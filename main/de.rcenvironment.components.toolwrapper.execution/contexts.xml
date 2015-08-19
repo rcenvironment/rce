@@ -1,0 +1,13 @@
+<contexts>
+	<context id="TestDummy" title="LiftingLine 2.2.1 Help">
+		<description>LiftingLine help content</description>
+		
+		<topic href="PLUGINS_ROOT/de.dlr.sc.chameleon.rce.doc.liftingline/html/liftingline.html" label="See LiftingLine Help"/>
+		<topic href="PLUGINS_ROOT/de.dlr.sc.chameleon.rce.doc.liftingline/html/cpacs4lili.html" label="See CPACS4LiLie Help"/>
+		<topic href="PLUGINS_ROOT/de.dlr.sc.chameleon.rce.doc/html/toc.html" label="See Chameleon User Guide"/>
+		<topic href="PLUGINS_ROOT/de.dlr.sc.chameleon.rce.doc/html/faq.html" label="See Chameleon FAQ"/>
+		<topic href="PLUGINS_ROOT/de.dlr.sc.chameleon.rce.doc/html/glossary.html" label="See Chameleon Glossary"/>
+		<topic href="PLUGINS_ROOT/de.dlr.sc.chameleon.rce.doc/html/contact_support.html" label="Get Contact And Support"/>
+		
+	</context>
+</contexts>

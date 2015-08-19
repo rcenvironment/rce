@@ -1,0 +1,8 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="VampZero Initializer Persistent Component Description Updater">
+	
+	<implementation class="de.rcenvironment.components.cpacs.vampzeroinitializer.execution.VampZeroInitializerPersistentComponentDescriptionUpdater"/>
+	
+	<service>
+		<provide interface="de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater"/>
+	</service>
+</scr:component>

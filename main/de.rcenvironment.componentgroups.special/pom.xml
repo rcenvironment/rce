@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.componentgroups.special.master</artifactId>
+	<name>RCE Component Group 'Special' Master Project</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.componentgroups.special.parent</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../de.rcenvironment.componentgroups.special/parent.pom</relativePath>
+	</parent>
+
+	<properties>
+		<modules-root>..</modules-root>
+	</properties>
+
+	<modules>
+		<!-- excel component -->
+		<module>${modules-root}/de.rcenvironment.components.excel.common</module>
+		<!-- FIXME 6.0.0 disabled until issue #11111 (Excel test bundle crashes 
+			Linux build) is resolved -->
+		<!-- <module>${modules-root}/de.rcenvironment.components.excel.common.tests</module> -->
+		<module>${modules-root}/de.rcenvironment.components.excel.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.excel.gui</module>
+
+		<!-- sql component -->
+		<module>${modules-root}/de.rcenvironment.components.sql.common</module>
+		<module>${modules-root}/de.rcenvironment.components.sql.common.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.sql.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.sql.gui</module>
+
+		<!-- component group feature -->
+		<module>${modules-root}/de.rcenvironment.componentgroups.special.feature</module>
+	</modules>
+
+</project>

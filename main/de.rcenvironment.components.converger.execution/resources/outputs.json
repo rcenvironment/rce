@@ -1,0 +1,42 @@
+{
+    "staticOutputs": [
+        {
+            "name": "Converged",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Converged absolute",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Converged relative",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Outer loop done",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicOutputs": [
+        {
+            "identifier": "convergedValue",
+            "dataTypes": [
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "readOnly": "true"
+        }
+    ]
+}

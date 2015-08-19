@@ -1,0 +1,73 @@
+{
+  "identifier" : "32e4eef0-90e7-42d7-b9aa-0222d46cbaff",
+  "workflowVersion" : "3",
+  "name" : "SQL_Writer_2014-11-04_07:46:23_02",
+  "nodes" : [ {
+    "identifier" : "918e948a-6e2a-4863-9b56-d4e173b24bef",
+    "name" : "SQL Writer",
+    "location" : "204:54",
+    "component" : {
+      "identifier" : "de.rcenvironment.sqlwriter",
+      "version" : "3.0",
+      "name" : "SQL Writer"
+    },
+    "configuration" : {
+      "dropTable" : "true",
+      "sqlCleanup" : "",
+      "sqlSetup" : "",
+      "createTable" : "true",
+      "jdbcProfile" : "Test Datenbank",
+      "tableName" : "temp_test_data_writer",
+      "sqlDispose" : "",
+      "dropTableOn" : "DISPOSE",
+      "inputMapping" : "idtest_data#INTEGER;name#STRING;number#STRING",
+      "sqlquery" : "insert into ${tableName} (...) values (...)",
+      "inputMode" : "BLOCK"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "7c43cbc0-a2b2-4ecf-b9a4-1c011d211f97",
+      "name" : "testdata",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "d7f6dccc-ac48-427b-8e6a-ca8f66908e4e",
+      "name" : "meta.tableName",
+      "epIdentifier" : null,
+      "datatype" : "ShortText"
+    }, {
+      "identifier" : "98cc6e85-5b8b-4d4b-9b78-e15d4c517a28",
+      "name" : "meta.sqlSuccess",
+      "epIdentifier" : null,
+      "datatype" : "Integer"
+    } ]
+  }, {
+    "identifier" : "764f9d68-84ef-4bee-a1f7-97a4ac60eed1",
+    "name" : "Script",
+    "location" : "54:54",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "name" : "Script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "testdata = [[0 for x in xrange(3)] for x in xrange(3)]\r\n\r\ntestdata[0][0] = 1\r\ntestdata[0][1] = 'f'\r\ntestdata[0][2] = 2\r\ntestdata[1][0] = 7\r\ntestdata[1][1] = 'g'\r\ntestdata[1][2] = 3\r\ntestdata[2][0] = 8\r\ntestdata[2][1] = 'h'\r\ntestdata[2][2] = 8\r\n\r\nRCE.write_output(\"testdata\", testdata)\r\n\r\nprint testdata",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "b31d8458-c276-495b-8617-bd4e000e4b68",
+      "name" : "testdata",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "764f9d68-84ef-4bee-a1f7-97a4ac60eed1",
+    "output" : "b31d8458-c276-495b-8617-bd4e000e4b68",
+    "target" : "918e948a-6e2a-4863-9b56-d4e173b24bef",
+    "input" : "7c43cbc0-a2b2-4ecf-b9a4-1c011d211f97"
+  } ]
+}

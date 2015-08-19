@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="windows-1252"?>
+<project name="de.rcenvironment.executor.python">
+
+  <bannerLeft>
+    <name>RCE Website</name>
+    <src>http://www.rcenvironment.de/FrontPage?action=AttachFile&amp;do=get&amp;target=rce_logo.png</src>
+    <href>http://www.rcenvironment.de</href>
+  </bannerLeft>
+  
+  <bannerRight>
+    <name>Chameleon Website</name>
+    <src>http://a.fsdn.com/con/icons/ch/chameleonir@sf.net/Chameleon_2009_thumbnail.jpg</src>
+    <href>http://sourceforge.net/projects/chameleonir/</href>
+  </bannerRight>
+  
+  <body>
+    <links>
+      <item name="RCE website" href="http://www.rcenvironment.de" />
+    </links>
+
+    <menu name="de.rcenvironment.rce.components.gui.python">
+      <item name="Usage" href="usage.html"/>
+    </menu>
+  </body>
+
+</project>

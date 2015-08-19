@@ -1,0 +1,19 @@
+{
+    "configuration":[
+        {
+            "key":"epsA",
+            "defaultValue":"0.1"
+        },
+        {
+            "key":"epsR",
+            "defaultValue":"0.1"
+        },
+        {
+            "key":"maxIterations"
+        },
+        {
+            "key":"iterationsToConsider",
+            "defaultValue":"1"
+        }
+    ]
+}

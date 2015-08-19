@@ -1,0 +1,22 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE XML Merger Component Common
+Bundle-SymbolicName: de.rcenvironment.components.xml.merger.common;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Export-Package: de.rcenvironment.components.xml.merger.common;version="6.0.0"
+RCE-Component: false
+Bundle-ClassPath: .
+Bundle-Vendor: DLR
+Bundle-ActivationPolicy: lazy
+Import-Package: de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.history,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.cpacs.utils.common.components,
+ org.apache.commons.logging;provider=paxlogging,
+ org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13",
+ org.eclipse.jface.resource,
+ org.eclipse.swt.graphics

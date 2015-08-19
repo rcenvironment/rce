@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="Component Name">
+	<implementation class="de.rcenvironment.components.outputwriter.execution.OutputWriterComponent"/>
+	
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+
+    <property name="rce.component.id" type="String" value="de.rcenvironment.outputwriter"/>
+    <property name="rce.component.class" type="String" value="de.rcenvironment.components.outputwriter.execution.OutputWriterComponent"/>
+	<property name="rce.component.version" type="String" value="1.1"/>
+	<property name="rce.component.name" type="String" value="Output Writer"/>
+	<property name="rce.component.group" type="String" value="Data Flow"/>
+	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.outputwriter.common/resources/outputWriter_16.png"/>
+	<property name="rce.component.icon-24" type="String" value="platform:/plugin/de.rcenvironment.components.outputwriter.common/resources/outputWriter_24.png"/>
+	<property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.outputwriter.common/resources/outputWriter_32.png"/>
+	<property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
+	<property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+	
+	<property name="rce.component.size" type="String" value="small"/>
+
+</scr:component>

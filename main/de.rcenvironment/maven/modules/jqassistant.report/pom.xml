@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<!-- Note: This POM should not be run together with other modules, as this 
+		causes weird side effects with the jQAssistant plugin - misc_ro, Oct 2014 -->
+
+	<artifactId>de.rcenvironment.modules.jqassistant.report</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>com.buschmais.jqassistant.maven</groupId>
+				<artifactId>jqassistant-maven-plugin</artifactId>
+				<version>1.0.0-M2</version>
+				<executions>
+					<execution>
+						<id>jqa-analyze</id>
+						<goals>
+							<goal>analyze</goal>
+						</goals>
+						<phase>compile</phase>
+						<configuration>
+							<storeDirectory>${projects-root}/target/jqassistant/datastore</storeDirectory>
+							<failOnConstraintViolations>false</failOnConstraintViolations>
+						</configuration>
+					</execution>
+					<execution>
+						<id>jqa-report</id>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<phase>compile</phase>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

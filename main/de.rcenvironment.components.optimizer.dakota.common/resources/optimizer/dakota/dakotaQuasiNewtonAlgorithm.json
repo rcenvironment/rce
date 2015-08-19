@@ -1,0 +1,123 @@
+{
+    "methodName":"Dakota Quasi-Newton method",
+    "methodCode":"optpp_q_newton",
+    "optimizerPackage":"dakota",
+    "followingMethods":"0",
+    "specificSettings":{
+        "search_method":{
+            "GuiName":"Search method",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"value_based_line_search,gradient_based_line_search,trust_region,tr_pds",
+            "DefaultValue":"trust_region",
+            "Value":"",
+            "Validation":"",
+            "IsGroup":"true"
+        },
+        "max_step":{
+            "GuiName":"Maximum step size",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1000",
+            "Value":"",
+            "Validation":">=0"
+        },
+        "gradient_tolerance":{
+            "GuiName":"Gradient tolerance",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1.E-4",
+            "Value":"",
+            "Validation":""
+        },
+        "merit_function":{
+            "GuiName":"Merit function",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"el_bakry,argaez_tapia,van_shanno",
+            "DefaultValue":"argaez_tapia",
+            "Value":"",
+            "Validation":""
+        },
+        "steplength_to_boundary":{
+            "GuiName":"Steplengh to boundary",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"0.99995",
+            "Value":"",
+            "Validation":""
+        },
+        "centering_parameter":{
+            "GuiName":"Centering parameter",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "Value":"",
+            "DefaultValue":"0.1",
+            "Validation":""
+        }
+        
+    },
+    "responsesSettings":{
+        "gradients":{
+            "GuiName":"Use gradients",
+            "GuiOrder":"1",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"numerical_gradients,analytic_gradients",
+            "DefaultValue":"numerical_gradients",
+            "Value":"",
+            "Validation":"",
+            "noKeyword":"true"
+        },
+        "interval_type":{
+            "GuiName":"Gradient interval type",
+            "GuiOrder":"2",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"forward,central",
+            "DefaultValue":"forward",
+            "Value":"",
+            "Validation":""
+        },
+        "fd_gradient_step_size":{
+            "GuiName":"Gradient stepsize",
+            "GuiOrder":"3",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1.0E-4",
+            "Value":"",
+            "Validation":">0"
+        },
+        "hessians":{
+            "GuiName":"Use hessians",
+            "GuiOrder":"4",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"no_hessians,numerical_hessians",
+            "DefaultValue":"no_hessians",
+            "Value":"",
+            "Validation":"",
+            "noKeyword":"true"
+        },
+        "interval_type_hessian":{
+            "GuiName":"Hessian interval type",
+            "GuiOrder":"5",
+            "dataType":"None",
+            "SWTWidget":"Combo",
+            "Choices":"forward,central",
+            "DefaultValue":"forward",
+            "Value":"",
+            "Validation":"",
+            "noKeyword":"true"
+        },
+        "fd_hessian_step_size":{
+            "GuiName":"Hessian stepsize",
+            "GuiOrder":"6",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1.0E-4",
+            "Value":"",
+            "Validation":">0"
+        }
+    }
+}

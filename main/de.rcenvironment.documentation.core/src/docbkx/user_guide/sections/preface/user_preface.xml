@@ -1,0 +1,15 @@
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+
+<chapter id="preface">
+    <title>Preface</title>
+    <para>This chapter gives an introduction to RCE.</para>
+    
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../../common/sections/preface/abstract.xml"/>
+    
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="user_peergroup.xml"/>
+    
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../../common/sections/preface/licensing.xml"/>
+    
+    <xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="../../../common/sections/preface/operating_systems.xml"/>
+    
+</chapter>

@@ -1,0 +1,35 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.modules.cpacs.nonComponent</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<module>${projects-root}/de.rcenvironment.cpacs.utils.common</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.utils.common.tests</module>
+
+		<module>${projects-root}/de.rcenvironment.cpacs.component.integration</module>
+
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.xpathchooser</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.wizards.toolintegration</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.wizards.exampleproject</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.workflow.integration</module>
+
+		<module>${projects-root}/de.rcenvironment.cpacs.branding</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.branding.login</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.branding.workflow</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.branding.feature</module>
+
+		<module>${projects-root}/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature</module>
+	</modules>
+
+</project>

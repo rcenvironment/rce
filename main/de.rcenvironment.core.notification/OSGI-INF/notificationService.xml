@@ -1,0 +1,14 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Notification Servivce">
+	<implementation class="de.rcenvironment.core.notification.internal.NotificationServiceImpl" />
+	<service>
+    	<provide interface="de.rcenvironment.core.notification.NotificationService"/>
+	</service>
+	<reference
+		name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
+</scr:component>
+  	  

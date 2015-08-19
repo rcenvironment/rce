@@ -1,0 +1,31 @@
+{
+    "staticOutputs": [
+        {
+            "name": "my Output",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer"
+            ],
+            "defaultDataType": "Integer"
+        },
+        {
+            "name": "my Output 2",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicOutputs": [
+        {
+            "identifier": "outputId",
+            "dataTypes": [
+                "FileReference", 
+				"SmallTable"
+            ],
+            "defaultDataType": "FileReference",
+            "readOnly": "true"
+        }
+    ]
+}

@@ -1,0 +1,6 @@
+<contexts>
+	<context id="joiner" title="Joiner Component Help">
+		<description>The Joiner component is used to join multiple inputs to one.</description>
+     	<topic href="resources/help/html/usage.html" label="Joiner Component Usage"></topic>
+	</context>
+</contexts>

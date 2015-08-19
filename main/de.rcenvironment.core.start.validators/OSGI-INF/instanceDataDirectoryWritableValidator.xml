@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="InstanceDataDirectoryWritableValidator">
+
+   <implementation class="de.rcenvironment.core.validators.internal.InstanceDataDirectoryWritableValidator"/>
+   
+   <service>
+   		<provide interface="de.rcenvironment.core.start.common.validation.PlatformValidator"/>
+   </service>
+   
+   <reference 
+   		bind="bindConfigurationService" 
+   		cardinality="1..1" 
+   		interface="de.rcenvironment.core.configuration.ConfigurationService" 
+   		name="ConfigurationService" 
+   		policy="static"
+   	/>
+</scr:component>

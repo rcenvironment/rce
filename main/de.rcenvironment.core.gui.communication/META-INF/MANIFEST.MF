@@ -1,0 +1,28 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Communication GUI
+Bundle-SymbolicName: de.rcenvironment.core.gui.communication; singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.ui
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Activator: de.rcenvironment.core.gui.communication.views.Activator
+Import-Package: de.rcenvironment.core.communication.api,
+ de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.communication.connection.api,
+ de.rcenvironment.core.communication.model,
+ de.rcenvironment.core.communication.model.impl,
+ de.rcenvironment.core.communication.nodeproperties,
+ de.rcenvironment.core.communication.nodeproperties.spi,
+ de.rcenvironment.core.communication.routing,
+ de.rcenvironment.core.communication.spi,
+ de.rcenvironment.core.communication.utils,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.model.api,
+ de.rcenvironment.core.component.spi,
+ de.rcenvironment.core.gui.resources.api,
+ de.rcenvironment.core.gui.utils.incubator,
+ de.rcenvironment.core.utils.incubator,
+ org.apache.commons.logging;version="1.1.1"
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: DLR

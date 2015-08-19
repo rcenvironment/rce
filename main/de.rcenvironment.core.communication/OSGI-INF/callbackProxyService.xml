@@ -1,0 +1,6 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" name="Callback Proxy Service">
+	<implementation class="de.rcenvironment.core.communication.rpc.internal.CallbackProxyServiceImpl" />
+	<service>
+    	<provide interface="de.rcenvironment.core.communication.rpc.api.CallbackProxyService"/>
+	</service>
+</scr:component>

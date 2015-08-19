@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+                      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Cluster Component Usage</title>
+    </head>
+    <body>
+        <h2><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US"
+                >Cluster Component Usage</span></h2>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Synopsis
+            </span></h3>
+        <p><span style="mso-ansi-language:EN-US">Cluster component allows submission of
+                jobs to a cluster. 
+                </span></p>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Rationale
+            </span></h3>
+        <p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto"><span
+                
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                >The component submits jobs described by a given job script to the queuing system of
+                a cluster. It allows to upload directories beforehand and to download directories
+                after the job is terminated. 
+                </span></p>
+        <p class="MsoNormal" style="mso-margin-top-alt:auto;mso-margin-bottom-alt:auto"><span
+                
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                >To check if jobs are finished, the Cluster component polls the queuing system every
+                minute and asks for their states. The connection to the cluster is done via SSH. For
+                the submission, a directory (sandbox-[uuid]) is created on the cluster in the user’s
+                home directory. It will serve as the current working directory for all remote
+                command line calls.
+                </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                >The remote directory structure is as follows</span></p>
+        <p class="MsoListParagraphCxSpFirst"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    >/sandbox-[id]
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:1">            </span>/iteration-0</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                       </span>/cluster-job-0</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:3">                                  
+                    </span>/input
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:3">                                  
+                    </span>/output
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                       </span>/cluster-job-1</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:3">                                  
+                    </span>/input
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:3">                                  
+                    </span>/output
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                       </span>…</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                      
+                    </span>/cluster-job-shared-input</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:1">            </span>/iteration-1</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                       </span>/cluster-job-0</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:3">                                  
+                    </span>/input
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:3">                                  
+                    </span>/output
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                       </span>…</span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:2">                       </span>/
+                    cluster-job-shared-input
+                </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:1">            </span>…</span></p>
+        <p class="MsoListParagraphCxSpLast"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:1">            </span>job</span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">
+              
+            </span></p>
+        <p class="MsoListParagraphCxSpFirst"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;mso-ansi-language:EN-US"
+                >The job script is uploaded to <span style="color:black;mso-themecolor:text1"
+                    >/sandbox-[id]/job. </span>The job submission is done from <span
+                    style="color:black;mso-themecolor:text1"
+                        >/sandbox-[id]/iteration-[n]/cluster-job-[n]/.
+                        </span></span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpLast"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                >If the job failed and the Cluster component should be marked as failed, a file
+                named job_failed must be created in
+                /sandbox-[id]/iteration-[n]/cluster-job-[n]/output. The content of the file is used
+                as error message. The output directories are not downloaded for the failed job and
+                all remaining jobs terminated afterwards. 
+                    </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Usage</span></h3>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >The Cluster component is configured as follows: 
+                    </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpFirst" style="text-indent:-18.0pt;mso-list:l0 level1 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">1.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;mso-ansi-language:EN-US"
+                >In the Cluster tab define the information needed to connect to a cluster via SSH.
+                Define host IP or resolvable host name, port number, etc. The working directory root
+                is the folder, where the sandbox folder mentioned above is created. Also define the
+                queuing system running on the cluster. In some cases, the queuing system console
+                commands like qsub, qstat, etc. are not known within a non-interactive SSH shell on
+                the cluster. For that, you can optionally define the absolute paths to the required
+                commands explicitly. If you don’t know them, just type ‘which qsub’ etc. on a
+                cluster’s console and you will get them.
+                    </span></p>
+        <p class="MsoListParagraphCxSpLast" style="margin-left:54.0pt;mso-add-space:auto"><span                   
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US">
+                    
+                </span></p>
+        <p class="MsoNormal" style="margin-left:36.0pt"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-no-proof:yes"
+                    ><img alt="converger" height="253"
+                    src="images/image001.png"
+                    width="1047" /></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoNormal" style="margin-left:36.0pt"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpFirst" style="text-indent:-18.0pt;mso-list:l0 level1 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-list:Ignore">2.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                >The job itself is either described in the Job tab or is provided within each input
+                directory (/sandbox-[id]/iteration-[#]/cluster-job-[#]/input). Select the check box
+                accordingly. If it is provided within each input directory, the name of the script
+                must be: run_cluster_job.sh<br/>
+                <br/>
+            </span><span style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-no-proof: yes"
+                    ><img alt="Unbenannt_" height="298"
+                    src="images/image002.png"
+                     width="1034" /></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor: text1;mso-ansi-language:EN-US">
+                <br style="mso-special-character:line-break"  />
+                <br style="mso-special-character:line-break"  />
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpMiddle" style="text-indent:-18.0pt;mso-list:l0 level1 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-list:Ignore">3.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                >In the tab Inputs/Outputs you see the inputs and outputs of the Cluster component.
+                The inputs and outputs are static and cannot be modified except the scheduling behavior.
+                    </span></p>
+        <p class="MsoListParagraphCxSpMiddle"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:72.0pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level2 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-list:Ignore">a.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">      
+                </span></span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                >Job count </span><span
+                style="font-family:Wingdings;mso-ascii-font-family:&#34;Times New Roman&#34;; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-hansi-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US;mso-char-type:symbol; mso-symbol-font-family:Wingdings"
+                    ><span style="mso-char-type:symbol;mso-symbol-font-family: Wingdings"
+                >à</span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                > # jobs to submit on each iteration
+                    </span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:72.0pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level2 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-list:Ignore">b.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                >Job inputs </span><span
+                style="font-family:Wingdings;mso-ascii-font-family:&#34;Times New Roman&#34;; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-hansi-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;mso-char-type:symbol;mso-symbol-font-family:Wingdings"
+                    ><span style="mso-char-type:symbol;mso-symbol-font-family:Wingdings"
+                >à</span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                > input directories, which are uploaded before each iteration to
+                /sandbox-[id]/iteration-n/cluster-job-n/input (in the order as they arrive, 0 for
+                first directory, 1 for second, etc.)
+                    </span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:72.0pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level2 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-list:Ignore">c.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">      
+                </span></span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                >Shared job input </span><span
+                style="font-family:Wingdings;mso-ascii-font-family:&#34;Times New Roman&#34;; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-hansi-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US;mso-char-type:symbol; mso-symbol-font-family:Wingdings"
+                    ><span style="mso-char-type:symbol;mso-symbol-font-family: Wingdings"
+                >à</span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                > input directory which is uploaded before each iteration to
+                    /sandbox-[id]/iteration-n/shared-input
+                    </span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:72.0pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level2 lfo1"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-list:Ignore">d.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black; mso-themecolor:text1;mso-ansi-language:EN-US"
+                >Job outputs </span><span
+                style="font-family:Wingdings;mso-ascii-font-family:&#34;Times New Roman&#34;; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-hansi-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US;mso-char-type:symbol; mso-symbol-font-family:Wingdings"
+                    ><span style="mso-char-type:symbol;mso-symbol-font-family: Wingdings"
+                >à</span></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                > output directory which is download after each iteration from
+                    sandbox-[id]/iteration-n/cluster-job-n/output
+                    </span></p>
+        <p class="MsoListParagraphCxSpLast"><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-ansi-language:EN-US"
+                    ><span style="mso-spacerun:yes"> </span></span><span
+                style="mso-fareast-font-family: &#34;Times New Roman&#34;;color:black;mso-themecolor:text1;mso-no-proof:yes"
+                    ><img alt="endpoints" height="242"
+                    src="images/image003.png"
+                     width="1018" /></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor: text1;mso-ansi-language:EN-US"
+                    >.<br style="mso-special-character:line-break"  />
+                <br style="mso-special-character:line-break"  />
+                </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:black;mso-themecolor:text1;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    ><span style="mso-tab-count:1">            </span>
+                    </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >You are done and the Cluster component is ready to start. To see the native
+                standard out and error of the job submission see the Workflow console.
+                    </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-no-proof:yes"><img
+                     alt="Unbenannt_" height="284"
+                    src="images/image004.png"
+                    width="1109" /></span><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoNormal"><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">
+                
+            </span></p>
+        <pre xml:space="preserve"><span style="mso-ansi-language:EN-US"></span></pre>
+        <pre xml:space="preserve"><span style="mso-ansi-language:EN-US"></span></pre>
+        <p class="MsoNormal"
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US">
+                
+            </span></p>
+        <p class="MsoNormal"
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US">
+                
+            </span></p>
+    </body>
+</html>

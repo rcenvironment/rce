@@ -1,0 +1,115 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.modules.coverage.report</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<!-- JAR packaging required as Jacoco skips POM projects, even for reporting -->
+	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<build>
+		<!-- set the combined source directory to link them in the report -->
+		<sourceDirectory>${projects-root}/target/combined-source-files</sourceDirectory>
+		<plugins>
+			<!-- copy collected class files to target/classes -->
+			<plugin>
+				<artifactId>maven-resources-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-input-files-for-jacoco-report</id>
+						<goals>
+							<goal>copy-resources</goal>
+						</goals>
+						<phase>generate-resources</phase>
+						<configuration>
+							<outputDirectory>${project.build.directory}/classes</outputDirectory>
+							<resources>
+								<resource>
+									<directory>${projects-root}/target/combined-class-files</directory>
+								</resource>
+							</resources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- prevent default compilation of the collected source files -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>default-compile</id>
+						<phase>none</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- prevent default jar generation -->
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<version>2.3.2</version>
+				<executions>
+					<execution>
+						<id>default-jar</id>
+						<phase>none</phase>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- generate the report -->
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.6.2.201302030002</version>
+				<executions>
+					<execution>
+						<id>merged-jacoco-report</id>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<phase>compile</phase>
+						<configuration>
+							<dataFile>${projects-root}/target/coverage-data/jacoco.exec</dataFile>
+							<includes>
+								<include>de/rcenvironment/**</include>
+							</includes>
+							<excludes>
+								<exclude>**/gui/**</exclude>
+								<exclude>**/*Test*</exclude>
+							</excludes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<!-- clean up the collected class files to prevent them being scanned 
+				by reporting tools -->
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>clean-report-input</id>
+						<!-- run after report generation in "compile" phase -->
+						<phase>process-classes</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+						<configuration>
+							<excludeDefaultDirectories>true</excludeDefaultDirectories>
+							<filesets>
+								<fileset>
+									<directory>${project.build.directory}/classes</directory>
+									<followSymlinks>false</followSymlinks>
+								</fileset>
+							</filesets>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>

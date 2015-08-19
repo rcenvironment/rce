@@ -1,0 +1,9 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Typed Datum Service">
+
+	<implementation class="de.rcenvironment.core.datamodel.internal.TypedDatumServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.datamodel.api.TypedDatumService"/>
+	</service>
+	
+	
+</scr:component>

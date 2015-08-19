@@ -1,0 +1,32 @@
+{
+	"general" : {
+		"instanceName" : "Example standalone server started by \"${systemUser}\" on ${hostName}",
+		"isWorkflowHost": true
+	},
+	"network" : {
+		"serverPorts" : {
+			"serverPort1" : {
+				"ip" : "127.0.0.1",
+				"port" : 21000
+			}
+		},
+		"ipFilter" : {
+			"enabled" : false,
+			"allowedIPs" : [
+				"127.0.0.1",
+				"127.0.0.2"
+			]
+		}
+	},
+	"publishing" : {
+		"components" : [
+			"de.rcenvironment.cluster",
+			"de.rcenvironment.converger",
+			"de.rcenvironment.joiner",
+			"de.rcenvironment.optimizer",
+			"de.rcenvironment.parametricstudy",
+			"de.rcenvironment.sqlcommand",
+			"de.rcenvironment.xmlmerger"
+		]
+	}
+}

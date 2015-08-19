@@ -1,0 +1,44 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "toJoin",
+            "group": "join",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector",
+                "Matrix"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Constant",
+	            "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+            "inputExecutionConstraintOptions":[
+                "None"
+            ],
+            "defaultInputExecutionConstraint":"None",
+            "initialEndpoints": [
+                {
+                    "name": "Input 001"
+                },
+                {
+                    "name": "Input 002"
+                }
+            ]
+        }
+    ],
+    "inputGroups":[
+        {
+            "identifier":"join",
+            "type": "Or"
+        }
+    ]
+}

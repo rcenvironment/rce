@@ -1,0 +1,149 @@
+{
+  "identifier" : "ffa54d38-be67-4a87-9a68-d2fd4b950a4d",
+  "workflowVersion" : "3",
+  "name" : "SQL_Writer_noCreate_2014-11-03_09:18:34_11",
+  "nodes" : [ {
+    "identifier" : "77488de8-8554-4fd4-8f2a-b1c6043a7fd7",
+    "name" : "SQL Command",
+    "location" : "374:74",
+    "component" : {
+      "identifier" : "de.rcenvironment.sqlcommand",
+      "version" : "3.0",
+      "name" : "SQL Command"
+    },
+    "configuration" : {
+      "sqlCleanup" : "",
+      "sqlSetup" : "",
+      "sqlQueryInit" : "",
+      "jdbcProfile" : "Test Datenbank",
+      "sqlDispose" : "",
+      "sqlQueryInitDo" : "false",
+      "sqlquery" : "SELECT * FROM test_data;\r\nDELETE FROM test_data WHERE idtest_data > 5"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "88c3fad0-bce5-4ef9-bbbf-6aa2494b8b0a",
+      "name" : "success",
+      "epIdentifier" : "default",
+      "datatype" : "Integer"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "167439f5-f683-49ad-a31d-7a91f5ab9289",
+      "name" : "meta.tableName",
+      "epIdentifier" : null,
+      "datatype" : "ShortText"
+    }, {
+      "identifier" : "da3a19b5-852b-45a8-8b81-c68d2a533f90",
+      "name" : "meta.sqlSuccess",
+      "epIdentifier" : null,
+      "datatype" : "Integer"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "a4621f71-e0c2-4bd5-b25b-87bdb8bfd021",
+      "name" : "data",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "2b8eb717-5016-406c-9c72-5ca106f77d29",
+    "name" : "SQL Writer",
+    "location" : "224:74",
+    "component" : {
+      "identifier" : "de.rcenvironment.sqlwriter",
+      "version" : "3.0",
+      "name" : "SQL Writer"
+    },
+    "configuration" : {
+      "dropTable" : "false",
+      "sqlCleanup" : "",
+      "sqlSetup" : "",
+      "createTable" : "false",
+      "jdbcProfile" : "Test Datenbank",
+      "tableName" : "test_data",
+      "sqlDispose" : "",
+      "dropTableOn" : "DISPOSE",
+      "inputMapping" : "idtest_data#INTEGER;name#INTEGER;number#INTEGER",
+      "sqlquery" : "insert into ${tableName} (...) values (...)",
+      "inputMode" : "BLOCK"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "4e41e3b9-ce35-4f63-ba73-5518653cfaa9",
+      "name" : "testdata",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "92079a50-e547-47e9-a7d3-f6c2a1a08a14",
+      "name" : "meta.tableName",
+      "epIdentifier" : null,
+      "datatype" : "ShortText"
+    }, {
+      "identifier" : "3ad23052-9674-4049-a9a7-35eb0f323599",
+      "name" : "meta.sqlSuccess",
+      "epIdentifier" : null,
+      "datatype" : "Integer"
+    } ]
+  }, {
+    "identifier" : "b799b92d-21c2-47e2-aba3-44271f59683c",
+    "name" : "Script",
+    "location" : "74:74",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.3",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "false",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "testdata = [[0 for x in xrange(3)] for x in xrange(3)]\r\n\r\ntestdata[0][0] = 6\r\ntestdata[0][1] = 'f'\r\ntestdata[0][2] = 6\r\ntestdata[1][0] = 7\r\ntestdata[1][1] = 'g'\r\ntestdata[1][2] = 7\r\ntestdata[2][0] = 8\r\ntestdata[2][1] = 'h'\r\ntestdata[2][2] = 8\r\n\r\nRCE.write_output(\"testdata\", testdata)\r\n\r\nprint testdata",
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "f10276f6-3fd3-4c98-8835-7839d1088d76",
+      "name" : "testdata",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "e6ea6691-ed5f-4883-b4a6-8563fe1206e6",
+    "name" : "Script (1)",
+    "location" : "525:74",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.3",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "false",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "print RCE.read_input(\"data\")\r\n",
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "fbcec1a6-0630-45b1-803a-a9998e41cb22",
+      "name" : "data",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "usage" : "required"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "b799b92d-21c2-47e2-aba3-44271f59683c",
+    "output" : "f10276f6-3fd3-4c98-8835-7839d1088d76",
+    "target" : "2b8eb717-5016-406c-9c72-5ca106f77d29",
+    "input" : "4e41e3b9-ce35-4f63-ba73-5518653cfaa9"
+  }, {
+    "source" : "2b8eb717-5016-406c-9c72-5ca106f77d29",
+    "output" : "3ad23052-9674-4049-a9a7-35eb0f323599",
+    "target" : "77488de8-8554-4fd4-8f2a-b1c6043a7fd7",
+    "input" : "88c3fad0-bce5-4ef9-bbbf-6aa2494b8b0a"
+  }, {
+    "source" : "77488de8-8554-4fd4-8f2a-b1c6043a7fd7",
+    "output" : "a4621f71-e0c2-4bd5-b25b-87bdb8bfd021",
+    "target" : "e6ea6691-ed5f-4883-b4a6-8563fe1206e6",
+    "input" : "fbcec1a6-0630-45b1-803a-a9998e41cb22"
+  } ]
+}

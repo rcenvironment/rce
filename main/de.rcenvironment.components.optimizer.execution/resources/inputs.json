@@ -1,0 +1,212 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "Objective",
+            "group" : "valuesToOptimize",
+            "dataTypes": [
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "weight": {
+                    "guiName": "Weight",
+                    "guiPosition": "0",
+                    "guiGroup": "Objective function",
+                    "visibility": "shown",
+                    "dataType": "float",
+                    "defaultValue": "1",
+                    "validation": "required"
+                },
+                "goal": {
+                    "guiName": "Optimization target",
+                    "guiPosition": "1",
+                    "guiGroup": "Objective function",
+                    "visibility": "shown",
+                    "possibleValues": [
+                        "Minimize",
+                        "Maximize",
+                        "Solve for"
+                    ],
+                    "defaultValue": "Minimize",
+                    "validation": "required"
+                },
+                "solve": {
+                    "guiName": "Solve for",
+                    "guiPosition": "2",
+                    "guiGroup": "Objective function",
+                    "dataType": "float",
+                    "visibility": "shown",
+                    "guiActivationFilter": {
+                        "goal": [
+                            "Solve for"
+                        ]
+                    },
+                    "defaultValue": "0"
+                },
+                "hasGradient": {
+                    "guiName": "Has gradient",
+                    "guiPosition": "0",
+                    "guiGroup": "Gradient",
+                    "visibility": "shown",
+                    "dataType": "bool",
+                    "defaultValue": "false"
+                },
+                "vectorSize": {
+                    "guiName": "Dimension of vector",
+                    "guiPosition": "0",
+                    "guiGroup": "Vector",
+                    "dataType": "int",
+                    "visibility": "shown",
+                    "endpointDataTypes": [
+                        "Vector"
+                    ],
+                    "validation": "required"
+                }
+            }
+        },
+        {
+            "identifier": "Constraint",
+            "group" : "valuesToOptimize",
+            "dataTypes": [
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "hasSingleBounds": {
+                    "guiName": "Has unified bounds",
+                    "guiPosition": "0",
+                    "guiGroup": "Bounds",
+                    "visibility": "shown",
+                    "defaultValue": "true",
+                    "dataType": "bool"
+                },
+                "lower": {
+                    "guiName": "Lower bound",
+                    "guiPosition": "1",
+                    "guiGroup": "Bounds",
+                    "visibility": "shown",
+                    "defaultValue": "-1",
+                    "dataType": "float",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasSingleBounds": [
+                            "true"
+                        ]
+                    }
+                },
+                "upper": {
+                    "guiName": "Upper bound",
+                    "guiPosition": "2",
+                    "guiGroup": "Bounds",
+                    "visibility": "shown",
+                    "dataType": "float",
+                    "defaultValue": "1",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasSingleBounds": [
+                            "true"
+                        ]
+                    }
+                },
+                "hasGradient": {
+                    "guiName": "Has gradient",
+                    "guiPosition": "0",
+                    "guiGroup": "Gradient",
+                    "visibility": "shown",
+                    "dataType": "bool",
+                    "defaultValue": "false"
+                },
+                "vectorSize": {
+                    "guiName": "Dimension of vector",
+                    "guiPosition": "0",
+                    "guiGroup": "Vector",
+                    "dataType": "int",
+                    "visibility": "shown",
+                    "endpointDataTypes": [
+                        "Vector"
+                    ],
+                    "validation": "required"
+                }
+            }
+        },
+        {
+            "identifier": "startvalues",
+            "group" : "startValues",
+            "dataTypes": [
+                "Float",
+                "Vector"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "usage": {
+                    "guiName": "Usage",
+                    "guiPosition": "0",
+                    "guiGroup": "Scheduling",
+                    "visibility": "shown",
+                    "possibleValues": [
+                        "initial"
+                    ],
+                    "defaultValue": "initial"
+                }
+            }
+        },
+        {
+            "identifier": "outerLoopDone",
+            "group":"innerLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "readOnly": "true",
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "usage": {
+                    "defaultValue": "optional",
+                    "visibility": "developerConfigurable"
+                }
+            }
+        },
+        {
+            "identifier": "gradients",
+             "group":"valuesToOptimize",
+            "dataTypes": [
+                "Float",
+                "Vector",
+                "Matrix"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "usage": {
+                    "guiName": "Usage",
+                    "guiPosition": "0",
+                    "guiGroup": "Scheduling",
+                    "visibility": "developerConfigurable",
+                    "possibleValues": [
+                        "initial"
+                    ],
+                    "defaultValue": "required"
+                }
+            }
+        }
+    ],
+     "inputGroups":[
+        {
+            "identifier":"valuesToOptimize",
+            "type":"And",
+            "group":"startOrRunValues"
+        },
+        {
+            "identifier":"startValues",
+            "type":"And",
+            "group":"startOrRunValues"
+        },
+         {
+            "identifier":"startOrRunValues",
+            "type": "Or",
+            "group":"innerLoop"
+        },
+        {
+            "identifier":"innerLoop",
+            "type": "Or"
+        }
+    ]
+}

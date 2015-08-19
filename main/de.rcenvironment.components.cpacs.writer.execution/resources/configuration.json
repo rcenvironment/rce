@@ -1,0 +1,15 @@
+{
+    "configuration": [
+        {
+            "key": "localFolder"
+        },
+        {
+            "key": "saveMode",
+            "defaultValue": "true"
+        },
+		{
+            "key": "storeComponentHistoryData",
+            "defaultValue": "false"
+        }
+    ]
+}

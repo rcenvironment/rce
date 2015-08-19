@@ -1,0 +1,24 @@
+{
+		"dynamicOutputs": [
+		{
+			"endpointIdentifier": "default",
+			"endpointDataTypes": [
+				"Boolean",
+				"ShortText",
+				"Integer",
+				"Float"
+			],
+			"endpointDefaultDataType": "Float",
+			"endpointMetaData": {
+				"variable.xpath": {
+					"guiName": "XPath",
+					"guiPosition": "0",
+					"guiGroup": "XML values",
+					"visibility" : "shown",
+					"defaultValue" : "",
+					"validation" : "required"
+				}
+			}
+		}
+	]
+}

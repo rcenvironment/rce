@@ -1,0 +1,167 @@
+This is a list of the third-party software used in this product and their 
+respective licenses. Please see the "licenses" folder for the individual 
+license files.
+
+Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL" file.
+
+ Academic Free License (AFL) version 3.0
+	ASM Core (asm:asm:2.2.3 - http://asm.objectweb.org/asm/)
+	
+ Apache License, Version 2.0
+	Activation 1.1 (org.apache.geronimo.specs:geronimo-activation_1.1_spec:1.0.2 - http://geronimo.apache.org/specs/geronimo-activation_1.1_spec)
+	Abdera Core (org.apache.abdera:abdera-core:1.1 - http://abdera.apache.org/abdera-core)
+	Abdera Extensions - JSON (org.apache.abdera:abdera-extensions-json:1.1 - http://abdera.apache.org/abdera-extensions-json)
+	Abdera Extensions - Main (org.apache.abdera:abdera-extensions-main:1.1 - http://abdera.apache.org/abdera-extensions-main)
+	Abdera Parser (org.apache.abdera:abdera-parser:1.1 - http://abdera.apache.org/abdera-parser)
+	ActiveMQ :: Core (org.apache.activemq:activemq-core:5.7.0 - http://activemq.apache.org/activemq-core)
+	ActiveMQ Protocol Buffers Implementation and Compiler (org.apache.activemq.protobuf:activemq-protobuf:1.1 - http://activemq.apache.org/activemq-protobuf)
+	Annotation 1.0 (org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-annotation_1.0_spec)
+	ant-jsch (org.apache.ant:ant-jsch:1.7.0 - http://ant.apache.org/ant-jsch/)
+	ant-launcher (org.apache.ant:ant-launcher:1.7.0 - http://ant.apache.org/ant-launcher/)
+	Apache CXF Minimal Bundle Jar (org.apache.cxf:cxf-bundle-minimal:2.2.11 - http://cxf.apache.org)
+	Apache Commons Collections (org.apache.commons:commons-collections4:4.0 - http://commons.apache.org/proper/commons-collections/)
+	Apache Commons CSV (org.apache.commons:commons-csv:1.1 - http://commons.apache.org/proper/commons-csv/)
+	Apache Derby Database Engine and Embedded JDBC Driver (org.apache.derby:derby:10.11.1.1 - http://db.apache.org/derby/derby/)
+	Apache Geronimo JAX-WS 2.1 API (org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0 - http://geronimo.apache.org/maven/specs/geronimo-jaxws_2.1_spec/1.0)
+	Apache Log4j (log4j:log4j:1.2.16 - http://logging.apache.org/log4j/1.2/)
+	Apache MINA Core (org.apache.mina:mina-core:2.0.4 - http://mina.apache.org/mina-core/)
+	Apache Mina SSHD :: Core (org.apache.sshd:sshd-core:0.7.0 - http://www.apache.org/sshd/sshd-core/)
+	Apache POI (org.apache.poi:poi-ooxml-schemas:3.8 - http://poi.apache.org/)
+	Apache POI (org.apache.poi:poi-ooxml:3.8 - http://poi.apache.org/)
+	Apache POI (org.apache.poi:poi:3.8 - http://poi.apache.org/)
+	Apache ServiceMix :: Bundles :: saxon9he (org.apache.servicemix.bundles:org.apache.servicemix.bundles.saxon:9.4.0.1_1 - http://servicemix.apache.org/bundles-pom/org.apache.servicemix.bundles.saxon/)
+	Apache Santuario (org.apache.santuario:xmlsec:1.4.4 - http://santuario.apache.org/)
+	Axiom API (org.apache.ws.commons.axiom:axiom-api:1.2.7 - http://ws.apache.org/commons/axiom/modules/axiom-api/)
+	Axiom Impl (org.apache.ws.commons.axiom:axiom-impl:1.2.7 - http://ws.apache.org/commons/axiom/modules/axiom-impl/)
+	Code Generation Library (cglib:cglib-nodep:2.2.2 - http://cglib.sourceforge.net/)
+	Commons Codec (commons-codec:commons-codec:1.4 - http://commons.apache.org/codec/)
+	Commons Compress (org.apache.commons:commons-compress:1.4 - http://commons.apache.org/compress/)
+	Commons DBCP (commons-dbcp:commons-dbcp:1.4 - http://commons.apache.org/dbcp/)
+	Commons Exec (org.apache.commons:commons-exec:1.1 - http://commons.apache.org/exec/)
+	Commons IO (commons-io:commons-io:2.4 - http://commons.apache.org/io/)
+	Commons Lang (commons-lang:commons-lang:2.5 - http://commons.apache.org/lang/)
+	Commons Lang (org.apache.commons:commons-lang3:3.1 - http://commons.apache.org/lang/)
+	Commons Logging (commons-logging:commons-logging:1.1.1 - http://commons.apache.org/logging)
+	Commons Net (commons-net:commons-net:3.1 - http://commons.apache.org/net)
+	Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
+	Data Mapper for Jackson (org.codehaus.jackson:jackson-mapper-asl:1.9.13 - http://jackson.codehaus.org)
+	EasyMock (org.easymock:easymock:3.1 - http://www.easymock.org)
+	EasyMock class extension (org.easymock:easymockclassextension:3.1 - http://www.easymock.org)
+	imgscalr - A Java Image Scaling Library (org.imgscalr:imgscalr-lib:4.2 - http://www.thebuzzmedia.com/software/imgscalr-java-image-scaling-library/)
+	I18N Libraries (org.apache.abdera:abdera-i18n:1.1 - http://abdera.apache.org)
+    J2EE Management 1.1 (org.apache.geronimo.specs:geronimo-j2ee-management_1.1_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-j2ee-management_1.1_spec)
+    JASYPT: Java Simplified Encryption (org.jasypt:jasypt:1.9.0 - http://www.jasypt.org)
+    JGlobus Core 2.0.4 (org.jglobus:JGlobus-Core:2.0.4 - http://dev.globus.org/wiki/CoG_jglobus)
+    Jackson (org.codehaus.jackson:jackson-core-asl:1.9.13 - http://jackson.codehaus.org)
+    larvalabs collections (net.sourceforge.collections:collections-generic:4.01 - http://collections.sourceforge.net)
+	JavaMail 1.4 (org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.6 - http://geronimo.apache.org/maven/specs/geronimo-javamail_1.4_spec/1.6)
+	Jasypt (org.jasypt:jasypt:1.9.0 - http://www.jasypt.org/)
+	jdom (jdom:jdom:1.0 - no url defined)
+	Jettison (org.codehaus.jettison:jettison:1.2 - no url defined)
+	Jetty Server (org.mortbay.jetty:jetty:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/modules/jetty)
+	Jetty Utilities (org.mortbay.jetty:jetty-util:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/jetty-util)
+	JMS 1.1 (org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-jms_1.1_spec)
+	Neethi (org.apache.neethi:neethi:2.0.4 - http://ws.apache.org/commons/neethi/)
+	Objenesis (org.objenesis:objenesis:1.2 - http://objenesis.googlecode.com/svn/docs/index.html)
+    org.apache.tools.ant (org.apache.ant:ant:1.7.0 - http://ant.apache.org/ant/)
+    OPS4J Pax ConfMan - Properties Loader (org.ops4j.pax.confman:pax-confman-propsloader:0.2.3 - http://www.ops4j.org/confman/pax-confman-propsloader)
+	OPS4J Pax Logging - API (org.ops4j.pax.logging:pax-logging-api:1.8.1 - http://www.ops4j.org/projects/pax/logging/pax-logging-api)
+	OPS4J Pax Logging - Service (org.ops4j.pax.logging:pax-logging-service:1.8.1 - http://www.ops4j.org/projects/pax/logging/pax-logging-service)
+	QuickImage (quickimage-plugin:p2 - http://psnet.nu/c/quickimage)
+	Servlet Specification API (org.mortbay.jetty:servlet-api:2.5-20081211 - http://jetty.mortbay.org/servlet-api)
+	Servlet 2.5 (org.apache.geronimo.specs:geronimo-servlet_2.5_spec:1.2 - http://geronimo.apache.org/maven/specs/servlet-2.5/1.2)
+	sigar (org.fusesource:sigar:1.6.4 - http://fusesource.com/sigar/)
+	StAX API (stax:stax-api:1.0.1 - http://stax.codehaus.org/)
+	Streaming API for XML (STAX API 1.0) (org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-stax-api_1.0_spec)
+	Web Services Metadata 2.0 (org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2 - http://geronimo.apache.org/specs/geronimo-ws-metadata_2.0_spec)
+	Woodstox (org.codehaus.woodstox:wstx-asl:3.2.9 - http://woodstox.codehaus.org)
+	WSS4J (org.apache.ws.security:wss4j:1.5.10 - http://ws.apache.org/wss4j/)
+	Xalan Java (xalan:xalan:2.7.1 - http://xml.apache.org/xalan-j/)
+	Xalan Java Serializer (xalan:serializer:2.7.1 - http://xml.apache.org/xalan-j/)
+	xercesImpl (xerces:xercesImpl:2.6.2 - no url defined)
+	XML Commons External Components XML APIs (xml-apis:xml-apis:1.0.b2 - http://xml.apache.org/commons/#external)
+	XML Commons Resolver Component (xml-resolver:xml-resolver:1.2 - http://xml.apache.org/commons/components/resolver/)
+	XmlBeans (org.apache.xmlbeans:xmlbeans:2.3.0 - http://xmlbeans.apache.org)
+	xmlParserAPIs (xerces:xmlParserAPIs:2.6.2 - no url defined)
+	XmlSchema (org.apache.ws.commons.schema:XmlSchema:1.4.7 - http://ws.apache.org/commons/XmlSchema)
+
+ Berkeley Software Distribution (BSD)
+	dom4j (dom4j:dom4j:1.6.1 - http://dom4j.org)
+	jung-algorithms (net.sf.jung:jung-algorithms:2.0.1 - http://jung.sourceforge.net/site/jung-algorithms)
+	jung-api (net.sf.jung:jung-api:2.0.1 - http://jung.sourceforge.net/site/jung-api)
+	jung-graph-impl (net.sf.jung:jung-graph-impl:2.0.1 - http://jung.sourceforge.net/site/jung-graph-impl)
+ 
+ Bouncy Castle Licence
+	Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15:1.43 - http://www.bouncycastle.org/java.html)
+	Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15on:1.51 - http://www.bouncycastle.org/java.html)
+
+ CERN Public License
+    colt (colt:colt:1.0.3 - no url defined)
+
+ Common Development and Distribution License (CDDL) 1.0
+	JAXB RI (com.sun.xml.bind:jaxb-impl:2.1.13 - https://jaxb.dev.java.net/)
+	JAXB XJC (com.sun.xml.bind:jaxb-xjc:2.1.13 - https://jaxb.dev.java.net/)
+	jsr311-api (javax.ws.rs:jsr311-api:1.0 - https://jsr311.dev.java.net)
+	JavaBeans(TM) Activation Framework (javax.activation:activation:1.1.1 - http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp)
+	jaxb-api (javax.xml.bind:jaxb-api:2.1 - no url defined)
+	saaj-api (javax.xml.soap:saaj-api:1.3 - no url defined)
+	saaj-impl (com.sun.xml.messaging.saaj:saaj-impl:1.3.2 - no url defined)
+    JavaMail API (compat) (javax.mail:mail:1.4.5 - http://kenai.com/projects/javamail/mail)
+		
+ Common Public License (CPL)
+	WSDL4J (wsdl4j:wsdl4j:1.6.2 - http://sf.net/projects/wsdl4j)
+
+ Eclipse Public License - v 1.0
+	Eclipse Draw2d, Version 3.7.2.v20110927-2020-4617w3122212803131
+	Eclipse Equinox Executable, Version 3.5.1.v20111216-1653-7P7NFUIFIbaUcU77s0KQWHw5HZTZ
+	Eclipse Equinox p2 Core, Version 1.0.1.v20110906-1605-8290FZ9FVKHVRKtmx3fpNuo02129
+	Eclipse Equinox p2 Extras, Version 1.0.1.v20110906-1605-7A4FD4DiVOMap8cHSc6vPuny4gqO
+	Eclipse Equinox p2 RCP, Version 1.0.1.v20110906-1605-7A4FD4DiVOMap8cHSc6vPuny4gqO
+	Eclipse Equinox p2 User UI, Version 2.1.2.R37x_v20110815-1155-6-Bk8pYWZz0qUTX5I15GZWwbXkrl
+	Eclipse GEF, Version 3.7.2.v20110927-2020-777D381B4Bz0755B465D34242
+	Eclipse Help, Version 1.3.0.v20110530-0844-7i7uFFmFFl8nvqbDpEqTvx
+	Eclipse Platform, Version 3.7.2.v20120207-1839-9gF7UHPDFxGjd-PqDr2jX_4yKaumkoHTz04_q-q
+	Eclipse RCP, Version 3.7.2.v20120120-1424-9DB5FmnFq5JCf1UA38R-kz0S0272
+	Eclipse WST Common Core, Version 3.3.2.v201111030500-7B7DFO9F7RZHOhIjR6Mz-NJ
+	Eclipse WST Common UI, Version 3.3.2.v201111030500-7C79FVsEdhO_sfog9oNekiJkS7Nz00OK
+	Eclipse WST XML Core, Version 3.3.2.v201112072049-7C7OFeMF7RZHQOIsNANyRc
+	Eclipse WST XML UI, Version 3.3.2.v201112072049-7H7EFZ7DxumTmce4khcSkIiqoD8eDMKlT8Oz011P
+	Eclipse WST XML Userdoc, Version 3.3.0.v201102071641-50FYwAkF7B77UBZFDBL
+	Jetty Server (org.mortbay.jetty:jetty:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/modules/jetty)
+	Jetty Utilities (org.mortbay.jetty:jetty-util:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/jetty-util)
+	
+ GNU Lesser General Public License (LGPL), Version 2.1
+    Colt, Packages hep.aida.* (colt:colt:1.0.3 - http://acs.lbl.gov/software/colt/)
+	JACOB (com.jacob:jacob:1.17 - http://sourceforge.net/projects/jacob-project/)
+	xom (xom:xom:1.0 - http://www.xom.nu)
+	
+ ICU license
+	icu4j (com.ibm.icu:icu4j:2.6.1 - no url defined)
+
+ Jaxen Project License
+	jaxen (jaxen:jaxen:1.1.1 - http://jaxen.codehaus.org/)
+	
+ Jython License
+    jython (org.python:jython-standalone:2.5.1 - http://www.jython.org/)
+
+ MIT License
+    SLF4J API Module (org.slf4j:slf4j-api:1.6.6 - http://www.slf4j.org)
+ 
+ Mozilla Public License
+    Saxon (saxon:net.sf.saxon:8.8 - http://saxon.sf.net)
+
+ New BSD License
+    Hamcrest (org.hamcrest.core:1.1.0 - http://www.opensource.org/licenses/bsd-license.php)
+    Jodd Core (org.jodd:jodd-core:3.6.2 - http://jodd.org)
+    Jodd Mail (org.jodd:jodd-mail:3.6.2 - http://jodd.org)
+ 
+ Open CASCADE Technology Public License
+    Open Cascade (org.jcae:opencascade:6.5 - http://http://www.opencascade.org/)
+
+ Public Domain
+    AOP alliance (aopalliance:aopalliance:1.0 - http://aopalliance.sourceforge.net)
+    Dough Lea's util.concurrent package (concurrent:concurrent:1.3.4 - no url defined)
+    XZ for Java (org.tukaani:xz:1.0 - http://tukaani.org/xz/java.html)
+
+ Revised Berkeley Software Distribution (BSD)
+	JSch (com.jcraft:jsch:0.1.45 - http://www.jcraft.com/jsch/)

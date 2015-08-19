@@ -1,0 +1,5 @@
+<contexts>
+	<context id="*" title="User-integrated Component Help">
+		<description>You find the help for this component in the 'Properties' view under the 'Description' tab. It will be provided here soon.</description>
+	</context>
+</contexts>

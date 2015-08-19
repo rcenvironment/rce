@@ -1,0 +1,39 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.modules.globalData.reset</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-clean-plugin</artifactId>
+				<configuration>
+					<filesets>
+						<fileset>
+							<directory>${projects-root}/target</directory>
+							<includes>
+								<!-- explicitly list expected directories to prevent accidents -->
+								<include>coverage-data/**</include>
+								<include>combined-source-files/**</include>
+								<include>combined-class-files/**</include>
+								<include>jqassistant/**</include>
+							</includes>
+							<followSymlinks>false</followSymlinks>
+						</fileset>
+					</filesets>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

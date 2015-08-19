@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?>
+
+<target name="rce_main_repo" sequenceNumber="28">
+<locations>
+<location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="de.rcenvironment.core.combined.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.core.gui.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.core.gui.branding.default.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.componentgroups.examples.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.filesets.configuration.samples.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.filesets.logging.default.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.filesets.licensing.self.epl.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.filesets.sql.connectors.mysql.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.filesets.licensing.thirdparty.default.feature.feature.group" version="3.1.2.201306121505"/>
+<unit id="de.rcenvironment.componentgroups.standard.feature.feature.group" version="3.1.2.201306121505"/>
+<repository location="http://updates.sc.dlr.de/eclipse/rce/core/releases/3.1/3.1.2"/>
+</location>
+</locations>
+</target>

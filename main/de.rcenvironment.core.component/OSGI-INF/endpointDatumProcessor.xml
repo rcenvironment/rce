@@ -1,0 +1,22 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Endpoint Datum Processor">
+
+	<implementation class="de.rcenvironment.core.component.execution.internal.EndpointDatumProcessorImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.internal.EndpointDatumProcessor"/>
+	</service>
+	
+	<reference name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

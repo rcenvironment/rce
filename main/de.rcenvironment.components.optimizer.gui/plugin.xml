@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+	<!-- Hide from Windows->Show View -->
+	<extension point="org.eclipse.ui.activities">  
+	  <activity id="de.rcenvironment.components.optimizer.gui.activity.suppress.runtime" name="Suppress runtime view">
+	  </activity>
+	  <activityPatternBinding
+	     activityId="de.rcenvironment.components.optimizer.gui.activity.suppress.runtime"
+	     isEqualityPattern="true"
+	     pattern="de.rcenvironment.components.optimizer.gui/de.rcenvironment.components.optimizer.gui.view.OptimizerView">
+	  </activityPatternBinding>
+	 </extension>
+	 
+   <!-- Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         
+         <propertySection
+               tab="workflow.editor.tab.optimizer.Algorithm"
+               class="de.rcenvironment.components.optimizer.gui.properties.OptimizerAlgorithmSection"
+               id="workflow.editor.tab.Properties.Section.Script"
+               filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+               tab="workflow.editor.tab.optimizer.Algorithm"
+               class="de.rcenvironment.components.optimizer.gui.properties.DOEAlgorithmSection"
+               id="workflow.editor.tab.Properties.Section.DOEScript"
+               filter="de.rcenvironment.components.optimizer.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.optimizer.InputsOutputs"
+               class="de.rcenvironment.components.optimizer.gui.properties.OptimizerEndpointPropertySection"
+               id="workflow.editor.tab.Properties.Section.InputsOutputs"
+               filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerCommonComponentFilter"
+               enablesFor="1">
+         </propertySection>
+              <propertySection
+               tab="workflow.editor.tab.optimizer.InputsOutputs"
+               class="de.rcenvironment.components.optimizer.gui.properties.OptimizerEndpointPropertySection"
+               id="workflow.editor.tab.Properties.Section.InputsOutputs"
+               filter="de.rcenvironment.components.optimizer.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+           <propertySection
+               tab="workflow.editor.tab.optimizer.NestedLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
+               id="workflow.editor.tab.Properties.Section.NestedLoop"
+               filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerCommonComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerCommonComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+      </propertySections>
+   </extension>
+   
+   <!-- Register Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         
+         <propertyTab label="%algorithm"
+               category="default"
+               id="workflow.editor.tab.optimizer.Algorithm">
+         </propertyTab>
+         
+         <propertyTab
+               label="%inoutput"
+               category="default"
+               afterTab="workflow.editor.tab.optimizer.Algorithm"
+               id="workflow.editor.tab.optimizer.InputsOutputs">
+         </propertyTab>
+          <propertyTab
+               label="%nestedLoop"
+               category="default"
+               afterTab="workflow.editor.tab.optimizer.Parameters"
+               id="workflow.editor.tab.optimizer.NestedLoop">
+         </propertyTab>
+         <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="History Data"
+               afterTab="workflow.editor.tab.optimizer.NestedLoop">
+         </propertyTab>
+     </propertyTabs>
+   </extension>
+
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   
+    <!-- Runtime View -->
+   	<extension
+         point="org.eclipse.ui.views">
+      <view icon="resources/optimizer16.png"
+            allowMultiple="true"
+            class="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
+            id="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
+            name="Optimizer"
+            restorable="false">
+      </view>
+   </extension>
+      	<extension
+         point="org.eclipse.ui.views">
+      <view icon="resources/doe_64.png"
+            allowMultiple="true"
+            class="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
+            id="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
+            name="DOE"
+            restorable="false">
+      </view>
+   </extension>
+   <!-- View Location -->
+    <extension point="org.eclipse.ui.perspectiveExtensions">
+		<perspectiveExtension targetID="de.rcenvironment.core">
+			<view id="de.rcenvironment.components.optimizer.gui.view.OptimizerView" relationship="stack"
+				relative="de.rcenvironment.core.Perspective.bottom" visible="false">
+			</view>
+		</perspectiveExtension>
+	</extension>
+   
+   <!-- Validator -->
+   
+   <extension
+         point="de.rcenvironment.core.gui.workflow.nodeValidators">
+      <validator
+            class="de.rcenvironment.components.optimizer.gui.properties.OptimizerWorkflowNodeValidator"
+            filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerComponentFilter">
+      </validator>
+   </extension>
+   <!-- Register Runtime View -->
+   <extension
+         point="de.rcenvironment.core.gui.workflow.monitoring">
+      <monitor component="de.rcenvironment.optimizer"
+            view="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
+            default="true">
+      </monitor>
+   </extension>
+     <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.optimizer.gui.view.OptimizerHistoryDataItemSubtreeBuilder"/>
+   </extension>
+</plugin>

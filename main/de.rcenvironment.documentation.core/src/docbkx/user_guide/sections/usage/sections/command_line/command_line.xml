@@ -1,0 +1,333 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="command_line">
+	<title>Commands</title>
+	<para>This section introduces the list of commands available for the command line and the
+		interactive shell. </para>
+	<sect2>
+		<title>Command Line Parameters</title>
+		<para>General syntax </para>
+		<programlisting>&gt;  rce --[RCE arguments] -[RCP arguments] -[VM arguments]</programlisting>
+		<para>
+			<table frame="all">
+				<title>Command line arguments for RCE</title>
+				<tgroup cols="3">
+					<colspec colname="Argument" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<colspec colname="Description" colnum="3" colwidth="4.88*"/>
+					<thead>
+						<row>
+							<entry>Argument</entry>
+							<entry align="left">Type</entry>
+							<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>batch "&lt;command string>"</entry>
+							<entry>RCE</entry>
+							<entry>Works like "exec" command but always shuts down RCE after
+								execution and implies the "--headless" command.</entry>
+						</row>
+						<row>
+							<entry>headless</entry>
+							<entry align="center">RCE</entry>
+							<entry>Starts RCE in a headless modus without GUI. It will remain in the
+								OSGi console and waits for user input. </entry>
+						</row>
+						<row>
+							<entry>exec "&lt;command string>"</entry>
+							<entry align="center">RCE</entry>
+							<entry>
+								<para>Executes one or more shell commands defined by &lt;command
+									string>. For the list of available commands, refer to the
+									command shell documentation<!--TODO add link-->. This argument
+									is usually used together with --headless to run RCE in batch
+									mode. Multiple commands can be chained within &lt;command
+									string> by separating them with " ; " (note the spaces); each
+									command is completed before the next is started. To shut down
+									RCE at the end of a command sequence, use the "stop" command. </para>
+								<para>As a typical example, <code>rce --headless --exec "wf run
+										example.wf ; stop"</code> will execute the "example.wf"
+									workflow in headless mode and then shut down RCE. </para>
+							</entry>
+						</row>
+						<row>
+							<entry>data @noDefault </entry>
+							<entry align="center">RCP</entry>
+							<entry>Set the default workspace location to empty</entry>
+						</row>
+						<row>
+							<entry>consoleLog </entry>
+							<entry>RCP</entry>
+							<entry>Logs everything for log files on the console as well.</entry>
+						</row>
+						<row>
+							<entry>console</entry>
+							<entry>RCP</entry>
+							<entry>Runs RCE with an additional OSGi console window, which allows you
+								to execute RCE shell commands. See the Command Shell
+								documentation<!--TODO add link--> for more information.</entry>
+						</row>
+						<row>
+							<entry><emphasis>Deprecated: </emphasis>console &lt;port></entry>
+							<entry>RCP</entry>
+							<entry>Specify the port that will be used to listen for telnet
+								connections. (<emphasis>NOTE: </emphasis>this access is insecure;
+								configure SSH access instead)</entry>
+						</row>
+						<row>
+							<entry>clean </entry>
+							<entry>RCP</entry>
+							<entry>Cleans before startup</entry>
+						</row>
+						<row>
+							<entry>vmargs</entry>
+							<entry>VM</entry>
+							<entry>Standard JVM arguments</entry>
+						</row>
+						<row>
+							<entry>Dde.rcenvironment.rce.<?linebreak?>configuration.dir=<?linebreak?>&lt;insert-config-path></entry>
+							<entry>VM</entry>
+							<entry>Sets the configuration directory</entry>
+						</row>
+						<row>
+							<entry>Dcommunication.<?linebreak?>overrideNodeId =&lt;some-id></entry>
+							<entry align="center">VM</entry>
+							<entry><para>Sets the local node id, overriding any stored value. This
+									is mostly used for automated
+								testing.</para>Example:<?linebreak?>
+										"-Dcommunication.overrideNodeId=<?linebreak?>a96db8fa762d59f2d2782f3e5e9662d4"<para><emphasis>Note</emphasis>:
+									This setting's format will most likely change in
+								5.0.0.</para></entry>
+						</row>
+						<row>
+							<entry>Dcommunication.<?linebreak?>uploadBlockSize=<?linebreak?>&lt;block
+								size in bytes></entry>
+							<entry>VM</entry>
+							<entry>
+								<para>Sets the block size to use when uploading data to a remote
+									node. This is useful for very slow connections (less than about
+									10 kb/s) to avoid timeouts. The default value is 262144 (256
+									kb).</para>
+								<para>Example:<?linebreak?> "-Dcommunication.uploadBlockSize=131072"
+									- sets the upload block size to 128kb (half the normal
+									size)</para>
+								<para><emphasis>Note</emphasis>: This setting's format will most
+									likely change in 5.0.0.</para>
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</para>
+	</sect2>
+	<sect2>
+		<title>Command Shell</title>
+		<para>RCE provides an integrated shell (sometimes referred to as "console") for executing
+			commands. It can be accessed in three different ways:<itemizedlist>
+				<listitem>
+					<para>Start RCE with the "-console" command-line option, or add "-console" to
+						the rce.ini file before starting; this will open an OSGi console window. Due
+						to the nature of an OSGi console, all RCE commands must be prefixed with
+						"rce". For example, type "rce help" to show the available commands.</para>
+				</listitem>
+				<listitem>
+					<para><emphasis>Deprecated: </emphasis>Start RCE with the "-console &lt;port>"
+						command-line option; this will accept telnet OSGi console sessions on that
+						port. As with the "-console" option, RCE commands must be prefixed with
+						"rce" (for example, type "rce help").</para>
+					<para>Note that this option is <emphasis>insecure</emphasis>, as there is no
+						authentication nor encryption, so it should only be used in fully trusted
+						networks. Whenever possible, use the SSH console (see below) instead
+						.</para>
+				</listitem>
+				<listitem>
+					<para>Configure SSH access. To do so, refer to Section Configuration Parameters. After RCE has
+						started, you can access the shell on the configured port with a standard SSH
+						client. On Windows systems, the "putty" software works well as a
+						client.</para>
+					<para>As this option creates a pure RCE shell (as opposed to the OSGi consoles
+						created above), you can enter RCE commands without a prefix - for example,
+						just type "help" to list the available commands. Note that to avoid
+						confusion, adding a "rce" prefix still works, but it is not
+						necessary.</para>
+				</listitem>
+			</itemizedlist></para>
+		<para>The following table lists some shell commands; more documentation coming soon.</para>
+		<para>
+			<table frame="all">
+				<title>Shell Commands</title>
+				<tgroup cols="2">
+					<colspec colname="c1" colnum="1" colwidth="1*"/>
+					<colspec colname="c2" colnum="2" colwidth="3.19*"/>
+					<thead>
+						<row>
+							<entry>Argument</entry>
+							<entry>Description</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>help</entry>
+							<entry>Lists all available commands.</entry>
+						</row>
+						<row>
+							<entry>net</entry>
+							<entry>
+								<para>Lists the nodes in the known RCE network. </para>
+							</entry>
+						</row>
+						<row>
+							<entry>net filter</entry>
+							<entry>Shows the status of the IP whitelist filter.</entry>
+						</row>
+						<row>
+							<entry>net filter reload</entry>
+							<entry>Reloads the IP whitelist configuration.</entry>
+						</row>
+						<row>
+							<entry>shutdown</entry>
+							<entry>Shuts down the local RCE instance.</entry>
+						</row>
+						<row>
+							<entry>stop</entry>
+							<entry>Shuts down the local RCE instance (alias of "shutdown").</entry>
+						</row>
+						<row>
+							<entry>verify [--dispose &lt;onfinished|always|never>] [--pr &lt;parallel runs>] [--sr
+								&lt;serial runs>] [-p &lt;placeholder value file>] --basedir
+								&lt;directory> &lt;workflow file> [&lt;workflow file> ...]</entry>
+							<entry>Runs several workflows and creates a summary which failed and which
+									succeeded.<para>The "--pr" option defines how often the workflow
+									is started in parallel. The "--sr" options defines how often the
+									workflow is started in serial. E.g. "--pr 5 --sr 3" starts the
+									workflow three times with five in parallel. If "*" is used with
+									the "--basedir" option or multiple workflow filenames are
+									passed, "--pr" and "--sr" are applied for each of the
+									workflows.</para><para>For "--dispose" and "-p" option refer to
+									"wf run" below.</para><para>Needs the "--basedir &lt;directory>"
+									parameter, which defines a directory containing workflow files.
+									File paths containing spaces must be enclosed in double quotes
+									("...").</para><para>The second parameter defines the workflow's
+									filenames. Using "*" as workflow file runs all non-backup
+									workflows in the basedir. Workflow file paths containing spaces
+									must be enclosed in double quotes ("...").</para></entry>
+						</row>
+						<row>
+							<entry>wf run  [--dispose &lt;onfinished|always|never>] [-p &lt;placeholder value file>]
+								&lt;workflow file></entry>
+							<entry>
+								<para>Executes the given workflow file and waits until it has
+									completed. Workflow file paths containing spaces must be
+									enclosed in double quotes ("...").</para>
+								<para>The "--dispose" option defines the disposal behavior after workflow completion. If a
+									workflow is disposed, its resources are freed. The result data
+									are kept in either case. Default is "onfinished": The workflow
+									is disposed if it terminated in state "Finished".</para>
+								<para>The "-p" option can be used to define a placeholder value file (see below).</para>
+							</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</para>
+	
+	<sect3 id="placeholder_files">
+		<title>Configuration Placeholder Value Files</title>
+	<para>Some workflow components use placeholders for configuration
+		values. The values for the placeholders are defined at workflow start.
+		When executing workflows from the command line (e.g. in headless or
+		batch mode), the placeholder's values must be defined in a file, which
+		will be passed to the command with the -p option. Placeholder value
+		files have following format:</para>
+		<para><code>{ </code></para>
+		<para><code> &lt;component id>/&lt;component version> : {</code></para>
+		<para><code>      &lt;configuration placeholder id> : &lt;configuration value></code></para>
+		<para><code>  }</code></para>
+		<para><code> &lt;component id>/&lt;component version>/&lt;component instance name> :
+				{</code></para>
+		<para><code>      &lt;configuration placeholder id> : &lt;configuration value></code></para>
+		<para><code>  }</code></para>
+		<para><code>}</code></para>
+		<para>
+			<note>
+				<para>Every id and every value must be in enclosed in double quotes ("...").</para>
+			</note>
+		</para>
+		<para>The <code>component id</code> is the id string of a component (e.g.
+				de.rcenvironment.script), the <code>component version</code> is the version of the
+				component that is used in the workflow (e.g. 3.4).</para>
+		<para> There are two ways of defining values for configuration placeholders: per component type and
+				per component instance. When defined per component type, the id and version must be
+				specified (e.g. "de.rcenvironment.script/3.4"). When defined per component instance
+				the component id, component version, and the name of the component in the workflow
+				must be specified (e.g. "de.rcenvironment.script/3.4/MyScript"). In both cases, the
+					<code>configuration placeholder id</code>, which is the name of the
+				configuration placeholder, and the actual <code>configuration value</code> must be
+				specified.</para>
+		<para>Component instance values override component type values.</para>
+		<para>
+			<note>
+				<para>It is possible to mix component type and component instance values.</para>
+			</note>
+		</para>
+		<para>Below is an example placeholder value file, which defines one placeholder value (component type) for the
+				script component, one placeholer value (component type) for the input provider component and
+				a placeholder value (component instance) for a specified input provider component of the workflow:</para>
+		<para><code>{</code></para>
+		<para><code> "de.rcenvironment.script/3.4": {</code></para>
+		<para><code>     "pythonExecutionPath": "C:/Python/python.exe",</code></para>
+		<para><code>     },</code></para>
+		<para><code> "de.rcenvironment.inputprovider/3.2": {</code></para>
+		<para><code> "inputFile": "C:/input/globalInputFile.txt"</code></para>
+		<para><code>}</code></para>
+		<para><code> "de.rcenvironment.inputprovider/3.2/Provider 1" : {</code></para>
+		<para><code>           "inputFile": "C:/input/Provider1.txt"</code></para>
+		<para><code> }</code>
+		</para>
+		<para><code>}</code></para>
+		
+		<para>The following table lists components and their configuratuon placeholders.</para>
+		<para>
+			<table frame="all">
+				<title>Components and their configuration placeholders</title>
+				<tgroup cols="3">
+					<colspec colname="Component" colnum="1" colwidth="1.3*"/>
+					<colspec colname="Id_and_version" colnum="2" colwidth="3.4*"/>
+					<colspec colname="Placeholders" colnum="3" colwidth="4.58*"/>
+					<thead>
+						<row>
+							<entry>Component</entry>
+							<entry>Component id and version</entry>
+							<entry>Configuration placeholders</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>Cluster</entry>
+							<entry>de.rcenvironment.cluster/3.2</entry>
+							<entry><para>authuser - user name</para><para>authphrase - password (base64 encoded)</para></entry>
+						</row>
+						<row>
+							<entry>Input Provider</entry>
+							<entry>de.rcenvironment.inputprovider/3.2</entry>
+							<entry><para>&lt;output name> - value of output</para></entry>
+						</row>
+						<row>
+							<entry>Output Writer</entry>
+							<entry>de.rcenvironment.outputwriter/1.1</entry>
+							<entry>targetRootFolder - path to target root folder</entry>
+						</row>
+						<row>
+							<entry>Script</entry>
+							<entry>de.rcenvironment.script/3.4</entry>
+							<entry>pythonExecutionPath - path to the Python executable (only required if Python is set as
+									script language)</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+		</para>
+	</sect3>
+	</sect2>
+</sect1>

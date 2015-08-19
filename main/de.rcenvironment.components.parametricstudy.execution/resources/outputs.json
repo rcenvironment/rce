@@ -1,0 +1,46 @@
+{
+    "staticOutputs":[
+        {
+            "name":"Design Variable",
+            "dataTypes":[
+                "Float"
+            ],
+            "defaultDataType":"Float",
+            "metaData":{
+                "FromValue":{
+                    "guiName":"From",
+                    "guiPosition":"0",
+                    "guiGroup":"Range",
+                    "dataType":"float",
+                    "possibleValues":[
+                        "*"
+                    ],
+                    "visibility":"shown",
+                    "defaultValue":"0"
+                },
+                "ToValue":{
+                    "guiName":"To",
+                    "guiPosition":"1",
+                    "guiGroup":"Range",
+                    "dataType":"float",
+                    "possibleValues":[
+                        "*"
+                    ],
+                    "visibility":"shown",
+                    "defaultValue":"10"
+                },
+                "StepSize":{
+                    "guiName":"Step size",
+                    "guiPosition":"2",
+                    "guiGroup":"Range",
+                    "dataType":"float",
+                    "possibleValues":[
+                        "*"
+                    ],
+                    "visibility":"shown",
+                    "defaultValue":"1"
+                }
+            }
+        }
+    ]
+}

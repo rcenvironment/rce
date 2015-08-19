@@ -1,0 +1,9 @@
+
+bssc075dl: 
+                                                                         Req'd  Req'd   Elap
+Job ID               Username Queue    Jobname          SessID NDS   TSK Memory Time  S Time
+-------------------- -------- -------- ---------------- ------ ----- --- ------ ----- - -----
+506.bssc075dl        seid_do  qtest    job                 --      2   2    --  00:00 R   -- 
+507.bssc075dl        litz_ma  mem      jib                 --      2   2    --  00:00 Q   -- 
+508.bssc075dl        seid_do  qtest    job                 --      2   2    --  00:00 C   -- 
+509.bssc075dl        sipp_ja  fast     jab                 --      2   2    --  00:00 Q   -- 

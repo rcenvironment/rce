@@ -1,0 +1,30 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" 
+	activate="activate" immediate="true" name="Workflow Host Service">
+	
+	<implementation class="de.rcenvironment.core.communication.management.internal.WorkflowHostServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.management.WorkflowHostService"/>
+		<provide interface="de.rcenvironment.core.utils.incubator.ListenerProvider" />
+	</service>
+	
+	<reference
+		name="NodePropertiesService" 
+		interface="de.rcenvironment.core.communication.nodeproperties.NodePropertiesService" 
+		bind="bindNodePropertiesService" 
+	/>
+	
+	<reference
+		name="NodeConfigurationService"
+		interface="de.rcenvironment.core.communication.configuration.NodeConfigurationService"
+		bind="bindNodeConfigurationService"
+	/>
+	
+	<reference
+		name="Workflow Host Set Listeners" 
+		interface="de.rcenvironment.core.communication.management.WorkflowHostSetListener" 
+		cardinality="0..n" 
+		bind="addWorkflowHostSetListener"
+		unbind="removeWorkflowHostSetListener" 
+		policy="dynamic"/>
+	
+</scr:component>

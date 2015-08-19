@@ -1,0 +1,25 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Default Script Executor">
+	<implementation class="de.rcenvironment.components.script.execution.DefaultScriptExecutor"/>
+
+    <reference bind="bindScriptingService"
+        unbind="unbindScriptingService"
+        cardinality="1..1"
+        interface="de.rcenvironment.core.scripting.ScriptingService"
+        policy="dynamic"
+    />		
+    <reference
+        name="Typed Datum Service"
+        interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+        cardinality="1..1"
+        bind="bindTypedDatumService"
+        unbind="unbindTypedDatumService"
+        policy="dynamic"
+    />
+    <reference
+        name="Component Data Management Service"
+        interface="de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService"
+        cardinality="1..1"
+        bind="bindComponentDataManagementService"
+        policy="dynamic"
+    />
+</scr:component> 

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Register Property Sections -->
+  <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab
+               label="Configuration"
+               category="default"
+               afterTab="workflow.editor.tab.Properties"
+               id="workflow.editor.tab.sql.Configuration.Reader">
+         </propertyTab>
+         <propertyTab
+               label="Configuration"
+               category="default"
+               afterTab="workflow.editor.tab.sql.Configuration.Reader"
+               id="workflow.editor.tab.sql.Configuration.Writer">
+         </propertyTab>
+         <propertyTab
+               label="Configuration"
+               category="default"
+               afterTab="workflow.editor.tab.sql.Configuration.Command"
+               id="workflow.editor.tab.sql.Configuration.Command">
+         </propertyTab>
+         <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.sql.Configuration.Writer"
+               id="workflow.editor.tab.sql.IO">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+   
+   <!-- Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+               tab="workflow.editor.tab.sql.IO"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.DefaultEndpointPropertySection"
+               id="workflow.editor.tab.sql.Section.IO"
+               filter="de.rcenvironment.components.sql.gui.properties.SqlComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.sql.Configuration.Reader"
+               class="de.rcenvironment.components.sql.gui.properties.SqlReaderComponentSection"
+               id="workflow.editor.tab.sql.Section.Reader"
+               filter="de.rcenvironment.components.sql.gui.properties.SqlReaderComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.sql.Configuration.Writer"
+               class="de.rcenvironment.components.sql.gui.properties.SqlWriterComponentSection"
+               id="workflow.editor.tab.sql.Section.Writer"
+               filter="de.rcenvironment.components.sql.gui.properties.SqlWriterComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.sql.Configuration.Command"
+               class="de.rcenvironment.components.sql.gui.properties.SqlCommandComponentSection"
+               id="workflow.editor.tab.sql.Section.Command"
+               filter="de.rcenvironment.components.sql.gui.properties.SqlCommandComponentFilter"
+               enablesFor="1">
+         </propertySection>
+      </propertySections>
+   </extension>
+   
+      <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   
+</plugin>

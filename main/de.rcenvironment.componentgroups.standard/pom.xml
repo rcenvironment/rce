@@ -1,0 +1,71 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.componentgroups.standard.master</artifactId>
+	<name>RCE Component Group 'Standard' Master Project</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.componentgroups.standard.parent</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../de.rcenvironment.componentgroups.standard/parent.pom</relativePath>
+	</parent>
+
+	<properties>
+		<modules-root>..</modules-root>
+	</properties>
+
+	<modules>
+		<!-- cluster component -->
+		<module>${modules-root}/de.rcenvironment.components.cluster.common</module>
+		<module>${modules-root}/de.rcenvironment.components.cluster.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.cluster.gui</module>
+
+		<!-- converger component -->
+		<module>${modules-root}/de.rcenvironment.components.converger.common</module>
+		<module>${modules-root}/de.rcenvironment.components.converger.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.converger.gui</module>
+
+		<!-- input provider component -->
+		<module>${modules-root}/de.rcenvironment.components.inputprovider.common</module>
+		<module>${modules-root}/de.rcenvironment.components.inputprovider.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.inputprovider.gui</module>
+
+		<!-- joiner component -->
+		<module>${modules-root}/de.rcenvironment.components.joiner.common</module>
+		<module>${modules-root}/de.rcenvironment.components.joiner.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.joiner.gui</module>
+		
+		<!-- optimizer component -->
+		<module>${modules-root}/de.rcenvironment.components.optimizer.common</module>
+		<module>${modules-root}/de.rcenvironment.components.optimizer.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.optimizer.gui</module>
+
+		<!-- optimizer dakota fragment -->
+		<module>${modules-root}/de.rcenvironment.components.optimizer.dakota.common</module>
+		<module>${modules-root}/de.rcenvironment.components.optimizer.dakota.execution</module>
+
+		<!-- outputwriter component -->
+		<module>${modules-root}/de.rcenvironment.components.outputwriter.common</module>
+		<module>${modules-root}/de.rcenvironment.components.outputwriter.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.outputwriter.gui</module>
+
+		<!-- parametric study component -->
+		<module>${modules-root}/de.rcenvironment.components.parametricstudy.common</module>
+		<module>${modules-root}/de.rcenvironment.components.parametricstudy.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.parametricstudy.gui</module>
+
+		<!-- script component -->
+		<module>${modules-root}/de.rcenvironment.components.script.common</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution.python</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution.jython</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.script.gui</module>
+
+		<!-- component group feature -->
+		<module>${modules-root}/de.rcenvironment.componentgroups.standard.feature</module>
+	</modules>
+
+</project>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+
+   <extension
+         id="application"
+         point="org.eclipse.core.runtime.applications">
+      <application>
+         <run
+               class="de.rcenvironment.core.start.Application">
+         </run>
+      </application>
+   </extension>
+      
+   <extension
+         id="product"
+         point="org.eclipse.core.runtime.products">
+      <product
+            name="%applicationName"
+            application="de.rcenvironment.core.start.application">
+         <property
+               name="windowImages"
+               value="%windowImages">
+         </property>
+         <property
+               name="aboutText"
+               value="%aboutMessage">
+         </property>
+         <property
+               name="aboutImage"
+               value="%aboutImage">
+         </property>
+         <property
+               name="appName"
+               value="%applicationName">
+         </property>
+         <property
+               name="preferenceCustomization"
+               value="plugin_customization.ini">
+         </property>
+         <!-- START ProgressBar im Splash -->
+            <property name="startupProgressRect" value="5,270,490,4"/>
+            <property name="startupForegroundColor" value="FFFFFF"/>
+		<!-- END ProgressBar im Splash -->
+      </product>
+   </extension>
+   
+</plugin>

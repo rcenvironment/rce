@@ -1,0 +1,44 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "default",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "SmallTable"
+            ],
+            "defaultDataType": "SmallTable",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "metaData": {
+                "address": {
+                    "guiName": "Address",
+                    "guiPosition": "0",
+                    "guiGroup": "Excel configuration",
+					"visibility" : "shown",
+					"defaultValue" : "",
+					"validation" : "required"
+                },
+                "expanding": {
+                    "guiName": "Expand Cell Area",
+                    "guiPosition": "1",
+                    "guiGroup": "Excel configuration",
+                    "dataType": "bool",
+					"visibility" : "shown",
+					"defaultValue" : "false"
+                }
+            }
+        }
+    ]
+}

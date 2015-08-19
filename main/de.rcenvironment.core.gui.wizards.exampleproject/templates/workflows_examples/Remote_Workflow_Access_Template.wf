@@ -1,0 +1,118 @@
+{
+  "identifier" : "1b5103aa-eceb-48ba-98ef-d64d07060c0d",
+  "workflowVersion" : "3",
+  "name" : "Remote_Workflow_Access_Template",
+  "nodes" : [ {
+    "identifier" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
+    "name" : "Input Provider",
+    "location" : "177:164",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "445f656e-4c5e-4e80-96f7-f937884eadb5",
+      "name" : "parameters",
+      "epIdentifier" : "default",
+      "datatype" : "ShortText",
+      "metadata" : {
+        "startValue" : "##RUNTIME_PARAMETERS##"
+      }
+    }, {
+      "identifier" : "d9ed6235-973d-4778-ae61-b9ea9888cd98",
+      "name" : "input",
+      "epIdentifier" : "default",
+      "datatype" : "DirectoryReference",
+      "metadata" : {
+        "startValue" : "##RUNTIME_INPUT_DIRECTORY##"
+      }
+    } ]
+  }, {
+    "identifier" : "4a9b049a-8e58-4d16-9ded-bb7347b0c81b",
+    "name" : "Output Writer",
+    "location" : "552:164",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.outputwriter",
+      "version" : "1.1",
+      "name" : "Output Writer"
+    },
+    "configuration" : {
+      "SelectedRoot" : "##RUNTIME_OUTPUT_DIRECTORY##",
+      "OWWritePath" : "${targetRootFolder}",
+      "SelectRootOnWorkflowStart" : "false"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "8d50cce8-af3e-4567-8bfd-7f842e2bbca0",
+      "name" : "output",
+      "epIdentifier" : "default",
+      "datatype" : "DirectoryReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "filename" : "output",
+        "folderForSaving" : "[root]"
+      }
+    } ]
+  }, {
+    "identifier" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "name" : "Placeholder",
+    "location" : "350:145",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "# This is a placeholder for your actual workflow logic. Delete this script component,\r\n# and add your components in its place. Do not change the values of the predefined \r\n# Input Provider and Output Writer components. The Input Provider sends the directory \r\n# of files and the (optional) parameter string into the workflow. After your workflow\r\n# logic has completed, send a directory of your output files to the Output Provider.\r\n\r\n# As a simple example, these lines copy all input files to the output directory \r\n# without modification.\r\n\r\nimport os\r\nimport shutil\r\n\r\ninput_files_dir = RCE.read_input(\"inputFiles\")\r\noutput_files_dir = \"output\"\r\nshutil.copytree(input_files_dir, output_files_dir)\r\nRCE.write_output(\"outputFiles\", os.path.abspath(output_files_dir))\r\n\r\n# Print the received parameters (which may be empty)\r\n\r\nprint \"Received Parameters: \" + RCE.read_input(\"parameters\")\r\n",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "a890f1cf-a1c8-4d36-b93c-b2bb893d9202",
+      "name" : "parameters",
+      "epIdentifier" : "default",
+      "datatype" : "ShortText",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "5b5f83c1-6848-4eb4-992e-565faadb97a7",
+      "name" : "inputFiles",
+      "epIdentifier" : "default",
+      "datatype" : "DirectoryReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "19dc0a85-175b-4e34-9a1c-c77674d5bc9f",
+      "name" : "outputFiles",
+      "epIdentifier" : "default",
+      "datatype" : "DirectoryReference"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
+    "output" : "445f656e-4c5e-4e80-96f7-f937884eadb5",
+    "target" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "input" : "a890f1cf-a1c8-4d36-b93c-b2bb893d9202"
+  }, {
+    "source" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "output" : "19dc0a85-175b-4e34-9a1c-c77674d5bc9f",
+    "target" : "4a9b049a-8e58-4d16-9ded-bb7347b0c81b",
+    "input" : "8d50cce8-af3e-4567-8bfd-7f842e2bbca0"
+  }, {
+    "source" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
+    "output" : "d9ed6235-973d-4778-ae61-b9ea9888cd98",
+    "target" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "input" : "5b5f83c1-6848-4eb4-992e-565faadb97a7"
+  } ]
+}

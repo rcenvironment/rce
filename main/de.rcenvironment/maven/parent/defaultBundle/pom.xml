@@ -1,0 +1,123 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.maven.parent.defaultBundle</artifactId>
+	<name>RCE Core Parent</name>
+	<!-- as this parent POM is not deployed anywhere, it can keep its version 
+		across releases -->
+	<version>1.0.0</version>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.common.parent.osgiProject</artifactId>
+		<version>6.0.0</version>
+		<!-- see http://jira.codehaus.org/browse/MNG-4687 -->
+		<relativePath />
+	</parent>
+
+	<properties>
+		<!-- the default parent folder of all projects; note that this path is 
+			relative to the POM that references this parent POM, not relative to the 
+			parent POM itself - misc_ro -->
+		<projects-root>..</projects-root>
+
+		<!-- the location of the shared Jacoco coverage data file. each module 
+			appends its data to this file to create an aggregated coverage report -->
+		<internal.jacoco.datadir>${projects-root}/target/coverage-data</internal.jacoco.datadir>
+		<internal.jacoco.datafile>${internal.jacoco.datadir}/jacoco.exec</internal.jacoco.datafile>
+
+		<!-- by default, ignore all test failures -->
+		<maven.test.failure.ignore>true</maven.test.failure.ignore>
+	</properties>
+
+	<repositories>
+		<repository>
+			<!-- used to fetch RCE parent POMs -->
+			<id>rce-common-https</id>
+			<url>https://repo.sc.dlr.de/nexus/content/repositories/rce-public-6.x</url>
+			<snapshots>
+				<updatePolicy>always</updatePolicy>
+			</snapshots>
+		</repository>
+	</repositories>
+
+	<profiles>
+
+		<profile>
+			<id>collectCoverageDataIfEnabled</id>
+			<activation>
+				<property>
+					<name>rce.maven.generateCoverageReport</name>
+				</property>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jacoco</groupId>
+						<artifactId>jacoco-maven-plugin</artifactId>
+						<version>0.6.2.201302030002</version>
+						<executions>
+							<execution>
+								<id>prepare-agent</id>
+								<goals>
+									<goal>prepare-agent</goal>
+								</goals>
+								<configuration>
+									<destFile>${internal.jacoco.datafile}</destFile>
+									<append>true</append>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<artifactId>maven-resources-plugin</artifactId>
+						<!-- TODO add "clean" step -->
+						<version>2.4.3</version>
+						<executions>
+							<execution>
+								<id>copy-source-files-to-combined-location</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${projects-root}/target/combined-source-files</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.build.sourceDirectory}</directory>
+										</resource>
+										<resource>
+											<directory>${project.build.testSourceDirectory}</directory>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+							<execution>
+								<id>copy-class-files-to-jacoco-input</id>
+								<phase>prepare-package</phase>
+								<goals>
+									<goal>copy-resources</goal>
+								</goals>
+								<configuration>
+									<outputDirectory>${projects-root}/target/combined-class-files</outputDirectory>
+									<resources>
+										<resource>
+											<directory>${project.build.directory}/classes</directory>
+											<includes>
+												<include>**/*.class</include>
+											</includes>
+										</resource>
+									</resources>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+	</profiles>
+
+</project>

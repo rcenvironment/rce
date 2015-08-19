@@ -1,0 +1,363 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+                      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title></title>
+    </head>
+    <body>
+        <h2><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US"
+                >Excel Component Usage</span></h2>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Synopsis<span style="mso-ansi-language:EN-US">The Excel Component
+                    to get access to Microsoft Excel files in RCE with input and output cells and
+                    macro execution. </span></span></h3>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >Rationale</span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >This component wraps an existing Microsoft Excel file which is linked to RCE. The
+                general principle is:</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">1.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Copy of the existing Excel file as temporarily file in a temporarily folder
+                (working copy)</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">2.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Waiting for all input channels which are needed to run the component (depending on
+                its “usage” type)</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">3.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Executing VBA-macro “Before Excel run”</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">4.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Copy all input channels to their specific cell ranges. It there are multiple values
+                in an input channel the first value occurring (“first in, first out”) will be
+                copied</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">5.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Updating all formulas</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">6.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Executing VBA-macro “After input variables are written”</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">7.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Updating all formulas</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l0 level1 lfo1"><span
+               
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">8.<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Reading all output channel values from their specific cell range<span
+                    style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                        ><span style="mso-list:Ignore">9.<span
+                            style="font:7.0pt &#34;Times New Roman&#34;">     
+                    </span></span></span><span
+                    style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                    >Executing VBA-macro “After Excel run”<span
+                        style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                            ><span style="mso-list:Ignore">10.<span
+                                style="font:7.0pt &#34;Times New Roman&#34;"> 
+                        </span></span></span><span
+                        style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                        >Deletion of temporarily Excel file</span></span></span></h3>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >Usage</span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >The Excel Component has two (resp. three) views to be configured. </span></h3>
+        <h3><span
+                    style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    >File</span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >First, there is the file view, where you can link a specific Excel file to the RCE
+                    component.<span style="mso-no-proof:yes"> </span></span></h3>
+        <h3><img alt="Unbenannt" height="125"
+                src="images/image001.png"
+                width="669" /><span
+                    style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                ></span></h3>
+        <h3><span
+                    style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+                   
+                </span></h3>
+        <h3><span
+                    style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    >Inputs/Outputs</span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >The second view is for creating the inputs and outputs of the Excel component. The
+                configuration of the channels of both types is (mostly) similar. A RCE-channel is
+                always connected to a specific Excel cell range. The button “Autodiscover” discovers
+                automatically all input and output channels which are described as user-specific
+                cell areas which a beginning “I_” for input-channels and a beginning “O_” for output
+                channels.</span></h3>
+        <h3><img alt="Unbenannt" height="152"
+                src="images/image002.png"
+                 width="1067" /><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+            ></span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+              
+            </span></h3>
+        <h3><img  alt="Unbenannt" height="365"
+                src="images/image003.png"
+                 width="240" /><span
+                style="font-size:12.0pt;mso-fareast-font-family: &#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight: bold"
+                    ><span style="mso-spacerun:yes"> </span></span><img alt="Unbenannt"
+                 height="268"
+                src="images/image004.png"
+                 width="240" /><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+            ></span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+               
+            </span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >Following a short description of all channel-configuration parameters:</span></h3>
+        <table border="1" cellpadding="0" cellspacing="0" class="MsoTableLightShading"
+            style="border-collapse:collapse;border:none;mso-border-top-alt:solid black 1.0pt;  mso-border-top-themecolor:text1;mso-border-bottom-alt:solid black 1.0pt;  mso-border-bottom-themecolor:text1;mso-yfti-tbllook:1184;mso-padding-alt:0cm 5.4pt 0cm 5.4pt">
+            <tbody>
+                <tr style="mso-yfti-irow:-1;mso-yfti-firstrow:yes">
+                    <td
+                        style="width:230.3pt;border-top:solid black 1.0pt;   mso-border-top-themecolor:text1;border-left:none;border-bottom:solid black 1.0pt;   mso-border-bottom-themecolor:text1;border-right:none;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top"  rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:5"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Element</span></h3>
+                    </td>
+                    <td
+                        style="width:230.3pt;border-top:solid black 1.0pt;   mso-border-top-themecolor:text1;border-left:none;border-bottom:solid black 1.0pt;   mso-border-bottom-themecolor:text1;border-right:none;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top"  rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:1"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Description</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:0">
+                    <td
+                        style="width:230.3pt;border:none;background:silver;   mso-background-themecolor:text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top"  rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:68"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Name</span></h3>
+                    </td>
+                    <td
+                        style="width:230.3pt;border:none;background:silver;   mso-background-themecolor:text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top" rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:64"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:   bold"
+                                >The name of the RCE-channel</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:1">
+                    <td style="width:230.3pt;border:none;padding:0cm 5.4pt 0cm 5.4pt" valign="top"
+                         rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:4"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Data Type</span></h3>
+                    </td>
+                    <td style="width:230.3pt;border:none;padding:0cm 5.4pt 0cm 5.4pt" valign="top"
+                         rowspan="1" colspan="1">
+                        <h3><span
+                                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;   color:black;mso-themecolor:text1;mso-themeshade:191;mso-ansi-language:EN-US;   font-weight:normal;mso-bidi-font-weight:bold"
+                                >There are five different data types which represent Excel and RCE
+                                types:</span></h3>
+                        <h3><span
+                                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;   color:black;mso-themecolor:text1;mso-themeshade:191;mso-ansi-language:EN-US;   font-weight:normal;mso-bidi-font-weight:bold"
+                                >Short Text: alphanumeric text<br  /> Boolean:
+                                    true/false<br  /> Integer<br  /> Float:
+                                floating-point number<br  /> Small Table: cell
+                                (area)</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:2">
+                    <td
+                        style="width:230.3pt;border:none;background:silver;   mso-background-themecolor:text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top" rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:68"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Address</span></h3>
+                    </td>
+                    <td
+                        style="width:230.3pt;border:none;background:silver;   mso-background-themecolor:text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top" rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:64"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:   bold"
+                                >Address represents Excel cell areas, e. g. “Table1!A1:B5”.
+                                Alternatively, in Excel where might be a user-specific name of a
+                                cell area which can be used at this point</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:3">
+                    <td style="width:230.3pt;border:none;padding:0cm 5.4pt 0cm 5.4pt" valign="top"
+                         rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:4"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Expand Cell Area (only input channels)</span></h3>
+                    </td>
+                    <td style="width:230.3pt;border:none;padding:0cm 5.4pt 0cm 5.4pt" valign="top"
+                         rowspan="1" colspan="1">
+                        <h3><span
+                                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;   color:black;mso-themecolor:text1;mso-themeshade:191;mso-ansi-language:EN-US;   font-weight:normal;mso-bidi-font-weight:bold"
+                                >If the user does not know the size of the cell area which she wants
+                                to insert, this field can be set to true. Now the upper left cell
+                                area field can be selected in “Address”-parameter. From that address
+                                on the complete table will be inserted, ignoring existing cell
+                                entries</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:4">
+                    <td
+                        style="width:230.3pt;border:none;background:silver;   mso-background-themecolor:text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top"  rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:68"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Usage (only input channels)</span></h3>
+                    </td>
+                    <td
+                        style="width:230.3pt;border:none;background:silver;   mso-background-themecolor:text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top"  rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:64"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:   bold"
+                                >RCE-usage types</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:5">
+                    <td style="width:230.3pt;border:none;padding:0cm 5.4pt 0cm 5.4pt" valign="top"
+                         rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:4"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Delete empty entries (only output channels)</span></h3>
+                    </td>
+                    <td style="width:230.3pt;border:none;padding:0cm 5.4pt 0cm 5.4pt" valign="top"
+                         rowspan="1" colspan="1">
+                        <h3><span
+                                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;   color:black;mso-themecolor:text1;mso-themeshade:191;mso-ansi-language:EN-US;   font-weight:normal;mso-bidi-font-weight:bold"
+                                >If a selected cell area contains empty row at the end these will be
+                                cut off when setting this field to true.</span></h3>
+                    </td>
+                </tr>
+                <tr style="mso-yfti-irow:6;mso-yfti-lastrow:yes">
+                    <td
+                        style="width:230.3pt;border:none;border-bottom:solid black 1.0pt;   mso-border-bottom-themecolor:text1;background:silver;mso-background-themecolor:   text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top"  rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:68"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;mso-bidi-font-weight:normal"
+                                >Button “Select address in Excel file...”</span></h3>
+                    </td>
+                    <td
+                        style="width:230.3pt;border:none;border-bottom:solid black 1.0pt;   mso-border-bottom-themecolor:text1;background:silver;mso-background-themecolor:   text1;mso-background-themetint:63;padding:0cm 5.4pt 0cm 5.4pt"
+                        valign="top" rowspan="1" colspan="1">
+                        <h3 style="mso-yfti-cnfc:64"><span
+                                style="font-size:12.0pt;   mso-fareast-font-family:&#34;Times New Roman&#34;;color:black;mso-themecolor:text1;   mso-themeshade:191;mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:   bold"
+                                >To select a cell area in Excel this button opens Microsoft Excel
+                                file and let the user select a specific cell area.</span></h3>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >When you are finished adding variables, you can connect them in the connection
+                editor. </span></h3>
+        <h3><span
+                    style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                    >Macros</span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >A third view is for configuring VBA-macros for executing during runtime.
+            </span></h3>
+        <h3><img alt="Unbenannt" height="185"
+                src="images/image005.png"
+                 width="737" /><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+            ></span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+               
+            </span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >While in Microsoft Excel properties the access to the VBA-project object model is
+                granted all available VBA-macros can be discovered with button “Discover Macros”.
+                All available macros can be chosen in each dropdown menus.</span></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+               
+            </span></h3>
+        <h3><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >Requirements</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l1 level1 lfo2"><span
+               
+                style="font-size:12.0pt;font-family:Symbol;mso-fareast-font-family: Symbol;mso-bidi-font-family:Symbol;mso-ansi-language:EN-US;font-weight:normal; mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">·<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">       
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >Microsoft Excel should be installed. RCE component is tested with Microsoft Excel
+                2003 and 2010</span></h3>
+        <h3 style="margin-left:36.0pt;text-indent:-18.0pt;mso-list:l1 level1 lfo2"><span
+               
+                style="font-size:12.0pt;font-family:Symbol;mso-fareast-font-family: Symbol;mso-bidi-font-family:Symbol;mso-ansi-language:EN-US;font-weight:normal; mso-bidi-font-weight:bold"
+                    ><span style="mso-list:Ignore">·<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">       
+                </span></span></span><span
+                style="font-size:12.0pt; mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US;font-weight: normal;mso-bidi-font-weight:bold"
+                >For an automatic detection of VBA-macros the VBA-project must be trusted. Please
+                start Excel as administrator. Under file-&gt;options-&gt;trust center-&gt;trust
+                center settings-&gt;macro settings-&gt;trust access to the VBA project object
+                model-&gt;activate</span></h3>
+        <h3></h3>
+        <h3><span
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+                
+            </span></h3>
+    </body>
+</html>

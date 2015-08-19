@@ -1,0 +1,5 @@
+numerical_gradients
+    method_source dakota
+    interval_type %%INTERVAL_TYPE%%
+    fd_gradient_step_size = %%GRADIENT_STEP_SIZE%%
+    

@@ -1,0 +1,54 @@
+{
+    "staticInputs": [
+        {
+            "name": "my Input",
+            "dataTypes": [
+                "Integer"
+            ],
+            "defaultDataType": "Integer"
+        }
+    ],
+    "dynamicInputs": [
+        {
+            "identifier": "inputId",
+            "dataTypes": [
+                "Float", 
+				"Vector",
+				"Matrix"
+            ],
+            "defaultDataType": "Vector",
+            "metaData":{
+                "myMetaDataKey":{
+                    "guiName":"Meta data name",
+                    "guiPosition":"0",
+                    "visibility":"shown",
+                    "possibleValues":[
+                        "required",
+                        "optional",
+                        "initial"
+                    ],
+                    "defaultValue":"required"
+                },
+                "myFilteredMetaDataKey":{
+                    "guiActivationFilter":{
+                        "goal":[
+                            "Solve for"
+                        ]
+                    },
+                    "activationFilter": {
+				        "scriptLanguage": [
+				            "Python"
+				        ]
+				    }
+                }
+            }
+        },
+        {
+            "identifier": "inputId2",
+            "dataTypes": [
+				"Matrix"
+            ],
+            "defaultDataType": "Matrix"
+        }
+    ]
+}

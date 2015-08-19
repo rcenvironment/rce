@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->  
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+               class="de.rcenvironment.components.script.gui.ScriptEndpointSection"
+               enablesFor="1"
+               filter="de.rcenvironment.components.script.gui.ScriptComponentFilter"
+               id="workflow.editor.tab.Properties.Section.InputsOutputs"
+               tab="workflow.editor.tab.script.InputsOutputs">
+         </propertySection>
+         <propertySection
+               class="de.rcenvironment.components.script.gui.ScriptSection"
+               enablesFor="1"
+               filter="de.rcenvironment.components.script.gui.ScriptComponentFilter"
+               id="workflow.editor.tab.Properties.Section.Script"
+               tab="workflow.editor.tab.script.Script">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.script.gui.ScriptComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+  	</propertySections>        
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.script.Script"
+               label="Script">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.script.InputsOutputs"
+               afterTab="workflow.editor.tab.script.Script"
+               label="Inputs/Outputs">
+         </propertyTab>
+         <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="History Data"
+               afterTab="workflow.editor.tab.writer.XPathChooser">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   <extension
+         point="de.rcenvironment.core.gui.workflow.nodeValidators">
+      <validator
+            class="de.rcenvironment.components.script.gui.ScriptComponentWorkflowNodeValidator"
+            filter="de.rcenvironment.components.script.gui.ScriptComponentFilter">
+      </validator>
+   </extension>
+   
+   <extension
+         point="de.rcenvironment.core.gui.workflow.editorActions">
+      <action
+            class="de.rcenvironment.components.script.gui.EditScriptWorkflowEditorAction"
+            component="de.rcenvironment.components.script.execution.ScriptComponent.*"
+            default="true"
+            id="de.rcenvironment.components.script.EditAction"
+            label="Edit Script">
+      </action>
+   </extension>
+   
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.script.gui.ScriptHistoryDataItemSubtreeBuilder"/>
+   </extension>
+</plugin>

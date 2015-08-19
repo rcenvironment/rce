@@ -1,0 +1,50 @@
+{
+    "dynamicInputs":[
+        {
+            "identifier":"default",
+            "group":"write",
+            "dataTypes":[
+                "FileReference",
+                "DirectoryReference"
+            ],
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "metaData": {
+                "filename": {
+                    "guiName": "Target name",
+                    "guiPosition": "0",
+                    "guiGroup": "Options",
+                    "visibility": "shown",
+                    "dataType": "Text",
+                    "defaultValue": "",
+                    "validation": "required"
+                },
+                 "folderForSaving": {
+                    "guiName": "Target folder",
+                    "guiPosition": "0",
+                    "guiGroup": "Options",
+                    "visibility": "developerConfigurable",
+                    "dataType": "Text",
+                    "defaultValue": "",
+                    "validation": "required"
+                }
+            }
+        }
+    ],
+    "inputGroups":[
+        {
+            "identifier":"write",
+            "type": "Or"
+        }
+    ]
+}

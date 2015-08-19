@@ -1,0 +1,20 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="build_process_and_dependencies">
+	<title>Build Structure and Dependencies</title>
+	<sect2>
+		<title>Overview: Build and Versioning Scopes</title>
+		<para>TODO migrate/add content</para>
+		<para>Note that in 2.5.x, the "standard" and "example" component groups are
+			built as part of the core repository, and are therefore upgraded and
+			released along with it. This will probably change in a future release.
+		</para>
+	</sect2>
+	<sect2>
+		<title>Changing Version Dependencies</title>
+		<sect3>
+			<title>Switching "RCE Core" to another version of "RCE Platform"
+			</title>
+			<para>TODO migrate/add content</para>
+		</sect3>
+	</sect2>
+</sect1>

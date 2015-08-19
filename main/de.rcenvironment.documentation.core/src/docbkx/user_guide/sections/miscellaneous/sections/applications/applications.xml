@@ -1,0 +1,33 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="applications">
+	<title>Applications</title>
+	<para>This section describes some of the applications of RCE.
+	</para>
+	<sect2 id="prel_aircr_des">
+	<title>Preliminary Aircraft Design: Design of a short- to medium-range aircraft</title>
+	<para>From a paper presented at DLRK 2012: "Application of a distributed
+		MDAO framework to the design of a short- to medium-range aircraft", E.
+		Moerland, T. Zill, B. Nagel, H. Spangenberg, H. Schumann, P. Zamov
+	</para>
+	<para>"The workflow consists of an initiation part, in which the initial
+		aircraft model is generated, a high-lift concept and engine are added
+		and the overall aerodynamic polars corresponding to the configuration
+		are calculated. All the data is cumulatively stored in the CPACS data
+		exchange format and forwarded to the iterative part. Herein, the
+		initially calculated wing component masses using VAMPzero are updated
+		using tools of higher-fidelity level. The connection to systems
+		pre-design is established and a synthesis is performed. The
+		calculation is continued until the aircraft masses are converged
+		(i.e.: all snowball effects of changing individual component masses
+		are incorporated)."
+	</para>
+		<figure>
+			<title>Workflow in RCE</title>
+			<mediaobject>
+				<imageobject>
+					<imagedata fileref="images/ug_applications_wf_preliminary_aircraft_design.png" contentwidth="400"/>
+				</imageobject>
+			</mediaobject>
+		</figure>
+	</sect2>
+</sect1>

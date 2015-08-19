@@ -1,0 +1,6 @@
+<contexts>
+	<context id="integration_cpacs" title="CPACS page">
+		<description>Define execution script for the tool.</description>
+		<topic href="resources/help/cpacsPage.xhtml" label="CPACS Usage"/>
+	</context>
+</contexts>

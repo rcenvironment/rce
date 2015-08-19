@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Platform - Maven Native Code Libraries - Cross-Platform
+Bundle-SymbolicName: de.rcenvironment.platform.maven.native.common;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ClassPath: lib/maven/sigar-1.6.4.jar
+Bundle-NativeCode: 
+ native/sigar-x86-winnt.dll;osname=WindowsXP;osname=WindowsVista;osname=Windows7;osname=Windows8;
+ osname=Windows2003;osname=WindowsServer2008;osname=WindowsServer2012;processor=x86,
+ native/sigar-amd64-winnt.dll;osname=WindowsXP;osname=WindowsVista;osname=Windows7;osname=Windows8;
+ osname=Windows2003;osname=WindowsServer2008;osname=WindowsServer2012;processor=x86_64,
+ native/libsigar-x86-linux.so;osname=Linux;processor=x86,
+ native/libsigar-amd64-linux.so;osname=Linux;processor=x86_64
+Import-Package: org.apache.log4j;version="1.2.15"
+Export-Package: org.hyperic.sigar;version="1.6.4",
+ org.hyperic.sigar.cmd;version="1.6.4",
+ org.hyperic.sigar.jmx;version="1.6.4",
+ org.hyperic.sigar.pager;version="1.6.4",
+ org.hyperic.sigar.ptql;version="1.6.4",
+ org.hyperic.sigar.util;version="1.6.4",
+ org.hyperic.sigar.win32;version="1.6.4"

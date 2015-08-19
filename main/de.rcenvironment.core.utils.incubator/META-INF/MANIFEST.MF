@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Utils Incubator Bundle
+Bundle-SymbolicName: de.rcenvironment.core.utils.incubator;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ActivationPolicy: lazy
+Bundle-Vendor: DLR
+Require-Bundle: org.ops4j.pax.logging.pax-logging-api;bundle-version="1.6.4"
+Import-Package: de.rcenvironment.core.utils.common.concurrent,
+ de.rcenvironment.core.utils.common.textstream,
+ de.rcenvironment.core.utils.common.textstream.receivers,
+ de.rcenvironment.core.utils.executor,
+ org.apache.commons.compress.archivers;version="1.4.0",
+ org.apache.commons.compress.archivers.zip;version="1.4.0",
+ org.apache.commons.compress.utils;version="1.4.0",
+ org.apache.commons.io;version="2.4.0",
+ org.apache.commons.lang3;version="3.1.0",
+ org.dom4j;version="1.6.1",
+ org.dom4j.io;version="1.6.1",
+ org.imgscalr;version="4.2.0"
+Export-Package: de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.core.utils.incubator.configuration,
+ de.rcenvironment.core.utils.incubator.configuration.annotation,
+ de.rcenvironment.core.utils.incubator.xml
+Bundle-ClassPath: .

@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+               tab="workflow.editor.tab.converger.Properties"
+               class="de.rcenvironment.components.converger.gui.ConvergerParameterSection"
+               id="workflow.editor.tab.Properties.Section.Properties"
+               filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.converger.Parameters"
+               class="de.rcenvironment.components.converger.gui.ConvergerEndpointSection"
+               id="workflow.editor.tab.Properties.Section.Endpoints"
+               filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter"
+               enablesFor="1">
+		 </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.converger.NestedLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
+               id="workflow.editor.tab.Properties.Section.NestedLoop"
+               filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter"
+               enablesFor="1">
+         </propertySection>
+  	</propertySections>
+  </extension>
+   <!-- Register Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab
+               label="%properties"
+               category="default"
+               id="workflow.editor.tab.converger.Properties">
+         </propertyTab>
+         <propertyTab
+               label="%parameters"
+               category="default"
+               afterTab="workflow.editor.tab.converger.Properties"
+               id="workflow.editor.tab.converger.Parameters">
+         </propertyTab>
+         <propertyTab
+               label="%nestedLoop"
+               category="default"
+               afterTab="workflow.editor.tab.converger.Parameters"
+               id="workflow.editor.tab.converger.NestedLoop">
+         </propertyTab>
+      </propertyTabs>
+        
+
+   </extension>
+	<!--  Configuration validation -->
+    <extension
+         point="de.rcenvironment.core.gui.workflow.nodeValidators">
+       <validator
+            class="de.rcenvironment.components.converger.gui.ConvergerWorkflowNodeValidator"
+            filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter">
+       </validator>
+    </extension>
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.converger.gui.ConvergerHistoryDataItemSubtreeBuilder"/>
+   </extension>
+   
+</plugin>

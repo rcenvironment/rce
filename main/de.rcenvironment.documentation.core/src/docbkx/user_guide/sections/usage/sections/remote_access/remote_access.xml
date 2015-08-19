@@ -1,0 +1,439 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="tool_access">
+	<title>Remote Tool and Workflow Access</title>
+	<para>RCE provides an interface that allows external applications to access and run single tools or
+		complete workflows within RCE instances. This allows existing applications to make use of
+		RCE's features (like network distribution, data management, logging, ...) when integrating
+		the application itself is not possible or desirable. For example, applications that are
+		based on frequent user interaction are not a good fit for being run as part of an automated
+		workflow, but may still want to use some of RCE's features.</para>
+	<para>This section describes the Remote Access feature from an end-user's perspective. Using
+		scripts and templates contained in the RCE distribution, this will guide you through the
+		creation of a simple example, which you can expand to build your own solutions.</para>
+	<sect2>
+		<title>Basic Concepts</title>
+		<para>The basic idea of the Remote Access interface is that the external application opens an SSH
+			connection to RCE, and initiates the tool or workflow execution via text commands. Input
+			and output data, as well as log files, are transfered using SCP. To demonstrate this
+			interface, and how to interact with it, example script files are provided for Windows
+			and Linux. This documentation explains how to set up and use these scripts.</para>
+		<para>Note that these scripts are not the Remote Access interface itself, but only examples of how
+			to use it. An application that wants to invoke tools in RCE with minimal latency will
+			probably be better off using the SSH interface directly. Native system libraries (e.g. a
+			Windows DLL) are planned for future releases, which will simplify the direct,
+			low-latency usage of this interface.</para>
+	</sect2>
+	<sect2>
+		<title>Prerequisites</title>
+		<para>Except for RCE (and the Java installation it needs to run), you need just one more piece of
+			software to use the Remote Tool Access example. <phrase os="windows">On Windows, you
+				need to have "Putty" (an SSH client) installed on your system.</phrase>
+			<phrase os="linux">On Linux, the "sshpass" package is required. (This assumes that "ssh"
+				and "scp" commands are already present on the system.)</phrase></para>
+		<note>
+			<para os="windows">You can download Putty (free of charge) from
+					<uri>http://www.chiark.greenend.org.uk/~sgtatham/putty/</uri>. If you install it
+				into the default location, there is nothing more to do. If you choose a different
+				installation path, you need to adjust the Putty path in the run.bat file described
+				later.</para>
+			<para os="linux">To install the "sshpass" package, check if your Linux distribution's package
+				manager provides it. On Debian, Ubuntu or Mint systems, for example, you can install
+				it by running the command <code>sudo apt-get install sshpass</code> in a terminal.
+				On other distributions, like CentOS or SUSE, you may need to compile and install it
+				from source. To do so, download the source from
+					<uri>http://sourceforge.net/projects/sshpass/files/sshpass/1.05/</uri>, unpack
+				it, and run the standard <code>./configure &amp;&amp; make &amp;&amp; make
+					install</code> sequence as root. (Please note that these steps are only required
+				for the shell script examples to work. It is not required for the Remote Access
+				interface itself.)</para>
+		</note>
+	</sect2>
+	<sect2>
+		<title>Tool vs. Workflow Execution</title>
+		<para>In RCE 5.0.0, the "remote access" feature was able to invoke a single integrated tool.
+			Starting with RCE 5.1.0, arbitrary user-defined workflows can be executed. The following
+			sections describe each approach separately.</para>
+	</sect2>
+	<sect2>
+		<title>Setting up the Single Tool Execution Example</title>
+		<para>These steps will guide you through the configuration of an integrated tool, and will show
+			you how to access it using the provided example scripts. Using this example, you will be
+			able to easily integrate your own text-based tools into RCE and invoke them using the
+			Remote Access interface.</para>
+		<para>
+			<itemizedlist>
+				<listitem>
+					<para>Download and unpack/install an RCE distribution (version 6.0.0 or higher).</para>
+				</listitem>
+				<listitem>
+					<para>Run RCE and select the "Help > Configuration Information" menu option.
+						From the list of configuration examples, double-click "Remote Access Server"
+						to open it. Mark all text (Ctrl-A) and copy it to the clipboard
+						(Ctrl-C).</para>
+				</listitem>
+				<listitem>
+					<para>Select the "Help > Open Configuration File" menu option, select all text
+						(Ctrl-A) and paste the copied text from the example configuration.</para>
+				</listitem>
+				<listitem>
+					<para>Save the file, and select "File > Restart" to apply the new configuration.
+						The Remote Access SSH interface is now running, with a pre-configured SSH
+						account of "ra_demo", password "ra_demo".<note>
+							<para>IMPORTANT: "ra_demo" is just an example account for testing within
+								a secure network. Create a new account with a better password before
+								using the Remote Access interface in production. Publishing tools
+								using this default account is a potential security risk.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para>Define an example tool using the following steps.</para>
+					<itemizedlist>
+						<listitem>
+							<para>Select the "File > Integrate Tool" menu option.</para>
+						</listitem>
+						<listitem>
+							<para>In the dialog that has opened, select "Create a new configuration from a template" and
+								choose "Remote Tool Access" from the list. Click "Next >".</para>
+						</listitem>
+						<listitem>
+							<para>On the "Tool Description" page, enter a name for the example tool
+								(e.g. "test"). Click "Next >".</para>
+						</listitem>
+						<listitem>
+							<para>You can leave the next two wizard pages as they are. Skip them by
+								clicking "Next >" twice.</para>
+						</listitem>
+						<listitem>
+							<para>You should be on the "Launch Settings" page now. Click "Add" on the right-hand side. On
+								the dialog that opens, you normally enter a version number
+								describing your tool's release number and the path where it is
+								installed. For this example, just enter an arbitrary version and
+								select an arbitrary directory (for example, a temporary files
+								directory on your computer). Click "Ok" and then "Next >" to proceed.<note>
+									<para>After completing this Remote Access example, refer to the
+										"Tool Integration" section on how to integrate your actual
+										tools.</para>
+								</note></para>
+						</listitem>
+						<listitem>
+							<para>On the "Execution" page, enable the command section that matches
+								your operating system. This is where you define the commands that
+								execute your tool. For this example, just leave the commands as they
+								are. Click "Save and Activate" to complete the wizard.</para>
+						</listitem>
+					</itemizedlist>
+				</listitem>
+				<listitem>
+					<para>You now have an example tool that can be accessed with the "Remote Access" feature. To do
+						so, navigate to the "examples<phrase os="linux">/</phrase><phrase
+							os="windows">\</phrase>remote_access" sub-folder in the RCE folder. Copy
+						the <phrase os="linux">run-tool.sh</phrase><phrase os="windows"
+							>run-tool.bat</phrase> file to an empty folder.</para>
+				</listitem>
+				<listitem>
+					<para>Create a folder named "input" next to the <phrase os="linux">run-tool.sh</phrase><phrase
+							os="windows">run-tool.bat</phrase> file. This folder will be uploaded
+						and made available to the integrated tool. Copy some test files into
+						it.</para>
+				</listitem>
+				<listitem>
+					<para>Open the <phrase os="linux">run-tool.sh</phrase><phrase os="windows"
+							>run-tool.bat</phrase> file in a text editor. Enter the tool id and
+						version you entered in the wizard in place of the "<code>###</code>"
+						placeholders. Optionally, set something for the parameter placeholder as
+						well. Save and exit the file.</para>
+				</listitem>
+				<listitem>
+					<para>Open a <phrase os="linux">terminal</phrase><phrase os="windows">command
+							prompt</phrase> in the current folder. <note os="windows">
+							<para>A simple way to do this in Windows 7 is to hold the Shift key and
+								right-click in an empty space of the current folder, and then select
+								"Open command window here" from the menu.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para><phrase os="linux">Make the shell script executable by running <code>chmod +x
+								run.sh</code> and then start the demo with
+								<code>./run-tool.sh</code></phrase><phrase os="windows">Enter
+								<code>run-tool</code> in the command prompt window and press Enter
+							to start the demo.</phrase> You should see some progress output
+						now.</para>
+				</listitem>
+				<listitem>
+					<para>When using the Remote Access feature for the first time, there may be a security warning
+						to verify the identity of the RCE instance you are connecting to. Confirm
+						the question by entering "y" and pressing Enter. This answer is saved, so
+						the question should not appear again for the same RCE instance.</para>
+				</listitem>
+				<listitem>
+					<para>After the tool run has finished, there should be two new folders next to the "input"
+						folder, named "output" and "logs". "output" contains files generated by the
+						integrated tool, while "logs" contains generall process information.
+						Currently, it should contain a single file named "workflow.log" which
+						provides detail information about the steps that were executed.<note>
+							<para>Make sure to delete or rename the "output" and "logs" folders
+								before running the Tool Access script again, as they will interfere
+								with the next run's downloads.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para>To get an impression of how this feature interacts with existing RCE features, you can
+						examine several areas within the RCE instance.<itemizedlist>
+							<listitem>
+								<para>Open the "Workflow List" view in RCE and watch it while the "run-tool" script is
+									executing. After a short preparation time where the input data
+									is uploaded, you will see the automatically generated workflow
+									containing the tool being executed. It will disappear
+									automatically if it finishes successfully; if it fails, it will
+									remain in the list for review.</para>
+							</listitem>
+							<listitem>
+								<para>Open the "Workflow Console" view; if the tool produced any
+									output, it should be visible there.</para>
+							</listitem>
+							<listitem>
+								<para>Open the "Workflow Data Browser" and refresh it; there should be a
+									"Remote_Tool_Access-..." workflowe entry matching the remote
+									tool run. When you expand this entry, you should see the
+									uploaded content of the input folder, the generated output
+									folder, any generated text output (in the "Execution Log"
+									folder), and the exit code of the tool process (also in the
+									"Execution Log" folder).</para>
+							</listitem>
+						</itemizedlist></para>
+				</listitem>
+			</itemizedlist>
+		</para>
+	</sect2>
+	<sect2>
+		<title>Setting up the Workflow Execution Example/Template</title>
+		<para>These steps will guide you through the creation of a remote-executable workflow, and
+			will show you how to invoke it using the provided example scripts.</para>
+		<para>
+			<itemizedlist>
+				<listitem>
+					<para>Download and unpack/install an RCE distribution (version 6.0.0 or
+						higher).</para>
+				</listitem>
+				<listitem>
+					<para>Run RCE and select the "Help > Open Configuration Information" menu option. From the list
+						of configuration examples, double-click "Remote Access Server" to open it.
+						Mark all text (Ctrl-A) and copy it to the clipboard (Ctrl-C).</para>
+				</listitem>
+				<listitem>
+					<para>Select the "Help > Open Configuration File" menu option, select all text
+						(Ctrl-A) and paste the copied text from the example configuration.</para>
+				</listitem>
+				<listitem>
+					<para>Save the file, and select "File > Restart" to apply the new configuration.
+						The Remote Access SSH interface is now running, with a pre-configured SSH
+						account of "ra_demo", password "ra_demo".<note>
+							<para>IMPORTANT: "ra_demo" is just an example account for testing within
+								a secure network. Create a new account with a better password before
+								using the Remote Access interface in production. Publishing tools
+								using this default account is a potential security risk.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para>As a first example we are going to execute the umodified
+						"Remote_Workflow_Access_Template" workflow file in the Workflow Examples
+						Project. If you haven't created this project already, right-click in the
+						Project Explorer on the left side, and choose "New > Workflow Examples
+						Project", and choose a name for it. The template file is contained within
+						the project folder. To get an impression of the basic setup, open the
+						template workflow file. You will see an Input Provider on the left side with
+						two outputs: one Directory and one ShortText. On the right side, there is an
+						Output Provider with a single Directory input. These are the points where
+						the Remote Workflow Access feature sends the provided input files (as a
+						Directory) and parameters (as a ShortText) into your workflow, and collects
+						the final output files (as a Directory). </para>
+				</listitem>
+				<listitem>
+					<para>As a security measure, you need to explicitly publish your workflow to allow remote
+						access to it. This is done via a console command at this time; future RCE
+						versions will most likely add a option to do this from the GUI. To issue
+						this command, open the "Command Console" view (if it is not already visible)
+						by selecting "Windows > Show View > Other" from the menu, and then
+						double-clicking "Command Console" in the "RCE" section.</para>
+				</listitem>
+				<listitem>
+					<para>Right-click your workflow file in the "Project Explorer" and select the
+						"Properties" entry at the bottom of the popup menu. Mark the value of the
+						"location" entry with the mouse, and press Ctrl+C to copy the full path to
+						the workflow file to the clipboard.<note>
+							<para>This step demonstrates how the get the path of a workflow file in
+								the current workspace, but you can use workflow files that are
+								located anywhere on your system.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para>To make the workflow available for remote execution, enter the command <code>ra-admin
+							publish-wf "<replaceable>&lt;workflow file></replaceable>"
+								<replaceable>&lt;id></replaceable></code> in the command window.
+						Press Ctrl-V in place of <replaceable>&lt;workflow file></replaceable> to
+						insert the path to your workflow file there. For
+							<replaceable>&lt;id></replaceable>, choose a string (without whitespace)
+						that callers can use to execute the workflow. Press "enter" to execute the
+						command. The workflow file will be inspected, and you will either see a
+						message describing what is missing, or a message that the workflow was
+						successfully published. Fix any errors until the workflow is
+						published.</para>
+					<note>
+						<para>Currently, published workflows are not persistent, so they must be published again after
+							a restart. To make a workflow permanently available from a server
+							instance after a restart, you can add the <code>ra-admin
+								publish-wf</code> command as a startup <code>--exec "..."</code>
+							parameter. Note that any double quotes in the command (for example the
+							ones enclosing the workflow file's path) must be prefixed with a
+							backslash ("\").</para>
+						<para>Example: <code>rce --exec "ra-admin publish-wf \"my workflow file with spaces.wf\"
+								myPublishId" --headless -noSplash</code></para>
+					</note>
+				</listitem>
+				<listitem>
+					<para>If some of the workflow's components use placeholders for configuration
+						values, you can use the <code>-p</code> option to specify a placeholder
+						values file. The structure of placeholder value files is explained in
+						<xref  linkend="placeholder_files"/>.</para>
+					<para>Example: <code>ra-admin publish-wf -p myPlaceholderValues.json myWorkflowFile.wf
+							myPublishId</code></para>
+				</listitem>
+				<listitem>
+					<para>You now have a workflow file that can be executed using the "Remote Access" feature. To
+						do so, navigate to the "examples<phrase os="linux">/</phrase><phrase
+							os="windows">\</phrase>remote_access" sub-folder in the RCE installation
+						folder. Copy the <phrase os="linux">run-wf.sh</phrase><phrase os="windows"
+							>run-wf.bat</phrase> file to an empty folder.<note>
+							<para>If you don't know where your RCE installation folder is, use "Help
+								> Open Configuration Information".</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para>Create a folder named "input" next to the <phrase os="linux"
+							>run-wf.sh</phrase><phrase os="windows">run-wf.bat</phrase> file. This
+						folder will be uploaded and made available to the integrated tool. Copy some
+						test files into it.</para>
+				</listitem>
+				<listitem>
+					<para>Open the <phrase os="linux">run-wf.sh</phrase><phrase os="windows"
+							>run-wf.bat</phrase> file in a text editor. Enter the workflow's
+							<replaceable>&lt;id></replaceable> chosen above in place of the
+							"<code>###</code>" placeholders. Optionally, set something for the
+						parameter placeholder as well. Save and exit the file.</para>
+				</listitem>
+				<listitem>
+					<para>Open a <phrase os="linux">terminal</phrase><phrase os="windows">command
+							prompt</phrase> in the current folder. <note os="windows">
+							<para>A simple way to do this in Windows 7 is to hold the Shift key and
+								right-click in an empty space of the current folder, and then select
+								"Open command window here" from the menu.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para><phrase os="linux">Make the shell script executable by running <code>chmod
+								+x run-wf.sh</code> and then start the demo with
+								<code>./run-wf.sh</code></phrase><phrase os="windows">Enter
+								<code>run-wf</code> in the command prompt window and press Enter to
+							start the demo.</phrase> You should see some progress output now.</para>
+				</listitem>
+				<listitem>
+					<para>When using the Remote Access feature for the first time, there may be a security warning
+						to verify the identity of the RCE instance you are connecting to. Confirm
+						the question by entering "y" and pressing Enter. This answer is saved, so
+						the question should not appear again for the same RCE instance. If you
+						receive a warning that the server's SSH key has changed (e.g. after
+						reinstalling RCE), follow the command's instructions on how to reset the
+						stored key.</para>
+				</listitem>
+				<listitem>
+					<para>After the workflow run has finished, there should be two new folders next
+						to the "input" folder, named "output" and "logs". "output" contains files
+						generated by the integrated tool, while "logs" contains generall process
+						information. Currently, it should contain a single file named "workflow.log"
+						which provides detail information about the steps that were executed.<note>
+							<para>Make sure to delete or rename the "output" and "logs" folders
+								before running the Tool Access script again, as they will interfere
+								with the next run's downloads.</para>
+						</note></para>
+				</listitem>
+				<listitem>
+					<para>To get an impression of how this feature interacts with existing RCE
+						features, you can examine several areas within the RCE instance.<itemizedlist>
+							<listitem>
+								<para>Open the "Workflow List" view in RCE and watch it while the "run-wf" script is
+									executing. After a short preparation time where the input data
+									is uploaded, you will see the workflow being executed. It will
+									disappear automatically if it finishes successfully; if it
+									fails, it will remain in the list for review. You can also
+									double-click on a running or workflow to monitor its
+									execution.</para>
+							</listitem>
+							<listitem>
+								<para>Open the "Workflow Console" view; if the tool produced any
+									output, it should be visible there.</para>
+							</listitem>
+							<listitem>
+								<para>Open the "Workflow Data Browser" and refresh it; there should be an entry for the
+									Remote Access workflow. When you expand this entry, you should
+									see the uploaded content of the input folder, the generated
+									output folder, any generated text output (in the "Execution Log"
+									folder), and the exit code of the tool process (also in the
+									"Execution Log" folder).</para>
+							</listitem>
+						</itemizedlist></para>
+				</listitem>
+			</itemizedlist>
+		</para>
+	</sect2>
+	<sect2>
+		<title>Building Your Own Remote Access Workflow</title>
+		<para>After running the example/template workflow as described in the previous section, you
+			can proceed to building your own actual workflow.</para>
+		<para>As described above, open the "Remote_Workflow_Access_Template" workflow file. You will
+			see an Input Provider on the left side with two outputs: one Directory and one
+			ShortText. On the right side, there is an Output Provider with a single Directory input.
+			These are the points where the Remote Workflow Access feature sends the provided input
+			files (as a Directory) and parameters (as a ShortText) into your workflow, and collects
+			the final output files (as a Directory). You should leave these two components
+			unchanged, and place your workflow logic between them. The Script component in the
+			middle is just a placeholder - unless you need a Script component anyway, you can just
+			delete it.</para>
+		<para>There are two basic approaches to building your workflow:<itemizedlist>
+				<listitem>
+					<para>Either you start with the template, and build your workflow between the
+						two standard components. This is straight-forward, but means that you cannot
+						test run the workflow from the RCE GUI (as the Input Provider will fail),
+						but have to use the Remote Access feature to test it.</para>
+				</listitem>
+				<listitem>
+					<para>The other approach is to build your workflow normally, where you add an
+						Input Provider and Output Writer with the same outputs and inputs as the
+						ones in the template (but with standard configuration values). You can then
+						test (and if needed, modify) your workflow from the GUI until it behaves as
+						it should. Then, mark all components <emphasis>except</emphasis>  the Input
+						Provider and Output writer in your workflow, and select "Copy" from the
+						right-click menu. Switch to the template file, click an empty area, and
+						select "Paste" from the right-click menu. Then, connect the two template
+						components (Input Provider and Output Writer) as in your original
+						workflow.</para>
+					<note>
+						<para>(Advanced Usage) You can also build your workflow in the template
+							file, add your own Input Provider and Output Writer, and use the new
+							"Enable/Disable Component" feature to toggle between them for testing
+							and Remote Access usage. As this requires some helper components to
+							work, this is not recommended for your first example, but may be a
+							useful trick to keep in mind.</para>
+					</note>
+				</listitem>
+			</itemizedlist></para>
+		<para>After you have finished building your workflow, the process of publishing and
+			executing it is the same as described above for the unmodified template file. Please
+			note that publishing your workflow for remote execution automatically creates an
+			(invisible) copy of it. Modifications you make to your workflow file are not published
+			right away. Once you have made the changes you want to publish, run the same "ra-admin
+			publish-wf" command again to update the published version.<note>
+				<para>Tip: To repeat a previous command, presse the "up arrow" key in the Command
+					Console window.</para>
+			</note></para>
+	</sect2>
+</sect1>

@@ -1,0 +1,19 @@
+#!/bin/bash
+#PBS -N jijajob
+#PBS -l nodes=2
+#PBS -l walltime=00:00:05
+#PBS -q qtest
+#PBS -k n
+
+echo $PBS_JOBID
+
+echo ================================================
+
+cat $PBS_NODEFILE
+
+echo ===============================================
+
+/usr/bin/env
+
+echo $PATH
+while (true) ; do sleep 5 ; done

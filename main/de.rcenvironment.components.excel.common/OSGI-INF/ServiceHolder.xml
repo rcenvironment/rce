@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Typed Datum Server for Channel Value">
+    <implementation class="de.rcenvironment.rce.components.excel.commons.ServiceHolder" />
+
+ <reference
+        name="Typed Datum Service"
+        interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+        cardinality="1..1"
+        bind="bindTypedDatumService"
+        unbind="unbindTypedDatumService"
+        policy="dynamic"
+ />
+</scr:component>

@@ -1,0 +1,3 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Remote File Connection Support">
+	<implementation class="de.rcenvironment.core.communication.fileaccess.internal.RemoteFileConnectionSupport" /> 
+</scr:component>

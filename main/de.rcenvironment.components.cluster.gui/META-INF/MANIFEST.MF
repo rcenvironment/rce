@@ -1,0 +1,26 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Cluster Component GUI
+Bundle-SymbolicName: de.rcenvironment.components.cluster.gui;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-Vendor: DLR
+Bundle-ClassPath: .
+Import-Package: de.rcenvironment.components.cluster.common,
+ de.rcenvironment.core.component.executor,
+ de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.component.workflow.model.api,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.datamanagement.browser.spi,
+ de.rcenvironment.core.gui.utils.incubator,
+ de.rcenvironment.core.gui.workflow.editor.properties,
+ de.rcenvironment.core.gui.workflow.editor.validator,
+ de.rcenvironment.core.gui.workflow.executor.properties,
+ de.rcenvironment.core.utils.cluster,
+ de.rcenvironment.core.utils.common.channel.legacy,
+ org.apache.commons.logging;version="1.1.1",
+ org.eclipse.osgi.util
+Require-Bundle: org.eclipse.ui.views.properties.tabbed
+Bundle-Localization: plugin
+Bundle-ActivationPolicy: lazy

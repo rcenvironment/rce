@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Platform - Maven-OSGi PAX-Logging Resolution Stub
+Bundle-SymbolicName: de.rcenvironment.platform.maven-osgi.paxlogging.stub;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: org.apache.commons.logging;version="1.1.1",
+ org.slf4j;version="1.6.1",
+ org.slf4j.spi;version="1.6.1",
+ org.slf4j.helpers;version="1.6.1"

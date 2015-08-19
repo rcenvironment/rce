@@ -1,0 +1,8 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Vendor: DLR
+Bundle-Name: RCE CPACS Example Project Wizard
+Bundle-SymbolicName: de.rcenvironment.cpacs.gui.wizards.exampleproject
+Bundle-Version: 6.0.0.qualifier
+Fragment-Host: de.rcenvironment.core.gui.wizards.exampleproject
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7

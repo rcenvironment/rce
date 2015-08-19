@@ -1,0 +1,25 @@
+{
+	"general" : {
+		"instanceName" : "Example Remote Access server started by \"${systemUser}\" on ${hostName}"
+	},
+	"sshServer" : {
+		"enabled" : true,
+		"port" : 31005,
+		"accounts" : {
+			"ra_demo" : {
+				"password" : "ra_demo",
+				"role" : "remote access",
+				"enabled" : true
+			}
+		},
+		"roles" : {
+			"remote access" : {
+				"allowedCommandPatterns" : [
+					"ra .+",
+					"net info",
+					"components list"
+				]
+			}
+		}
+	}
+}

@@ -1,0 +1,44 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.modules.cpacs.components</artifactId>
+	<name>RCE Module ${project.artifactId}</name>
+	<packaging>pom</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.module</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../../parent/module</relativePath>
+	</parent>
+
+	<modules>
+		<module>${projects-root}/de.rcenvironment.componentgroups.cpacs.feature</module>
+		<module>${projects-root}/de.rcenvironment.components.cpacs.vampzeroinitializer.common</module>
+		<module>${projects-root}/de.rcenvironment.components.cpacs.vampzeroinitializer.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.cpacs.vampzeroinitializer.gui</module>
+		<module>${projects-root}/de.rcenvironment.components.cpacs.writer.common</module>
+		<module>${projects-root}/de.rcenvironment.components.cpacs.writer.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.cpacs.writer.gui</module>
+		<module>${projects-root}/de.rcenvironment.components.toolwrapper.common</module>
+		<module>${projects-root}/de.rcenvironment.components.toolwrapper.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.toolwrapper.generator.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.toolwrapper.gui</module>
+		<module>${projects-root}/de.rcenvironment.components.tiglviewer.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.tiglviewer.gui</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.loader.common</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.loader.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.loader.gui</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.common</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.gui</module>
+
+		<!-- TODO clean up layering/dependencies -->
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer.feature</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer.win32.x86</module>
+		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer.win32.x86_64</module>
+	</modules>
+
+</project>

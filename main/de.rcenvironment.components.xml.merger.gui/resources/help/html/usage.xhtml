@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+                      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>XML Merger Component Usage</title>
+    </head>
+    <body>
+        <h2><span 
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US"
+                >XML Merger Component Usage</span></h2>
+        <h2><span 
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US"
+                >Synopsis</span></h2>
+        <h3><span  style="font-size:12.0pt;mso-ansi-language:EN-US; font-weight:normal"
+                >The XML Merger Component merges the XML content of two inputs on the basis of
+                user-defined rules.</span></h3>
+        <h3><span 
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >Rationale</span></h3>
+        <h3><span  style="font-size:12.0pt;mso-ansi-language:EN-US; font-weight:normal"
+                >The basic functionality of the XML Merger Component is to merge two XML data sets
+                into one as follows: There is a 'main'-XML data set (input channel </span><span
+                
+                style="font-size:12.0pt;font-family:&#34;Courier New&#34;; mso-ansi-language:EN-US;font-weight:normal"
+                >XML</span><span 
+                style="font-size:12.0pt;mso-ansi-language:EN-US;font-weight:normal">). The complete
+                XSLT mapping will be described regarding this XML dataset. All integrating parts of
+                another XML data set (input channel </span><span 
+                style="font-size:12.0pt;font-family:&#34;Courier New&#34;;mso-ansi-language: EN-US;font-weight:normal"
+                >XML</span><span 
+                style="font-size:12.0pt; font-family:&#34;Courier New&#34;;mso-ansi-language:EN-US;font-weight:normal; mso-bidi-font-weight:bold"
+                > to integrate</span><span 
+                style="font-size:12.0pt;mso-ansi-language:EN-US;font-weight:normal">) will be
+                described with a 'document'-reference in XSLT mapping.</span></h3>
+        <p><span  style="mso-ansi-language:EN-US">As XSLT is a standard technology in
+                the field of information technology it is referred to corresponding literature
+                available. As a technical background, the approach used is based on Saxon processor.
+                In the mapping file (<span style="mso-bidi-font-weight: bold">see example</span>) a
+                XSLT-constant </span><span 
+                style="font-family:&#34;Courier New&#34;;mso-ansi-language:EN-US"
+                >INTEGRATING_INPUT</span><span  style="mso-ansi-language:EN-US"> refers
+                to the </span><span 
+                style="font-family:&#34;Courier New&#34;;mso-ansi-language:EN-US">XML to
+                integrate</span><span  style="mso-ansi-language:EN-US"> data
+                channel.</span></p>
+        <p style="margin-bottom:0cm;margin-bottom:.0001pt"><strong><span 
+                    style="font-size:11.0pt;mso-ansi-language:EN-US">Example:</span></strong><span
+                 style="font-size:11.0pt;mso-ansi-language:EN-US"> </span><tt><b><span
+                         style="font-size:11.0pt;mso-ansi-language:EN-US">XSLT
+                        mapping:</span></b></tt><span 
+                style="font-size:11.0pt;mso-ansi-language:EN-US"> </span></p>
+        <pre xml:space="preserve"><span class="pun"></span></pre>
+        <pre xml:space="preserve"><span class="pun"><span  style="mso-ansi-language:EN-US">&lt;?</span></span><span class="pln"><span  style="mso-ansi-language:EN-US">xml version</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="str"><span  style="mso-ansi-language:EN-US">"1.0"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> encoding</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="str"><span  style="mso-ansi-language:EN-US">"UTF-8"</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">?&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pun"><span  style="mso-ansi-language:EN-US"></span></span></pre>
+        <pre xml:space="preserve"><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:stylesheet</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">version</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"1.0"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US">  </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">xmlns:xsl</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"http://www.w3.org/1999/XSL/Transform"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">xmlns:xsi</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"http://www.w3.org/2001/XMLSchema-instance"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">exclude-result-prefixes</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"xsi"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:output</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">method</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"xml"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">version</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"1.0"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">encoding</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"UTF-8"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">indent</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"yes"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">/&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="com"><span  style="mso-ansi-language:EN-US">&lt;!--Define Variable for integrated CPACS--&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:variable</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">name</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"cpacsIntegratedDoc"</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">select</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"'INTEGRATING_INPUT'"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">/&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                </span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="com"><span  style="mso-ansi-language:EN-US">&lt;!--Copy complete Source to Result --&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:template</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">match</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"@* | node()"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:copy&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:apply-templates</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">select</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"@* | node()"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">/&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;/xsl:copy&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;/xsl:template&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US"></span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:template</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">match</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"/cpacs/aircraft/configuration/trajectories/global"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;global&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;ReferenceTrajectoryUID&gt;&lt;xsl:value-of</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">select</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"document($cpacsIntegratedDoc)/cpacs/aircraft/configuration/trajectories/global/ReferenceTrajectoryUID"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">/&gt;&lt;/ReferenceTrajectoryUID&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:copy-of</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">select</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"document($cpacsIntegratedDoc)/cpacs/aircraft/configuration/trajectories/global/ReferenceTrajectory"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">/&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">                </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;xsl:copy-of</span></span><span class="pln"><span  style="mso-ansi-language:EN-US"> </span></span><span class="atn"><span  style="mso-ansi-language:EN-US">select</span></span><span class="pun"><span  style="mso-ansi-language:EN-US">=</span></span><span class="atv"><span  style="mso-ansi-language:EN-US">"/cpacs/aircraft/configuration/trajectories/global/*"</span></span><span class="tag"><span  style="mso-ansi-language:EN-US">/&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;/global&gt;</span></span></pre>
+        <pre xml:space="preserve"><span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;/xsl:template&gt;<span class="pln"><span  style="mso-ansi-language:EN-US">        </span></span></span></span></pre>
+        <pre xml:space="preserve"><span class="tag"><span  style="mso-ansi-language:EN-US">&lt;/xsl:stylesheet&gt;</span></span></pre>
+        <h3
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span 
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold">
+            </span></h3>
+        <h3
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span 
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                >Usage</span></h3>
+        <h3
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span 
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >On the “Mapping” tab you can load a mapping file into the component. The content of
+                the mapping file will be stored within the workflow. Editing the mapping content
+                allows you to edit and store the workflow corresponding content, not the file
+                itself.</span></h3>
+        <h3
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span 
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >You can define the scheduling of the static input channels on the tab
+                    “Inputs/Outputs”.<br  /> You are also able to add dynamic input or
+                output channels here. Thus it is possible to map single values into the XML dataset
+                via XPATH declaration. Moreover, you can select single values in order to write them
+                in an output channel.</span></h3>
+        <h3
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span 
+                style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
+                >On the tab “History Data” you can select whether to store history data for each
+                component run or not.</span></h3>
+    </body>
+</html>

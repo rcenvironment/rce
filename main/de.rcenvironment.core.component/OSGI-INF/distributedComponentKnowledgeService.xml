@@ -1,0 +1,25 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Distributed Component Knowledge Service">
+
+	<implementation class="de.rcenvironment.core.component.internal.DistributedComponentKnowledgeServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"/>
+		<provide interface="de.rcenvironment.core.utils.incubator.ListenerProvider"/>
+	</service>
+	
+	<reference
+		name="NodePropertiesService" 
+		interface="de.rcenvironment.core.communication.nodeproperties.NodePropertiesService" 
+		cardinality="1..1" 
+		bind="bindNodePropertiesService" 
+		policy="dynamic"/>
+		
+	<reference
+		name="DistributedComponentKnowledgeListeners" 
+		interface="de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener" 
+		cardinality="0..n" 
+		bind="addDistributedComponentKnowledgeListener" 
+		unbind="removeDistributedComponentKnowledgeListener" 
+		policy="dynamic"
+	/>
+	
+</scr:component>

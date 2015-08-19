@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
+	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-core-5.7.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/activemq-protobuf-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/commons-net-3.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/geronimo-j2ee-management_1.1_spec-1.0.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/geronimo-jms_1.1_spec-1.1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/jasypt-1.9.0.jar"/>
+	<classpathentry kind="output" path="target/classes"/>
+</classpath>

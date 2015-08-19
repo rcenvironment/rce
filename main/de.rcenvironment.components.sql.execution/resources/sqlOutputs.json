@@ -1,0 +1,30 @@
+{
+    "staticOutputs": [
+        {
+            "name": "meta.tableName",
+            "dataTypes": [
+                "ShortText"
+            ],
+            "defaultDataType": "ShortText"
+        },
+        {
+            "name": "meta.sqlSuccess",
+            "dataTypes": [
+                "Integer"
+            ],
+            "defaultDataType": "Integer"
+        }
+    ],
+	"dynamicOutputs": [
+        {
+            "identifier": "default",
+            "dataTypes": [
+                "ShortText",
+                "Integer",
+                "Float",
+                "SmallTable"
+            ],
+            "defaultDataType": "Float"
+        }
+    ]
+}

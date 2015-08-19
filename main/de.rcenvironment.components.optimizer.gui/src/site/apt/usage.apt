@@ -1,0 +1,118 @@
+ ---
+ Python Component Usage
+ ---
+
+Python Component Usage
+
+* Synopsis
+
+ The Python component allows to execute Python code within an RCE workflow run by calling any natively installed Python interpreter on the Python component's RCE node.
+ The component is designed to allow binding of variables from the RCE framework into and out of the Python script, both single-value and array variables coming from and going into input and output channels, respectively.
+ Additionally the RCE data management service can be utilized from inside your Python script to read file contents from, or write contents into it.
+ 
+* Rationale
+
+ The component uses a natively installed Python version. This approach was selected on purposem because many users use their own specific modules and environments and rather choose a full binary integration over a constrained or esoteric Python version like Jython.
+ 
+ * Drawbacks of this approach include:
+ 
+ [[1]] Only single file scripts are allowed, because the user's script contents are converted into a temporary "wrapped" script, executed in the Python executor service's temporary directory.
+       It's currently not possible to copy satellite files like pure-Python modules or input data files to the same directory where the script is residing.
+       One may, however, use the data management service to inject file paths into the python script (see below).
+ 
+ The single file restriction is necessary to allow a flexible variable binding and connection with data management entries.
+ 
+ [[1]] The execution speed of the Python component is limited by the initial start-up time of the Python interpreter (or virtual machine, just-in-time compiler).
+       Each script execution first wraps the user script into a temporary script file, then starts the Python executable in a new process and after that processes the output bindings.
+
+ []
+ 
+ * Advantages of native Python binding include:
+ 
+ [[1]] 100% binary compatibility
+ 
+ [[1]] Exotic setups are supported automatically, including third-party modules, binary libraries, <<<cpython>>> and so on.
+       Users gain the benefit of using additionally installed Python modules like <<<numpy>>, <<<scipy>>> or <<<mysqldb>>>.
+ 
+ [[1]] Self-compiled Python interpreters with binary extensions can be used
+ 
+ [[1]] No problems with library indexing as e.g. in {{{http://jython.org}Jython}}
+
+* Usage
+
+ To write your own Python script, proceed as follows:
+ 
+ [[1]] Define your input and output variables: Any dynamic channel you added in the <<<Input/Output>>> tab of the Properties View appearing for the selected Python component automatically constitutes a bound Python variable in your script, with the type specified.
+       The type must be correct, especially when binding output variables.
+ 
+       By defining a dynamic channel endpoint, you select a data type for it, which is automatically mapped to a bound Python variable data type.
+       Currently, the following choices are available:
+ 
+ [Integer] Any integer number; in RCE represented internally by a <<<{{{http://download.oracle.com/javase/6/docs/api/java/lang/Long.html}java.lang.Long}}>>> data type, this can be an <<<int>>> as well as a <<<long>>> {{{http://docs.python.org/library/stdtypes.html#numeric-types-int-float-long-complex}in Python}}, depending on the number itself
+ 
+ [Real] Any floating point number; in RCE represented internally by a <<<{{{http://download.oracle.com/javase/6/docs/api/java/lang/Double.html}java.lang.Double}}>>> data type, in Python this is a <<<{{{http://docs.python.org/library/stdtypes.html#numeric-types-int-float-long-complex}float}}>>>
+ 
+ [Logic] A boolean value, either true or false; in RCE represented internally by a <<<{{{http://download.oracle.com/javase/6/docs/api/java/lang/Boolean.html}java.lang.Boolean}}>>> data type, in Python this is a <<<{{{http://docs.python.org/library/stdtypes.html#boolean-values}bool}}>>> with values <<<True>>> or <<<False>>>
+ 
+ [String] A text string; in RCE represented internally by a <<<{{{http://download.oracle.com/javase/6/docs/api/java/lang/String.html}java.lang.String}}>>> data type, in Python this is a <<<{{{http://docs.python.org/library/stdtypes.html#sequence-types-str-unicode-list-tuple-bytearray-buffer-xrange}str}}>>>
+ 
+ [Empty] A non-value data type; in RCE this is <<<null>>>, in Python <<<None>>>
+ 
+ [Array] An n-dimensional array, where each dimension may have a different size and each cell value any of the data types above
+ 
+ [FileReference] A reference type for usually file-based data management entries; in RCE this is a <<<DataManagementFileReference>>> object, in Python a string containing a file location (an absolute path).
+ 
+ []
+ 
+ [[1]] Write your script: Click the "New" button of the Python component GUI.
+       This opens it with the text editor integrated in RCE, or with any other Python editor plugin you installed into your RCE installation.
+ 
+       After editing the script, you will notice that the workflow editor state becomes "dirty" - there is a <<<*>>> in front of the editor's file name heading.
+       To apply the changes, you need to safe the workflow before executing it, e.g. by pushing <<<CTRL+S>>>.
+ 
+       Using variables from inside a script works as follows:
+ 
+  [Singular values] To read them, there is nothing you need to do; the channel values are "automagically" injected into the script.
+    If for example a Real-type channel called <<pi>> receives a value of say <<<3.14159>>>, the global variable <<<pi>>> inside your script will already have this value.
+ 
+    To assign a value to an output variable, simply assign a correctly typed data value to a global variable with the name of the channel.
+    To return a logic value called <<<foo>>>, simply write down <<<foo = True>>>. However, watch out for Python keywords:
+    Naming a channel, e.g. <<<continue>>>, <<<pass>>>, <<<if>>> or <<<break>>> won't work for obvious reasons
+ 
+  [Arrays] Arrays may have an arbitrary number of dimensions, each of which may have a different size, offering therefore a lot of flexibility (e.g. a 4x4 matrix, a 100x3 tuple array, or a 2x3x4x5 4-dimensional array.
+    In Python, incoming arrays are already fully initialized as lists of lists, therefore each dimension has the defined number of elements, which can be any of the basic data types (int, float, ...)
+
+    Output arrays are initialized as <<<[]>>> by default, and need not be filled fully for each dimension by the user script; a warning will be issued nonetheless if they are sparse.
+    Undefined values will have a default value of Empty in the RCE framework.
+ 
+    The dimension sizes can be detected by code like <<<dims = (len(a), len(a[0]), len(a[0][0]), )>>> where <<<a>>> is an input array.
+    Output arrays can be initialized by code like <<<b = [[None] * 5] * 10>>>
+ 
+  [Data Management integration] It is possible to access data management entries coming from other components in the workflow from within the Python script, or writing out data to the data management service in form of files.
+ 
+    Data management entries must be defined by creating dynamic channels of the data type <<<FileReference>>>. The channel's name is the name of the data management key to use from inside Python.
+    In contrast to singular values and arrays, however, all data management entries are stored in one Python dictionary called <<<_dm_>>>.
+    Its keys are the input or output reference names, while the values are strings that point to an absolute file path, where to load data from or where data has been stored temporarily by the Python script.
+    The Python component creates or reads those files and loads or stores their contents from or in the data mangement service.
+ 
+    Don't forget to call <<<_dm_.clear()>>> before leaving the script or before putting output data management entries to the dictionary
+ 
+ [[1]] Detect if your script is run from inside RCE or not:
+
+----
+try:
+    _rce_
+    print "We are run inside RCE"
+except:
+    print "We are standalone"
+----
+
+* Examples
+
+----
+b = a * a * a                                 # a is a Real input channel, b is a Real output channel
+d = [x*x - 1.*x + 3. for x in c]              # c is a one-dimensional input array of Real values
+fd = open(_dm_["previous_tools_data"], "r")   # opens a data management entry file
+contents = fd.read().split("\n")[1:-1]        # read all lines without header or empty last line
+fd.close()
+----

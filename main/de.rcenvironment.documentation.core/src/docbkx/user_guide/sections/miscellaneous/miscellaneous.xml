@@ -1,0 +1,13 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<chapter id="miscellaneous">
+	<title>Miscellaneous</title>
+	<para>This chapter contains miscellaneous information.
+	</para>
+	
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="sections/faq/faq.xml" />
+
+	<!--<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+		href="sections/applications/applications.xml" />-->
+
+</chapter>

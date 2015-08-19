@@ -1,0 +1,199 @@
+{
+  "identifier" : "74a5377d-7e63-4811-abda-8a3154cf0813",
+  "workflowVersion" : "3",
+  "name" : "ind_2014-11-22_23:13:49_03",
+  "nodes" : [ {
+    "identifier" : "07489a14-f7a1-4101-9aba-d788deef47d5",
+    "name" : "Forwarder 1",
+    "location" : "300:117",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "false",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output(\"x\", RCE.read_input(\"x\") * 2)",
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "0bb78d3b-6f63-4d2b-8bbf-3b22f40c88ca",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Consuming"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "ca5a0609-c86b-437d-81e1-8370b8274515",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "be7296e8-c279-45f1-a8a6-45cc4c16bbca",
+    "name" : "Forwarder 2",
+    "location" : "300:221",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "false",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.write_output(\"x\", RCE.read_input(\"x\"))",
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "45caf5e8-8e33-4937-9d33-3158f14b7abd",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Consuming"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "140bfb1e-468a-49a2-8e09-268b1499980e",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "7ebe546f-5c09-4a55-9f37-1a1d11dc7f3b",
+    "name" : "Joiner",
+    "location" : "450:80",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.2",
+      "name" : "Joiner"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d533b6b2-abfc-4eec-9918-de0fa6a0e322",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "8bbc9f5c-88e2-4ce0-bbb0-8d4b97241919",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "e0bf1253-170c-4ade-b28a-04625e515ded",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "7b98dce5-e873-4320-b00f-4388cc0d1cc9",
+    "name" : "NaV Sender",
+    "location" : "154:174",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "false",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "x = RCE.read_input(\"x\")\r\nif x == 5:\r\n\tRCE.write_not_a_value_output(\"x_1\")\r\n\tRCE.write_not_a_value_output(\"x_2\")\r\nelif x < 5:\r\n\tRCE.write_output(\"x_1\", x)\r\nelse:\r\n\tRCE.write_output(\"x_2\", x)",
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "802dca26-27a9-4881-8617-54c76c29b628",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Consuming"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "a1723401-4c7e-44ec-98a8-b8ea72120ad7",
+      "name" : "x_1",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "898e04b6-b5a1-4402-b23c-2ad5a616578e",
+      "name" : "x_2",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "54385772-2a13-41b3-9e4b-48d620595187",
+    "name" : "Parametric Study",
+    "location" : "154:61",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "3.1",
+      "name" : "Parametric Study"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f0f1cddc-d15a-4c71-89c4-aae42b0e834b",
+      "name" : "x",
+      "epIdentifier" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Consuming"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "9db5e4ef-8f41-4ad5-935a-603daa18fc96",
+      "name" : "Design Variable",
+      "epIdentifier" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "FromValue" : "0",
+        "StepSize" : "1",
+        "ToValue" : "10"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "7b98dce5-e873-4320-b00f-4388cc0d1cc9",
+    "output" : "898e04b6-b5a1-4402-b23c-2ad5a616578e",
+    "target" : "be7296e8-c279-45f1-a8a6-45cc4c16bbca",
+    "input" : "45caf5e8-8e33-4937-9d33-3158f14b7abd"
+  }, {
+    "source" : "be7296e8-c279-45f1-a8a6-45cc4c16bbca",
+    "output" : "140bfb1e-468a-49a2-8e09-268b1499980e",
+    "target" : "7ebe546f-5c09-4a55-9f37-1a1d11dc7f3b",
+    "input" : "d533b6b2-abfc-4eec-9918-de0fa6a0e322"
+  }, {
+    "source" : "07489a14-f7a1-4101-9aba-d788deef47d5",
+    "output" : "ca5a0609-c86b-437d-81e1-8370b8274515",
+    "target" : "7ebe546f-5c09-4a55-9f37-1a1d11dc7f3b",
+    "input" : "8bbc9f5c-88e2-4ce0-bbb0-8d4b97241919"
+  }, {
+    "source" : "54385772-2a13-41b3-9e4b-48d620595187",
+    "output" : "9db5e4ef-8f41-4ad5-935a-603daa18fc96",
+    "target" : "7b98dce5-e873-4320-b00f-4388cc0d1cc9",
+    "input" : "802dca26-27a9-4881-8617-54c76c29b628"
+  }, {
+    "source" : "7ebe546f-5c09-4a55-9f37-1a1d11dc7f3b",
+    "output" : "e0bf1253-170c-4ade-b28a-04625e515ded",
+    "target" : "54385772-2a13-41b3-9e4b-48d620595187",
+    "input" : "f0f1cddc-d15a-4c71-89c4-aae42b0e834b"
+  }, {
+    "source" : "7b98dce5-e873-4320-b00f-4388cc0d1cc9",
+    "output" : "a1723401-4c7e-44ec-98a8-b8ea72120ad7",
+    "target" : "07489a14-f7a1-4101-9aba-d788deef47d5",
+    "input" : "0bb78d3b-6f63-4d2b-8bbf-3b22f40c88ca"
+  } ]
+}

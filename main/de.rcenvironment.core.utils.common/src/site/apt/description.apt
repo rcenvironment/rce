@@ -1,0 +1,51 @@
+ ---
+ Bundle description
+ ---
+
+Description
+
+* Introduction
+
+ The <<<commons>>> bundle contains several classes that are used from many other bundles in the RCE framework. In the following some of them are explained:
+
+* <<<de.rcenvironment.commons>>>
+
+ [SerializableList.java] An interface extending both <<<java.util.List>>> and <<<java.io.Serializable>>>
+ 
+ [SerializableListImpl.java] An implementation of the above via <<<java.util.ArrayList>>>
+ 
+ [SerializableMap.java] An interface extending both <<<java.util.Map>>> and <<<java.io.Serializable>>>
+ 
+ [SerializableMapImpl.java] An implementation of the above via <<<java.util.Hashtable>>>
+ 
+ [TypedProperties.java] A very generic implementation of typed variables (properties that have a distinct and assured type each).
+ 
+ It works similar to a map and supports <<<get>>> and <<<put>>> operations for values and types of named parameters, respectively.
+ Supports convenience methods to check types, return sets, or add all elements of a collection and has overwrite policies for existing names in the collection.
+  
+ This class may be used independently, but is mainly derived in specific versions for specific executors, cf. <<<AbstractVariableExecutionContext>>> or <<<PythonExecutionResult>>>, where the <<<put>>> and <<<get>>> operations respecitvely have been replaced by more fluent names for certain expected data types.
+
+* <<<de.rcenvironment.commons.channel>>>
+
+ [DataManagementFileReference.java] Used as a channel type when transferring file contents via the data management service. This class encapsulates only a string key (a UUID) used to refer to a data management entry
+ 
+ [VariantArray.java] Used as a channel type when transferring arrays of values between components. The class is based on the <<<TypedValue>>> class, cf. below.
+ Arrays are initialized by the <<<Empty>>> data type and may have an arbitrary number of dimensions with differnt sizes.
+ 
+ Arrays offer additional behaviour like pruning dimensions (e.g. empty rows or columns), and compressing its contents into a run-length encoded stream.
+ 
+* <<<de.rcenvironment.commons.variables>>>
+
+ [BoundVariable.java] A key player in all script-like executor implementations.
+ 
+ It provides an abstraction and access to basic data types called <Logic>, <Integer>, <Real>, <String> and <Empty>, that can be mapped, for instance, to Java's data types <Boolean>, <Long>, <Double>, <String> and null. The number precision is limited by Java's internal representation, although all values are stored as a String.
+ A variable always has a name, a data type, and a value.
+ Values can be modified via specific methods like <<<setIntegerValue>>> and <<<getRealValue>>>.
+  
+ Additionally a conversion from and to string representations is always possible via the <<<getValue>>> and <<<setValue>>> methods.
+ Uncasted access to the specific data type is feasible per <<<getValue>>>, which returns a <<<Serializable>>> of the according wrapper type, e.g. <Double> or <Boolean>.
+  
+ The methods throw <<<IllegalArgumentException>>>s, if data types and provided values don't match.
+ Default values are assigned, if using a value-less constructor.
+
+ [VariableType.java] This is the enum that determines the basic data types we allow for variable-aware executor components, <Logic>, <Integer>, <Real> and <String>, and <Empty> for a no-type.

@@ -1,0 +1,21 @@
+{
+	"general" : {
+		"instanceName" : "Example relay started by \"${systemUser}\" on ${hostName}",
+		"isRelay": true
+	},
+	"network" : {
+		"serverPorts" : {
+			"relayPort1" : {
+				"ip" : "127.0.0.1",
+				"port" : 21000
+			}
+		},
+		"ipFilter" : {
+			"enabled" : false,
+			"allowedIPs" : [
+				"127.0.0.1",
+				"127.0.0.2"
+			]
+		}
+	}
+}

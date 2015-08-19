@@ -1,0 +1,101 @@
+<jqa:jqassistant-rules xmlns:jqa="http://www.buschmais.com/jqassistant/core/analysis/rules/schema/v1.0">
+
+	<!-- added: misc_ro, 2014-04-03 -->
+	<!-- last modified: misc_ro, 2014-04-03 -->
+	<constraint id="rce:TestClassNamesMustEndWithTestOrTests">
+		<description>Verifies that test classes' names end with "Test" or "Tests".</description>
+		<cypher><![CDATA[
+			MATCH
+				(testClass:TYPE:CLASS)-[:DECLARES]->(testMethod:METHOD),
+				(testMethod:METHOD)-[:ANNOTATED_BY]->(testAnnotation)-[:OF_TYPE]->(annotationType:TYPE)
+			WHERE
+				annotationType.FQN="org.junit.Test"
+				AND NOT testClass.FQN =~ ".*Test(s)?"
+			RETURN DISTINCT
+				testClass.FQN
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-03 -->
+	<!-- last modified: misc_ro, 2014-04-03 -->
+	<constraint id="rce:TestClassesShouldBeInATestBundle">
+		<description>Verifies that all test classes are location in test bundles.</description>
+		<cypher><![CDATA[
+			MATCH
+				(artifact:ARTIFACT)-[:CONTAINS]->(testClass:TYPE:CLASS),
+				(testClass:TYPE:CLASS)-[:DECLARES]->(testMethod:METHOD),
+				(testMethod:METHOD)-[:ANNOTATED_BY]->(testAnnotation)-[:OF_TYPE]->(annotationType:TYPE)
+			WHERE
+				annotationType.FQN="org.junit.Test"
+				AND NOT artifact.NAME =~ ".*\\.tests"
+			RETURN DISTINCT
+				testClass.FQN, artifact.NAME
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-03 -->
+	<!-- last modified: misc_ro, 2014-04-03 -->
+	<constraint id="rce:PackageNamesShouldStartWithTheBundleName">
+		<description>Verifies that all package names within a bundle start with the bundle's name. Test bundles are excluded (for now).</description>
+		<cypher><![CDATA[
+			MATCH
+				(artifact:ARTIFACT)-[:CONTAINS]->(t:TYPE),
+				(package:PACKAGE)-[:CONTAINS]->(t)
+			WHERE
+				NOT artifact.NAME =~ ".*\\.tests"
+				AND
+				NOT package.FQN =~ (artifact.NAME + ".*")
+			RETURN DISTINCT
+				artifact, package
+			ORDER BY
+				artifact.FQN, package.FQN
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-23 -->
+	<!-- last modified: misc_ro, 2014-04-23 -->
+	<constraint id="rce:OnlyTheThreadPoolShouldCallThreadConstructors">
+		<description>Verifies that no classes except the shared thread pool create Threads manually, or declare Thread factories.</description>
+		<cypher><![CDATA[
+			MATCH
+				(caller:TYPE)-[:DECLARES]->(method:METHOD)-[:INVOKES]->(cnstr:CONSTRUCTOR)<-[:DECLARES]-(target:TYPE)
+			WHERE target.FQN = "java.lang.Thread"
+				AND caller.FQN =~ "de\\.rcenvironment\\..*"
+				AND NOT caller.FQN =~ "de.rcenvironment.core.utils.common.concurrent.SharedThreadPool.*"
+			RETURN
+				caller.FQN + "#" + method.NAME + "()" as Calling_Method
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2014-04-23 -->
+	<!-- last modified: misc_ro, 2014-04-23 -->
+	<constraint id="rce:OnlyTheThreadPoolAndTestsShouldHandleExecutors">
+		<description>Verifies that no classes except the shared thread pool and test classes create or use Executor instances.</description>
+		<cypher><![CDATA[
+			MATCH
+				(caller:TYPE)-[:DECLARES]->(callerMethod:METHOD)-[:INVOKES]->
+                (targetMethod:METHOD)<-[:DECLARES]-(target:TYPE)
+			WHERE
+            	(target.FQN = "java.util.concurrent.ExecutorService" 
+                OR target.FQN = "java.util.concurrent.Executors")
+				AND caller.FQN =~ "de\\.rcenvironment\\..*"
+				AND NOT caller.FQN =~ "de.rcenvironment.core.utils.common.concurrent.SharedThreadPool.*"
+				AND NOT caller.NAME =~ ".*Test"
+			RETURN DISTINCT
+				caller.FQN + "#" + callerMethod.NAME + "()" as Calling_Method
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+	<group id="default">
+		<includeConstraint refId="rce:TestClassNamesMustEndWithTestOrTests" />
+		<includeConstraint refId="rce:TestClassesShouldBeInATestBundle" />
+		<includeConstraint refId="rce:PackageNamesShouldStartWithTheBundleName" />
+		<includeConstraint refId="rce:OnlyTheThreadPoolShouldCallThreadConstructors" />
+		<includeConstraint refId="rce:OnlyTheThreadPoolAndTestsShouldHandleExecutors" />
+	</group>
+
+</jqa:jqassistant-rules>

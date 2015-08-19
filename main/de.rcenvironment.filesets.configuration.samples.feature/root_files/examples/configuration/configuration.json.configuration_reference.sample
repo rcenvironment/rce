@@ -1,0 +1,146 @@
+{
+	"general" : {
+		"comment" : "This is a reference file demonstrating all available settings; it is not intended for out-of-the-box usage",
+		"instanceName" : "Reference example started by \"${systemUser}\" on ${hostName}",
+		"isWorkflowHost" : true,
+		"isRelay" : true,
+		"tempDirectory" : "/tmp/custom-temp-directory/${systemUser}"
+	},
+	"network" : {
+		"requestTimeoutMsec": 40000,
+		"forwardingTimeoutMsec": 35000,
+		"connections" : {
+			"exampleConnection1" : {
+				"host" : "127.0.0.1",
+				"port" : 20001,
+				"connectOnStartup": false,
+				"autoRetryInitialDelay" : 5,
+				"autoRetryMaximumDelay" : 300,
+				"autoRetryDelayMultiplier" : 1.5
+			}
+		},
+		"serverPorts" : {
+			"examplePort1" : {
+				"ip" : "0.0.0.0",
+				"port" : 20005
+			}
+		},
+		"ipFilter" : {
+			"enabled" : true,
+			"allowedIPs" : [
+				"127.0.0.1",
+				"127.0.0.2"
+			]
+		}
+	},
+	"publishing" : {
+		"components" : [
+			"de.rcenvironment.cluster",
+			"de.rcenvironment.converger",
+			"de.rcenvironment.joiner",
+			"de.rcenvironment.optimizer",
+			"de.rcenvironment.parametricstudy",
+			"de.rcenvironment.sqlcommand",
+			"de.rcenvironment.xmlmerger"
+		]
+	},
+	"componentSettings": {
+		"de.rcenvironment.cluster": {
+			"maxChannels": 8
+		},
+		"de.rcenvironment.sql": {
+			"profiles" : {
+				"1" : {
+					"label" : "sample label",
+					"host" : "sample-url",
+					"database" : "sample-db",
+					"user" : "sample-user",
+					"password" : "sample-password",
+					"jdbc" : {
+						"url" : "jdbc:mysql://${host}/${database}",
+						"file" : "configuration/jdbc/mysql-connector-java-5.1.17-bin.jar",
+						"driver" : "com.mysql.jdbc.Driver"
+					}
+				},
+				"2" : {
+					"label" : "sample label 2",
+					"host" : "sample-url",
+					"database" : "sample-db",
+					"user" : "sample-user",
+					"password" : "sample-password",
+					"jdbc" : {
+						"url" : "jdbc:mysql://${host}/${database}",
+						"file" : "configuration/jdbc/mysql-connector-java-5.1.17-bin.jar",
+						"driver" : "com.mysql.jdbc.Driver"
+					}
+				}
+			}
+		}
+	},
+	"sshServer" : {
+		"enabled" : true,
+		"port" : 31005,
+		"accounts" : {
+			"admin" : {
+				"password" : "changeme!_adm",
+				"role" : "admin",
+				"enabled" : false
+			},
+			"developer" : {
+				"password" : "changeme!_dev",
+				"role" : "developer",
+				"enabled" : false
+			},
+			"user" : {
+				"password" : "changeme!_user",
+				"role" : "user",
+				"enabled" : false
+			},
+			"ra_demo" : {
+				"password" : "ra_demo",
+				"role" : "remote access",
+				"enabled" : false
+			},
+			"default" : {
+				"password" : "default",
+				"role" : "guest"
+			}
+		},
+		"roles" : {
+			"admin" : {
+				"allowedCommandPatterns" : [
+					".*"
+				]
+			},
+			"developer" : {
+				"allowedCommandPatterns" : [
+					"stats",
+					"tasks",
+					"net( .+)?"
+				]
+			},
+			"user" : {
+				"allowedCommandPatterns" : [
+					"net info",
+					"components list",
+					"wf run .+",
+					"net add .+"
+				]
+			},
+			"remote access" : {
+				"allowedCommandPatterns" : [
+					"ta .+",
+					"toolaccess .+",
+					"net info",
+					"components list"
+				]
+			},
+			"guest" : {
+				"allowedCommandPatterns" : [
+					"net info",
+					"components list"
+				]
+			}
+		}
+	}
+}

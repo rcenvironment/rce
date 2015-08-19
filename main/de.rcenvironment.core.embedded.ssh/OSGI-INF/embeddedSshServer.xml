@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" immediate="true" name="Embedded SSH Server">
+
+	<implementation class="de.rcenvironment.core.embedded.ssh.internal.EmbeddedSshServerImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.embedded.ssh.api.TemporarySshAccountControl"/>
+	</service>
+	
+	<reference
+ 		name="Configuration Service"
+ 		interface="de.rcenvironment.core.configuration.ConfigurationService"
+ 		cardinality="1..1"
+ 		policy="dynamic"
+ 		bind="bindConfigurationService"
+ 	/>
+ 	
+ 	<reference 
+   		name="Command Execution Service" 
+   		interface="de.rcenvironment.core.command.api.CommandExecutionService" 
+   		cardinality="1..1" 
+   		policy="static"
+   		bind="bindCommandExecutionService" 
+   	/>
+   	
+ 	<reference 
+   		name="SCP Context Service" 
+   		interface="de.rcenvironment.core.embedded.ssh.api.ScpContextManager" 
+   		cardinality="1..1" 
+   		policy="static"
+   		bind="bindScpContextManager" 
+   	/>
+   	
+</scr:component>

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<sect1 id="licensing">
+    <title>License Information</title>
+    <para>RCE is published under the Eclipse Public Licence (EPL) 1.0. It is based on Eclipse RCP
+        3.7.2 (Indigo SR2), which is also published under the Eclipse Public Licence (EPL) 1.0. RCE
+        also makes use of various libraries which may not be covered by the EPL; for detailed
+        information, see the file "THIRD_PARTY" in the root folder of an RCE installation. (To
+        review this file without installing RCE, open the RCE release .zip file.)</para>
+    <para>For downloads and further information, please visit <ulink
+            url="http://www.rcenvironment.de">http://www.rcenvironment.de</ulink>.</para>
+</sect1>

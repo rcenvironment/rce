@@ -1,0 +1,9 @@
+{
+    "placeholders": [
+        {
+            "key": "*",
+            "isPath": "true",
+            "guiName" : "*"
+        }
+    ]
+}

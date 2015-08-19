@@ -1,0 +1,24 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Service Handler for login bundle">
+	<implementation class="de.rcenvironment.core.login.internal.ServiceHandler" /> 
+	<reference bind="bindConfigurationService"
+		unbind="unbindConfigurationService"
+		cardinality="1..1"
+		interface="de.rcenvironment.core.configuration.ConfigurationService"
+		name="Configuration Service"
+		policy="dynamic"
+	/>
+	<reference bind="bindAuthenticationService"
+		unbind="unbindAuthenticationService"
+		cardinality="1..1"
+		interface="de.rcenvironment.core.authentication.AuthenticationService"
+		name="Authentication Service"
+		policy="dynamic"
+	/>
+	<reference bind="bindNotificationService"
+		unbind="unbindNotificationService"
+		cardinality="1..1"
+		interface="de.rcenvironment.core.notification.NotificationService"
+		name="Notification Service"
+		policy="dynamic"
+	/>
+</scr:component>

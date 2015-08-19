@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE TiGL Viewer Component GUI
+Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.gui;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Activator: de.rcenvironment.components.tiglviewer.gui.internal.Activator
+Require-Bundle: org.eclipse.core.runtime,
+ org.eclipse.ui
+Import-Package: de.rcenvironment.components.tiglviewer.execution,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.model.api,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.datamanagement.browser.spi,
+ de.rcenvironment.core.gui.workflow.editor.properties,
+ de.rcenvironment.core.gui.workflow.view,
+ de.rcenvironment.core.utils.common.concurrent,
+ org.apache.commons.logging,
+ org.eclipse.ui.internal.views.properties.tabbed.view
+RCE-Component: false
+Export-Package: de.rcenvironment.components.tiglviewer.gui.runtime
+Bundle-ActivationPolicy: lazy

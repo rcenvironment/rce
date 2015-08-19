@@ -1,0 +1,15 @@
+target/
+.settings/
+.svn/
+sys$command
+/de.rcenvironment/utils/launch/profiles/*/integration/
+/de.rcenvironment/utils/launch/profiles/*/storage/
+/de.rcenvironment/utils/launch/profiles/*/output/
+/de.rcenvironment/utils/launch/profiles/*/workspace/
+/de.rcenvironment/utils/launch/profiles/*/*.log
+/de.rcenvironment/utils/launch/profiles/*/*.lock
+# temporary fix for generated folder; see Mantis #11136
+/de.rcenvironment/maven/initial/workspace
+# TODO check: these may be obsolete as they are located in <profile>/storage now 
+derby.log
+/de.rcenvironment.core.scripting.tests/cachedir

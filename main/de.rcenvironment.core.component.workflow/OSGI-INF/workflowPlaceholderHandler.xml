@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Workflow Placeholder Handler">
+
+    <implementation class="de.rcenvironment.core.component.workflow.execution.api.WorkflowPlaceholderHandler" />
+    
+    <reference
+        bind="bindPersistentSettingsService"
+        cardinality="1..1"
+        interface="de.rcenvironment.core.configuration.PersistentSettingsService"
+        name="Persistent Settings Service"
+        policy="dynamic"
+    />
+</scr:component>

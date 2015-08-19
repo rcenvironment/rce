@@ -1,0 +1,290 @@
+{
+  "identifier" : "493d807a-e203-48ec-bcab-de8f678d8bdf",
+  "workflowVersion" : "3",
+  "name" : "Converger_in_nested_loop_2013-09-03_15:40:54",
+  "nodes" : [ {
+    "identifier" : "84b4f5dc-1d69-46d8-826e-89c4b089ad13",
+    "name" : "Joiner",
+    "location" : "343:138",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.2"
+    },
+    "configuration" : {
+      "Joined" : "2",
+      "dataType" : "Float"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "19e4fb6c-f640-459e-8328-7e6fb98361af",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "0031a843-4d43-4d36-8241-de200ef26635",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "f03d4f3e-830f-4060-83d5-ad2f15ae9f84",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "06644b76-d236-477f-a327-f94dc5281db4",
+    "name" : "Tool 2",
+    "location" : "418:213",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "remotePathOfExisting script" : "",
+      "script" : "x = RCE.read_input(\"x\")\r\nif x < 10:\r\n\tRCE.write_output(\"y\", x *2)\r\nelse:\r\n\tRCE.write_output(\"y\", x + 0.1)\r\n",
+      "remoteUploadPathOfNewScript" : "",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "cfd3eba5-15d0-4cfb-ad8b-e42703779509",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "32edf946-60ee-465e-a327-eceafb512ab3",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "c9a11d14-25f5-4457-a370-8ca41ef35868",
+    "name" : "Tool 1",
+    "location" : "324:26",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "remotePathOfExisting script" : "",
+      "script" : "x = RCE.read_input(\"x\")\r\nRCE.write_output(\"y\", x / 10)\r\n",
+      "remoteUploadPathOfNewScript" : "",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "0ca144ad-16f3-4d0f-b492-c43743a9103d",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "23a9629a-e143-43e4-8dee-24f940777913",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "54fa2029-5a12-43b9-8ca2-54eb229b5554",
+    "name" : "Inner Converger",
+    "location" : "324:306",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "3.2"
+    },
+    "configuration" : {
+      "epsR" : "1.0E-4",
+      "epsA" : "0.1",
+      "iterationsToConsider" : "1",
+      "isNestedLoop_5e0ed1cd" : true
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "1d9c80e2-31aa-47b9-95da-4b8696df5514",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "NaN",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "6b74bac8-6852-4389-a5e7-5ab5685fbe61",
+      "name" : "Outer loop done",
+      "epIdentifier" : "outerLoopDone",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "usage" : "optional"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "d22c9076-5817-41cc-a67a-a63c2a8b56ec",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "datatype" : "Boolean"
+    }, {
+      "identifier" : "0f39aee3-09e8-4d65-9c49-92d68c6ef626",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "datatype" : "Boolean"
+    }, {
+      "identifier" : "022bbf73-1329-4ffb-ab25-b5f6d5bfc317",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "e8390d0d-5c39-4073-ac39-ac4201cdcb27",
+      "name" : "x_converged",
+      "datatype" : "Float",
+      "epIdentifier" : "convergedValue"
+    }, {
+      "identifier" : "d42f5436-0d61-426c-bfab-be88233016dc",
+      "name" : "x",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "NaN",
+        "hasStartValue" : "false"
+      },
+      "epIdentifier" : "convergedValue"
+    } ]
+  }, {
+    "identifier" : "c6a1dbd6-1ace-44f4-bf57-fe47b5afc036",
+    "name" : "Outer Converger",
+    "location" : "45:26",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "3.2"
+    },
+    "configuration" : {
+      "epsR" : "0.001",
+      "epsA" : "0.001",
+      "iterationsToConsider" : "1"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f99fe5de-420a-422e-a9c3-d8e7b68cba3c",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "1.0",
+        "hasStartValue" : "true",
+        "initValue_dca67e34" : "{\"t\":\"Flt\",\"v\":1.0}"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "0071b14d-b052-4dc7-b3f1-4e734f85bb47",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "datatype" : "Boolean"
+    }, {
+      "identifier" : "e72805b3-f68d-498c-884e-bc198cf3f9c3",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "datatype" : "Boolean"
+    }, {
+      "identifier" : "241846a3-9069-4a32-a82a-36f213e6a836",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "ed4c92b2-dd29-4608-ab4a-33776982716e",
+      "name" : "x",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "1.0",
+        "hasStartValue" : "true"
+      },
+      "epIdentifier" : "convergedValue"
+    }, {
+      "identifier" : "553a81e6-c9d0-4293-acf8-cc2326bec50d",
+      "name" : "x_converged",
+      "datatype" : "Float",
+      "epIdentifier" : "convergedValue"
+    } ]
+  }, {
+    "identifier" : "811595c0-6666-4989-bb63-c530e3afb55d",
+    "name" : "Tool 3",
+    "location" : "47:306",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "remotePathOfExisting script" : "",
+      "script" : "x = RCE.read_input(\"x\")\r\nif x < 11:\r\n\tRCE.write_output(\"y\", x)\r\nelse:\r\n\tRCE.write_output(\"y\", 10)",
+      "remoteUploadPathOfNewScript" : "",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "cec576f2-456d-48fc-9179-834db2542b30",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "11e1c49e-89a7-4fc2-87ab-18565158565a",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "c9a11d14-25f5-4457-a370-8ca41ef35868",
+    "output" : "23a9629a-e143-43e4-8dee-24f940777913",
+    "target" : "84b4f5dc-1d69-46d8-826e-89c4b089ad13",
+    "input" : "19e4fb6c-f640-459e-8328-7e6fb98361af"
+  }, {
+    "source" : "811595c0-6666-4989-bb63-c530e3afb55d",
+    "output" : "11e1c49e-89a7-4fc2-87ab-18565158565a",
+    "target" : "c6a1dbd6-1ace-44f4-bf57-fe47b5afc036",
+    "input" : "f99fe5de-420a-422e-a9c3-d8e7b68cba3c"
+  }, {
+    "source" : "84b4f5dc-1d69-46d8-826e-89c4b089ad13",
+    "output" : "f03d4f3e-830f-4060-83d5-ad2f15ae9f84",
+    "target" : "54fa2029-5a12-43b9-8ca2-54eb229b5554",
+    "input" : "1d9c80e2-31aa-47b9-95da-4b8696df5514"
+  }, {
+    "source" : "06644b76-d236-477f-a327-f94dc5281db4",
+    "output" : "32edf946-60ee-465e-a327-eceafb512ab3",
+    "target" : "84b4f5dc-1d69-46d8-826e-89c4b089ad13",
+    "input" : "0031a843-4d43-4d36-8241-de200ef26635"
+  }, {
+    "source" : "c6a1dbd6-1ace-44f4-bf57-fe47b5afc036",
+    "output" : "241846a3-9069-4a32-a82a-36f213e6a836",
+    "target" : "54fa2029-5a12-43b9-8ca2-54eb229b5554",
+    "input" : "6b74bac8-6852-4389-a5e7-5ab5685fbe61"
+  }, {
+    "source" : "54fa2029-5a12-43b9-8ca2-54eb229b5554",
+    "output" : "e8390d0d-5c39-4073-ac39-ac4201cdcb27",
+    "target" : "811595c0-6666-4989-bb63-c530e3afb55d",
+    "input" : "cec576f2-456d-48fc-9179-834db2542b30"
+  }, {
+    "source" : "c6a1dbd6-1ace-44f4-bf57-fe47b5afc036",
+    "output" : "ed4c92b2-dd29-4608-ab4a-33776982716e",
+    "target" : "c9a11d14-25f5-4457-a370-8ca41ef35868",
+    "input" : "0ca144ad-16f3-4d0f-b492-c43743a9103d"
+  }, {
+    "source" : "54fa2029-5a12-43b9-8ca2-54eb229b5554",
+    "output" : "d42f5436-0d61-426c-bfab-be88233016dc",
+    "target" : "06644b76-d236-477f-a327-f94dc5281db4",
+    "input" : "cfd3eba5-15d0-4cfb-ad8b-e42703779509"
+  } ]
+}

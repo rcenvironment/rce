@@ -1,0 +1,121 @@
+{
+    "dynamicOutputs": [
+        {
+            "identifier": "Design",
+            "dataTypes": [
+                "Float",
+                "Vector"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "hasStartValue": {
+                    "guiName": "Has start value",
+                    "guiPosition": "0",
+                    "guiGroup": "Start values",
+                    "visibility": "shown",
+                    "defaultValue": "true",
+                    "dataType": "bool"
+                },
+                "startValue": {
+                    "guiName": "Start value",
+                    "guiPosition": "1",
+                    "guiGroup": "Start values",
+                    "visibility": "shown",
+                    "dataType": "float",
+                    "defaultValue": "0",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasStartValue": [
+                            "true"
+                        ]
+                    }
+                },
+                "hasSingleBounds": {
+                    "guiName": "Has unified bounds",
+                    "guiPosition": "0",
+                    "guiGroup": "Bounds",
+                    "visibility": "shown",
+                    "defaultValue": "true",
+                    "dataType": "bool"
+                },
+                "lower": {
+                    "guiName": "Lower bound",
+                    "guiPosition": "1",
+                    "guiGroup": "Bounds",
+                    "dataType": "float",
+                    "visibility": "shown",
+                    "defaultValue": "-1",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasSingleBounds": [
+                            "true"
+                        ]
+                    }
+                },
+                "upper": {
+                    "guiName": "Upper bound",
+                    "guiPosition": "2",
+                    "guiGroup": "Bounds",
+                    "dataType": "float",
+                    "visibility": "shown",
+                    "defaultValue": "1",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasSingleBounds": [
+                            "true"
+                        ]
+                    }
+                },
+                "vectorSize": {
+                    "guiName": "Dimension of vector",
+                    "guiPosition": "0",
+                    "guiGroup": "Vector",
+                    "dataType": "int",
+                    "visibility": "shown",
+                    "endpointDataTypes": [
+                        "Vector"
+                    ],
+                    "validation": "required"
+                }
+            }
+        },
+        {
+            "identifier": "optima",
+            "dataTypes": [
+                "Float",
+                "Vector"
+            ],
+            "defaultDataType": "Float"
+        }
+    ],
+    "staticOutputs": [
+        {
+            "name": "Optimizer is finished",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+         {
+            "name": "Outer loop done",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Gradient request",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        },
+        {
+            "name": "Iteration",
+            "dataTypes": [
+                "Integer"
+            ],
+            "defaultDataType": "Integer"
+        }
+    ]
+}

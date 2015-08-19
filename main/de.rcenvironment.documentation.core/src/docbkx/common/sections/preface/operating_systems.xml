@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
+                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<sect1 id="operating_systems">
+    <title>Compatible Operating Systems</title>
+    <para>RCE releases are provided for Windows and Linux. It is regularly tested on<itemizedlist>
+            <listitem>
+                <para>CentOS 7 (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>Debian 7 stable (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>SUSE Linux Enterprise Desktop ("SLED") 11 SP2 (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>Windows 7 (64 bit)</para>
+            </listitem>
+        </itemizedlist>It is also confirmed to run (but not as thoroughly tested) on<itemizedlist>
+            <listitem>
+                <para>Mint 17 (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>Red Hat 7 (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>SUSE Linux Enterprise Server ("SLES") 11 SP2 (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>Ubuntu 12 LTS (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>Ubuntu 14 LTS (64 bit)</para>
+            </listitem>
+            <listitem>
+                <para>Windows Server 2008 r2 (64 bit)</para>
+            </listitem>
+        </itemizedlist></para>
+    <sect2>
+        <title>Support of 32 Bit Operating Systems</title>
+        <para>Starting with release 6.0.0, only the 64 bit versions of RCE are being fully tested.
+            The 32 bit packages are provided for backwards compatiblity and may be removed in a
+            future release. If you rely on up-to-date 32 bit versions of RCE, or encounter a problem
+            with these packages, please contact the RCE developers so we can take this into
+            account.</para>
+    </sect2>
+</sect1>
+<!--TODO add "known issues" section?-->

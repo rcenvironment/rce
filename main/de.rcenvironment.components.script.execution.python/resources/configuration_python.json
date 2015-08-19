@@ -1,0 +1,21 @@
+{
+    "configuration": [
+        {
+            "key": "pythonExecutionPath",
+            "defaultValue": "${pythonExecutionPath}"
+        }
+    ],
+    "placeholders": [
+        {
+            "key": "pythonExecutionPath",
+            "guiName": "Python installation",
+            "guiPosition": "1",
+            "dataType": "file"
+        }
+    ],
+    "activationFilter": {
+        "scriptLanguage": [
+            "Python"
+        ]
+    }
+}

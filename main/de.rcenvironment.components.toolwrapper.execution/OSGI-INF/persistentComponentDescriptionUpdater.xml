@@ -1,0 +1,8 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="ToolWrapper Persistent Component Description Updater">
+	
+	<implementation class="de.dlr.sc.chameleon.rce.toolwrapper.component.TWCompDescUpdater"/>
+	
+	<service>
+		<provide interface="de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater"/>
+	</service>
+</scr:component>

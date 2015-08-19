@@ -1,0 +1,12 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Excel Component Common Tests
+Bundle-SymbolicName: de.rcenvironment.components.excel.common.tests
+Bundle-Version: 6.0.0.qualifier
+Fragment-Host: de.rcenvironment.components.excel.common
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Require-Bundle: de.rcenvironment.core.utils.testing
+Eclipse-PlatformFilter: (& (osgi.ws=win32) (osgi.os=win32) )
+Import-Package: de.rcenvironment.core.datamodel.testutils,
+ org.apache.commons.io;version="2.0.1"
+Bundle-Vendor: DLR

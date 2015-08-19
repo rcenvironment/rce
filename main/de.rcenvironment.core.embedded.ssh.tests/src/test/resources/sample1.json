@@ -1,0 +1,47 @@
+{
+	"enabled" : true,
+	"host": "127.0.0.2",
+	"port" : 31007,
+	"accounts" : {
+		"admin" : {
+			"password" : "changeme!_adm",
+			"role" : "admin",
+			"enabled" : false
+		},
+		"developer" : {
+			"password" : "changeme!_dev",
+			"role" : "user",
+			"enabled" : false
+		},
+		"user" : {
+			"password" : "changeme!_user",
+			"role" : "user",
+			"enabled" : false
+		},
+		"default" : {
+			"password" : "default",
+			"role" : "guest"
+		}
+	},
+	"roles" : {
+		"admin" : {
+			"allowedCommandPatterns" : [
+				".*"
+			]
+		},
+		"user" : {
+			"allowedCommandPatterns" : [
+				"net info",
+				"components list",
+				"wf run .+",
+				"net add .+"
+			]
+		},
+		"guest" : {
+			"allowedCommandPatterns" : [
+				"net info",
+				"components list"
+			]
+		}
+	}
+}

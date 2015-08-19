@@ -1,0 +1,74 @@
+{
+  "identifier" : "b4be3587-f761-4d0f-b9ee-d240524c76b6",
+  "workflowVersion" : "3",
+  "name" : "SQL_Reader_new_blank_2014-10-31_11:06:55_22",
+  "nodes" : [ {
+    "identifier" : "777cc035-ea99-4ede-a336-8d9d04d57a88",
+    "name" : "SQL Reader",
+    "location" : "80:51",
+    "component" : {
+      "identifier" : "de.rcenvironment.sqlreader",
+      "version" : "3.0",
+      "name" : "SQL Reader"
+    },
+    "configuration" : {
+      "sqlCleanup" : "",
+      "sqlSetup" : "",
+      "sqlQueryInit" : "SELECT * FROM ${tableName};",
+      "jdbcProfile" : "Test Datenbank",
+      "tableName" : "rce_test.test_data",
+      "sqlDispose" : "",
+      "sqlQueryInitDo" : "true",
+      "sqlquery" : "SELECT * FROM ${tableName}"
+    },
+    "staticOutputs" : [ {
+      "identifier" : "47ec23b3-26db-493b-b6e6-37d4d2805a50",
+      "name" : "meta.sqlSuccess",
+      "epIdentifier" : null,
+      "datatype" : "Integer"
+    }, {
+      "identifier" : "8a3781e8-6ae6-492d-9527-9f77d755dbbb",
+      "name" : "meta.tableName",
+      "epIdentifier" : null,
+      "datatype" : "ShortText"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "7bf86fc7-4ce3-43d6-b1bd-342e41db6aa8",
+      "name" : "output",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "7b3b8a1a-ae1a-4962-a436-e74772174c6f",
+    "name" : "Script",
+    "location" : "294:51",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "name" : "Script",
+      "version" : "3.4"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "false",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "x = RCE.read_input('input')\r\nprint x",
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "04281129-a1de-4be4-a958-6e4b3e60710c",
+      "name" : "input",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Consuming",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "777cc035-ea99-4ede-a336-8d9d04d57a88",
+    "output" : "7bf86fc7-4ce3-43d6-b1bd-342e41db6aa8",
+    "target" : "7b3b8a1a-ae1a-4962-a436-e74772174c6f",
+    "input" : "04281129-a1de-4be4-a958-6e4b3e60710c"
+  } ]
+}

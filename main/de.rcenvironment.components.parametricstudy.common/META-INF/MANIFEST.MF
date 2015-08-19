@@ -1,0 +1,15 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Parametric Study Component Common
+Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.common;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Export-Package: de.rcenvironment.components.parametricstudy.common
+Bundle-ClassPath: .
+Bundle-Vendor: DLR
+Bundle-ActivationPolicy: lazy
+Service-Component: OSGI-INF/*.xml
+Import-Package: de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.notification,
+ de.rcenvironment.core.utils.common

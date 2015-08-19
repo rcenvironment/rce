@@ -1,0 +1,17 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>de.rcenvironment.core.gui.branding.default.versioninfo.feature</artifactId>
+	<name>RCE Default Branding Feature</name>
+	<version>6.0.0.qualifier</version>
+	<packaging>eclipse-feature</packaging>
+
+	<parent>
+		<groupId>de.rcenvironment</groupId>
+		<artifactId>de.rcenvironment.maven.parent.defaultBundle</artifactId>
+		<version>1.0.0</version>
+		<relativePath>../de.rcenvironment/maven/parent/defaultBundle</relativePath>
+	</parent>
+
+</project>

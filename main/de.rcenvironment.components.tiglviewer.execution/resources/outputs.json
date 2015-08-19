@@ -1,0 +1,12 @@
+{
+	"staticOutputs": [
+        {
+            "name": "TiGL Viewer File",
+            "dataTypes": [
+                "FileReference"
+            ],
+            "defaultDataType": "FileReference",
+            "metaData": {}
+        }
+    ]
+}

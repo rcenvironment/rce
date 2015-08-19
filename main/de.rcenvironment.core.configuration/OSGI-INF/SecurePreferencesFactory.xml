@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"
+	name="Secure Preferences Factory">
+	<implementation
+		class="de.rcenvironment.core.configuration.SecurePreferencesFactory" />
+	<reference bind="bindConfigurationService"
+		cardinality="1..1"
+		interface="de.rcenvironment.core.configuration.ConfigurationService"
+		name="Configuration Service"
+		policy="dynamic"
+	/>
+
+</scr:component>

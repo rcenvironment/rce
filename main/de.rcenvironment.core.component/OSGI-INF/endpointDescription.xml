@@ -1,0 +1,13 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Endpoint Description">
+
+	<implementation class="de.rcenvironment.core.component.model.endpoint.api.EndpointDescription"/>
+
+    <reference
+        name="Typed Datum Service"
+        interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+        cardinality="1..1"
+        bind="bindTypedDatumService"
+        policy="dynamic"
+    />
+
+</scr:component>

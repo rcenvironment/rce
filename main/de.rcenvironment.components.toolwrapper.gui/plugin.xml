@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Extension for classes allocated to tabs -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         
+         <!-- File selection dialog -->
+          <propertySection
+               tab="workflow.editor.tab.toolwrapper.DynamicDirectoryChannels"
+               class="de.dlr.sc.chameleon.rce.toolwrapper.gui.properties.ToolWrapperDirectoryChannelsSection"
+               id="workflow.editor.tab.toolwrapper.DynamicDirectoryChannels.Section"
+               filter="de.dlr.sc.chameleon.rce.toolwrapper.gui.properties.ToolWrapperComponentFilter" />
+         
+      </propertySections>
+   </extension>
+   
+   
+   <!-- Extension for own tabs in component properties -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <!-- The Input&Output Tab -->
+         <propertyTab
+               label="Inputs / Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.Content"
+               id="workflow.editor.tab.toolwrapper.DynamicDirectoryChannels">
+         </propertyTab>
+
+      </propertyTabs>
+   
+   </extension>
+     <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.toolwrapper.gui.dm.ToolWrapperHistoryDataItemSubtreeBuilder"/>
+   </extension>
+   
+</plugin>

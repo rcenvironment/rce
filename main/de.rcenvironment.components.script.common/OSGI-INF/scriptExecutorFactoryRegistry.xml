@@ -1,0 +1,13 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Script Executor Factory Registry">
+	<implementation class="de.rcenvironment.components.script.common.registry.internal.ScriptExecutorFactoryRegistryImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.components.script.common.registry.ScriptExecutorFactoryRegistry"/>
+	</service>
+	<reference name="Script Executor Factory"
+		interface="de.rcenvironment.components.script.common.registry.ScriptExecutorFactory"
+		cardinality="0..n"
+		bind="addScriptExecutorFactory"
+		unbind="removeScriptExecutorFactory"
+		policy="dynamic"
+	/>
+</scr:component>

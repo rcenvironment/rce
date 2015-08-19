@@ -1,0 +1,26 @@
+instructions.configure=\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/eclipsec.exe);\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/launcher.exe);\
+	org.eclipse.equinox.p2.touchpoint.natives.remove(path:${installFolder}/launcher);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.setFrameworkDependentProperty(propName:org.eclipse.update.reconcile,propValue:false);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-clean);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:--launcher.XXMaxPermSize);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-data @noDefault);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xms512m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1024m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx2048m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:MaxPermSize=256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-clean);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:--launcher.XXMaxPermSize);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dosgi.requiredJavaVersion=1.7);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xms512m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx2048m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:MaxPermSize=256m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);

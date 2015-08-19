@@ -1,0 +1,6 @@
+<contexts>
+	<context id="excel" title="Excel Component Help">
+		<description>The Excel Component for usage of Microsoft Excel files.</description>
+		<topic href="resources/help/html/usage.xhtml" label="Excel Component Usage"></topic>
+	</context>
+</contexts>

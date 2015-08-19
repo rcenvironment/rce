@@ -1,0 +1,43 @@
+{
+    "configuration": [
+        {
+            "key": "algorithm",
+            "defaultValue": ""
+        },
+        {
+            "key": "methodConfigurations",
+            "defaultValue": ""
+        },
+        {
+            "key": "optimizerPackageCode",
+            "defaultValue": ""
+        },
+        {
+            "key": "usePrecalculation",
+            "defaultValue": "false"
+        },
+        {
+            "key": "preCalcFilePath",
+            "defaultValue": "${preCalcFilePath}",
+            "value": "${preCalcFilePath}"
+        },
+        {
+            "key": "storeComponentHistoryData",
+            "defaultValue": "false"
+        }
+    ],
+    "placeholders": [
+        {
+            "key": "preCalcFilePath",
+            "guiName": "File with precalculation",
+            "guiPosition": "2",
+            "isPath": "true",
+            "dataType": "file"
+        }
+    ],
+    "activationFilter": {
+        "usePrecalculation": [
+            "true"
+        ]
+    }
+}

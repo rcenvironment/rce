@@ -1,0 +1,12 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="JDBC Service">
+	<implementation class="de.rcenvironment.components.sql.common.internal.JDBCServiceImpl" /> 
+	<reference bind="bindConfigurationService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.configuration.ConfigurationService"
+ 		name="Configuration Service"
+ 		policy="dynamic"
+ 	/>
+ <service>
+    <provide interface="de.rcenvironment.components.sql.common.JDBCService"/>
+ </service> 
+</scr:component>

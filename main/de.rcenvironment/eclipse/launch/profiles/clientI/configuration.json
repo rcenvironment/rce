@@ -1,0 +1,55 @@
+{
+    "general" : {
+        "instanceName" : "Client 1 started by \"${systemUser}\" on ${hostName}"
+    },
+    "network" : {
+        "connections" : {
+            "1" : {
+                "displayName" : "Example Server Connection",
+                "host" : "127.0.0.1",
+                "port" : 20001,
+                "autoRetryInitialDelay" : 5,
+                "autoRetryMaximumDelay" : 300,
+                "autoRetryDelayMultiplier" : 1.5
+            }
+        }
+    },
+	"publishing": {
+        "components": [
+            "de.rcenvironment.parametricstudy"
+        ]
+    },
+	"componentSettings": {
+		"de.rcenvironment.cluster": {
+			"maximumChannels": 8
+		},
+		"de.rcenvironment.sql": {
+			"profiles" : {
+				"1" : {
+					"label" : "sample label",
+					"host" : "sample-url",
+					"database" : "sample-db",
+					"user" : "sample-user",
+					"password" : "sample-password",
+					"jdbc" : {
+						"url" : "jdbc:mysql://${host}/${database}",
+						"file" : "jdbc/mysql-connector-java-5.1.17-bin.jar",
+						"driver" : "com.mysql.jdbc.Driver"
+					}
+				},
+				"2" : {
+					"label" : "sample label 2",
+					"host" : "sample-url",
+					"database" : "sample-db",
+					"user" : "sample-user",
+					"password" : "sample-password",
+					"jdbc" : {
+						"url" : "jdbc:mysql://${host}/${database}",
+						"file" : "jdbc/mysql-connector-java-5.1.17-bin.jar",
+						"driver" : "com.mysql.jdbc.Driver"
+					}
+				}
+			}
+		}
+	}
+}

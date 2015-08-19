@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->  
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+                 class="de.rcenvironment.components.inputprovider.gui.InputProviderInputSection"
+                 enablesFor="1"
+                 filter="de.rcenvironment.components.inputprovider.gui.InputProviderComponentFilter"
+                 id="workflow.editor.tab.inputprovider.Section.DynOutputs"
+                 tab="workflow.editor.tab.inputprovider.DynOutputs">
+           </propertySection>
+  	</propertySections>        
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.inputprovider.DynOutputs"
+               label="%outputs">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.inputprovider.gui.InputProviderHistoryDataItemSubtreeBuilder"/>
+   </extension>
+   
+</plugin>

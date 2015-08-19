@@ -1,0 +1,387 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="configuration">
+	<title>Configuration</title>
+	<para>This section describes the configuration of RCE. Configuration is done within one single
+		configuration file. It is located in the profile directory. From the graphical user
+		interface, you can easily access it from the tool bar or <emphasis role="italic"
+			>Help</emphasis> menu. Note: To apply changes you need to restart RCE. The format of the
+		configuration file is JSON. See <ulink url="http://www.json.org/"><emphasis role="underline"
+				>http://www.json.org/</emphasis></ulink> for the format definition. Also refer to
+		the example configuration files in the installation data directory.</para>
+	<sect2>
+		<title>Configuration Locations and Files</title>
+		<para>Starting with RCE 6.0.0, all user data is strictly separated from the RCE installation
+			itself. Each set of user data is contained in a so-called "profile". Each profile
+			defines what is called an RCE "instance". Each profile (and therefore, each instance)
+			belongs to exactly one user, and each user can have multiple profiles. The default
+			profile is located within the user's "home" directory (<phrase os="windows"
+				>"C:\users\&lt;user id>\" on Windows</phrase><phrase os="linux">"/home/&lt;user
+					id>/" on Linux</phrase>), in the ".rce/default" sub-folder.<note>
+						<para>Note that ".rce" is a hidden directory; you may need to set operating-specific
+							options to see hidden files and directories.</para>
+					</note></para>
+		<para>All manual configuration takes place in the profile's central configuration file,
+			"configuration.json". As of RCE 6.0.0, most configuration settings only take effect on
+			startup, so you need to restart RCE after editing it. (This will be changed in an future
+			release.) This applies to all types of installations.</para>
+	</sect2>
+	<sect2>
+		<title>Configuration Parameters</title>
+		<para>Configuration parameters are grouped within the configuration file. Below are lists of the
+			configuration parameters. There is one list per group.</para>
+		<table width="100%">
+			<title>general</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+			<tbody>
+					<row>
+						<entry>instanceName</entry>
+						<entry>The name of the instance that will be shown to all users in the RCE network.</entry>
+						<entry>"&lt;unnamed instance>"</entry>
+					</row>
+				<row>
+					<entry>isWorkflowHost </entry>
+					<entry>If set to <emphasis role="italic">true</emphasis>, the local instance can be used as a
+								<emphasis role="italic">workflow host</emphasis> by other RCE
+							instances. I.e., the workflow controller can be set to this instance and
+							the workflow data is stored there as well.</entry>
+					<entry>false</entry>
+				</row>
+					<row>
+						<entry>isRelay</entry>
+						<entry>
+							<para>If set to <emphasis>true</emphasis>, the local node will merge all
+								connected nodes into a single network, and forward messages between
+								them. This behaviour is transitive; if a relay node connects to
+								another relay node, both networks will effectively merge into
+								one.</para>
+							<para>If set to <emphasis>false</emphasis> (the default value), the
+								local node can connect to multiple networks at once without causing
+								them to merge.</para>
+						</entry>
+						<entry>false</entry>
+					</row>
+				<row>
+					<entry>tempDirectory </entry>
+					<entry>Can be used to override the default path where RCE stores temporary files. Useful if
+							there is little space in the default temp file location. Must be an
+							absolute path to an existing directory, and the path must not contain
+							spaces (to prevent problems with tools accessing such
+							directories).</entry>
+					<entry>An "rce-temp" subdirectory within the user or system temp directory.</entry>
+				</row>
+			</tbody>
+			</tgroup>
+		</table>
+		<note>
+			<para>IMPORTANT: When setting up a network of RCE instances, keep in mind that the RCE
+				network traffic is currently <emphasis>not encrypted</emphasis>. This means that it
+				is <emphasis>not secure</emphasis> to expose RCE server ports to untrusted networks
+				like the internet. When setting up RCE connections between different locations, make
+				sure that they either connect across a secure network (e.g. your institution's
+				internal network), or that the connection is secured by other means, like SSH
+				tunnelling or a VPN.</para>
+		</note>
+		<table frame="all" width="100%">
+			<title>network</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>requestTimeoutMsec</entry>
+						<entry>The timeout (in milliseconds) for network requests that are made by
+							the local node. If this time expires before a response is received, the
+							request fails.</entry>
+						<entry>40000</entry>
+					</row>
+					<row>
+						<entry>forwardingTimeout Msec</entry>
+						<entry>The timeout (in milliseconds) for network requests that are forwarded
+							by the local node on behalf of another node. If this time expires before
+							a response is received, an error reponse is sent back to the node that
+							made the request.</entry>
+						<entry>35000</entry>
+					</row>
+					<row>
+						<entry>connections</entry>
+						<entry>A list of all connections that the local instance tries to establish
+							on startup. This allows the local instance to act as a client. For each
+							connection a unique identifier (id) must be given.</entry>
+						<entry>{} (an empty list in JSON format)</entry>
+					</row>
+					<row>
+						<entry>connections/[id]/host</entry>
+						<entry>IP address of the host to connect to. Host names and IPv4 adresses are
+							permitted.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>connections/[id]/port</entry>
+						<entry>Port number of the remote RCE instance.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>connections/[id]/connectOnStartup</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, the connection is immediately
+							established on startup.</entry>
+						<entry>true</entry>
+					</row>
+					<row>
+						<entry>connections/[id]/autoRetry InitialDelay</entry>
+						<entry>The initial delay, in seconds, to wait after a failed or broken
+							connection before a reconnect attempt is made. This configuration must
+							be present to enable the auto-reconnect feature.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>connections/[id]/autoRetry DelayMultiplier</entry>
+						<entry>A decimal-point value >= 1 that the delay time is multiplied with
+							after each consecutive connection failure. This provides an "exponential
+							backoff" feature that reduces the frequency of connection attempts over
+							time. This configuration must be present to enable the auto-reconnect
+							feature.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>connections/[id]/autoRetry MaximumDelay</entry>
+						<entry>Defines an upper limit for the delay time, even when applying the
+							multiplier would create a higher value. This can be used to maintain a
+							minimum frequency for retrying the connection. This configuration must
+							be present to enable the auto-reconnect feature.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>serverPorts </entry>
+						<entry>A list of all server ports that the local instance registers for other instances to
+							connect to. This allows the local instance to act as a server. For each
+							server port a unique identifier (id) must be given.</entry>
+						<entry>{} (an empty list in JSON format)</entry>
+					</row>
+					<row>
+						<entry>serverPorts/[id]/ip</entry>
+						<entry>IP address to which the local instance should be bound.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>serverPorts/[id]/port</entry>
+						<entry>Port number to which other instances connect to.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>ipFilter </entry>
+						<entry>Allows to limit the incoming connections to a set of IP addresses.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>ipFilter/enabled </entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, the ip filter active.</entry>
+						<entry>false</entry>
+					</row>
+					<row>
+						<entry>ipFilter/allowedIPs</entry>
+						<entry>List of IP addresses, which are allowed to connect to the instance.</entry>
+						<entry>[] (an empty list in JSON format)</entry>
+					</row>
+				</tbody>
+				</tgroup>
+			</table>
+			<table width="100%">
+			<title>publishing</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>components </entry>
+						<entry>List of workflow components, which are made available to other instances within the RCE
+							network. Workflow components are represented by their identifiers. Note:
+							That doesn't affect integrated tools.</entry>
+						<entry>[] (an empty list in JSON format)</entry>
+					</row>
+				</tbody>
+			</tgroup>
+			</table>
+		<table width="100%">
+			<title>componentSettings</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>de.rcenvironment.cluster</entry>
+						<entry>Configuration of the cluster workflow component.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.cluster/maxChannels</entry>
+						<entry>Maximum number of channels, which are allowed to be opened in
+							parallel to the cluster server.</entry>
+						<entry>8</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql</entry>
+						<entry>Configuration of the SQLworkflow components.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/profiles </entry>
+						<entry>List of profiles which will describe the jdbc connection to a database. All
+							configuration keys following are part of one entry of the collection </entry>
+						<entry>[] (an empty list in JSON format)</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/label </entry>
+						<entry>A name for a profile. This label will be shown in the configuration view of the SQL
+							component </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/host </entry>
+						<entry>A url to the host computer of the database </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/database </entry>
+						<entry>The name of the database </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/user </entry>
+						<entry>The username for database access </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/password </entry>
+						<entry>The password of the user for database access </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/jdbc </entry>
+						<entry>List of jdbc configuration parameters. All configuration keys following are part of
+							this list </entry>
+						<entry>{} (an empty list in JSON format)</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/url </entry>
+						<entry>Connection string of jdbc driver. Per default, it will be assembled with configuration
+							keys above.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/file </entry>
+						<entry>Absolute or relative (beginning at root-folder of RCE) path to jdbc driver file </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>de.rcenvironment.sql/driver </entry>
+						<entry>SQL driver classname </entry>
+					</row>
+				</tbody>
+			</tgroup>
+			</table>
+			<table width="100%">
+			<title>sshServer</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>enabled</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis> the local instance acts as an SSH
+							server.</entry>
+						<entry>false</entry>
+					</row>
+					<row>
+						<entry>port</entry>
+						<entry>Port number to which SSH clients connect to.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>accounts</entry>
+						<entry>List of accounts. For each account a unique identifier (account name) must be
+							given.</entry>
+						<entry>{} (an empty list in JSON format)</entry>
+					</row>
+					<row>
+						<entry>[account name]/password</entry>
+						<entry>Password for the account.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>[account name]/role</entry>
+						<entry>Role of the account. See 'roles' below.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>[account name]/enabled</entry>
+						<entry>If set to <emphasis role="italic">true</emphasis>, the account is enabled.</entry>
+						<entry>true</entry>
+					</row>
+					<row>
+						<entry>roles</entry>
+						<entry>List of roles. For each role a unique identifier (role name) must be given.</entry>
+						<entry/>
+					</row>
+					<row>
+						<entry>[role name]/allowed CommandPatterns</entry>
+						<entry>List of commands the role is allowed to execute. Regular expressions
+							are supported.</entry>
+						<entry>[] (an empty list in JSON format)</entry>
+					</row>
+				</tbody>
+			</tgroup>
+			</table>
+	</sect2>
+</sect1>

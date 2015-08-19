@@ -1,0 +1,73 @@
+{
+    "general" : {
+        "instanceName" : "Server started by \"${systemUser}\" on ${hostName}",
+        "isWorkflowHost" : true,
+        "isRelay" : true
+    },
+    "network" : {
+        "serverPorts" : {
+            "1" : {
+                "ip" : "0.0.0.0",
+                "port" : 20001
+            }
+        },
+        "ipFilter": {
+            "enabled": true,
+            "allowedIPs": [
+                "127.0.0.1"
+            ]
+        }
+    },
+    "publishing": {
+        "components": [
+            "de.rcenvironment.cluster",
+            "de.rcenvironment.cpacswriter",
+            "de.rcenvironment.converger",
+            "de.rcenvironment.excel",
+            "de.rcenvironment.inputprovider",
+            "de.rcenvironment.joiner",
+            "de.rcenvironment.optimizer",
+            "de.rcenvironment.outputwriter",
+            "de.rcenvironment.parametricstudy",
+            "de.rcenvironment.script",
+            "de.rcenvironment.sqlcommand",
+            "de.rcenvironment.sqlreader",
+            "de.rcenvironment.sqlwriter",
+            "de.rcenvironment.vampzeroinitializer",
+            "de.rcenvironment.xmlloader",
+            "de.rcenvironment.xmlmerger"
+        ]
+    },
+    "sshServer" : {
+        "enabled" : true,
+        "host": "127.0.0.1",
+        "port" : 31006,
+        "accounts" : {
+            "admin" : {
+                "password" : "changeme!_adm",
+                "role" : "admin",
+                "enabled" : false
+            },
+            "ra" : {
+                "password" : "ra",
+                "role" : "remote access",
+                "enabled" : false
+            }
+        },
+        "roles" : {
+            "admin" : {
+                "allowedCommandPatterns" : [
+                    ".*"
+                ]
+            },
+            "remote access" : {
+                "allowedCommandPatterns" : [
+                    "ta .+",
+                    "toolaccess .+",
+                    "net info",
+                    "components list"
+                ]
+            }
+        }
+    }
+}

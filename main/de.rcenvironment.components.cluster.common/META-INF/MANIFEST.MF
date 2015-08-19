@@ -1,0 +1,11 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Cluster Component Common
+Bundle-SymbolicName: de.rcenvironment.components.cluster.common
+Bundle-Version: 6.0.0.qualifier
+Bundle-ActivationPolicy: lazy
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Vendor: DLR
+Export-Package: de.rcenvironment.components.cluster.common
+Import-Package: de.rcenvironment.core.component.api,
+ de.rcenvironment.core.utils.common.channel.legacy

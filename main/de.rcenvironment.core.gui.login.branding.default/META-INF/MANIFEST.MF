@@ -1,0 +1,9 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core GUI Login Branding
+Bundle-SymbolicName: de.rcenvironment.core.gui.login.branding.default
+Bundle-Version: 6.0.0.qualifier
+Fragment-Host: de.rcenvironment.core.gui.login
+Bundle-Vendor: DLR & Fraunhofer SCAI
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Eclipse-BundleShape: dir

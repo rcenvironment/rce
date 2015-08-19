@@ -1,0 +1,25 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="Script Component">
+
+	<implementation class="de.rcenvironment.components.script.execution.ScriptComponent"/>
+	
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
+	</service>
+	
+	<property name="rce.component.id" type="String">
+		de.rcenvironment.script
+		de.rcenvironment.components.script.execution.ScriptComponent_Script
+	</property>
+	
+	<property name="rce.component.name" type="String" value="Script"/>
+	<property name="rce.component.group" type="String" value="Execution"/>
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.script.execution.ScriptComponent"/>
+	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.script.common/resources/script16.png"/>
+    <property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.script.common/resources/script32.png"/>
+    <property name="rce.component.version" type="String" value="3.4"/>
+    
+    <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
+    <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
+    <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
+  
+</scr:component> 

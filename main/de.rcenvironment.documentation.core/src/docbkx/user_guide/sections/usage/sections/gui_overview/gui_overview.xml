@@ -1,0 +1,116 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="gui_overview">
+	<title>Graphical User Interface</title>
+	<para>This section introduces the Graphical User Interface (GUI). </para>
+	<para>The GUI of RCE is composed of different views and editors (besides standard GUI elements
+		such as the menu bar, status bar, etc.). Views can be (re-)arranged by the user. They can
+		even be closed and opened again. Some views are closed by default, but can be opened as desired. 
+		To open a view go to: Window->Show view. </para>
+	<figure>
+		<title>Workbench with different views and the workflow editor opened</title>
+		<mediaobject>
+			<imageobject>
+				<imagedata fileref="images/ug_gui_overview_workbench.png" contentwidth="420"/>
+			</imageobject>
+		</mediaobject>
+	</figure>
+	<para> Left hand-side: <itemizedlist>
+			<listitem>
+				<para>
+					<emphasis role="italic">Project Explorer:</emphasis> View to manage projects.
+					All relevant data including workflow files needs to be organized in projects.
+				</para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis role="italic">Workflow List:</emphasis> Lists all active workflows and
+					allows to manage them (stop, pause, resume, dispose). </para>
+			</listitem>
+		</itemizedlist>
+	</para>
+	<para> Right hand side and center: <itemizedlist>
+			<listitem>
+				<para>
+					<emphasis role="italic">Workflow Editor:</emphasis> Core view of RCE used to
+					build and configure workflows. </para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis role="italic">Palette:</emphasis> Lists all available workflow
+					components. If RCE runs in a distributed environment this includes local as well
+					as remote workflow components. At the top, it also provides actions for
+					connecting workflow components. The appearing connection editor dialog will look
+					like this. Additionally, connections of the workflow are shown in the <emphasis
+						role="italic">Properties</emphasis> view at the bottom, if the background of
+					the workflow editor is selected.</para>
+				<figure>
+					<title>Connection Editor</title>
+					<mediaobject>
+						<imageobject>
+							<imagedata fileref="images/ug_gui_overview_connectioneditor.png"
+								contentwidth="320"/>
+						</imageobject>
+					</mediaobject>
+				</figure>
+			</listitem>
+		</itemizedlist>
+	</para>
+	<para> Bottom: <itemizedlist>
+			<listitem>
+				<para>
+					<emphasis role="italic">Log:</emphasis> Shows all log output of RCE, e.g. error
+					messages during workflow execution. </para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis role="italic">Network View:</emphasis> Shows all RCE nodes of the
+					distributed RCE network and their published workflow components. It also shows
+					the outgoing connections of the own RCE instance and allows to manage them
+					(start, stop, etc.). </para>
+				<figure>
+					<title>Network View</title>
+					<mediaobject>
+						<imageobject>
+							<imagedata fileref="images/ug_gui_overview_networkview.png"
+								contentwidth="320"/>
+						</imageobject>
+					</mediaobject>
+				</figure>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis role="italic">Workflow Data Browser:</emphasis> Shows workflow related
+					result data. </para>
+				<figure>
+					<title>Workflow Data Browser</title>
+					<mediaobject>
+						<imageobject>
+							<imagedata fileref="images/ug_gui_overview_workflowdatabrowser.png"
+								contentwidth="320"/>
+						</imageobject>
+					</mediaobject>
+				</figure>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis role="italic">Properties:</emphasis> Allows configuration of workflow
+					components (e.g. Inputs/Outputs) if they are selected in the workflow editor. 
+					View adapts to selected	workflow component. </para>
+			</listitem>
+			<listitem>
+				<para>
+					<emphasis role="italic">Workflow Console:</emphasis> Shows all native console
+					line output of integrated tools during workflow execution. Provides full text
+					search. </para>
+				<figure>
+					<title>Workflow Console</title>
+					<mediaobject>
+						<imageobject>
+							<imagedata fileref="images/ug_gui_overview_workflowconsole.png"
+								contentwidth="320"/>
+						</imageobject>
+					</mediaobject>
+				</figure>
+			</listitem>
+		</itemizedlist></para>
+</sect1>

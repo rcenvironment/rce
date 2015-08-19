@@ -1,0 +1,21 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "parameters",
+            "dataTypes": [
+                "Integer",
+                "Float"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+                "Single"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+    ]
+}

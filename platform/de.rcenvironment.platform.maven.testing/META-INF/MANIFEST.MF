@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Platform - Maven Plain Java Libraries - Test Utilities
+Bundle-SymbolicName: de.rcenvironment.platform.maven.testing;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Export-Package: net.sf.cglib.core;version="2.2.2",
+ net.sf.cglib.proxy;version="2.2.2",
+ org.easymock;version="5.0.0",
+ org.easymock.classextension;version="5.0.0"
+DynamicImport-Package: *
+Bundle-Vendor: DLR
+Bundle-ClassPath: lib/maven/cglib-nodep-2.2.2.jar,
+ lib/maven/easymock-3.1.jar,
+ lib/maven/easymockclassextension-3.1.jar,
+ lib/maven/objenesis-1.2.jar

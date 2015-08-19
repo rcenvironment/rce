@@ -1,0 +1,62 @@
+{
+    "dynamicInputs":[
+        {
+            "identifier":"valueToConverge",
+            "group":"valuesToConverge",
+            "dataTypes":[
+                "Float"
+            ],
+            "defaultDataType":"Float",
+            "inputHandlingOptions":[
+                "Single"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "metaData":{
+                "hasStartValue":{
+                    "guiName":"Has start value",
+                    "guiPosition":"0",
+                    "visibility":"shown",
+                    "defaultValue":"false",
+                    "dataType":"bool"
+                },
+                "startValue":{
+                    "guiName":"Start value",
+                    "guiPosition":"1",
+                    "visibility":"shown",
+                    "dataType":"float",
+                    "validation":"required",
+                    "guiActivationFilter":{
+                        "hasStartValue":[
+                            "true"
+                        ]
+                    }
+                }
+            }
+        },
+        {
+            "identifier":"outerLoopDone",
+            "group":"innerLoop",
+            "dataTypes":[
+                "Boolean"
+            ],
+            "readOnly":"true",
+            "defaultDataType":"Boolean"
+        }
+    ],
+    "inputGroups":[
+        {
+            "identifier":"valuesToConverge",
+            "type":"And",
+            "group":"innerLoop"
+        },
+        {
+            "identifier":"innerLoop",
+            "type": "Or"
+        }
+    ]
+}

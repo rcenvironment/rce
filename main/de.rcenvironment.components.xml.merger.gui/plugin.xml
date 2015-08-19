@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+    <!-- Extension for classes allocated to tabs -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+      
+          <!-- File selection dialog -->
+          <propertySection
+               tab="workflow.editor.tab.merger.FileDialog"
+               class="de.rcenvironment.components.xml.merger.gui.XmlMergerSection"
+               id="workflow.editor.tab.merger.properties.FileDialog.Section"
+               filter="de.rcenvironment.components.xml.merger.gui.XmlMergerComponentFilter" />
+			   
+			<!-- XPathChooserView -->
+         <propertySection
+               tab="workflow.editor.tab.merger.XPathChooser"
+               class="de.rcenvironment.cpacs.gui.xpathchooser.XPathChooserPropertyView"
+               id="workflow.editor.tab.merger.XPathChooser.Section"
+               filter="de.rcenvironment.components.xml.merger.gui.XmlMergerComponentFilter">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.xml.merger.gui.XmlMergerComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+         </propertySections>
+
+    </extension>
+   
+   
+    <!-- Extension for own tabs in component properties -->
+    <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+        <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+            <propertyTab
+                label="Mapping"
+                category="default"
+                id="workflow.editor.tab.merger.FileDialog" />
+				
+				<!-- The Input&Output Tab -->
+    		<propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               afterTab="workflow.editor.tab.merger.FileDialog"
+               id="workflow.editor.tab.merger.XPathChooser" />
+            <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="History Data"
+               afterTab="workflow.editor.tab.merger.XPathChooser">
+         </propertyTab>
+        </propertyTabs>
+    </extension>
+    
+    <!--  Configuration validation -->
+    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
+       <validator
+            class="de.rcenvironment.components.xml.merger.gui.XmlMergerWorkflowNodeValidator"
+            filter="de.rcenvironment.components.xml.merger.gui.XmlMergerComponentFilter">
+       </validator>
+    </extension>
+    
+    <!-- Data management browser subtree builder-->
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.xml.merger.gui.XmlMergerHistoryDataItemSubtreeBuilder"/>
+   </extension>
+   
+       <!-- Dynamic Help -->
+    <extension point="org.eclipse.help.contexts">
+        <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+    </extension>
+    
+</plugin>

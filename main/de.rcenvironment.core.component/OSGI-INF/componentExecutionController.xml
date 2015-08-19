@@ -1,0 +1,35 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Component Execution Controller">
+
+	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutionControllerImpl"/>
+
+	<reference
+        name="Component Execution Permits Service"
+        interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionPermitsService"
+        cardinality="1..1"
+        bind="bindComponentExecutionPermitsService"
+        policy="dynamic"
+    />
+    
+	<reference name="Endpoint Datum Sender"
+		interface="de.rcenvironment.core.component.execution.internal.EndpointDatumSender"
+		cardinality="1..1"
+		bind="bindEndpointDatumSender"
+		policy="dynamic"
+	/>
+	
+    <reference
+        name="Typed Datum Service"
+        interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+        cardinality="1..1"
+        bind="bindTypedDatumService"
+        policy="dynamic"
+    />
+
+	<reference name="Distributed Meta Data Service"
+		interface="de.rcenvironment.core.datamanagement.DistributedMetaDataService"
+		cardinality="1..1"
+		bind="bindDistributedMetaDataService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

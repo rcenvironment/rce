@@ -1,0 +1,21 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="true" name="Workflow Execution Controller Service">
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionControllerServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionControllerService"/>
+	</service>
+	
+	<reference name="Workflow Host Service"
+		interface="de.rcenvironment.core.communication.management.WorkflowHostService"
+		cardinality="1..1"
+		bind="bindWorkflowHostService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Distributed Notification Service"
+		interface="de.rcenvironment.core.notification.DistributedNotificationService"
+		cardinality="1..1"
+		bind="bindDistributedNotificationService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

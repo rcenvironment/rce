@@ -1,0 +1,35 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "default",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float"
+            ],
+            "defaultDataType": "Float",
+			"inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "metaData": {
+                "variable.xpath": {
+                    "guiName": "XPath",
+                    "guiPosition": "0",
+                    "guiGroup": "CPACS Values",
+					"visibility" : "shown",
+					"defaultValue" : "",
+					"validation" : "required"
+                }
+            }
+        }
+    ]
+}

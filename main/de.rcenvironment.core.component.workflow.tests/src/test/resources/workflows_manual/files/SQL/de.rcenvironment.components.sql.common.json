@@ -1,0 +1,17 @@
+// http://www.json.org/json-en.html
+{
+  "profiles": [
+    {
+	  "label": "Test Datenbank",
+	  "host": "localhost:3306",
+	  "database": "rce_test",
+	  "user": "root",
+	  "password": "scroot",
+	  "jdbc": {
+	    "url": "jdbc:mysql://${host}/${database}",
+	    "file": "configuration/jdbc/mysql-connector-java-5.1.17-bin.jar",
+	    "driver": "com.mysql.jdbc.Driver"
+	  }
+	}
+  ]
+}

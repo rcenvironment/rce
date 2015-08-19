@@ -1,0 +1,11 @@
+{
+    "staticOutputs":[
+        {
+            "name":"Decrypted result",
+            "dataTypes":[
+                "ShortText"
+            ],
+            "defaultDataType":"ShortText"
+        }
+    ]
+}

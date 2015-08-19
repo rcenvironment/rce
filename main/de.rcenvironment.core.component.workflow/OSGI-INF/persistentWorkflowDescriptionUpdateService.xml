@@ -1,0 +1,27 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Workflow Description Update Service">
+	<implementation class="de.rcenvironment.core.component.workflow.update.internal.PersistentWorkflowDescriptionUpdateServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService"/>
+	</service>
+	<reference name="Distributed Persistent Component Description Update Service"
+		interface="de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService"
+		cardinality="1..1"
+		bind="bindComponentDescriptionUpdateService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Distributed Component Knowledge Service"
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"
+		bind="bindDistributedComponentKnowledgeService"
+		ardinality="1..1"
+		policy="dynamic"
+	/>
+	
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

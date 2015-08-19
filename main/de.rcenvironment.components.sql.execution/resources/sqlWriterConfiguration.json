@@ -1,0 +1,48 @@
+{
+    "configuration": [
+        {
+            "key": "tableName",
+            "defaultValue": "output_${componentSqlId}"
+        },
+        {
+            "key": "sqlquery",
+            "defaultValue": "insert into ${tableName} (...) values (...)"
+        },
+        {
+            "key": "jdbcProfile",
+            "defaultValue": ""
+        },
+        {
+            "key": "sqlSetup",
+			"defaultValue": ""
+        },
+        {
+            "key": "sqlCleanup",
+			"defaultValue": ""
+        },
+        {
+            "key": "sqlDispose",
+			"defaultValue": ""
+        },
+        {
+            "key": "inputMode",
+            "defaultValue": "BLOCK"
+        },
+        {
+            "key": "inputMapping",
+			"defaultValue": ""
+        },
+        {
+            "key": "createTable",
+            "defaultValue": "false"
+        },
+        {
+            "key": "dropTable",
+            "defaultValue": "false"
+        },
+        {
+            "key": "dropTableOn",
+            "defaultValue": "DISPOSE"
+        }
+    ]
+}

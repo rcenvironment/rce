@@ -1,0 +1,60 @@
+{
+  "identifier" : "7addf404-81a8-4eb0-8bb5-508076c51c64",
+  "workflowVersion" : "1",
+  "nodes" : [ {
+    "identifier" : "1bec3df8-da80-4240-b972-585e081d1a76",
+    "name" : "Reader",
+    "location" : "269:110",
+    "component" : {
+      "identifier" : "de.rcenvironment.rce.components.python.PythonComponent_Python",
+      "version" : "2.0"
+    },
+    "configuration" : [ "remote path of existing script:java.lang.String:", "usage of script:java.lang.String:NEW", "debug:java.lang.Boolean:false", "script:java.lang.String:filename = _dm_[\"incfile\"]\r\nfile = open(filename, \"r\")\r\nprint file.read()\r\nfile.close()\r\nprint incstring\r\nprint incdouble\r\nprint incinteger\r\nprint incarray\r\n", "remote upload path of new script:java.lang.String:", "pythonInstallation:java.lang.String:${pathPlaceholder}" ],
+    "addInput" : [ "incstring:java.lang.String", "incinteger:java.lang.Integer", "incarray:de.rcenvironment.commons.channel.VariantArray", "incfile:de.rcenvironment.commons.channel.DataManagementFileReference", "incdouble:java.lang.Double" ],
+    "inputMetaData" : {
+      "incstring" : [ "usage:java.lang.String:required" ],
+      "incinteger" : [ "usage:java.lang.String:required" ],
+      "incarray" : [ "usage:java.lang.String:required" ],
+      "incfile" : [ "usage:java.lang.String:required" ],
+      "incdouble" : [ "usage:java.lang.String:required" ]
+    },
+    "platform" : "0bfa946ed681481985a7574ea24d6e4d"
+  }, {
+    "identifier" : "d6c5caab-ca3a-452f-97e1-9760996dd24b",
+    "name" : "Generator",
+    "location" : "120:108",
+    "component" : {
+      "identifier" : "de.rcenvironment.rce.components.python.PythonComponent_Python",
+      "version" : "2.0"
+    },
+    "configuration" : [ "remote path of existing script:java.lang.String:", "usage of script:java.lang.String:NEW", "debug:java.lang.Boolean:false", "script:java.lang.String:filename = \"outgoing.pue\"\r\nfile = open(filename, \"w\")\r\nfile.write(\"Allet muss raus!\")\r\nfile.close()\r\n_dm_[\"outgfile\"] = filename\r\noutgstring = \"rauswill\"\r\noutgdouble = 42.0\r\noutginteger = 815\r\noutgarray = [0, 8, 15]", "remote upload path of new script:java.lang.String:", "pythonInstallation:java.lang.String:${pathPlaceholder}" ],
+    "addOutput" : [ "outgdouble:java.lang.Double", "outginteger:java.lang.Integer", "outgfile:de.rcenvironment.commons.channel.DataManagementFileReference", "outgarray:de.rcenvironment.commons.channel.VariantArray", "outgstring:java.lang.String" ],
+    "platform" : "0bfa946ed681481985a7574ea24d6e4d"
+  } ],
+  "connections" : [ {
+    "source" : "d6c5caab-ca3a-452f-97e1-9760996dd24b",
+    "output" : "outgfile",
+    "target" : "1bec3df8-da80-4240-b972-585e081d1a76",
+    "input" : "incfile"
+  }, {
+    "source" : "d6c5caab-ca3a-452f-97e1-9760996dd24b",
+    "output" : "outgarray",
+    "target" : "1bec3df8-da80-4240-b972-585e081d1a76",
+    "input" : "incarray"
+  }, {
+    "source" : "d6c5caab-ca3a-452f-97e1-9760996dd24b",
+    "output" : "outgdouble",
+    "target" : "1bec3df8-da80-4240-b972-585e081d1a76",
+    "input" : "incdouble"
+  }, {
+    "source" : "d6c5caab-ca3a-452f-97e1-9760996dd24b",
+    "output" : "outgstring",
+    "target" : "1bec3df8-da80-4240-b972-585e081d1a76",
+    "input" : "incstring"
+  }, {
+    "source" : "d6c5caab-ca3a-452f-97e1-9760996dd24b",
+    "output" : "outginteger",
+    "target" : "1bec3df8-da80-4240-b972-585e081d1a76",
+    "input" : "incinteger"
+  } ]
+}

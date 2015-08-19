@@ -1,0 +1,33 @@
+{
+  "templateName" : "CPACS Tool",
+  "alwaysRun" : true,
+  "groupName" : "CPACS",
+  "setToolDirAsWorkingDir" : true,
+  "inputs" : [ {
+    "endpointFolder" : "Input folder",
+    "endpointFileName" : "CPACSInitial.xml",
+    "endpointDataType" : "FileReference",
+    "endpointName" : "CPACSInitial",
+    "endpointUsage" : "required"
+  } ],
+  "integrationType" : "CPACS",
+  "hasToolSpecificInput" : true,
+  "cpacsInitialEndpointName" : "CPACSInitial",
+  "cpacsOutgoingEndpointName" : "CPACSout",
+  "toolInputFileName" : "ToolInput/toolInput.xml",
+  "mappingInputFilename" : "mappingInput.xml",
+  "toolspecificMappingFilename" : "ToolSpecificMapping.xml",
+  "toolspecificInputdataFilename" : "ToolSpecificInputData.xml",
+  "cpacsResultFilename" : "cpacsResult.xml",
+  "mappingOutputFilename" :  "mappingOutput.xml",
+  "toolOutputFilename" : "ToolOutput/toolOutput.xml", 
+  "copyToolBehavior" : "once",
+  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "outputs" : [ {
+    "endpointFolder" : "",
+    "endpointFileName" : "",
+    "endpointDataType" : "FileReference",
+    "endpointName" : "CPACSout",
+    "endpointUsage" : "-"
+  } ]
+}

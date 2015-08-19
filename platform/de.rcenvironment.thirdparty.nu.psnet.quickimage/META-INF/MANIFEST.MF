@@ -1,0 +1,21 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Third-Party Artifacts - QuickImage 1.0.3.2
+Bundle-SymbolicName: de.rcenvironment.thirdparty.nu.psnet.quickimage;singleton:=true
+Bundle-Version: 6.0.0.qualifier
+Bundle-ClassPath: lib/quickimage.jar
+Bundle-Activator: nu.psnet.quickimage.QuickImagePlugin
+Bundle-Vendor: psnet.nu
+Bundle-Localization: plugin
+Export-Package: nu.psnet.quickimage,
+ nu.psnet.quickimage.core,
+ nu.psnet.quickimage.editors,
+ nu.psnet.quickimage.widgets
+Require-Bundle: org.eclipse.ui,
+ org.eclipse.core.runtime,
+ org.eclipse.ui.ide,
+ org.eclipse.core.resources,
+ org.eclipse.ui.editors
+Eclipse-LazyStart: true
+Bundle-RequiredExecutionEnvironment: J2SE-1.5
+Eclipse-BundleShape: dir

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target includeMode="feature" name="trunk_snapshot_platform_repo.all" sequenceNumber="37">
+<locations>
+<location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="nu.psnet.quickimage.feature.group" version="1.0.3.2"/>
+<repository location="http://psnet.nu/eclipse/updates"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="5.0.0.0201403111018_SNAPSHOT"/>
+<repository location="http://updates.sc.dlr.de/eclipse/rce/platform/snapshots/trunk"/>
+</location>
+<location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="org.eclipse.wst.xml_ui.feature.feature.group" version="3.2.3.v201102160550-7H7AFUWDxumQJOi9ghcTb5YgkwEZ"/>
+<repository location="http://ftp-stud.hs-esslingen.de/Mirrors/eclipse/releases/helios/201102250900/"/>
+</location>
+</locations>
+</target>
