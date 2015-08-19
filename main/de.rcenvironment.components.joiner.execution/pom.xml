@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.joiner.execution</artifactId>
 	<name>RCE Joiner Component Execute Bundle</name>
-	<version>6.2.0.qualifier</version>
+	<version>6.2.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.xml</artifactId>
 	<name>RCE Core Component XML Bundle</name>
-	<version>6.2.0.qualifier</version>
+	<version>6.2.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -11,6 +11,7 @@ package de.rcenvironment.core.utils.incubator.xml.impl;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.StringReader;
 import java.util.LinkedList;
 import java.util.List;
@@ -75,7 +76,7 @@ public class XMLMapperServiceImpl implements XMLMapperService {
         tFactory = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null);
         tFactory.setErrorListener(new XSLTErrorHandler());
     }
-    
+
     /**
      * OSGI binding method.
      * 
@@ -99,16 +100,19 @@ public class XMLMapperServiceImpl implements XMLMapperService {
     public void transformXMLFileWithXSLT(File sourceFile, File resultFile, File xsltFile) throws XMLException {
         Transformer transformer = null;
 
-        try {
+        //Use try with-resources. it automatically closes the fileOutputStream after the block.
+        try (final FileOutputStream fileOutputStream = new FileOutputStream(resultFile);) {
             transformer = tFactory.newTransformer(new StreamSource(xsltFile));
             transformer.setErrorListener(new XSLTErrorHandler());
             transformer.transform(new StreamSource(sourceFile), new StreamResult(
-                new FileOutputStream(resultFile)));
+                fileOutputStream));
         } catch (final TransformerConfigurationException e) {
             throw new XMLException(e.toString());
         } catch (final FileNotFoundException e) {
             throw new XMLException(e.toString());
         } catch (final TransformerException | NullPointerException e) {
+            throw new XMLException(e.toString());
+        } catch (IOException e) {
             throw new XMLException(e.toString());
         }
     }

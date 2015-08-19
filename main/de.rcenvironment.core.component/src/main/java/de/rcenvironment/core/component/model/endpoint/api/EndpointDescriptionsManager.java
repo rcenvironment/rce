@@ -411,9 +411,9 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
     public void addConnectedDataType(String endpointName, DataType dataType) {
         
         EndpointDescription endpointDesc = getNotClonedEndpointDescription(endpointName);
-        EndpointDescription oldEndpointDesc = endpointDesc.clone();
 
         if (endpointDesc != null) {
+            EndpointDescription oldEndpointDesc = endpointDesc.clone();
             endpointDesc.addConnectedDataType(dataType);
             firePropertyChange(PROPERTY_ENDPOINT, new EndpointChange(EndpointChange.Type.Modified, endpointDesc, oldEndpointDesc));
         }
@@ -425,9 +425,9 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
      */
     public void removeConnectedDataType(String endpointName, DataType dataType) {
         EndpointDescription endpointDesc = getNotClonedEndpointDescription(endpointName);
-        EndpointDescription oldEndpointDesc = endpointDesc.clone();
 
         if (endpointDesc != null) {
+            EndpointDescription oldEndpointDesc = endpointDesc.clone();
             endpointDesc.removeConnectedDataType(dataType);
             firePropertyChange(PROPERTY_ENDPOINT, new EndpointChange(EndpointChange.Type.Modified, endpointDesc, oldEndpointDesc));
         }

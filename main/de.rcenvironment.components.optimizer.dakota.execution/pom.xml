@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.optimizer.dakota.execution</artifactId>
 	<name>RCE Optimizer Component Dakota Execution Bundle</name>
-	<version>6.2.0.qualifier</version>
+	<version>6.2.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

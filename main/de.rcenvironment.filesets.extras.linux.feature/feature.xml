@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.extras.linux.feature"
       label="RCE File Sets - Extra file sets for RCE on Linux OS"
-      version="6.2.0.qualifier"
+      version="6.2.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

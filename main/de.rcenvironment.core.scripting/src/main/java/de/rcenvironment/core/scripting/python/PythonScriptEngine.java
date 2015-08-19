@@ -254,7 +254,7 @@ public class PythonScriptEngine implements ScriptEngine {
                 File dir = new File(dirInputDir, directoryReference.getDirectoryName());
                 try {
                     componentDatamanagementService.copyDirectoryReferenceTDToLocalDirectory(compContext,
-                        (DirectoryReferenceTD) compContext.readInput(inputName), dir);
+                        (DirectoryReferenceTD) compContext.readInput(inputName), dirInputDir);
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to load input directory from the data management", e);
                 }

@@ -147,7 +147,7 @@ public class WizardEndpointEditDialog extends Dialog {
             if (config.containsKey(InOutputConfigurationPage.HANDLING)) {
                 for (String handling : StringUtils.splitAndUnescape(config.get(InOutputConfigurationPage.HANDLING))) {
                     inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.valueOf(
-                            handling))].setSelection(true);
+                        handling))].setSelection(true);
                 }
             } else if (config.containsKey(InOutputConfigurationPage.USAGE)) {
                 if (config.get(InOutputConfigurationPage.USAGE).equals("initial")) {
@@ -155,18 +155,18 @@ public class WizardEndpointEditDialog extends Dialog {
                         .setSelection(true);
                 } else {
                     inputDatumHandlingButtons[inputDatumHandlings.indexOf(
-                            EndpointDefinition.InputDatumHandling.Single)].setSelection(true);
+                        EndpointDefinition.InputDatumHandling.Single)].setSelection(true);
                 }
             }
             if (config.containsKey(InOutputConfigurationPage.CONSTRAINT)) {
                 for (String constraint : StringUtils.splitAndUnescape(config.get(InOutputConfigurationPage.CONSTRAINT))) {
                     inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(
-                            EndpointDefinition.InputExecutionContraint.valueOf(constraint))].setSelection(true);
+                        EndpointDefinition.InputExecutionContraint.valueOf(constraint))].setSelection(true);
                 }
             } else if (config.containsKey(InOutputConfigurationPage.USAGE)) {
                 if (config.get(InOutputConfigurationPage.USAGE).equals("optional")) {
                     inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(
-                            EndpointDefinition.InputExecutionContraint.NotRequired)].setSelection(true);
+                        EndpointDefinition.InputExecutionContraint.NotRequired)].setSelection(true);
                 } else {
                     inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition.InputExecutionContraint.Required)]
                         .setSelection(true);
@@ -232,16 +232,20 @@ public class WizardEndpointEditDialog extends Dialog {
             new Label(propertyContainer, SWT.NONE);
             inputExecutionConstraintButtons[2] = new Button(propertyContainer, SWT.CHECK);
             inputExecutionConstraintButtons[2].setText(inputExecutionConstraints.get(2).getDisplayName());
-
-            Label fileNameLabel = new Label(propertyContainer, SWT.NONE);
-            fileNameLabel.setText(Messages.filenameColon);
-            filenameText = new Text(propertyContainer, SWT.BORDER);
-            GridData fileNameData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
-            filenameText.setLayoutData(fileNameData);
-            filenameText.setEnabled(false);
-            if (type.equals(InOutputConfigurationPage.INPUTS)) {
-                filenameText.setMessage(Messages.emptyFilename);
-            }
+            filenameText = null;
+            /**
+             * Commented out because of bug with renaming file / dir
+             */
+            // Label fileNameLabel = new Label(propertyContainer, SWT.NONE);
+            // fileNameLabel.setText(Messages.filenameColon);
+            // filenameText = new Text(propertyContainer, SWT.BORDER);
+            // GridData fileNameData = new GridData(GridData.GRAB_HORIZONTAL |
+            // GridData.FILL_HORIZONTAL);
+            // filenameText.setLayoutData(fileNameData);
+            // filenameText.setEnabled(false);
+            // if (type.equals(InOutputConfigurationPage.INPUTS)) {
+            // filenameText.setMessage(Messages.emptyFilename);
+            // }
         }
 
     }

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Data Management
 Bundle-SymbolicName: de.rcenvironment.core.datamanagement;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 6.2.0.qualifier
+Bundle-Version: 6.2.1.qualifier
 Export-Package: 
  de.rcenvironment.core.datamanagement,
  de.rcenvironment.core.datamanagement.backend,

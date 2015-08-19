@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -139,7 +138,11 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
         col2.setText(Messages.dataType);
         TableColumn col3 = null;
         TableColumn col4 = null;
-        TableColumn col5 = null;
+
+        /**
+         * Commented out because of bug with renaming file / dir
+         */
+        // TableColumn col5 = null;
 
         if (type.equals(INPUTS)) {
             col3 = new TableColumn(table, SWT.NONE);
@@ -147,9 +150,11 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
             col4 = new TableColumn(table, SWT.NONE);
             col4.setText(Messages.inputExecutionConstraint);
-
-            col5 = new TableColumn(table, SWT.NONE);
-            col5.setText(Messages.filename);
+            /**
+             * Commented out because of bug with renaming file / dir
+             */
+            // col5 = new TableColumn(table, SWT.NONE);
+            // col5.setText(Messages.filename);
         }
 
         // layout data for the columns
@@ -163,8 +168,8 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
                 true));
             tableLayout.setColumnData(col4, new ColumnWeightData(columnWeight,
                 true));
-            tableLayout.setColumnData(col5, new ColumnWeightData(columnWeight,
-                true));
+            // tableLayout.setColumnData(col5, new ColumnWeightData(columnWeight,
+            // true));
         }
 
         Button buttonAdd = new Button(client, SWT.FLAT);
@@ -286,29 +291,33 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
                             EndpointDefinition.InputExecutionContraint.Required
                                 .getDisplayName());
                     }
-                    if ((DataType.valueOf(endpoint.get(DATA_TYPE)) == DataType.FileReference || DataType
-                        .valueOf(endpoint.get(DATA_TYPE)) == DataType.DirectoryReference)
-                        && endpoint.get(FILENAME) != null) {
-                        if (endpoint.get(FILENAME).isEmpty()) {
-                            item.setText(4, Messages.emptyFilenameTable);
-                        } else if (endpoint.get(FILENAME).equals("-")) {
-                            item.setText(
-                                4,
-                                ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[2]
-                                    + File.separator
-                                    + endpoint.get(FILENAME));
-                        } else {
-                            item.setText(
-                                4,
-                                ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[2]
-                                    + File.separator
-                                    + endpoint.get(NAME)
-                                    + File.separator
-                                    + endpoint.get(FILENAME));
-                        }
-                    } else {
-                        item.setText(4, "" + "-");
-                    }
+                    /**
+                     * Commented out because of bug with renaming file / dir
+                     */
+                    // if ((DataType.valueOf(endpoint.get(DATA_TYPE)) == DataType.FileReference ||
+                    // DataType
+                    // .valueOf(endpoint.get(DATA_TYPE)) == DataType.DirectoryReference)
+                    // && endpoint.get(FILENAME) != null) {
+                    // if (endpoint.get(FILENAME).isEmpty()) {
+                    // item.setText(4, Messages.emptyFilenameTable);
+                    // } else if (endpoint.get(FILENAME).equals("-")) {
+                    // item.setText(
+                    // 4,
+                    // ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[2]
+                    // + File.separator
+                    // + endpoint.get(FILENAME));
+                    // } else {
+                    // item.setText(
+                    // 4,
+                    // ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[2]
+                    // + File.separator
+                    // + endpoint.get(NAME)
+                    // + File.separator
+                    // + endpoint.get(FILENAME));
+                    // }
+                    // } else {
+                    // item.setText(4, "" + "-");
+                    // }
                 }
             }
         }

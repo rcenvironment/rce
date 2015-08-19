@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE OutputWriter Component Common
 Bundle-SymbolicName: de.rcenvironment.components.outputwriter.common
-Bundle-Version: 6.2.0.qualifier
+Bundle-Version: 6.2.1.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: de.rcenvironment.components.outputwriter.common

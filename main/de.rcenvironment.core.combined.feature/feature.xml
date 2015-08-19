@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.combined.feature"
       label="RCE Combined Core Feature"
-      version="6.2.0.qualifier"
+      version="6.2.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

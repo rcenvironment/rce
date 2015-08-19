@@ -273,9 +273,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
         keepOnFailure = false;
         if (componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE) != null) {
-            keepOnFailure =
-                Boolean.parseBoolean(componentContext
-                    .getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
+            keepOnFailure = Boolean.parseBoolean(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
         }
     }
 
@@ -573,8 +571,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     engine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
 
                     String headerScript =
-                        ScriptingUtils.prepareHeaderScript(stateMap, componentContext, TempFileServiceAccess.getInstance()
-                            .createManagedTempDir(), new LinkedList<File>());
+                        ScriptingUtils.prepareHeaderScript(stateMap, componentContext, inputDirectory,
+                            new LinkedList<File>());
                     engine.eval(headerScript);
                     engine.eval(prepareTableInput(inputValues));
                     exitCode = (Integer) engine.eval(script);
@@ -595,7 +593,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                             ConsoleRow.Type.COMPONENT_OUTPUT);
                     }
 
-                } catch (ScriptException | IOException e) {
+                } catch (ScriptException e) {
                     componentContext.printConsoleLine(scriptPrefix + SCRIPT_TERMINATED_ABNORMALLY_ERROR_MSG, ConsoleRow.Type.STDERR);
                     componentContext.printConsoleLine(e.getMessage(), ConsoleRow.Type.STDERR);
                     deleteBaseWorkingDirectory(false);
@@ -792,37 +790,47 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     }
 
     private String copyInputFileToInputFolder(String inputName, Map<String, TypedDatum> inputValues) {
-
         File targetFile = null;
         TypedDatum fileReference = inputValues.get(inputName);
         try {
             if (componentContext.getInputDataType(inputName) == DataType.FileReference) {
                 String fileName = ((FileReferenceTD) fileReference).getFileName();
-                if (componentContext.getInputMetaDataKeys(inputName).contains(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME)
-                    && !componentContext.getInputMetaDataValue(inputName, ToolIntegrationConstants.KEY_ENDPOINT_FILENAME).isEmpty()) {
-                    fileName = componentContext.getInputMetaDataValue(inputName, ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
-                }
+                /**
+                 * Commented out because of bug with renaming file / dir
+                 */
+                // if (!componentContext.getInputMetaDataValue(inputName,
+                // ToolIntegrationConstants.KEY_ENDPOINT_FILENAME).isEmpty()) {
+                // fileName = componentContext.getInputMetaDataValue(inputName,
+                // ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
+                // }
                 targetFile = new File(inputDirectory.getAbsolutePath(), inputName + File.separator + fileName);
                 if (targetFile.exists()) {
                     FileUtils.forceDelete(targetFile);
                 }
                 datamanagementService.copyFileReferenceTDToLocalFile(componentContext, (FileReferenceTD) fileReference, targetFile);
             } else {
-                String fileName = ((DirectoryReferenceTD) fileReference).getDirectoryName();
+                // String fileName = ((DirectoryReferenceTD) fileReference).getDirectoryName();
                 targetFile = new File(inputDirectory.getAbsolutePath(), inputName);
                 if (targetFile.exists()) {
                     FileUtils.forceDelete(targetFile);
                 }
                 datamanagementService.copyDirectoryReferenceTDToLocalDirectory(componentContext,
                     (DirectoryReferenceTD) fileReference, targetFile);
-                targetFile = new File(targetFile, ((DirectoryReferenceTD) fileReference).getDirectoryName());
-                if (componentContext.getInputMetaDataValue(inputName, ToolIntegrationConstants.KEY_ENDPOINT_FILENAME) != null
-                    && !componentContext.getInputMetaDataValue(inputName, ToolIntegrationConstants.KEY_ENDPOINT_FILENAME).isEmpty()) {
-                    fileName = componentContext.getInputMetaDataValue(inputName, ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
-                    File newTarget = new File(new File(inputDirectory.getAbsolutePath(), inputName), fileName);
-                    targetFile.renameTo(newTarget);
-                    targetFile = newTarget;
-                }
+                /**
+                 * Commented out because of bug with renaming file / dir
+                 */
+                // if (componentContext.getInputMetaDataValue(inputName,
+                // ToolIntegrationConstants.KEY_ENDPOINT_FILENAME) != null
+                // && !componentContext.getInputMetaDataValue(inputName,
+                // ToolIntegrationConstants.KEY_ENDPOINT_FILENAME).isEmpty()) {
+                // fileName = componentContext.getInputMetaDataValue(inputName,
+                // ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
+                // File newTarget = new File(new File(inputDirectory.getAbsolutePath(), inputName),
+                // fileName);
+                // FileUtils.moveDirectory(new File(targetFile, ((DirectoryReferenceTD)
+                // fileReference).getDirectoryName()), newTarget);
+                // targetFile = newTarget;
+                // }
             }
             componentContext.printConsoleLine(toolName + ": Copied " + targetFile.getName() + " to "
                 + targetFile.getAbsolutePath() + "\"", ConsoleRow.Type.COMPONENT_OUTPUT);

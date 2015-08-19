@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch Common
 Bundle-SymbolicName: de.rcenvironment.components.switch.common
-Bundle-Version: 6.2.0.qualifier
+Bundle-Version: 6.2.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.components.switchcmp.common

@@ -219,7 +219,14 @@ public final class ScriptingUtils {
                 tempFiles.add(fileInputDir);
                 File file = new File(fileInputDir, ((FileReferenceTD) input).getFileName());
                 try {
-                    componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext, (FileReferenceTD) input, file);
+                    // Since the code is shared for the script component and tool integration, there
+                    // must be some difference here:
+                    // In tool integration, copying the data is done by the component so at this
+                    // point, it is not needed any more (is already exists)
+                    // For the script component, this should always run.
+                    if (!file.exists()) {
+                        componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext, (FileReferenceTD) input, file);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to load input file from the data management", e);
                 }
@@ -230,8 +237,15 @@ public final class ScriptingUtils {
                 tempFiles.add(dirInputDir);
                 File dir = new File(dirInputDir, ((DirectoryReferenceTD) input).getDirectoryName());
                 try {
-                    componentDatamanagementService.copyDirectoryReferenceTDToLocalDirectory(compContext,
-                        (DirectoryReferenceTD) input, dir);
+                    // Since the code is shared for the script component and tool integration, there
+                    // must be some difference here:
+                    // In tool integration, copying the data is done by the component so at this
+                    // point, it is not needed any more (is already exists)
+                    // For the script component, this should always run.
+                    if (!dir.exists()) {
+                        componentDatamanagementService.copyDirectoryReferenceTDToLocalDirectory(compContext,
+                            (DirectoryReferenceTD) input, dirInputDir);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException("Failed to load input directory from the data management", e);
                 }
