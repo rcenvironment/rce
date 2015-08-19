@@ -19,6 +19,7 @@ import java.util.Map;
 import javax.script.ScriptEngine;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -211,7 +212,7 @@ public final class ScriptingUtils {
         String dataDefinition = "RCE_Dict_InputChannels = { ";
         String nameAndValue = "";
         for (String inputName : compContext.getInputsWithDatum()) {
-            nameAndValue = " \"" + inputName + "\" : ";
+            nameAndValue = " \"" + StringEscapeUtils.escapeJava(inputName) + "\" : ";
             TypedDatum input = compContext.readInput(inputName);
             switch (compContext.getInputDataType(inputName)) {
             case FileReference:
@@ -262,9 +263,9 @@ public final class ScriptingUtils {
             case ShortText:
                 String value = ((ShortTextTD) input).getShortTextValue();
                 if (value.contains("\n")) {
-                    nameAndValue += QUOTE + QUOTE + QUOTE + value + QUOTE + QUOTE + QUOTE;
+                    nameAndValue += QUOTE + QUOTE + QUOTE + StringEscapeUtils.escapeJava(value) + QUOTE + QUOTE + QUOTE;
                 } else {
-                    nameAndValue += QUOTE + value + QUOTE;
+                    nameAndValue += QUOTE + StringEscapeUtils.escapeJava(value) + QUOTE;
                 }
                 break;
             case Integer:

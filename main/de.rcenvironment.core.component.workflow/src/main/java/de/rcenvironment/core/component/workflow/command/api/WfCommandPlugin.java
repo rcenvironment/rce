@@ -87,8 +87,8 @@ public class WfCommandPlugin implements CommandPlugin {
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
         contributions.add(new CommandDescription("wf", "", false, "short form of \"wf list\""));
-        contributions.add(new CommandDescription("wf run", "[--dispose <onfinished|never|always>] [-p <JSON placeholder file>]"
-            + " <workflow file>", false, "execute a workflow file"));
+        contributions.add(new CommandDescription("wf run", "[--dispose <onfinished|never|always>] [--compact-output] "
+            + "[-p <JSON placeholder file>] <workflow file>", false, "execute a workflow file"));
         contributions.add(new CommandDescription("wf verify",
             "[--dispose <onfinished|never|always>] [--pr <parallel runs>] [--sr <sequential runs>] [-p <JSON placeholder file>] "
                 + "([--basedir <root directory for all subsequent files>] (<workflow filename>|\"*\")+ )+",
@@ -165,9 +165,12 @@ public class WfCommandPlugin implements CommandPlugin {
     }
 
     private void performWfRun(CommandContext cmdCtx) throws CommandException {
-        // "wf run [--dispose] [-p <JSON placeholder file>] <filename>"
+        // "wf run [--dispose <...>] [--compact-output] [-p <JSON placeholder file>] <filename>"
 
         HeadlessWorkflowExecutionService.Dispose dispose = readOptionalDisposeParameter(cmdCtx);
+
+        boolean compactId = cmdCtx.consumeNextTokenIfEquals("--compact-output");
+
         File placeholdersFile = readOptionalPlaceholdersFileParameter(cmdCtx);
 
         final String filename = cmdCtx.consumeNextToken();
@@ -176,8 +179,9 @@ public class WfCommandPlugin implements CommandPlugin {
             throw CommandException.syntaxError("Missing filename", cmdCtx);
         }
 
-        if (cmdCtx.consumeNextToken() != null) {
-            throw CommandException.wrongNumberOfParameters(cmdCtx);
+        final String additionalToken = cmdCtx.consumeNextToken();
+        if (additionalToken != null) {
+            throw CommandException.syntaxError("Expected end of command, but found another argument: " + additionalToken, cmdCtx);
         }
         final File wfFile;
         try {
@@ -194,7 +198,7 @@ public class WfCommandPlugin implements CommandPlugin {
         try {
             // TODO specify log directory?
             workflowExecutionService.executeWorkflow(wfFile, placeholdersFile,
-                setupLogDirectoryForWfFile(wfFile), cmdCtx.getOutputReceiver(), null, dispose);
+                setupLogDirectoryForWfFile(wfFile), cmdCtx.getOutputReceiver(), null, dispose, compactId);
         } catch (WorkflowExecutionException e) {
             log.error("Exception while executing workflow from file: " + wfFile.getAbsolutePath(), e);
             throw CommandException.executionError(e.getMessage(), cmdCtx);
@@ -213,7 +217,7 @@ public class WfCommandPlugin implements CommandPlugin {
                         log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
                             MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
                         throw CommandException.executionError(
-                                StringUtils.format("Workflow file '%s' is not valid. See log above for more details.",
+                            StringUtils.format("Workflow file '%s' is not valid. See log above for more details.",
                                 wfFile.getAbsolutePath()), context);
                     }
                     log.debug("Retrying workflow validation in a few seconds.");
@@ -607,7 +611,7 @@ public class WfCommandPlugin implements CommandPlugin {
                             try {
                                 // TODO specify log directory?
                                 FinalWorkflowState finalState = workflowExecutionService.executeWorkflow(wfFile, placeholdersFile,
-                                    setupLogDirectoryForWfFile(wfFile), context.getOutputReceiver(), null, dispose);
+                                    setupLogDirectoryForWfFile(wfFile), context.getOutputReceiver(), null, dispose, false);
                                 wfVerifyResult.addFinalState(finalState);
                             } catch (WorkflowExecutionException e) {
                                 context.println("Exception while executing workflow " + wfFile + ": " + e.toString());

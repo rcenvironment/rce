@@ -14,7 +14,6 @@ import java.io.Serializable;
 
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
-import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryDataItemSubtreeBuilder;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
@@ -59,6 +58,8 @@ public class CpacsIntegrationHistoryDataItemSubtreeBuilder extends IntegrationHi
     @Override
     public void buildInitialHistoryDataItemSubtree(Serializable historyDataItem, DMBrowserNode parent) {
 
+        super.buildInitialHistoryDataItemSubtree(historyDataItem, parent);
+        
         ServiceRegistryAccess registryAccess = ServiceRegistry.createAccessFor(this);
         TypedDatumSerializer serializer = registryAccess.getService(TypedDatumService.class).getSerializer();
 
@@ -70,7 +71,6 @@ public class CpacsIntegrationHistoryDataItemSubtreeBuilder extends IntegrationHi
                 throw new IllegalArgumentException(e);
             }
 
-            CommonHistoryDataItemSubtreeBuilderUtils.buildCommonHistoryDataItemSubtrees(historyData, parent);
             if (historyData.getCpacsWithVariablesFileReference() != null
                 || historyData.getToolInputWithoutToolspecificFileReference() != null) {
                 intermediateInputsNode =

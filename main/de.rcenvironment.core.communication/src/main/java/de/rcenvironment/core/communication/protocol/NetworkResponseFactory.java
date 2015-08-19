@@ -15,6 +15,7 @@ import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.impl.NetworkResponseImpl;
+import de.rcenvironment.core.communication.protocol.ProtocolConstants.ResultCode;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 
 /**
@@ -52,6 +53,19 @@ public final class NetworkResponseFactory {
         NetworkResponseImpl response =
             new NetworkResponseImpl(contentBytes, request.getRequestId(), ProtocolConstants.ResultCode.SUCCESS);
         return response;
+    }
+
+    /**
+     * Creates a response (typically on the caller side) from a received result code, and raw response bytes.
+     * 
+     * @param request the associated request
+     * @param responseBody the byte array to use as the response payload
+     * @param resultCode the numeric result code
+     * @return the generated response
+     */
+    public static NetworkResponse generateResponseWithResultCode(NetworkRequest request, byte[] responseBody, int resultCode) {
+        ResultCode resultCodeEnum = ResultCode.fromCode(resultCode); // may return INVALID RESULT_CODE if the code is unknown
+        return new NetworkResponseImpl(responseBody, request.getRequestId(), resultCodeEnum);
     }
 
     /**

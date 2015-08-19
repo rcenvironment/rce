@@ -2,7 +2,6 @@
   "identifier" : "04715674-27b7-4502-a4c7-5b212fe849ef",
   "workflowVersion" : "4",
   "name" : "MDO_CO_2014-12-08_17:35:03_12",
-  "platform" : "d527f3d12cc84c048193f0f6f6c22ab6",
   "labels" : "[{\"identifier\":\"38f150c6-b373-4172-ba0d-b2cfcdab78e1\",\"text\":\"Calculate an optimum for Discipline 1 with the given constraints\",\"location\":\"535:-54\",\"size\":\"355:246\",\"alpha\":\"197\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:255:0\",\"alignmentType\":\"BOTTOMCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"e3d16af5-fbe2-451c-9f90-fea338683c24\",\"text\":\"Calculate an optimum for Discipline 2 with the given constraints\",\"location\":\"535:265\",\"size\":\"355:246\",\"alpha\":\"197\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:128:255\",\"alignmentType\":\"BOTTOMCENTER\",\"border\":\"false\",\"textSize\":\"9\"}]",
   "nodes" : [ {
     "identifier" : "c96f1a88-1b6a-4807-b349-43cea53a3f88",

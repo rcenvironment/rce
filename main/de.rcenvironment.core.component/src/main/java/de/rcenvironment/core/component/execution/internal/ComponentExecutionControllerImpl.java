@@ -84,6 +84,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
 
 /**
@@ -94,9 +95,11 @@ import de.rcenvironment.core.utils.incubator.StateChangeException;
  */
 public class ComponentExecutionControllerImpl implements ComponentExecutionController {
 
-    private static final int MAX_CALLBACK_FAILURES = 9;
-
     private static final Log LOG = LogFactory.getLog(ComponentExecutionControllerImpl.class);
+    
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(ComponentExecutionControllerImpl.class);
+
+    private static final int MAX_CALLBACK_FAILURES = 9;
 
     private static final int HEARTBEAT_SEND_INTERVAL_MSEC = 30 * 1000;
 
@@ -441,8 +444,9 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         this.compDataManagementStorage = new ComponentExecutionStorageBridge(metaDataService, executionContext,
             timestampOffsetToWorkfowNode);
         this.executionScheduler = new ExecutionScheduler(compExeCtx, endpointDatumsToProcess, stateMachine);
-
-        heartbeatFuture = threadPool.scheduleAtFixedRate(heartbeatRunnable, HEARTBEAT_SEND_INTERVAL_MSEC);
+        
+        heartbeatFuture = threadPool.scheduleAtFixedRateAfterDelay(heartbeatRunnable, Math.round(Math.random() * 10),
+            HEARTBEAT_SEND_INTERVAL_MSEC);
     }
 
     @Override
@@ -542,6 +546,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         PAUSE_ATTEMPT_FAILED,
         RESUME_ATTEMPT_FAILED,
         RESTART_ATTEMPT_FAILED,
+        SENDING_OUTPUTS_FAILED,
 
         RUNNING,
         FINISHED,
@@ -747,6 +752,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             case SCHEDULING_FAILED:
             case PAUSE_ATTEMPT_FAILED:
             case CANCEL_ATTEMPT_FAILED:
+            case SENDING_OUTPUTS_FAILED:
                 if (checkStateChange(currentState, ComponentState.TEARING_DOWN, event)) {
                     state = handleFailure(currentState, event);
                 }
@@ -1561,7 +1567,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             if (isWorkflowControllerReachable()) {
                 try {
                     callback.processConsoleRows(consoleRows);
-                    wfControllerCallbackFailureCount.set(0);
+                    handleWorkflowCallbackSuccess();
                 } catch (UndeclaredThrowableException e) {
                     handleWorkflowCallbackFailure(e.getCause());
                 } catch (RuntimeException e) {
@@ -1576,7 +1582,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             if (isWorkflowControllerReachable()) {
                 try {
                     callback.onComponentStateChanged(compExeId, oldState, newState, count, countOnResets);
-                    wfControllerCallbackFailureCount.set(0);
+                    handleWorkflowCallbackSuccess();
                 } catch (UndeclaredThrowableException e) {
                     handleWorkflowCallbackFailure(e.getCause());
                 } catch (RuntimeException e) {
@@ -1591,7 +1597,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             if (isWorkflowControllerReachable()) {
                 try {
                     callback.onComponentStateChanged(compExeId, oldState, newState, count, countOnResets, th);
-                    wfControllerCallbackFailureCount.set(0);
+                    handleWorkflowCallbackSuccess();
                 } catch (UndeclaredThrowableException e) {
                     handleWorkflowCallbackFailure(e.getCause());
                 } catch (RuntimeException e) {
@@ -1605,11 +1611,12 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             if (isWorkflowControllerReachable()) {
                 try {
                     callback.onInputProcessed(serializedEndpointDatum);
-                    wfControllerCallbackFailureCount.set(0);
+                    handleWorkflowCallbackSuccess();
                 } catch (UndeclaredThrowableException e) {
-                    handleWorkflowCallbackFailure(e.getCause());
+                    stateMachine.postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.SENDING_OUTPUTS_FAILED,
+                        e.getCause()));
                 } catch (RuntimeException e) {
-                    handleWorkflowCallbackFailure(e);
+                    stateMachine.postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.SENDING_OUTPUTS_FAILED, e));
                 }
             }
         }
@@ -1618,8 +1625,13 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         public void onComponentHeartbeatReceived(String executionIdentifier) {
             if (isWorkflowControllerReachable()) {
                 try {
+                    if (VERBOSE_LOGGING) {
+                        LOG.debug(StringUtils.format("Component '%s' (%s) is sending heartbeat to workflow controller '%s' (%s)",
+                            compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
+                            compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()));
+                    }
                     callback.onComponentHeartbeatReceived(executionIdentifier);
-                    wfControllerCallbackFailureCount.set(0);
+                    handleHeartbeatSentSuccess();
                 } catch (UndeclaredThrowableException e) {
                     handleHeartbeatSentFailure(e.getCause());
                 } catch (RuntimeException e) {
@@ -1627,18 +1639,38 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 }
             }
         }
+        
+        private void handleWorkflowCallbackSuccess() {
+            if (wfControllerCallbackFailureCount.get() > 0) {
+                LOG.debug(StringUtils.format("Callback from local component '%s' (%s) to workflow controller '%s' (%s) succeeded again",
+                    compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
+                    compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()));
+            }
+            wfControllerCallbackFailureCount.set(0);
+        }
+        
+        private void handleHeartbeatSentSuccess() {
+            if (wfControllerCallbackFailureCount.get() > 0) {
+                LOG.debug(StringUtils.format("Heartbeat callback from local component '%s' (%s) to workflow controller '%s' (%s)"
+                    + " succeeded again", compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
+                    compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()));
+            }
+            wfControllerCallbackFailureCount.set(0);
+        }
 
         private void handleWorkflowCallbackFailure(Throwable e) {
             int failureCount = wfControllerCallbackFailureCount.incrementAndGet();
-            String message = StringUtils.format("Callback from local component '%s' to workflow controller ('%s') failed",
-                compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowExecutionIdentifier());
+            String message = StringUtils.format("Callback from local component '%s' (%s) to workflow controller '%s' (%s) failed",
+                compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
+                compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier());
             registerCallbackFailureEvent(message, failureCount, e);
         }
 
         private void handleHeartbeatSentFailure(Throwable e) {
-            int failureCount = wfControllerCallbackFailureCount.addAndGet(2); // TODO review: keep increased heartbeat weight?
-            String message = StringUtils.format("Heartbeat callback from local component '%s' to workflow controller ('%s') failed",
-                compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowExecutionIdentifier());
+            int failureCount = wfControllerCallbackFailureCount.addAndGet(2);
+            String message = StringUtils.format("Heartbeat callback from local component '%s' (%s) to workflow controller '%s' (%s) failed",
+                compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
+                compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier());
             registerCallbackFailureEvent(message, failureCount, e);
         }
 

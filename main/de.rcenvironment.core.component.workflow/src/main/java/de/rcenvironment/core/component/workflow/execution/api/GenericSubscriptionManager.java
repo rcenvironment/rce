@@ -30,6 +30,7 @@ import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * Handles the connection to the subscription service and the retrieval of "missed" notifications.
@@ -42,12 +43,14 @@ public class GenericSubscriptionManager {
     private final GenericSubscriptionEventProcessor eventProcessor;
 
     private final WorkflowHostService workflowHostService;
-    
+
     private final CommunicationService communicationService;
 
     private final String wildCard = ".*";
 
     private final Set<String> subscribed = new HashSet<String>();
+
+    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
     /**
      * Default constructor.
@@ -138,12 +141,16 @@ public class GenericSubscriptionManager {
             if (lastMissedNumber != NotificationService.NO_MISSED) {
                 eventProcessor.setNumberOfLastMissingNotification(notifId, node.getIdString(), lastMissedNumber);
                 Log log = LogFactory.getLog(getClass());
-                log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, node));
+                if (verboseLogging) {
+                    log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, node));
+                }
                 Map<String, List<Notification>> storedNotifications = sns.getNotifications(notifId, node);
-                log.debug(StringUtils.format("Received %d stored notification entries for id %s from node %s", storedNotifications.size(),
-                    notifId, node));
-                for (Entry<String, List<Notification>> e : storedNotifications.entrySet()) {
-                    log.debug(StringUtils.format("  Received %d notifications for topic %s", e.getValue().size(), e.getKey()));
+                if (verboseLogging) {
+                    log.debug(StringUtils.format("Received %d stored notification entries for id %s from node %s",
+                        storedNotifications.size(), notifId, node));
+                    for (Entry<String, List<Notification>> e : storedNotifications.entrySet()) {
+                        log.debug(StringUtils.format("  Received %d notifications for topic %s", e.getValue().size(), e.getKey()));
+                    }
                 }
                 for (List<Notification> notifications : storedNotifications.values()) {
                     // TODO 5.0 final: replaced commented-out code with this line; remove old code after testing

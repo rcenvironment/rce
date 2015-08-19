@@ -17,9 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
-import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
-import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.jface.viewers.Viewer;
@@ -269,7 +267,7 @@ public final class PropertyTabGuiHelper {
 
     private static Object selectFileOrDirectoryFromWorkspace(final Shell shell, final String title, final String message,
         Object input, final SelectionType filter) {
-        final IProject project = getCurrentWorkflowsProject();
+        final IProject project = getProjectOfCurrentlyActiveEditor();
         final ElementTreeSelectionDialog selectionDialog = new ElementTreeSelectionDialog(shell,
             new WorkbenchLabelProvider(),
             new BaseWorkbenchContentProvider()) {
@@ -356,7 +354,7 @@ public final class PropertyTabGuiHelper {
      * 
      * @return The name of the project or null if not found
      */
-    public static String getProjectOfCurrentlyActiveEditor() {
+    public static IProject getProjectOfCurrentlyActiveEditor() {
         String source = "Return the project path of the active editor: %s";
         final IWorkbenchWindow window = PlatformUI.getWorkbench().getActiveWorkbenchWindow();
         IEditorInput input = null;
@@ -381,12 +379,7 @@ public final class PropertyTabGuiHelper {
         // second if-chain to avoid deep nesting
         if (input.exists()) {
             if (input instanceof FileEditorInput) {
-                final IPath root = ResourcesPlugin.getWorkspace().getRoot().getLocation();
-                final IPath path = ((FileEditorInput) input).getPath().makeRelativeTo(root);
-                if (path.segment(0).equals("..")) {
-                    return path.toOSString();
-                }
-                return path.segment(0);
+                return ((FileEditorInput) input).getFile().getProject();
             } else {
                 LOGGER.debug(StringUtils.format(source, "Wrong type of active editor input " + input.getClass()));
             }
@@ -396,19 +389,5 @@ public final class PropertyTabGuiHelper {
         return null;
     }
 
-    /**
-     * Return the current workflow's project.
-     * 
-     * @return The project
-     */
-    public static IProject getCurrentWorkflowsProject() {
-        final IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
-        String path = getProjectOfCurrentlyActiveEditor();
-        if (path != null) {
-            final IProject project = root.getProject(path);
-            return project;
-        }
-        return null;
-    }
 
 }

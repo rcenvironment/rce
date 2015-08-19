@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.cpacs.gui.workflow.integration</artifactId>
 	<name>RCE CPACS GUI Workflow Integration Bundle</name>
-	<version>6.2.1.qualifier</version>
+	<version>6.3.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

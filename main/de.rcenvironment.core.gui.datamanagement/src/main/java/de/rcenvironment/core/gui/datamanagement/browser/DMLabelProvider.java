@@ -33,8 +33,10 @@ public class DMLabelProvider extends ColumnLabelProvider {
         ImageManager imageManager = ImageManager.getInstance();
         Image result = DMBrowserImages.IMG_DEFAULT;
         DMBrowserNode node = (DMBrowserNode) element;
-        if (node.getType() == DMBrowserNodeType.Workflow) {
+        if (node.getType() == DMBrowserNodeType.Workflow && node.getIcon() == null) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.WORKFLOW_16);
+        } else if (node.getType() == DMBrowserNodeType.Workflow && node.getIcon() != null) {
+            result = node.getIcon();
         } else if (node.getType() == DMBrowserNodeType.Workflow_Disabled) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.WORKFLOW_DISABLED_16);
         } else if (node.getType() == DMBrowserNodeType.Timeline) {

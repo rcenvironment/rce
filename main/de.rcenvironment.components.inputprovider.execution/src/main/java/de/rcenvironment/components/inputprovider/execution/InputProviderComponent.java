@@ -32,27 +32,31 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class InputProviderComponent extends DefaultComponent {
 
+    private static final String BACKSLASH = "\\";
+
+    private static final String FRONTSLASH = "/";
+
     private ComponentContext componentContext;
-    
+
     private TypedDatumFactory typedDatumFactory;
 
     private ComponentDataManagementService dataManagementService;
-    
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
     }
-    
+
     @Override
     public boolean treatStartAsComponentRun() {
         return componentContext.getOutputs().size() > 0;
     }
-    
+
     @Override
     public void start() throws ComponentException {
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
-        
+
         for (String outputName : componentContext.getOutputs()) {
             // Only if there are starting values! = Don't send nothing.
             String value = componentContext.getOutputMetaDataValue(outputName, InputProviderComponentConstants.META_VALUE);
@@ -79,7 +83,7 @@ public class InputProviderComponent extends DefaultComponent {
                 datum = getTypedDatumForFile(value, outputName);
                 break;
             case DirectoryReference:
-                datum = getTypedDatumForDirectory(value);
+                datum = getTypedDatumForDirectory(value, outputName);
                 break;
             default:
                 throw new ComponentException("Given data type is not supported: " + type);
@@ -88,7 +92,7 @@ public class InputProviderComponent extends DefaultComponent {
             componentContext.printConsoleLine("Wrote to output '" + outputName + "': " + value, ConsoleRow.Type.COMPONENT_OUTPUT);
         }
     }
-    
+
     private TypedDatum getTypedDatumForFile(String value, String outputName) throws ComponentException {
         File file = createFileObject(value);
         if (file == null) {
@@ -106,9 +110,12 @@ public class InputProviderComponent extends DefaultComponent {
         }
     }
 
-    private TypedDatum getTypedDatumForDirectory(String value) throws ComponentException {
+    private TypedDatum getTypedDatumForDirectory(String value, String outputName) throws ComponentException {
         File dir = createFileObject(value);
-        if (!dir.exists()) {
+        if (dir == null) {
+            throw new ComponentException(StringUtils.format("%s: No directory name given for output '%s'",
+                componentContext.getInstanceName(), outputName));
+        } else if (!dir.exists()) {
             throw new ComponentException(StringUtils.format("%s: Directory doesn't exist on node %s: %s",
                 componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
         }
@@ -124,13 +131,33 @@ public class InputProviderComponent extends DefaultComponent {
         }
     }
 
-    private File createFileObject(String value) {
+    private File createFileObject(String value) throws ComponentException {
         if (value.isEmpty()) {
             return null;
         }
+        // if front and backslashes are mixed -> exception
+        if (value.contains(FRONTSLASH) && value.contains(BACKSLASH)) {
+            throw new ComponentException(StringUtils.format(
+                "%s: Given path to file or directory could not be resolved, as it contains front and backslash as well. %s",
+                componentContext.getInstanceName(), value));
+        }
+        // determine separator
+        String usedSeparator = "";
+        if (value.contains(FRONTSLASH)) {
+            usedSeparator = FRONTSLASH;
+        } else if (value.contains(BACKSLASH)) {
+            usedSeparator = BACKSLASH;
+        } else {
+            // if neither front nor backslash exists -> exception
+            throw new ComponentException(StringUtils.format("%s: Given path to file or directory does not exist on node %s: %s",
+                componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), value));
+        }
         File file = new File(value);
-        if (!file.isAbsolute() && !value.isEmpty()) {
-            file = new File(ResourcesPlugin.getWorkspace().getRoot().getLocation().toFile().getAbsolutePath() + "/" + value);
+        if (!file.isAbsolute()) {
+            String projectName = value.split(usedSeparator)[0];
+            String pathToFileWithinProject = value.substring(projectName.length());
+            file = new File(ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).getLocation().toFile().getAbsolutePath()
+                + usedSeparator + pathToFileWithinProject);
         }
         return file;
     }

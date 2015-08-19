@@ -59,11 +59,14 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryData
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeUtils;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -131,6 +134,8 @@ public class DMContentProvider implements ITreeContentProvider {
         "de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder";
 
     protected final Log log = LogFactory.getLog(getClass());
+
+    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
     private DistributedMetaDataService metaDataService;
 
@@ -266,21 +271,44 @@ public class DMContentProvider implements ITreeContentProvider {
     private WorkflowRun getMetaDataForWorkflow(DMBrowserNode workflowNode) throws CommunicationException {
         // extract the id of the desired workflow
         final Long workflowRunID = Long.valueOf(workflowNode.getMetaData().getValue(METADATA_COMPONENT_CONTEXT_ID));
+        final NodeIdentifier workflowNodeId = workflowNode.getNodeIdentifier(); // TODO review: not DM node id?
 
-        if (workflowMetaDataMap.containsKey(workflowRunID)) {
-            return workflowMetaDataMap.get(workflowRunID);
+        synchronized (workflowMetaDataMap) {
+            if (workflowMetaDataMap.containsKey(workflowRunID)) {
+                return workflowMetaDataMap.get(workflowRunID);
+            }
         }
 
         final long start = System.currentTimeMillis();
-        WorkflowRun result = metaDataService.getWorkflowRun(workflowRunID, workflowNode.getNodeIdentifier());
-        final long millis = System.currentTimeMillis() - start;
-        if (result == null) {
-            log.warn(StringUtils.format("Unable to fetch meta data of workflow %d from node %s.", workflowRunID, workflowNode.getName()));
-            return null;
+        WorkflowRun result = null;
+        try {
+            log.debug(StringUtils.format("Fetching run data of workflow #%s from %s", workflowRunID, workflowNodeId));
+            result = metaDataService.getWorkflowRun(workflowRunID, workflowNodeId);
+            log.debug(StringUtils.format("Finished fetching run data of workflow #%s from %s", workflowRunID, workflowNodeId));
+        } catch (CommunicationException e) {
+            // cache anyway to prevent repeated failing remote requests as this method is called multiple times when building the tree nodes
+            synchronized (workflowMetaDataMap) {
+                workflowMetaDataMap.put(workflowRunID, null);
+            }
+            log.debug(StringUtils.format("Failed to fetch run data of workflow #%s from %s", workflowRunID, workflowNodeId));
+            throw e; // throw exception to keep logic for 6.3; could be improved though - seid_do
         }
-        log.debug(StringUtils.format("metadata query for workflow \'%s\' took %d ms", result.getWorkflowTitle(),
-            millis));
-        workflowMetaDataMap.put(workflowRunID, result);
+        final long millis = System.currentTimeMillis() - start;
+        // TODO review: can "null" really happen here? (see catch block above) - misc_ro, Jul 2015
+        if (result == null) {
+            log.error(StringUtils.format("Unable to fetch meta data of workflow #%d from node %s", workflowRunID,
+                workflowNode.getName()));
+        } else {
+            if (verboseLogging) {
+                log.debug(StringUtils.format("Meta data query for workflow #%d (\'%s\') took %d ms", workflowRunID,
+                    result.getWorkflowTitle(), millis));
+            }
+        }
+        // cache even in case of 'null' result to prevent repeated failing requests as this method is called multiple times when
+        // building the tree nodes
+        synchronized (workflowMetaDataMap) {
+            workflowMetaDataMap.put(workflowRunID, result);
+        }
         return result;
     }
 
@@ -288,6 +316,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
         final long start = System.currentTimeMillis();
         Set<WorkflowRunDescription> workflowDescriptions = metaDataService.getWorkflowRunDescriptions();
+
         log.debug(StringUtils.format("query for all workflow run descriptions on all known nodes took %d ms",
             (System.currentTimeMillis() - start)));
 
@@ -349,6 +378,7 @@ public class DMContentProvider implements ITreeContentProvider {
                 contextDMObject.setType(DMBrowserNodeType.Workflow);
                 contextDMObject.setWorkflowID(contextID);
                 contextDMObject.setWorkflowHostID(wfd.getControllerNodeID());
+                setWorkflowNodeIconFromFinalState(contextDMObject, wfd.getFinalState());
                 // add workflow node to the child node set of the parent (root) node
                 parent.addChild(contextDMObject);
                 // register as known workflow
@@ -431,6 +461,28 @@ public class DMContentProvider implements ITreeContentProvider {
         workflowNode.setTitle(wfNodeTitle);
     }
 
+    private void setWorkflowNodeIconFromFinalState(DMBrowserNode workflowNode, FinalWorkflowState finalState) {
+        if (finalState != null) {
+            // Select state icon for workflow
+            switch (finalState) {
+            case CANCELLED:
+                workflowNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.CANCELLED));
+                break;
+            case FINISHED:
+                workflowNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.FINISHED));
+                break;
+            case FAILED:
+                workflowNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.FAILED));
+                break;
+            default:
+                break;
+            }
+        } else {
+            workflowNode.setIcon(null);
+        }
+
+    }
+
     private void createChildrenForWorkflowNode(final DMBrowserNode workflowNode) throws CommunicationException {
         final WorkflowRun workflowRun = getMetaDataForWorkflow(workflowNode);
         if (workflowRun == null) {
@@ -464,29 +516,35 @@ public class DMContentProvider implements ITreeContentProvider {
         componentHostInformation.setType(DMBrowserNodeType.InformationText);
         runInformation.addChild(componentHostInformation);
 
-        for (final ComponentInstance componentInstance : workflowRun.getComponentRuns().keySet()) {
+        if (workflowRun.getComponentRuns().isEmpty()) {
+            DMBrowserNode.addNewLeafNode("Not (yet) available", DMBrowserNodeType.InformationText, componentHostInformation);
+        } else {
+            for (final ComponentInstance componentInstance : workflowRun.getComponentRuns().keySet()) {
 
-            if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
-
-                final NodeIdentifier componentRunHostID =
-                    NodeIdentifierFactory.fromNodeId(workflowRun.getComponentRuns().get(componentInstance).iterator().next().getNodeID());
-
-                if (componentRunHostID != null) {
-                    DMBrowserNode compNode =  DMBrowserNode.addNewLeafNode(
-                        StringUtils.format("%s: %s", componentInstance.getComponentInstanceName(),
-                            componentRunHostID.getAssociatedDisplayName()),
-                        DMBrowserNodeType.Component, componentHostInformation);
-                    MetaDataSet metaDataSet = new MetaDataSet();
-                    final String componentName = componentInstance.getComponentInstanceName();
-                    metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
-                    metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
-                    compNode.setMetaData(metaDataSet);
-                    
-                    setComponentIconForDMBrowserNode(compNode);
+                if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
+        
+                    final NodeIdentifier componentRunHostID =
+                        NodeIdentifierFactory.fromNodeId(workflowRun.getComponentRuns().get(componentInstance).iterator()
+                            .next().getNodeID());
+        
+                    if (componentRunHostID != null) {
+                        DMBrowserNode compNode = DMBrowserNode.addNewLeafNode(
+                            StringUtils.format("%s: %s", componentInstance.getComponentInstanceName(),
+                                componentRunHostID.getAssociatedDisplayName()),
+                            DMBrowserNodeType.Component, componentHostInformation);
+                        MetaDataSet metaDataSet = new MetaDataSet();
+                        final String componentName = componentInstance.getComponentInstanceName();
+                        metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
+                        metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID()
+                            .split(STRING_SLASH)[0]);
+                        compNode.setMetaData(metaDataSet);
+        
+                        setComponentIconForDMBrowserNode(compNode);
+                    }
+        
                 }
-
+        
             }
-
         }
 
         // create timeline sub-tree
@@ -582,6 +640,7 @@ public class DMContentProvider implements ITreeContentProvider {
             final String componentName = componentInstance.getComponentInstanceName();
             metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
             metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
+
             final String componentHostName;
             if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
                 if (NodeIdentifierFactory.fromNodeId(
@@ -594,10 +653,16 @@ public class DMContentProvider implements ITreeContentProvider {
             } else {
                 componentHostName = "";
             }
+
+            final String finalState = componentInstance.getFinalState();
+            String componentNodeText = StringUtils.format("%s (Runs: %d) <%s>", componentName,
+                workflowRun.getComponentRuns().get(componentInstance)
+                    .size(), componentHostName);
+            if (finalState != null && finalState.equals("FAILED")) {
+                componentNodeText = componentNodeText.concat(" [FAILED]");
+            }
             DMBrowserNode componentNode =
-                new DMBrowserNode(StringUtils.format("%s (Runs: %d) <%s>", componentName,
-                    workflowRun.getComponentRuns().get(componentInstance)
-                        .size(), componentHostName));
+                new DMBrowserNode(componentNodeText);
             componentNode.setType(DMBrowserNodeType.Component);
             componentNode.setMetaData(metaDataSet);
             setComponentIconForDMBrowserNode(componentNode);
@@ -780,7 +845,9 @@ public class DMContentProvider implements ITreeContentProvider {
      * Clear cached meta data.
      */
     public void clear() {
-        workflowMetaDataMap.clear();
+        synchronized (workflowMetaDataMap) {
+            workflowMetaDataMap.clear();
+        }
     }
 
     /**
@@ -791,13 +858,17 @@ public class DMContentProvider implements ITreeContentProvider {
     public void clear(DMBrowserNode node) {
         DMBrowserNode wfNode = node.getNodeWithTypeWorkflow();
         if (wfNode != null) {
-            workflowMetaDataMap.remove(Long.valueOf(wfNode.getMetaData().getValue(METADATA_COMPONENT_CONTEXT_ID)));
+            synchronized (workflowMetaDataMap) {
+                workflowMetaDataMap.remove(Long.valueOf(wfNode.getMetaData().getValue(METADATA_COMPONENT_CONTEXT_ID)));
+            }
         }
     }
 
     @Override
     public void dispose() {
-        workflowMetaDataMap.clear();
+        synchronized (workflowMetaDataMap) {
+            workflowMetaDataMap.clear();
+        }
     }
 
     @Override

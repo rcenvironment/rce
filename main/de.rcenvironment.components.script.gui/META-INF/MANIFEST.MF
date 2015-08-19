@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.script.gui;singleton:=true
-Bundle-Version: 6.2.1.qualifier
+Bundle-Version: 6.3.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Import-Package: de.rcenvironment.components.script.common,

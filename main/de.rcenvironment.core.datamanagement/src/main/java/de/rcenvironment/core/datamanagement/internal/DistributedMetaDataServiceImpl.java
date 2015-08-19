@@ -16,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
@@ -30,6 +32,7 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -40,6 +43,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  * 
  * @author Doreen Seider
  * @author Jan Flink
+ * @author Robert Mischke
  */
 public class DistributedMetaDataServiceImpl implements DistributedMetaDataService {
 
@@ -48,6 +52,8 @@ public class DistributedMetaDataServiceImpl implements DistributedMetaDataServic
     private WorkflowHostService workflowHostService;
 
     private BundleContext context;
+
+    private final Log log = LogFactory.getLog(getClass());
 
     @Override
     public Long addComponentRun(Long componentInstanceId, String nodeId, Integer count, Long starttime,
@@ -158,15 +164,50 @@ public class DistributedMetaDataServiceImpl implements DistributedMetaDataServic
 
         CallablesGroup<Set> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Set.class);
 
-        for (NodeIdentifier node : workflowHostService.getWorkflowHostNodesAndSelf()) {
-            final NodeIdentifier finalNode = node;
+        for (final NodeIdentifier remoteNodeId : workflowHostService.getWorkflowHostNodesAndSelf()) {
+            final String remoteNodeIdString = remoteNodeId.getIdString();
             callablesGroup.add(new Callable<Set>() {
 
                 @Override
                 @TaskDescription("Distributed query: getWorkflowDescriptions()")
                 public Set<WorkflowRunDescription> call() throws Exception {
-                    MetaDataService service = (MetaDataService) communicationService.getService(MetaDataService.class, finalNode, context);
-                    return service.getWorkflowRunDescriptions();
+                    MetaDataService service =
+                        (MetaDataService) communicationService.getService(MetaDataService.class, remoteNodeId, context);
+                    Set<WorkflowRunDescription> workflowRunDescriptions = service.getWorkflowRunDescriptions();
+                    workflowRunDescriptions = fixInconsistentControllerNodeIds(remoteNodeId, workflowRunDescriptions);
+                    return workflowRunDescriptions;
+                }
+
+                private Set<WorkflowRunDescription> fixInconsistentControllerNodeIds(final NodeIdentifier remoteNodeId,
+                    Set<WorkflowRunDescription> workflowRunDescriptions) {
+                    boolean hasInconsistenControllerNodeIds = false;
+                    for (WorkflowRunDescription wrd : workflowRunDescriptions) {
+                        final String controllerNodeId = wrd.getControllerNodeID();
+                        final String dmNodeId = wrd.getDatamanagementNodeID();
+                        if (!remoteNodeIdString.equals(controllerNodeId) || !remoteNodeIdString.equals(dmNodeId)) {
+                            hasInconsistenControllerNodeIds = true;
+                        }
+                    }
+                    if (hasInconsistenControllerNodeIds) {
+                        // found at least one inconsistent workflow run, so rewrite the collection
+                        Set<WorkflowRunDescription> newSet = new HashSet<>();
+                        for (WorkflowRunDescription wrd : workflowRunDescriptions) {
+                            final String controllerNodeId = wrd.getControllerNodeID();
+                            final String dmNodeId = wrd.getDatamanagementNodeID();
+                            if (!remoteNodeIdString.equals(controllerNodeId) || !remoteNodeIdString.equals(dmNodeId)) {
+                                log.warn(StringUtils
+                                    .format(
+                                        "Replacing an inconsistent controller and/or storage node id (%s, %s) in workflow run #%d received "
+                                            + "from node %s - most likely, the remote node's id has changed since the workflow was run",
+                                        controllerNodeId, dmNodeId, wrd.getWorkflowRunID(), remoteNodeId));
+                                newSet.add(WorkflowRunDescription.cloneAndReplaceNodeIds(wrd, remoteNodeIdString));
+                            } else {
+                                newSet.add(wrd);
+                            }
+                        }
+                        workflowRunDescriptions = newSet;
+                    }
+                    return workflowRunDescriptions;
                 }
             });
         }
@@ -175,7 +216,8 @@ public class DistributedMetaDataServiceImpl implements DistributedMetaDataServic
 
             @Override
             public void onAsyncException(Exception e) {
-                // LOG.warn("Exception during asynchrous execution", e);
+                // log a compact message, no stacktrace
+                log.warn("Failed to query a node for workflow data management information: " + e.toString());
             }
         });
 

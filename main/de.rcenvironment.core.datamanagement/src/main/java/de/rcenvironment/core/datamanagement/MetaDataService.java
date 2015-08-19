@@ -158,6 +158,7 @@ public interface MetaDataService {
      * 
      * @return A collection of {@link WorkflowRunDescription}s.
      */
+    // TODO to make use of the ordered result, this should return List instead of Set - misc_ro
     Set<WorkflowRunDescription> getWorkflowRunDescriptions();
 
     /**

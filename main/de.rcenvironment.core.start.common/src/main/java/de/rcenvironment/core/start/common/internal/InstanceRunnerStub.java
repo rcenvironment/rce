@@ -9,6 +9,7 @@
 package de.rcenvironment.core.start.common.internal;
 
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.cm.ConfigurationAdmin;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.start.common.InstanceRunner;
@@ -27,6 +28,12 @@ public class InstanceRunnerStub extends InstanceRunner {
     public void bindCommandExecutionService(CommandExecutionService newService) {
         LogFactory.getLog(getClass()).debug("Injecting shared CommandExecutionService");
         super.bindCommandExecutionService(newService);
+    }
+    
+    @Override
+    public void bindConfigurationAdmin(ConfigurationAdmin newService) {
+        LogFactory.getLog(getClass()).debug("Injecting shared ConfigurationAdmin");
+        super.bindConfigurationAdmin(newService);
     }
 
     @Override

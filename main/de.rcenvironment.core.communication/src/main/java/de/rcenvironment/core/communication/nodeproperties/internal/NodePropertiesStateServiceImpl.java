@@ -33,6 +33,7 @@ import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
 import de.rcenvironment.core.utils.incubator.ListenerProvider;
 
@@ -65,6 +66,8 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
     private final Set<NodeProperty> reachableProperties = new HashSet<NodeProperty>();
 
     private final AsyncOrderedCallbackManager<NodePropertiesChangeListener> callbackManager;
+
+    private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -169,8 +172,10 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
             final Set<NodeProperty> updatedPropertiesCopy = Collections.unmodifiableSet(updatedProperties);
             final Set<NodeProperty> removedPropertiesCopy = Collections.unmodifiableSet(removedProperties);
 
-            log.debug(StringUtils.format("Reporting node property state change: %d properties added, %d updated, %d removed",
-                addedPropertiesCopy.size(), updatedPropertiesCopy.size(), removedPropertiesCopy.size()));
+            if (verboseLogging) {
+                log.debug(StringUtils.format("Reporting node property state change: %d properties added, %d updated, %d removed",
+                    addedPropertiesCopy.size(), updatedPropertiesCopy.size(), removedPropertiesCopy.size()));
+            }
 
             callbackManager.enqueueCallback(new AsyncCallback<NodePropertiesChangeListener>() {
 
@@ -260,9 +265,11 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
         // }
 
         if (!disconnectedProperties.isEmpty() || !reconnectedProperties.isEmpty()) {
-            log.debug(StringUtils.format(
-                "Reporting node property state change after topology change: %d properties disconnected, %d reconnected",
-                disconnectedProperties.size(), reconnectedProperties.size()));
+            if (verboseLogging) {
+                log.debug(StringUtils.format(
+                    "Reporting node property state change after topology change: %d properties disconnected, %d reconnected",
+                    disconnectedProperties.size(), reconnectedProperties.size()));
+            }
 
             final Collection<NodeProperty> disconnectedPropertiesCopy = Collections.unmodifiableCollection(disconnectedProperties);
             final Collection<NodeProperty> reconnectedPropertiesCopy = Collections.unmodifiableCollection(reconnectedProperties);

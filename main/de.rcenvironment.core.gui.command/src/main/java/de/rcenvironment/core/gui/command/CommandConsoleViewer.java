@@ -151,7 +151,7 @@ public class CommandConsoleViewer extends ViewPart {
             // clipboard so that only this line will be
             Clipboard clipboard = new Clipboard(Display.getCurrent());
             String content = ((String) clipboard.getContents(TextTransfer.getInstance()));
-            if (content.contains(platformIndependentLineBreak)){
+            if (content != null && content.contains(platformIndependentLineBreak)){
                 clipboard.setContents(new String[]{content.substring(0, content.indexOf(platformIndependentLineBreak))}, 
                         new Transfer[]{ TextTransfer.getInstance()});
             }

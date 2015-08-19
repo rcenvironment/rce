@@ -12,7 +12,9 @@ package de.rcenvironment.core.embedded.ssh.api;
  * An interface that allows management of temporary SSH/SCP accounts by other services.
  * 
  * @author Robert Mischke
+ * 
  */
+// TODO review: is this interface still needed/useful?
 public interface TemporarySshAccountControl {
 
     /**

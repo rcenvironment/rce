@@ -12,6 +12,7 @@ instructions.configure=\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xms512m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1024m);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1280m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx2048m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:MaxPermSize=256m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
@@ -52,4 +53,4 @@ units.2.version=$version$
 units.2.provides.1.namespace=org.eclipse.equinox.p2.iu
 units.2.provides.1.name=de.rcenvironment.products.rce.default.maxheap.1gb
 units.2.provides.1.version=$version$
-units.2.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx1024m);
+units.2.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx1280m);

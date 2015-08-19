@@ -70,15 +70,25 @@ public class WorkflowGraphTest {
         hopsCount.put(OUTPUT + ZERO, counts);
         checkResultCorrect(hops, 1, new int[] { 1 }, hopsCount);
 
-        graph = createTwoSinksWorkflowGraph();
+        graph = createCircleWorkflowGraphWithInnerLoopBack();
         hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
+        hopsCount = new HashMap<>();
+        counts = new LinkedList<>();
+        counts.add(4);
+        hopsCount.put(OUTPUT + ZERO, counts);
+        checkResultCorrect(hops, 1, new int[] { 1 }, hopsCount);
+
+        graph = createTwoSinksWorkflowGraph();
+        hops =
+            graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
         hopsCount = new HashMap<>();
         counts = new LinkedList<>();
         hopsCount.put(OUTPUT + ZERO, counts);
         checkResultCorrect(hops, 1, new int[] { 0 }, hopsCount);
 
         graph = createTwoSinksWithInnerLoopWorkflowGraph();
-        hops = graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
+        hops =
+            graph.getHopsToTraverseWhenResetting(nodeNamesToNodes.get(SINK_NODE0).getExecutionIdentifier());
         hopsCount = new HashMap<>();
         counts = new LinkedList<>();
         counts.add(2);
@@ -213,7 +223,51 @@ public class WorkflowGraphTest {
         edges.get(key3).add(e3);
         edges.put(key4, new HashSet<WorkflowGraphEdge>());
         edges.get(key4).add(e4);
+        return new WorkflowGraph(nodes, edges);
 
+    }
+
+    /**
+     * 
+     * @return A circle of nodes connected to a sink, so the circle should be resetted.
+     */
+    private WorkflowGraph createCircleWorkflowGraphWithInnerLoopBack() {
+
+        nodeNamesToNodes = new HashMap<>();
+        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        for (int i = 0; i < 1; i++) {
+            WorkflowGraphNode node = createNewNode(1, 1, true, false);
+            nodeNamesToNodes.put(SINK_NODE + i, node);
+            nodes.put(node.getExecutionIdentifier(), node);
+        }
+        WorkflowGraphNode node0 = createNewNode(2, 1, false, false);
+        nodeNamesToNodes.put(NODE + 0, node0);
+        nodes.put(node0.getExecutionIdentifier(), node0);
+        WorkflowGraphNode node = createNewNode(1, 1, false, false);
+        nodeNamesToNodes.put(NODE + 1, node);
+        nodes.put(node.getExecutionIdentifier(), node);
+        WorkflowGraphNode lastNode = createNewNode(1, 2, false, false);
+        nodeNamesToNodes.put(NODE + 2, lastNode);
+        nodes.put(lastNode.getExecutionIdentifier(), lastNode);
+        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
+        WorkflowGraphEdge e1 = createEdge(nodeNamesToNodes.get(SINK_NODE0), 0, nodeNamesToNodes.get(NODE0), 0);
+        WorkflowGraphEdge e2 = createEdge(nodeNamesToNodes.get(NODE0), 0, nodeNamesToNodes.get(NODE1), 0);
+        WorkflowGraphEdge e3 = createEdge(nodeNamesToNodes.get(NODE1), 0, nodeNamesToNodes.get(NODE2), 0);
+        WorkflowGraphEdge e4 = createEdge(nodeNamesToNodes.get(NODE2), 0, nodeNamesToNodes.get(SINK_NODE0), 0);
+        WorkflowGraphEdge e5 = createEdge(nodeNamesToNodes.get(NODE2), 0, nodeNamesToNodes.get(NODE0), 1);
+        String key1 = WorkflowGraph.createEdgeKey(e1);
+        String key2 = WorkflowGraph.createEdgeKey(e2);
+        String key3 = WorkflowGraph.createEdgeKey(e3);
+        String key4 = WorkflowGraph.createEdgeKey(e4);
+        edges.put(key1, new HashSet<WorkflowGraphEdge>());
+        edges.get(key1).add(e1);
+        edges.put(key2, new HashSet<WorkflowGraphEdge>());
+        edges.get(key2).add(e2);
+        edges.put(key3, new HashSet<WorkflowGraphEdge>());
+        edges.get(key3).add(e3);
+        edges.put(key4, new HashSet<WorkflowGraphEdge>());
+        edges.get(key4).add(e4);
+        edges.get(key4).add(e5);
         return new WorkflowGraph(nodes, edges);
 
     }

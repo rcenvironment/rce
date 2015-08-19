@@ -54,7 +54,8 @@
             "defaultDataType": "FileReference",
             "inputHandlingOptions":[
                 "Single",
-                "Constant"
+                "Constant",
+				"Queue"
             ],
             "defaultInputHandling":"Single"
 		}

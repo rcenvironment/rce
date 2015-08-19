@@ -466,7 +466,12 @@ public final class SharedThreadPool implements ThreadPool {
 
     @Override
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long repetitionDelayMsec) {
-        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, null), repetitionDelayMsec, repetitionDelayMsec,
+        return scheduleAtFixedRateAfterDelay(runnable, repetitionDelayMsec, repetitionDelayMsec);
+    }
+    
+    @Override
+    public ScheduledFuture<?> scheduleAtFixedRateAfterDelay(Runnable runnable, long initialDelayMsec, long repetitionDelayMsec) {
+        return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, null), initialDelayMsec, repetitionDelayMsec,
             TimeUnit.MILLISECONDS);
     }
 

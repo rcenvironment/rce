@@ -10,13 +10,16 @@ package de.rcenvironment.components.doe.gui.properties;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEConstants;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
 
@@ -31,7 +34,7 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
     protected Collection<WorkflowNodeValidationMessage> validate() {
         final List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();
 
-        final boolean hasOutputs = hasOutputs();
+        final boolean hasOutputs = getOutputs().size() > 0;
 
         if (!hasOutputs) {
             final WorkflowNodeValidationMessage noInputMessage = new WorkflowNodeValidationMessage(
@@ -84,7 +87,7 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
 
         return messages;
     }
-
+ 
     private void checkTableDimensions(List<WorkflowNodeValidationMessage> messages) {
         if (getProperty(DOEConstants.KEY_TABLE) == null || getProperty(DOEConstants.KEY_TABLE).isEmpty()) {
             final WorkflowNodeValidationMessage startSampleErrorMessage = new WorkflowNodeValidationMessage(
@@ -216,5 +219,18 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
         }
 
     }
-
+    @Override
+    protected Set<EndpointDescription> getOutputs() {
+        Set<EndpointDescription> outputs = new HashSet<>(super.getOutputs());
+        EndpointDescription toRemove = null;
+        for (EndpointDescription e : outputs){
+            if (e.getName().equals(DOEConstants.OUTPUT_FINISHED_NAME)){
+                toRemove = e;
+            }
+        }
+        if (toRemove != null){
+            outputs.remove(toRemove);
+        }
+        return outputs;
+    }
 }

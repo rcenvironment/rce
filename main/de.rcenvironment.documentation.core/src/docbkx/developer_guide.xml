@@ -9,7 +9,7 @@
 	</subtitle>
 
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-		href="developer_guide/sections/developer_preface.xml" />
+		href="developer_guide/sections/developer_preface.xml"/>
 
 	<chapter>
 		<title>Introduction</title>
@@ -32,6 +32,12 @@
 		<title>Coding</title>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/new_component.xml" />
+	</chapter>
+	
+	<chapter>
+		<title>Debugging and Monitoring</title>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+			href="developer_guide/sections/debugging_monitoring.xml" />
 	</chapter>
 	
 	<chapter>

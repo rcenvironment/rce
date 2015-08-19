@@ -10,6 +10,9 @@ package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -20,6 +23,7 @@ import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -31,12 +35,9 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  * @author Sebastian Holtappels
  * @author Robert Mischke
  */
-public class EmbeddedSshServerImpl {
+public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
     private static final String HOST_KEY_STORAGE_FILE_NAME = "ssh_host_key.dat";
-
-    // TODO configure/inject setting from RA bundle; misplaced here
-    private static final String REMOTE_ACCESS_PROTOCOL_VERSION = "6.2.0";
 
     private ConfigurationService configurationService;
 
@@ -50,9 +51,11 @@ public class EmbeddedSshServerImpl {
 
     private SshServer sshd;
 
-    private final Log logger = LogFactory.getLog(getClass());
-
     private boolean sshServerActive = false;
+
+    private final Map<String, String> announcedVersionEntries = new HashMap<>();
+
+    private final Log logger = LogFactory.getLog(getClass());
 
     /**
      * OSGi-DS life-cycle method.
@@ -81,13 +84,21 @@ public class EmbeddedSshServerImpl {
         performShutdown();
     }
 
+    @Override
+    public synchronized void setAnnouncedVersionOrProperty(String key, String value) {
+        announcedVersionEntries.put(key, value);
+        if (sshServerActive) {
+            updateServerBannerWithAnnouncementData();
+        }
+    }
+
     private synchronized void performStartup() {
         sshServerActive = getActivationSettingFromConfig(sshConfiguration);
         if (sshServerActive) {
             authenticationManager = new SshAuthenticationManager(sshConfiguration);
             sshd = SshServer.setUpDefaultServer();
-            // TODO also add RCE product version?
-            sshd.getProperties().put(SshServer.SERVER_IDENTIFICATION, "RCE RA/" + REMOTE_ACCESS_PROTOCOL_VERSION);
+            // TODO also use this to announce the RCE product version?
+            updateServerBannerWithAnnouncementData();
             sshd.setPasswordAuthenticator(authenticationManager);
             String hostKeyFilePath = new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA),
                 HOST_KEY_STORAGE_FILE_NAME).getAbsolutePath();
@@ -126,6 +137,19 @@ public class EmbeddedSshServerImpl {
                 logger.error("Exception during shutdown of embedded SSH server", e);
             }
         }
+    }
+
+    // note: should only be called from synchronized methods
+    private void updateServerBannerWithAnnouncementData() {
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("RCE");
+        for (Entry<String, String> entry : announcedVersionEntries.entrySet()) {
+            buffer.append(" ");
+            buffer.append(entry.getKey());
+            buffer.append("/");
+            buffer.append(entry.getValue());
+        }
+        sshd.getProperties().put(SshServer.SERVER_IDENTIFICATION, buffer.toString());
     }
 
     private boolean getActivationSettingFromConfig(SshConfiguration currentConfig) {

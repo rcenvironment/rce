@@ -16,6 +16,7 @@ import org.eclipse.ui.ISharedImages;
  * 
  * @author Robert Mischke
  */
+
 public enum StandardImages implements ImageSource {
 
     /**
@@ -236,7 +237,22 @@ public enum StandardImages implements ImageSource {
     /**
      * Show number of channels per connection icon in toolbar.
      */
-    SHOW_CONNECTION_NUMBERS(fromLocalBundle("connectNumbers.gif"));
+    SHOW_CONNECTION_NUMBERS(fromLocalBundle("connectNumbers.gif")),
+    
+    /**
+     * Workflow state: finished.
+     */
+    FINISHED(fromLocalBundle("finished.gif")),
+    
+    /**
+     * Workflow state: cancelled.
+     */
+    CANCELLED(fromLocalBundle("cancel_enabled.gif")),
+    
+    /**
+     * Workflow state: failed.
+     */
+    FAILED(fromLocalBundle("failed.gif"));
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 

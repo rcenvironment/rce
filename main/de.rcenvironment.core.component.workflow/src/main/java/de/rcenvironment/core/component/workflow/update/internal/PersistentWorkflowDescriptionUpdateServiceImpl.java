@@ -106,7 +106,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     };
 
     private static final String BENDPOINTS = "bendpoints";
-    
+
     private static final String CONNECTIONS = "connections";
 
     private static final String NODES = "nodes";
@@ -223,7 +223,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                 }
                 if (bendpoints != null) {
                     workflowDescriptionAsTree.put(BENDPOINTS, bendpoints);
-                } 
+                }
             }
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             return new PersistentWorkflowDescription(componentDescriptions, writer.writeValueAsString(workflowDescriptionAsTree));
@@ -471,19 +471,20 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         throws JsonGenerationException, JsonMappingException, IOException {
 
         List<PersistentComponentDescription> componentDescriptions = new LinkedList<PersistentComponentDescription>();
-        Iterator<JsonNode> nodeIterator = nodes.getElements();
-        while (nodeIterator.hasNext()) {
-            JsonNode component = nodeIterator.next();
+        if (nodes != null) {
+            Iterator<JsonNode> nodeIterator = nodes.getElements();
+            while (nodeIterator.hasNext()) {
+                JsonNode component = nodeIterator.next();
 
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
-            componentDescriptions.add(new PersistentComponentDescription(writer.writeValueAsString(component)));
-        }
+                ObjectMapper mapper = new ObjectMapper();
+                ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+                componentDescriptions.add(new PersistentComponentDescription(writer.writeValueAsString(component)));
+            }
+            DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
 
-        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
-
-        for (PersistentComponentDescription componentDescription : componentDescriptions) {
-            checkAndSetNodeIdentifier(componentDescription, compKnowledge.getAllInstallations());
+            for (PersistentComponentDescription componentDescription : componentDescriptions) {
+                checkAndSetNodeIdentifier(componentDescription, compKnowledge.getAllInstallations());
+            }
         }
 
         return componentDescriptions;
@@ -534,7 +535,12 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     }
 
-    protected void bindComponentDescriptionUpdateService(DistributedPersistentComponentDescriptionUpdateService updateService) {
+    /**
+     * OSGi bind method. This bind method is set to public for tests of this class.
+     * 
+     * @param updateService to bind.
+     */
+    public void bindComponentDescriptionUpdateService(DistributedPersistentComponentDescriptionUpdateService updateService) {
         this.componentUpdateService = updateService;
     }
 

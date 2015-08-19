@@ -221,6 +221,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     + File.separator);
                 baseWorkingDirectory.mkdirs();
             }
+            FileUtils.write(new File(baseWorkingDirectory, "rce-workflow-info.txt"), "Workflow name: "
+                + componentContext.getWorkflowInstanceName());
             if (!useIterationDirectories) {
                 iterationDirectory = baseWorkingDirectory;
                 currentWorkingDirectory = baseWorkingDirectory;
@@ -383,23 +385,17 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 } else {
                     writeNoNeedToRunInformationToStdout();
                 }
-
-                addLogsToHistoryDataItem();
             } catch (IOException e) {
                 LOG.error("Closing or storing console log file failed", e);
             }
 
         } finally {
-            // Note: To ensure history data items will be stored on error, a finally block is used
-            // as long as no lifecycle method is present
-            // for the case of an error (will be added in the future) - seid_do
-            storeHistoryDataItem();
-
             // delete log files after each iteration if deleteToolBehavior is set so
             if (deleteToolBehaviour.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS)) {
                 deleteLogs();
             }
         }
+        storeHistoryDataItem();
     }
 
     // The before* and after* methods are for implementing own code in sub classes
@@ -465,9 +461,10 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 }
 
             }
-
+          
             break;
         case FAILED:
+            storeHistoryDataItem();
             deleteBaseWorkingDirectory(false);
             break;
         default:
@@ -523,12 +520,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 ConsoleRow.Type.STDOUT, stdoutLogFile, false);
             stderrWatcher = ConsoleRowUtils.logToWorkflowConsole(componentContext, executor.getStderr(),
                 ConsoleRow.Type.STDERR, stderrLogFile, false);
-            try {
-                exitCode = executor.waitForTermination();
-            } catch (InterruptedException e) {
-                deleteBaseWorkingDirectory(false);
-                throw new ComponentException("Executor Interrupted: " + e.getMessage());
-            }
+            exitCode = executor.waitForTermination();
             stdoutWatcher.waitForTermination();
             stderrWatcher.waitForTermination();
             componentContext.printConsoleLine("Command execution of " + toolName + " finished with exit code " + exitCode,
@@ -541,9 +533,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 deleteBaseWorkingDirectory(false);
                 throw new ComponentException(COMMAND_SCRIPT_TERMINATED_ABNORMALLY_ERROR_MSG + exitCode);
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             deleteBaseWorkingDirectory(false);
-            throw new ComponentException(toolName + ": Could not create Executor: " + e.getMessage());
+            throw new ComponentException(toolName + ": Error executing tool: " + e.getMessage());
         }
         return exitCode;
     }
@@ -629,8 +621,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     private void writeOutputValues(ScriptEngine engine, Map<String, Object> scriptExecConfig) {
         final Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         /*
-         * Extract all values calculated/set in the script to a custom scope so the calculated/set
-         * values are accessible via the current Context.
+         * Extract all values calculated/set in the script to a custom scope so the calculated/set values are accessible via the current
+         * Context.
          */
         for (final String key : bindings.keySet()) {
             Object value = bindings.get(key);
@@ -831,6 +823,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 // fileReference).getDirectoryName()), newTarget);
                 // targetFile = newTarget;
                 // }
+                targetFile = new File(targetFile,  ((DirectoryReferenceTD) fileReference).getDirectoryName());
             }
             componentContext.printConsoleLine(toolName + ": Copied " + targetFile.getName() + " to "
                 + targetFile.getAbsolutePath() + "\"", ConsoleRow.Type.COMPONENT_OUTPUT);
@@ -960,13 +953,17 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     stdoutLogFile, stdoutLogFile.getName());
                 historyDataItem.addLog(stdoutLogFile.getName(), stdoutFileRef);
             }
-            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stdoutLogFile);
+            if (stdoutLogFile != null){
+                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stdoutLogFile);
+            }
             if (stderrLogFile != null && stderrLogFile.exists() && !FileUtils.readFileToString(stderrLogFile).isEmpty()) {
                 String stderrFileRef = datamanagementService.createTaggedReferenceFromLocalFile(componentContext,
                     stderrLogFile, stderrLogFile.getName());
                 historyDataItem.addLog(stderrLogFile.getName(), stderrFileRef);
             }
-            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stderrLogFile);
+            if (stderrLogFile != null){
+                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stderrLogFile);
+            }
             historyDataItem.setWorkingDirectory(currentWorkingDirectory.getAbsolutePath());
         }
 
@@ -979,7 +976,15 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     }
 
     private void storeHistoryDataItem() {
-        if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
+        try {
+            if (historyDataItem != null){
+                addLogsToHistoryDataItem();
+            }
+        } catch (IOException e) {
+            LOG.error("Closing or storing console log file failed", e);
+        }
+        if (historyDataItem != null 
+            && Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             componentContext.writeFinalHistoryDataItem(historyDataItem);
         }
     }

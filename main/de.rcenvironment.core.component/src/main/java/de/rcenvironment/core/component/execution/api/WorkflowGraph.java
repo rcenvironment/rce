@@ -20,8 +20,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Encapsulates information about the workflow graph and processes particular graph-related
- * requests.
+ * Encapsulates information about the workflow graph and processes particular graph-related requests.
  * 
  * @author Doreen Seider
  * @author Sascha Zur
@@ -65,12 +64,14 @@ public class WorkflowGraph implements Serializable {
                             getHopsRecursive(e.getTargetExecutionIdentifier(), hopsQueue, endpointHopsSet, startNode);
                         }
                         resetCycleHops.put(startNode.getEndpointName(outputIdentifier), endpointHopsSet);
+                    } else {
+                        resetCycleHops.put(startNode.getEndpointName(outputIdentifier), new HashSet<Queue<WorkflowGraphHop>>());
                     }
                 }
                 cachedResetCycleHops.put(executionIdentifier, resetCycleHops);
             }
         }
-        
+
         Map<String, Set<Queue<WorkflowGraphHop>>> cachedResetCycleHopForExeId = cachedResetCycleHops.get(executionIdentifier);
         Map<String, Set<Queue<WorkflowGraphHop>>> snapshot = new HashMap<>();
         for (String outputName : cachedResetCycleHopForExeId.keySet()) {
@@ -85,12 +86,17 @@ public class WorkflowGraph implements Serializable {
     private void getHopsRecursive(String targetExecutionIdentifier, Queue<WorkflowGraphHop> hopsQueue,
         Set<Queue<WorkflowGraphHop>> endpointHopsSet, WorkflowGraphNode startNode) {
         WorkflowGraphNode currentNode = nodes.get(targetExecutionIdentifier);
-
         if (targetExecutionIdentifier.equals(startNode.getExecutionIdentifier())) {
             // returned to origin OR current node has no outputs to go to.
             endpointHopsSet.add(hopsQueue);
             return;
         }
+        for (WorkflowGraphHop hop : hopsQueue) {
+            if (hop.getHopExecutionIdentifier().equals(targetExecutionIdentifier)) {
+                return;
+            }
+        }
+
         if ((currentNode.isResetSink() && !getInnerResetLinkNodes(startNode.getExecutionIdentifier()).contains(
             currentNode.getExecutionIdentifier()))
             || currentNode.getOutputIdentifiers().isEmpty()) {

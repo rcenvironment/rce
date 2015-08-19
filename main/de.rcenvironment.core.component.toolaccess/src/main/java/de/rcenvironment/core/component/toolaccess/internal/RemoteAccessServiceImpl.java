@@ -37,6 +37,7 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.toolaccess.api.RemoteAccessConstants;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
@@ -45,6 +46,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -107,6 +109,8 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     private ConfigurationService configurationService;
 
     private File publishedWfStorageDir;
+
+    private EmbeddedSshServerControl embeddedSshServerControl;
 
     /**
      * Simple holder for execution parameters, including the workflow template file.
@@ -180,6 +184,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      */
     public void activate() {
         initAndRestoreFromPublishedWfStorage();
+        embeddedSshServerControl.setAnnouncedVersionOrProperty("RA", RemoteAccessConstants.PROTOCOL_VERSION);
     }
 
     @Override
@@ -451,6 +456,15 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      */
     public void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
         this.componentKnowledgeService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    public void bindEmbeddedSshServerControl(EmbeddedSshServerControl newInstance) {
+        this.embeddedSshServerControl = newInstance;
     }
 
     /**

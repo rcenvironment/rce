@@ -1554,6 +1554,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
             @Override
             public void run() {
+                if (viewer.getTree().isDisposed()) {
+                    return;
+                }
                 viewer.refresh(node);
                 if (node == viewer.getInput()) {
                     viewer.getTree().setEnabled(true);

@@ -113,7 +113,7 @@ public interface ThreadPool {
      * {@link Runnable}s scheduled with this method are included in the thread pool statistics.
      * 
      * @param runnable the {@link Runnable} to execute periodically
-     * @param delayMsec the delay before the first and between subsequent executions
+     * @param delayMsec the delay before the first execution
      * @return a {@link ScheduledFuture} that can be used to wait for the task's completion, on which it returns 'null'; TODO clarify: is it
      *         possible to cancel tasks via this?
      */
@@ -131,5 +131,18 @@ public interface ThreadPool {
      * @return a {@link ScheduledFuture} that can be used to cancel the task
      */
     ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long repetitionDelayMsec);
+    
+    /**
+     * A simplified version of {@link ScheduledExecutorService#scheduleAtFixedRate(Runnable, long, long, TimeUnit)} for scheduling periodic
+     * background tasks. The {@link TimeUnit} is always {@link TimeUnit#MILLISECONDS}.
+     * 
+     * {@link Runnable}s scheduled with this method are included in the thread pool statistics.
+     * 
+     * @param runnable the {@link Runnable} to execute periodically
+     * @param initialDelayMsec the delay before the first execution
+     * @param repetitionDelayMsec the delay between subsequent executions
+     * @return a {@link ScheduledFuture} that can be used to cancel the task
+     */
+    ScheduledFuture<?> scheduleAtFixedRateAfterDelay(Runnable runnable, long initialDelayMsec, long repetitionDelayMsec);
 
 }

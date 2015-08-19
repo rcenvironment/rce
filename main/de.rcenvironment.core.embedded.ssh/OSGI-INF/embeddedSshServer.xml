@@ -3,7 +3,7 @@
 
 	<implementation class="de.rcenvironment.core.embedded.ssh.internal.EmbeddedSshServerImpl"/>
 	<service>
-		<provide interface="de.rcenvironment.core.embedded.ssh.api.TemporarySshAccountControl"/>
+		<provide interface="de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl"/>
 	</service>
 	
 	<reference

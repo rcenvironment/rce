@@ -73,6 +73,9 @@ public final class DOEConstants {
     /** Constant. */
     public static final String TABLE_FILE_EXTENTION = ".csv";
 
+    /** Constant. */
+    public static final String OUTPUT_FINISHED_NAME = "Outer loop done";
+
     private DOEConstants() {
 
     }

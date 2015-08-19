@@ -8,4 +8,12 @@
    		name="Command Execution Service" 
    		policy="static"
    	/>
+   	
+   	<reference 
+   		bind="bindConfigurationAdmin" 
+   		cardinality="1..1" 
+   		interface="org.osgi.service.cm.ConfigurationAdmin" 
+   		name="Configuration Admin" 
+   		policy="static"
+   	/>
 </scr:component>

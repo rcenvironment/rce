@@ -35,6 +35,7 @@ import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.incubator.xml.XMLException;
+import de.rcenvironment.core.utils.incubator.xml.api.XMLMapperConstants;
 import de.rcenvironment.core.utils.incubator.xml.api.XMLMapperService;
 import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
 
@@ -158,7 +159,7 @@ public class XmlMergerComponent extends DefaultComponent {
                 throw new ComponentException("An error during XSLT mapping occured. Not all files are generated properly.");
             }
         } else if (mappingType.equals(XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC)) {
-            resultFile = mapping(tempMainFile, tempIntegratingFile);
+            resultFile = performMappingWithGlobalMappingLock(tempMainFile, tempIntegratingFile);
 
             if (tempMainFile == null || tempIntegratingFile == null || resultFile == null) {
                 throw new ComponentException(
@@ -253,7 +254,7 @@ public class XmlMergerComponent extends DefaultComponent {
      * @return The combined data set
      * @throws ComponentException Thrown if XML mapping fails.
      */
-    private File mapping(final File main, final File integrating) throws ComponentException {
+    private File map(final File main, final File integrating) throws ComponentException {
         LOG.debug("Mapping in merger component.");
         if ((main != null) && (integrating != null)) {
             LOG.debug("Using classic output mapping");
@@ -275,6 +276,12 @@ public class XmlMergerComponent extends DefaultComponent {
             }
         } else {
             return null;
+        }
+    }
+    
+    private File performMappingWithGlobalMappingLock(final File main, final File integrating) throws ComponentException {
+        synchronized (XMLMapperConstants.GLOBAL_MAPPING_LOCK) {
+            return map(main, integrating);            
         }
     }
 }

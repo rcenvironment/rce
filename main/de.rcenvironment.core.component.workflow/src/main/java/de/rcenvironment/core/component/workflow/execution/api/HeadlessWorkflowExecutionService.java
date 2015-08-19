@@ -76,11 +76,12 @@ public interface HeadlessWorkflowExecutionService {
      * @param outputReceiver the {@link TextOutputReceiver} to write status messages to
      * @param customConsoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
      * @param dispose {@link Dispose} behavior. Default is {@link Dispose#OnFinished}
+     * @param compactId If set, only the bare id is printed to the output.
      * @return the state that the workflow finished with
      * @throws WorkflowExecutionException on execution failure
      */
     FinalWorkflowState executeWorkflow(File wfFile, File placeholdersFile, File customLogDirectory,
-        TextOutputReceiver outputReceiver, SingleConsoleRowsProcessor customConsoleRowReceiver, Dispose dispose)
+        TextOutputReceiver outputReceiver, SingleConsoleRowsProcessor customConsoleRowReceiver, Dispose dispose, boolean compactId)
         throws WorkflowExecutionException;
     
     /**

@@ -25,6 +25,7 @@ import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.component.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.toolaccess.api.RemoteAccessConstants;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
@@ -47,6 +48,8 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     private static final String RA_COMMAND = "ra";
 
     private static final String RA_ADMIN_COMMAND = "ra-admin";
+
+    private static final String SUBCOMMAND_PROTOCOL_VERSION = "protocol-version";
 
     private static final String SUBCOMMAND_LIST_TOOLS = "list-tools";
 
@@ -213,6 +216,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     @Override
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
+        // ra protocol-version
+        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_PROTOCOL_VERSION, "", true,
+            "prints the protocol version of this interface"));
         // ra list-tools
         contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_TOOLS, "[-f/--format {csv|token-list}]", true,
             "lists all available tool ids and versions for the \"" + SUBCOMMAND_RUN_TOOL + "\" command",
@@ -283,7 +289,9 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
 
     private void handleStandardCommand(CommandContext context) throws IOException, CommandException {
         String subCommand = context.consumeNextToken();
-        if (SUBCOMMAND_LIST_TOOLS.equals(subCommand)) {
+        if (SUBCOMMAND_PROTOCOL_VERSION.equals(subCommand)) {
+            performProtocolVersion(context);
+        } else if (SUBCOMMAND_LIST_TOOLS.equals(subCommand)) {
             performListTools(context);
         } else if (SUBCOMMAND_LIST_WORKFLOWS.equals(subCommand)) {
             performListWfs(context);
@@ -329,6 +337,10 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
      */
     public void bindRemoteAccessService(RemoteAccessService newInstance) {
         this.remoteAccessService = newInstance;
+    }
+
+    private void performProtocolVersion(CommandContext context) {
+        context.println(RemoteAccessConstants.PROTOCOL_VERSION);
     }
 
     private void performListTools(CommandContext context) throws CommandException {

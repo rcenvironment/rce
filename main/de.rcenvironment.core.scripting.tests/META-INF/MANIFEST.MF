@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Scripting Tests
 Bundle-SymbolicName: de.rcenvironment.core.scripting.tests
-Bundle-Version: 6.2.1.qualifier
+Bundle-Version: 6.3.0.qualifier
 Fragment-Host: de.rcenvironment.core.scripting
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing

@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.start.common;
 
+import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
@@ -16,6 +17,8 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.service.cm.Configuration;
+import org.osgi.service.cm.ConfigurationAdmin;
 
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
@@ -34,8 +37,17 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  */
 public abstract class InstanceRunner {
 
+    protected static final String ERROR_MESSAGE_INCORRECT_LOGGING_CONFIG = "Failed to initialize background logging properly."
+        + " Most likely, because RCE was started from another directory than its installation directory. "
+        + "(The installation directory is the directory, which contains the 'rce' executable.) ";
+    
+    protected static final String INFO_MESSAGE_INCORRECT_LOGGING_CONFIG = "RCE will be shutdown. "
+        + "Start it again from its installation directory.";
+    
     private static volatile CommandExecutionService commandExecutionService;
 
+    private static volatile ConfigurationAdmin configurationAdmin;
+    
     protected final Log log = LogFactory.getLog(getClass());
 
     /**
@@ -45,6 +57,15 @@ public abstract class InstanceRunner {
      */
     public void bindCommandExecutionService(CommandExecutionService newService) {
         InstanceRunner.commandExecutionService = newService;
+    }
+    
+    /**
+     * Injects the {@link ConfigurationAdmin} instance to check configuration of pax logging.
+     * 
+     * @param newService the new instance
+     */
+    public void bindConfigurationAdmin(ConfigurationAdmin newService) {
+        configurationAdmin = newService;
     }
 
     /**
@@ -123,6 +144,29 @@ public abstract class InstanceRunner {
      */
     public void triggerRestart() {
 
+    }
+    
+    protected boolean isLoggingConfiguredProperly() {
+        
+        boolean isConfiguredProperly = false;
+        Configuration paxLoggingConfiguration = null;
+        try {
+            String paxLoggingPid = "org.ops4j.pax.logging";
+            paxLoggingConfiguration = configurationAdmin.getConfiguration(paxLoggingPid);
+        } catch (IOException e) {
+            log.error("Failed to get configuration of pax logging from the configuration admin service. "
+                + "Most likely, logging is not configured properly.", e);
+            // as there is nothing to do from a user's perspective, the error is just logged and not provided to the user
+            return false;
+        }
+        String nonDefaultPaxConfigKey = "log4j.appender.DEBUG_LOG";
+        isConfiguredProperly = paxLoggingConfiguration.getProperties() != null
+            && paxLoggingConfiguration.getProperties().get(nonDefaultPaxConfigKey) != null;            
+        if (!isConfiguredProperly) {
+            log.error(ERROR_MESSAGE_INCORRECT_LOGGING_CONFIG);
+        }
+
+        return isConfiguredProperly;
     }
 
 }

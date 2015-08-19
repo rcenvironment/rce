@@ -7,6 +7,8 @@
  */
 package de.rcenvironment.core.communication.transport.jms.common;
 
+import de.rcenvironment.core.communication.model.NetworkResponse;
+
 /**
  * Constants used as part of JMS-based transport network protocols.
  * 
@@ -34,6 +36,11 @@ public abstract class JmsProtocolConstants {
      * JMS property key for the metadata map.
      */
     public static final String MESSAGE_FIELD_METADATA = "metadata";
+
+    /**
+     * JMS property key for the integer result code of a {@link NetworkResponse}.
+     */
+    public static final String MESSAGE_FIELD_RESULT_CODE = "result.code";
 
     /**
      * JMS property key for transporting the queue name to use for remote-initiated requests; used in both directions.
@@ -88,4 +95,5 @@ public abstract class JmsProtocolConstants {
      * exceptions on the remote side.
      */
     public static final long WAIT_AFTER_SENDING_SHUTDOWN_MESSAGE_MSEC = 300;
+
 }

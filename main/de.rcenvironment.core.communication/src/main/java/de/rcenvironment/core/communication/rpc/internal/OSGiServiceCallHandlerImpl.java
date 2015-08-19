@@ -54,7 +54,9 @@ public class OSGiServiceCallHandlerImpl implements ServiceCallHandler {
     // the callback that verifies the presence of @AllowRemoteCall annotations
     private static final MethodPermissionCheck METHOD_PERMISSION_CHECK = new MethodPermissionCheckHasAnnotation(AllowRemoteAccess.class);
 
-    private static final int SERVICE_RESOLUTION_NUM_RETRIES = 10;
+    private static final int SINGLETON_SERVICE_RESOLUTION_NUM_ATTEMPTS = 10;
+
+    private static final int DYNAMIC_SERVICE_RESOLUTION_NUM_ATTEMPTS = 2;
 
     private static final int SERVICE_RESOLUTION_RETRY_DELAY_MSEC = 1000;
 
@@ -123,9 +125,17 @@ public class OSGiServiceCallHandlerImpl implements ServiceCallHandler {
         // uuid += COLON + serviceCallRequest.getServiceProperties();
         // }
 
-        Object service =
-            lookupService(serviceCallRequest.getService(), serviceCallRequest.getServiceProperties(), SERVICE_RESOLUTION_NUM_RETRIES,
-                SERVICE_RESOLUTION_RETRY_DELAY_MSEC);
+        final String serviceFilter = serviceCallRequest.getServiceProperties();
+        final int numResolutionAttempts;
+        if (serviceFilter == null || serviceFilter.isEmpty()) {
+            // "static"/"singleton" services: use many retries as they may be still starting up
+            numResolutionAttempts = SINGLETON_SERVICE_RESOLUTION_NUM_ATTEMPTS;
+        } else {
+            // "dynamic"/"named" services: as they are created on the fly, there is no point in waiting a long time
+            numResolutionAttempts = DYNAMIC_SERVICE_RESOLUTION_NUM_ATTEMPTS;
+        }
+        Object service = lookupService(serviceCallRequest.getService(),
+            serviceFilter, numResolutionAttempts, SERVICE_RESOLUTION_RETRY_DELAY_MSEC);
 
         Object returnValue = null;
         try {

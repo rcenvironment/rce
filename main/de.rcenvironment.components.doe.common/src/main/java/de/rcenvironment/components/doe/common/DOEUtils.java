@@ -98,11 +98,13 @@ public final class DOEUtils {
                 }
                 printer.println();
                 for (int i = 0; i < currentRun; i++) {
-                    for (int j = 0; j < tableValues[i].length; j++) {
-                        printer.print(tableValues[i][j]);
-                    }
-                    for (String input : orderedInputs) {
-                        printer.print(results.get(i).get(input));
+                    if (results.get(i) != null) {
+                        for (int j = 0; j < tableValues[i].length; j++) {
+                            printer.print(tableValues[i][j]);
+                        }
+                        for (String input : orderedInputs) {
+                            printer.print(results.get(i).get(input));
+                        }
                     }
                     printer.println();
                     printer.flush();

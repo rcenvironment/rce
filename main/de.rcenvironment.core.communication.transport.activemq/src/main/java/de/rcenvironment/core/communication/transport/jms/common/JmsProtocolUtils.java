@@ -171,7 +171,7 @@ public final class JmsProtocolUtils {
     public static Message createMessageFromNetworkResponse(NetworkResponse response, Session session) throws JMSException {
         ObjectMessage jmsResponse = session.createObjectMessage();
         jmsResponse.setObject(response.getContentBytes());
-        // TODO set "response" message type?
+        jmsResponse.setIntProperty(JmsProtocolConstants.MESSAGE_FIELD_RESULT_CODE, response.getResultCode().getCode());
         // TODO add metadata?
         return jmsResponse;
     }
@@ -186,8 +186,13 @@ public final class JmsProtocolUtils {
      */
     public static NetworkResponse createNetworkResponseFromMessage(Message jmsResponse, final NetworkRequest request) throws JMSException {
         byte[] content = (byte[]) ((ObjectMessage) jmsResponse).getObject();
-        NetworkResponse response = NetworkResponseFactory.generateSuccessResponse(request, content);
-        return response;
+        if (jmsResponse.propertyExists(JmsProtocolConstants.MESSAGE_FIELD_RESULT_CODE)) {
+            int resultCode = jmsResponse.getIntProperty(JmsProtocolConstants.MESSAGE_FIELD_RESULT_CODE);
+            return NetworkResponseFactory.generateResponseWithResultCode(request, content, resultCode);
+        } else {
+            // backwards compatibility for remote 6.0.x - 6.2.x RCE nodes; can be dropped in 7.0.0
+            return NetworkResponseFactory.generateSuccessResponse(request, content);
+        }
     }
 
     /**

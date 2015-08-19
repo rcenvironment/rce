@@ -42,8 +42,9 @@
     </sect2>
     <sect2>
         <title>Known Issues</title>
-        <para>On Red Hat Enterprise Linux 7 with KDE 4, Eclipse applications (as RCE is) can cause a
-              segmentation fault at startup. If you encounter such an issue, you can try choosing a different GTK2 theme:</para>
+        <para>On Red Hat Enterprise Linux 7 with KDE 4, RCE (like any other Eclipse-based
+            application) can cause a segmentation fault at startup. If you encounter such an issue,
+            you can try choosing a different GTK2 theme:</para>
         <para>
             <orderedlist>
                 <listitem>

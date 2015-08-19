@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.instancemanagement</artifactId>
 	<name>RCE Core Instance Management Bundle</name>
-	<version>6.2.1.qualifier</version>
+	<version>6.3.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

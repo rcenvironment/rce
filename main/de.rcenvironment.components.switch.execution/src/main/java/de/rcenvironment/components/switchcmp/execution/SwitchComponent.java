@@ -162,6 +162,13 @@ public class SwitchComponent extends DefaultComponent {
         writeFinalHistoryDataItem();
     }
 
+    @Override
+    public void tearDown(FinalComponentState state) {
+        if (state.equals(FinalComponentState.FAILED)) {
+            writeFinalHistoryDataItem();
+        }
+    }
+    
     private void initializeNewHistoryDataItem() {
         if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             historyDataItem = new SwitchComponentHistoryDataItem(SwitchComponentConstants.COMPONENT_ID);

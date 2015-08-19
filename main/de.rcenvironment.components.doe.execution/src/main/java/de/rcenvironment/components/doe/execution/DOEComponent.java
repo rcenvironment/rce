@@ -92,6 +92,8 @@ public class DOEComponent extends DefaultComponent {
 
     private Double[][] codedValues;
 
+    private List<String> outputs;
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
@@ -100,7 +102,9 @@ public class DOEComponent extends DefaultComponent {
     @Override
     public void start() throws ComponentException {
         super.start();
-
+        outputs = new LinkedList<String>(componentContext.getOutputs());
+        outputs.remove(DOEConstants.OUTPUT_FINISHED_NAME);
+        Collections.sort(outputs);
         int runNumberCount = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_RUN_NUMBER));
         int seedNumber = 0;
         if (componentContext.getConfigurationValue(DOEConstants.KEY_SEED_NUMBER) != null) {
@@ -109,13 +113,13 @@ public class DOEComponent extends DefaultComponent {
         valuesTable = new Double[0][0];
         if (!(componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
             || componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_MONTE_CARLO))
-            && componentContext.getOutputs().size() < 2) {
+            && outputs.size() < 2) {
             throw new ComponentException(TOO_FEW_OUTPUTS_EXCEPTION);
         }
         switch (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD)) {
         case DOEConstants.DOE_ALGORITHM_FULLFACT:
             if (runNumberCount >= 2) {
-                valuesTable = DOEAlgorithms.populateTableFullFactorial(componentContext.getOutputs().size(), runNumberCount);
+                valuesTable = DOEAlgorithms.populateTableFullFactorial(outputs.size(), runNumberCount);
                 if (valuesTable.length == 0) {
                     throw new ComponentException("The chosen configuration produced too many samples.");
                 }
@@ -124,10 +128,10 @@ public class DOEComponent extends DefaultComponent {
             }
             break;
         case DOEConstants.DOE_ALGORITHM_LHC:
-            valuesTable = DOEAlgorithms.populateTableLatinHypercube(componentContext.getOutputs().size(), runNumberCount, seedNumber);
+            valuesTable = DOEAlgorithms.populateTableLatinHypercube(outputs.size(), runNumberCount, seedNumber);
             break;
         case DOEConstants.DOE_ALGORITHM_MONTE_CARLO:
-            valuesTable = DOEAlgorithms.populateTableMonteCarlo(componentContext.getOutputs().size(), runNumberCount, seedNumber);
+            valuesTable = DOEAlgorithms.populateTableMonteCarlo(outputs.size(), runNumberCount, seedNumber);
             break;
         case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE:
             ObjectMapper mapper = new ObjectMapper();
@@ -160,11 +164,11 @@ public class DOEComponent extends DefaultComponent {
                         this.runNumber,
                         this.endSample));
                 }
-                if (valuesTable.length > 0 && valuesTable[0].length < componentContext.getOutputs().size()) {
+                if (valuesTable.length > 0 && valuesTable[0].length < outputs.size()) {
                     throw new ComponentException(StringUtils.format(
                         NUMBER_OF_VALUES_PER_SAMPLE_LOWER_THAN_THE_NUMBER_OF_OUTPUTS,
                         valuesTable[0].length,
-                        componentContext.getOutputs().size()));
+                        outputs.size()));
                 }
                 for (int i = 0; i < endSample && i < valuesTable.length; i++) {
                     for (int j = 0; j < valuesTable[i].length; j++) {
@@ -180,10 +184,8 @@ public class DOEComponent extends DefaultComponent {
         default:
             break;
         }
-        File tableFile;
+        File tableFile = null;
         try {
-            List<String> outputs = new LinkedList<String>(componentContext.getOutputs());
-            Collections.sort(outputs);
             int i = 0;
             codedValues = new Double[valuesTable.length][valuesTable[0].length];
             for (String output : outputs) {
@@ -194,27 +196,36 @@ public class DOEComponent extends DefaultComponent {
                 }
                 i++;
             }
-            tableFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOETable*.csv");
-            DOEUtils.writeTableToCSVFile(codedValues, tableFile.getAbsolutePath(), outputs);
-            tableFileReference =
-                componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
-                    tableFile, "DOETable.csv");
+            if (outputs.size() > 0){
+                tableFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOETable*.csv");
+                DOEUtils.writeTableToCSVFile(codedValues, tableFile.getAbsolutePath(), outputs);
+                tableFileReference =
+                    componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
+                        tableFile, "DOETable.csv");
+            }
         } catch (IOException e) {
             LOGGER.error("Could not create DOE table file", e);
-
+        } finally {
+            if (tableFile != null && tableFile.exists()){
+                try {
+                    TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tableFile);
+                } catch (IOException e) {
+                    LOGGER.error("Temp file could not be disposed", e);
+                }
+            }
         }
         processInputs();
     }
 
     @Override
     public boolean treatStartAsComponentRun() {
-        return !componentContext.getOutputs().isEmpty();
+        return componentContext.getOutputs().size() > 1;
     }
 
     @Override
     public void processInputs() throws ComponentException {
         initializeNewHistoryDataItem();
-        if (historyDataItem != null) {
+        if (historyDataItem != null && tableFileReference != null) {
             historyDataItem.setTableFileReference(tableFileReference.getFileReference());
         }
         processInput();
@@ -222,23 +233,36 @@ public class DOEComponent extends DefaultComponent {
         writeNewOutput();
         writeFinalHistoryDataItem();
     }
-
+    @Override
+    public void tearDown(FinalComponentState state) {
+        super.tearDown(state);
+        if (state == FinalComponentState.FAILED){
+            writeResultFile();
+            writeFinalHistoryDataItem();
+        }
+    }
     private void writeResultFile() {
         if (!componentContext.getInputsWithDatum().isEmpty() && historyDataItem != null) {
-            File resultFile;
+            File resultFile = null;
             try {
-                List<String> outputs = (new LinkedList<String>(componentContext.getOutputs()));
-                Collections.sort(outputs);
                 resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOEResult*.csv");
                 DOEUtils.writeResultToCSVFile(codedValues, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
                 FileReferenceTD resultFileReference =
                     componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
                         resultFile, "Result.csv");
-
                 historyDataItem.setResultFileReference(resultFileReference.getFileReference());
             } catch (IOException e) {
                 LOGGER.error(e);
+            } finally {
+                if (resultFile != null && resultFile.exists()){
+                    try {
+                        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(resultFile);
+                    } catch (IOException e) {
+                        LOGGER.error("Temp file could not be disposed: ", e);
+                    }
+                }
             }
+            
         }
     }
 
@@ -249,19 +273,26 @@ public class DOEComponent extends DefaultComponent {
             } else if (runNumber < valuesTable.length) {
                 writeNextOutput();
             } else {
+                sendFinalizeOutput();
                 componentContext.closeAllOutputs();
             }
+        }
+    }
+
+    private void sendFinalizeOutput() {
+        if (outputs.size() > 0){
+            componentContext.writeOutput(DOEConstants.OUTPUT_FINISHED_NAME,
+                componentContext.getService(TypedDatumService.class).getFactory().createBoolean(true));
         }
     }
 
     private void writeNextOutput() {
         if (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
             && runNumber > endSample) {
+            sendFinalizeOutput();
             componentContext.closeAllOutputs();
             return;
         }
-        List<String> outputs = new LinkedList<String>(componentContext.getOutputs());
-        Collections.sort(outputs);
         int i = 0;
         for (String output : outputs) {
             Double low = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_LOWER));
@@ -285,8 +316,6 @@ public class DOEComponent extends DefaultComponent {
                 && runNumber > endSample) {
                 break;
             }
-            List<String> outputs = new LinkedList<String>(componentContext.getOutputs());
-            Collections.sort(outputs);
             int i = 0;
             for (String output : outputs) {
                 Double low = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_LOWER));
@@ -303,6 +332,7 @@ public class DOEComponent extends DefaultComponent {
             }
             runNumber++;
         }
+        sendFinalizeOutput();
     }
 
     private void processInput() throws ComponentException {
@@ -354,7 +384,8 @@ public class DOEComponent extends DefaultComponent {
     }
 
     private void writeFinalHistoryDataItem() {
-        if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
+        if (historyDataItem != null && outputs.size() > 0  
+            && Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             componentContext.writeFinalHistoryDataItem(historyDataItem);
         }
     }

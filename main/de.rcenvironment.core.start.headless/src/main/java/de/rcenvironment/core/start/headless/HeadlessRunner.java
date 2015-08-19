@@ -60,6 +60,8 @@ public final class HeadlessRunner extends InstanceRunner {
         // Write versions to log file
         log.debug("Core Version: " + VersionUtils.getVersionOfCoreBundles());
         log.debug("Product Version: " + VersionUtils.getVersionOfProduct());
+        
+        isLoggingConfiguredProperly();
 
         if (CommandLineArguments.isBatchModeRequested()) {
             if (commandExecutionFuture != null) {

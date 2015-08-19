@@ -112,15 +112,19 @@ public final class GUIRunner extends InstanceRunner {
         Log log = LogFactory.getLog(GUIRunner.class);
         log.debug("Core Version: " + VersionUtils.getVersionOfCoreBundles());
         log.debug("Product Version: " + version);
-
+        
+        if (checkIfExitRequiredBecauseOfIncorrectLoggingConfiguration()) {
+            return IApplication.EXIT_OK;
+        }
+        
+        if (checkIfExitRequiredBecauseOfConfigurationLoadingError()) {
+            return IApplication.EXIT_OK;
+        }
+        
         // trigger execution of "--exec" commands, if they exist
         String[] execCommandTokens = CommandLineArguments.getExecCommandTokens();
         if (execCommandTokens != null) {
             initiateAsyncCommandExecution(execCommandTokens, "execution of --exec commands", false);
-        }
-
-        if (checkIfExitRequiredBecauseOfConfigurationLoadingError()) { 
-            return IApplication.EXIT_OK;
         }
 
         // start the workbench - returns as soon as the workbench is closed
@@ -201,6 +205,14 @@ public final class GUIRunner extends InstanceRunner {
     }
 
     private boolean determineWorkspaceLocation(Location workspaceLocation) throws MalformedURLException, IOException {
+
+        // if a workspace was defined using the Eclipse "-data" option, use it as an override and don't use our own mechanism
+        if (workspaceLocation.isSet()) {
+            log.info("Not using the workspace chooser or locations stored in the RCE profile, "
+                + "as a workspace location was already defined (probably using the -data option): " + workspaceLocation.getURL());
+            return true;
+        }
+
         WorkspaceSettings workspaceSettings = WorkspaceSettings.getInstance();
         File profileDirectory = BootstrapConfiguration.getInstance().getProfileDirectory();
 
@@ -265,6 +277,7 @@ public final class GUIRunner extends InstanceRunner {
 
         workspaceSettings.updateLocationHistory(currentWorkspace, StringUtils.escapeAndConcat(newRecentWorkspacesArray));
         URL userWSURL = new URL("file", null, currentWorkspace);
+
         try {
             workspaceLocation.set(userWSURL, true);
             tryWorkspaceChoosingAgain = false;
@@ -290,7 +303,7 @@ public final class GUIRunner extends InstanceRunner {
     private void displayError(final PlatformMessage error) {
         displayError("Validation", error.getMessage());
     }
-    
+
     private void displayError(String title, String message) {
         MessageDialog.openError(new Shell(), title, message);
     }
@@ -301,6 +314,15 @@ public final class GUIRunner extends InstanceRunner {
             boolean yes = MessageDialog.openQuestion(new Shell(), "Configuration", "Failed to load configuration file. Most likely, "
                 + "it has syntax errors. Check the log for details.\n\nDefault configuration values will be applied.\n\nProceed anyway?");
             return !yes;
+        }
+        return false;
+    }
+    
+    private boolean checkIfExitRequiredBecauseOfIncorrectLoggingConfiguration() {
+        if (!isLoggingConfiguredProperly()) {
+            MessageDialog.openError(new Shell(), "Logging", ERROR_MESSAGE_INCORRECT_LOGGING_CONFIG + "\n\n"
+                + INFO_MESSAGE_INCORRECT_LOGGING_CONFIG);
+            return true;
         }
         return false;
     }

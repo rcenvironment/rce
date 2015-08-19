@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Input Provider Component Common
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.common;singleton:=true
-Bundle-Version: 6.2.1.qualifier
+Bundle-Version: 6.3.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Export-Package: de.rcenvironment.components.inputprovider.common

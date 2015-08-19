@@ -12,8 +12,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 
 /**
- * Verifies that endpoint names only contain characters a..z, A..Z, 0..9, underscore or blank.
- * Underscore and blank are parameterized.
+ * Verifies that endpoint names only contain characters a..z, A..Z, 0..9, underscore or blank. Underscore and blank are parameterized.
  * 
  * @author Sascha Zur
  * @author Oliver Seebach
@@ -42,6 +41,9 @@ public class AlphanumericalTextContraintListener implements Listener {
     @Override
     public void handleEvent(Event event) {
         String string = event.text;
+        if (string == null) {
+            return;
+        }
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
             boolean inForbiddenChars = false;

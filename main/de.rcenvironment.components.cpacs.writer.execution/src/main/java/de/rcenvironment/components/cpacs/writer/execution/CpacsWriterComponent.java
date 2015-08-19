@@ -165,6 +165,12 @@ public class CpacsWriterComponent extends DefaultComponent {
         default:
             break;
         }
+        try {
+            TEMP_MANAGER.disposeManagedTempDirOrFile(tempDir);
+        } catch (IOException e) {
+            LogFactory.getLog(getClass()).error(StringUtils.format("Failed to dispose temporary directory '%s'",
+                tempDir.getAbsolutePath()), e);
+        }
         super.tearDown(state);
     }
     

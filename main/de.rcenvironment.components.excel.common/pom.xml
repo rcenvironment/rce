@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.excel.common</artifactId>
 	<name>RCE Excel Component Common Bundle</name>
-	<version>6.2.1.qualifier</version>
+	<version>6.3.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

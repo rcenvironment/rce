@@ -10,6 +10,8 @@ package de.rcenvironment.core.scripting;
 
 import java.util.List;
 
+import org.apache.commons.lang3.StringEscapeUtils;
+
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
@@ -53,7 +55,7 @@ public final class ScriptDataTypeHelper {
             }
             break;
         case ShortText:
-            returnValue = ((ShortTextTD) typedDatumOfCell).getShortTextValue();
+            returnValue = StringEscapeUtils.escapeJava(((ShortTextTD) typedDatumOfCell).getShortTextValue());
             break;
         case Integer:
             returnValue = ((IntegerTD) typedDatumOfCell).getIntValue();

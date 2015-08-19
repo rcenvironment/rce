@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>de.rcenvironment.cpacs.gui.wizards.exampleproject</artifactId>
 	<name>RCE CPACS GUI Example Project Wizard</name>
-	<version>6.2.1.qualifier</version>
+	<version>6.3.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

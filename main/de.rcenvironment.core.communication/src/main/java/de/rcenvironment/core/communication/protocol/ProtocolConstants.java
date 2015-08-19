@@ -8,13 +8,15 @@
 
 package de.rcenvironment.core.communication.protocol;
 
+import org.apache.commons.logging.LogFactory;
+
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Constants related to the higher-level network protocol, for example metadata values. This also
- * includes version information for network compatibility checks.
+ * Constants related to the higher-level network protocol, for example metadata values. This also includes version information for network
+ * compatibility checks.
  * 
  * @author Robert Mischke
  */
@@ -47,8 +49,7 @@ public final class ProtocolConstants {
         EXCEPTION_AT_DESTINATION(102),
 
         /**
-         * An exception occurred while forwarding/routing the request towards its final destination
-         * node.
+         * An exception occurred while forwarding/routing the request towards its final destination node.
          */
         EXCEPTION_WHILE_FORWARDING(103),
 
@@ -70,7 +71,12 @@ public final class ProtocolConstants {
         /**
          * A timeout occurred while waiting for a response after sending the request into a channel.
          */
-        TIMEOUT_WAITING_FOR_RESPONSE(106);
+        TIMEOUT_WAITING_FOR_RESPONSE(106),
+
+        /**
+         * A placeholder result code if an invalid code was passed in for conversion via {@link #fromCode(int)}.
+         */
+        INVALID_RESULT_CODE(999);
 
         private final int code;
 
@@ -84,8 +90,7 @@ public final class ProtocolConstants {
 
         /**
          * @param code a numeric code
-         * @return the associated {@link ResultCode} object; if none exists, an
-         *         {@link IllegalArgumentException} is thrown
+         * @return the associated {@link ResultCode} object; if none exists, an {@link IllegalArgumentException} is thrown
          */
         public static ResultCode fromCode(int code) {
             for (ResultCode rc : values()) {
@@ -93,7 +98,8 @@ public final class ProtocolConstants {
                     return rc;
                 }
             }
-            throw new IllegalArgumentException("Invalid code: " + code);
+            LogFactory.getLog(ProtocolConstants.class).error("Received an invalid result code: " + code);
+            return INVALID_RESULT_CODE;
         }
 
         @Override
@@ -103,12 +109,10 @@ public final class ProtocolConstants {
     }
 
     /**
-     * An arbitrary protocol version or compatibility string used to determine if two nodes can
-     * establish a compatible connection.
+     * An arbitrary protocol version or compatibility string used to determine if two nodes can establish a compatible connection.
      * 
-     * Note that there are no "higher/lower version" semantics for the content of this string. On a
-     * connection attempt, the strings provided by both nodes are only checked for equality, and
-     * possibly displayed as part of the error message if they do not match.
+     * Note that there are no "higher/lower version" semantics for the content of this string. On a connection attempt, the strings provided
+     * by both nodes are only checked for equality, and possibly displayed as part of the error message if they do not match.
      */
     public static final String PROTOCOL_COMPATIBILITY_VERSION = "6.0.0-final";
 

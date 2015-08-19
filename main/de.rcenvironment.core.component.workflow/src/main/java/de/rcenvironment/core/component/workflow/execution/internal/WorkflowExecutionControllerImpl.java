@@ -63,6 +63,7 @@ import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
 
 /**
@@ -73,11 +74,13 @@ import de.rcenvironment.core.utils.incubator.StateChangeException;
 public class WorkflowExecutionControllerImpl implements WorkflowExecutionController, WorkflowExecutionControllerCallback {
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionControllerImpl.class);
+    
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(WorkflowExecutionControllerImpl.class);
 
     /**
-     * After 2 minutes without heartbeat from component, the workflow will fail.
+     * After 140 seconds without heartbeat from component, the workflow will fail.
      */
-    private static final int MAX_HEARTBEAT_INTERVAL_MSEC = 1200 * 1000;
+    private static final int MAX_HEARTBEAT_INTERVAL_MSEC = 140 * 1000;
     
     private static MetaDataService metaDataService;
     
@@ -167,20 +170,23 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         @Override
         @TaskDescription("Check heartbeats of components")
         public void run() {
-//            LOG.debug("Checking component heartbeats");
+            if (VERBOSE_LOGGING) {
+                LOG.debug(StringUtils.format("Checking component heartbeats for workflow '%s' (%s)",
+                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
+            }
             long currentTimestamp = System.currentTimeMillis();
-            boolean heartbeatLost = false;
+            Set<String> compExeIdsLost = new HashSet<>();
             synchronized (componentHeartbeatTimestamps) {
                 for (String compExeId : componentHeartbeatTimestamps.keySet()) {
                     if (currentTimestamp - componentHeartbeatTimestamps.get(compExeId) > MAX_HEARTBEAT_INTERVAL_MSEC
                         && !finalComponentStateListener.hasComponent(compExeId)) {
-                        heartbeatLost = true;
+                        compExeIdsLost.add(compExeId);
                     }
                 }
             }
-            if (heartbeatLost) {
+            if (!compExeIdsLost.isEmpty()) {
                 stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.COMPONENT_HEARTBEAT_LOST,
-                    new WorkflowExecutionException("At least one non-finished component not reachable")));                
+                    new WorkflowExecutionException("Component(s) not reachable (anymore): " + compExeIdsLost)));
             }
         }
     };
@@ -389,11 +395,12 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 if (checkStateChange(currentState, WorkflowState.CANCELING_AFTER_FAILED)) {
                     state = WorkflowState.CANCELING_AFTER_FAILED;
                     if (event.getThrowable() != null) {
-                        LOG.error(
-                            StringUtils.format("Workflow '%s' (%s) will be cancelled as a component failed", wfExeCtx.getInstanceName(),
-                                wfExeCtx.getExecutionIdentifier()), event.getThrowable());
+                        LOG.error(StringUtils.format("Workflow '%s' (%s) will be cancelled as a component failed",
+                            wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()), event.getThrowable());
                     }
-                    cancelAsync();
+                    if (currentState != WorkflowState.CANCELING) {
+                        cancelAsync();
+                    }
                 }
                 break;
             case CANCEL_ATTEMPT_SUCCESSFUL:
@@ -553,6 +560,9 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                                 disposeComponentImmediately.put(compExeId, !compExeCtx.getComponentDescription().performLazyDisposal());
                                 componentExecutionService.prepare(compExeId,
                                     compExeCtx.getNodeId());
+                                LOG.debug(StringUtils.format("Created component '%s' (%s) on node '%s' (%s)",
+                                    compExeCtx.getInstanceName(), compExeId, compExeCtx.getNodeId().getAssociatedDisplayName(),
+                                    compExeCtx.getNodeId().getIdString()));
                             } catch (CommunicationException | RuntimeException e) {
                                 return e;
                             }
@@ -571,7 +581,8 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
                 for (Throwable t : throwables) {
                     if (t != null) {
-                        LOG.error(StringUtils.format("Preparing workflow '%s' failed", wfExeCtx.getInstanceName()), t);
+                        LOG.error(StringUtils.format("Preparing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                            wfExeCtx.getExecutionIdentifier()), t);
                     }
                 }
 
@@ -581,6 +592,9 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         return;
                     }
                 }
+                
+                LOG.debug(StringUtils.format("Workflow '%s' (%s) is prepared (%d component(s))",
+                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(), compExeCtxts.size()));
             }
         }
 
@@ -713,6 +727,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                             componentExecutionService.start(compExeId, componentExecutionIds.get(compExeId));
                             onComponentHeartbeatReceived(compExeId);
                         }
+                        @Override
+                        public String getMethodToCallAsString() {
+                            return "start";
+                        }
                     }.callParallelAndWait();
 
                 if (throwable == null) {
@@ -749,6 +767,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         @Override
                         public void callSingleComponent(String compExeId) throws CommunicationException {
                             componentExecutionService.pause(compExeId, componentExecutionIds.get(compExeId));
+                        }
+                        @Override
+                        public String getMethodToCallAsString() {
+                            return "pause";
                         }
                     }.callParallelAndWait();
 
@@ -793,6 +815,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         @Override
                         public void callSingleComponent(String compExeId) throws CommunicationException {
                             componentExecutionService.resume(compExeId, componentExecutionIds.get(compExeId));
+                        }
+                        @Override
+                        public String getMethodToCallAsString() {
+                            return "resume";
                         }
                     }.callParallelAndWait();
 
@@ -843,20 +869,21 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                             public void callSingleComponent(String compExeId) throws CommunicationException {
                                 componentExecutionService.cancel(compExeId, componentExecutionIds.get(compExeId));
                             }
-                            
                             @Override
                             public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
                                 finalComponentStateListener.addComponent(compExeId);
                                 lastConsoleRowListener.addComponent(compExeId);
                                 setComponentStateToFailed(compExeId);
                             }
-        
                             @Override
                             public void logError(Throwable t) {
                                 LOG.error(StringUtils.format("Cancelling workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
                                     wfExeCtx.getExecutionIdentifier()), t);
                             }
-                            
+                            @Override
+                            public String getMethodToCallAsString() {
+                                return "cancel";
+                            }
                         }.callParallelAndWait();
     
                     int compsNotInitCount = wfExeCtx.getWorkflowDescription().getWorkflowNodes().size() - componentExecutionIds.size();
@@ -948,6 +975,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         public void callSingleComponent(String compExeId) throws CommunicationException {
                             componentExecutionService.dispose(compExeId, componentExecutionIds.get(compExeId));
                         }
+                        @Override
+                        public String getMethodToCallAsString() {
+                            return "dispose";
+                        }
                     }.callParallelAndWait();
 
                 try {
@@ -1019,7 +1050,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                             }
                             return null;
                         }
-                    }, "Call component: " + finalExecutionId);
+                    }, String.format("Call component ('%s'): ", finalExecutionId, getMethodToCallAsString()));
                 }
 
                 List<Throwable> throwables = callablesGroup.executeParallel(new AsyncExceptionListener() {
@@ -1045,6 +1076,8 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             }
 
             public abstract void callSingleComponent(String compExeId) throws CommunicationException;
+            
+            public abstract String getMethodToCallAsString();
 
             public void onErrorInSingleComponentCall(String compExeId, Throwable t) {}
             
@@ -1142,6 +1175,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     @Override
     @AllowRemoteAccess
     public void onComponentHeartbeatReceived(String executionIdentifier) {
+        if (VERBOSE_LOGGING) {
+            LOG.debug(StringUtils.format("Received hearbeat from component (%s) for workflow '%s' (%s)",
+                executionIdentifier, wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
+        }
         componentHeartbeatTimestamps.put(executionIdentifier, System.currentTimeMillis());
     }
 

@@ -73,6 +73,8 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  */
 public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExecutionService {
 
+    private static final String COLON_AND_SPACE = ": ";
+
     private static final String FILE_TYPE_PLACEHOLDER = "placeholder";
 
     private static final String FILE_TYPE_WORKFLOW = "workflow";
@@ -96,8 +98,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     /**
      * Default constructor; should only be used by OSGi-DS and unit tests.
      */
-    public HeadlessWorkflowExecutionServiceImpl() {
-    }
+    public HeadlessWorkflowExecutionServiceImpl() {}
 
     @Override
     public WorkflowDescription parseWorkflowFile(File wfFile, final TextOutputReceiver outputReceiver) throws WorkflowExecutionException {
@@ -144,16 +145,18 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         verifyIsReadableFile(placeholdersFile, FILE_TYPE_PLACEHOLDER);
         readPlaceholdersFile(placeholdersFile);
     }
-    
+
     @Override
     public FinalWorkflowState executeWorkflow(File wfFile, File placeholdersFile, File customLogDirectory,
         TextOutputReceiver outputReceiver, SingleConsoleRowsProcessor customConsoleRowReceiver) throws WorkflowExecutionException {
-        return executeWorkflow(wfFile, placeholdersFile, customLogDirectory, outputReceiver, customConsoleRowReceiver, Dispose.OnFinished);
+        return executeWorkflow(wfFile, placeholdersFile, customLogDirectory, outputReceiver, customConsoleRowReceiver, Dispose.OnFinished,
+            false);
     }
 
     @Override
     public FinalWorkflowState executeWorkflow(File wfFile, File placeholdersFile, File logDirectory,
-        final TextOutputReceiver outputReceiver, final SingleConsoleRowsProcessor customConsoleRowsProcessor, Dispose dispose)
+        final TextOutputReceiver outputReceiver, final SingleConsoleRowsProcessor customConsoleRowsProcessor, Dispose dispose,
+        boolean compactOutput)
         throws WorkflowExecutionException {
 
         WorkflowState finalState = null; // = unknown
@@ -176,10 +179,18 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             }
             headlessWfExeCtx.setLogDirectory(logDirectory);
             // run
-            headlessWfExeCtx.addOutput(StringUtils.format("Starting execution of workflow '%s' using log directory '%s'",
-                wfFile.getAbsolutePath(), logDirectory.getAbsolutePath()));
+            if (!compactOutput) {
+                headlessWfExeCtx.addOutput(StringUtils.format("Starting execution of workflow '%s' using log directory '%s'",
+                    wfFile.getAbsolutePath(), logDirectory.getAbsolutePath()));
+            }
             try {
                 startWorkflowExecution(workflowDescription, headlessWfExeCtx);
+                if (compactOutput) {
+                    headlessWfExeCtx.addOutput(headlessWfExeCtx.getWorkflowExecutionContext().getExecutionIdentifier());
+                } else {
+                    headlessWfExeCtx.addOutput(StringUtils.format("Workflow execution ID for workflow '%s':  %s", wfFile.getAbsolutePath(),
+                        headlessWfExeCtx.getWorkflowExecutionContext().getExecutionIdentifier()));
+                }
                 finalState = headlessWfExeCtx.waitForTermination();
             } catch (InterruptedException e) {
                 throw new WorkflowExecutionException("Received interruption signal while waiting for workflow to terminate");
@@ -191,10 +202,14 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             outputReceiver.addOutput("Failed to execute workflow '" + wfFile.getAbsolutePath() + "': " + e.getMessage());
             throw e;
         }
-        headlessWfExeCtx.closeResources();
-        headlessWfExeCtx.addOutput("Terminated execution of workflow '" + wfFile.getAbsolutePath() + "'. Final state: "
-            + finalState.getDisplayName());
-
+        headlessWfExeCtx.closeResources(); // TODO review: shouldn't this be in a try/catch block? - misc_ro
+        if (compactOutput) {
+            headlessWfExeCtx.addOutput(String.format("%s: %s", headlessWfExeCtx.getWorkflowExecutionContext()
+                .getExecutionIdentifier(), finalState.getDisplayName()));
+        } else {
+            headlessWfExeCtx.addOutput("Terminated execution of workflow '" + wfFile.getAbsolutePath() + "'. Final state: "
+                + finalState.getDisplayName());
+        }
         // map to reduced set of final workflow states (to avoid downstream checking for invalid values)
         switch (finalState) {
         case FINISHED:
@@ -260,7 +275,8 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
                 @Override
                 public void onNewWorkflowState(String workflowIdentifier, WorkflowState newState) {
-                    log.debug("Received state change event for workflow " + workflowIdentifier + ": " + newState.getDisplayName());
+                    log.debug("Received state change event for workflow " + workflowIdentifier + COLON_AND_SPACE
+                        + newState.getDisplayName());
                     switch (newState) {
                     case CANCELLED:
                     case FAILED:
@@ -275,7 +291,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                             } catch (CommunicationException | RuntimeException e) {
                                 log.error("Failed to dispose workflow", e);
                                 wfHeadlessExeCtx.reportWorkflowDisposed(WorkflowState.FAILED);
-                            }                            
+                            }
                         }
                         break;
                     case DISPOSED:
@@ -288,7 +304,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                     }
                 }
             });
-        
+
         // add workflow state subscriber; only subscribe for this specific workflow (no wildcard)
         try {
             distributedNotificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID
@@ -302,7 +318,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         // add console output subscriber
         ConsoleRowSubscriber consoleRowSubscriber = new ConsoleRowSubscriber(wfHeadlessExeCtx, logDirectory);
         wfHeadlessExeCtx.registerResourceToCloseOnFinish(consoleRowSubscriber);
-        
+
         // subscribe to a console row notification on workflow controller node
         try {
             distributedNotificationService.subscribe(StringUtils.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
@@ -312,12 +328,12 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             log.error("Failed to start workflow (error while subscribing for console row output): " + e1.getMessage());
             return;
         }
-        
+
         // needed to guarantee this NotificationSubscriber is not removed by GC and thus, can be accessible from remote. get obsolete if
         // following issue is resolved: https://www.sistec.dlr.de/mantis/view.php?id=8659 -- Jan 2015 seid_do
         wfHeadlessExeCtx.setConsoleRowSubscriber(consoleRowSubscriber);
         wfHeadlessExeCtx.setWorkflowStateChangeListener(workflowStateChangeListener);
-        
+
         // Start the workflow
         WorkflowExecutionInformation wfExeInfo;
         try {
@@ -325,7 +341,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         } catch (CommunicationException e) {
             throw new WorkflowExecutionException(e);
         }
-        
+
         log.debug(StringUtils.format("Created workflow from file %s with name '%s', with id %s on node %s (%s)",
             wfHeadlessExeCtx.getWorkflowFile().getName(), wfExeInfo.getInstanceName(), wfExeInfo.getExecutionIdentifier(),
             wfExeInfo.getNodeId().getAssociatedDisplayName(), wfExeInfo.getNodeId().getIdString()));
@@ -438,15 +454,15 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                 + "(listed as <component id>/<version> -> <placeholder key> (<instance id>)): " + missingPlaceholderValues);
         }
     }
-    
+
     private String createComponentInstancePlaceholderKey(WorkflowNode wn) {
         return wn.getComponentDescription().getIdentifier() + "/" + wn.getName();
     }
-    
+
     private void logPlaceholderValues(WorkflowNode wn, Map<String, String> cPlaceholderValues) {
         PlaceholdersMetaDataDefinition placeholderMetaDataDefinition = wn.getComponentDescription().getConfigurationDescription()
             .getComponentConfigurationDefinition().getPlaceholderMetaDataDefinition();
-        
+
         Map<String, String> cPlaceholderValuesToLog = new HashMap<>();
         for (String cPlaceholderKey : cPlaceholderValues.keySet()) {
             if (placeholderMetaDataDefinition.decode(cPlaceholderKey)) {
@@ -462,7 +478,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     private void eliminateKnownIrrelevantPlaceholders(WorkflowNode wn, Set<String> missingCIPlaceholderKeys) {
         Set<String> activeConfigKeys = wn.getComponentDescription().getConfigurationDescription()
             .getActiveConfigurationDefinition().getConfigurationKeys();
-        
+
         Iterator<String> phKeysIterator = missingCIPlaceholderKeys.iterator();
         while (phKeysIterator.hasNext()) {
             String phKey = phKeysIterator.next();
@@ -480,7 +496,8 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                 new TypeReference<HashMap<String, HashMap<String, String>>>() {
                 });
         } catch (IOException e) {
-            throw new WorkflowExecutionException("Failed to parse placeholders file " + placeholdersFile.getAbsolutePath() + ": "
+            throw new WorkflowExecutionException("Failed to parse placeholders file " + placeholdersFile.getAbsolutePath()
+                + COLON_AND_SPACE
                 + e.toString());
         }
     }
@@ -513,8 +530,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
      * 
      * @param description to check for updates
      * @param user acting user
-     * @param silentUpdate <code>true</code> it checks if silent update is available, otherwise
-     *        <code>false</code>
+     * @param silentUpdate <code>true</code> it checks if silent update is available, otherwise <code>false</code>
      * @return <code>true</code> if update is available, otherwise <code>false</code>
      * @throws IOException on error
      */
@@ -550,7 +566,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
         compKnowledgeService = newInstance;
     }
-    
+
     protected void bindWorkflowHostService(WorkflowHostService newInstance) {
         workflowHostService = newInstance;
     }
@@ -587,12 +603,11 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     public Set<WorkflowExecutionInformation> getWorkflowExecutionInformations() {
         return workflowExecutionService.getWorkflowExecutionInformations();
     }
-    
+
     @Override
     public Set<WorkflowExecutionInformation> getWorkflowExecutionInformations(boolean forceRefresh) {
         return workflowExecutionService.getWorkflowExecutionInformations(forceRefresh);
     }
-
 
     @Override
     public void cancel(String executionId, NodeIdentifier node) throws CommunicationException {
@@ -619,6 +634,5 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     public WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws CommunicationException {
         return workflowExecutionService.getWorkflowState(executionId, node);
     }
-
 
 }

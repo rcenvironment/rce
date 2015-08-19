@@ -177,7 +177,9 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
         if (!enabled) {
             return;
         }
-        backgroundTaskFuture.cancel(true);
+        if (backgroundTaskFuture != null) {
+            backgroundTaskFuture.cancel(true);
+        }
     }
 
     /**

@@ -43,6 +43,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
  * Implementation of {@link ComponentExecutionControllerService}.
@@ -52,6 +53,9 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 public class ComponentExecutionControllerServiceImpl implements ComponentExecutionControllerService {
 
     private static final Log LOG = LogFactory.getLog(ComponentExecutionControllerServiceImpl.class);
+    
+    private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(ComponentExecutionControllerImpl.class);
+    
     /**
      * Wait one minute max for component to get cancelled. If it takes longer, it will cancel in the background and will be disposed the
      * next time of garbage collecting or the time afterwards etc.
@@ -89,8 +93,10 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
             @Override
             @TaskDescription("Garbage collection: Component controllers")
             public void run() {
-//                LOG.debug("Running garbage collection for component controllers");
                 Set<String> compExeIds = new HashSet<>(componentExecutionInformations.keySet());
+                if (VERBOSE_LOGGING) {
+                    LOG.debug("Running garbage collection for component controllers: " + compExeIds);
+                }
                 for (String compExeId : compExeIds) {
                     ComponentExecutionController componentController = getComponentController(compExeId);
                     if (!componentController.isWorkflowControllerReachable()) {
@@ -233,15 +239,17 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
             ServiceReference[] serviceReferences = bundleContext.getServiceReferences(ComponentExecutionController.class.getName(), filter);
             if (serviceReferences != null) {
                 for (ServiceReference<?> ref : serviceReferences) {
-                    return (ComponentExecutionController) bundleContext.getService(ref);
+                    ComponentExecutionController compExeCtrl = (ComponentExecutionController) bundleContext.getService(ref);
+                    if (compExeCtrl != null) {
+                        return (ComponentExecutionController) bundleContext.getService(ref);                        
+                    }
                 }
             }
         } catch (InvalidSyntaxException e) {
             // should not happen
             LogFactory.getLog(getClass()).error(StringUtils.format("Filter '%s' is not valid", filter));
         }
-        throw new RuntimeException(StringUtils.format("%s with id '%s' not registered as OSGi service",
-            ComponentExecutionController.class.getSimpleName(), executionId));
+        throw new RuntimeException(StringUtils.format("Component controller ('%s') is not registered (anymore)", executionId));
     }
 
     protected void bindCommunicationService(CommunicationService newService) {

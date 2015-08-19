@@ -253,27 +253,6 @@
 							<entry>Shuts down the local RCE instance (alias of "shutdown").</entry>
 						</row>
 						<row>
-							<entry>verify [--dispose &lt;onfinished|always|never>] [--pr
-								&lt;parallel runs>] [--sr &lt;serial runs>] [-p &lt;placeholder
-								value file>] --basedir &lt;directory> &lt;workflow file>
-								[&lt;workflow file> ...]</entry>
-							<entry>Runs several workflows and creates a summary which failed and
-								which succeeded.<para>The "--pr" option defines how often the
-									workflow is started in parallel. The "--sr" options defines how
-									often the workflow is started in serial. E.g. "--pr 5 --sr 3"
-									starts the workflow three times with five in parallel. If "*" is
-									used with the "--basedir" option or multiple workflow filenames
-									are passed, "--pr" and "--sr" are applied for each of the
-									workflows.</para><para>For "--dispose" and "-p" option refer to
-									"wf run" below.</para><para>Needs the "--basedir &lt;directory>"
-									parameter, which defines a directory containing workflow files.
-									File paths containing spaces must be enclosed in double quotes
-									("...").</para><para>The second parameter defines the workflow's
-									filenames. Using "*" as workflow file runs all non-backup
-									workflows in the basedir. Workflow file paths containing spaces
-									must be enclosed in double quotes ("...").</para></entry>
-						</row>
-						<row>
 							<entry>version</entry>
 							<entry>Shows version information.</entry>
 						</row>
@@ -307,20 +286,55 @@
 							<entry>Resume a paused workflow.</entry>
 						</row>
 						<row>
-							<entry>wf run [--dispose &lt;onfinished|always|never>] [-p
-								&lt;placeholder value file>] &lt;workflow file></entry>
+							<entry>wf run [--dispose &lt;onfinished|always|never>] [--compact-output] [-p &lt;placeholder
+								value file>] &lt;workflow file></entry>
 							<entry>
 								<para>Executes the given workflow file and waits until it has
 									completed. Workflow file paths containing spaces must be
 									enclosed in double quotes ("...").</para>
-								<para>The "--dispose" option defines the disposal behavior after
-									workflow completion. If a workflow is disposed, its resources
-									are freed. The result data are kept in either case. Default is
-									"onfinished": The workflow is disposed if it terminated in state
-									"Finished".</para>
+								<para>The "--dispose" option defines the disposal behavior after workflow completion.
+									Disposing a workflow releases certain resources that may or may
+									not be used after it has finished, for example data to be
+									visualized in components' runtime views. Data that is stored in
+									the data management is not affected by disposal. The default of
+									this setting is "onfinished": The workflow is disposed if it
+									terminates in state "Finished" (which means normal completion
+									without errors), otherwise it is left unchanged for
+									inspection.</para>
+								<para>The "--compact-output" option reduces this command's output as
+									much as possible, which is intended to simplify scripted calls
+									of this command. The first line printed will either be the
+									workflow's assigned id if the start was successful, or a text
+									starting with <code>"Error "</code> if the workflow could not be
+									started. If (and only if) the start was successful, a second
+									like will be printed once the workflow has terminated. The
+									pattern of this second line is "<code>&lt;workflow id>:
+										&lt;final state></code>".</para>
 								<para>The "-p" option can be used to define a placeholder value file
 									(see below).</para>
 							</entry>
+						</row>
+						<row>
+							<entry>wf verify [--dispose &lt;onfinished|always|never>] [--pr
+								&lt;parallel runs>] [--sr &lt;serial runs>] [-p &lt;placeholder
+								value file>] --basedir &lt;directory> &lt;workflow file>
+								[&lt;workflow file> ...]</entry>
+							<entry>Runs several workflows and creates a summary of which ones failed
+								and succeeded.<para>The "--pr" option defines how often the workflow
+									is started in parallel. The "--sr" options defines how often the
+									workflow is started in serial. E.g. "--pr 5 --sr 3" starts the
+									workflow three times with five in parallel. If "*" is used with
+									the "--basedir" option or multiple workflow filenames are
+									passed, "--pr" and "--sr" are applied for each of the
+									workflows.</para><para>For the "--dispose" and "-p" options
+									refer to "wf run" above.</para><para>The "--basedir
+									&lt;directory>" parameter specifies the directory containing the
+									workflow files. File paths containing spaces must be enclosed in
+									double quotes ("...").</para><para>The second parameter defines
+									the workflow's filenames. Using "*" as workflow file runs all
+									non-backup workflows in the basedir. Workflow file paths
+									containing spaces must be enclosed in double quotes
+									("...").</para></entry>
 						</row>
 					</tbody>
 				</tgroup>
@@ -371,11 +385,11 @@
 				a placeholder value (component instance) for a specified input provider component of the workflow:</para>
 		<para><code>{</code></para>
 		<para><code> "de.rcenvironment.script/3.4": {</code></para>
-		<para><code>     "pythonExecutionPath": "C:/Python/python.exe",</code></para>
+		<para><code>     "pythonExecutionPath": "C:/Python/python.exe"</code></para>
 		<para><code>     },</code></para>
 		<para><code> "de.rcenvironment.inputprovider/3.2": {</code></para>
 		<para><code> "inputFile": "C:/input/globalInputFile.txt"</code></para>
-		<para><code>}</code></para>
+		<para><code>},</code></para>
 		<para><code> "de.rcenvironment.inputprovider/3.2/Provider 1" : {</code></para>
 		<para><code>           "inputFile": "C:/input/Provider1.txt"</code></para>
 		<para><code> }</code>

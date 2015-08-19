@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_6.2.1.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="6.2.1.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.special.feature_6.2.1.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="6.2.1.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.standard.feature_6.2.1.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="6.2.1.qualifier"/>
-   <feature url="features/de.rcenvironment.core.combined.feature_6.2.1.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="6.2.1.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_6.2.1.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="6.2.1.qualifier"/>
-   <feature url="features/de.rcenvironment.cpacs.gui.tiglviewer.feature_6.2.1.qualifier.jar" id="de.rcenvironment.cpacs.gui.tiglviewer.feature" version="6.2.1.qualifier" os="win32" ws="win32"/>
-   <feature url="features/de.rcenvironment.documentation.core.feature_6.2.1.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="6.2.1.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_6.3.0.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="6.3.0.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.special.feature_6.3.0.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="6.3.0.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.standard.feature_6.3.0.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="6.3.0.qualifier"/>
+   <feature url="features/de.rcenvironment.core.combined.feature_6.3.0.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="6.3.0.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_6.3.0.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="6.3.0.qualifier"/>
+   <feature url="features/de.rcenvironment.cpacs.gui.tiglviewer.feature_6.3.0.qualifier.jar" id="de.rcenvironment.cpacs.gui.tiglviewer.feature" version="6.3.0.qualifier" os="win32" ws="win32"/>
+   <feature url="features/de.rcenvironment.documentation.core.feature_6.3.0.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="6.3.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_6.0.0.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="6.0.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.extras.feature_6.0.0.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="6.0.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_6.0.0.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="6.0.0.qualifier"/>

@@ -7,6 +7,8 @@
  */
 package de.rcenvironment.core.communication.transport.activemq.internal;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.ExceptionListener;
@@ -47,6 +49,8 @@ public class ActiveMQBroker implements JmsBroker {
     // note: this value should have no effect as long as all JMS messages are non-persistent - misc_ro
     private static final long ACTIVEMQ_TEMPORARY_STORE_LIMIT = 50 * 1024 * 1024; // 50 mb (arbitrary)
 
+    private static final AtomicInteger sharedInboxConsumerIdGenerator = new AtomicInteger();
+
     private final String brokerName;
 
     private final String externalUrl;
@@ -61,13 +65,13 @@ public class ActiveMQBroker implements JmsBroker {
 
     private final RemoteInitiatedMessageChannelFactory remoteInitiatedConnectionFactory;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
-
-    private final Log log = LogFactory.getLog(getClass());
-
     private int numRequestConsumers;
 
     private ActiveMQConnectionFilterPlugin connectionFilterPlugin;
+
+    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+
+    private final Log log = LogFactory.getLog(getClass());
 
     public ActiveMQBroker(ServerContactPoint scp, RemoteInitiatedMessageChannelFactory remoteInitiatedConnectionFactory) {
         this.scp = scp;
@@ -175,12 +179,13 @@ public class ActiveMQBroker implements JmsBroker {
 
     private void spawnInboxConsumers(Connection connection) throws JMSException {
         RawMessageChannelEndpointHandler endpointHandler = scp.getEndpointHandler();
-        log.debug("Spawning initial inbox consumer for SCP " + scp);
+        log.debug("Spawning initial inbox consumer for " + scp.toString());
         threadPool.execute(new InitialInboxConsumer(connection, endpointHandler, scp, remoteInitiatedConnectionFactory));
-        log.debug("Spawning " + numRequestConsumers + " request inbox consumer(s) for SCP " + scp);
+        log.debug("Spawning " + numRequestConsumers + " request inbox consumer(s) for " + scp);
         for (int i = 1; i <= numRequestConsumers; i++) {
             threadPool.execute(new RequestInboxConsumer(JmsProtocolConstants.QUEUE_NAME_C2B_REQUEST_INBOX, connection, endpointHandler),
-                "Server request inbox consumer #" + i);
+                String.format("Server request inbox consumer #%d (worker %d for %s')", sharedInboxConsumerIdGenerator.incrementAndGet(),
+                    i, scp.toString()));
         }
     }
 

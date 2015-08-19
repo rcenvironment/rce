@@ -1,11 +1,20 @@
 {
-    "dynamicOutputs":[
+    "staticOutputs": [
         {
-            "identifier":"default",
-            "dataTypes":[
+            "name": "Outer loop done",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicOutputs": [
+        {
+            "identifier": "default",
+            "dataTypes": [
                 "Float"
             ],
-            "defaultDataType":"Float",
+            "defaultDataType": "Float",
             "metaData": {
                 "lower": {
                     "guiName": "Lower bound",
@@ -24,7 +33,6 @@
                     "visibility": "shown",
                     "defaultValue": "1",
                     "validation": "required"
-                    
                 }
             }
         }

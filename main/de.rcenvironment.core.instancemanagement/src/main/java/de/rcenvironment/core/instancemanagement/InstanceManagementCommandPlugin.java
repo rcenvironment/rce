@@ -33,14 +33,14 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
         contributions.add(new CommandDescription(ROOT_CMD
-            + " install [--if-missing|--force-download|--force-reinstall] <url version id/part> <installation id>", "", false, ""));
+            + " install [--if-missing|--force-download|--force-reinstall] <url version id/part> <installation id>", "", true, ""));
         contributions.add(new CommandDescription(ROOT_CMD
-            + " configure", "[--clean] <instance id> <template id> [<key=value>*]", false, ""));
-        contributions.add(new CommandDescription(ROOT_CMD + " start", "<instance id> <installation id>", false, ""));
-        contributions.add(new CommandDescription(ROOT_CMD + " stop", "<instance id>", false, ""));
-        contributions.add(new CommandDescription(ROOT_CMD + " dispose", "<instance id>", false, ""));
-        contributions.add(new CommandDescription(ROOT_CMD + " list [--instances|--installations|--templates]", "", false, ""));
-        contributions.add(new CommandDescription(ROOT_CMD + " info", "", false, ""));
+            + " configure", "[--clean] <instance id> <template id> [<key=value>*]", true, ""));
+        contributions.add(new CommandDescription(ROOT_CMD + " start", "<instance id> <installation id>", true, ""));
+        contributions.add(new CommandDescription(ROOT_CMD + " stop", "<instance id>", true, ""));
+        contributions.add(new CommandDescription(ROOT_CMD + " dispose", "<instance id>", true, ""));
+        contributions.add(new CommandDescription(ROOT_CMD + " list [--instances|--installations|--templates]", "", true, ""));
+        contributions.add(new CommandDescription(ROOT_CMD + " info", "", true, ""));
         return contributions;
     }
 

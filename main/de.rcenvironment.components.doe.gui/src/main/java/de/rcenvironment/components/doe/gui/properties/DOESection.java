@@ -12,8 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -768,7 +770,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             outputsWarningLabel.setText(Messages.tooMuchElements);
         }
         if (!outputsWarningLabel.isVisible() && algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
-            && (tableValues == null || tableValues[0] == null)) {
+            && (tableValues == null || tableValues.length == 0 || tableValues[0] == null)) {
             outputsWarningLabel.setVisible(true);
             outputsWarningLabel.setText(Messages.noTableLong);
         }
@@ -933,5 +935,19 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             return true;
         }
 
+    }
+    @Override
+    protected Set<EndpointDescription> getOutputs() {
+        Set<EndpointDescription> outputs = new HashSet<>(super.getOutputs());
+        EndpointDescription toRemove = null;
+        for (EndpointDescription e : outputs){
+            if (e.getName().equals(DOEConstants.OUTPUT_FINISHED_NAME)){
+                toRemove = e;
+            }
+        }
+        if (toRemove != null){
+            outputs.remove(toRemove);
+        }
+        return outputs;
     }
 }

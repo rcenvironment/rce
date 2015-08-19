@@ -205,7 +205,7 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         @Override
         public void updateControl(final Control control, final String propertyName, final String newValue,
             final String oldValue) {
-            if (propertyName.equals(JoinerComponentConstants.DATATYPE)) {
+            if (propertyName.equals(JoinerComponentConstants.DATATYPE) && newValue != null) {
                 dataTypeCombo.select(dataTypesInCombo.indexOf(DataType.valueOf(newValue)));
             } else {
                 super.updateControl(control, propertyName, newValue, oldValue);

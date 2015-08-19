@@ -170,7 +170,9 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
 
             @Override
             public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
-                log.debug("Component knowledge updated: " + newState);
+                if (verboseLogging) {
+                    log.debug("Component knowledge updated: " + newState);                    
+                }
             }
         });
     }

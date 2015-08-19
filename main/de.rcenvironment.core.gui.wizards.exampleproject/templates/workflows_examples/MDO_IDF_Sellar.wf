@@ -2,7 +2,6 @@
   "identifier" : "c9a0dc87-2fc1-416a-8a1c-0e24c3e9eeb6",
   "workflowVersion" : "4",
   "name" : "MDO_IDF_2014-12-08_18:21:30_02",
-  "platform" : "d527f3d12cc84c048193f0f6f6c22ab6",
   "nodes" : [ {
     "identifier" : "ae76dcea-40c8-4622-b85e-115c06cc6647",
     "name" : "Discipline 1",
