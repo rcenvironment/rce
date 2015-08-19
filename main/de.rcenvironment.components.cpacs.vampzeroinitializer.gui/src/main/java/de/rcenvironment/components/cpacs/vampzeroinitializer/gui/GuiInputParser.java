@@ -26,14 +26,16 @@ import org.w3c.dom.NodeList;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Component;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Discipline;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Parameter;
-import de.rcenvironment.core.utils.incubator.XMLHelper;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.xml.XMLException;
+import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
 
 /**
  * Parse the XML that describes the GUI and the parameters.
  * 
  * @author Arne Bachmann
  * @author Markus Kunde
+ * @author Brigitte Boden
  */
 public final class GuiInputParser {
 
@@ -42,12 +44,20 @@ public final class GuiInputParser {
     /**
      * The xpath object.
      */
-    private static final XPath XPATH = XPathFactory.newInstance().newXPath();
-
+    private XPath xpath;
+    
     /**
-     * Hide.
+     * The XMLSupport service.
      */
-    private GuiInputParser() {}
+    private XMLSupportService xmlSupport;
+    
+    /**
+     * Constructor.
+     */
+    public GuiInputParser() {
+        xpath = XPathFactory.newInstance().newXPath();
+        xmlSupport = ServiceRegistry.createAccessFor(this).getService(XMLSupportService.class);
+    }
 
     /**
      * Parse the given file and return the model objects.
@@ -57,13 +67,12 @@ public final class GuiInputParser {
      * @throws XPathExpressionException For any parsing error
      * @throws XMLException Error in XML handling
      */
-    public static List<Component> parse(final String configuration) throws XPathExpressionException, XMLException {
-        final XMLHelper xmlHelper = new XMLHelper();
+    public List<Component> parse(final String configuration) throws XPathExpressionException, XMLException {
         final Document doc;
         if (configuration == null) {
             return new ArrayList<Component>();
         }
-        doc = xmlHelper.readXMLFromString(configuration);
+        doc = xmlSupport.readXMLFromString(configuration);
         return parse(doc, "/cpacs/toolspecific/vampZero/components/component");
     }
 
@@ -75,13 +84,12 @@ public final class GuiInputParser {
      * @throws XPathExpressionException For any parsing error
      * @throws XMLException Error in XML handling
      */
-    public static List<Component> parse(final InputStream stream) throws XPathExpressionException, XMLException {
-        final XMLHelper xmlHelper = new XMLHelper();
+    public List<Component> parse(final InputStream stream) throws XPathExpressionException, XMLException {
         final Document doc;
         if (stream == null) {
             return new ArrayList<Component>();
         }
-        doc = xmlHelper.readXMLFromStream(stream);
+        doc = xmlSupport.readXMLFromStream(stream);
         return parse(doc, "/zeroGuiIn/component");
     }
 
@@ -93,22 +101,22 @@ public final class GuiInputParser {
      * @return a component list
      * @throws XPathExpressionException
      */
-    protected static List<Component> parse(final Document doc, final String xpathPrefix) throws XPathExpressionException {
+    protected List<Component> parse(final Document doc, final String xpathPrefix) throws XPathExpressionException {
         final List<Component> componentList = new ArrayList<Component>();
         final List<Discipline> disciplineList = new ArrayList<Discipline>();
         final List<Parameter> parameterList = new ArrayList<Parameter>();
-        final NodeList components = (NodeList) XPATH.evaluate(xpathPrefix, doc.getDocumentElement(), NODESET);
+        final NodeList components = (NodeList) xpath.evaluate(xpathPrefix, doc.getDocumentElement(), NODESET);
         int cn = components.getLength();
         for (int c = 0; c < cn; c++) {
             final Node component = components.item(c);
             final String componentName = getNodeTextValue(component, NAME);
-            final NodeList disciplines = (NodeList) XPATH.evaluate("disciplines/discipline", component, NODESET);
+            final NodeList disciplines = (NodeList) xpath.evaluate("disciplines/discipline", component, NODESET);
             disciplineList.clear();
             int dn = disciplines.getLength();
             for (int d = 0; d < dn; d++) {
                 final Node discipline = disciplines.item(d);
                 final String disciplineName = getNodeTextValue(discipline, NAME);
-                final NodeList parameters = (NodeList) XPATH.evaluate("parameters/parameter", discipline, NODESET);
+                final NodeList parameters = (NodeList) xpath.evaluate("parameters/parameter", discipline, NODESET);
                 parameterList.clear();
                 int pn = parameters.getLength();
                 for (int p = 0; p < pn; p++) {

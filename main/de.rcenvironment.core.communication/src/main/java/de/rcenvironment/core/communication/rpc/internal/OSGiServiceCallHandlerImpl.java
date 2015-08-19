@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheckHasAnnotation;
@@ -187,9 +188,9 @@ public class OSGiServiceCallHandlerImpl implements ServiceCallHandler {
             // prepare for retry
             attempt++;
             if (attempt <= numAttempts) {
-                LOGGER.warn(String.format("Failed to acquire OSGi service on attempt #%d; "
-                    + "it may not have started yet, retrying after %d msec (request: service=%s, filter=%s)",
-                    attempt, delayBetweenAttemptsMsec, service, filter));
+                LOGGER.warn(StringUtils.format("Failed to acquire OSGi service on attempt #%d; "
+                    + "it may not have started yet, retrying after %d msec (request: service=%s, filter=%s)", attempt,
+                    delayBetweenAttemptsMsec, service, filter));
                 try {
                     Thread.sleep(delayBetweenAttemptsMsec);
                 } catch (InterruptedException e) {

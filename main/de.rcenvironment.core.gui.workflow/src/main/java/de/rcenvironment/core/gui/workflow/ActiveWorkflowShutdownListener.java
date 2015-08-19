@@ -46,6 +46,7 @@ import de.rcenvironment.core.notification.DefaultNotificationSubscriber;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -100,7 +101,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 String message = "\n";
                 message += "\nWorkflows:\n";
                 for (WorkflowExecutionInformation wfExeInfo : localActiveWfExeInfosSnapshot) {
-                    message += String.format("- %s -> %s\n", wfExeInfo.getInstanceName(),
+                    message += StringUtils.format("- %s -> %s\n", wfExeInfo.getInstanceName(),
                         wfStates.get(wfExeInfo.getExecutionIdentifier()).getDisplayName());
                     lines++;
                     activeWfExeIds.add(wfExeInfo.getExecutionIdentifier());
@@ -116,8 +117,9 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 message += "\nComponents:\n";
                 for (ComponentExecutionInformation compExeInfo : localActiveCompExeInfosSnapshot) {
                     if (!activeWfExeIds.contains(compExeInfo.getWorkflowExecutionIdentifier())) {
-                        message += String.format("- %s (%s) -> %s\n", compExeInfo.getInstanceName(), compExeInfo.getWorkflowInstanceName(),
-                            compStates.get(compExeInfo.getExecutionIdentifier()).getDisplayName());
+                        message +=
+                            StringUtils.format("- %s (%s) -> %s\n", compExeInfo.getInstanceName(), compExeInfo.getWorkflowInstanceName(),
+                                compStates.get(compExeInfo.getExecutionIdentifier()).getDisplayName());
                         lines++;
                         if (lines > maxLines) {
                             message += "...\n";
@@ -226,7 +228,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                         try {
                             workflowExecutionService.dispose(wfExecutionIdentifier, wfNodeId);
                         } catch (CommunicationException e) {
-                            LOGGER.error(String.format("Failed to dispose workflow '%s' (%s)",
+                            LOGGER.error(StringUtils.format("Failed to dispose workflow '%s' (%s)",
                                 wfInstanceName, wfExecutionIdentifier), e);
                             wfDisposedLatch.countDown();
                         }
@@ -244,7 +246,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
             notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExecutionIdentifier,
                 workflowStateChangeListener, wfNodeId);
             
-            notificationService.subscribe(String.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
+            notificationService.subscribe(StringUtils.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
                 wfExecutionIdentifier, wfNodeId.getIdString()), new ConsoleRowSubscriber(wfDisposedLatch), wfNodeId);
             if (state == null) {
                 state = workflowExecutionService.getWorkflowState(wfExecutionIdentifier, wfNodeId);
@@ -256,13 +258,13 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 workflowExecutionService.dispose(wfExecutionIdentifier, wfNodeId);
             }
         } catch (CommunicationException e) {
-            LOGGER.error(String.format("Failed to cancel/dispose workflow '%s' (%s): %s",
+            LOGGER.error(StringUtils.format("Failed to cancel/dispose workflow '%s' (%s): %s",
                 wfInstanceName, wfExecutionIdentifier, e.getMessage()));
         }
         try {
             wfDisposedLatch.await();
         } catch (InterruptedException e) {
-            LOGGER.debug(String.format("Was interupted when cancelling/disposing workflow '%s' (%s)",
+            LOGGER.debug(StringUtils.format("Was interupted when cancelling/disposing workflow '%s' (%s)",
                 wfInstanceName, wfExecutionIdentifier), e);
             Thread.currentThread().interrupt();
         }
@@ -286,7 +288,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 wfStates.put(wfExeInfo.getExecutionIdentifier(), state);
             } catch (CommunicationException e) {
                 // should not happen as this is finally a local RPC
-                LOGGER.error(String.format("Failed to get state for workflow '%s'", wfExeInfo.getInstanceName()), e);
+                LOGGER.error(StringUtils.format("Failed to get state for workflow '%s'", wfExeInfo.getInstanceName()), e);
             }
         }
         return activeWfExeInfos;
@@ -310,7 +312,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 compStates.put(compExeInfo.getExecutionIdentifier(), state);
             } catch (CommunicationException e) {
                 // should not happen as this is finally a local RPC
-                LOGGER.error(String.format("Failed to get state for component '%s' (%s)",
+                LOGGER.error(StringUtils.format("Failed to get state for component '%s' (%s)",
                     compExeInfo.getInstanceName(), compExeInfo.getExecutionIdentifier()), e);
             }
         }

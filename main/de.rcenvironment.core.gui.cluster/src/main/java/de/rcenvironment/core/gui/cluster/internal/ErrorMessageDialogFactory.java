@@ -12,6 +12,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Composite;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 
 /**
  * Creates error messages for specified error handling scenarios which might occur.
@@ -41,8 +43,8 @@ public final class ErrorMessageDialogFactory {
      */
     public static MessageDialog createMessageDialogForConnectionFailure(Composite parent, Exception e) {
         MessageDialog dialog = new MessageDialog(parent.getShell(), Messages.connectionFailureDialogTitle, null,
-            String.format(Messages.connectionFailureDialogMessage, ExceptionUtils.getRootCauseMessage(e)),
-            MessageDialog.ERROR, new String[] { Messages.ok }, 0);
+                StringUtils.format(Messages.connectionFailureDialogMessage, ExceptionUtils.getRootCauseMessage(e)), MessageDialog.ERROR,
+                new String[] { Messages.ok }, 0);
         return dialog;
     }
 
@@ -65,7 +67,8 @@ public final class ErrorMessageDialogFactory {
      */
     public static MessageDialog createMessageDialogForCancelingJobsFailure(Composite parent, String errorMessage) {
         MessageDialog dialog = new MessageDialog(parent.getShell(), Messages.cancelingJobsFailureDialogTitle, null,
-            String.format(Messages.cancelingJobsFailureDialogMessage, errorMessage), MessageDialog.ERROR, new String[] { Messages.ok }, 0);
+                StringUtils.format(Messages.cancelingJobsFailureDialogMessage, errorMessage), MessageDialog.ERROR,
+                new String[] { Messages.ok }, 0);
         return dialog;
     }
     

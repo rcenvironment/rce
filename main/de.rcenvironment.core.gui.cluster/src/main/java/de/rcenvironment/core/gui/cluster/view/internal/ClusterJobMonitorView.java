@@ -45,6 +45,7 @@ import org.eclipse.ui.part.ViewPart;
 import de.rcenvironment.core.gui.cluster.configuration.internal.ClusterConnectionConfigurationDialogsController;
 import de.rcenvironment.core.gui.cluster.internal.ErrorMessageDialogFactory;
 import de.rcenvironment.core.utils.cluster.ClusterService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * View monitoring information about cluster jobs.
@@ -170,7 +171,7 @@ public class ClusterJobMonitorView extends ViewPart {
                 .getItem(connectedConfigurationNameCombo.getSelectionIndex());
             ClusterConnectionInformation connectionInformation = model.getClusterConnectionInformation(connectedConfigurationName);
             MessageDialog dialog = new MessageDialog(parent.getShell(), Messages.informationDialogTitle, null,
-                String.format(Messages.informationDialogMessage,
+                StringUtils.format(Messages.informationDialogMessage,
                     connectionInformation.getHost(), connectionInformation.getUsername(), connectionInformation.getConnectedDate(),
                     connectionInformation.getLastUpdateDate(),
                     connectionInformation.getUpdateInterval()),

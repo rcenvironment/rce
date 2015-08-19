@@ -45,16 +45,18 @@ import de.rcenvironment.core.start.gui.WorkspaceSettings;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
- * Dialog that shows information about the configuration and offers to open sample configuration files.
+ * Dialog that shows information about the configuration and offers to open sample configuration
+ * files.
  * 
  * @author Oliver Seebach
  * @author Robert Mischke
+ * @author Sascha Zur
  */
 public class ConfigurationInformationDialog extends Dialog {
 
-    private ConfigurationService configurationService;
+    private final ConfigurationService configurationService;
 
-    private SortedMap<String, File> exampleConfigFileNamesAndPaths = new TreeMap<>();
+    private final SortedMap<String, File> exampleConfigFileNamesAndPaths = new TreeMap<>();
 
     private String profileConfigPath = "";
 
@@ -281,6 +283,7 @@ public class ConfigurationInformationDialog extends Dialog {
                 String selection = examplesList.getItem(selectionIndex);
                 File configFile = exampleConfigFileNamesAndPaths.get(selection);
                 try {
+                    configFile.setReadOnly();
                     EditorsHelper.openExternalFileInEditor(configFile);
                 } catch (PartInitException e) {
                     log.error("Failed to open profile configuration file in an editor.", e);

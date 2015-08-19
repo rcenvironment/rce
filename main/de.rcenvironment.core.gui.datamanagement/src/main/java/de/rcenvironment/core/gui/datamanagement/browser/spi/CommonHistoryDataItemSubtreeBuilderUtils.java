@@ -31,6 +31,7 @@ import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -161,7 +162,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 }
             }
             if (dataItem.getExitCode() != null) {
-                DMBrowserNode.addNewLeafNode(String.format("%s: %d", "Exit code", dataItem.getExitCode()),
+                DMBrowserNode.addNewLeafNode(StringUtils.format("%s: %d", "Exit code", dataItem.getExitCode()),
                     DMBrowserNodeType.InformationText, logNode);
             }
         }
@@ -225,7 +226,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             FileReferenceTD fileReference = (FileReferenceTD) item.getValue();
             node.setAssociatedFilename(fileReference.getFileName());
             node.setDataReferenceId(fileReference.getFileReference());
-            node.setTitle(String.format(LEAF_TEXT_FORMAT, item.getEndpointName(), fileReference.getFileName()));
+            node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, item.getEndpointName(), fileReference.getFileName()));
         }
     }
 
@@ -234,7 +235,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             DirectoryReferenceTD directoryReference = (DirectoryReferenceTD) item.getValue();
             node.setAssociatedFilename(directoryReference.getDirectoryName());
             node.setDataReferenceId(directoryReference.getDirectoryReference());
-            node.setTitle(String.format(LEAF_TEXT_FORMAT, item.getEndpointName(), directoryReference.getDirectoryName()));
+            node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, item.getEndpointName(), directoryReference.getDirectoryName()));
         }
     }
 
@@ -259,7 +260,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
     }
     
     private static String handleLabel(String fullContent, String abbreviatedContent, String endpointName, DMBrowserNode node) {
-        String formattedLabel = String.format(LEAF_TEXT_FORMAT, endpointName, abbreviatedContent);
+        String formattedLabel = StringUtils.format(LEAF_TEXT_FORMAT, endpointName, abbreviatedContent);
         node.setTitle(formattedLabel);
         node.setFileContentAndName(fullContent, endpointName);
 
@@ -296,7 +297,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 buildSubtreeForDirectoryItem(item, node, parent);
             }
         } else {
-            node.setTitle(String.format(LEAF_TEXT_FORMAT, name, item.getValue()));
+            node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, name, item.getValue()));
         }
     }
 

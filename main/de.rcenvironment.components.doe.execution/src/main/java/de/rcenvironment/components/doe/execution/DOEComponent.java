@@ -35,6 +35,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -150,17 +151,17 @@ public class DOEComponent extends DefaultComponent {
                     this.runNumber = 0;
                 }
                 if (this.runNumber >= valuesTable.length) {
-                    throw new ComponentException(String.format(START_SAMPLE_VALUE_HIGHER_THAN_THE_NUMBER_OF_SAMPLES,
+                    throw new ComponentException(StringUtils.format(START_SAMPLE_VALUE_HIGHER_THAN_THE_NUMBER_OF_SAMPLES,
                         this.runNumber,
                         valuesTable.length));
                 }
                 if (this.runNumber > this.endSample) {
-                    throw new ComponentException(String.format(START_SAMPLE_VALUE_HIGHER_THAN_END_SAMPLE_VALUE,
+                    throw new ComponentException(StringUtils.format(START_SAMPLE_VALUE_HIGHER_THAN_END_SAMPLE_VALUE,
                         this.runNumber,
                         this.endSample));
                 }
                 if (valuesTable.length > 0 && valuesTable[0].length < componentContext.getOutputs().size()) {
-                    throw new ComponentException(String.format(
+                    throw new ComponentException(StringUtils.format(
                         NUMBER_OF_VALUES_PER_SAMPLE_LOWER_THAN_THE_NUMBER_OF_OUTPUTS,
                         valuesTable[0].length,
                         componentContext.getOutputs().size()));
@@ -272,7 +273,7 @@ public class DOEComponent extends DefaultComponent {
             }
             componentContext.writeOutput(output,
                 componentContext.getService(TypedDatumService.class).getFactory().createFloat(value));
-            componentContext.printConsoleLine(String.format(WROTE_VALUE_TO_OUTPUT_TEXT, output, value), ConsoleRow.Type.STDOUT);
+            componentContext.printConsoleLine(StringUtils.format(WROTE_VALUE_TO_OUTPUT_TEXT, output, value), ConsoleRow.Type.STDOUT);
 
         }
         runNumber++;
@@ -297,7 +298,7 @@ public class DOEComponent extends DefaultComponent {
                 }
                 componentContext.writeOutput(output,
                     componentContext.getService(TypedDatumService.class).getFactory().createFloat(value));
-                componentContext.printConsoleLine(String.format(WROTE_VALUE_TO_OUTPUT_TEXT, output, value),
+                componentContext.printConsoleLine(StringUtils.format(WROTE_VALUE_TO_OUTPUT_TEXT, output, value),
                     ConsoleRow.Type.STDOUT);
             }
             runNumber++;
@@ -315,19 +316,19 @@ public class DOEComponent extends DefaultComponent {
             String behaviour = componentContext.getConfigurationValue(DOEConstants.KEY_FAILED_RUN_BEHAVIOUR);
             if (behaviour.equals(DOEConstants.KEY_BEHAVIOUR_ABORT)) {
                 if (invalidInputs.size() == 1) {
-                    throw new ComponentException(String.format(INPUT_INVALID_EXCEPTION, invalidInputs.toString()));
+                    throw new ComponentException(StringUtils.format(INPUT_INVALID_EXCEPTION, invalidInputs.toString()));
                 } else {
-                    throw new ComponentException(String.format(INPUTS_INVALID_EXCEPTION, invalidInputs.toString()));
+                    throw new ComponentException(StringUtils.format(INPUTS_INVALID_EXCEPTION, invalidInputs.toString()));
                 }
             } else if (behaviour.equals(DOEConstants.KEY_BEHAVIOUR_RERUN)) {
                 if (invalidInputs.size() == 1) {
                     componentContext.printConsoleLine(
-                        String.format(INPUT_RERUNNING_TEXT, invalidInputs.toString(), --runNumber),
+                        StringUtils.format(INPUT_RERUNNING_TEXT, invalidInputs.toString(), --runNumber),
                         Type.STDOUT);
 
                 } else {
                     componentContext.printConsoleLine(
-                        String.format(INPUTS_RERUNNING_TEXT, invalidInputs.toString(), --runNumber),
+                        StringUtils.format(INPUTS_RERUNNING_TEXT, invalidInputs.toString(), --runNumber),
                         Type.STDOUT);
                 }
             }

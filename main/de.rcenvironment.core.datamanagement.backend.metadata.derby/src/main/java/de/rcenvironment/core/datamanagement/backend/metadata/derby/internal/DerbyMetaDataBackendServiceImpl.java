@@ -116,6 +116,7 @@ import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -355,13 +356,14 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                         // from spec: The subclass of SQLException is thrown in situations where a previoulsy failed operation might
                         // be able to succeed when the operation is retried without any intervention by application-level functionality.
                         if (count == 0) {
-                            LOGGER.debug(String.format("Executing database statement failed (%s). Will retry.", e.getMessage()));
+                            LOGGER.debug(StringUtils.format("Executing database statement failed (%s). Will retry.", e.getMessage()));
                         }
                         waitForRetry();
                     }
                     count++;
                     if (count >= MAX_RETRIES) {
-                        throw new RuntimeException(String.format("Failed to commit database transaction after %d retries.", MAX_RETRIES));
+                        throw new RuntimeException(StringUtils.format("Failed to commit database transaction after %d retries.",
+                            MAX_RETRIES));
                     }
                 }
                 connection.commit();
@@ -431,7 +433,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
     private void addProperties(String propertiesTableName, Long relatedId, Map<String, String> properties, Connection connection,
         boolean isRetry) throws SQLException {
-        String sql = String.format(INSERT_INTO + DB_PREFIX + STRING_PLACEHOLDER + "("
+        String sql = StringUtils.format(INSERT_INTO + DB_PREFIX + STRING_PLACEHOLDER + "("
             + WORKFLOW_RUN_ID + COMMA + KEY + COMMA + VALUE + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES, propertiesTableName);
         PreparedStatement stmt = connection.prepareStatement(sql);
@@ -978,7 +980,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         } else {
             valueColumn = BIG_VALUE;
         }
-        PreparedStatement stmt = connection.prepareStatement(String.format(sql, valueColumn), Statement.RETURN_GENERATED_KEYS);
+        PreparedStatement stmt = connection.prepareStatement(StringUtils.format(sql, valueColumn), Statement.RETURN_GENERATED_KEYS);
         stmt.setString(1, datum.getDataType().getShortName());
         stmt.setString(2, value);
         stmt.executeUpdate();
@@ -1168,7 +1170,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         default:
             relatedIdColumn = null;
         }
-        String sql = String.format(SELECT + KEY + COMMA + VALUE
+        String sql = StringUtils.format(SELECT + KEY + COMMA + VALUE
             + FROM + DB_PREFIX + STRING_PLACEHOLDER + WHERE + STRING_PLACEHOLDER + EQUAL + QMARK, tableName, relatedIdColumn);
         PreparedStatement stmt = connection.prepareStatement(sql);
         stmt.setLong(1, relatedId);
@@ -1193,7 +1195,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             protected Boolean protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 if (isWorkflowFinished(workflowRunId, connection, isRetry)) {
                     markDeletion(workflowRunId, FILES_TO_BE_DELETED, connection, isRetry);
-                    LOGGER.debug(String.format("Marked workflow run id %d to delete files.", workflowRunId));
+                    LOGGER.debug(StringUtils.format("Marked workflow run id %d to delete files.", workflowRunId));
                     return true;
                 }
                 LOGGER.warn("Workflow files deletion requested, but workflow " + workflowRunId + " is not finished yet");
@@ -1222,7 +1224,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             protected Boolean protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 if (isWorkflowFinished(workflowRunId, connection, isRetry)) {
                     markDeletion(workflowRunId, WORKFLOW_RUN_TO_BE_DELETED, connection, isRetry);
-                    LOGGER.debug(String.format("Marked workflow run id %d to be deleted.", workflowRunId));
+                    LOGGER.debug(StringUtils.format("Marked workflow run id %d to be deleted.", workflowRunId));
                     return true;
                 }
                 LOGGER.warn("Workflow run deletion requested, but workflow " + workflowRunId + " is not finished yet");
@@ -1248,7 +1250,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             @Override
             protected Map<Long, Set<String>> protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 connection.setReadOnly(true);
-                LOGGER.debug(String.format("Starting to delete workflow run id %d.", workflowRunId));
+                LOGGER.debug(StringUtils.format("Starting to delete workflow run id %d.", workflowRunId));
                 Map<Long, Set<String>> keys = getDataReferenceBinaryKeys(workflowRunId, connection, isRetry);
                 return keys;
             }
@@ -1272,7 +1274,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                 protected Void protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                     deleteTypedDatums(workflowRunId, connection, isRetry);
                     deleteWorkflowRunContent(workflowRunId, connection, isRetry);
-                    LOGGER.debug(String.format("Finished deletion of workflow run id %d.", workflowRunId));
+                    LOGGER.debug(StringUtils.format("Finished deletion of workflow run id %d.", workflowRunId));
                     return null;
                 }
             };
@@ -1286,7 +1288,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             @Override
             protected Map<Long, Set<String>> protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 connection.setReadOnly(true);
-                LOGGER.debug(String.format("Starting to delete files of workflow run id %d.", workflowRunId));
+                LOGGER.debug(StringUtils.format("Starting to delete files of workflow run id %d.", workflowRunId));
                 Map<Long, Set<String>> keys = getDataReferenceBinaryKeys(workflowRunId, connection, isRetry);
                 return keys;
             }
@@ -1309,7 +1311,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                 protected Void protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                     markDataReferencesDeleted(workflowRunId, connection, isRetry);
                     markDeletion(workflowRunId, NOT_MARKED_TO_BE_DELETED, connection, isRetry);
-                    LOGGER.debug(String.format("Finished file deletion of workflow run id %d.",
+                    LOGGER.debug(StringUtils.format("Finished file deletion of workflow run id %d.",
                         workflowRunId));
                     return null;
                 }
@@ -1474,26 +1476,26 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         String sqlcompRunProp =
             DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN_PROPERTIES + WHERE + COMPONENT_RUN_ID + IN + BRACKET_STRING_PLACEHOLDER;
         PreparedStatement stmtCompRunProp =
-            connection.prepareStatement(String.format(sqlcompRunProp, String.format(sqlCompRunIds, sqlCompInstIds)));
+            connection.prepareStatement(StringUtils.format(sqlcompRunProp, StringUtils.format(sqlCompRunIds, sqlCompInstIds)));
         stmtCompRunProp.setLong(1, workflowRunId);
         stmtCompRunProp.execute();
         stmtCompRunProp.close();
         String sqlcompInstProp =
             DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE_PROPERTIES + WHERE + COMPONENT_INSTANCE_ID + IN
                 + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtCompInstProp = connection.prepareStatement(String.format(sqlcompInstProp, sqlCompInstIds));
+        PreparedStatement stmtCompInstProp = connection.prepareStatement(StringUtils.format(sqlcompInstProp, sqlCompInstIds));
         stmtCompInstProp.setLong(1, workflowRunId);
         stmtCompInstProp.execute();
         stmtCompInstProp.close();
         String sqlEndpointInst =
             DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtEndpointInst = connection.prepareStatement(String.format(sqlEndpointInst, sqlCompInstIds));
+        PreparedStatement stmtEndpointInst = connection.prepareStatement(StringUtils.format(sqlEndpointInst, sqlCompInstIds));
         stmtEndpointInst.setLong(1, workflowRunId);
         stmtEndpointInst.execute();
         stmtEndpointInst.close();
         String sqlCompRun =
             DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
-        PreparedStatement stmtCompRun = connection.prepareStatement(String.format(sqlCompRun, sqlCompInstIds));
+        PreparedStatement stmtCompRun = connection.prepareStatement(StringUtils.format(sqlCompRun, sqlCompInstIds));
         stmtCompRun.setLong(1, workflowRunId);
         stmtCompRun.execute();
         stmtCompRun.close();
@@ -1760,7 +1762,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         stmtDataRefIds.close();
         PreparedStatement stmtBinaryRefs;
         if (keys.keySet().size() > 0) {
-            stmtBinaryRefs = connection.prepareStatement(String.format(sqlBinaryRefs, sqlDataRefIds));
+            stmtBinaryRefs = connection.prepareStatement(StringUtils.format(sqlBinaryRefs, sqlDataRefIds));
             stmtBinaryRefs.setLong(1, workflowRunId);
             rs = stmtBinaryRefs.executeQuery();
             if (rs != null) {
@@ -1835,8 +1837,8 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         String sql = UPDATE + TABLE_WORKFLOW_RUN + SET + FINAL_STATE + EQUAL + SINGE_QOUTE + STRING_PLACEHOLDER + SINGE_QOUTE
             + WHERE + FINAL_STATE + IS_NULL;
         Statement stmt = connection.createStatement();
-        int affectedLines = stmt.executeUpdate(String.format(sql, FinalWorkflowState.CORRUPTED));
-        LOGGER.debug(String.format("Cleaned up corrupted final states of %d workflows.", affectedLines));
+        int affectedLines = stmt.executeUpdate(StringUtils.format(sql, FinalWorkflowState.CORRUPTED));
+        LOGGER.debug(StringUtils.format("Cleaned up corrupted final states of %d workflows.", affectedLines));
         stmt.close();
     }
 
@@ -1852,7 +1854,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                 int type = rs.getInt(TO_BE_DELETED);
                 switch (type) {
                 case WORKFLOW_RUN_TO_BE_DELETED:
-                    LOGGER.debug(String.format("Clean up deletion of workflow run id %d", wfrunId));
+                    LOGGER.debug(StringUtils.format("Clean up deletion of workflow run id %d", wfrunId));
                     executionQueue.enqueue(new Runnable() {
 
                         @Override
@@ -1862,7 +1864,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                     });
                     break;
                 case FILES_TO_BE_DELETED:
-                    LOGGER.debug(String.format("Clean up file deletion of workflow run id %d", wfrunId));
+                    LOGGER.debug(StringUtils.format("Clean up file deletion of workflow run id %d", wfrunId));
                     executionQueue.enqueue(new Runnable() {
 
                         @Override

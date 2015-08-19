@@ -110,7 +110,7 @@ public class ReadOnlyWorkflowNodePart extends WorkflowNodePart {
         super.refresh();
         synchronized (batchAggregator) {
             if (!initializeStatusTriggered) {
-                Job job = new Job(String.format(Messages.initializingComponentState, ((WorkflowNode) getModel()).getName())) {
+                Job job = new Job(StringUtils.format(Messages.initializingComponentState, ((WorkflowNode) getModel()).getName())) {
 
                     @Override
                     protected IStatus run(IProgressMonitor monitor) {

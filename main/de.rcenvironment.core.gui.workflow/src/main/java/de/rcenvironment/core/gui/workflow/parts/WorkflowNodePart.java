@@ -16,6 +16,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.Platform;
@@ -48,6 +49,7 @@ import org.eclipse.gef.requests.CreateConnectionRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
@@ -94,7 +96,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     /** The width and height of a small workflow node's bounds. */
     public static final int SMALL_WORKFLOW_NODE_WIDTH = 38;
-    
+
     /**
      * The width and height of a medium sized workflow node.
      */
@@ -156,8 +158,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * {@link WorkflowNodeValidityStateListener} to update the valid state of this {@link WorkflowNodePart} using
-     * {@link #updateValid(boolean)}.
+     * {@link WorkflowNodeValidityStateListener} to update the valid state of this
+     * {@link WorkflowNodePart} using {@link #updateValid(boolean)}.
      */
     private final WorkflowNodeValidityStateListener validityStateListener = new WorkflowNodeValidityStateListener() {
 
@@ -221,7 +223,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                     if (property == null || property.isEmpty()) {
                         messageText = relativeMessage;
                     } else {
-                        messageText = String.format("%s: %s", property, relativeMessage);
+                        messageText = de.rcenvironment.core.utils.common.StringUtils.format("%s: %s", property, relativeMessage);
                     }
                 }
                 builder.append(messageText);
@@ -232,8 +234,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Updates the visual indicators for {@link WorkflowNodeValidationMessage}s and refreshes the graphical representation of this
-     * {@link WorkflowNodePart}.
+     * Updates the visual indicators for {@link WorkflowNodeValidationMessage}s and refreshes the
+     * graphical representation of this {@link WorkflowNodePart}.
      * 
      * @param valid true, if validation yielded not {@link WorkflowNodeValidationMessage}s.
      */
@@ -300,7 +302,13 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             icon = ((WorkflowNode) getModel()).getComponentDescription().getIcon32();
         }
         if (icon != null) {
-            image = new Image(Display.getCurrent(), new ByteArrayInputStream(icon));
+            try {
+                image = new Image(Display.getCurrent(), new ByteArrayInputStream(icon));
+            } catch (SWTException e) {
+                // The images of integrated tools may be broken, so the default will be used.
+                LogFactory.getLog(getClass()).info("Could not load tool icon, loading default. ", e);
+                image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_32);
+            }
         } else if (ci.getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
             if (ci.getSize() == ComponentSize.SMALL) {
                 image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_24_GREY);
@@ -422,10 +430,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     protected String generateTooltipTextBase(WorkflowNode node) {
         if (node.getComponentDescription().getVersion() != null
             && toolIntegrationRegistry.hasId(node.getComponentDescription().getIdentifier())) {
-            return String.format("%s - %s (%s)", node.getName(),
+            return de.rcenvironment.core.utils.common.StringUtils.format("%s - %s (%s)", node.getName(),
                 node.getComponentDescription().getName(), node.getComponentDescription().getVersion());
         } else {
-            return String.format("%s - %s", node.getName(), node.getComponentDescription().getName());
+            return de.rcenvironment.core.utils.common.StringUtils.format("%s - %s", node.getName(), node.getComponentDescription()
+                .getName());
         }
     }
 
@@ -626,8 +635,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Checks for registered editor actions and if it finds one for the selected component, this is invoked. As no action is currently
-     * required here, the method is deprecated.
+     * Checks for registered editor actions and if it finds one for the selected component, this is
+     * invoked. As no action is currently required here, the method is deprecated.
      */
     @Deprecated
     private void performDefaultAction() {
@@ -646,7 +655,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                 try {
                     Object actionObject = confElement.createExecutableExtension("class");
                     if (!(actionObject instanceof WorkflowEditorAction)) {
-                        throw new RuntimeException(String.format(
+                        throw new RuntimeException(de.rcenvironment.core.utils.common.StringUtils.format(
                             "Class in attribute 'class' is not a subtype of '%s'.",
                             WorkflowEditorAction.class.getName()));
                     }
@@ -662,7 +671,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Verifies the valid state of the {@link WorkflowNode} and refreshes the visuals of the {@link WorkflowNodePart}.
+     * Verifies the valid state of the {@link WorkflowNode} and refreshes the visuals of the
+     * {@link WorkflowNodePart}.
      */
     public void verifyValid() {
         WorkflowNode workflowNode = getWorkflowNode();
@@ -705,7 +715,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Anchor for the depiction of reconnections, i.e. connections from one component to the same. Handles the source anchor.
+     * Anchor for the depiction of reconnections, i.e. connections from one component to the same.
+     * Handles the source anchor.
      * 
      * @author Oliver Seebach
      */
@@ -727,7 +738,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Anchor for the depiction of reconnections, i.e. connections from one component to the same. Handles the target anchor.
+     * Anchor for the depiction of reconnections, i.e. connections from one component to the same.
+     * Handles the target anchor.
      * 
      * @author Oliver Seebach
      */

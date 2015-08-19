@@ -389,8 +389,9 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 if (checkStateChange(currentState, WorkflowState.CANCELING_AFTER_FAILED)) {
                     state = WorkflowState.CANCELING_AFTER_FAILED;
                     if (event.getThrowable() != null) {
-                        LOG.error(String.format("Workflow '%s' (%s) will be cancelled as a component failed", wfExeCtx.getInstanceName(),
-                            wfExeCtx.getExecutionIdentifier()), event.getThrowable());
+                        LOG.error(
+                            StringUtils.format("Workflow '%s' (%s) will be cancelled as a component failed", wfExeCtx.getInstanceName(),
+                                wfExeCtx.getExecutionIdentifier()), event.getThrowable());
                     }
                     cancelAsync();
                 }
@@ -442,7 +443,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             case CANCEL_ATTEMPT_FAILED:
                 if (checkStateChange(currentState, WorkflowState.FAILED)) {
                     if (event.getThrowable() != null) {
-                        LOG.error(String.format("Failed to cancel workflow '%s' (%s)", wfExeCtx.getInstanceName(),
+                        LOG.error(StringUtils.format("Failed to cancel workflow '%s' (%s)", wfExeCtx.getInstanceName(),
                             wfExeCtx.getExecutionIdentifier()), event.getThrowable());
                     }
                     state = WorkflowState.FAILED;
@@ -455,14 +456,14 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         }
 
         private void logInvalidStateChangeRequest(WorkflowState currentState, WorkflowState requestedState) {
-            LOG.debug(String.format("Ignored workflow state change request for workflow '%s' (%s) as it will cause an invalid"
+            LOG.debug(StringUtils.format("Ignored workflow state change request for workflow '%s' (%s) as it will cause an invalid"
                 + " state transition: %s -> %s", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(),
                 currentState, requestedState));
         }
 
         @Override
         protected void onStateChanged(WorkflowState oldState, WorkflowState newState) {
-            LOG.debug(String.format("Workflow '%s' (%s) is now %s (previous state: %s)",
+            LOG.debug(StringUtils.format("Workflow '%s' (%s) is now %s (previous state: %s)",
                 wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(), newState, oldState));
             sendNewWorkflowStateAsConsoleRow(newState);
             notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeCtx.getExecutionIdentifier(), newState.name());
@@ -473,7 +474,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
         @Override
         protected void onStateChangeException(WorkflowStateMachineEvent event, StateChangeException e) {
-            LOG.error(String.format("Invalid state change attempt for workflow '%s' (%s), caused by event '%s'",
+            LOG.error(StringUtils.format("Invalid state change attempt for workflow '%s' (%s), caused by event '%s'",
                 wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(), event), e);
         }
 
@@ -570,7 +571,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
                 for (Throwable t : throwables) {
                     if (t != null) {
-                        LOG.error(String.format("Preparing workflow '%s' failed", wfExeCtx.getInstanceName()), t);
+                        LOG.error(StringUtils.format("Preparing workflow '%s' failed", wfExeCtx.getInstanceName()), t);
                     }
                 }
 
@@ -700,7 +701,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 Throwable throwable = new ParallelComponentCaller() {
                         @Override
                         public void logError(Throwable t) {
-                            LOG.error(String.format("Preparing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                            LOG.error(StringUtils.format("Preparing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
                                 wfExeCtx.getExecutionIdentifier()), t);
                         }
                         @Override
@@ -737,7 +738,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 Throwable throwable = new ParallelComponentCaller(true, true) {
                         @Override
                         public void logError(Throwable t) {
-                            LOG.error(String.format("Pausing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                            LOG.error(StringUtils.format("Pausing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
                                 wfExeCtx.getExecutionIdentifier()), t);
                         }
                         @Override
@@ -755,7 +756,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                     pausedComonentStateLatch.await();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    LOG.debug(String.format("Waiting for components to pause (workflow '%s' (%s)) was interrupted",
+                    LOG.debug(StringUtils.format("Waiting for components to pause (workflow '%s' (%s)) was interrupted",
                         wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PAUSE_ATTEMPT_FAILED, e));
                     return;
@@ -781,7 +782,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 Throwable throwable = new ParallelComponentCaller(true, true) {
                         @Override
                         public void logError(Throwable t) {
-                            LOG.error(String.format("Resuming workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                            LOG.error(StringUtils.format("Resuming workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
                                 wfExeCtx.getExecutionIdentifier()), t);
                         }
                         @Override
@@ -799,7 +800,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                     resumedComonentStateLatch.await();
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    LOG.debug(String.format("Waiting for components to pause (workflow '%s' (%s)) was interrupted",
+                    LOG.debug(StringUtils.format("Waiting for components to pause (workflow '%s' (%s)) was interrupted",
                         wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.RESUME_ATTEMPT_FAILED, e));
                     return;
@@ -852,7 +853,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         
                             @Override
                             public void logError(Throwable t) {
-                                LOG.error(String.format("Cancelling workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                                LOG.error(StringUtils.format("Cancelling workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
                                     wfExeCtx.getExecutionIdentifier()), t);
                             }
                             
@@ -868,7 +869,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         workflowTerminatedLatch.await();
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
-                        LOG.debug(String.format("Waiting for components to cancel (workflow '%s' (%s)) was interrupted",
+                        LOG.debug(StringUtils.format("Waiting for components to cancel (workflow '%s' (%s)) was interrupted",
                             wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
                         stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_ATTEMPT_FAILED, e));
                         return;
@@ -906,7 +907,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                     workflowTerminatedLatch.await();
                     setWorkflowExecutionFinishedAndPostFinishedEvent();
                 } catch (InterruptedException e) {
-                    LOG.error(String.format("Waiting for workflow '%s' (%s) to finish failed", wfExeCtx.getInstanceName(),
+                    LOG.error(StringUtils.format("Waiting for workflow '%s' (%s) to finish failed", wfExeCtx.getInstanceName(),
                         wfExeCtx.getExecutionIdentifier()), e);
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FAILED, e));
                 }
@@ -936,7 +937,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 Throwable throwable = new ParallelComponentCaller(true, false) {
                         @Override
                         public void logError(Throwable t) {
-                            LOG.error(String.format("Disposing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                            LOG.error(StringUtils.format("Disposing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
                                 wfExeCtx.getExecutionIdentifier()), t);
                         }
                         @Override
@@ -1104,7 +1105,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         try {
                             componentExecutionService.dispose(compExeId, componentExecutionIds.get(compExeId));
                         } catch (CommunicationException e) {
-                            LOG.error(String.format("Failed to dispose component %s", compExeId), e);
+                            LOG.error(StringUtils.format("Failed to dispose component %s", compExeId), e);
                         }
                     }
                 });

@@ -17,6 +17,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 import de.rcenvironment.core.utils.executor.CommandLineExecutor;
@@ -71,7 +72,7 @@ public class UnixFileInfoService extends AbstractFileService {
             commandPattern = "ls -l -A -b -q --time-style=+%%s --color=never %s";
         }
 
-        final String command = String.format(commandPattern, directory);
+        final String command = StringUtils.format(commandPattern, directory);
         try {
             final Output executionOutput = exec(command);
             if (executionOutput.err.length() > 0) {
@@ -119,7 +120,7 @@ public class UnixFileInfoService extends AbstractFileService {
     private FileInfo parseFileInfo(final String line, final String path, final String directory) throws IOException {
         final Matcher matcher = LS_LINE_PATTERN.matcher(line);
         if (!matcher.matches()) {
-            throw new IOException(String.format("LS line does not match pattern: %s", line));
+            throw new IOException(StringUtils.format("LS line does not match pattern: %s", line));
         }
         // type of entry is first char {-, d, l}
         char type = matcher.group(1).charAt(0);
@@ -182,7 +183,7 @@ public class UnixFileInfoService extends AbstractFileService {
     @Override
     public boolean isDirectory(final String path) throws IOException {
         final String commandPattern = "file %s";
-        final String command = String.format(commandPattern, path);
+        final String command = StringUtils.format(commandPattern, path);
         try {
             final Output executionOutput = exec(command);
             if (executionOutput.err.length() > 0) {
@@ -208,7 +209,7 @@ public class UnixFileInfoService extends AbstractFileService {
 
     private String resolveTarget(final String path) throws IOException {
         final String commandPattern = "file %s";
-        final String command = String.format(commandPattern, path);
+        final String command = StringUtils.format(commandPattern, path);
         try {
             final Output executionOutput = exec(command);
             if (executionOutput.err.length() > 0) {
@@ -243,7 +244,7 @@ public class UnixFileInfoService extends AbstractFileService {
             return 0L;
         }
         final String commandPattern = "du --bytes %s";
-        final String command = String.format(commandPattern, path);
+        final String command = StringUtils.format(commandPattern, path);
         try {
             final Output executionOutput = exec(command);
             if (executionOutput.err.length() > 0) {

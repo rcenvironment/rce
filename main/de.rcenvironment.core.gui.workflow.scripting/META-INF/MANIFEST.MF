@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow Scripting
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow.scripting;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ActivationPolicy: lazy
 Require-Bundle: org.eclipse.ui.views.properties.tabbed,
@@ -16,6 +16,7 @@ Import-Package: de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
+ de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.scripting
 Export-Package: de.rcenvironment.core.gui.workflow.scripting.properties

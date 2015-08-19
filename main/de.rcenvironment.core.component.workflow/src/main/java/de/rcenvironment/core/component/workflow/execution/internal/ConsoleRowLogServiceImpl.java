@@ -25,6 +25,7 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowLogService;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -152,7 +153,7 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
         }
 
         // TODO improve filename, locking/uniqueness etc.
-        String logFileName = String.format("console.combined.%d.log", System.currentTimeMillis());
+        String logFileName = StringUtils.format("console.combined.%d.log", System.currentTimeMillis());
         File outputDir = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_OUTPUT);
         logFile = new File(outputDir, logFileName);
         try {
@@ -200,7 +201,7 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
         int newTotal = bufferedCharacterCount.addAndGet(delta);
         if (delta > 0) {
             if (newTotal >= BUFFERED_CHARACTER_COUNT_WARNING_THRESHOLD) {
-                log.warn(String.format("Background log buffer has grown to %d characters", newTotal));
+                log.warn(StringUtils.format("Background log buffer has grown to %d characters", newTotal));
             }
         } else {
             // consistency check

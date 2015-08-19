@@ -23,7 +23,7 @@ import de.rcenvironment.core.configuration.ConfigurationService;
  * 
  * @author Robert Mischke
  */
-public abstract class MockConfigurationService {
+public abstract class MockConfigurationService implements ConfigurationService {
 
     /**
      * A mock implementation of {@link CommunicationService} that throws an exception on every method call. Subclasses for tests should
@@ -114,6 +114,16 @@ public abstract class MockConfigurationService {
 
         @Override
         public boolean isUsingIntendedProfileDirectory() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public boolean isUsingDefaultConfigurationValues() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public File getInstallationDir() {
             throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
         }
     }

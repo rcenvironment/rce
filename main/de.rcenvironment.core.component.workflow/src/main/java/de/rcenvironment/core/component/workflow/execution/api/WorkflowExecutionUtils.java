@@ -15,6 +15,7 @@ import java.util.Date;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Utility methods used during workflow execution.
@@ -65,7 +66,7 @@ public final class WorkflowExecutionUtils {
 
         // make the last two digits sequentially increasing to reduce the likelihood of timestamp collisions
         int suffixNumber = GLOBAL_WORKFLOW_SUFFIX_SEQUENCE_COUNTER.incrementAndGet() % WORKFLOW_SUFFIX_NUMBER_MODULO;
-        return String.format("%s_%s_%02d", storedWorkflowName, generateTimestampString(), suffixNumber);
+        return StringUtils.format("%s_%s_%02d", storedWorkflowName, generateTimestampString(), suffixNumber);
     }
 
     /**
@@ -82,8 +83,8 @@ public final class WorkflowExecutionUtils {
         File file = new File(filename).getAbsoluteFile();
         // validate
         if (!file.isFile() || !file.canRead()) {
-            throw new FileNotFoundException(String.format(errorString,
-                String.format("\"%s\" (resolved to \"%s\")", filename, file.getAbsolutePath())));
+            throw new FileNotFoundException(StringUtils.format(errorString,
+                StringUtils.format("\"%s\" (resolved to \"%s\")", filename, file.getAbsolutePath())));
         }
         return file;
     }

@@ -95,12 +95,15 @@ public class SwitchHistoryDataItemSubtreeBuilder implements ComponentHistoryData
         } else {
             String exceptionInformationText = "";
             if (historyDataItem != null) {
-                exceptionInformationText = String.format("Parsing history data point failed: Expected type %s, but was of type %s",
-                    String.class.getCanonicalName(),
-                    historyDataItem.getClass().getCanonicalName());
+                exceptionInformationText =
+                    de.rcenvironment.core.utils.common.StringUtils.format(
+                        "Parsing history data point failed: Expected type %s, but was of type %s",
+                            String.class.getCanonicalName(), historyDataItem.getClass().getCanonicalName());
             } else {
-                exceptionInformationText = String.format("Parsing history data point failed: Expected type %s, actual type not available.",
-                    String.class.getCanonicalName());
+                exceptionInformationText =
+                    de.rcenvironment.core.utils.common.StringUtils.format(
+                        "Parsing history data point failed: Expected type %s, actual type not available.",
+                            String.class.getCanonicalName());
             }
             throw new IllegalArgumentException(exceptionInformationText);
         }

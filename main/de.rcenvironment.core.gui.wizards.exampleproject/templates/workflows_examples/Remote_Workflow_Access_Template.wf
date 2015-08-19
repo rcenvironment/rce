@@ -1,6 +1,6 @@
 {
   "identifier" : "1b5103aa-eceb-48ba-98ef-d64d07060c0d",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "Remote_Workflow_Access_Template",
   "nodes" : [ {
     "identifier" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",

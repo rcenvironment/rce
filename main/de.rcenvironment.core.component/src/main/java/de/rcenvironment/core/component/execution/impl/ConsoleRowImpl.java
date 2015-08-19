@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.utils.common.ComparatorUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link ConsoleRow}.
@@ -145,8 +146,7 @@ public class ConsoleRowImpl implements ConsoleRow {
     @Override
     public String toString() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd - HH:mm:ss,SSS");
-        return String.format("%s: %s - %s (%s@%s)",
-            df.format(timestamp), type.toString(), payload, componentName, workflowName);
+        return StringUtils.format("%s: %s - %s (%s@%s)", df.format(timestamp), type.toString(), payload, componentName, workflowName);
     }
 
     @Override

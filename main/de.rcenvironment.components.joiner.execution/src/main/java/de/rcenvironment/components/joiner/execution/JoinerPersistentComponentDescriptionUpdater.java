@@ -35,8 +35,13 @@ import de.rcenvironment.core.component.update.spi.PersistentComponentDescription
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
  * 
  * @author Sascha Zur
+ * @author Doreen Seider
  */
 public class JoinerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
+
+    private static final String DATATYPE = "datatype";
+
+    private static final String CONFIGURATION = "configuration";
 
     private static final String MERGED = "Merged";
 
@@ -55,8 +60,8 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
     private static final String V3_1 = "3.1";
 
     private static final String V3_2 = "3.2";
-
-    private final String currentVersion = V3_2;
+    
+    private static final String V3_3 = "3.3";
 
     private final JsonFactory jsonFactory = new JsonFactory();
 
@@ -72,11 +77,13 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         if (silent && (persistentComponentDescriptionVersion == null
             || persistentComponentDescriptionVersion.compareTo(V1_0) < 0)) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE;
+        } else if (silent && persistentComponentDescriptionVersion.compareTo(V3_3) < 0) {
+            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         } else if (!silent && persistentComponentDescriptionVersion != null) {
             if (persistentComponentDescriptionVersion.compareTo(V3_0) < 0) {
                 versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
             }
-            if (persistentComponentDescriptionVersion.compareTo(currentVersion) < 0) {
+            if (persistentComponentDescriptionVersion.compareTo(V3_2) < 0) {
                 versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
             }
         }
@@ -100,10 +107,46 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
             default:
                 break;
             }
+        } else if (silent && formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+            switch (description.getComponentVersion()) {
+            case V3_2:
+                description = updateFromV32ToV33(description);
+                break;
+            default:
+                break;
+            }
         }
         return description;
     }
 
+    private PersistentComponentDescription updateFromV32ToV33(PersistentComponentDescription description)
+        throws JsonParseException, IOException {
+        
+        ObjectMapper mapper = new ObjectMapper();
+        ObjectNode node = (ObjectNode) mapper.readTree(description.getComponentDescriptionAsString());
+        
+        ArrayNode dynInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
+        ObjectNode firstInput = (ObjectNode) dynInputs.get(0);
+        String dataType = firstInput.get(DATATYPE).getTextValue();
+        ObjectNode configuration = (ObjectNode) node.get(CONFIGURATION);
+        String inputCount;
+        if (configuration != null) {
+            inputCount = configuration.get(JoinerComponentConstants.OUTPUT_NAME).getTextValue();
+            configuration.removeAll();
+        } else {
+            configuration = node.putObject(CONFIGURATION);
+            inputCount = "2";
+        }
+        configuration.put(JoinerComponentConstants.INPUT_COUNT, inputCount);
+        configuration.put(JoinerComponentConstants.DATATYPE, dataType);                        
+        
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+        description.setComponentVersion(V3_3);
+        return description;
+    }
+    
+    
     private PersistentComponentDescription updateFromV31ToV32(PersistentComponentDescription description)
         throws JsonParseException, IOException {
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
@@ -129,7 +172,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
             }
         }
 
-        ObjectNode configuration = (ObjectNode) rootNode.get("configuration");
+        ObjectNode configuration = (ObjectNode) rootNode.get(CONFIGURATION);
         if (configuration != null) {
             String number = configuration.get(MERGED).getTextValue();
             configuration.remove(MERGED);
@@ -137,12 +180,13 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         } else {
             configuration = mapper.createObjectNode();
             configuration.put(joinedString, TextNode.valueOf("2"));
-            ((ObjectNode) rootNode).put("configuration", configuration);
+            ((ObjectNode) rootNode).put(CONFIGURATION, configuration);
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));
         description.setComponentVersion(V3_2);
+        jsonParser.close();
         return description;
     }
 
@@ -168,6 +212,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));
         description.setComponentVersion(V3_1);
+        jsonParser.close();
         return description;
     }
 
@@ -188,7 +233,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         ObjectNode output = JsonNodeFactory.instance.objectNode();
         output.put(NAME, TextNode.valueOf(MERGED));
         output.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
-        output.put("datatype", TextNode.valueOf(rootNode.get(DYNAMIC_INPUTS).get(0).get("datatype").getTextValue()));
+        output.put(DATATYPE, TextNode.valueOf(rootNode.get(DYNAMIC_INPUTS).get(0).get(DATATYPE).getTextValue()));
 
         staticOutputs.add(output);
         ((ObjectNode) rootNode).put("staticOutputs", staticOutputs);
@@ -196,7 +241,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));
         description.setComponentVersion(V3_0);
-
+        jsonParser.close();
         return description;
     }
 
@@ -221,6 +266,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));
         description.setComponentVersion(V1_0);
+        jsonParser.close();
         return description;
     }
 }

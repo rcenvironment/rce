@@ -19,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.ConfigurationSegment;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Class providing the configuration of the communication bundle. Additionally it defines the default configuration.
@@ -147,7 +148,7 @@ public class CommunicationConfiguration {
         if (options.length() != 0) {
             options.setLength(options.length() - 1);
         }
-        String connection = String.format("activemq-tcp:%s:%d(%s)", host, port, options.toString());
+        String connection = StringUtils.format("activemq-tcp:%s:%d(%s)", host, port, options.toString());
         return connection;
     }
 
@@ -161,7 +162,7 @@ public class CommunicationConfiguration {
         if (port == null || port < 1 || port > MAX_VALID_PORT) {
             throw new ConfigurationException("Missing or invalid \"port\" parameter");
         }
-        return String.format("activemq-tcp:%s:%d", ip, port.intValue());
+        return StringUtils.format("activemq-tcp:%s:%d", ip, port.intValue());
     }
 
     public List<String> getProvidedContactPoints() {

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping">
+	<map:mapping mode="append">
+		<map:source>/cpacs/header[1]</map:source>
+		<map:target>/cpacs/header[2]</map:target>
+	</map:mapping>
+</map:mappings>

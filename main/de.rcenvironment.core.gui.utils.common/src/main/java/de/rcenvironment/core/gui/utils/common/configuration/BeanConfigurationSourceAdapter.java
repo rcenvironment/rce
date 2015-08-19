@@ -23,6 +23,7 @@ import org.eclipse.ui.views.properties.IPropertySource2;
 import org.eclipse.ui.views.properties.PropertyDescriptor;
 
 import de.rcenvironment.core.gui.utils.common.configuration.ConfigurationViewerContentProvider.ArraySource;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.configuration.ConfigurationInfo;
 import de.rcenvironment.core.utils.incubator.configuration.ConfigurationIntrospector;
 import de.rcenvironment.core.utils.incubator.configuration.annotation.Configurable;
@@ -369,7 +370,7 @@ public class BeanConfigurationSourceAdapter extends BeanPropertySourceAdapter
         @Override
         public Object getEditableValue() {
             final Object[] arrayRef = getArray();
-            return String.format("%s [%d]", arrayRef.getClass().getComponentType()
+            return StringUtils.format("%s [%d]", arrayRef.getClass().getComponentType()
                     .getSimpleName(), arrayRef.length);
         }
 
@@ -426,7 +427,7 @@ public class BeanConfigurationSourceAdapter extends BeanPropertySourceAdapter
             IPropertyDescriptor[] descriptors = new IPropertyDescriptor[arrayRef.length];
             for (int index = 0; index < descriptors.length; ++index) {
                 descriptors[index] = new PropertyDescriptor(new Integer(
-                            index), String.format("[%d]", index));
+                            index), StringUtils.format("[%d]", index));
             }
             return descriptors;
         }
@@ -535,7 +536,7 @@ public class BeanConfigurationSourceAdapter extends BeanPropertySourceAdapter
          */
         @Override
         public Object getEditableValue() {
-            return String.format("? [%d]", list.size());
+            return StringUtils.format("? [%d]", list.size());
         }
 
         /**
@@ -589,7 +590,7 @@ public class BeanConfigurationSourceAdapter extends BeanPropertySourceAdapter
             final IPropertyDescriptor[] descriptors = new IPropertyDescriptor[list.size()];
             for (int index = 0; index < descriptors.length; ++index) {
                 descriptors[index] = new PropertyDescriptor(new Integer(
-                            index), String.format("[%d]", index));
+                            index), StringUtils.format("[%d]", index));
             }
             return descriptors;
         }

@@ -15,6 +15,7 @@ import java.util.List;
 import org.eclipse.nebula.visualization.xygraph.figures.Trace.TraceType;
 import org.eclipse.swt.graphics.RGB;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.configuration.annotation.Configurable;
 import de.rcenvironment.core.utils.incubator.configuration.annotation.Configuration;
 
@@ -474,7 +475,7 @@ public final class ChartConfiguration extends AbstractConfiguration {
          */
         @Override
         public String toString() {
-            return String.format("%s", title);
+            return StringUtils.format("%s", title);
         }
 
     }

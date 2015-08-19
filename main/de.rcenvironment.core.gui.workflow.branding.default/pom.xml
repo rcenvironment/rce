@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.workflow.branding.default</artifactId>
 	<name>RCE Core GUI Workflow Branding Fragment Bundle</name>
-	<version>6.1.0.qualifier</version>
+	<version>6.2.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

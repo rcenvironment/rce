@@ -42,23 +42,26 @@ public final class WorkflowLabelProvider extends LabelProvider {
         } else {
             Object object = ((IStructuredSelection) objects).getFirstElement();
             if (object instanceof WorkflowNodePart) {
-                value = String.format("Component Properties: %s",
+                value = de.rcenvironment.core.utils.common.StringUtils.format("Component Properties: %s",
                     StringUtils.abbreviate(((WorkflowNode) ((WorkflowNodePart) object).getModel()).getName(), maxLength));
             } else if (object instanceof WorkflowExecutionInformationPart) {
-                value = String.format("Workflow: %s", StringUtils.abbreviate(((WorkflowExecutionInformation)
-                    ((WorkflowExecutionInformationPart) object).getModel()).getInstanceName(), maxLength));
+                value =
+                    de.rcenvironment.core.utils.common.StringUtils.format("Workflow: %s",
+                        StringUtils.abbreviate(
+                            ((WorkflowExecutionInformation) ((WorkflowExecutionInformationPart) object).getModel()).getInstanceName(),
+                            maxLength));
             } else if (object instanceof WorkflowLabelPart) {
                 String[] labelParts = ((WorkflowLabel) ((WorkflowLabelPart) object).getModel()).getText().split("\n");
                 String labelAbrev = StringUtils.abbreviate(labelParts[0].replaceAll("\\r", ""), maxLength);
                 if (!labelAbrev.endsWith("...") && labelParts.length > 1) {
                     labelAbrev += "...";
                 }
-                value = String.format("Label Properties: \"%s\"", labelAbrev);
+                value = de.rcenvironment.core.utils.common.StringUtils.format("Label Properties: \"%s\"", labelAbrev);
             } else if (object instanceof WorkflowPart || object instanceof ConnectionPart) {
                 try {
                     String partName = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
                         .getActivePage().getActivePartReference().getPartName();
-                    value = String.format("Workflow Properties: %s",
+                    value = de.rcenvironment.core.utils.common.StringUtils.format("Workflow Properties: %s",
                         StringUtils.abbreviate(StringUtils.removeEndIgnoreCase(partName, ".wf"), maxLength));
                 } catch (NullPointerException npe){
                     value = "Workflow Properties";

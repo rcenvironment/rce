@@ -29,11 +29,13 @@ public class ScriptExecutorFactoryRegistryImpl implements ScriptExecutorFactoryR
 
     private static final Log LOGGER = LogFactory.getLog(ScriptExecutorFactoryRegistryImpl.class);
 
-    private List<ScriptExecutorFactory> executorFactories =
+    // synchronized methods to avoid removing a factory while other read it. Since this won't happen
+    // often, synchronizing the methods is enough
+    private final List<ScriptExecutorFactory> executorFactories =
         Collections.synchronizedList(new LinkedList<ScriptExecutorFactory>());
 
     @Override
-    public void addScriptExecutorFactory(ScriptExecutorFactory factory) {
+    public synchronized void addScriptExecutorFactory(ScriptExecutorFactory factory) {
         if (factory != null && !executorFactories.contains(factory)) {
             executorFactories.add(factory);
         } else {
@@ -42,7 +44,7 @@ public class ScriptExecutorFactoryRegistryImpl implements ScriptExecutorFactoryR
     }
 
     @Override
-    public void removeScriptExecutorFactory(ScriptExecutorFactory factory) {
+    public synchronized void removeScriptExecutorFactory(ScriptExecutorFactory factory) {
         if (factory != null && executorFactories.contains(factory)) {
             executorFactories.remove(factory);
         } else {
@@ -51,7 +53,7 @@ public class ScriptExecutorFactoryRegistryImpl implements ScriptExecutorFactoryR
     }
 
     @Override
-    public List<ScriptLanguage> getCurrentRegisteredExecutorLanguages() {
+    public synchronized List<ScriptLanguage> getCurrentRegisteredExecutorLanguages() {
         List<ScriptLanguage> result = new LinkedList<ScriptLanguage>();
         for (ScriptExecutorFactory factory : executorFactories) {
             result.add(factory.getSupportingScriptLanguage());
@@ -60,7 +62,7 @@ public class ScriptExecutorFactoryRegistryImpl implements ScriptExecutorFactoryR
     }
 
     @Override
-    public ScriptExecutor requestScriptExecutor(ScriptLanguage language) {
+    public synchronized ScriptExecutor requestScriptExecutor(ScriptLanguage language) {
         ScriptExecutor result = null;
         for (ScriptExecutorFactory currentFactory : executorFactories) {
             if (currentFactory.getSupportingScriptLanguage().getName().equalsIgnoreCase(language.getName())) {

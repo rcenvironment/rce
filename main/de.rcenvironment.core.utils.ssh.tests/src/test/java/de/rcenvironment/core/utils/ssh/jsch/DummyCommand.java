@@ -93,7 +93,8 @@ public class DummyCommand implements Command {
         } else {
             stderrStream.write(EMPTY_STRING.getBytes());
         }
-
+        stdoutStream.flush();
+        stderrStream.flush();
         IOUtils.closeQuietly(stdoutStream);
         IOUtils.closeQuietly(stderrStream);
         exitCallback.onExit(exitValue);

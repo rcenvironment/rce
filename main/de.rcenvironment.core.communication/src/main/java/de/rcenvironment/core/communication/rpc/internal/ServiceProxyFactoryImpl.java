@@ -29,6 +29,7 @@ import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.ThreadGuard;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
@@ -128,7 +129,7 @@ public final class ServiceProxyFactoryImpl implements ServiceProxyFactory {
 
                 // check to avoid string concatenation if stats are disabled
                 if (StatsCounter.isEnabled()) {
-                    StatsCounter.count("Remote service calls", String.format("%s#%s(...)", myService.getName(), method.getName()));
+                    StatsCounter.count("Remote service calls", StringUtils.format("%s#%s(...)", myService.getName(), method.getName()));
                 }
 
                 List<Serializable> parameterList = new ArrayList<>();
@@ -151,7 +152,7 @@ public final class ServiceProxyFactoryImpl implements ServiceProxyFactory {
                         remoteServiceCallService.performRemoteServiceCall(serviceCallRequest);
                     if (serviceCallResult == null) {
                         // should not happen in version 6.1.0 or higher anymore; left in for safety
-                        throw new RuntimeException(String.format(
+                        throw new RuntimeException(StringUtils.format(
                             "Unexpected null service call result for RPC to method %s#%s() on %s",
                             serviceCallRequest.getService(), serviceCallRequest.getServiceMethod(),
                             serviceCallRequest.getRequestedPlatform()));

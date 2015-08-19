@@ -2,10 +2,11 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication - ActiveMQ Transport
 Bundle-SymbolicName: de.rcenvironment.core.communication.transport.activemq
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Import-Package: de.rcenvironment.core.utils.common.concurrent,
+Import-Package: de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.concurrent,
  javax.jms;version="1.1.0",
  org.apache.activemq;version="5.7.0",
  org.apache.activemq.broker;version="5.7.0",

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS Utils
 Bundle-SymbolicName: de.rcenvironment.cpacs.utils.common;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Import-Package: de.rcenvironment.core.communication.common,
@@ -19,6 +19,7 @@ Import-Package: de.rcenvironment.core.communication.common,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.notification,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.xml,
  org.apache.commons.lang3;version="3.1.0",
@@ -27,7 +28,5 @@ Import-Package: de.rcenvironment.core.communication.common,
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.node;version="1.9.13",
  org.eclipse.swt.graphics
-Export-Package: de.rcenvironment.cpacs.utils.common.components,
- de.rcenvironment.cpacs.utils.common.xml;version="6.0.0"
-Service-Component: OSGI-INF/*.xml
+Export-Package: de.rcenvironment.cpacs.utils.common.components
 Bundle-ActivationPolicy: lazy

@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
@@ -211,5 +212,15 @@ public interface MessageChannelService {
      * @param shuttingDown true if new connection attempts should be suppressed as shutdown is in progress
      */
     void setShutdownFlag(boolean shuttingDown);
+
+    /**
+     * Shortcut method to answer local service calls that were serialized because the "force local RPC serialization" flag is set. This
+     * circumvents the routing layer, which would be made more complicated (with no benefit) by adding local-to-local routing.
+     * 
+     * @param request the request
+     * @param sourceId the source/sender node (should always be the local node id)
+     * @return the RPC response
+     */
+    NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, NodeIdentifier sourceId);
 
 }

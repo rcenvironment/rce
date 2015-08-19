@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.start.common.Platform;
 import de.rcenvironment.core.start.common.validation.internal.PlatformValidatorsRegistry;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A manager class that manages the validation of the RCE platform thru the registered {@link PlatformValidator}s.
@@ -70,11 +71,11 @@ public class PlatformValidationManager {
                 final Collection<PlatformMessage> validationMessages = validator.validatePlatform();
                 messages.addAll(validationMessages);
             } catch (RuntimeException e) {
-                LOGGER.error(String.format("The execution of the validator '%s' caused an exception",
+                LOGGER.error(StringUtils.format("The execution of the validator '%s' caused an exception",
                     validator.getClass().getName()), e);
                 messages.add(new PlatformMessage(
                     PlatformMessage.Type.ERROR, "de.rcenvironment.rce.gui",
-                    String.format("The execution of the validator '%s' caused an exception ('%s').",
+                    StringUtils.format("The execution of the validator '%s' caused an exception ('%s').",
                         validator.getClass().getName(), e.getLocalizedMessage())));
             }
         }

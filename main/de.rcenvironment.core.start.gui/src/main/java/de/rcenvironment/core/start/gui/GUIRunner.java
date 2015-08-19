@@ -21,10 +21,9 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.jface.dialogs.Dialog;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.osgi.service.datalocation.Location;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.ide.ChooseWorkspaceData;
@@ -32,6 +31,7 @@ import org.eclipse.ui.internal.ide.ChooseWorkspaceDialog;
 import org.eclipse.ui.statushandlers.StatusManager;
 import org.osgi.framework.Version;
 
+import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.start.common.CommandLineArguments;
 import de.rcenvironment.core.start.common.InstanceRunner;
@@ -41,6 +41,7 @@ import de.rcenvironment.core.start.gui.internal.ApplicationWorkbenchAdvisor;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.common.concurrent.ThreadGuard;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Starts the GUI for RCE.
@@ -48,6 +49,7 @@ import de.rcenvironment.core.utils.common.concurrent.ThreadGuard;
  * @author Sascha Zur
  * @author Jan Flink
  * @author Robert Mischke
+ * @author Marc Stammerjohann
  */
 @SuppressWarnings("restriction")
 public final class GUIRunner extends InstanceRunner {
@@ -115,6 +117,10 @@ public final class GUIRunner extends InstanceRunner {
         String[] execCommandTokens = CommandLineArguments.getExecCommandTokens();
         if (execCommandTokens != null) {
             initiateAsyncCommandExecution(execCommandTokens, "execution of --exec commands", false);
+        }
+
+        if (checkIfExitRequiredBecauseOfConfigurationLoadingError()) { 
+            return IApplication.EXIT_OK;
         }
 
         // start the workbench - returns as soon as the workbench is closed
@@ -263,7 +269,7 @@ public final class GUIRunner extends InstanceRunner {
             workspaceLocation.set(userWSURL, true);
             tryWorkspaceChoosingAgain = false;
         } catch (IOException e) {
-            displayError(new PlatformMessage(PlatformMessage.Type.ERROR, "", "Workspace folder could not be created or is read-only."));
+            displayError("Workspace", "Workspace folder could not be created or is read-only.");
             // A non-valid workspace was chosen, show the workspace chooser again.
             tryWorkspaceChoosingAgain = true;
             workspaceSettings.setDontAskAgainSetting(false);
@@ -273,7 +279,7 @@ public final class GUIRunner extends InstanceRunner {
     }
 
     private void handleError(final PlatformMessage error, final int style) {
-        final String errorMessageLabel = String.format("%s: %s", error.getType(), error.getMessage());
+        final String errorMessageLabel = StringUtils.format("%s: %s", error.getType(), error.getMessage());
         final IStatus status = new Status(Status.ERROR, error.getBundleSymbolicName(), errorMessageLabel);
         StatusManager.getManager().handle(status, style);
         if (style == StatusManager.BLOCK) {
@@ -282,10 +288,20 @@ public final class GUIRunner extends InstanceRunner {
     }
 
     private void displayError(final PlatformMessage error) {
-        Shell shell = new Shell();
-        MessageBox box = new MessageBox(shell, SWT.ICON_ERROR | SWT.OK);
-        box.setText(error.getType().toString());
-        box.setMessage(error.getMessage());
-        box.open();
+        displayError("Validation", error.getMessage());
+    }
+    
+    private void displayError(String title, String message) {
+        MessageDialog.openError(new Shell(), title, message);
+    }
+
+    private boolean checkIfExitRequiredBecauseOfConfigurationLoadingError() {
+        ConfigurationService configurationService = ServiceRegistry.createAccessFor(this).getService(ConfigurationService.class);
+        if (configurationService.isUsingDefaultConfigurationValues()) {
+            boolean yes = MessageDialog.openQuestion(new Shell(), "Configuration", "Failed to load configuration file. Most likely, "
+                + "it has syntax errors. Check the log for details.\n\nDefault configuration values will be applied.\n\nProceed anyway?");
+            return !yes;
+        }
+        return false;
     }
 }

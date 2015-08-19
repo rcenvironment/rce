@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.componentgroups.standard.feature"
       label="RCE Standard Components Feature"
-      version="6.1.0.qualifier"
+      version="6.2.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -279,13 +279,18 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
-
    <plugin
          id="de.rcenvironment.components.script.execution.python"
          download-size="0"
          install-size="0"
          version="0.0.0"
          fragment="true"
+         unpack="false"/>
+  <plugin
+         id="de.rcenvironment.components.script.execution.python.fragment"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
          unpack="false"/>
 
    <plugin
@@ -306,14 +311,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
          download-size="0"
          install-size="0"
          version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.switch.execution.tests"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         fragment="true"
          unpack="false"/>
 
    <plugin

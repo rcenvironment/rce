@@ -23,6 +23,7 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupListener;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupListenerAdapter;
 import de.rcenvironment.core.communication.connection.api.DisconnectReason;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -63,7 +64,7 @@ public class NetworkConnectionListenerImpl implements IStartup {
                 if (!firstConsecutiveFailure) {
                     return;
                 }
-                final String message = String.format("Failed to establish network connection to \"%s\".\n\n%s",
+                final String message = StringUtils.format("Failed to establish network connection to \"%s\".\n\n%s",
                     setup.getDisplayName(), getAutoRetryRemark(willAutoRetry));
                 showMessageDialogAsync(message);
             }
@@ -71,11 +72,11 @@ public class NetworkConnectionListenerImpl implements IStartup {
             @Override
             public void onConnectionClosed(ConnectionSetup setup, DisconnectReason disconnectReason, boolean willAutoRetry) {
                 if (setup.getDisconnectReason() == ERROR) {
-                    String message = String.format("Network connection to \"%s\" was closed due to a connection error.\n\n%s",
+                    String message = StringUtils.format("Network connection to \"%s\" was closed due to a connection error.\n\n%s",
                         setup.getDisplayName(), getAutoRetryRemark(willAutoRetry));
                     showMessageDialogAsync(message);
                 } else if (setup.getDisconnectReason() == REMOTE_SHUTDOWN) {
-                    String message = String.format(
+                    String message = StringUtils.format(
                         "Network connection to \"%s\" was closed because the remote node is shutting down.\n\n%s",
                         setup.getDisplayName(), getAutoRetryRemark(willAutoRetry));
                     showMessageDialogAsync(message);

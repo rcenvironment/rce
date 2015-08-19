@@ -3,11 +3,12 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Merger Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.xml.merger.gui;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.datamanagement.history,
  de.rcenvironment.core.component.workflow.model.api,
+ de.rcenvironment.core.component.xml,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.utils.common,
@@ -18,7 +19,6 @@ Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.utils.common.legacy,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.cpacs.gui.xpathchooser,
- de.rcenvironment.cpacs.utils.common.components,
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.logging;provider=paxlogging
 Require-Bundle: org.eclipse.ui.views.properties.tabbed,

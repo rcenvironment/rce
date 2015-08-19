@@ -22,6 +22,7 @@ import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 import de.rcenvironment.core.embedded.ssh.api.TemporarySshAccount;
 import de.rcenvironment.core.embedded.ssh.api.TemporarySshAccountControl;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -127,7 +128,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         if (user != null) {
             return user;
         } else {
-            throw new AuthenticationException(String.format("No SSH account for username \"%s\"", userName));
+            throw new AuthenticationException(StringUtils.format("No SSH account for username \"%s\"", userName));
         }
     }
 
@@ -182,7 +183,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         } catch (IOException e) {
             throw new RuntimeException("Failed to create temporary SCP directory", e);
         }
-        log.debug(String.format("Created temporary SCP account '%s' with virtual SCP path '%s' mapped to local path '%s'",
+        log.debug(StringUtils.format("Created temporary SCP account '%s' with virtual SCP path '%s' mapped to local path '%s'",
             tempAccount.getUsername(), tempAccount.getVirtualScpRootPath(), tempAccount.getLocalScpRootPath().getAbsolutePath()));
 
         temporaryAccounts.add(tempAccount);

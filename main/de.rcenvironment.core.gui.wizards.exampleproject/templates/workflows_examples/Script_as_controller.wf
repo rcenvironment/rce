@@ -1,6 +1,6 @@
 {
   "identifier" : "7e2e30c3-832d-4443-9f26-c4f09a82b90c",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "nodes" : [ {
     "identifier" : "54ae0236-1b36-4e05-b797-3627225eb4a3",
     "name" : "Input Provider",
@@ -84,10 +84,11 @@
     "location" : "254:152",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2"
+      "version" : "3.3"
     },
     "configuration" : {
-      "Joined" : "2"
+      "inputCount" : "2",
+      "datatype" : "Integer"
     },
     "dynamicInputs" : [ {
       "identifier" : "04d1cbce-41a0-47dd-ba48-b382be7a7927",

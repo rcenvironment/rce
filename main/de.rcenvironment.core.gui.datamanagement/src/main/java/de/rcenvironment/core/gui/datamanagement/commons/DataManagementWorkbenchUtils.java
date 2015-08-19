@@ -20,7 +20,9 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
@@ -92,10 +94,11 @@ public final class DataManagementWorkbenchUtils {
      * @param filename the filename to use for the given data
      * @param user the proxy certificate to resolve the reference
      * @param rceNodeIdentifier {@link NodeIdentifier} of the RCE node, which store the file to open
+     * @param inTiglViewer true if CPACS File should be opened in TiGL Viewer
      */
     public void tryOpenDataReferenceInReadonlyEditor(final String dataReferenceId, final String fileReferencePath,
         final String filename,
-        final User user, final NodeIdentifier rceNodeIdentifier) {
+        final User user, final NodeIdentifier rceNodeIdentifier, final boolean inTiglViewer) {
 
         if (dataReferenceId != null && fileReferencePath == null) {
             // open = copy to local temporary file + open in editor
@@ -106,7 +109,7 @@ public final class DataManagementWorkbenchUtils {
                     File tempFile = null;
                     try {
                         // acquire local temporary file with the associated filename
-                        
+
                         File tempDir = new File(Activator.getInstance().getBundleSpecificTempDir(), dataReferenceId);
                         tempDir.mkdir();
                         if (!tempDir.mkdir() && !tempDir.exists()) {
@@ -117,9 +120,15 @@ public final class DataManagementWorkbenchUtils {
                         if (!(tempDir.exists() && tempDir.list().length == 1 && tempDir.list()[0].equals(filename))) {
                             // copy data reference content to local temporary file
                             dataManagementService.copyReferenceToLocalFile(user, dataReferenceId, tempFile,
-                                rceNodeIdentifier);                            
+                                rceNodeIdentifier);
                         }
-                        openInEditor(tempFile);
+
+                        if (inTiglViewer) {
+                            openInTigl(tempFile);
+
+                        } else {
+                            openInEditor(tempFile);
+                        }
                     } catch (AuthorizationException e) {
                         log.error("Failed to copy datamanagement reference to local file.", e);
                     } catch (IOException e) {
@@ -138,7 +147,14 @@ public final class DataManagementWorkbenchUtils {
 
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
-                    openInEditor(new File(fileReferencePath));
+                    
+                    if (inTiglViewer){
+                        openInTigl(new File(fileReferencePath));
+
+                    } else {
+                        openInEditor(new File(fileReferencePath));
+                    }
+
                     return Status.OK_STATUS;
                 }
 
@@ -157,15 +173,49 @@ public final class DataManagementWorkbenchUtils {
         tempFile.setWritable(false);
         // open in editor
         Display.getDefault().syncExec(new Runnable() {
+
             @Override
             public void run() {
                 try {
+
                     EditorsHelper.openExternalFileInEditor(tempFile);
                 } catch (final PartInitException e) {
                     log.error("Failed to open datamanagement reference copied to local file in an editor.", e);
                 }
             }
         });
+    }
+
+    private void openInTigl(final File tempFile) {
+
+        tempFile.setWritable(false);
+        // open in TiGL
+        Display.getDefault().syncExec(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    String secondId = null;
+                    try {
+
+                        secondId = tempFile.getCanonicalPath();
+                        secondId = secondId.replaceAll(":", "&#38");
+
+                        PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
+                            .showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
+                                secondId, IWorkbenchPage.VIEW_ACTIVATE);
+
+                    } catch (IOException e) {
+                        log.error(e);
+                    }
+                   
+                } catch (final PartInitException e) {
+                    log.error(e);
+                    log.error("Failed to open datamanagement reference copied to local file in the TiGL.", e);
+                }
+            }
+        });
+
     }
 
 }

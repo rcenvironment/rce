@@ -11,6 +11,9 @@ package de.rcenvironment.core.utils.incubator.xml;
 /**
  * This exception will be thrown if an error in handling XML files occurred.
  * 
+ * TODO Moved here for 6.2 because the class XMLException could not be moved due to serialization issues. Should be moved back to
+ * core.utils.common in 7.0.
+ * 
  * @author Jan Flink
  */
 public class XMLException extends Exception {

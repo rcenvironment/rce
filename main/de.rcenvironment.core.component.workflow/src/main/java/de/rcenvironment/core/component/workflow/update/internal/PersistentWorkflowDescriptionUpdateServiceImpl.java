@@ -105,6 +105,8 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         }
     };
 
+    private static final String BENDPOINTS = "bendpoints";
+    
     private static final String CONNECTIONS = "connections";
 
     private static final String NODES = "nodes";
@@ -204,7 +206,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         ObjectMapper mapper = new ObjectMapper();
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         try {
-            JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
+            ObjectNode workflowDescriptionAsTree = (ObjectNode) mapper.readTree(description.getWorkflowDescriptionAsString());
             ArrayNode componentNodes = new ArrayNode(jsonFactory);
             if (componentDescriptions.size() > 0) {
                 for (PersistentComponentDescription pcd : componentDescriptions) {
@@ -212,16 +214,16 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                     componentNodes.add(component);
                 }
 
-                JsonNode connections = workflowDescriptionAsTree.get(CONNECTIONS);
+                JsonNode connections = workflowDescriptionAsTree.remove(CONNECTIONS);
+                JsonNode bendpoints = workflowDescriptionAsTree.remove(BENDPOINTS);
+                workflowDescriptionAsTree.remove(NODES);
+                workflowDescriptionAsTree.put(NODES, componentNodes);
                 if (connections != null) {
-                    ((ObjectNode) workflowDescriptionAsTree).remove(CONNECTIONS);
-                    ((ObjectNode) workflowDescriptionAsTree).remove(NODES);
-                    ((ObjectNode) workflowDescriptionAsTree).put(NODES, componentNodes);
-                    ((ObjectNode) workflowDescriptionAsTree).put(CONNECTIONS, connections);
-                } else {
-                    ((ObjectNode) workflowDescriptionAsTree).remove(NODES);
-                    ((ObjectNode) workflowDescriptionAsTree).put(NODES, componentNodes);
+                    workflowDescriptionAsTree.put(CONNECTIONS, connections);
                 }
+                if (bendpoints != null) {
+                    workflowDescriptionAsTree.put(BENDPOINTS, bendpoints);
+                } 
             }
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             return new PersistentWorkflowDescription(componentDescriptions, writer.writeValueAsString(workflowDescriptionAsTree));
@@ -449,21 +451,20 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     public PersistentWorkflowDescription createPersistentWorkflowDescription(String persistentWorkflowDescriptionString, User user)
         throws JsonParseException, IOException {
 
-        JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(persistentWorkflowDescriptionString);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(jsonParser);
+        try (JsonParser jsonParser = new JsonFactory().createJsonParser(persistentWorkflowDescriptionString)) {
+            ObjectMapper mapper = new ObjectMapper();
+            JsonNode node = mapper.readTree(jsonParser);
 
-        List<PersistentComponentDescription> nodeDescriptionList = new ArrayList<PersistentComponentDescription>();
-        JsonNode componentNodes = node.get(NODES);
-        if (componentNodes != null) {
-            nodeDescriptionList = createComponentDescriptions(componentNodes, user);
+            List<PersistentComponentDescription> nodeDescriptionList = new ArrayList<PersistentComponentDescription>();
+            JsonNode componentNodes = node.get(NODES);
+            if (componentNodes != null) {
+                nodeDescriptionList = createComponentDescriptions(componentNodes, user);
+            }
+
+            ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+            String workflowDescriptionString = writer.writeValueAsString(node);
+            return new PersistentWorkflowDescription(nodeDescriptionList, workflowDescriptionString);
         }
-
-        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
-        String workflowDescriptionString = writer.writeValueAsString(node);
-
-        return new PersistentWorkflowDescription(nodeDescriptionList, workflowDescriptionString);
     }
 
     private List<PersistentComponentDescription> createComponentDescriptions(JsonNode nodes, User user)

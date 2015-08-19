@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.IdGenerator;
 
 /**
@@ -44,19 +45,6 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
 
     // TODO temporary hardcoded default for actual RCE instances; see Mantis #8074
     private static final int STARTUP_INITIAL_CONNECT_DELAY_MSEC = 2500;
-
-    /**
-     * A system property to specify a certain node id for testing. Example usage in command line:
-     * "-Drce.network.overrideNodeId=12312312312312312312312312312312"
-     */
-    private static final String SYSTEM_PROPERTY_OVERRIDE_NODE_ID = "rce.network.overrideNodeId";
-
-    /**
-     * Regular expression for the node id override value.
-     */
-    private static final String NODE_ID_OVERRIDE_PATTERN = "[0-9a-f]{32}";
-
-    private static final String PERSISTENT_SETTINGS_KEY_PLATFORM_ID = "rce.network.nodeId";
 
     private final List<NetworkContactPoint> serverContactPoints;
 
@@ -146,7 +134,7 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
             ipFilterConfiguration = new CommunicationIPFilterConfiguration();
             ipFilterConfiguration.setEnabled(true); // enable, but do not add IPs -> block all
         }
-        log.info(String.format("IP filter enabled: %s, configured number of IPs: %d",
+        log.info(StringUtils.format("IP filter enabled: %s, configured number of IPs: %d",
             ipFilterConfiguration.getEnabled(), ipFilterConfiguration.getAllowedIPs().size()));
         return ipFilterConfiguration;
     }

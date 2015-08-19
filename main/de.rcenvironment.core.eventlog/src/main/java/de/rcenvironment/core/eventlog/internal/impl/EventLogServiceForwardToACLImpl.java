@@ -12,6 +12,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.eventlog.internal.EventLogService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A simple {@link EventLogService} implementation that forwards all events to the provided
@@ -30,7 +31,7 @@ public class EventLogServiceForwardToACLImpl implements EventLogService {
         String formattedMessage = getFormattedMessage(event);
         // forward to ACL
         // TODO q&d output; could be improved by using log levels
-        LOGGER.info(String.format("%s/%s/%s: %s", event.getContext(), event.getMessageType(), event.getSourceId(), formattedMessage));
+        LOGGER.info(StringUtils.format("%s/%s/%s: %s", event.getContext(), event.getMessageType(), event.getSourceId(), formattedMessage));
     }
 
     private String getFormattedMessage(EventLogMessage event) {
@@ -43,6 +44,6 @@ public class EventLogServiceForwardToACLImpl implements EventLogService {
             messagePattern = event.getMessage();
         }
         // insert parameters into pattern
-        return String.format(messagePattern, event.getParameters());
+        return StringUtils.format(messagePattern, event.getParameters());
     }
 }

@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.rpc.ServiceCallResult;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.communication.spi.CallbackObject;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * {@link InvocationHandler} implementation used to create proxy for objects which need to be called back.
@@ -131,8 +132,9 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
 
         if (serviceCallResult == null) {
             // shouldn't normally happen
-            LOGGER.warn(String.format("Received null object as service call result (id: %s, method: %s); returning null as return value",
-                objectIdentifier, methodName));
+            LOGGER.warn(StringUtils.format(
+                "Received null object as service call result (id: %s, method: %s); returning null as return value", objectIdentifier,
+                methodName));
             return null;
         }
 

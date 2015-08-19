@@ -72,7 +72,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     private final Map<EndpointDescription, EndpointDescription> endpointMapping = new HashMap<EndpointDescription, EndpointDescription>();
 
     private final Map<String, EndpointDescription> endpointIDMapping = new HashMap<String, EndpointDescription>();
-    
+
     private final Map<WorkflowNode, Rectangle> newNodeAndLocationMapping = new HashMap<>();
 
     private int nodeConstraintPositionCounter = 0;
@@ -92,31 +92,37 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     private int labelMinX = Integer.MAX_VALUE;
 
     private int labelMinY = Integer.MAX_VALUE;
-    
+
     private Point editorOffsetPoint = null;
-    
+
     private boolean pasteTriggeredByMouse = false;
 
     @Override
     void edit() {
+        
+        nameMapping.clear();
+        nodeConstraintPositionCounter = 0;
+        hasConnections = false;
+        labelConstraintPositionCounter = 0;
+        
         List<WorkflowNode> workflowNodesToCreate = new LinkedList<>();
         List<WorkflowNodePart> pastedWorkflowNodeParts = new LinkedList<>();
         List<WorkflowLabel> workflowLabelsToCreate = new LinkedList<>();
         List<Connection> connectionsToCreate = new LinkedList<>();
         List<Rectangle> nodeConstraintsToCreate = new LinkedList<>();
         List<Rectangle> labelConstraintsToCreate = new LinkedList<>();
-        
+
         // determines whether the pasting was triggered via hotkey ctrl+v or via mouse (i.e. editor's context menu)
-        if (viewer.getContextMenu().isDirty()){
+        if (viewer.getContextMenu().isDirty()) {
             pasteTriggeredByMouse = false;
         } else {
             pasteTriggeredByMouse = true;
         }
         // determines the offset of the visible part of the editor from the editor's origin
-        if (viewer.getControl() instanceof FigureCanvas){
+        if (viewer.getControl() instanceof FigureCanvas) {
             editorOffsetPoint = ((FigureCanvas) viewer.getControl()).getViewport().getViewLocation();
         }
-        
+
         Object content = null;
         try {
             content = extractContentfromSystemClipboard();
@@ -182,15 +188,15 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                     newNode.setEnabled(node.isEnabled());
                     workflowNodesToCreate.add(newNode);
                     addNewNodePosition(nodeConstraintsToCreate, node);
-                    
+
                     nameMapping.put(node.getIdentifier(), newNode.getIdentifier());
                     nodeMapping.put(node, newNode);
-                    
+
                     // mapping to store new nodes determined location without altering the node itself
                     newNodeAndLocationMapping.put(newNode, nodeConstraintsToCreate.get(nodeConstraintPositionCounter));
-                    
+
                     nodeConstraintPositionCounter++;
-                    
+
                     for (EndpointDescription endpoint : node.getInputDescriptionsManager().getEndpointDescriptions()) {
                         EndpointDescription newEndpoint = newNode.getInputDescriptionsManager().getEndpointDescription(endpoint.getName());
                         endpointMapping.put(endpoint, newEndpoint);
@@ -218,9 +224,9 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                     EndpointDescription sourceOutput = endpointIDMapping.get(oldConnection.getOutput().getIdentifier());
                     EndpointDescription targetInput = endpointIDMapping.get(oldConnection.getInput().getIdentifier());
                     List<Location> originalBendpoints = oldConnection.getBendpoints();
-                    int bendpointOffsetX = newNodeAndLocationMapping.get(source).x  - oldConnection.getSourceNode().getX();
-                    int bendpointOffsetY = newNodeAndLocationMapping.get(source).y  - oldConnection.getSourceNode().getY();
-                    List<Location> bendpointsWithOffset = 
+                    int bendpointOffsetX = newNodeAndLocationMapping.get(source).x - oldConnection.getSourceNode().getX();
+                    int bendpointOffsetY = newNodeAndLocationMapping.get(source).y - oldConnection.getSourceNode().getY();
+                    List<Location> bendpointsWithOffset =
                         ConnectionUtils.translateBendpointListByOffset(originalBendpoints, bendpointOffsetX, bendpointOffsetY);
                     Connection newConnection = new Connection(source, sourceOutput, target, targetInput, bendpointsWithOffset);
                     connectionsToCreate.add(newConnection);
@@ -234,10 +240,6 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
             (WorkflowDescription) viewer.getContents().getModel(),
             nodeConstraintsToCreate, labelConstraintsToCreate);
         commandStack.execute(nodeAndConnectionCreateCommand);
-        nameMapping.clear();
-        nodeConstraintPositionCounter = 0;
-        hasConnections = false;
-        labelConstraintPositionCounter = 0;
 
         selectPastedNodes(workflowNodesToCreate);
     }
@@ -271,6 +273,8 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     }
 
     private void getMinNodeAndLabel(Object content) {
+        nodeMinX = Integer.MAX_VALUE;
+        nodeMinY = Integer.MAX_VALUE;
         for (Object partToPast : (List<?>) content) {
             if (partToPast instanceof WorkflowNodePart) {
                 WorkflowNodePart part = (WorkflowNodePart) partToPast;
@@ -312,7 +316,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                     (node.getX() - nodeMinX + editor.getMouseX() + editorOffsetPoint.x),
                     (node.getY() - nodeMinY + editor.getMouseY() + editorOffsetPoint.y), 0, 0));
             } else {
-                findFreeSpotForNode(editor.getMouseX() + editorOffsetPoint.x, editor.getMouseY() + editorOffsetPoint.y, 
+                findFreeSpotForNode(editor.getMouseX() + editorOffsetPoint.x, editor.getMouseY() + editorOffsetPoint.y,
                     node.getComponentDescription().getSize(), nodeConstraintsToCreate);
             }
         } else {
@@ -337,7 +341,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
             nodeConstraintsToCreate.add(nodeConstraintPositionCounter, new Rectangle(x, y, 0, 0));
         }
     }
-    
+
     private void addNewLabelPosition(List<Rectangle> labelConstraintsToCreate, WorkflowLabel label) {
         if (!viewer.getContextMenu().isDirty()) {
             findFreeSpotForLabel(editor.getMouseX(), editor.getMouseY(), label.getSize(),
@@ -357,8 +361,12 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                     y += offset * 2;
                 }
             }
-            labelConstraintsToCreate.add(labelConstraintPositionCounter, 
-                new Rectangle(x, y, labelSize.width, labelSize.height));
+            if (isLabelPositionValid(x, y)) {
+                labelConstraintsToCreate.add(labelConstraintPositionCounter,
+                    new Rectangle(x, y, labelSize.width, labelSize.height));
+            } else {
+                findFreeSpotForLabel(x + offset, y + offset, labelSize, labelConstraintsToCreate);
+            }
         }
     }
 
@@ -456,8 +464,8 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                                 .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_SEPARATOR)) {
                                 Location bendpoint =
                                     new Location(Integer.parseInt(bendpointString
-                                        .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_COORDINATE_SEPARATOR)[0])
-                                        , Integer.parseInt(bendpointString
+                                        .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_COORDINATE_SEPARATOR)[0]),
+                                        Integer.parseInt(bendpointString
                                             .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_COORDINATE_SEPARATOR)[1]));
                                 bendpoints.add(bendpoint);
                             }
@@ -539,17 +547,17 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         copied.setIsNodeTransient(origin.getIsNodeTransient());
         for (EndpointDescription ep : origin.getInputDescriptionsManager().getDynamicEndpointDescriptions()) {
             copied.getInputDescriptionsManager().addDynamicEndpointDescription(ep.getDynamicEndpointIdentifier(),
-                ep.getName(), ep.getDataType(), ep.getMetaData());
+                ep.getName(), ep.getDataType(), ep.getMetaData(), false);
         }
         for (EndpointDescription ep : origin.getInputDescriptionsManager().getStaticEndpointDescriptions()) {
-            copied.getInputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData());
+            copied.getInputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(), false);
         }
         for (EndpointDescription ep : origin.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
             copied.getOutputDescriptionsManager().addDynamicEndpointDescription(ep.getDynamicEndpointIdentifier(),
-                ep.getName(), ep.getDataType(), ep.getMetaData());
+                ep.getName(), ep.getDataType(), ep.getMetaData(), false);
         }
         for (EndpointDescription ep : origin.getOutputDescriptionsManager().getStaticEndpointDescriptions()) {
-            copied.getOutputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData());
+            copied.getOutputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(), false);
         }
         copied.getConfigurationDescription().setConfiguration(new HashMap<>(origin.getConfigurationDescription().getConfiguration()));
         return copied;

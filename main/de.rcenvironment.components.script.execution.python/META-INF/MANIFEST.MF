@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Python
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.python;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Export-Package: de.rcenvironment.components.script.execution.python
 Service-Component: OSGI-INF/*.xml
 Bundle-ClassPath: .
@@ -11,10 +11,18 @@ Bundle-Vendor: DLR
 Bundle-ActivationPolicy: lazy
 Require-Bundle: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.scripting
-Fragment-Host: de.rcenvironment.components.script.execution
-RCE-ComponentExtension-Configuration: /resources/configuration_python.json
-Import-Package: de.rcenvironment.core.component.api,
+Import-Package: de.rcenvironment.components.script.common,
+ de.rcenvironment.components.script.common.registry,
+ de.rcenvironment.components.script.execution,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.notification,
  de.rcenvironment.core.scripting.python,
- de.rcenvironment.core.utils.executor
+ de.rcenvironment.core.utils.executor,
+ de.rcenvironment.core.utils.scripting,
+ org.apache.commons.logging;version="1.0.4"

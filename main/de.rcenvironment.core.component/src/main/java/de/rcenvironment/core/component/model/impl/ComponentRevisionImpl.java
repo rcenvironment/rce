@@ -12,6 +12,7 @@ import java.io.Serializable;
 
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A writable {@link ComponentRevision} implementation.
@@ -36,7 +37,7 @@ public class ComponentRevisionImpl implements ComponentRevision, Serializable {
 
     @Override
     public String toString() {
-        return String.format("ComponentRevision(ci=%s)", componentInterface);
+        return StringUtils.format("ComponentRevision(ci=%s)", componentInterface);
     }
 
     @Override

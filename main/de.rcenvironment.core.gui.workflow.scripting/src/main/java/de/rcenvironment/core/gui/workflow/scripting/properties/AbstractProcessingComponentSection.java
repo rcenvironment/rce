@@ -38,6 +38,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 import de.rcenvironment.core.utils.scripting.ScriptableComponentConstants.ComponentRunMode;
 import de.rcenvironment.core.utils.scripting.ScriptableComponentConstants.ScriptTime;
@@ -274,7 +275,7 @@ public abstract class AbstractProcessingComponentSection extends ValidatingWorkf
                 }
             }
             if (!found) {
-                throw new IllegalArgumentException(String.format("Item '%s' does not exists", item));
+                throw new IllegalArgumentException(StringUtils.format("Item '%s' does not exists", item));
             }
         }
     }
@@ -292,7 +293,7 @@ public abstract class AbstractProcessingComponentSection extends ValidatingWorkf
                 if (e.getDataType() != DataType.FileReference) {
                     final String label = Messages.bind(Messages.variablesInputPattern, e.getName(), e.getDataType());
                     variables.get(ComponentRunMode.RUN).add(label);
-                    final String placeholder = String.format(PLACEHOLDER_PATTERN, e.getName());
+                    final String placeholder = StringUtils.format(PLACEHOLDER_PATTERN, e.getName());
                     variablesPlaceholders.put(label, placeholder);
                 }
             }
@@ -302,7 +303,7 @@ public abstract class AbstractProcessingComponentSection extends ValidatingWorkf
                     final String label = Messages.bind(Messages.variablesOutputPattern, e.getName());
                     variables.get(ComponentRunMode.INIT).add(label);
                     variables.get(ComponentRunMode.RUN).add(label);
-                    final String placeholder = String.format(PLACEHOLDER_PATTERN, e.getName());
+                    final String placeholder = StringUtils.format(PLACEHOLDER_PATTERN, e.getName());
                     variablesPlaceholders.put(label, placeholder);
                 }
             }

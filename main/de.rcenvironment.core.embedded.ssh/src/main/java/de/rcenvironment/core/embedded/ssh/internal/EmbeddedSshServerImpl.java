@@ -21,6 +21,7 @@ import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -34,8 +35,8 @@ public class EmbeddedSshServerImpl {
 
     private static final String HOST_KEY_STORAGE_FILE_NAME = "ssh_host_key.dat";
 
-    // TODO configure/inject setting from RA bundle
-    private static final String REMOTE_ACCESS_PROTOCOL_VERSION = "6.1.0";
+    // TODO configure/inject setting from RA bundle; misplaced here
+    private static final String REMOTE_ACCESS_PROTOCOL_VERSION = "6.2.0";
 
     private ConfigurationService configurationService;
 
@@ -103,11 +104,11 @@ public class EmbeddedSshServerImpl {
                 sshConfiguration));
             try {
                 sshd.start();
-                logger.info(String.format("SSH server started on port %s (bound to IP %s)", sshConfiguration.getPort(),
+                logger.info(StringUtils.format("SSH server started on port %s (bound to IP %s)", sshConfiguration.getPort(),
                     sshConfiguration.getHost()));
             } catch (IOException e) {
                 logger.error(
-                    String.format("Failed to start embedded SSH server on port %s (attempted to bind to IP address %s)",
+                    StringUtils.format("Failed to start embedded SSH server on port %s (attempted to bind to IP address %s)",
                         sshConfiguration.getPort(), sshConfiguration.getHost()), e);
             }
         } else {

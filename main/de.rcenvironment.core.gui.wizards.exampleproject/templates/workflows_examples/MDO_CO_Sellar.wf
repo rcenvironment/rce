@@ -1,14 +1,14 @@
 {
   "identifier" : "04715674-27b7-4502-a4c7-5b212fe849ef",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "MDO_CO_2014-12-08_17:35:03_12",
   "platform" : "d527f3d12cc84c048193f0f6f6c22ab6",
+  "labels" : "[{\"identifier\":\"38f150c6-b373-4172-ba0d-b2cfcdab78e1\",\"text\":\"Calculate an optimum for Discipline 1 with the given constraints\",\"location\":\"535:-54\",\"size\":\"355:246\",\"alpha\":\"197\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:255:0\",\"alignmentType\":\"BOTTOMCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"e3d16af5-fbe2-451c-9f90-fea338683c24\",\"text\":\"Calculate an optimum for Discipline 2 with the given constraints\",\"location\":\"535:265\",\"size\":\"355:246\",\"alpha\":\"197\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:128:255\",\"alignmentType\":\"BOTTOMCENTER\",\"border\":\"false\",\"textSize\":\"9\"}]",
   "nodes" : [ {
     "identifier" : "c96f1a88-1b6a-4807-b349-43cea53a3f88",
     "name" : "Discipline 1",
     "location" : "777:81",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -69,7 +69,6 @@
     "name" : "Discipline 1 Calculation",
     "location" : "777:-26",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -184,7 +183,6 @@
     "name" : "Discipline 1_post",
     "location" : "548:-26",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -245,7 +243,6 @@
     "name" : "Discipline 2",
     "location" : "777:300",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -297,7 +294,6 @@
     "name" : "Discipline 2 Calculation",
     "location" : "777:404",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -394,7 +390,6 @@
     "name" : "Discipline 2_post",
     "location" : "548:404",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -446,7 +441,6 @@
     "name" : "Local Optimizer Discipline 1",
     "location" : "657:81",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
       "version" : "6.1",
@@ -683,7 +677,6 @@
     "name" : "Local Optimizer Discipline 2",
     "location" : "657:300",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
       "version" : "6.1",
@@ -881,7 +874,6 @@
     "name" : "Objective",
     "location" : "439:191",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -1042,7 +1034,6 @@
     "name" : "Optimizer",
     "location" : "252:191",
     "active" : "true",
-    "platform" : "7b9c1aa702014adea3f6bac2047f5221",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
       "version" : "6.1",
@@ -1571,6 +1562,5 @@
     "output" : "65f72f9c-21df-4335-b143-9ca855a3064e",
     "target" : "2d51438d-3b92-4c1a-97fd-c53f5513f12c",
     "input" : "6e1f9600-ee69-49b6-9baa-a95c3d4e493d"
-  } ],
-  "labels" : "[{\"identifier\":\"38f150c6-b373-4172-ba0d-b2cfcdab78e1\",\"text\":\"Calculate an optimum for Discipline 1 with the given constraints\",\"location\":\"535:-54\",\"size\":\"355:246\",\"alpha\":\"197\",\"colorText\":\"0:0:0\",\"colorBackground\":\"128:255:0\",\"alignmentType\":\"BOTTOMCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"e3d16af5-fbe2-451c-9f90-fea338683c24\",\"text\":\"Calculate an optimum for Discipline 2 with the given constraints\",\"location\":\"535:265\",\"size\":\"355:246\",\"alpha\":\"197\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:128:255\",\"alignmentType\":\"BOTTOMCENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+  } ]
 }

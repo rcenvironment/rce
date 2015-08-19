@@ -22,6 +22,8 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.MenuDetectEvent;
+import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -133,6 +135,10 @@ public class ConsoleView extends ViewPart {
     private Display display;
 
     private ServiceRegistryPublisherAccess serviceRegistryAccess;
+    
+    private MenuItem copyLineItem;
+    
+    private MenuItem copyMessageItem;
 
     /**
      * A timer task that is used to periodically check the {@link ConsoleRowModelService} for modifications. This approach was chosen
@@ -280,6 +286,18 @@ public class ConsoleView extends ViewPart {
         sashComposite.setLayout(new GridLayout(1, false));
 
         createTableArrangement(sashComposite);
+        
+        // Triggers if the copy functions in context menu are enabled
+        consoleRowTableViewer.getTable().addMenuDetectListener(new MenuDetectListener() {
+
+            @Override
+            public void menuDetected(MenuDetectEvent event) {
+                copyLineItem.setEnabled(!consoleRowTableViewer.getSelection().isEmpty());
+                copyMessageItem.setEnabled(!consoleRowTableViewer.getSelection().isEmpty());
+            }
+        });
+        
+        
 
         // set text field listener
         searchTextField.addKeyListener(new KeyAdapter() {
@@ -605,11 +623,17 @@ public class ConsoleView extends ViewPart {
 
         // create copy context menu
         Menu contextMenu = new Menu(tableComposite);
-        MenuItem copyItem = new MenuItem(contextMenu, SWT.PUSH);
-        copyItem.setText(Messages.copy);
-        copyItem.setImage(Activator.getInstance().getImageRegistry().get(Activator.IMAGE_COPY));
-        copyItem.addSelectionListener(new CopyToClipboardListener(consoleRowTableViewer));
+        copyLineItem = new MenuItem(contextMenu, SWT.PUSH);
+        copyMessageItem = new MenuItem(contextMenu, SWT.PUSH);
+        copyMessageItem.setText(Messages.copyMessage + "\tCtrl+Alt+C");
+        copyMessageItem.setImage(Activator.getInstance().getImageRegistry().get(Activator.IMAGE_COPY));
+        copyMessageItem.addSelectionListener(new CopyToClipboardListener(consoleRowTableViewer));
+        copyLineItem.setText(Messages.copyLine + "\tCtrl+C");
+        copyLineItem.setImage(Activator.getInstance().getImageRegistry().get(Activator.IMAGE_COPY));
+        copyLineItem.addSelectionListener(new CopyToClipboardListener(consoleRowTableViewer));
         consoleRowTableViewer.getControl().setMenu(contextMenu);
+        
+
     }
 
     private Action[] createToolbarActions() {
@@ -644,11 +668,16 @@ public class ConsoleView extends ViewPart {
             public void keyPressed(KeyEvent e) {
                 if (e.stateMask == SWT.CTRL && e.keyCode == 'a') {
                     table.getTable().selectAll();
-                } else if (e.stateMask == SWT.CTRL && e.keyCode == 'c') {
+                } else if ((e.stateMask == SWT.CTRL && e.keyCode == 'c') && copyLineItem.isEnabled()) {
                     CopyToClipboardHelper helper = new CopyToClipboardHelper(table);
-                    helper.copyToClipboard();
-                }
+                    helper.copyToClipboard(CopyToClipboardHelper.COPY_LINE);
+                } else if ((e.stateMask == (SWT.CTRL + SWT.ALT) && (e.keyCode == 'c')) && copyLineItem.isEnabled()) {
+                    CopyToClipboardHelper helper = new CopyToClipboardHelper(table);
+                    helper.copyToClipboard(CopyToClipboardHelper.COPY_MESSAGE);
+                } 
             }
         });
     }
+
+
 }

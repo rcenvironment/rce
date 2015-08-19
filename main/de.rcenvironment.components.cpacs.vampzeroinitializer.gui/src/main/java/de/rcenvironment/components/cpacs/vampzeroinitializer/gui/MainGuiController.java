@@ -100,6 +100,10 @@ public class MainGuiController {
      * All components in the GUI definition file.
      */
     private List<Component> components;
+    
+    private GuiInputParser guiInputParser = new GuiInputParser();
+    
+    private ToolspecificOutputWriter toolspecificOutputWriter = new ToolspecificOutputWriter();
 
     /**
      * Constructor.
@@ -149,7 +153,7 @@ public class MainGuiController {
             boolean killSwitch = false;
             try {
                 fis = new FileInputStream(xmlPath);
-                componentsTemp = GuiInputParser.parse(fis);
+                componentsTemp = guiInputParser.parse(fis);
                 fis.close();
             } catch (XPathExpressionException | IOException | XMLException e) {
                 LOGGER.error(e);
@@ -160,7 +164,7 @@ public class MainGuiController {
             }
         } else {
             try {
-                componentsTemp = GuiInputParser.parse(getClass().getClassLoader().getResourceAsStream("resources/gui.xml"));
+                componentsTemp = guiInputParser.parse(getClass().getClassLoader().getResourceAsStream("resources/gui.xml"));
             } catch (final XPathExpressionException | XMLException e) {
                 LOGGER.error(e.getCause().getMessage());
                 componentsTemp = new ArrayList<Component>();
@@ -227,7 +231,7 @@ public class MainGuiController {
 
             @Override
             public void handleEvent(final Event event) {
-                listener.transfer(ToolspecificOutputWriter.createOutput(modifiedComponents));
+                listener.transfer(toolspecificOutputWriter.createOutput(modifiedComponents));
             }
         });
         createButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
@@ -423,7 +427,7 @@ public class MainGuiController {
      */
     public void setSelectedParameters(final String configuration) {
         try {
-            final List<Component> setComponents = GuiInputParser.parse(configuration);
+            final List<Component> setComponents = guiInputParser.parse(configuration);
             modifiedComponents.clear();
             for (final Component setComponent : setComponents) {
                 final Component compDefinition = getComponentForName(components, setComponent.getName());

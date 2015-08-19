@@ -1,9 +1,0 @@
-Manifest-Version: 1.0
-Bundle-ManifestVersion: 2
-Bundle-Name: RCE Transport Workflow Branding
-Bundle-SymbolicName: de.rcenvironment.transport.branding.workflow;singleton:=true
-Bundle-Version: 6.1.0.qualifier
-Bundle-Vendor: DLR
-Fragment-Host: de.rcenvironment.core.gui.workflow
-Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-Eclipse-BundleShape: dir

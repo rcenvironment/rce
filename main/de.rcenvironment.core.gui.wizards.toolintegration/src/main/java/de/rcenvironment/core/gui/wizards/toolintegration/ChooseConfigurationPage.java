@@ -20,6 +20,8 @@ import java.util.TreeMap;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.eclipse.jface.viewers.DoubleClickEvent;
+import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -27,6 +29,7 @@ import org.eclipse.jface.viewers.ListViewer;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
+import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
@@ -48,6 +51,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -84,6 +88,8 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
     private final Map<String, Map<String, Object>> allConfigurations;
 
+    private ListViewer toolListViewer;
+
     protected ChooseConfigurationPage(String pageName, Collection<ToolIntegrationContext> allIntegrationContexts,
         ToolIntegrationWizard wizard, String type) {
         super(pageName);
@@ -117,7 +123,9 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         }
 
         final Map<String, String> configs = readExistingConfigurations(pageType);
-        toolList = new List(container, SWT.SINGLE | SWT.BORDER);
+        toolListViewer = new ListViewer(container, SWT.SINGLE | SWT.BORDER);
+        toolListViewer.addDoubleClickListener(new ToolIntegrationDoubleClickListener(this));
+        toolList = toolListViewer.getList();
         GridData toolListData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL);
         toolList.setLayoutData(toolListData);
         for (String toolName : configs.keySet()) {
@@ -320,6 +328,8 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
                 }
             }
         });
+
+        templateListViewer.addDoubleClickListener(new ToolIntegrationDoubleClickListener(this));
     }
 
     private Map<String, Map<String, Object>> readTemplates() {
@@ -340,23 +350,38 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
     }
 
     private void readTemplateDir(Map<String, Map<String, Object>> result, File templateRootPath) {
-        for (File f : templateRootPath.listFiles()) {
-            if (f.isFile() && f.getName().endsWith(JSON_SUFFIX)) {
-                try {
-                    @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
-                        mapper.readValue(f, new HashMap<String, Object>().getClass());
-                    result.put(f.getAbsolutePath(), configurationMap);
-                } catch (IOException e) {
-                    LOGGER.error("Integration: Could not read templates: ", e);
+        if (templateRootPath != null && templateRootPath.listFiles() != null) {
+            for (File f : templateRootPath.listFiles()) {
+                if (f.isFile() && f.getName().endsWith(JSON_SUFFIX)) {
+                    try {
+                        @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
+                            mapper.readValue(f, new HashMap<String, Object>().getClass());
+                        result.put(f.getAbsolutePath(), configurationMap);
+                    } catch (IOException e) {
+                        LOGGER.error("Integration: Could not read templates: ", e);
+                    }
                 }
-
             }
         }
     }
 
+    @Override
+    public void setPageComplete(boolean complete) {
+        if (complete && pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)) {
+            complete &= textChosenConfig.getText() != null && !textChosenConfig.getText().isEmpty();
+        } else if (complete && pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
+            && loadInactiveConfigurationButton.getSelection()) {
+            complete &= textChosenConfig.getText() != null && !textChosenConfig.getText().isEmpty();
+        } else if (complete && pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
+            && loadTemplateButton.getSelection()) {
+            complete &= templateListViewer.getSelection() != null && !templateListViewer.getSelection().isEmpty();
+        }
+        super.setPageComplete(complete);
+    }
+
     private void createNewIntegrationPart(Composite container) {
         newIntegrationButton = new Button(container, SWT.RADIO);
-        newIntegrationButton.setText(String.format(Messages.newConfigurationButton,
+        newIntegrationButton.setText(StringUtils.format(Messages.newConfigurationButton,
             ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE));
         newIntegrationButton.addSelectionListener(new SelectionListener() {
 
@@ -391,7 +416,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         for (final ToolIntegrationContext context : allIntegrationContexts) {
             if (!context.getContextId().equals(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID)) {
                 final Button newExtensionIntegrationButton = new Button(container, SWT.RADIO);
-                newExtensionIntegrationButton.setText(String.format(Messages.newConfigurationButton, context.getContextType()));
+                newExtensionIntegrationButton.setText(StringUtils.format(Messages.newConfigurationButton, context.getContextType()));
                 newExtensionIntegrationButton.addSelectionListener(new SelectionListener() {
 
                     @Override
@@ -448,7 +473,9 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             }
             wizard.setPreviousConfiguration(configurationMap, configJson);
             wizard.removeAdditionalPages();
-            wizard.setAdditionalPages((String) configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE));
+            if (configurationMap != null) {
+                wizard.setAdditionalPages((String) configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE));
+            }
         } else {
             wizard.setPreviousConfiguration(null, null);
             wizard.removeAdditionalPages();
@@ -461,9 +488,11 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         for (ToolIntegrationContext context : allIntegrationContexts) {
             String configFolder = context.getRootPathToToolIntegrationDirectory();
             File toolIntegrationFile = new File(configFolder, context.getNameOfToolIntegrationDirectory());
-            if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles().length > 0) {
+            if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles() != null
+                && toolIntegrationFile.listFiles().length > 0) {
                 for (File toolFolder : toolIntegrationFile.listFiles()) {
-                    if (toolFolder.isDirectory() && !toolFolder.getName().equals("null") && toolFolder.listFiles().length > 0) {
+                    if (toolFolder != null && toolFolder.isDirectory() && !toolFolder.getName().equals("null")
+                        && toolFolder.listFiles() != null && toolFolder.listFiles().length > 0) {
                         File[] files = toolFolder.listFiles();
                         for (File f : files) {
                             if (f.getName().equals(context.getConfigurationFilename())) {
@@ -529,6 +558,15 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             setPageComplete(false);
         }
     }
+
+    /**
+     * show next page for double click event.
+     * 
+     * @param iWizardPage to show.
+     */
+    public void showPage(IWizardPage iWizardPage) {
+        getContainer().showPage(iWizardPage);
+    }
 }
 
 /**
@@ -571,6 +609,30 @@ final class TemplateListContentProvider implements IStructuredContentProvider {
 }
 
 /**
+ * Listener for double clicking in lists.
+ * 
+ * @author Sascha Zur
+ */
+class ToolIntegrationDoubleClickListener implements IDoubleClickListener {
+
+    private ChooseConfigurationPage page;
+
+    public ToolIntegrationDoubleClickListener(ChooseConfigurationPage page) {
+        this.page = page;
+    }
+
+    @Override
+    public void doubleClick(DoubleClickEvent event) {
+        if (page.canFlipToNextPage()) {
+            IWizardPage[] pages = page.getWizard().getPages();
+            page.showPage(pages[1]);
+        }
+
+    }
+
+}
+
+/**
  * Item for the template list.
  * 
  * @author Jan Flink
@@ -608,6 +670,7 @@ final class TemplateListItem {
             name = fileName.substring(fileName.lastIndexOf(File.separator) + 1,
                 fileName.indexOf(JSON_SUFFIX));
         }
-        return String.format(item, name, integrationType);
+        return StringUtils.format(item, name, integrationType);
     }
+
 }

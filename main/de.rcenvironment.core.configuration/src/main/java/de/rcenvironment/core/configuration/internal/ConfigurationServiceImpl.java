@@ -10,6 +10,8 @@ package de.rcenvironment.core.configuration.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -36,7 +38,9 @@ import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
 import de.rcenvironment.core.utils.common.OSFamily;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
@@ -110,6 +114,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     private GeneralSettings generalSettings;
 
+    private String resolvedInstanceName;
+
+    private boolean usingDefaultConfigurationValues = false;
+
     public ConfigurationServiceImpl() {
         mapper = new ObjectMapper();
         // allow comments in JSON files
@@ -174,12 +182,14 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             currentRootConfiguration = configurationStore.getSnapshotOfRootSegment();
         } catch (IOException e) {
             // log without (usually irrelevant) stacktrace
-            log.error(String.format("Failed to load configuration file %s: %s", configurationStoreFile.getAbsolutePath(), e.toString()));
+            log.error(StringUtils.format("Failed to load configuration file %s: %s",
+                configurationStoreFile.getAbsolutePath(), e.toString()));
         }
 
         if (currentRootConfiguration == null) {
-            log.error(String.format("No configuration file found, or it could not be loaded; using default values"));
+            log.error(StringUtils.format("No configuration file found, or it could not be loaded; using default values"));
             currentRootConfiguration = configurationStore.createEmptyPlaceholder();
+            usingDefaultConfigurationValues = true;
         }
 
         log.debug("(Re-)loaded root configuration");
@@ -371,7 +381,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public String getInstanceName() {
-        return generalSettings.getInstanceName();
+        return resolvedInstanceName;
     }
 
     @Override
@@ -399,7 +409,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             throw new NullPointerException();
         }
         errorListeners.add(listener);
-        log.debug(String.format("Added instance of type '%s' to the configuration service error listeners.", listener.getClass()));
+        log.debug(StringUtils.format("Added instance of type '%s' to the configuration service error listeners.", listener.getClass()));
     }
 
     /**
@@ -412,7 +422,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             throw new NullPointerException();
         }
         errorListeners.remove(listener);
-        log.debug(String.format("Removed instance of type '%s' to the configuration service error listeners.", listener.getClass()));
+        log.debug(StringUtils.format("Removed instance of type '%s' to the configuration service error listeners.", listener.getClass()));
     }
 
     protected void fireErrorEvent(final ConfigurationServiceMessage error) {
@@ -438,14 +448,15 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         this.discoveryBootstrapService = newService;
     }
 
-    private File determineDefaultInstallationDataRootDir() {
+    @Override
+    public File getInstallationDir() {
         String osgiInstallArea = System.getProperty(SYSTEM_PROPERTY_OSGI_INSTALL_AREA);
         if (osgiInstallArea != null) {
-            configurationLocationPath = osgiInstallArea.replace("file:", "") + CONFIGURATION_SUBDIRECTORY_PATH;
+            configurationLocationPath = osgiInstallArea.replace("file:", "");
             configurationLocation = new File(configurationLocationPath);
             if (configurationLocation.isDirectory()) {
                 // success
-                return configurationLocation.getParentFile().getAbsoluteFile();
+                return configurationLocation.getAbsoluteFile();
             } else {
                 throw new IllegalStateException("Property '" + SYSTEM_PROPERTY_OSGI_INSTALL_AREA
                     + "' is defined but does not point to a directory");
@@ -502,7 +513,29 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private void initializeGeneralSettings() {
         ConfigurationSegment configurationSegment = getConfigurationSegment("general");
         generalSettings = new GeneralSettings(configurationSegment);
-        log.debug("Resolved instance name: " + generalSettings.getInstanceName());
+        resolvedInstanceName = resolvePlaceholdersInInstanceName(generalSettings.getRawInstanceName());
+        log.debug("Resolved instance name: " + resolvedInstanceName);
+    }
+
+    private String resolvePlaceholdersInInstanceName(String instanceName) {
+        instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_SYSTEM_USER_NAME,
+            System.getProperty(SYSTEM_PROPERTY_USER_NAME));
+        instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_PROFILE_NAME,
+            profileDirectory.getName());
+        instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_VERSION,
+            StringUtils.nullSafeToString(VersionUtils.getVersionOfProduct(), "<unknown>"));
+
+        // only determine the host name if actually necessary
+        if (instanceName.contains(CONFIGURATION_PLACEHOLDER_HOST_NAME)) {
+            try {
+                instanceName = instanceName.replace(CONFIGURATION_PLACEHOLDER_HOST_NAME,
+                    InetAddress.getLocalHost().getHostName());
+            } catch (UnknownHostException e) {
+                LogFactory.getLog(getClass()).warn("Failed to determine the local host name", e);
+            }
+        }
+
+        return instanceName;
     }
 
     private void initializeInstanceTempDirectoryRoot() {
@@ -524,7 +557,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         // INSTALLATION_DATA_ROOT (default: "${osgi.install.area}/..")
         if (!configurePathFromOverridePropertyIfSet(ConfigurablePathId.INSTALLATION_DATA_ROOT,
             SYSTEM_PROPERTY_INSTALLATION_DATA_ROOT_OVERRIDE)) {
-            configurablePathMap.put(ConfigurablePathId.INSTALLATION_DATA_ROOT, determineDefaultInstallationDataRootDir());
+            File installationDirectory = getInstallationDir();
+            log.info("Set installation data root directory to: " + installationDirectory.getAbsolutePath());
+            configurablePathMap.put(ConfigurablePathId.INSTALLATION_DATA_ROOT, installationDirectory);
         }
         // get final value for internal usage
         final File installationDataRoot = configurablePathMap.get(ConfigurablePathId.INSTALLATION_DATA_ROOT);
@@ -590,12 +625,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         }
         File path = new File(value);
         if (!path.isAbsolute()) {
-            log.warn(String.format("Value '%s' for path override setting '%s' will be ignored as it is not an absolute path",
+            log.warn(StringUtils.format("Value '%s' for path override setting '%s' will be ignored as it is not an absolute path",
                 value, overrideProperty));
             return false;
         }
         if (!path.isDirectory()) {
-            log.warn(String.format(
+            log.warn(StringUtils.format(
                 "Value '%s' for path override setting '%s' will be ignored as it does not point to an existing directory",
                 value, overrideProperty));
             return false;
@@ -669,5 +704,10 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     private String getSystemTempDir() {
         return System.getProperty("java.io.tmpdir");
+    }
+
+    @Override
+    public boolean isUsingDefaultConfigurationValues() {
+        return usingDefaultConfigurationValues;
     }
 }

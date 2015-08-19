@@ -30,6 +30,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Parametric Study component implementation.
@@ -146,7 +147,7 @@ public class ParametricStudyComponent extends DefaultComponent {
                         componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
                             typedDatumFactory.createFloat(calculateDesignVariable(step)));
                         if (step % 10 == 0 && Thread.interrupted()) {
-                            LogFactory.getLog(getClass()).debug(String.format("Component '%s' was interupted",
+                            LogFactory.getLog(getClass()).debug(StringUtils.format("Component '%s' was interupted",
                                 componentContext.getInstanceName()));
                             return;
 
@@ -157,7 +158,7 @@ public class ParametricStudyComponent extends DefaultComponent {
                         componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
                             typedDatumFactory.createFloat(from + currentStep * stepSize));
                         if (currentStep % 10 == 0 && Thread.interrupted()) {
-                            LogFactory.getLog(getClass()).debug(String.format("Component '%s' was interupted",
+                            LogFactory.getLog(getClass()).debug(StringUtils.format("Component '%s' was interupted",
                                 componentContext.getInstanceName()));
                             return;
                         }
@@ -176,7 +177,7 @@ public class ParametricStudyComponent extends DefaultComponent {
     @Override
     public void processInputs() throws ComponentException {
         if (componentContext.isOutputClosed(ParametricStudyComponentConstants.OUTPUT_NAME)) {
-            throw new ComponentException(String.format("Too many parameters received. "
+            throw new ComponentException(StringUtils.format("Too many parameters received. "
                 + "Expect exactly one parameter per input per design variable sent. "
                 + "%s design variable sent and %s received", steps, steps + 1));
         }

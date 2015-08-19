@@ -205,6 +205,11 @@ public class ComponentContextImpl implements ComponentContext {
     public boolean isDynamicInput(String inputName) {
         return getDynamicInputIdentifier(inputName) != null;
     }
+    
+    @Override
+    public boolean isDynamicOutput(String outputName) {
+        return getDynamicOutputIdentifier(outputName) != null;
+    }
 
     @Override
     public Set<String> getInputsWithDatum() {

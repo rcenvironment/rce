@@ -15,6 +15,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link OptimizerResultService}.
@@ -41,7 +42,7 @@ public class OptimizerResultServiceImpl implements OptimizerResultService {
         final String title, final ResultStructure structure) {
         final ResultSet study = new ResultSet(identifier, title, structure);
         final OptimizerPublisher studyPublisher = new OptimizerPublisherImpl(study, notificationService);
-        final String notificationId = String.format(OptimizerUtils.STRUCTURE_PATTERN, study.getIdentifier());
+        final String notificationId = StringUtils.format(OptimizerUtils.STRUCTURE_PATTERN, study.getIdentifier());
         notificationService.setBufferSize(notificationId, 1);
         notificationService.send(notificationId, new Serializable[] { study.getStructure(), title });
         return studyPublisher;
@@ -50,7 +51,7 @@ public class OptimizerResultServiceImpl implements OptimizerResultService {
     @Override
     public OptimizerReceiver createReceiver(final String identifier,
         final NodeIdentifier platform) {
-        final String notificationId = String.format(OptimizerUtils.STRUCTURE_PATTERN,
+        final String notificationId = StringUtils.format(OptimizerUtils.STRUCTURE_PATTERN,
             identifier);
         if (distributedNotificationService != null && distributedNotificationService
             .getNotifications(notificationId, platform) != null) {

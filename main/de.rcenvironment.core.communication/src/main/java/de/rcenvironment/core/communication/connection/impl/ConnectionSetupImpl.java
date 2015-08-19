@@ -45,6 +45,7 @@ import de.rcenvironment.core.communication.connection.api.DisconnectReason;
 import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
@@ -175,7 +176,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
         @Override
         public String toString() {
-            return String.format("%s (#%d, %s)", type.name(), taskId, relatedChannel);
+            return StringUtils.format("%s (#%d, %s)", type.name(), taskId, relatedChannel);
         }
 
     }
@@ -225,15 +226,15 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                 } catch (CommunicationException e) {
                     // TODO reduce number of stacktrace layers by unwrapping or changing source behaviour - misc_ro
                     if (isAutoRetry) {
-                        log.info(String.format("Failed to auto-reconnect to \"%s\" (Reason: %s, Connection details: %s)",
+                        log.info(StringUtils.format("Failed to auto-reconnect to \"%s\" (Reason: %s, Connection details: %s)",
                             displayName, e.toString(), getNetworkContactPointString()));
                     } else {
-                        log.warn(String.format("Failed to connect to \"%s\"  (Reason: %s, Connection details: %s)",
+                        log.warn(StringUtils.format("Failed to connect to \"%s\"  (Reason: %s, Connection details: %s)",
                             displayName, e.toString(), getNetworkContactPointString()));
                     }
                     postEvent(new StateMachineEvent(CONNECT_ATTEMPT_FAILED, null, taskId));
                 } catch (CancellationException e) {
-                    log.info(String.format("The connect attempt to \"%s\" was cancelled", displayName));
+                    log.info(StringUtils.format("The connect attempt to \"%s\" was cancelled", displayName));
                 }
             }
 
@@ -336,7 +337,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
         @Override
         protected ConnectionSetupState processEvent(ConnectionSetupState currentState, StateMachineEvent event)
             throws StateChangeException {
-            log.debug(String.format("Processing event %s while in state %s", event, currentState));
+            log.debug(StringUtils.format("Processing event %s while in state %s", event, currentState));
             switch (event.getType()) {
             case START_REQUESTED:
                 isConnectionIntended = true;
@@ -406,11 +407,11 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                 connectedMessageChannel = newChannel;
                 lastConnectedMessageChannel = newChannel;
                 if (consecutiveConnectionFailures == 0) {
-                    log.info(String.format("Network connection established: \"%s\"", displayName));
+                    log.info(StringUtils.format("Network connection established: \"%s\"", displayName));
                 } else {
                     // TODO text is not quite correct if a connection broke down and is reestablished on the first attempt - misc_ro
-                    log.info(String.format("Network connection \"%s\" was successfully established after %d failed attempts", displayName,
-                        consecutiveConnectionFailures));
+                    log.info(StringUtils.format("Network connection \"%s\" was successfully established after %d failed attempts",
+                        displayName, consecutiveConnectionFailures));
                 }
                 return CONNECTED;
             case CONNECT_ATTEMPT_FAILED:
@@ -465,7 +466,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             if (currentAttemptId == event.getTaskId()) {
                 return true;
             } else {
-                log.debug(String.format("Ignoring event of type %s as it refers to attempt #%d while the current attempt is #%d",
+                log.debug(StringUtils.format("Ignoring event of type %s as it refers to attempt #%d while the current attempt is #%d",
                     event.getType(), event.getTaskId(), currentAttemptId));
                 return false;
             }
@@ -495,7 +496,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                 throw new RuntimeException("Should not be reached with event type " + event.getType());
             }
             listener.onConnectionClosed(ConnectionSetupImpl.this, lastDisconnectReason, triggerAutoRetry);
-            log.info(String.format("Network connection closed (%s): \"%s\"", lastDisconnectReason.getDisplayText(), displayName));
+            log.info(StringUtils.format("Network connection closed (%s): \"%s\"", lastDisconnectReason.getDisplayText(), displayName));
             if (triggerAutoRetry) {
                 // count the initial connection breakdown towards the number of connection failures; this prevents redundant user feedback
                 // on the first attempt to reconnect
@@ -541,7 +542,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             case WAITING_TO_RECONNECT:
                 connectedMessageChannel = null;
                 long targetDelay = calculateNextAutoRetryDelay();
-                log.debug(String.format("Scheduling auto-retry of connection %s in %d msec "
+                log.debug(StringUtils.format("Scheduling auto-retry of connection %s in %d msec "
                     + "(failure count: %d, delay multiplier: %s, maximum: %d)", displayName,
                     targetDelay, consecutiveConnectionFailures, autoRetryDelayMultiplier, autoRetryMaximumDelayMsec));
 
@@ -723,7 +724,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                 }
                 // no parse exceptions -> enable
                 this.autoRetryEnabled = true;
-                log.debug(String.format(
+                log.debug(StringUtils.format(
                     "Parsed auto-retry settings for connection \"%s\": Initial delay=%d msec, maximum=%d msec, multiplier=%s",
                     getDisplayName(), autoRetryInitialDelayMsec, autoRetryMaximumDelayMsec, autoRetryDelayMultiplier));
             } catch (NumberFormatException e) {

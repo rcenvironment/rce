@@ -46,6 +46,7 @@ import de.rcenvironment.core.utils.cluster.ClusterQueuingSystem;
 import de.rcenvironment.core.utils.cluster.ClusterQueuingSystemConstants;
 import de.rcenvironment.core.utils.cluster.ClusterService;
 import de.rcenvironment.core.utils.cluster.ClusterServiceManager;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
@@ -564,17 +565,17 @@ public class ClusterComponent extends DefaultComponent {
     // synchronized to prevent starting executor in parallel
     private synchronized void checkIfClusterJobSucceeded(int job) throws ComponentException {
 
-        String message = String.format("Failed to determine if cluster job %d succeeded. Assumed that it does, to avoid false negatives.",
-            job);
+        String message =
+            StringUtils.format("Failed to determine if cluster job %d succeeded. Assumed that it does, to avoid false negatives.", job);
         String path = getOutputFolderPath(job);
-        String command = String.format("ls %s", path);
+        String command = StringUtils.format("ls %s", path);
         try {
             executor.start(command);
             InputStream stdoutStream = executor.getStdout();
             InputStream stderrStream = executor.getStderr();
             executor.waitForTermination();
             if (!IOUtils.toString(stderrStream).isEmpty()) {
-                log.error(String.format("Failed to execute command '%s' on %s: %s", command,
+                log.error(StringUtils.format("Failed to execute command '%s' on %s: %s", command,
                     sshConfiguration.getDestinationHost(), IOUtils.toString(stderrStream)));
                 log.error(message);
             } else if (IOUtils.toString(stdoutStream).contains(FAILED_FILE_NAME)) {
@@ -584,12 +585,12 @@ public class ClusterComponent extends DefaultComponent {
                     executor.downloadFileFromWorkdir(path + SLASH + FAILED_FILE_NAME, file);
                     errorMessage = FileUtils.readFileToString(file);
                 } catch (IOException e) {
-                    log.error(String.format("Downloading file '%s' failed. Error message could not extracted.", FAILED_FILE_NAME));
+                    log.error(StringUtils.format("Downloading file '%s' failed. Error message could not extracted.", FAILED_FILE_NAME));
                 }
-                logErrorMetaInformation(String.format("Cluster job '%d' failed with message: %s", job, errorMessage));
-                throw new ComponentException(String.format("Cluster job '%d' failed with message: %s", job, errorMessage));
+                logErrorMetaInformation(StringUtils.format("Cluster job '%d' failed with message: %s", job, errorMessage));
+                throw new ComponentException(StringUtils.format("Cluster job '%d' failed with message: %s", job, errorMessage));
             } else {
-                logInfoMetaInformation(String.format("Cluster job %d succeeded", job));
+                logInfoMetaInformation(StringUtils.format("Cluster job %d succeeded", job));
             }
         } catch (IOException e) {
             log.error(message, e);
@@ -623,7 +624,7 @@ public class ClusterComponent extends DefaultComponent {
     }
 
     private String getJobFolderPath(int job) {
-        return String.format(PATH_PATTERN, iteration, job);
+        return StringUtils.format(PATH_PATTERN, iteration, job);
     }
 
     private String getOutputFolderPath(int job) {

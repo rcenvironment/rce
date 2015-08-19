@@ -44,6 +44,7 @@ import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.rpc.ServiceCallHandler;
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
@@ -96,7 +97,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         // start server contact points
         log.debug("Starting server contact points");
         for (NetworkContactPoint ncp : configurationService.getServerContactPoints()) {
-            // log.debug(String.format("Virtual instance '%s': Starting server at %s",
+            // log.debug(StringUtils.format("Virtual instance '%s': Starting server at %s",
             // ownNodeInformation.getLogName(), ncp));
             try {
                 synchronized (initializedServerContactPoints) {
@@ -123,10 +124,10 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         log.debug("Starting preconfigured connections");
         for (final NetworkContactPoint ncp : configurationService.getInitialNetworkContactPoints()) {
             // TODO add custom display name when available; move string reconstruction into NCP
-            final String displayName = String.format("%s:%s", ncp.getHost(), ncp.getPort());
+            final String displayName = StringUtils.format("%s:%s", ncp.getHost(), ncp.getPort());
             boolean connectOnStartup = !"false".equals(ncp.getAttributes().get("connectOnStartup"));
             ConnectionSetup setup = connectionSetupService.createConnectionSetup(ncp, displayName, connectOnStartup);
-            log.debug(String.format("Loaded pre-configured network connection \"%s\" (Settings: %s)",
+            log.debug(StringUtils.format("Loaded pre-configured network connection \"%s\" (Settings: %s)",
                 setup.getDisplayName(), ncp.getAttributes()));
             if (setup.getConnnectOnStartup()) {
                 setup.signalStartIntent();
@@ -203,7 +204,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         // shut down server contact points
         synchronized (initializedServerContactPoints) {
             for (ServerContactPoint scp : initializedServerContactPoints) {
-                // log.debug(String.format("Virtual instance '%s': Stopping server at %s",
+                // log.debug(StringUtils.format("Virtual instance '%s': Stopping server at %s",
                 // ownNodeInformation.getLogName(), ncp));
                 scp.shutDown();
             }
@@ -353,7 +354,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         } else {
             localData.put("debug.coreVersion", "<unknown>");
         }
-        localData.put("debug.osInfo", String.format("%s (%s/%s)",
+        localData.put("debug.osInfo", StringUtils.format("%s (%s/%s)",
             System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch")));
         localData.put("debug.isRelay", Boolean.toString(configurationService.isRelay()));
         return localData;

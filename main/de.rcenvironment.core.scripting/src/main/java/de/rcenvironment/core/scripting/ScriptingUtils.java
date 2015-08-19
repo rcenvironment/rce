@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.script.ScriptEngine;
 
@@ -40,6 +39,7 @@ import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Utils for all scripting elements.
@@ -93,6 +93,15 @@ public final class ScriptingUtils {
             jythonPath = findJythonPath(osgiBundlestoreDir);
         }
         return jythonPath;
+    }
+
+    /**
+     * Set jython path for tests.
+     * 
+     * @param path to set
+     */
+    public static synchronized void setJythonPath(String path) {
+        jythonPath = path;
     }
 
     /**
@@ -167,7 +176,7 @@ public final class ScriptingUtils {
             wrappingScript += " \"" + outputName + QUOTE;
         }
         wrappingScript += "]\n";
-        currentHeader += String.format("RCE_CURRENT_RUN_NUMBER = %s\n", componentContext.getExecutionCount());
+        currentHeader += StringUtils.format("RCE_CURRENT_RUN_NUMBER = %s\n", componentContext.getExecutionCount());
         currentHeader += wrappingScript;
         currentHeader += "RCE.setDictionary_internal(RCE_Dict_InputChannels)\nimport shutil\n";
         List<String> notConnected = new LinkedList<String>();
@@ -193,7 +202,7 @@ public final class ScriptingUtils {
         }
         notConnectedValues.substring(0, notConnectedValues.length() - 1);
         notConnectedValues += "]";
-        currentHeader += String.format("RCE_LIST_REQ_IF_CONNECTED_INPUTS = %s\n", notConnectedValues);
+        currentHeader += StringUtils.format("RCE_LIST_REQ_IF_CONNECTED_INPUTS = %s\n", notConnectedValues);
         return currentHeader;
     }
 
@@ -206,35 +215,27 @@ public final class ScriptingUtils {
             TypedDatum input = compContext.readInput(inputName);
             switch (compContext.getInputDataType(inputName)) {
             case FileReference:
-                String path = "";
+                File fileInputDir = new File(tempDir, inputName);
+                tempFiles.add(fileInputDir);
+                File file = new File(fileInputDir, ((FileReferenceTD) input).getFileName());
                 try {
-                    // create Temp file, to handle the file reference within Jython.
-                    File file =
-                        new File(new File(tempDir, inputName), "upload.jython-" + UUID.randomUUID().toString() + ".tmp");
-                    componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext,
-                        (FileReferenceTD) input, file);
-                    path = file.getAbsolutePath().toString(); // remember to delete file
-                    tempFiles.add(file);
+                    componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext, (FileReferenceTD) input, file);
                 } catch (IOException e) {
-                    LOGGER.error("Loading file from the data management failed", e);
+                    throw new RuntimeException("Failed to load input file from the data management", e);
                 }
-                path = path.replaceAll(ESCAPESLASH, SLASH);
-                nameAndValue += QUOTE + path + QUOTE;
+                nameAndValue += QUOTE + file.getAbsolutePath().toString().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
                 break;
             case DirectoryReference:
-                String dirPath = "";
+                File dirInputDir = new File(tempDir, inputName);
+                tempFiles.add(dirInputDir);
+                File dir = new File(dirInputDir, ((DirectoryReferenceTD) input).getDirectoryName());
                 try {
-                    File file = new File(tempDir, inputName);
                     componentDatamanagementService.copyDirectoryReferenceTDToLocalDirectory(compContext,
-                        (DirectoryReferenceTD) input, file);
-                    file = new File(file, ((DirectoryReferenceTD) input).getDirectoryName());
-                    dirPath = file.getAbsolutePath().toString(); // remember to delete file
-                    tempFiles.add(file);
+                        (DirectoryReferenceTD) input, dir);
                 } catch (IOException e) {
-                    LOGGER.error("Loading directory the data management failed", e);
+                    throw new RuntimeException("Failed to load input directory from the data management", e);
                 }
-                dirPath = dirPath.replaceAll(ESCAPESLASH, SLASH);
-                nameAndValue += QUOTE + dirPath + QUOTE;
+                nameAndValue += QUOTE + dir.getAbsolutePath().toString().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
                 break;
             case Boolean:
                 boolean bool = (((BooleanTD) input).getBooleanValue());
@@ -371,7 +372,7 @@ public final class ScriptingUtils {
             try {
                 outputValue = typedDatumFactory.createFloat(Double.parseDouble(value.toString()));
             } catch (NumberFormatException e) {
-                LOGGER.error(String.format("Output %s could not be parsed to data type Float", value.toString()));
+                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Float", value.toString()));
                 throw new ComponentException(e);
             }
 
@@ -380,7 +381,7 @@ public final class ScriptingUtils {
             try {
                 outputValue = typedDatumFactory.createInteger(Long.parseLong(value.toString()));
             } catch (NumberFormatException e) {
-                LOGGER.error(String.format("Output %s could not be parsed to data type Integer", value.toString()));
+                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Integer", value.toString()));
                 throw new ComponentException(e);
             }
 
@@ -458,7 +459,7 @@ public final class ScriptingUtils {
                         file.getName());
                 }
             } else {
-                throw new ComponentException(String.format(
+                throw new ComponentException(StringUtils.format(
                     "Could not write %s for output \"%s\" because it does not exist: %s", type, name, file.getAbsolutePath()));
             }
         } catch (IOException ex) {

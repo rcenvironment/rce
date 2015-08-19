@@ -19,6 +19,7 @@ import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
 import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualInstanceTestUtils;
 import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualTopology;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Common base class for {@link VirtualInstance} tests.
@@ -72,7 +73,7 @@ public abstract class AbstractVirtualInstanceTest extends AbstractTransportBased
     }
 
     protected void setupInstances(int numNodes, boolean useDuplexTransport, boolean startInstances) throws InterruptedException {
-        log.debug(String.format("Setting up test '%s' with topology size %d", getCurrentTestName(), numNodes));
+        log.debug(StringUtils.format("Setting up test '%s' with topology size %d", getCurrentTestName(), numNodes));
         allInstances = instanceUtils.spawnDefaultInstances(numNodes, useDuplexTransport, startInstances);
         addGlobalTrafficListener(allInstances);
         testTopology = new VirtualTopology(allInstances);

@@ -1,0 +1,2 @@
+# the directory containing the rce-remote executable; note that backslashes must be escaped as "\\".
+remoteaccess.standalone.location=###

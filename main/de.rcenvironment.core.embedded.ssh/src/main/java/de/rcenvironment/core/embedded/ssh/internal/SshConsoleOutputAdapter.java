@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.AbstractInteractiveCommandConsole;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Class for handling command input and printing out the output.
@@ -117,7 +118,7 @@ public class SshConsoleOutputAdapter extends AbstractInteractiveCommandConsole {
     public void printConsolePrompt() {
         if (consolePromptString == null) {
             String template = SshConstants.CONSOLE_PROMPT_TEMPLATE;
-            consolePromptString = String.format(template, activeUser);
+            consolePromptString = StringUtils.format(template, activeUser);
         }
         writeToConsole(consolePromptString);
     }

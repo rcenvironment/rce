@@ -23,13 +23,13 @@ import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagemen
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.component.xml.XMLComponentConstants;
+import de.rcenvironment.core.component.xml.XmlComponentHistoryDataItem;
+import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
-import de.rcenvironment.cpacs.utils.common.components.XmlComponentHistoryDataItem;
-import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
 
 /**
  * Implementing class for Source functionality with file support.
@@ -37,6 +37,7 @@ import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
  * @author Markus Kunde
  * @author Markus Litz
  * @author Jan Flink
+ * @author Brigitte Boden
  */
 public class XmlLoaderComponent extends DefaultComponent {
 
@@ -50,6 +51,8 @@ public class XmlLoaderComponent extends DefaultComponent {
     private XmlComponentHistoryDataItem historyDataItem = null;
     
     private File tempFile = null;
+    
+    private EndpointXMLService endpointXmlUtils;
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
@@ -63,6 +66,7 @@ public class XmlLoaderComponent extends DefaultComponent {
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
+        endpointXmlUtils = componentContext.getService(EndpointXMLService.class);
         
         xmlContent = componentContext.getConfigurationValue(XmlLoaderComponentConstants.XMLCONTENT);
 
@@ -82,7 +86,6 @@ public class XmlLoaderComponent extends DefaultComponent {
         initializeNewHistoryDataItem();
         
         final FileReferenceTD fileReference;
-        final ComponentVariableMapper varMapper = new ComponentVariableMapper();
 
         try {
             tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("XMLLoader-*.xml");
@@ -97,19 +100,19 @@ public class XmlLoaderComponent extends DefaultComponent {
             }
             if (historyDataItem != null && !variableInputs.isEmpty()) {
                 historyDataItem.setPlainXMLFileReference(dataManagementService.createFileReferenceTDFromLocalFile(componentContext,
-                    tempFile, ChameleonCommonConstants.XML_PLAIN_FILENAME).getFileReference());
+                    tempFile, XMLComponentConstants.XML_PLAIN_FILENAME).getFileReference());
             }
-            varMapper.updateXMLWithInputs(tempFile.getAbsolutePath(), variableInputs, componentContext);
+            endpointXmlUtils.updateXMLWithInputs(tempFile, variableInputs, componentContext);
 
             // Output dynamic values to XML
-            varMapper.updateOutputsFromXML(tempFile.getAbsolutePath(), XmlLoaderComponentConstants.ENDPOINT_NAME_XML, componentContext);
+            endpointXmlUtils.updateOutputsFromXML(tempFile, componentContext);
             fileReference =
                 dataManagementService.createFileReferenceTDFromLocalFile(componentContext, tempFile,
-                    componentContext.getInstanceName() + ChameleonCommonConstants.XML_APPENDIX_FILENAME);
+                    componentContext.getInstanceName() + XMLComponentConstants.XML_APPENDIX_FILENAME);
         } catch (IOException e) {
             throw new ComponentException("Writing XML file to temporary file failed", e);
         } catch (DataTypeException e) {
-            throw new ComponentException("Adding input values to XML file failed", e);
+            throw new ComponentException("Converting a value failed.", e);
         }
 
         componentContext.writeOutput(XmlLoaderComponentConstants.ENDPOINT_NAME_XML, fileReference);

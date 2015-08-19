@@ -49,6 +49,7 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A dialog for editing a single endpoint configuration.
@@ -129,7 +130,7 @@ public class EndpointEditDialog extends Dialog {
         } else {
             epManager = configuration.getOutputDescriptionsManager();
         }
-        this.title = String.format(Messages.title, actionType, direction);
+        this.title = StringUtils.format(Messages.title, actionType, direction);
         this.metaData = metaData;
         this.metadataValues = metadataValues;
         
@@ -236,7 +237,7 @@ public class EndpointEditDialog extends Dialog {
             return settingsComposite;
         } else {
             Label noMetaData = new Label(parent, SWT.NONE);
-            noMetaData.setText(String.format(Messages.noConfig, type));
+            noMetaData.setText(StringUtils.format(Messages.noConfig, type));
             GridData g = new GridData(GridData.FILL, GridData.FILL, true, true);
             g.horizontalAlignment = SWT.CENTER;
             noMetaData.setLayoutData(g);

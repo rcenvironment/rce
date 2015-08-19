@@ -16,6 +16,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A {@link RawMessageChannelTrafficListener} intended for keeping track of all message traffic in virtual
@@ -181,7 +182,7 @@ public class TestNetworkTrafficListener implements RawMessageChannelTrafficListe
             throw new IllegalArgumentException("Argument must be >=1");
         }
 
-        return String.format("Total requests sent:                %d\n"
+        return StringUtils.format("Total requests sent:                %d\n"
             + "Average requests sent per node:     %d\n"
             + "Total LSA messages sent:            %d\n"
             + "Average LSA messages sent per node: %d\n"

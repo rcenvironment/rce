@@ -41,6 +41,8 @@ public class EndpointDatumSenderImpl implements EndpointDatumSender {
     private BundleContext bundleContext;
 
     private CommunicationService communicationService;
+    
+    private EndpointDatumSerializer endpointDatumSerializer;
 
     protected void activate(BundleContext context) {
         bundleContext = context;
@@ -65,7 +67,7 @@ public class EndpointDatumSenderImpl implements EndpointDatumSender {
                         EndpointDatumProcessor.class, finalNode, bundleContext);
                     endpointDatumProcessors.put(finalNode, inputProcessor);
                 }
-                endpointDatumProcessors.get(finalNode).onEndpointDatumReceived(EndpointDatumSerializer
+                endpointDatumProcessors.get(finalNode).onEndpointDatumReceived(endpointDatumSerializer
                     .serializeEndpointDatum(endpointDatum));
             }
         });
@@ -73,6 +75,10 @@ public class EndpointDatumSenderImpl implements EndpointDatumSender {
 
     protected void bindCommunicationService(CommunicationService newService) {
         communicationService = newService;
+    }
+    
+    protected void bindEndpointDatumSerializer(EndpointDatumSerializer newService) {
+        endpointDatumSerializer = newService;
     }
 
 }

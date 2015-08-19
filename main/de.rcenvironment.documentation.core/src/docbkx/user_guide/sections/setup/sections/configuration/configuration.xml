@@ -354,7 +354,7 @@
 					</row>
 					<row>
 						<entry>port</entry>
-						<entry>Port number to which SSH clients connect to.</entry>
+						<entry>The port number to which SSH clients can connect to.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -365,12 +365,17 @@
 					</row>
 					<row>
 						<entry>[account name]/password</entry>
-						<entry>Password for the account.</entry>
+						<entry>The password for the account. IMPORTANT: As of RCE 6.x, SSH passwords are always
+							configured as plain text. To prevent misuse of the configured login
+							data, any configuration file with SSH accounts <emphasis>must</emphasis>
+							be secured against unauthorized reading (e.g. by setting restrictive
+							filesystem permissions). RCE 7.x will add support for configuring
+							passwords in a more secure manner.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
 						<entry>[account name]/role</entry>
-						<entry>Role of the account. See 'roles' below.</entry>
+						<entry>The role of the account. See 'roles' below.</entry>
 						<entry>-</entry>
 					</row>
 					<row>

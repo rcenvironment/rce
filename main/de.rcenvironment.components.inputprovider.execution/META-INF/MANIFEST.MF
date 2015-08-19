@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Imput Provider Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.common,
@@ -20,6 +20,7 @@ Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.utils.common,
  org.codehaus.jackson;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.node;version="1.9.13",

@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Default {@link NetworkContactPoint} implementation.
@@ -99,7 +100,7 @@ public class NetworkContactPointImpl implements NetworkContactPoint, Serializabl
 
     @Override
     public String toString() {
-        return String.format("%s:%d (%s)", host, port, transportId);
+        return StringUtils.format("%s:%d (%s)", host, port, transportId);
     }
 
 }

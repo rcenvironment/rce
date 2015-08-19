@@ -102,7 +102,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                     case PAUSED:
                     case RESUMING:
                         // can be removed if to verbose
-//                        LOG.debug(String.format("Sending heartbeat notification for active workflow %s (%s)",
+//                        LOG.debug(StringUtils.format("Sending heartbeat notification for active workflow %s (%s)",
 //                            wfExeInfo.getInstanceName(), wfExeId));
                         notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeId, WorkflowState.IS_ALIVE.name());
                         break;

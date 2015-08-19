@@ -18,6 +18,7 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
@@ -90,7 +91,8 @@ public final class InitialInboxConsumer extends AbstractJmsQueueConsumer impleme
                 log.warn("Received message of unhandled type " + messageType + " from queue " + queueName);
             }
         } catch (JMSException | CommunicationException e) {
-            log.warn(String.format("Error while dispatching message of type %s: %s", messageType, e.toString())); // log without stacktrace
+            log.warn(StringUtils.format("Error while dispatching message of type %s: %s", messageType, e.toString())); // log without
+                                                                                                                       // stacktrace
         }
     }
 

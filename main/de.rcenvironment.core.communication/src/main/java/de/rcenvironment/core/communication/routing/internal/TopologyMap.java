@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.model.internal.NetworkGraphImpl;
 import de.rcenvironment.core.communication.model.internal.NetworkGraphLinkImpl;
+import de.rcenvironment.core.utils.common.StringUtils;
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
@@ -155,7 +156,7 @@ public final class TopologyMap {
 
         // if the purpose of the LSA was to tell that an instance is shutting down
         if (LinkStateAdvertisement.REASON_SHUTDOWN.equals(lsa.getReason())) {
-            // LOGGER.debug(String.format("%s has been informed that %s will shut down soon.",
+            // LOGGER.debug(StringUtils.format("%s has been informed that %s will shut down soon.",
             // owner, // lsa.getOwner()));
             // TODO check: are both incoming and outgoing links removed from topology map?
             LOGGER.debug("Received a shutdown notice for node " + lsaRoot.getNodeIdentifier()
@@ -201,7 +202,7 @@ public final class TopologyMap {
                 nodes.add(networkModel.getEndpoints(link).getSecond().getNodeIdentifier());
             }
             return new NetworkRoute(source, destination, path, nodes, elapsed);
-            // LOGGER.debug(String.format("Route computation: %s ms", elapsed * 10e-9));
+            // LOGGER.debug(StringUtils.format("Route computation: %s ms", elapsed * 10e-9));
         } else {
             LOGGER.warn("Could not determine route to node " + destination + " as it is not part of the known topology");
             return null;
@@ -495,7 +496,7 @@ public final class TopologyMap {
             destinationNode = addNode(networkLink.getDestination());
         }
         if (!networkModel.addEdge(networkLink, sourceNode, destinationNode)) {
-            LOGGER.warn(String.format("Link edge %s was not added to graph -- duplicate?", networkLink));
+            LOGGER.warn(StringUtils.format("Link edge %s was not added to graph -- duplicate?", networkLink));
             return false;
         }
         return true;

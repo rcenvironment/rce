@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Script Component Execution Jython Bundle Tests
+Bundle-SymbolicName: de.rcenvironment.components.script.execution.jython.tests
+Bundle-Version: 6.2.0.qualifier
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-Vendor: DLR
+Import-Package: de.rcenvironment.components.script.execution,
+ de.rcenvironment.components.script.execution.jython,
+ de.rcenvironment.components.script.execution.testutils,
+ de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.component.testutils,
+ de.rcenvironment.core.configuration.bootstrap,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.scripting.testutils
+Export-Package: de.rcenvironment.components.script.execution.jython
+Bundle-ActivationPolicy: lazy
+Require-Bundle: de.rcenvironment.core.utils.testing
+Fragment-Host: de.rcenvironment.components.script.execution.jython

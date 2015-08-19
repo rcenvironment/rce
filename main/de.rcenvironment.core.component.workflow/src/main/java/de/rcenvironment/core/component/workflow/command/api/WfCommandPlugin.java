@@ -36,6 +36,7 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionE
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -209,11 +210,11 @@ public class WfCommandPlugin implements CommandPlugin {
                     break;
                 } else {
                     if (retries >= MAXIMUM_WORKFLOW_PARSE_RETRIES) {
-                        log.debug(String.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
+                        log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
                             MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
                         throw CommandException.executionError(
-                            String.format("Workflow file '%s' is not valid. See log above for more details.", wfFile.getAbsolutePath()),
-                            context);
+                                StringUtils.format("Workflow file '%s' is not valid. See log above for more details.",
+                                wfFile.getAbsolutePath()), context);
                     }
                     log.debug("Retrying workflow validation in a few seconds.");
                     try {
@@ -259,7 +260,7 @@ public class WfCommandPlugin implements CommandPlugin {
                 if (workflowExecutionService.getWorkflowState(executionId, nodeId).equals(WorkflowState.RUNNING)) {
                     workflowExecutionService.pause(executionId, nodeId);
                 } else {
-                    outputReceiver.addOutput(String.format(WRONG_STATE_ERROR, "Pausing",
+                    outputReceiver.addOutput(StringUtils.format(WRONG_STATE_ERROR, "Pausing",
                         workflowExecutionService.getWorkflowState(executionId, nodeId)));
                 }
             } catch (CommunicationException e) {
@@ -286,7 +287,7 @@ public class WfCommandPlugin implements CommandPlugin {
                 if (workflowExecutionService.getWorkflowState(executionId, nodeId).equals(WorkflowState.PAUSED)) {
                     workflowExecutionService.resume(executionId, nodeId);
                 } else {
-                    outputReceiver.addOutput(String.format(WRONG_STATE_ERROR, "Resuming",
+                    outputReceiver.addOutput(StringUtils.format(WRONG_STATE_ERROR, "Resuming",
                         workflowExecutionService.getWorkflowState(executionId, nodeId)));
                 }
             } catch (CommunicationException e) {
@@ -315,7 +316,7 @@ public class WfCommandPlugin implements CommandPlugin {
                     || workflowExecutionService.getWorkflowState(executionId, nodeId).equals(WorkflowState.PAUSED)) {
                     workflowExecutionService.cancel(executionId, nodeId);
                 } else {
-                    outputReceiver.addOutput(String.format(WRONG_STATE_ERROR, "Canceling",
+                    outputReceiver.addOutput(StringUtils.format(WRONG_STATE_ERROR, "Canceling",
                         workflowExecutionService.getWorkflowState(executionId, nodeId)));
                 }
             } catch (CommunicationException e) {
@@ -345,7 +346,7 @@ public class WfCommandPlugin implements CommandPlugin {
                     || workflowExecutionService.getWorkflowState(executionId, nodeId).equals(WorkflowState.FINISHED)) {
                     workflowExecutionService.dispose(executionId, nodeId);
                 } else {
-                    outputReceiver.addOutput(String.format(WRONG_STATE_ERROR, "Disposing",
+                    outputReceiver.addOutput(StringUtils.format(WRONG_STATE_ERROR, "Disposing",
                         workflowExecutionService.getWorkflowState(executionId, nodeId)));
                 }
             } catch (CommunicationException e) {
@@ -372,7 +373,7 @@ public class WfCommandPlugin implements CommandPlugin {
         for (WorkflowExecutionInformation wfInfo : wfInfos) {
             try {
                 WorkflowState state = workflowExecutionService.getWorkflowState(wfInfo.getExecutionIdentifier(), wfInfo.getNodeId());
-                output += String.format(" '%s' - %s [%s]\n", wfInfo.getInstanceName(), state, wfInfo.getExecutionIdentifier());
+                output += StringUtils.format(" '%s' - %s [%s]\n", wfInfo.getInstanceName(), state, wfInfo.getExecutionIdentifier());
                 total++;
                 switch (state) {
                 case RUNNING:
@@ -399,7 +400,7 @@ public class WfCommandPlugin implements CommandPlugin {
 
         }
         output +=
-            String.format(" -- TOTAL COUNT: %d workflows: %d running, %d paused, %d finished, %d cancelled, %d failed, %d other -- ",
+            StringUtils.format(" -- TOTAL COUNT: %d workflows: %d running, %d paused, %d finished, %d cancelled, %d failed, %d other -- ",
                 total, running, paused, finished, cancelled, failed, other);
         outputReceiver.addOutput(output);
     }
@@ -597,7 +598,7 @@ public class WfCommandPlugin implements CommandPlugin {
             for (int i = 0; i < parallelRuns; i++) {
                 for (final File wfFile : wfFiles) {
                     // attach a task id to help with debugging, e.g. for identifying the thread of a stalled workflow - misc_ro
-                    String taskId = String.format("wf-verify-%s-%s", sequenceNumberGenerator.incrementAndGet(), wfFile.getName());
+                    String taskId = StringUtils.format("wf-verify-%s-%s", sequenceNumberGenerator.incrementAndGet(), wfFile.getName());
                     callablesGroup.add(new Callable<Void>() {
 
                         @Override
@@ -627,7 +628,7 @@ public class WfCommandPlugin implements CommandPlugin {
                 }
             });
         }
-        context.println(String.format("Workflow verification results (%s):", wfVerifyResult.asString()));
+        context.println(StringUtils.format("Workflow verification results (%s):", wfVerifyResult.asString()));
     }
 
     /**
@@ -676,7 +677,7 @@ public class WfCommandPlugin implements CommandPlugin {
         }
 
         private String asString() {
-            return String.format("Executions: %d/%d -> Finished: %d,  Cancelled: %d, Failed: %d, Error: %d",
+            return StringUtils.format("Executions: %d/%d -> Finished: %d,  Cancelled: %d, Failed: %d, Error: %d",
                 totalRuns.get(), runsSubmitted, finished.get(), canceled.get(), failed.get(), error.get());
         }
     }
@@ -704,7 +705,7 @@ public class WfCommandPlugin implements CommandPlugin {
         // make the last two digits sequentially increasing to reduce the likelihood of timestamp collisions
         // TODO >5.0.0: crude fix for #10436 - align better with generated workflow name - misc_ro
         int suffixNumber = GLOBAL_WORKFLOW_SUFFIX_SEQUENCE_COUNTER.incrementAndGet() % WORKFLOW_SUFFIX_NUMBER_MODULO;
-        // TODO don't use SQL timestamp for formatting; also, use String.format()
+        // TODO don't use SQL timestamp for formatting; also, use StringUtils.format()
         Timestamp ts = new Timestamp(millis);
         folderName = "logs/" + folderName + "_" + ts.toString().replace('.', '-').replace(' ', '_').replace(':', '-') + "_" + suffixNumber;
 

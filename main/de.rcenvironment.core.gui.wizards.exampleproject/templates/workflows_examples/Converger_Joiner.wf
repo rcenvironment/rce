@@ -1,6 +1,6 @@
 {
   "identifier" : "41507644-24f5-4260-93da-daaab5618735",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "nodes" : [ {
     "identifier" : "3ae2177b-31cb-4200-9d2a-46671ad2fad7",
     "name" : "Joiner-1",
@@ -8,11 +8,12 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2",
-      "name" : "Joiner"
+      "name" : "Joiner",
+      "version" : "3.3"
     },
     "configuration" : {
-      "Joined" : "2"
+      "inputCount" : "2",
+      "datatype" : "Float"
     },
     "dynamicInputs" : [ {
       "identifier" : "70c31cd4-b7e5-4bcf-a4b8-b0d273e388c2",
@@ -168,11 +169,12 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2",
-      "name" : "Joiner"
+      "name" : "Joiner",
+      "version" : "3.3"
     },
     "configuration" : {
-      "Joined" : "2"
+      "inputCount" : "2",
+      "datatype" : "Float"
     },
     "dynamicInputs" : [ {
       "identifier" : "efd5b8f7-666f-4538-8c8f-b5c55e7d9081",

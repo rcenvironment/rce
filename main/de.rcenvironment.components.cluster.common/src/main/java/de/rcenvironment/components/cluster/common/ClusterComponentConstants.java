@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Common constants for cluster component.
@@ -82,7 +83,7 @@ public final class ClusterComponentConstants {
     public static String getCommandsPathsAsPropertyString(Map<String, String> paths) {
         StringBuilder builder = new StringBuilder();
         for (String command : paths.keySet()) {
-            builder.append(String.format("%s=%s;", command, paths.get(command)));
+            builder.append(StringUtils.format("%s=%s;", command, paths.get(command)));
         }
         return builder.toString();
     }

@@ -1,0 +1,32 @@
+{
+    "general" : {
+        "instanceName" : "Integration Test Server started by \"${systemUser}\" on ${hostName}",
+        "isWorkflowHost" : true,
+        "isRelay" : false
+    },
+    "sshServer" : {
+        "enabled" : true,
+        "ip": "0.0.0.0",
+        "port" : 31055,
+        "accounts" : {
+            "ra_demo" : {
+                "password" : "ra_demo",
+                "role" : "remote access",
+                "enabled" : true
+            },
+            "pwtest" : {
+                "password" : "the_pw",
+                "role" : "remote access",
+                "enabled" : true
+            }
+        },
+        "roles" : {
+            "remote access" : {
+                "allowedCommandPatterns" : [
+                    "ra .+",
+                    "net info"
+                ]
+            }
+        }
+    }
+}

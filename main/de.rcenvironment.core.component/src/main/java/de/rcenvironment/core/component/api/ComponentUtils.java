@@ -42,6 +42,7 @@ import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Class providing utility methods used for handling component properties.
@@ -345,8 +346,7 @@ public final class ComponentUtils {
      */
     public static String replaceOutputVariables(String text, Set<String> outputValues, String placeholderFormat) {
         for (String outputName : outputValues) {
-            text = text.replace(String.format(placeholderFormat, outputName),
-                OUTPUT_TAG + outputName + OUTPUT_TAG);
+            text = text.replace(StringUtils.format(placeholderFormat, outputName), OUTPUT_TAG + outputName + OUTPUT_TAG);
         }
         return text;
     }
@@ -361,7 +361,7 @@ public final class ComponentUtils {
      */
     public static String replacePropertyVariables(String script, Map<String, String> properties, String placeholderFormat) {
         for (String propName : properties.keySet()) {
-            script = script.replace(String.format(placeholderFormat, propName), "" + properties.get(propName));
+            script = script.replace(StringUtils.format(placeholderFormat, propName), "" + properties.get(propName));
         }
         return script;
     }
@@ -393,7 +393,7 @@ public final class ComponentUtils {
     public static String replaceVariable(String text, String value, String placeholderName, String placeholderFormat) {
         value = value.replace("\\\\", FILE_SEPERATOR);
         value = value.replace("\\", FILE_SEPERATOR);
-        text = text.replace(String.format(placeholderFormat, placeholderName), value);
+        text = text.replace(StringUtils.format(placeholderFormat, placeholderName), value);
         return text;
     }
 

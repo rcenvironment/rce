@@ -8,10 +8,11 @@
 
 package de.rcenvironment.components.switchcmp.gui;
 
-import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import de.rcenvironment.components.switchcmp.common.ScriptValidation;
 import de.rcenvironment.components.switchcmp.common.SwitchComponentConstants;
@@ -40,7 +41,7 @@ public class SwitchComponentWorkflowNodeValidator extends AbstractWorkflowNodeVa
                     Messages.noConditionString, Messages.noConditionString);
             messages.add(emptyCondition);
         } else {
-            String errorMessage = ScriptValidation.validateScript(condition, getInputNames(), getSwitchInputDataType(), this);
+            String errorMessage = ScriptValidation.validateScript(condition, getInputAndConnectionStatus(), getInputsAndDataTypes(), this);
             if (!errorMessage.isEmpty()) {
                 final WorkflowNodeValidationMessage scriptError =
                     new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR,
@@ -53,23 +54,21 @@ public class SwitchComponentWorkflowNodeValidator extends AbstractWorkflowNodeVa
         return messages;
     }
 
-    private DataType getSwitchInputDataType() {
+    private Map<String, DataType> getInputsAndDataTypes() {
+        Map<String, DataType> inputs = new HashMap<>();
         for (EndpointDescription description : getInputs()) {
-            if (description.getName().equals(SwitchComponentConstants.DATA_INPUT_NAME)) {
-                return description.getDataType();
-            }
+            inputs.put(description.getName(), description.getDataType());
         }
-
-        return null;
+        return inputs;
     }
 
-    private List<String> getInputNames() {
-        List<String> inputs = new ArrayList<>();
+    private Map<String, Boolean> getInputAndConnectionStatus() {
+        Map<String, Boolean> inputs = new HashMap<>();
 
         for (EndpointDescription description : getInputs()) {
-            inputs.add(description.getName());
+            inputs.put(description.getName(), description.isConnected());
         }
-
+        
         return inputs;
     }
 }

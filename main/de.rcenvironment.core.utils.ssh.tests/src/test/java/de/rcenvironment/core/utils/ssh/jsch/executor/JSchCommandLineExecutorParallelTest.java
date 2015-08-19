@@ -14,8 +14,7 @@ import static org.junit.Assert.fail;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -109,11 +108,9 @@ public class JSchCommandLineExecutorParallelTest {
     public void testParallelServers() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final int numServers = 10;
-
-        final List<String> threadsCompleted = Collections.synchronizedList(new ArrayList<String>());
+        final CountDownLatch threadsCompletedLatch = new CountDownLatch(numServers);
 
         for (int i = 0; i < numServers; i++) {
-            final int threadid = i;
 
             SharedThreadPool.getInstance().execute(new Runnable() {
 
@@ -180,14 +177,11 @@ public class JSchCommandLineExecutorParallelTest {
                     } catch (InterruptedException e) {
                         fail("Stopping SSH server failed:\n" + e);
                     }
-                    threadsCompleted.add("Server" + threadid);
+                    threadsCompletedLatch.countDown();
                 }
             });
         }
-        Thread.sleep(WAIT_FOR_THREADS_MSEC);
-        
-        //Assert that all threads are completed
-        assertEquals(numServers, threadsCompleted.size());
+        threadsCompletedLatch.await();
     }
 
 }

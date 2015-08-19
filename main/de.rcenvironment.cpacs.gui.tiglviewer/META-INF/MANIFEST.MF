@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Vendor: DLR
 Bundle-Name: RCE TiGL Viewer 
 Bundle-SymbolicName: de.rcenvironment.cpacs.gui.tiglviewer;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-Activator: de.rcenvironment.cpacs.gui.tiglviewer.Activator
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime

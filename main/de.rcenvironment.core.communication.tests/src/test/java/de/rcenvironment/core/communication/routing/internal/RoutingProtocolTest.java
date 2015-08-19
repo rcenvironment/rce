@@ -37,6 +37,7 @@ import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.transport.virtual.VirtualTransportTestConfiguration;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Unit tests for {@link LinkStateRoutingProtocolManager}.
@@ -111,7 +112,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
             VirtualInstance receiver = instanceUtils.getRandomInstance(allInstances, sender);
 
             // check a random route
-            assertTrue(String.format(ERROR_MSG_A_NO_ROUTE_TO_B, sender, receiver), sender.getRouteTo(receiver) != null);
+            assertTrue(StringUtils.format(ERROR_MSG_A_NO_ROUTE_TO_B, sender, receiver), sender.getRouteTo(receiver) != null);
         }
     }
 
@@ -175,7 +176,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
         assertTrue(instanceUtils.allInstancesHaveSameRawNetworkGraph(allInstances));
 
         List<? extends NetworkGraphLink> route = firstInstance.getRouteTo(lastInstance);
-        assertTrue(String.format(ERROR_MSG_A_NO_ROUTE_TO_B, firstInstance, lastInstance), route != null);
+        assertTrue(StringUtils.format(ERROR_MSG_A_NO_ROUTE_TO_B, firstInstance, lastInstance), route != null);
         assertEquals(1, route.size());
     }
 
@@ -210,7 +211,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
         assertTrue(failingNodePredecessor.knownTopologyContainsLinkTo(failingNode));
 
         // sender should falsely believe that there is a route.
-        assertTrue(String.format(ERROR_MSG_A_NO_ROUTE_TO_B, firstNode, lastNode), firstNode.getRouteTo(lastNode) != null);
+        assertTrue(StringUtils.format(ERROR_MSG_A_NO_ROUTE_TO_B, firstNode, lastNode), firstNode.getRouteTo(lastNode) != null);
 
         dummyContent = instanceUtils.generateUniqueMessageToken();
 
@@ -245,7 +246,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
         // the channel should now be there again
         assertTrue(failingNodePredecessor.knownTopologyContainsLinkTo(failingNode));
 
-        assertTrue(String.format(ERROR_MSG_A_NO_ROUTE_TO_B, firstNode, lastNode), firstNode.getRouteTo(lastNode) != null);
+        assertTrue(StringUtils.format(ERROR_MSG_A_NO_ROUTE_TO_B, firstNode, lastNode), firstNode.getRouteTo(lastNode) != null);
 
         dummyContent = instanceUtils.generateUniqueMessageToken();
 

@@ -222,4 +222,9 @@ public class ComponentContextDefaultStub implements ComponentContext {
         return null;
     }
 
+    @Override
+    public boolean isDynamicOutput(String outputName) {
+        return false;
+    }
+
 }

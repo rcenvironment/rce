@@ -132,7 +132,7 @@ public class InternalTDImpl implements InternalTD {
         try {
             rootNode = (ObjectNode) mapper.readTree(value);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new IllegalArgumentException(e);
         }
         InternalTDType type = InternalTDImpl.InternalTDType.valueOf(rootNode.get(SERIALIZE_KEY_TYPE).getTextValue());
         String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).getTextValue();

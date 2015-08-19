@@ -98,6 +98,32 @@ public class StringUtilsTest {
         checkConcatAndSplit(StringUtils.ESCAPE_CHARACTER + StringUtils.ESCAPE_CHARACTER);
     }
 
+    /** Test fault tolerant implementation of {@link String#format(String, Object...)}. */
+    @Test
+    public void testStringFormat() {
+        String placeholderText = "%s %b %d";
+        String stringValue = "RCE";
+        boolean isCorrect = true;
+        int number = 5;
+        String message = "red green blue";
+        String correctFormat = stringValue + " " + isCorrect + " " + number;
+        
+        String result = StringUtils.format(placeholderText);
+        assertEquals(placeholderText, result);
+
+        result = StringUtils.format(placeholderText, stringValue);
+        assertEquals(placeholderText + StringUtils.FORMAT_SEPARATOR + stringValue, result);
+
+        result = StringUtils.format(placeholderText, stringValue, isCorrect);
+        assertEquals(placeholderText + StringUtils.FORMAT_SEPARATOR + stringValue + StringUtils.FORMAT_SEPARATOR + isCorrect, result);
+
+        result = StringUtils.format(placeholderText, stringValue, isCorrect, number);
+        assertEquals(correctFormat, result);
+
+        result = StringUtils.format(placeholderText, stringValue, isCorrect, number, message);
+        assertEquals(correctFormat, result);
+    }
+
     /**
      * Tests all 4-character combinations of a standard character, the separator, the escape
      * character, and a null string.

@@ -38,6 +38,7 @@ import de.rcenvironment.core.component.workflow.execution.impl.WorkflowExecution
 import de.rcenvironment.core.component.workflow.execution.spi.WorkflowStateChangeListener;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
 /**
@@ -71,9 +72,9 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
         Map<String, String> executionAuthTokens, Boolean calledFromRemote) throws WorkflowExecutionException {
 
         if (calledFromRemote && !workflowHostService.getWorkflowHostNodes().contains(wfExeCtx.getNodeId())) {
-            throw new WorkflowExecutionException(String.format("Workflow execution request refused, as the requested instance is "
-                + "not declared as workflow host: %s (%s)", wfExeCtx.getNodeId().getAssociatedDisplayName(),
-                wfExeCtx.getNodeId().getIdString()));
+            throw new WorkflowExecutionException(StringUtils.format("Workflow execution request refused, as the requested instance is "
+                + "not declared as workflow host: %s (%s)", wfExeCtx.getNodeId().getAssociatedDisplayName(), wfExeCtx.getNodeId()
+                    .getIdString()));
         }
         WorkflowExecutionController workflowController = new WorkflowExecutionControllerImpl(wfExeCtx);
         workflowController.setComponentExecutionAuthTokens(executionAuthTokens);
@@ -108,7 +109,7 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
                         dispose(executionId);
                     } else if (newState != WorkflowState.DISPOSING) {
                         LogFactory.getLog(getClass()).warn(
-                            String.format("Received unexpected workflow state '%s' for workflow '%s'", newState, executionId));
+                            StringUtils.format("Received unexpected workflow state '%s' for workflow '%s'", newState, executionId));
                     }
                 }
             }) {
@@ -138,7 +139,7 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
         } catch (RuntimeException e) {
             if (e.getMessage().contains(NOT_REGISTERED_AS_OSGI_SERVICE)) {
                 LogFactory.getLog(WorkflowExecutionControllerServiceImpl.class).warn(
-                    String.format("Failed to dispose workflow (%s). It seems to be already disposed (%s).",
+                    StringUtils.format("Failed to dispose workflow (%s). It seems to be already disposed (%s).",
                         executionId, e.getMessage()));
             } else {
                 throw e;
@@ -209,17 +210,17 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
             }
         } catch (InvalidSyntaxException e) {
             // should not happen
-            LogFactory.getLog(getClass()).error(String.format("Filter '%s' is not valid", filter));
+            LogFactory.getLog(getClass()).error(StringUtils.format("Filter '%s' is not valid", filter));
         } catch (IllegalStateException e) {
             LogFactory.getLog(getClass()).warn("Bundle seems to be shutted down. "
                 + "If this occurs at any time thant shut down, it is an error", e);
         }
-        throw new RuntimeException(String.format("%s with id '%s' " + NOT_REGISTERED_AS_OSGI_SERVICE,
+        throw new RuntimeException(StringUtils.format("%s with id '%s' " + NOT_REGISTERED_AS_OSGI_SERVICE,
             WorkflowExecutionController.class.getSimpleName(), executionId));
     }
 
     private String createPropertyFilter(String executionId) {
-        return String.format("(%s=%s)", ExecutionConstants.EXECUTION_ID_OSGI_PROP_KEY, executionId);
+        return StringUtils.format("(%s=%s)", ExecutionConstants.EXECUTION_ID_OSGI_PROP_KEY, executionId);
     }
 
     protected void bindWorkflowHostService(WorkflowHostService newService) {

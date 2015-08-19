@@ -19,12 +19,14 @@ import org.eclipse.gef.GraphicalViewer;
 import org.eclipse.gef.ui.actions.ActionRegistry;
 import org.eclipse.gef.ui.actions.GEFActionConstants;
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IAction;
 import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.ui.actions.ActionFactory;
 
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * ContextMenu for the Workflow editor.
@@ -62,13 +64,15 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
         // Add standard action groups to the menu
         GEFActionConstants.addStandardActionGroups(menu);
 
+        // Add shortcut text to the actions
+        IAction undo = actionRegistry.getAction(ActionFactory.UNDO.getId());
+        undo.setText(Messages.undo.concat(Messages.undoShortcut));
+        IAction redo = actionRegistry.getAction(ActionFactory.REDO.getId());
+        redo.setText(Messages.redo.concat(Messages.redoShortcut));
+
         // Add actions to the menu
-        menu.appendToGroup(
-                GEFActionConstants.GROUP_UNDO,
-                actionRegistry.getAction(ActionFactory.UNDO.getId()));
-        menu.appendToGroup(
-                GEFActionConstants.GROUP_UNDO,
-                actionRegistry.getAction(ActionFactory.REDO.getId()));
+        menu.appendToGroup(GEFActionConstants.GROUP_UNDO, undo);
+        menu.appendToGroup(GEFActionConstants.GROUP_UNDO, redo);
     }
 
     private void addContributedContextMenuActions(IMenuManager menu) {
@@ -90,7 +94,7 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
                     try {
                         Object actionObject = (WorkflowEditorAction) confElement.createExecutableExtension("class");
                         if (!(actionObject instanceof WorkflowEditorAction)) {
-                            throw new RuntimeException(String.format(
+                            throw new RuntimeException(StringUtils.format(
                                     "Class in attribute 'class' is not a subtype of '%s'.",
                                     WorkflowEditorAction.class.getName()));
                         }

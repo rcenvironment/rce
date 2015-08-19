@@ -46,6 +46,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.datamanagement.commons.MetaDataConstants;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Derby meta data db setup.
@@ -112,7 +113,7 @@ public abstract class DerbyDatabaseSetup {
             throw new RuntimeException("Unknown DB state!");
         }
         statement.close();
-        LOGGER.debug(String.format("Database version is %s", getDBVersion(connection)));
+        LOGGER.debug(StringUtils.format("Database version is %s", getDBVersion(connection)));
     }
 
     private static void deleteViews(final Connection connection) {
@@ -148,8 +149,8 @@ public abstract class DerbyDatabaseSetup {
         String sql = "DROP VIEW %s";
         Statement stmt = connection.createStatement();
         if (viewExists(stmt, viewName)) {
-            stmt.execute(String.format(sql, viewName));
-            LOGGER.debug(String.format("Deleted view %s", viewName));
+            stmt.execute(StringUtils.format(sql, viewName));
+            LOGGER.debug(StringUtils.format("Deleted view %s", viewName));
         }
         stmt.close();
     }
@@ -183,9 +184,9 @@ public abstract class DerbyDatabaseSetup {
         try {
             String sql = "INSERT INTO " + TABLE_DB_VERSION_INFO + " VALUES('%s')";
             Statement stmt = connection.createStatement();
-            stmt.executeUpdate(String.format(sql, dbVersion));
+            stmt.executeUpdate(StringUtils.format(sql, dbVersion));
             stmt.close();
-            LOGGER.info(String.format("Set database version to %s", dbVersion));
+            LOGGER.info(StringUtils.format("Set database version to %s", dbVersion));
         } catch (SQLException e) {
             throw new RuntimeException("Failed to set database version.", e);
         }
@@ -196,7 +197,7 @@ public abstract class DerbyDatabaseSetup {
             String version = "unknown";
             String sql = SELECT + DB_VERSION + " FROM " + TABLE_DB_VERSION_INFO;
             Statement stmt = connection.createStatement();
-            ResultSet rs = stmt.executeQuery(String.format(sql));
+            ResultSet rs = stmt.executeQuery(StringUtils.format(sql));
             if (rs != null && rs.next()) {
                 version = rs.getString(DB_VERSION);
                 rs.close();
@@ -283,8 +284,8 @@ public abstract class DerbyDatabaseSetup {
 
     private static void createIndex(String tableName, String columnName, Connection connection) throws SQLException {
         Statement stmt = connection.createStatement();
-        String sql = String.format("CREATE INDEX INDEX_%s_%s ON %s (%s)", tableName, columnName, tableName, columnName);
-        LOGGER.debug(String.format("Creating index 'INDEX_%s_%s'", tableName, columnName));
+        String sql = StringUtils.format("CREATE INDEX INDEX_%s_%s ON %s (%s)", tableName, columnName, tableName, columnName);
+        LOGGER.debug(StringUtils.format("Creating index 'INDEX_%s_%s'", tableName, columnName));
         stmt.executeUpdate(sql);
         stmt.close();
     }
@@ -335,7 +336,7 @@ public abstract class DerbyDatabaseSetup {
     private static void createTable(final String tableName, final Connection connection) throws SQLException {
         Statement stmt = connection.createStatement();
         String sql = null;
-        LOGGER.debug(String.format("Creating table '%s'", tableName));
+        LOGGER.debug(StringUtils.format("Creating table '%s'", tableName));
 
         if (!tableExists(stmt, tableName)) {
             switch (tableName) {
@@ -436,7 +437,7 @@ public abstract class DerbyDatabaseSetup {
     private static void createView(final String viewName, final Connection connection) throws SQLException {
         Statement stmt = connection.createStatement();
         String sql = null;
-        LOGGER.debug(String.format("Creating view '%s'", viewName));
+        LOGGER.debug(StringUtils.format("Creating view '%s'", viewName));
 
         if (!viewExists(stmt, viewName)) {
             switch (viewName) {

@@ -34,6 +34,7 @@ import de.rcenvironment.core.datamanagement.DistributedDataReferenceService;
 import de.rcenvironment.core.datamanagement.DistributedFileDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -160,7 +161,7 @@ public class DataManagementServiceImpl implements DataManagementService {
             dataRef = dataReferenceService.getReference(reference, nodeId);
         }
         if (dataRef == null) {
-            throw new FileNotFoundException(String.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
+            throw new FileNotFoundException(StringUtils.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
         }
         InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(user, dataRef);
         try {
@@ -181,7 +182,7 @@ public class DataManagementServiceImpl implements DataManagementService {
             dataRef = dataReferenceService.getReference(reference, platforms);
         }
         if (dataRef == null) {
-            throw new FileNotFoundException(String.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
+            throw new FileNotFoundException(StringUtils.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
         }
         InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(user, dataRef);
         try {
@@ -259,7 +260,7 @@ public class DataManagementServiceImpl implements DataManagementService {
             dataRef = dataReferenceService.getReference(reference, nodeId);
         }
         if (dataRef == null) {
-            throw new FileNotFoundException(String.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
+            throw new FileNotFoundException(StringUtils.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
         }
         InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(user, dataRef);
         try {

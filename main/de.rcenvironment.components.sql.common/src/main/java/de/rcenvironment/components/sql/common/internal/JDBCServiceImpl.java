@@ -33,6 +33,7 @@ import de.rcenvironment.components.sql.common.JDBCProfile;
 import de.rcenvironment.components.sql.common.JDBCService;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Default implementation of {@link JDBCService}.
@@ -66,7 +67,7 @@ public class JDBCServiceImpl implements JDBCService {
         for (final JDBCProfile profile : getProfiles()) {
             if (labels.contains(profile.getLabel())) {
                 throw new RuntimeException(
-                    String.format("Duplicate sql connection label '%s'.", profile.getLabel()));
+                    StringUtils.format("Duplicate sql connection label '%s'.", profile.getLabel()));
             }
         }
     }
@@ -101,7 +102,7 @@ public class JDBCServiceImpl implements JDBCService {
             }
             connection = DriverManager.getConnection(url, user, password);
         } catch (SQLException e) {
-            throw new SQLException("Connection could not be established / retrieved.", e);
+            throw new SQLException("Connection could not be established / retrieved.", e.toString());
         }
         return connection;
     }
@@ -157,7 +158,7 @@ public class JDBCServiceImpl implements JDBCService {
                 // throw new RuntimeException(e);
                 e = null;
             } catch (NoSuchMethodException e) {
-                // throw new RuntimeException(String.format("No property '%s' in jdbc profile.", propertyName), e);
+                // throw new RuntimeException(StringUtils.format("No property '%s' in jdbc profile.", propertyName), e);
                 e = null;
             }
         }
@@ -167,8 +168,9 @@ public class JDBCServiceImpl implements JDBCService {
     private synchronized void loadDriver(final JDBCProfile profile) {
         if (!loadedProfiles.contains(profile)) {
             final String file = replace(profile.getJdbc().getFile());
-            final File driverFile = new File(file);
-            final String jdbcDriverFileInfo = String.format("JDBC driver file '%s'", driverFile.getAbsolutePath());
+            File installationLocation = configurationService.getInstallationDir();
+            final File driverFile = new File(installationLocation, file);
+            final String jdbcDriverFileInfo = StringUtils.format("JDBC driver file '%s'", driverFile.getAbsolutePath());
             if (!driverFile.exists() || !driverFile.isFile() || !driverFile.canRead()) {
                 throw new RuntimeException(jdbcDriverFileInfo + " could not be found.");
             }
@@ -181,15 +183,15 @@ public class JDBCServiceImpl implements JDBCService {
                 final Driver driver = (Driver) driverClass.newInstance();
                 DriverManager.registerDriver(new DriverAdapter(driver));
             } catch (MalformedURLException e) {
-                throw new RuntimeException(jdbcDriverFileInfo + " could not be loaded.", e);
+                throw new RuntimeException(jdbcDriverFileInfo + " could not be loaded. " + e.toString());
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(jdbcDriverFileInfo + " could not be found.", e);
+                throw new RuntimeException(jdbcDriverFileInfo + " could not be found. " + e.toString());
             } catch (InstantiationException e) {
-                throw new RuntimeException(jdbcDriverFileInfo + " could not be instantiated.", e);
+                throw new RuntimeException(jdbcDriverFileInfo + " could not be instantiated. " + e.toString());
             } catch (IllegalAccessException e) {
-                throw new RuntimeException(jdbcDriverFileInfo + " could not be accessed.", e);
+                throw new RuntimeException(jdbcDriverFileInfo + " could not be accessed. " + e.toString());
             } catch (SQLException e) {
-                throw new RuntimeException(jdbcDriverFileInfo + " could not be registered.", e);
+                throw new RuntimeException(jdbcDriverFileInfo + " could not be registered. " + e.toString());
             }
         }
         loadedProfiles.add(profile);

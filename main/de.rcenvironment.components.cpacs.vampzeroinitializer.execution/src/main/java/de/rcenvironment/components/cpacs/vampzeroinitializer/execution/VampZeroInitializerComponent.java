@@ -22,14 +22,14 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.component.xml.XmlComponentHistoryDataItem;
+import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
 import de.rcenvironment.cpacs.utils.common.components.CpacsChannelFilter;
-import de.rcenvironment.cpacs.utils.common.components.XmlComponentHistoryDataItem;
-import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
 
 /**
  * The "source" function based on aicraft predesign parameters.
@@ -50,6 +50,8 @@ public class VampZeroInitializerComponent extends DefaultComponent {
     private String xmlContent;
 
     private XmlComponentHistoryDataItem historyDataItem = null;
+    
+    private EndpointXMLService endpointXmlUtils;
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
@@ -64,6 +66,7 @@ public class VampZeroInitializerComponent extends DefaultComponent {
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
+        endpointXmlUtils = componentContext.getService(EndpointXMLService.class);
         
         final String vampZeroInputs = componentContext.getConfigurationValue(VampZeroInitializerComponentConstants.XMLCONTENT);
 
@@ -86,7 +89,6 @@ public class VampZeroInitializerComponent extends DefaultComponent {
         }
         initializeNewHistoryDataItem();
         File tempFile = null;
-        final ComponentVariableMapper varMapper = new ComponentVariableMapper();
         String cpacs = "";
         try {
             tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("VAMPZeroInitializer-*.xml");
@@ -103,7 +105,7 @@ public class VampZeroInitializerComponent extends DefaultComponent {
                 historyDataItem.setPlainXMLFileReference(cpacs);
             }
             try {
-                varMapper.updateXMLWithInputs(tempFile.getAbsolutePath(), variableInputs, componentContext);
+                endpointXmlUtils.updateXMLWithInputs(tempFile, variableInputs, componentContext);
             } catch (DataTypeException e1) {
                 throw new ComponentException(e1.getMessage(), e1);
             }
@@ -118,7 +120,7 @@ public class VampZeroInitializerComponent extends DefaultComponent {
                 LOG.debug(e);
             }
             try {
-                varMapper.updateOutputsFromXML(tempFile.getAbsolutePath(), ChameleonCommonConstants.CHAMELEON_CPACS_NAME, componentContext);
+                endpointXmlUtils.updateOutputsFromXML(tempFile, componentContext);
             } catch (DataTypeException e1) {
                 throw new ComponentException(e1.getMessage(), e1);
             }

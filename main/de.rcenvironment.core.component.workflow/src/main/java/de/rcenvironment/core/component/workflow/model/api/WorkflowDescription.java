@@ -25,6 +25,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.EndpointChangeListener;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Describes a {@link WorkflowController} in a way that can be used by a {@link WorkflowRegistry} to
@@ -166,7 +167,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
                 return node;
             }
         }
-        throw new IllegalArgumentException(String.format("No node with identifier %s found", nodeId));
+        throw new IllegalArgumentException(StringUtils.format("No node with identifier %s found", nodeId));
     }
 
     private void addWorkflowNodeWithoutNotify(WorkflowNode node) {

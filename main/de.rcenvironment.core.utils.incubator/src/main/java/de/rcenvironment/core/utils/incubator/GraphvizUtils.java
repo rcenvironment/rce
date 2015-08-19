@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.PrefixingTextOutForwarder;
@@ -62,7 +63,7 @@ public final class GraphvizUtils {
          */
         public void addVertex(String id, String label) {
             vertexOrder.add(id);
-            vertexProperties.put(id, String.format("label=\"%s\"", escapeValue(label)));
+            vertexProperties.put(id, StringUtils.format("label=\"%s\"", escapeValue(label)));
         }
 
         /**
@@ -76,7 +77,7 @@ public final class GraphvizUtils {
         public void addVertexProperty(String id, String key, String value) {
             String oldValue = vertexProperties.get(id);
             // append new key-value pair
-            String newValue = String.format("%s,%s=\"%s\"", oldValue, key, escapeValue(value));
+            String newValue = StringUtils.format("%s,%s=\"%s\"", oldValue, key, escapeValue(value));
             vertexProperties.put(id, newValue);
         }
 
@@ -89,7 +90,7 @@ public final class GraphvizUtils {
          */
         public void addEdge(String fromId, String toId, String label) {
             // simple, direct approach; change to a map to allow adding properties later
-            edgeScriptLines.add(String.format("    v_%s->v_%s[label=\"%s\"];\n",
+            edgeScriptLines.add(StringUtils.format("    v_%s->v_%s[label=\"%s\"];\n",
                 escapeVertexId(fromId), escapeVertexId(toId), escapeValue(label)));
         }
 
@@ -106,10 +107,10 @@ public final class GraphvizUtils {
             if (properties != null) {
                 for (Map.Entry<String, String> entry : properties.entrySet()) {
                     additionalProperties =
-                        String.format("%s,%s=\"%s\"", additionalProperties, entry.getKey(), escapeValue(entry.getValue()));
+                        StringUtils.format("%s,%s=\"%s\"", additionalProperties, entry.getKey(), escapeValue(entry.getValue()));
                 }
             }
-            edgeScriptLines.add(String.format("    v_%s->v_%s[label=\"%s\"%s];\n",
+            edgeScriptLines.add(StringUtils.format("    v_%s->v_%s[label=\"%s\"%s];\n",
                 escapeVertexId(fromId), escapeVertexId(toId), escapeVertexId(label), additionalProperties));
         }
 
@@ -124,7 +125,7 @@ public final class GraphvizUtils {
             buffer.append(graphName);
             buffer.append(" {\n");
             for (String vertexId : vertexOrder) {
-                buffer.append(String.format("    v_%s[%s];\n", escapeVertexId(vertexId), vertexProperties.get(vertexId)));
+                buffer.append(StringUtils.format("    v_%s[%s];\n", escapeVertexId(vertexId), vertexProperties.get(vertexId)));
             }
             for (String edge : edgeScriptLines) {
                 buffer.append(edge);

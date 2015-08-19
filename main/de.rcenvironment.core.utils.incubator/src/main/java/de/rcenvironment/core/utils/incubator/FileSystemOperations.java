@@ -21,6 +21,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Provides reusable file system operations.
  * 
@@ -52,16 +54,16 @@ public final class FileSystemOperations {
                     Files.delete(file);
                     stats.filesDeleted++;
                 } catch (IOException e) {
-                    log.warn(String.format("Failed to delete %s: %s", file.toString(), e.toString()));
+                    log.warn(StringUtils.format("Failed to delete %s: %s", file.toString(), e.toString()));
                     stats.errors++;
                 }
             } else if (attrs.isSymbolicLink()) {
                 try {
-                    log.debug(String.format("Deleting symbolic link %s", file.toString()));
+                    log.debug(StringUtils.format("Deleting symbolic link %s", file.toString()));
                     Files.delete(file); // note: this deletes the symlink, NOT the target it points to
                     stats.symlinksDeleted++;
                 } catch (IOException e) {
-                    log.warn(String.format("Failed to delete symbolic link %s: %s", file.toString(), e.toString()));
+                    log.warn(StringUtils.format("Failed to delete symbolic link %s: %s", file.toString(), e.toString()));
                     stats.errors++;
                 }
             } else {
@@ -81,11 +83,11 @@ public final class FileSystemOperations {
             // If the directory is a junction, the junction itself is deleted, but the contents are not.
             if (attrs.isOther()) {
                 try {
-                    log.debug(String.format("Deleting junction point %s", dir.toString()));
+                    log.debug(StringUtils.format("Deleting junction point %s", dir.toString()));
                     Files.delete(dir);
                     stats.junctionsDeleted++;
                 } catch (IOException e) {
-                    log.warn(String.format("Failed to delete junction point %s: %s", dir.toString(), e.toString()));
+                    log.warn(StringUtils.format("Failed to delete junction point %s: %s", dir.toString(), e.toString()));
                     stats.errors++;
                 }
                 return FileVisitResult.SKIP_SUBTREE;
@@ -99,7 +101,7 @@ public final class FileSystemOperations {
                 Files.delete(dir);
                 stats.directoriesDeleted++;
             } catch (DirectoryNotEmptyException e) {
-                log.warn(String.format("Cannot delete directory %s as it is not empty", dir.toString()));
+                log.warn(StringUtils.format("Cannot delete directory %s as it is not empty", dir.toString()));
                 // do not count this as an error, as it is usually the follow-up of a previous error
             }
             return super.postVisitDirectory(dir, exc);
@@ -110,12 +112,12 @@ public final class FileSystemOperations {
             try {
                 /* One possibility why the visit could have failed is that the file is a junction to a directory that does not exist
                  anymore. Therefore, the file is deleted now.*/
-                log.debug(String.format("Deleting unknown type of file/directory %s (possibly a link/junction to a non-existing target)",
-                    file.toString()));
+                log.debug(StringUtils.format(
+                    "Deleting unknown type of file/directory %s (possibly a link/junction to a non-existing target)", file.toString()));
                 Files.delete(file);
                 stats.unknownDeleted++;
             } catch (IOException e1) {
-                log.warn(String.format("Failed to delete unknown type of file/directory %s: %s", file.toString(), e1.toString()));
+                log.warn(StringUtils.format("Failed to delete unknown type of file/directory %s: %s", file.toString(), e1.toString()));
                 stats.errors++;
             }
             return FileVisitResult.CONTINUE;
@@ -166,7 +168,7 @@ public final class FileSystemOperations {
             // note: this call does not follow symlinks when traversing
             Files.walkFileTree(absoluteDirectory.toPath(), new FilesAndDirsDeletionFileVisitor(log, stats));
         } catch (IOException e) {
-            log.error(String.format("Uncaught exception while trying to delete directory %s", absoluteDirectory.toString()), e);
+            log.error(StringUtils.format("Uncaught exception while trying to delete directory %s", absoluteDirectory.toString()), e);
         }
         if (!directory.exists()) {
             log.debug(String

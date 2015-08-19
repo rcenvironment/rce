@@ -8,6 +8,8 @@
 
 package de.rcenvironment.components.sql.common;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Input mode options.
  * 
@@ -44,7 +46,7 @@ public enum InputMode {
                 return mode;
             }
         }
-        throw new IllegalArgumentException(String.format("No Mode with label '%s'.", label));
+        throw new IllegalArgumentException(StringUtils.format("No Mode with label '%s'.", label));
     }
 
     /**

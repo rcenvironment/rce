@@ -15,6 +15,7 @@ import java.util.List;
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Validator for converger component.
@@ -47,7 +48,7 @@ public class ConvergerWorkflowNodeValidator extends AbstractWorkflowNodeValidato
         String prop = getProperty(key);
         
         if (prop == null || prop.isEmpty()) {
-            String text = String.format("'%s' is not defined", getPropertyDisplayName(key));
+            String text = StringUtils.format("'%s' is not defined", getPropertyDisplayName(key));
             messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, key, text, text));
         }
     }

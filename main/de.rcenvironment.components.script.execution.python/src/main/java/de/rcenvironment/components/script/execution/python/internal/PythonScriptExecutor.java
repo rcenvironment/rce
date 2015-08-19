@@ -12,9 +12,11 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.script.ScriptException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
@@ -27,12 +29,15 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyle
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
+import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
-import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.python.PythonComponentConstants;
 import de.rcenvironment.core.scripting.python.PythonScriptContext;
 import de.rcenvironment.core.scripting.python.PythonScriptEngine;
 import de.rcenvironment.core.utils.common.OSFamily;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
@@ -48,19 +53,13 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
 
     private static final String OS = "os";
 
+    private static final Log LOGGER = LogFactory.getLog(PythonScriptExecutor.class);
+
     private PythonScriptContext scriptContext;
 
-    private Map<String, Object> stateMap;
-
     @Override
-    public void reset() {
-        stateMap = new HashMap<String, Object>();
-    }
-
-    @Override
-    public boolean prepareExecutor(ComponentContext compCtx, DistributedNotificationService inNotificationService) {
-        super.prepareExecutor(compCtx, inNotificationService);
-        notificationService = inNotificationService;
+    public boolean prepareExecutor(ComponentContext compCtx) {
+        super.prepareExecutor(compCtx);
         componentContext = compCtx;
         String pythonInstallation = componentContext.getConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION);
         scriptContext = new PythonScriptContext();
@@ -68,6 +67,8 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         scriptContext.setAttribute(OS, OSFamily.getLocal(), 0);
         scriptContext.setAttribute(PythonComponentConstants.COMPONENT_CONTEXT, componentContext, 0);
         stateMap = new HashMap<String, Object>();
+        scriptingService = compCtx.getService(ScriptingService.class);
+
         return true;
     }
 
@@ -89,7 +90,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         scriptContext.removeAttribute(PythonComponentConstants.RUN_NUMBER, 0);
         scriptContext.setAttribute(PythonComponentConstants.RUN_NUMBER, getCurrentRunNumber(), 0);
         ((PythonScriptEngine) scriptEngine).createNewExecutor(historyDataItem);
-
+        typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
     }
 
     @Override
@@ -113,6 +114,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
     @SuppressWarnings("unchecked")
     @Override
     public boolean postRun() throws ComponentException {
+        TypedDatumFactory factory = componentContext.getService(TypedDatumService.class).getFactory();
         for (String outputName : componentContext.getOutputs()) {
             DataType type = componentContext.getOutputDataType(outputName);
             List<Object> resultList = (List<Object>) scriptEngine.get(outputName);
@@ -122,24 +124,24 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                     if (o != null) {
                         switch (type) {
                         case ShortText:
-                            outputValue = typedDatumFactory.createShortText(String.valueOf(o));
+                            outputValue = factory.createShortText(String.valueOf(o));
                             break;
                         case Boolean:
-                            outputValue = typedDatumFactory.createBoolean(Boolean.parseBoolean(String.valueOf(o)));
+                            outputValue = factory.createBoolean(Boolean.parseBoolean(String.valueOf(o)));
                             break;
                         case Float:
                             try {
-                                outputValue = typedDatumFactory.createFloat(Double.parseDouble(String.valueOf(o)));
+                                outputValue = factory.createFloat(Double.parseDouble(String.valueOf(o)));
                             } catch (NumberFormatException e) {
-                                LOGGER.error(String.format("Output %s could not be parsed to data type Float", o.toString()));
+                                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Float", o.toString()));
                                 throw new ComponentException(e);
                             }
                             break;
                         case Integer:
                             try {
-                                outputValue = typedDatumFactory.createInteger(Long.parseLong(String.valueOf(o)));
+                                outputValue = factory.createInteger(Long.parseLong(String.valueOf(o)));
                             } catch (NumberFormatException e) {
-                                LOGGER.error(String.format("Output %s could not be parsed to data type Integer", o.toString()));
+                                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Integer", o.toString()));
                                 throw new ComponentException(e);
                             }
                             break;
@@ -150,11 +152,11 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             outputValue = handleFileOrDirectoryOutput(outputName, outputValue, "directory", o);
                             break;
                         case Empty:
-                            outputValue = typedDatumFactory.createEmpty();
+                            outputValue = factory.createEmpty();
                             break;
                         case Vector:
                             List<Object> resultVector = (List<Object>) o;
-                            VectorTD vector = typedDatumFactory.createVector(resultVector.size());
+                            VectorTD vector = factory.createVector(resultVector.size());
                             int index = 0;
                             for (Object element : resultVector) {
                                 double convertedValue = 0;
@@ -163,7 +165,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                 } else {
                                     convertedValue = (Double) element;
                                 }
-                                vector.setFloatTDForElement(typedDatumFactory.createFloat(convertedValue), index);
+                                vector.setFloatTDForElement(factory.createFloat(convertedValue), index);
                                 index++;
                             }
                             outputValue = vector;
@@ -182,7 +184,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                     }
                                     i++;
                                 }
-                                outputValue = typedDatumFactory.createSmallTable(result);
+                                outputValue = factory.createSmallTable(result);
                             } else {
                                 int i = 0;
                                 for (Object element : rowArray) {
@@ -190,13 +192,13 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                     result[i][0] = getTypedDatum(element);
                                     i++;
                                 }
-                                outputValue = typedDatumFactory.createSmallTable(result);
+                                outputValue = factory.createSmallTable(result);
                             }
                             break;
                         default:
-                            outputValue = typedDatumFactory.createShortText(o.toString()); // should
-                                                                                           // not
-                                                                                           // happen
+                            outputValue = factory.createShortText(o.toString()); // should
+                                                                                 // not
+                                                                                 // happen
                         }
                         componentContext.writeOutput(outputName, outputValue);
                     }
@@ -205,7 +207,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         }
 
         for (String outputName : ((PythonScriptEngine) scriptEngine).getNotAValueOutputsList()) {
-            componentContext.writeOutput(outputName, typedDatumFactory.createNotAValue());
+            componentContext.writeOutput(outputName, factory.createNotAValue());
         }
 
         stateMap = ((PythonScriptEngine) scriptEngine).getStateOutput();
@@ -227,11 +229,14 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
             if (file.exists()) {
                 if (type.equals("directory")) {
                     outputValue =
-                        componentDatamanagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, file,
+                        componentContext.getService(ComponentDataManagementService.class).createDirectoryReferenceTDFromLocalDirectory(
+                            componentContext, file,
                             file.getName());
                 } else {
-                    outputValue = componentDatamanagementService.createFileReferenceTDFromLocalFile(componentContext, file,
-                        file.getName());
+                    outputValue =
+                        componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(
+                            componentContext, file,
+                            file.getName());
                 }
                 if (file.getAbsolutePath().startsWith(
                     componentContext.getService(ConfigurationService.class)
@@ -239,12 +244,12 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                     tempFiles.add(file);
                 }
             } else {
-                throw new ComponentException(String.format(
+                throw new ComponentException(StringUtils.format(
                     "Could not write %s for output \"%s\" because it does not exist: %s", type, outputName,
                     file.getAbsolutePath()));
             }
         } catch (IOException e) {
-            throw new ComponentException(String.format(
+            throw new ComponentException(StringUtils.format(
                 "Storing directory in the data management failed. No directory is written to output '%s'",
                 outputName), e);
         }
@@ -257,10 +262,5 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         if (scriptEngine != null) {
             ((PythonScriptEngine) scriptEngine).dispose();
         }
-    }
-
-    @Override
-    protected void bindComponentDataManagementService(ComponentDataManagementService compDataManagementService) {
-        componentDatamanagementService = compDataManagementService;
     }
 }

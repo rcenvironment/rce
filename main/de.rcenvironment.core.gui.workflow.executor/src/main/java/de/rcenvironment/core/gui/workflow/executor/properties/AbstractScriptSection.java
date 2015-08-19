@@ -12,6 +12,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
@@ -26,9 +27,11 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Abstract component for the ScriptSection.
@@ -49,9 +52,18 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
     /** None supported. */
     public static final int NO_SCRIPT_FILENAME = 8;
 
+    /** Check WhiteSpaceCharacter key. */
+    public static final String CHECKBOX_KEY = "checkShowWhitespace";
+
+    private static final String KEY_SCRIPT_WHITESPACE_BOX = "ScriptWhitespaceBox";
+
     private static final int MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT = 500;
 
     protected Button openInEditorButton;
+
+    protected Button checkBoxWhitespace;
+
+    protected WhitespaceShowListener whitespaceListener;
 
     protected Composite newScriptArea;
 
@@ -61,8 +73,14 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     private final String scriptName;
 
+    private final PersistentSettingsService persistentSettingsService;
+
     public AbstractScriptSection(int style, String scriptName) {
         this.scriptName = scriptName;
+        whitespaceListener = new WhitespaceShowListener();
+        persistentSettingsService =
+            ServiceRegistry.createAccessFor(this).getService(PersistentSettingsService.class);
+
     }
 
     /**
@@ -93,10 +111,13 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         gridData.horizontalAlignment = GridData.FILL;
 
         openInEditorButton = factory.createButton(jobParent, Messages.openInEditor, SWT.PUSH);
+        checkBoxWhitespace = factory.createButton(jobParent, Messages.showWhitespace, SWT.CHECK);
+
         openInEditorButton.addSelectionListener(new SelectionListener() {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
+
                 esr = new EditScriptRunnable(node);
                 esr.run();
             }
@@ -133,17 +154,42 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         final int aKeyCode = 97;
 
         scriptingText = new StyledText(newScriptArea, SWT.MULTI | SWT.V_SCROLL | SWT.BORDER);
+
         scriptingText.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
         scriptingText.addKeyListener(new KeyAdapter() {
 
             @Override
             public void keyPressed(KeyEvent e) {
+
                 if (e.stateMask == SWT.CTRL && e.keyCode == aKeyCode) {
                     scriptingText.selectAll();
                 }
+
                 updateEditor(node);
+
             }
 
+        });
+
+        whitespaceListener.setScriptingText(scriptingText);
+        scriptingText.addPaintListener(whitespaceListener);
+
+        checkBoxWhitespace.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(org.eclipse.swt.events.SelectionEvent e) {
+                boolean selected = checkBoxWhitespace.getSelection();
+                if (selected) {
+                    whitespaceListener.setOn(true);
+                    whitespaceListener.drawStyledText();
+                    updateEditor(node);
+
+                } else {
+                    whitespaceListener.setOn(false);
+                    whitespaceListener.redrawAll();
+                }
+                persistentSettingsService.saveStringValue(KEY_SCRIPT_WHITESPACE_BOX, String.valueOf(checkBoxWhitespace.getSelection()));
+            }
         });
 
         scriptingText.setLayoutData(gridData);
@@ -156,7 +202,9 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
     }
 
     private void updateEditor(WorkflowNode node) {
+
         if (esr != null && scriptingText != null && esr.getNode().equals(node)) {
+
             esr.update(scriptingText.getText());
         }
     }
@@ -165,6 +213,17 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
     public void aboutToBeShown() {
         super.aboutToBeShown();
         refresh();
+        String whitespaceBoxSelection = persistentSettingsService.readStringValue(KEY_SCRIPT_WHITESPACE_BOX);
+        if (whitespaceBoxSelection == null || !Boolean.parseBoolean(whitespaceBoxSelection)) {
+            checkBoxWhitespace.setSelection(false);
+            whitespaceListener.setOn(false);
+            whitespaceListener.redrawAll();
+        } else {
+            checkBoxWhitespace.setSelection(true);
+            whitespaceListener.setOn(true);
+            whitespaceListener.drawStyledText();
+            updateEditor(node);
+        }
     }
 
     private void addResizingListenerForJobScriptingText(final Composite parent) {
@@ -221,6 +280,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         protected String getScriptName() {
             return scriptName;
         }
+
     }
 
 }

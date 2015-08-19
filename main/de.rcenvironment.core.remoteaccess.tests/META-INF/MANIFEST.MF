@@ -1,0 +1,10 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Core Remote Access Tests
+Bundle-SymbolicName: de.rcenvironment.core.remoteaccess.tests
+Bundle-Version: 6.2.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Fragment-Host: de.rcenvironment.core.component.toolaccess
+Require-Bundle: de.rcenvironment.core.utils.testing;bundle-version="6.1.0"
+Import-Package: de.rcenvironment.core.utils.executor.testutils

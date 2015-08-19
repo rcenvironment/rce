@@ -18,6 +18,7 @@ import org.junit.Rule;
 import org.junit.rules.TestName;
 
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
@@ -88,7 +89,7 @@ public abstract class AbstractTransportBasedTest {
             log.warn("When resetting the thread pool, " + queuedCount + " Runnables were still queued");
         }
         // log summary
-        log.debug(String.format("End of test '%s'; Duration: %.3f sec; Communication thread pool size: %d; Global thread count: %d",
+        log.debug(StringUtils.format("End of test '%s'; Duration: %.3f sec; Communication thread pool size: %d; Global thread count: %d",
             getCurrentTestName(), testDuration, threadPoolSize, threadCount));
     }
 

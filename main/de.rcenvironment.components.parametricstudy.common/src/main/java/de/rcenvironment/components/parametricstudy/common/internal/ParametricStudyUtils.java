@@ -9,6 +9,7 @@
 package de.rcenvironment.components.parametricstudy.common.internal;
 
 import de.rcenvironment.components.parametricstudy.common.Study;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Utility class for identifier construction.
@@ -24,10 +25,10 @@ public final class ParametricStudyUtils {
     private ParametricStudyUtils() {}
     
     protected static String createStructureIdentifier(final Study study) {
-        return String.format(STRUCTURE_PATTERN, study.getIdentifier());
+        return StringUtils.format(STRUCTURE_PATTERN, study.getIdentifier());
     }
 
     protected static String createDataIdentifier(final Study study) {
-        return String.format(DATA_PATTERN, study.getIdentifier());
+        return StringUtils.format(DATA_PATTERN, study.getIdentifier());
     }
 }

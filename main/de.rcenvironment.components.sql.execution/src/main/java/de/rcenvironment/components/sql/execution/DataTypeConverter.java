@@ -101,7 +101,7 @@ public final class DataTypeConverter {
             result = factory.createShortText((String) value);
             break;
         default:
-            throw new UnsupportedOperationException("data type can not be converted: " + datatype);
+            throw new UnsupportedOperationException("data type can not be converted: " + datatype.toString());
         }
         return result;
     }

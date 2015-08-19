@@ -17,7 +17,8 @@ import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
-import org.eclipse.ui.handlers.HandlerUtil;
+import org.eclipse.ui.IPageLayout;
+import org.eclipse.ui.PlatformUI;
 
 /**
  * Handler for the WorkflowProjectWizard.
@@ -30,7 +31,10 @@ public class ShowNewWorkflowProjectWizardHandler extends AbstractHandler{
     @Override
     public Object execute(ExecutionEvent event) throws ExecutionException {
         
-        ISelection selection = HandlerUtil.getCurrentSelection(event);
+        //get the selection from the project explorer tree
+        ISelection selection = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().
+            findView(IPageLayout.ID_PROJECT_EXPLORER).getSite().getSelectionProvider().getSelection();
+        
         Shell shell = Display.getCurrent().getActiveShell();
         NewWorkflowProjectWizard wizard = new NewWorkflowProjectWizard(selection);
         WorkflowProjectWizardDialog dialog = new WorkflowProjectWizardDialog(shell, wizard);

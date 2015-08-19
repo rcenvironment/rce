@@ -23,6 +23,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefini
 import de.rcenvironment.core.component.model.endpoint.api.InitialDynamicEndpointDefinition;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Provides information about a single endpoint.
@@ -223,15 +224,15 @@ public class EndpointDefinitionImpl implements Serializable, EndpointDefinition 
 
         // sanity checks
         if (!dataTypes.contains(getDefaultDataType())) {
-            throw new IllegalArgumentException(String.format("Declared default data type '%s' not in declared list of allowed data "
+            throw new IllegalArgumentException(StringUtils.format("Declared default data type '%s' not in declared list of allowed data "
                 + "types '%s'", getDefaultDataType(), dataTypes));
         }
         if (!inputDatumHandlings.contains(getDefaultInputDatumHandling())) {
-            throw new IllegalArgumentException(String.format("Declared default input handling option '%s' not in declared list of "
+            throw new IllegalArgumentException(StringUtils.format("Declared default input handling option '%s' not in declared list of "
                 + "allowed input handling options '%s'", getDefaultInputDatumHandling(), inputDatumHandlings));
         }
         if (!inputExecutionContraints.contains(getDefaultInputExecutionConstraint())) {
-            throw new IllegalArgumentException(String.format("Declared default input execution constraint option '%s' not in "
+            throw new IllegalArgumentException(StringUtils.format("Declared default input execution constraint option '%s' not in "
                 + "declared list of allowed input execution constraint options '%s'", getDefaultInputExecutionConstraint(),
                 inputExecutionContraints));
         }

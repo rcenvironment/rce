@@ -8,8 +8,8 @@
 
 package de.rcenvironment.components.joiner.gui;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
@@ -18,13 +18,13 @@ import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.components.joiner.common.JoinerComponentConstants;
-import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -39,21 +39,19 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPan
  */
 public class JoinerInputSection extends DefaultEndpointPropertySection {
 
+    private static final int MINIMUM_SIZE_CONTROLS = 70;
+
     private static final int CONFIG_COMBO_WIDTH = 95;
 
     private static final int COMPOSITES_HEIGHT = 274;
 
     private static final int MAXIMUM_INPUT_COUNT = 100;
 
-    private int lastInputCount = 2;
+    private Combo dataTypeCombo;
 
-    private DataType lastDataType;
+    private Spinner inputCountSpinner;
 
-    private Combo dataTypes;
-
-    private Combo inputCount;
-
-    private final Map<String, DataType> displayNameToDataType = new HashMap<String, DataType>();
+    private final List<DataType> dataTypesInCombo = new ArrayList<DataType>();
 
     private final EndpointSelectionPane inputPane;
 
@@ -79,68 +77,49 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
 
         section = aTabbedPropertySheetPage.getWidgetFactory().createSection(endpointsComposite, Section.TITLE_BAR);
         section.setText(Messages.joinerConfig);
-
+        GridData sectionData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+        sectionData.horizontalSpan = 2;
+        section.setLayoutData(sectionData);
         configurationComposite = aTabbedPropertySheetPage.getWidgetFactory().createComposite(section);
 
         configurationComposite.setLayout(new GridLayout(2, false));
-
+        GridData cCompData = new GridData();
+        cCompData.horizontalSpan = 2;
+        configurationComposite.setLayoutData(cCompData);
         Label inputTypeLabel = new Label(configurationComposite, SWT.NONE);
         inputTypeLabel.setText(Messages.inputType);
 
-        dataTypes = new Combo(configurationComposite, SWT.READ_ONLY);
+        dataTypeCombo = new Combo(configurationComposite, SWT.READ_ONLY);
+        dataTypeCombo.setData(CONTROL_PROPERTY_KEY, JoinerComponentConstants.DATATYPE);
         GridData gridData = new GridData();
-        gridData.grabExcessHorizontalSpace = true;
-        gridData.horizontalAlignment = SWT.FILL;
-        dataTypes.setLayoutData(gridData);
-        dataTypes.addSelectionListener(new DataTypeChangedListener());
+        gridData.widthHint = MINIMUM_SIZE_CONTROLS;
+        dataTypeCombo.setLayoutData(gridData);
+        dataTypeCombo.addSelectionListener(new DataTypeChangedListener());
 
         Label inputCountLabel = new Label(configurationComposite, SWT.NONE);
         inputCountLabel.setText(Messages.inputCount);
-        inputCount = new Combo(configurationComposite, SWT.READ_ONLY);
-        gridData = new GridData();
-        gridData.grabExcessHorizontalSpace = true;
-        gridData.horizontalAlignment = SWT.FILL;
-        inputCount.setLayoutData(gridData);
-        for (int i = 1; i <= MAXIMUM_INPUT_COUNT; i++) {
-            inputCount.add("" + i);
-        }
-        inputCount.addSelectionListener(new InputCountChangedListener());
-
-        Composite emptyComposite = new Composite(endpointsComposite, SWT.NONE);
-        Display display = Display.getCurrent();
-        emptyComposite.setBackground(display.getSystemColor(SWT.COLOR_WHITE));
-        new Label(emptyComposite, SWT.NONE);
-
+        inputCountSpinner = new Spinner(configurationComposite, SWT.BORDER);
+        inputCountSpinner.setData(CONTROL_PROPERTY_KEY, JoinerComponentConstants.INPUT_COUNT);
+        gridData = new GridData(GridData.GRAB_HORIZONTAL);
+        gridData.widthHint = MINIMUM_SIZE_CONTROLS;
+        inputCountSpinner.setLayoutData(gridData);
+        inputCountSpinner.setMinimum(1);
+        inputCountSpinner.setMaximum(MAXIMUM_INPUT_COUNT);
+        inputCountSpinner.addSelectionListener(new InputCountChangedListener());
         section.moveAbove(inputPane.getControl());
-        emptyComposite.moveAbove(inputPane.getControl());
-
         section.setClient(configurationComposite);
     }
 
     @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
-
-        dataTypes.removeAll();
-        for (DataType dataType : getConfiguration().getInputDescriptionsManager()
-            .getDynamicEndpointDefinition(JoinerComponentConstants.DYNAMIC_INPUT_ID).getPossibleDataTypes()) {
-            dataTypes.add(dataType.getDisplayName());
-            displayNameToDataType.put(dataType.getDisplayName(), dataType);
+        if (dataTypeCombo.getItemCount() == 0) {
+            for (DataType dataType : getConfiguration().getInputDescriptionsManager()
+                .getDynamicEndpointDefinition(JoinerComponentConstants.DYNAMIC_INPUT_ID).getPossibleDataTypes()) {
+                dataTypeCombo.add(dataType.getDisplayName());
+                dataTypesInCombo.add(dataType);
+            }
         }
-
-        lastDataType =
-            getConfiguration().getOutputDescriptionsManager().getEndpointDescription(JoinerComponentConstants.OUTPUT_NAME).getDataType();
-        dataTypes.select(dataTypes.indexOf(lastDataType.getDisplayName()));
-
-        ConfigurationDescription config =
-            getConfiguration().getConfigurationDescription();
-        if (getProperty(JoinerComponentConstants.OUTPUT_NAME) != null) {
-            lastInputCount =
-                Integer.valueOf(config.getConfigurationValue(JoinerComponentConstants.OUTPUT_NAME));
-        } else {
-            lastInputCount = getInputs().size();
-        }
-        inputCount.select(inputCount.indexOf("" + lastInputCount));
     }
 
     @Override
@@ -149,8 +128,8 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         configurationComposite.setSize(parentComposite.getParent().getSize().x, COMPOSITES_HEIGHT);
         endpointsComposite.setSize(parentComposite.getParent().getSize().x, COMPOSITES_HEIGHT);
         parentComposite.setSize(parentComposite.getParent().getSize().x, COMPOSITES_HEIGHT);
-        inputCount.setSize(CONFIG_COMBO_WIDTH, inputCount.getSize().y);
-        dataTypes.setSize(CONFIG_COMBO_WIDTH, dataTypes.getSize().y);
+        inputCountSpinner.setSize(CONFIG_COMBO_WIDTH, inputCountSpinner.getSize().y);
+        dataTypeCombo.setSize(CONFIG_COMBO_WIDTH, dataTypeCombo.getSize().y);
     };
 
     /**
@@ -164,7 +143,7 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         @Override
         public void widgetSelected(SelectionEvent arg0) {
 
-            DataType newDataType = displayNameToDataType.get(dataTypes.getText());
+            DataType newDataType = dataTypesInCombo.get(dataTypeCombo.getSelectionIndex());
 
             EndpointDescription oldInput = getConfiguration().getInputDescriptionsManager()
                 .getEndpointDescription(JoinerComponentConstants.INPUT_NAME + "001");
@@ -173,11 +152,7 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
 
             if (EndpointHandlingHelper.editEndpointDataType(EndpointType.INPUT, oldInput, newDataType)
                 && EndpointHandlingHelper.editEndpointDataType(EndpointType.OUTPUT, oldOutput, newDataType)) {
-
-                execute(new JoinerEditDynamicEndpointCommand(lastInputCount, lastDataType, newDataType, dataTypes, inputPane,
-                    outputPane));
-
-                lastDataType = newDataType;
+                execute(new JoinerEditDynamicEndpointCommand(newDataType));
             }
         }
 
@@ -197,20 +172,66 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
 
         @Override
         public void widgetSelected(SelectionEvent event) {
-            int newCount = inputCount.getSelectionIndex() + 1;
+            int newCount = inputCountSpinner.getSelection();
             if (newCount != getInputs().size()) {
-                execute(new JoinerAddOrRemoveDynamicEndpointsCommand(getInputs().size(), lastInputCount, newCount, lastDataType,
-                    inputCount,
-                    inputPane));
-                lastInputCount = newCount;
-                ConfigurationDescription config = getConfiguration().getConfigurationDescription();
-                config.setConfigurationValue(JoinerComponentConstants.OUTPUT_NAME, String.valueOf(newCount));
+                execute(new JoinerAddOrRemoveDynamicEndpointsCommand(newCount));
             }
         }
 
         @Override
         public void widgetDefaultSelected(SelectionEvent event) {
             widgetSelected(event);
+        }
+    }
+
+    @Override
+    protected Synchronizer createSynchronizer() {
+        return new JoinerWidgetsSynchronizer();
+    }
+
+    @Override
+    protected Updater createUpdater() {
+        return new JoinerConfigrationWidgetsUpdater();
+    }
+
+    /**
+     * Joiner-specific implementation of {@link Updater}.
+     * 
+     * @author Doreen Seider
+     *
+     */
+    private class JoinerConfigrationWidgetsUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(final Control control, final String propertyName, final String newValue,
+            final String oldValue) {
+            if (propertyName.equals(JoinerComponentConstants.DATATYPE)) {
+                dataTypeCombo.select(dataTypesInCombo.indexOf(DataType.valueOf(newValue)));
+            } else {
+                super.updateControl(control, propertyName, newValue, oldValue);
+            }
+        }
+    }
+
+    /**
+     * Joiner-specific implementation of {@link Synchronizer}.
+     * 
+     * @author Doreen Seider
+     *
+     */
+    private class JoinerWidgetsSynchronizer extends DefaultSynchronizer {
+
+        @Override
+        protected void handlePropertyChange(Control control, String key, String newValue, String oldValue) {
+            if (key.equals(JoinerComponentConstants.DATATYPE)) {
+                dataTypeCombo.select(dataTypesInCombo.indexOf(DataType.valueOf(newValue)));
+                inputPane.refresh();
+                outputPane.refresh();
+                return;
+            } else if (key.equals(JoinerComponentConstants.INPUT_COUNT)) {
+                inputPane.refresh();
+            }
+            super.handlePropertyChange(control, key, newValue, oldValue);
         }
     }
 

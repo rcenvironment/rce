@@ -107,7 +107,7 @@ public class WizardPropertyEditDialog extends Dialog {
         keyText = new Text(propertyContainer, SWT.BORDER);
         GridData textGridData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
         keyText.setLayoutData(textGridData);
-        keyText.addListener(SWT.Verify, new VariableNameVerifyListener());
+        keyText.addListener(SWT.Verify, new VariableNameVerifyListener(false));
 
         Label displayName = new Label(propertyContainer, SWT.NONE);
         displayName.setText(Messages.displayNameColon);
@@ -120,7 +120,6 @@ public class WizardPropertyEditDialog extends Dialog {
         defaultValueText = new Text(propertyContainer, SWT.BORDER);
         GridData defaultValueData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
         defaultValueText.setLayoutData(defaultValueData);
-
     }
 
     private void saveAllConfig() {
@@ -152,7 +151,7 @@ public class WizardPropertyEditDialog extends Dialog {
         };
 
         keyText.addModifyListener(ml);
-        keyText.addListener(SWT.Verify, new VariableNameVerifyListener());
+        keyText.addListener(SWT.Verify, new VariableNameVerifyListener(true));
         displayNameText.addModifyListener(ml);
         defaultValueText.addModifyListener(ml);
 

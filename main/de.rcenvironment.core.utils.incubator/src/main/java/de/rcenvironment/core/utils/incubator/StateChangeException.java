@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.utils.incubator;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Represents an error that prevented a transition in a state machine to happen.
  * 
@@ -53,7 +55,7 @@ public class StateChangeException extends Exception {
         if (oldState == null && targetState == null) {
             return getMessage();
         } else {
-            return String.format("%s (old state: %s, target state: %s)", getMessage(), oldState, targetState);
+            return StringUtils.format("%s (old state: %s, target state: %s)", getMessage(), oldState, targetState);
         }
     }
 

@@ -32,6 +32,7 @@ import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Test class for data serializer.
@@ -117,49 +118,49 @@ public class DefaultTypedDatumSerializerTest {
 
         // Serialization of BooleanTD
         BooleanTD boolFalse = factory.createBoolean(false);
-        assertEquals(String.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.FALSE.toString()),
+        assertEquals(StringUtils.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.FALSE.toString()),
             serializer.serialize(boolFalse));
 
         // Serialization of BooleanTD
         BooleanTD boolTrue = factory.createBoolean(true);
-        assertEquals(String.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.TRUE.toString()),
+        assertEquals(StringUtils.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.TRUE.toString()),
             serializer.serialize(boolTrue));
 
         // Serialization of ShortTextTD
         ShortTextTD shortText = factory.createShortText(SHORT_TEXT_TEST_VALUE);
-        assertEquals(String.format(JSON_STRING_TEXT, DataType.ShortText.getShortName(), SHORT_TEXT_TEST_VALUE),
+        assertEquals(StringUtils.format(JSON_STRING_TEXT, DataType.ShortText.getShortName(), SHORT_TEXT_TEST_VALUE),
             serializer.serialize(shortText));
 
         // Serialization of IntegerTD
         IntegerTD integer = factory.createInteger(0);
-        assertEquals(String.format(JSON_STRING, DataType.Integer.getShortName(), 0), serializer.serialize(integer));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), 0), serializer.serialize(integer));
 
         integer = factory.createInteger(1);
-        assertEquals(String.format(JSON_STRING, DataType.Integer.getShortName(), 1), serializer.serialize(integer));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), 1), serializer.serialize(integer));
 
         integer = factory.createInteger(Integer.MAX_VALUE);
-        assertEquals(String.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MAX_VALUE), serializer.serialize(integer));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MAX_VALUE), serializer.serialize(integer));
 
         integer = factory.createInteger(Integer.MIN_VALUE);
-        assertEquals(String.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MIN_VALUE), serializer.serialize(integer));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MIN_VALUE), serializer.serialize(integer));
 
         // Serialization of FloatTD
         FloatTD floatData = factory.createFloat(0.0);
-        assertEquals(String.format(JSON_STRING, DataType.Float.getShortName(), 0.0), serializer.serialize(floatData));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), 0.0), serializer.serialize(floatData));
 
         floatData = factory.createFloat(1.0);
-        assertEquals(String.format(JSON_STRING, DataType.Float.getShortName(), 1.0), serializer.serialize(floatData));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), 1.0), serializer.serialize(floatData));
 
         floatData = factory.createFloat(Double.MAX_VALUE);
-        assertEquals(String.format(JSON_STRING, DataType.Float.getShortName(), Double.MAX_VALUE), serializer.serialize(floatData));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), Double.MAX_VALUE), serializer.serialize(floatData));
 
         floatData = factory.createFloat(Double.MIN_VALUE);
-        assertEquals(String.format(JSON_STRING, DataType.Float.getShortName(), Double.MIN_VALUE), serializer.serialize(floatData));
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), Double.MIN_VALUE), serializer.serialize(floatData));
 
         // Serialization of DateTimeTD
         Long currentMillis = System.currentTimeMillis();
         DateTimeTD dateTime = factory.createDateTime(currentMillis);
-        assertEquals(String.format(JSON_STRING, DataType.DateTime.getShortName(), String.valueOf(currentMillis)),
+        assertEquals(StringUtils.format(JSON_STRING, DataType.DateTime.getShortName(), String.valueOf(currentMillis)),
             serializer.serialize(dateTime));
 
         // Serialization of VectorTD
@@ -227,42 +228,42 @@ public class DefaultTypedDatumSerializerTest {
         // Deserialization of BooleanTD
         BooleanTD boolFalse = factory.createBoolean(false);
         assertEquals(boolFalse,
-            serializer.deserialize(String.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.FALSE.toString())));
+            serializer.deserialize(StringUtils.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.FALSE.toString())));
 
         BooleanTD boolTrue = factory.createBoolean(true);
         assertEquals(boolTrue,
-            serializer.deserialize(String.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.TRUE.toString())));
+            serializer.deserialize(StringUtils.format(JSON_STRING_TEXT, DataType.Boolean.getShortName(), Boolean.TRUE.toString())));
 
         // Deserialization of ShortTextTD
         ShortTextTD shortText = factory.createShortText(SHORT_TEXT_TEST_VALUE);
         assertEquals(shortText,
-            serializer.deserialize(String.format(JSON_STRING_TEXT, DataType.ShortText.getShortName(), SHORT_TEXT_TEST_VALUE)));
+            serializer.deserialize(StringUtils.format(JSON_STRING_TEXT, DataType.ShortText.getShortName(), SHORT_TEXT_TEST_VALUE)));
 
         // Deserialization of IntegerTD
         IntegerTD integer = factory.createInteger(5);
-        assertEquals(integer, serializer.deserialize(String.format(JSON_STRING, DataType.Integer.getShortName(), 5)));
+        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), 5)));
 
         integer = factory.createInteger(Integer.MAX_VALUE);
-        assertEquals(integer, serializer.deserialize(String.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MAX_VALUE)));
+        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MAX_VALUE)));
 
         integer = factory.createInteger(Integer.MIN_VALUE);
-        assertEquals(integer, serializer.deserialize(String.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MIN_VALUE)));
+        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MIN_VALUE)));
 
         // Deserialization of FloatTD
         FloatTD floatData = factory.createFloat(5.0);
-        assertEquals(floatData, serializer.deserialize(String.format(JSON_STRING, DataType.Float.getShortName(), 5.0)));
+        assertEquals(floatData, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), 5.0)));
 
         floatData = factory.createFloat(Double.MAX_VALUE);
-        assertEquals(floatData, serializer.deserialize(String.format(JSON_STRING, DataType.Float.getShortName(), Double.MAX_VALUE)));
+        assertEquals(floatData, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), Double.MAX_VALUE)));
 
         floatData = factory.createFloat(Double.MIN_VALUE);
-        assertEquals(floatData, serializer.deserialize(String.format(JSON_STRING, DataType.Float.getShortName(), Double.MIN_VALUE)));
+        assertEquals(floatData, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Float.getShortName(), Double.MIN_VALUE)));
 
         // Deserialization of DateTimeTD
         Long currentMillis = System.currentTimeMillis();
         DateTimeTD dateTime = factory.createDateTime(currentMillis);
         assertEquals(dateTime,
-            serializer.deserialize(String.format(JSON_STRING, DataType.DateTime.getShortName(), String.valueOf(currentMillis))));
+            serializer.deserialize(StringUtils.format(JSON_STRING, DataType.DateTime.getShortName(), String.valueOf(currentMillis))));
 
         // Deserialization of VectorTD
         FloatTD[] vectorEntries =
@@ -332,13 +333,13 @@ public class DefaultTypedDatumSerializerTest {
     }
 
     private String getFileReferenceString() {
-        return String.format(JSON_STRING, DataType.FileReference.getShortName(), "{\"fileReference\":\"example reference\",\"fileName\""
-            + ":\"example filename\",\"fileSize\":0}");
+        return StringUtils.format(JSON_STRING, DataType.FileReference.getShortName(),
+            "{\"fileReference\":\"example reference\",\"fileName\"" + ":\"example filename\",\"fileSize\":0}");
     }
 
     private String getFileReferenceWithModifiedString() {
-        return String.format(JSON_STRING, DataType.FileReference.getShortName(), "{\"fileReference\":\"example reference\",\"fileName\""
-            + ":\"example filename\",\"fileSize\":1024,\"lastModified\":0}");
+        return StringUtils.format(JSON_STRING, DataType.FileReference.getShortName(),
+            "{\"fileReference\":\"example reference\",\"fileName\"" + ":\"example filename\",\"fileSize\":1024,\"lastModified\":0}");
     }
 
     private String getVectorString(FloatTD[] vectorEntries) {
@@ -349,7 +350,7 @@ public class DefaultTypedDatumSerializerTest {
                 value += COMMA_STRING;
             }
         }
-        return String.format(JSON_STRING_ARRAY, DataType.Vector.getShortName(), value);
+        return StringUtils.format(JSON_STRING_ARRAY, DataType.Vector.getShortName(), value);
     }
 
     private String getMatrixString(FloatTD[][] matrixEntries) {
@@ -372,7 +373,7 @@ public class DefaultTypedDatumSerializerTest {
                 value += COMMA_STRING;
             }
         }
-        return String.format(JSON_STRING_DIMENSION_ARRAY, DataType.Matrix.getShortName(), rows, cols, value);
+        return StringUtils.format(JSON_STRING_DIMENSION_ARRAY, DataType.Matrix.getShortName(), rows, cols, value);
     }
 
     private String getSmallTableString(TypedDatum[][] tableEntries) {
@@ -395,7 +396,7 @@ public class DefaultTypedDatumSerializerTest {
                 value += COMMA_STRING;
             }
         }
-        return String.format(JSON_STRING_DIMENSION_ARRAY, DataType.SmallTable.getShortName(), rows, cols, value);
+        return StringUtils.format(JSON_STRING_DIMENSION_ARRAY, DataType.SmallTable.getShortName(), rows, cols, value);
     }
     
     

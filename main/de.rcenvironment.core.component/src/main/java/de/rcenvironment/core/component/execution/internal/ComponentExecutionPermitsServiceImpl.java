@@ -19,6 +19,7 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -73,18 +74,21 @@ public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionP
                 }
                 return null;
             }
-        }, String.format("Waiting for execution lock for component '%s' - %s", componentIdentifier, executionIdentifier));
+        }, StringUtils.format("Waiting for execution lock for component '%s' - %s", componentIdentifier, executionIdentifier));
     }
 
     @Override
     public synchronized void release(final String componentIdentifier) {
+        if (semaphores == null) {
+            updateSemaphores(componentKnowledgeService.getCurrentComponentKnowledge());
+        }
         if (semaphores.containsKey(componentIdentifier)) {
             semaphores.get(componentIdentifier).release();
         }
     }
     
     /**
-     * Reduced {@link Semaphore} that allows to increase and decrease maximum permits.
+     * Resizable {@link Semaphore} that allows to increase and decrease maximum permits.
      * 
      * @author Doreen Seider
      */
@@ -105,8 +109,10 @@ public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionP
             semaphore.acquire();
         }
         
-        protected void release() {
-            semaphore.release();
+        protected synchronized void release() {
+            if (semaphore.availablePermits() < maxPermits) {
+                semaphore.release();                
+            }
         }
         
         protected void updateMaximumPermits(int newMaxPermits) {

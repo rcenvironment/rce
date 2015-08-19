@@ -19,6 +19,7 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Component to get data to convergence.
@@ -75,8 +76,8 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
     }
 
     private void addValuesToLastIterationsValues() {
-        for (String key : iterationsValues.keySet()) {
-            iterationsValues.get(key).add(((FloatTD) componentContext.readInput(key)).getFloatValue());
+        for (String inputName : iterationsValues.keySet()) {
+            iterationsValues.get(inputName).add(((FloatTD) componentContext.readInput(inputName)).getFloatValue());
         }
     }
 
@@ -101,13 +102,13 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
                     isConvergedRel = false;
                 }
                 convergenceChecks++;
-                componentContext.printConsoleLine(String.format("%s -> min: %s; max: %s; converged abs: %s; converged rel: %s",
+                componentContext.printConsoleLine(StringUtils.format("%s -> min: %s; max: %s; converged abs: %s; converged rel: %s",
                     inputName + convergenceChecks, minValue, maxValue, isConvergedAbs, isConvergedRel), ConsoleRow.Type.STDOUT);
             } else {
                 isConvergedAbs = false;
                 isConvergedRel = false;
                 componentContext.printConsoleLine(
-                    String.format("%s -> skipped convergence check - not enough iterations yet (current: %s, required: %s)",
+                    StringUtils.format("%s -> skipped convergence check - not enough iterations yet (current: %s, required: %s)",
                         inputName + convergenceChecks, convergenceChecks, iterationsToConsider), ConsoleRow.Type.STDOUT);
             }
         }

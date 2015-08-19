@@ -1,6 +1,6 @@
 {
   "identifier" : "2610a723-29fb-45a7-b68c-1232949946bd",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "nodes" : [ {
     "identifier" : "b707d4e9-d642-4080-9f9e-a2038da06672",
     "name" : "XML Merger",

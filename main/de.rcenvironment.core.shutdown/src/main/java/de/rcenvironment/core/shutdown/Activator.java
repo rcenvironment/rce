@@ -11,6 +11,8 @@ package de.rcenvironment.core.shutdown;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
+import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+
 /**
  * Activator for shutdown.
  *
@@ -32,7 +34,7 @@ public class Activator implements BundleActivator {
     @Override
     public void start(BundleContext bundleContext) throws Exception {
         HeadlessShutdown shutdown = new HeadlessShutdown();
-        shutdown.execute();
+        shutdown.executeByLaunchConfiguration(BootstrapConfiguration.getInstance());
     }
 
     /*

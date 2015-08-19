@@ -21,7 +21,6 @@ import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
-import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
@@ -31,9 +30,7 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  */
 public class ScriptComponent extends DefaultComponent {
 
-    private static DistributedNotificationService notificationService;
-
-    private static ScriptExecutorFactoryRegistry scriptExecutorRegistry;
+    private ScriptExecutorFactoryRegistry scriptExecutorRegistry;
 
     private ComponentContext componentContext;
 
@@ -61,13 +58,11 @@ public class ScriptComponent extends DefaultComponent {
     public void start() throws ComponentException {
 
         scriptExecutorRegistry = componentContext.getService(ScriptExecutorFactoryRegistry.class);
-        notificationService = componentContext.getService(DistributedNotificationService.class);
-
         String language = componentContext.getConfigurationValue("scriptLanguage");
-        executor = scriptExecutorRegistry.requestScriptExecutor(ScriptLanguage.getByName(language));
+        setExecutor(scriptExecutorRegistry.requestScriptExecutor(ScriptLanguage.getByName(language)));
         scriptLanguage = ScriptLanguage.getByName(language);
         script = componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT);
-        executor.prepareExecutor(componentContext, notificationService);
+        executor.prepareExecutor(componentContext);
 
         if (treatStartAsComponentRun()) {
             processInputs();
@@ -99,6 +94,10 @@ public class ScriptComponent extends DefaultComponent {
         }
         executor.deleteTempFiles();
         writeFinalHistoryDataItem();
+    }
+
+    public void setExecutor(ScriptExecutor executor) {
+        this.executor = executor;
     }
 
     @Override

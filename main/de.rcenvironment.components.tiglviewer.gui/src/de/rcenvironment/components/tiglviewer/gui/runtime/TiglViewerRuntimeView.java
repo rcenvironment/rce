@@ -10,6 +10,7 @@ package de.rcenvironment.components.tiglviewer.gui.runtime;
 import java.io.File;
 import java.io.IOException;
 
+import org.apache.commons.exec.OS;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.widgets.Display;
@@ -59,11 +60,14 @@ public class TiglViewerRuntimeView extends TiglViewerView {
                 @TaskDescription("Starting TiGLViewer")
                 public void run() {
                     Display.getDefault().asyncExec(new Runnable() {
+
                         @Override
                         public void run() {
                             try {
-                                page.showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
-                                    secondId, IWorkbenchPage.VIEW_ACTIVATE);
+                                if (OS.isFamilyWindows()) {
+                                    page.showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
+                                        secondId, IWorkbenchPage.VIEW_ACTIVATE);
+                                }
                             } catch (PartInitException e) {
                                 LOGGER.error(e);
                             }

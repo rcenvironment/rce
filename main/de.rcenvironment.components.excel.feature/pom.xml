@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.components.excel.feature</artifactId>
 	<name>RCE Excel Component Feature</name>
-	<version>6.1.0.qualifier</version>
+	<version>6.2.0.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

@@ -62,6 +62,7 @@ import de.rcenvironment.core.component.registration.api.Registerable;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -381,7 +382,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             references = osgiComponentCtx.getBundleContext().getAllServiceReferences(Registerable.class.getName(), filter);
 
             if (references == null || references.length != 1) {
-                LOGGER.error(String.format(
+                LOGGER.error(StringUtils.format(
                     "No component found which provides the service '%s' and which has the temporary identifier '%s'",
                     Registerable.class.getName(), identifier));
                 return null;
@@ -503,7 +504,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             try {
                 return ComponentColor.valueOf(color.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOGGER.error(String.format("Color declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
+                LOGGER.error(StringUtils.format("Color declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
                     ComponentConstants.COMPONENT_COLOR_KEY, color, Arrays.toString(ComponentColor.values()),
                     ComponentConstants.COMPONENT_COLOR_STANDARD));
             }
@@ -527,7 +528,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             try {
                 return ComponentSize.valueOf(size.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOGGER.error(String.format("Size declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
+                LOGGER.error(StringUtils.format("Size declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
                     ComponentConstants.COMPONENT_SIZE_KEY, size, Arrays.toString(ComponentSize.values()),
                     ComponentConstants.COMPONENT_SIZE_STANDARD));
             }
@@ -541,7 +542,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             try {
                 return ComponentShape.valueOf(shape.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOGGER.error(String.format("Shape declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
+                LOGGER.error(StringUtils.format("Shape declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
                     ComponentConstants.COMPONENT_SHAPE_KEY, shape, Arrays.toString(ComponentShape.values()),
                     ComponentConstants.COMPONENT_SHAPE_STANDARD));
             }

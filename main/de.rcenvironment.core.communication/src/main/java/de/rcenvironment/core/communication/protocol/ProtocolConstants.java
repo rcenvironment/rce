@@ -10,6 +10,7 @@ package de.rcenvironment.core.communication.protocol;
 
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.model.NetworkResponse;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Constants related to the higher-level network protocol, for example metadata values. This also
@@ -97,7 +98,7 @@ public final class ProtocolConstants {
 
         @Override
         public String toString() {
-            return String.format("%s (%d)", name(), code);
+            return StringUtils.format("%s (%d)", name(), code);
         }
     }
 

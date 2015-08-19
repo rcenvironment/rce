@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.regex.Pattern;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Component to read data from a SQL database.
@@ -47,7 +48,7 @@ public class SQLReaderComponent extends AbstractSQLComponent {
                 builder.append(ALLOWED_PATTERNS[index]);
             }
             builder.append("]");
-            throw new RuntimeException(String.format("Statement of SQL reader component does not have a valid pattern (%s).",
+            throw new RuntimeException(StringUtils.format("Statement of SQL reader component does not have a valid pattern (%s).",
                 builder.toString()));
         }
     }
@@ -66,8 +67,8 @@ public class SQLReaderComponent extends AbstractSQLComponent {
             resultSet = statement.getResultSet();
             distributeResults(resultSet);
         } catch (SQLException e) {
-            logger.error("SQL Exception occured.", e);
-            throw new RuntimeException(e);
+            logger.error("SQL Exception occured. " + e.toString());
+            throw new RuntimeException(e.toString());
         } finally {
             try {
                 if (resultSet != null) {
@@ -78,8 +79,8 @@ public class SQLReaderComponent extends AbstractSQLComponent {
                 }
             } catch (SQLException e) {
                 final String message = "ResultSet or Statement could not be closed properly:";
-                logger.error(message, e);
-                throw new RuntimeException(message, e);
+                logger.error(message + " " + e.toString());
+                throw new RuntimeException(message + " " + e.toString());
             }
         }
     }

@@ -64,6 +64,12 @@ public interface ComponentContext extends ExecutionContext {
      * @return <code>true</code> if input is dynamic, otherwise <code>false</code>
      */
     boolean isDynamicInput(String inputName);
+    
+    /**
+     * @param outputName name of output
+     * @return <code>true</code> if input is dynamic, otherwise <code>false</code>
+     */
+    boolean isDynamicOutput(String outputName);
 
     /**
      * @param inputName name of the input

@@ -36,6 +36,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -545,7 +546,7 @@ public class DOEComponentTest {
         final String table = MINIMAL_CUSTOM_TABLE;
         setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
         exception.expect(ComponentException.class);
-        exception.expectMessage(String.format(DOEComponent.NUMBER_OF_VALUES_PER_SAMPLE_LOWER_THAN_THE_NUMBER_OF_OUTPUTS, 1, 2));
+        exception.expectMessage(StringUtils.format(DOEComponent.NUMBER_OF_VALUES_PER_SAMPLE_LOWER_THAN_THE_NUMBER_OF_OUTPUTS, 1, 2));
         component.start();
     }
 
@@ -596,7 +597,7 @@ public class DOEComponentTest {
         final String table = MINIMAL_CUSTOM_TABLE;
         setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, FIVE, FIVE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
         exception.expect(ComponentException.class);
-        exception.expectMessage(String.format(DOEComponent.START_SAMPLE_VALUE_HIGHER_THAN_THE_NUMBER_OF_SAMPLES, 5, 2));
+        exception.expectMessage(StringUtils.format(DOEComponent.START_SAMPLE_VALUE_HIGHER_THAN_THE_NUMBER_OF_SAMPLES, 5, 2));
         component.start();
 
     }

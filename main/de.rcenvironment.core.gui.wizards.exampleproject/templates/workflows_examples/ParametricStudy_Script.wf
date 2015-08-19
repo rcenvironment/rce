@@ -1,6 +1,6 @@
 {
   "identifier" : "697261b6-eaf5-44ab-af40-6c161a4f26f8",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "nodes" : [ {
     "identifier" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
     "name" : "Parametric Study",

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: Chameleon RCE ToolWrapper Component
 Bundle-SymbolicName: de.rcenvironment.components.toolwrapper.execution;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Import-Package: de.dlr.sc.chameleon.rce.toolwrapper.common,
@@ -17,13 +17,15 @@ Import-Package: de.dlr.sc.chameleon.rce.toolwrapper.common,
  de.rcenvironment.core.component.update.api,
  de.rcenvironment.core.component.update.spi,
  de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.notification,
+ de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.common.variables.legacy,
+ de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.xml,
  de.rcenvironment.cpacs.utils.common.components,
- de.rcenvironment.cpacs.utils.common.xml,
  net.sf.saxon;version="9.4.0.1",
  org.apache.commons.exec;version="1.1.0",
  org.apache.commons.io;version="2.0.1",

@@ -27,6 +27,7 @@ import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.rpc.ServiceProxyFactory;
@@ -57,9 +58,13 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
 
     private NetworkRoutingService routingService;
 
-    private final Log log = LogFactory.getLog(getClass());
-
     private NodeIdentifier localNodeId;
+
+    // NOTE: used in several locations
+    private final boolean forceLocalRPCSerialization = System
+        .getProperty(NodeConfigurationService.SYSTEM_PROPERTY_FORCE_LOCAL_RPC_SERIALIZATION) != null;
+
+    private final Log log = LogFactory.getLog(getClass());
 
     /**
      * OSGi-DS lifecycle method; also called by integration tests.
@@ -164,7 +169,12 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
         StatsCounter.count("CommunicationService.getService()", iface.getName());
 
         if (nodeId == null || platformService.isLocalNode(nodeId)) {
-            return getLocalService(iface, properties, bundleContext);
+            if (forceLocalRPCSerialization) {
+                log.debug("Creating service proxy for local service as the 'force RPC serialization' flag is set: " + iface.getName());
+                return remoteServiceHandler.createServiceProxy(nodeId, iface, null, properties);
+            } else {
+                return getLocalService(iface, properties, bundleContext);
+            }
         } else {
             return remoteServiceHandler.createServiceProxy(nodeId, iface, null, properties);
         }

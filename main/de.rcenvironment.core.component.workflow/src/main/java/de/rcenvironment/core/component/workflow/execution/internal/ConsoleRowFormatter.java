@@ -13,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Converts {@link ConsoleRow} entries to log file entries.
@@ -36,7 +37,7 @@ public final class ConsoleRowFormatter {
         if (componentName == null || componentName.isEmpty()) {
             componentName = "-";
         }
-        return String.format("[%s] [%s] [%s] %s%n", timeFormat.format(new Date(row.getTimestamp())), row.getType(), componentName,
+        return StringUtils.format("[%s] [%s] [%s] %s%n", timeFormat.format(new Date(row.getTimestamp())), row.getType(), componentName,
             row.getPayload());
     }
 
@@ -47,7 +48,7 @@ public final class ConsoleRowFormatter {
      * @return the generated log entry
      */
     public String toCombinedLogFileFormat(ConsoleRow row) {
-        return String.format("[%s] [%s] [%s] [%s] %s%n", new Date(row.getTimestamp()), row.getWorkflowName(), row.getComponentName(),
+        return StringUtils.format("[%s] [%s] [%s] [%s] %s%n", new Date(row.getTimestamp()), row.getWorkflowName(), row.getComponentName(),
             row.getType(), row.getPayload());
     }
 }

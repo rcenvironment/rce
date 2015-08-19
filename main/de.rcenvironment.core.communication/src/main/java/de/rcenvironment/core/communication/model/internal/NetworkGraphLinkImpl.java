@@ -10,6 +10,7 @@ package de.rcenvironment.core.communication.model.internal;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Tree representation of a "connection" between two {@link NetworkGraphNode}s. The exact semantics are up to the content provider.
@@ -26,7 +27,7 @@ public final class NetworkGraphLinkImpl implements NetworkGraphLink {
 
     public NetworkGraphLinkImpl(String linkId, NodeIdentifier source, NodeIdentifier target) {
         if (linkId == null || source == null || target == null) {
-            throw new NullPointerException(String.format("%s / %s / %s", linkId, source, target));
+            throw new NullPointerException(StringUtils.format("%s / %s / %s", linkId, source, target));
         }
         this.linkId = linkId;
         this.source = source;
@@ -50,7 +51,7 @@ public final class NetworkGraphLinkImpl implements NetworkGraphLink {
 
     @Override
     public String toString() {
-        return String.format("%s (%s->%s)", linkId, source, target);
+        return StringUtils.format("%s (%s->%s)", linkId, source, target);
     }
 
 }

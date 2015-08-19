@@ -19,15 +19,16 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.components.cpacs.writer.common.CpacsWriterComponentConstants;
+import de.rcenvironment.core.component.xml.XmlComponentHistoryDataItem;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryDataItemSubtreeBuilder;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
-import de.rcenvironment.cpacs.utils.common.components.XmlComponentHistoryDataItem;
 
 /**
  * Implementation of {@link ComponentHistoryDataItemSubtreeBuilder} for the CPACS Writer component.
@@ -88,7 +89,7 @@ public class CpacsWriterHistoryDataItemSubtreeBuilder implements ComponentHistor
                 cpacsWithVariablesFileNode.setDataReferenceId(historyData.getXmlWithVariablesFileReference());
             }
         } else {
-            throw new IllegalArgumentException(String.format("Parsing history data point failed: Expected type %s, but was type %s",
+            throw new IllegalArgumentException(StringUtils.format("Parsing history data point failed: Expected type %s, but was type %s",
                 String.class.getCanonicalName(),
                 historyDataItem.getClass().getCanonicalName()));
         }

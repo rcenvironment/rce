@@ -27,6 +27,7 @@ import de.rcenvironment.core.datamanagement.DistributedFileDataService;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -280,7 +281,8 @@ public class DistributedFileDataServiceImpl extends DistributedDataServiceImpl i
                     long remoteTotalSize = remoteDataService.appendToUpload(user, uploadId, filledBuffer.getContentSizeBuffer());
                     long duration = System.currentTimeMillis() - startTime;
                     if (duration > CHUNK_UPLOAD_TIME_WARNING_THRESHOLD_MSEC) {
-                        log.warn(String.format("Uploading a data block of %d bytes took %d msec", filledBuffer.getContentSize(), duration));
+                        log.warn(StringUtils.format("Uploading a data block of %d bytes took %d msec", filledBuffer.getContentSize(),
+                            duration));
                     }
                     localTotalSize += filledBuffer.getContentSize();
                     // consistency check
@@ -299,7 +301,7 @@ public class DistributedFileDataServiceImpl extends DistributedDataServiceImpl i
             }
             asyncUploader.shutDown();
             remoteDataService.finishUpload(user, uploadId, metaDataSet);
-            log.debug(String.format("Finished uploading %d bytes for upload id %s; polling for remote data reference", totalRead2,
+            log.debug(StringUtils.format("Finished uploading %d bytes for upload id %s; polling for remote data reference", totalRead2,
                 uploadId));
             // poll until successful or the thread is interrupted
             while (true) {

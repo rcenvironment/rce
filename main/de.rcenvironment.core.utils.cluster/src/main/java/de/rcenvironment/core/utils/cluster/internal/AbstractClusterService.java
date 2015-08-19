@@ -25,9 +25,9 @@ import com.jcraft.jsch.Session;
 
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation;
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation.ClusterJobState;
+import de.rcenvironment.core.utils.cluster.ClusterJobSourceService;
 import de.rcenvironment.core.utils.cluster.ClusterJobStateChangeListener;
 import de.rcenvironment.core.utils.cluster.ClusterService;
-import de.rcenvironment.core.utils.cluster.ClusterJobSourceService;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
@@ -189,21 +189,19 @@ public abstract class AbstractClusterService implements ClusterService {
         throws IOException {
         JSchCommandLineExecutor commandLineExecutor = new JSchCommandLineExecutor(ajschSession, remoteWorkDir);
         commandLineExecutor.start(command);
-        InputStream stdoutStream = commandLineExecutor.getStdout();
-        InputStream stderrStream = commandLineExecutor.getStderr();
-        try {
-            commandLineExecutor.waitForTermination();
-        } catch (InterruptedException e) {
-            throw new IOException(e);
+        try (InputStream stdoutStream = commandLineExecutor.getStdout(); InputStream stderrStream = commandLineExecutor.getStderr();) {
+            try {
+                commandLineExecutor.waitForTermination();
+            } catch (InterruptedException e) {
+                throw new IOException(e);
+            }
+            String stderr = IOUtils.toString(stderrStream);
+            if (stderr != null && !stderr.isEmpty()) {
+                throw new IOException(stderr);
+            }
+            String stdout = IOUtils.toString(stdoutStream);
+            return stdout;
         }
-        String stderr = IOUtils.toString(stderrStream);
-        IOUtils.closeQuietly(stderrStream);
-        if (stderr != null && !stderr.isEmpty()) {
-            throw new IOException(stderr);
-        }
-        String stdout = IOUtils.toString(stdoutStream);
-        IOUtils.closeQuietly(stdoutStream);
-        return stdout;
     }
 
 }

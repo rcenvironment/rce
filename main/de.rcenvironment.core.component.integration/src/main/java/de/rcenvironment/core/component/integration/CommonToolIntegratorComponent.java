@@ -58,6 +58,7 @@ import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptDataTypeHelper;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.ScriptingUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUtils;
 import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUtils.SubstitutionContext;
@@ -579,7 +580,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     exitCode = (Integer) engine.eval(script);
                     String footerScript = "\nRCE_Dict_OutputChannels = RCE.get_output_internal()\nRCE_CloseOutputChannelsList = "
                         + "RCE.get_closed_outputs_internal()\n" + "RCE_NotAValueOutputList = RCE.get_indefinite_outputs_internal()\n"
-                        + String.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
+                        + StringUtils.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                             WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
                     engine.eval(footerScript);
 
@@ -720,24 +721,28 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         SubstitutionContext context) throws ComponentException {
         if (inputValues != null) {
             for (String inputName : inputValues.keySet()) {
-                if (inputValues.containsKey(inputName) && script.contains(String.format(INPUT_PLACEHOLDER, inputName))) {
+                if (inputValues.containsKey(inputName) && script.contains(StringUtils.format(INPUT_PLACEHOLDER, inputName))) {
                     if (componentContext.getInputDataType(inputName) == DataType.FileReference) {
-                        script = script.replace(String.format(INPUT_PLACEHOLDER, inputName),
+                        script = script.replace(StringUtils.format(INPUT_PLACEHOLDER, inputName),
                             inputNamesToLocalFile.get(inputName).replaceAll(ESCAPESLASH, SLASH));
                     } else if (componentContext.getInputDataType(inputName) == DataType.DirectoryReference) {
-                        script = script.replace(String.format(INPUT_PLACEHOLDER, inputName),
+                        script = script.replace(StringUtils.format(INPUT_PLACEHOLDER, inputName),
                             inputNamesToLocalFile.get(inputName).replaceAll(ESCAPESLASH, SLASH));
                     } else if (componentContext.getInputDataType(inputName) == DataType.Vector) {
-                        script = script.replace(String.format(INPUT_PLACEHOLDER, inputName), validate(inputName, context,
-                            String.format("Name of Vector '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX, inputName)));
+                        script = script.replace(StringUtils.format(INPUT_PLACEHOLDER, inputName), validate(inputName, context,
+                            StringUtils.format("Name of Vector '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX, inputName)));
 
                     } else {
                         String value = inputValues.get(inputName).toString();
                         if (context == SubstitutionContext.JYTHON && componentContext.getInputDataType(inputName) == DataType.Boolean) {
                             value = value.substring(0, 1).toUpperCase() + value.substring(1);
                         }
-                        script = script.replace(String.format(INPUT_PLACEHOLDER, inputName), validate(value, context, String.format(
-                            "Value '%s' from input '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX, value, inputName)));
+                        script =
+                            script
+                                .replace(
+                                    StringUtils.format(INPUT_PLACEHOLDER, inputName),
+                                    validate(value, context, StringUtils.format("Value '%s' from input '%s'"
+                                        + SUBSTITUTION_ERROR_MESSAGE_PREFIX, value, inputName)));
                     }
                 }
             }
@@ -748,7 +753,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         // get properties!
         for (String configKey : componentContext.getConfigurationKeys()) {
             String value = componentContext.getConfigurationValue(configKey);
-            validate(value, context, String.format("Value '%s' of property '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX,
+            validate(value, context, StringUtils.format("Value '%s' of property '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX,
                 value, configKey));
             properties.put(configKey, componentContext.getConfigurationValue(configKey));
         }
@@ -773,7 +778,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         outputMapping = new HashMap<>();
         for (String outputName : outputs) {
             String outputID = "_RCE_OUTPUT_" + UUID.randomUUID().toString().replaceAll("-", "_");
-            script = script.replace(String.format(outputPlaceholder, outputName), outputID);
+            script = script.replace(StringUtils.format(outputPlaceholder, outputName), outputID);
             outputMapping.put(outputID, outputName);
         }
         return script;

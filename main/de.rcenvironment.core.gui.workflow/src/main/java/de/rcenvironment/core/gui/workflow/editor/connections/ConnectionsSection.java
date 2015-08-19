@@ -105,6 +105,11 @@ public class ConnectionsSection extends AbstractPropertySection {
             }
         }
     }
+    
+    @Override
+    public void aboutToBeShown() {
+        connectionDialogComposite.markSectionAsInitialized();
+    }
 
     @Override
     public void refresh() {
@@ -117,6 +122,8 @@ public class ConnectionsSection extends AbstractPropertySection {
         workflowDescription.removePropertyChangeListener(workflowDescriptionPropertyListener);
         super.dispose();
     }
+
+
 
     @Override
     public void createControls(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {

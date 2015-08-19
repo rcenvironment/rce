@@ -32,6 +32,7 @@ import de.rcenvironment.core.gui.cluster.internal.ErrorMessageDialogFactory;
 import de.rcenvironment.core.gui.cluster.view.internal.ClusterConnectionInformation;
 import de.rcenvironment.core.utils.cluster.ClusterService;
 import de.rcenvironment.core.utils.cluster.ClusterServiceManager;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -127,8 +128,8 @@ public class ClusterConnectionConfigurationDialogsController {
     
     protected void openDeleteConfirmationDialog(ClusterConnectionConfiguration configuration) {
         MessageDialog dialog = new MessageDialog(parent.getShell(), Messages.deleteConfirmDialogTitle, null,
-            String.format(Messages.deleteConfirmDialogQuestion, configuration),
-            MessageDialog.QUESTION, new String[] {Messages.yes, Messages.no}, 0);
+                StringUtils.format(Messages.deleteConfirmDialogQuestion, configuration), MessageDialog.QUESTION, new String[] {
+                    Messages.yes, Messages.no }, 0);
         switch (dialog.open()) {
         case 0:
             deleteClusterConnectionConfiguration(configuration);

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Optimizer Component Common
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.common;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Export-Package: de.rcenvironment.components.optimizer.common,
  de.rcenvironment.components.optimizer.common.execution
 Bundle-ClassPath: .

@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Extends the {@link WizardDialog} for adding a "save as" button to the ButtonBar.
@@ -123,7 +124,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         case IDialogConstants.FINISH_ID:
             if (!isEdit) {
                 finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigOK()) {
+                if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
                     MessageBox infoDialog = new MessageBox(this.getParentShell(),
                         SWT.ICON_INFORMATION | SWT.OK);
                     infoDialog.setText("Tool integrated");
@@ -134,7 +135,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
                     if (groupName == null || groupName.isEmpty()) {
                         groupName = ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
                     }
-                    infoDialog.setMessage(String.format("Tool \"%s\" was successfully integrated to group \"%s\".",
+                    infoDialog.setMessage(StringUtils.format("Tool \"%s\" was successfully integrated to group \"%s\".",
                         configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), groupName));
                     infoDialog.open();
                 }
@@ -142,7 +143,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
             } else {
                 ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
                 finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigOK()) {
+                if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
                     MessageBox infoDialog = new MessageBox(this.getParentShell(),
                         SWT.ICON_INFORMATION | SWT.OK);
                     infoDialog.setText("Tool updated");

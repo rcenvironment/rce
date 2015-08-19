@@ -16,6 +16,7 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -49,24 +50,25 @@ public class HeadlessShutdown {
 
     private BootstrapConfiguration bootstrapSettings;
 
-    private File shutdownDataDir;
-
     private final Log logger = LogFactory.getLog(getClass());
 
     /**
      * Triggers either the initiation of the shutdown mechanism either is client or server.
+     * 
+     * @param bootstrapConfiguration the global BootstrapConfiguration instance
      */
-    public void execute() {
-        bootstrapSettings = BootstrapConfiguration.getInstance();
+    public void executeByLaunchConfiguration(BootstrapConfiguration bootstrapConfiguration) {
+        this.bootstrapSettings = bootstrapConfiguration;
 
-        shutdownDataDir = bootstrapSettings.getShutdownDataDirectory();
+        final File shutdownDataDir = bootstrapSettings.getShutdownDataDirectory();
         if (!shutdownDataDir.exists()) {
             shutdownDataDir.mkdirs();
         }
 
         if (bootstrapSettings.isShutdownRequested()) {
             try {
-                sendShutdownToken();
+                writeToLog("Running this instance as a shutdown signal sender");
+                sendShutdownTokenInternal(shutdownDataDir);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
@@ -75,11 +77,21 @@ public class HeadlessShutdown {
             }
         } else {
             try {
-                initReceiver();
+                initReceiver(shutdownDataDir);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
         }
+    }
+
+    /**
+     * Sends a shutdown signal to a different (external) instance.
+     * 
+     * @param externalProfileDir the profile directory of the external instance
+     * @throws IOException if sending the shutdown signal fails
+     */
+    public void shutdownExternalInstance(File externalProfileDir) throws IOException {
+        sendShutdownTokenInternal(new File(externalProfileDir, BootstrapConfiguration.PROFILE_SHUTDOWN_DATA_SUBDIR));
     }
 
     private void writeToLog(String text) {
@@ -87,7 +99,7 @@ public class HeadlessShutdown {
     }
 
     // RECEIVER PART
-    private void initReceiver() throws IOException {
+    private void initReceiver(File shutdownDataDir) throws IOException {
 
         // Automatically create socket on free port
         final ServerSocket serverSocket = new ServerSocket(0);
@@ -155,14 +167,7 @@ public class HeadlessShutdown {
     }
 
     // SENDER PART
-    private void sendShutdownToken() throws IOException {
-
-        if (!shutdownDataDir.exists()) {
-            shutdownDataDir.mkdirs();
-        }
-
-        writeToLog("Running this instance as a shutdown signal sender");
-
+    private void sendShutdownTokenInternal(File shutdownDataDir) throws IOException, UnknownHostException {
         File secretFile = new File(shutdownDataDir, TOKEN_FILENAME);
         String content;
         try {
@@ -183,7 +188,6 @@ public class HeadlessShutdown {
         writeToLog("Sending \"" + message + "\" to " + HOST + ":" + port);
 
         writeMessageToConnection(socket, message);
-
     }
 
     private void tryToRemoveProfileStubDir() {

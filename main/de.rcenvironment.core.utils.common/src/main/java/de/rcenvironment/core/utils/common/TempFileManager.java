@@ -225,7 +225,7 @@ public class TempFileManager {
                     throw new IOException("Failed to acquire lock in new temporary directory: " + lockFile.getAbsolutePath());
                 }
                 if (log.isDebugEnabled()) {
-                    log.debug(String.format("Initialized top-level managed temp directory %s", instanceRootDir.getAbsolutePath()));
+                    log.debug(StringUtils.format("Initialized top-level managed temp directory %s", instanceRootDir.getAbsolutePath()));
                 }
             }
             return instanceRootDir;
@@ -399,7 +399,7 @@ public class TempFileManager {
         String antiCollisionSuffix = "";
         File newInstanceRootDir = null;
         while (antiCollisionAttempt < MAX_ROOT_DIR_ANTI_COLLISION_ATTEMPTS) {
-            String instanceDirectoryName = String.format("%s%s%s", finalPrefix, timestamp, antiCollisionSuffix);
+            String instanceDirectoryName = StringUtils.format("%s%s%s", finalPrefix, timestamp, antiCollisionSuffix);
             newInstanceRootDir = new File(globalRootDir, instanceDirectoryName);
             if (!newInstanceRootDir.isDirectory()) {
                 // does not exist, try to create
@@ -412,12 +412,12 @@ public class TempFileManager {
             antiCollisionSuffix = "(" + antiCollisionAttempt + ")";
         }
         if (newInstanceRootDir != null) {
-            throw new IOException(String.format(
+            throw new IOException(StringUtils.format(
                 "Failed to create unique instance temp directory after %s attempts; last attempted path was %s",
                 MAX_ROOT_DIR_ANTI_COLLISION_ATTEMPTS,
                 newInstanceRootDir.getAbsolutePath()));
         } else {
-            throw new IOException(String.format(
+            throw new IOException(StringUtils.format(
                 "Failed to create unique instance temp directory after %s attempts; last attempted path was null",
                 MAX_ROOT_DIR_ANTI_COLLISION_ATTEMPTS));
         }

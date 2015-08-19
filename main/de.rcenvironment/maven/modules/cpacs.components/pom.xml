@@ -32,6 +32,7 @@
 		<module>${projects-root}/de.rcenvironment.components.xml.loader.gui</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.common</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution.tests</module>
 		<module>${projects-root}/de.rcenvironment.components.xml.merger.gui</module>
 
 		<!-- TODO clean up layering/dependencies -->

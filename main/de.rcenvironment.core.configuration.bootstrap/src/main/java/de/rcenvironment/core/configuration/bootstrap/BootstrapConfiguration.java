@@ -25,6 +25,11 @@ import de.rcenvironment.core.configuration.bootstrap.internal.LaunchParameters;
 public final class BootstrapConfiguration {
 
     /**
+     * System property for exit code 1 on locked profile.
+     */
+    public static final String DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE = "rce.launch.exitOnLockedProfile";
+
+    /**
      * A system property that can be used to override the parent directory for profiles defined by a relative path or id (default "~/.rce").
      */
     public static final String SYSTEM_PROPERTY_PROFILES_PARENT_DIRECTORY_OVERRIDE = "rce.profiles.parentDir";
@@ -35,7 +40,16 @@ public final class BootstrapConfiguration {
      */
     public static final String SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH = "rce.profile.default";
 
-    private static final String PROFILE_DIR_LOCK_FILE_NAME = "instance.lock";
+    /**
+     * The relative path where the shutdown information (*not* the temporary shutdown *profile*!) of a profile is stored. Made public to
+     * allow sending shutdown signals to external instances.
+     */
+    public static final String PROFILE_SHUTDOWN_DATA_SUBDIR = "internal";
+
+    /**
+     * The name of the lock file to signal that the containing profile is in use.
+     */
+    public static final String PROFILE_DIR_LOCK_FILE_NAME = "instance.lock";
 
     private static final String SYSTEM_PROPERTY_USER_HOME = "user.home";
 
@@ -79,6 +93,8 @@ public final class BootstrapConfiguration {
 
     private final File profilesRootDirectory;
 
+    private final boolean fallbackProfileDisabled;
+
     /**
      * Performs the bootstrap profile initialization.
      * 
@@ -97,6 +113,11 @@ public final class BootstrapConfiguration {
         File preliminaryProfileDir = originalProfileDirectory;
 
         shutdownRequested = launchParams.containsToken("--shutdown");
+
+        // For headless mode, fallback profile is automatically disabled.
+        fallbackProfileDisabled =
+            System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParams.containsToken("--headless")
+                || launchParams.containsToken("--batch");
 
         // FIXME 6.0.0 - in case of a profile dir collision, the fallback profile will still use this for shutdown data - misc_ro
         shutdownProfileDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR + "/shutdown");
@@ -119,6 +140,11 @@ public final class BootstrapConfiguration {
         } else {
             stdErr.println("Failed to lock profile directory " + preliminaryProfileDir
                 + " - most likely, another instance is already using it");
+            // If the "--disable-profile-fallback" option is set, shut down, else try to create a fallback profile directory
+            if (fallbackProfileDisabled) {
+                stdErr.println("Fallback profile is disabled, shutting down.");
+                System.exit(1);
+            }
             preliminaryProfileDir = determineFallbackProfileDirectory(originalProfileDirectory);
             if (attemptToLockProfileDirectory(preliminaryProfileDir)) {
                 finalProfileDirectory = preliminaryProfileDir;
@@ -144,7 +170,7 @@ public final class BootstrapConfiguration {
         setLoggingParameters();
 
         // TODO/NOTE: this does not take full effect; apparently, the setting has already been read and applied
-        // setOsgiStorageLocation();
+//         setOsgiStorageLocation();
     }
 
     /**

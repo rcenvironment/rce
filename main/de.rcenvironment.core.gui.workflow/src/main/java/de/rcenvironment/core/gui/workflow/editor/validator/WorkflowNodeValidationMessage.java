@@ -104,7 +104,7 @@ public class WorkflowNodeValidationMessage implements Serializable {
     public String toString() {
         if (property != null && !property.isEmpty()
                 && relativeMessage != null && !relativeMessage.isEmpty()) {
-            return String.format("%s: %s", property, relativeMessage);
+            return StringUtils.format("%s: %s", property, relativeMessage);
         } else {
             return absoluteMessage;
         }

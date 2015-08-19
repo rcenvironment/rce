@@ -41,6 +41,7 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodePropertySection;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -53,7 +54,7 @@ public class SqlReaderComponentSection extends WorkflowNodePropertySection {
 
     private static final String PLACEHOLDER_PATTERN = "${%s}";
     
-    private static final String OUTPUT_PATTERN = String.format(PLACEHOLDER_PATTERN, "out:%s");
+    private static final String OUTPUT_PATTERN = StringUtils.format(PLACEHOLDER_PATTERN, "out:%s");
 
     private static final int MINIMUM_HEIGHT_TEXTFIELDS = 60;
 
@@ -444,13 +445,13 @@ public class SqlReaderComponentSection extends WorkflowNodePropertySection {
         final String tableNameLabel = Messages.bind(Messages.readerSectionTableNameLabelMeta, tableNamePlaceholder);
         initVariablesCombo.add(tableNameLabel);
         runVariablesCombo.add(tableNameLabel);
-        variablesPlaceholders.put(tableNameLabel, String.format(PLACEHOLDER_PATTERN, tableNamePlaceholder));
+        variablesPlaceholders.put(tableNameLabel, StringUtils.format(PLACEHOLDER_PATTERN, tableNamePlaceholder));
         // add input replacement values
         for (final EndpointDescription desc : configuration.getInputDescriptionsManager().getEndpointDescriptions()) {
             String inputName = desc.getName();
             final String inputType = configuration.getInputDescriptionsManager().getEndpointDescription(inputName).getDataType().toString();
             final String label = Messages.bind(Messages.variablesInputPattern, inputName, inputType);
-            final String placeholder = String.format(PLACEHOLDER_PATTERN, inputName);
+            final String placeholder = StringUtils.format(PLACEHOLDER_PATTERN, inputName);
             runVariablesCombo.add(label);
             variablesPlaceholders.put(label, placeholder);
         }
@@ -460,14 +461,33 @@ public class SqlReaderComponentSection extends WorkflowNodePropertySection {
             final String outputType = configuration.getOutputDescriptionsManager().getEndpointDescription(outputName)
                 .getDataType().toString();
             final String label = Messages.bind(Messages.variablesOutputPattern, outputName, outputType);
-            final String placeholder = String.format(OUTPUT_PATTERN, outputName);
+            final String placeholder = StringUtils.format(OUTPUT_PATTERN, outputName);
             initVariablesCombo.add(label);
             runVariablesCombo.add(label);
             variablesPlaceholders.put(label, placeholder);
         }
         updateVariableInsertControls();
+        handleFocus();
     }
 
+    private void handleFocus() {
+        // No profile selected yet -> focus profile combo box
+        if (jdbcProfileCombo.getText().isEmpty()){
+            jdbcProfileCombo.setFocus();
+        } else {
+            if (sqlInitStatementText.isEnabled()) {
+                // profile already selected -> if init enabled -> focus it
+                sqlInitStatementText.setFocus();
+            } else if (sqlStatementText.isEnabled()){
+                // profile already selected -> if init not enabled, but run -> focus it
+                sqlStatementText.setFocus();
+            } else {
+                // fallback: focus sql init check box
+                sqlInitStatementCheckbox.setFocus();
+            }
+        }
+    }
+    
     protected void refreshSqlStatement() {
         final boolean hasInputs = hasInputs();
         sqlStatementText.setEnabled(hasInputs);

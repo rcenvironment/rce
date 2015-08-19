@@ -8,6 +8,8 @@
  
 package de.rcenvironment.core.component.execution.api;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Represents an hop in a cyclic workflow graph to traverse.
  * 
@@ -48,7 +50,7 @@ public class WorkflowGraphHop {
     
     @Override
     public String toString() {
-        return String.format("%s@%s -> %s@%s", ouputName, executionIdentifier, targetInputName, targetExecutionIdentifier);
+        return StringUtils.format("%s@%s -> %s@%s", ouputName, executionIdentifier, targetInputName, targetExecutionIdentifier);
     }
     
 }

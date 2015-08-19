@@ -27,6 +27,7 @@ import de.rcenvironment.core.component.toolaccess.api.RemoteAccessConstants;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * 
@@ -99,7 +100,7 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
     }
 
     private void createFileDoesNotExistMessage(String outputName, String fileName) {
-        String text = String.format("'%s': missing file '%s'", outputName, fileName);
+        String text = StringUtils.format("'%s': missing file '%s'", outputName, fileName);
         messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, "", text, text, true));
     }
 
@@ -111,7 +112,7 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
      */
     private void validateExistingDirectories(String outputName, Collection<String> values, String pathName) {
         if (pathName.equals(RemoteAccessConstants.WF_PLACEHOLDER_INPUT_DIR)) {
-            String text = String.format("'%s': '%s' only valid if used via remote access", outputName, pathName);
+            String text = StringUtils.format("'%s': '%s' only valid if used via remote access", outputName, pathName);
             messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.WARNING, "", text, text, false));
             return;
         }
@@ -141,7 +142,7 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
     }
 
     private void createDirDoesNotExistMessage(String outputName, String pathName) {
-        String text = String.format("'%s': missing directory '%s'", outputName, pathName);
+        String text = StringUtils.format("'%s': missing directory '%s'", outputName, pathName);
         messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, "", text, text, true));
     }
 

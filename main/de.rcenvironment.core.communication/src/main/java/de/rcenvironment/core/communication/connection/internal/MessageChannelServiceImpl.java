@@ -57,6 +57,7 @@ import de.rcenvironment.core.communication.routing.internal.WaitForResponseCalla
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
@@ -74,7 +75,7 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
 public class MessageChannelServiceImpl implements MessageChannelService {
 
     /**
-     * String constant to satisfy CheckStyle; alternatively, introduce several String.format() calls.
+     * String constant to satisfy CheckStyle; alternatively, introduce several StringUtils.format() calls.
      */
     private static final String SINGLE_QUOTE = "'";
 
@@ -132,7 +133,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
         @Override
         public InitialNodeInformation exchangeNodeInformation(InitialNodeInformation senderNodeInformation) {
-            // logger.debug(String.format("Incoming channel from node '%s' (%s); sending identification '%s' (%s)",
+            // logger.debug(StringUtils.format("Incoming channel from node '%s' (%s); sending identification '%s' (%s)",
             // senderNodeInformation.getLogName(), senderNodeInformation.getNodeIdentifier(),
             // ownNodeInformation.getLogName(),
             // ownNodeInformation.getNodeIdentifier()));
@@ -146,9 +147,9 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 throw new IllegalStateException("Consistency error");
             }
             registerNewOutgoingChannel(channel);
-            logger.debug(String.format("Remote-initiated channel '%s' established from '%s' to '%s' via local SCP %s",
-                channel, ownNodeInformation.getLogDescription(), channel.getRemoteNodeInformation().getLogDescription(),
-                serverContactPoint));
+            logger.debug(StringUtils.format("Remote-initiated channel '%s' established from '%s' to '%s' via local SCP %s", channel,
+                ownNodeInformation.getLogDescription(), channel.getRemoteNodeInformation().getLogDescription(),
+                    serverContactPoint));
         }
 
         @Override
@@ -159,7 +160,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             logger.debug("Inbound message channel is closing, checking for mirror channels; id=" + idOfInboundChannel);
             for (final MessageChannel channel : getAllOutgoingChannels()) {
                 if (idOfInboundChannel.equals(channel.getAssociatedMirrorChannelId())) {
-                    logger.debug(String.format("Found matching mirror channel for closing inbound channel %s, closing: %s",
+                    logger.debug(StringUtils.format("Found matching mirror channel for closing inbound channel %s, closing: %s",
                         idOfInboundChannel, channel));
                     // close the mirror channel in a separate thread to avoid deadlocks if the
                     // caller holds any monitors
@@ -329,7 +330,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 // on success
                 InitialNodeInformation remoteNodeInformation = channel.getRemoteNodeInformation();
                 nodeInformationRegistry.updateFrom(remoteNodeInformation);
-                logger.debug(String.format("Channel '%s' established from '%s' to '%s' using remote NCP %s", channel,
+                logger.debug(StringUtils.format("Channel '%s' established from '%s' to '%s' using remote NCP %s", channel,
                     ownNodeInformation.getLogDescription(), remoteNodeInformation.getLogDescription(), ncp));
                 return channel;
             }
@@ -471,6 +472,11 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         sendRequest(request, channel, responseCallable);
         return threadPool.submit(responseCallable);
     }
+    
+    @Override
+    public NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, NodeIdentifier sourceId) {
+        return rawMessageChannelEndpointHandler.onRawRequestReceived(request, sourceId);
+    }
 
     @Override
     public void registerRequestHandler(String messageType, NetworkRequestHandler handler) {
@@ -525,10 +531,10 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     public void printIPFilterInformation(TextOutputReceiver outputReceiver) {
         Set<String> acceptedIps = globalIPWhitelistFilter.getAcceptedIps();
         if (acceptedIps != null) {
-            outputReceiver.addOutput(String.format("IP filtering is ENABLED; incoming connections are restricted to %d source IPs",
+            outputReceiver.addOutput(StringUtils.format("IP filtering is ENABLED; incoming connections are restricted to %d source IPs",
                 acceptedIps.size()));
         } else {
-            outputReceiver.addOutput(String.format("IP filtering is DISABLED; all incoming connections are accepted"));
+            outputReceiver.addOutput(StringUtils.format("IP filtering is DISABLED; all incoming connections are accepted"));
         }
     }
 
@@ -537,7 +543,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         synchronized (activeOutgoingChannels) {
             for (final MessageChannel channel : activeOutgoingChannels.values()) {
                 String uniqueTaskId =
-                    String.format("%s-%s", channel.getChannelId(), Long.toString(healthCheckTaskCounter.incrementAndGet()));
+                    StringUtils.format("%s-%s", channel.getChannelId(), Long.toString(healthCheckTaskCounter.incrementAndGet()));
                 threadPool.execute(new Runnable() {
 
                     @Override
@@ -553,7 +559,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                             }
                             // check if the channel was closed or marked as broken in the meantime
                             if (!channel.isReadyToUse()) {
-                                logger.debug(String.format("Channel %s is %s; skipping scheduled health check", channel.getChannelId(),
+                                logger.debug(StringUtils.format("Channel %s is %s; skipping scheduled health check", channel.getChannelId(),
                                     channel.getState()));
                                 return;
                             }
@@ -570,7 +576,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                                     if (checkSuccessful) {
                                         // log if this was a recovery
                                         if (connectionState.healthCheckFailureCount > 0) {
-                                            logger.info(String.format(
+                                            logger.info(StringUtils.format(
                                                 "Channel %s to %s passed its health check after %d previous failures",
                                                 channel.getChannelId(),
                                                 channel.getRemoteNodeInformation().getNodeId(),
@@ -581,7 +587,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                                     } else {
                                         // increase counter and log
                                         connectionState.healthCheckFailureCount++;
-                                        logger.warn(String.format(
+                                        logger.warn(StringUtils.format(
                                             "Channel %s to %s failed a health check (%d consecutive failures)",
                                             channel.getChannelId(),
                                             channel.getRemoteNodeInformation().getNodeId(),
@@ -697,7 +703,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         nodeInformationRegistry = NodeInformationRegistryImpl.getInstance();
         synchronized (transportProviders) {
             int numTransports = transportProviders.size();
-            logger.debug(String.format(
+            logger.debug(StringUtils.format(
                 "Activated network channel service; instance log name='%s'; node id='%s'; %d registered transport providers",
                 ownNodeInformation.getLogDescription(), ownNodeInformation.getNodeId(), numTransports));
         }
@@ -777,7 +783,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             MessageChannel removed = activeOutgoingChannels.remove(channel.getChannelId());
             // consistency check
             if (removed != channel) {
-                logger.warn(String.format("Unexpected state: Expected to find same registered channel object for "
+                logger.warn(StringUtils.format("Unexpected state: Expected to find same registered channel object for "
                     + "closed or broken channel %s, but found '%s' instead", channel.getChannelId(), removed));
             }
         }

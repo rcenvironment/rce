@@ -1,6 +1,6 @@
 {
   "identifier" : "c1a727d2-43f4-4267-8630-e17f1e9cce4e",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "InputProvider_Script_OutputWriter_2014-04-28_08:47:08",
   "nodes" : [ {
     "identifier" : "178b9928-3c61-4e59-ad5e-d6be10359f04",

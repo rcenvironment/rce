@@ -16,6 +16,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUtils.SubstitutionContext;
 
 /**
@@ -142,7 +143,7 @@ public class StringSubstitutionSecurityUtilsTest {
         StringSubstitutionSecurityUtils.setSuppressLogMessageOnDeniedSubstitution(false);
         if (expected != result) {
             // only build message on failure
-            Assert.fail(String.format("Test case \"%s\" failed in %s context: expected '%s', received '%s'",
+            Assert.fail(StringUtils.format("Test case \"%s\" failed in %s context: expected '%s', received '%s'",
                 testString, testContext, expected, result));
         }
     }

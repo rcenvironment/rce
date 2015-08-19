@@ -71,8 +71,8 @@ public class EndpointDatumImpl implements EndpointDatum {
         return dataManagementId;
     }
 
-    public void setIdentifier(String identifier) {
-        this.inputName = identifier;
+    public void setInputName(String inputName) {
+        this.inputName = inputName;
     }
 
     public void setValue(TypedDatum value) {
@@ -105,7 +105,7 @@ public class EndpointDatumImpl implements EndpointDatum {
      * @param endpointDatumRecipient {@link EndpointDatumRecipient} to fetch information from
      */
     public void setEndpointDatumRecipient(EndpointDatumRecipient endpointDatumRecipient) {
-        setIdentifier(endpointDatumRecipient.getInputName());
+        setInputName(endpointDatumRecipient.getInputName());
         setInputsComponentExecutionIdentifier(endpointDatumRecipient.getInputComponentExecutionIdentifier());
         setInputsNode(endpointDatumRecipient.getInputsNodeId());
     }

@@ -11,7 +11,11 @@ package de.rcenvironment.core.utils.common;
 import java.text.CharacterIterator;
 import java.text.StringCharacterIterator;
 import java.util.ArrayList;
+import java.util.IllegalFormatException;
 import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Utility class for {@link String} objects.
@@ -19,6 +23,7 @@ import java.util.List;
  * @author Doreen Seider
  * @author Sascha Zur
  * @author Robert Mischke
+ * @author Marc Stammerjohann
  */
 public final class StringUtils {
 
@@ -27,6 +32,9 @@ public final class StringUtils {
 
     /** Character used to escape the separator. */
     public static final String ESCAPE_CHARACTER = "\\";
+
+    /** Separator used to separate format string and values to be used for a readable fall back message. */
+    public static final String FORMAT_SEPARATOR = ", ";
 
     /**
      * Represents an empty array after concatenization.
@@ -39,6 +47,8 @@ public final class StringUtils {
      * Represents a null string as part of a serialized and concatenated array.
      */
     private static final String NULL_STRING_PLACEHOLDER = ESCAPE_CHARACTER + "0"; // "\0"
+
+    private static final Log LOG = LogFactory.getLog(StringUtils.class);
 
     private StringUtils() {}
 
@@ -201,6 +211,37 @@ public final class StringUtils {
     }
 
     /**
+     * Tries to parse an integer from the given string (using {@link Integer#parseInt(String)}), and returns the given default value if a
+     * {@link NumberFormatException} occurs.
+     * 
+     * @param input the string to parse
+     * @param defaultValue the default value to use on error
+     * @return the parsed value, or the default
+     */
+    public static int nullSafeParseInt(String input, int defaultValue) {
+        try {
+            return Integer.parseInt(input);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Returns the {@link #toString()} output of the given {@link Object}, or the default value if it is null.
+     * 
+     * @param reference an object or null
+     * @param defaultValue the value to return if the first parameter is null
+     * @return the {@link #toString()} output of the given {@link Object}, or the default value if it is null
+     */
+    public static String nullSafeToString(Object reference, String defaultValue) {
+        if (reference != null) {
+            return reference.toString();
+        } else {
+            return defaultValue;
+        }
+    }
+
+    /**
      * Performs all escape steps so the string is ready for concatenation.
      * 
      * @param input the original string
@@ -232,6 +273,39 @@ public final class StringUtils {
         String temp = unescapeSeparator(wrapped);
         temp = unescapeCharacter(temp, ESCAPE_CHARACTER.toCharArray()[0]);
         return temp;
+    }
+
+    /**
+     * Fault tolerant implementation of {@link String#format(String, Object...)}. If the {@link IllegalFormatException} is thrown, the raw
+     * format string is concatenated with the values.
+     * 
+     * @param format A format string
+     * @param args Arguments to replace the placeholder in the format string
+     * 
+     * @return a formatted string or a concatenated string
+     */
+    public static String format(String format, Object... args) {
+        String result = null;
+        try {
+            result = String.format(format, args);
+        } catch (IllegalFormatException e) {
+            String values = "";
+            for (int i = 0; i < args.length; i++) {
+                if (i == 0) {
+                    values = values.concat(args[i].toString());
+                } else {
+                    values = values.concat(FORMAT_SEPARATOR + args[i].toString());
+                }
+            }
+            result = format;
+            if (!values.isEmpty()) {
+                result = result.concat(FORMAT_SEPARATOR + values);
+            }
+            LOG.warn(StringUtils.format(
+                "Format error. Review the format string and the number of values.\n Format String: %s" + FORMAT_SEPARATOR
+                    + "Values: %s", format, values));
+        }
+        return result;
     }
 
 }

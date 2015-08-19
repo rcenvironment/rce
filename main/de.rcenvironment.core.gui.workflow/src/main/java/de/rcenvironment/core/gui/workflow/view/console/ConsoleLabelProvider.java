@@ -16,6 +16,7 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Provides the concrete label texts to display and images if required.
@@ -85,7 +86,7 @@ public class ConsoleLabelProvider extends LabelProvider implements ITableLabelPr
                     returnValue = row.getPayload();
                 } else if (ConsoleRow.WorkflowLifecyleEventType.valueOf(row.getPayload())
                     == ConsoleRow.WorkflowLifecyleEventType.COMPONENT_TERMINATED) {
-                    returnValue = String.format("------ End of component '%s' ------", row.getComponentName());
+                    returnValue = StringUtils.format("------ End of component '%s' ------", row.getComponentName());
                 } else {
                     returnValue = row.getPayload();                    
                 }

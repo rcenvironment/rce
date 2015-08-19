@@ -12,6 +12,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -59,6 +61,7 @@ import de.rcenvironment.core.gui.workflow.EndpointContentProvider.Endpoint;
 import de.rcenvironment.core.gui.workflow.EndpointHandlingHelper;
 import de.rcenvironment.core.gui.workflow.EndpointLabelProvider;
 import de.rcenvironment.core.gui.workflow.editor.commands.ConnectionAddCommand;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -69,6 +72,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  *
  */
 public class ConnectionDialogComposite extends Composite {
+
+    private static final Log LOGGER = LogFactory.getLog(ConnectionDialogComposite.class);
 
     private static final String SLASH = "/"; //$NON-NLS-1$
 
@@ -121,6 +126,8 @@ public class ConnectionDialogComposite extends Composite {
     private TypedDatumConverter datumConverter;
 
     private CommandStack editorsCommandStack;
+
+    private boolean initializedSection;
 
     /**
      * Filter modes.
@@ -279,6 +286,13 @@ public class ConnectionDialogComposite extends Composite {
         this.workflowDescription = workflowDescription;
     }
 
+    /**
+     * Marks whether the section has just been initialized.
+     */
+    public void markSectionAsInitialized() {
+        initializedSection = true;
+    }
+
     private void selectOutputSource() {
         Object selectedElement = ((ITreeSelection) sourceTreeViewer.getSelection()).getFirstElement();
         selectionData = null;
@@ -315,6 +329,16 @@ public class ConnectionDialogComposite extends Composite {
             }
         }
 
+        // if no node with the respective id was found, perform no drop and log warning
+        if (sourceNode == null) {
+            LOGGER.warn("Connection could not be created because workflow node with id " + sourceNodeId + " was not found.");
+            return false;
+        }
+        // if the section has been initialized and no source node is selected, perform no drop
+        if (initializedSection) {
+            return false;
+        }
+
         Endpoint targetEndpoint = null;
         Object currentTarget = targetObject;
         if (currentTarget instanceof Endpoint) {
@@ -333,55 +357,53 @@ public class ConnectionDialogComposite extends Composite {
         DataType sourceDataType = endpointManager.getEndpointDescription(sourceEndpointName).getDataType();
         if (sourceDataType != targetEndpoint.getEndpointDescription().getDataType()
             && !datumConverter.isConvertibleTo(sourceDataType, targetEndpoint.getEndpointDescription().getDataType())) {
-            MessageDialog.openError(Display.getCurrent().getActiveShell(), Messages.error, String.format(Messages.incompatibleTypes,
+            MessageDialog.openError(Display.getCurrent().getActiveShell(), Messages.error, StringUtils.format(Messages.incompatibleTypes,
                 sourceDataType.getDisplayName(), targetEndpoint.getEndpointDescription().getDataType().getDisplayName()));
             return false;
         }
-        boolean inputHasAlreadyConnection = false;
+
+        // if connection is already connected, show warning and don't perform drop
         Connection connectedTo = null;
         for (Connection c : workflowDescription.getConnections()) {
             if (c.getTargetNode().equals(targetEndpoint.getWorkflowNode())
                 && targetEndpoint.getEndpointDescription().getIdentifier().equals(c.getInput().getIdentifier())) {
-                inputHasAlreadyConnection = true;
                 connectedTo = c;
+                MessageDialog.openError(
+                    Display.getCurrent().getActiveShell(),
+                    Messages.error,
+                    StringUtils.format(Messages.alreadyConnected, targetEndpoint.getName(),
+                        connectedTo.getOutput().getName(), connectedTo.getSourceNode().getName()));
+                return false;
             }
         }
-        if (!inputHasAlreadyConnection) {
-            List<Location> alreadyExistentBendpoints = new ArrayList<>();
-            for (Connection connection : workflowDescription.getConnections()) {
-                if ((connection.getSourceNode().getIdentifier().equals(sourceNode.getIdentifier())
-                    && connection.getTargetNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier()))) {
-                    alreadyExistentBendpoints = connection.getBendpoints();
-                    break;
-                } else if (connection.getSourceNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier())
-                    && connection.getTargetNode().getIdentifier().equals(sourceNode.getIdentifier())){
-                    // invert order
-                    for (Location l : connection.getBendpoints()){
-                        alreadyExistentBendpoints.add(0, l);
-                    }
-                    break;
+
+        // check connections for already existent bendpoints between the two nodes
+        List<Location> alreadyExistentBendpoints = new ArrayList<>();
+        for (Connection connection : workflowDescription.getConnections()) {
+            if ((connection.getSourceNode().getIdentifier().equals(sourceNode.getIdentifier())
+                && connection.getTargetNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier()))) {
+                alreadyExistentBendpoints = connection.getBendpoints();
+                break;
+            } else if (connection.getSourceNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier())
+                && connection.getTargetNode().getIdentifier().equals(sourceNode.getIdentifier())) {
+                // invert order
+                for (Location l : connection.getBendpoints()) {
+                    alreadyExistentBendpoints.add(0, l);
                 }
+                break;
             }
-            
-            Connection connection = new Connection(sourceNode, endpointManager.getEndpointDescription(sourceEndpointName),
-                targetEndpoint.getWorkflowNode(), targetEndpoint.getEndpointDescription(), alreadyExistentBendpoints);
-            ConnectionAddCommand command = new ConnectionAddCommand(workflowDescription, connection);
+        }
 
-            // in section, execute on editors command stack, otherwise without command stack.
-            // TODO add command stack for connection dialog.
-            if (editorsCommandStack != null) {
-                editorsCommandStack.execute(command);
-            } else {
-                command.execute();
-            }
+        Connection connection = new Connection(sourceNode, endpointManager.getEndpointDescription(sourceEndpointName),
+            targetEndpoint.getWorkflowNode(), targetEndpoint.getEndpointDescription(), alreadyExistentBendpoints);
+        ConnectionAddCommand command = new ConnectionAddCommand(workflowDescription, connection);
 
+        // in section, execute on editors command stack, otherwise without command stack.
+        // TODO add command stack for connection dialog.
+        if (editorsCommandStack != null) {
+            editorsCommandStack.execute(command);
         } else {
-            MessageDialog.openError(
-                Display.getCurrent().getActiveShell(),
-                Messages.error,
-                String.format(Messages.alreadyConnected, targetEndpoint.getName(),
-                    connectedTo.getOutput().getName(), connectedTo.getSourceNode().getName()));
-            return false;
+            command.execute();
         }
         return true;
 
@@ -459,27 +481,26 @@ public class ConnectionDialogComposite extends Composite {
      * @param newModel The new model for the connection trees and canvas.
      */
     public void updateConnectionViewer(WorkflowDescription newModel) {
-        
-        workflowDescription = newModel;
 
+        workflowDescription = newModel;
         sourceTreeViewer.setInput(workflowDescription);
         targetTreeViewer.setInput(workflowDescription);
 
         sourceTreeViewer.getControl().setRedraw(false);
         targetTreeViewer.getControl().setRedraw(false);
-        
+
         targetTreeViewer.refresh(true);
         sourceTreeViewer.refresh(true);
 
         targetTreeViewer.expandAll();
         sourceTreeViewer.expandAll();
-        
+
         sourceTreeViewer.getControl().setRedraw(true);
         targetTreeViewer.getControl().setRedraw(true);
 
         sourceTreeViewer.getControl().redraw();
         targetTreeViewer.getControl().redraw();
-        
+
         canvas.updateCanvas(workflowDescription);
 
         canvas.repaint();
@@ -681,7 +702,12 @@ public class ConnectionDialogComposite extends Composite {
 
         @Override
         public void selectionChanged(SelectionChangedEvent e) {
-            selectOutputSource();
+            if (initializedSection) {
+                initializedSection = false;
+            } else {
+                selectOutputSource();
+            }
+
         }
     }
 
@@ -695,29 +721,41 @@ public class ConnectionDialogComposite extends Composite {
         @Override
         public void selectionChanged(SelectionChangedEvent event) {
             if (!event.getSelection().isEmpty() && selectionData != null) {
-
                 Object currentTarget = ((ITreeSelection) event.getSelection()).getFirstElement();
                 Object currentSource = ((ITreeSelection) sourceTreeViewer.getSelection()).getFirstElement();
 
                 boolean selectionTypesEqual = false;
-                if (currentSource.getClass() == currentTarget.getClass()) {
-                    selectionTypesEqual = true;
-                }
 
-                if (selectionTypesEqual && (currentTarget instanceof Endpoint || currentTarget instanceof WorkflowNode)) {
-                    for (String sourceString : ((String) selectionData).split(Pattern.quote(SEMICOLON))) {
-                        String[] splittedSourceString = sourceString.split(Pattern.quote(SLASH), 2);
-                        if (splittedSourceString.length > 1) {
-                            if (performEndpointDrop(splittedSourceString[0], splittedSourceString[1], currentTarget)) {
-                                setTargetTreeCursorToDefault();
-                            }
-                        }
+                if (currentSource != null) {
+
+                    if (currentSource.getClass() == currentTarget.getClass()) {
+                        selectionTypesEqual = true;
                     }
+
+                    if (selectionTypesEqual && (currentTarget instanceof Endpoint || currentTarget instanceof WorkflowNode)) {
+                        connectEqualTypes(currentTarget);
+
+                    }
+
                 }
                 canvas.repaint();
                 targetTreeViewer.refresh();
                 sourceTreeViewer.refresh();
             }
+        }
+
+        // Tries to connect two endpoints with identical types
+        private void connectEqualTypes(Object currentTarget) {
+
+            for (String sourceString : selectionData.split(Pattern.quote(SEMICOLON))) {
+                String[] splittedSourceString = sourceString.split(Pattern.quote(SLASH), 2);
+                if (splittedSourceString.length > 1) {
+                    if (performEndpointDrop(splittedSourceString[0], splittedSourceString[1], currentTarget)) {
+                        setTargetTreeCursorToDefault();
+                    }
+                }
+            }
+
         }
     }
 
@@ -810,7 +848,7 @@ public class ConnectionDialogComposite extends Composite {
             }
             Object currentSource = ((ITreeSelection) sourceTreeViewer.getSelection()).getFirstElement();
             boolean selectionTypesEqual = false;
-            if (currentSource != null && dest != null){
+            if (currentSource != null && dest != null) {
                 if (currentSource.getClass() == dest.getClass()) {
                     selectionTypesEqual = true;
                 }
@@ -827,7 +865,6 @@ public class ConnectionDialogComposite extends Composite {
         this.editorsCommandStack = editorsCommandStack2;
     }
 
-    
     /**
      * Mouse movement listener that handles cursor.
      * 
@@ -891,7 +928,8 @@ public class ConnectionDialogComposite extends Composite {
                             for (String candidate : sourceCandidates) {
                                 checkCandidateForCursorSetting(targetEndpoint, candidate);
                             }
-                        } else if (node.getName().equals(hoveredComponentName) && (targetType == workflowNodeClass)) {
+                        } else if (node.getName().equals(hoveredComponentName) && (targetType == workflowNodeClass)
+                            && !initializedSection) {
                             targetTreeDefaultCursor = targetTree.getParent().getCursor();
                             targetTree.setCursor(crossCursor);
                             break;
@@ -914,7 +952,7 @@ public class ConnectionDialogComposite extends Composite {
                 DataType targetDataType = targetEndpoint.getDataType();
                 boolean typeCompatible = (datumConverter.isConvertibleTo(sourceDataType, targetDataType))
                     || (sourceDataType.equals(targetDataType));
-                if (!isConnected && typeCompatible) {
+                if (!isConnected && typeCompatible && !initializedSection) {
                     targetTreeDefaultCursor = targetTree.getParent().getCursor();
                     targetTree.setCursor(crossCursor);
                 } else {
@@ -923,5 +961,5 @@ public class ConnectionDialogComposite extends Composite {
             }
         }
     }
-    
+
 }

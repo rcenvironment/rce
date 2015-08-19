@@ -22,6 +22,7 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.start.common.validation.PlatformMessage;
 import de.rcenvironment.core.start.common.validation.PlatformValidator;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Validator for all .json files in the configuration folder.
@@ -64,8 +65,8 @@ public class ConfigurationValidator implements PlatformValidator {
                     mapper.readTree(fileContent);
                 } catch (IOException e) {
                     result.add(new PlatformMessage(PlatformMessage.Type.WARNING,
-                        ValidatorsBundleActivator.bundleSymbolicName,
-                        String.format(Messages.couldNotValidateJsonFile, f.getAbsolutePath())));
+                        ValidatorsBundleActivator.bundleSymbolicName, StringUtils.format(Messages.couldNotValidateJsonFile,
+                            f.getAbsolutePath())));
                 }
             }
         }

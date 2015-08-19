@@ -20,6 +20,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
+import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,7 +87,23 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
 
     private static final String COULD_NOT_READ_TABLE_ERROR = "Could not read table. ";
 
-    private static final int MAX_GUI_ELEMENTS = 8000;
+    private static final int MAX_GUI_ELEMENTS;
+
+    // Since there is a bug with linux systems which lets RCE crash, there must be a constraint that
+    // is lower than the windows constraint for GUI elements.
+    // The bug is an xserver bug, which occurs having an intel graphics card. It is described in
+    // this thread:
+    // https://forums.opensuse.org/showthread.php/389147-X-Error-of-failed-request-BadAlloc-%28insufficient-resources
+
+    static {
+        if (OS.isFamilyUnix()) {
+            final int value = 2000;
+            MAX_GUI_ELEMENTS = value;
+        } else {
+            final int value = 10000;
+            MAX_GUI_ELEMENTS = value;
+        }
+    }
 
     private Combo algorithmSelection;
 
@@ -750,7 +767,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             outputsWarningLabel.setVisible(true);
             outputsWarningLabel.setText(Messages.tooMuchElements);
         }
-        if (!outputsWarningLabel.isVisible() && algorithmSelection.getSelection().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
+        if (!outputsWarningLabel.isVisible() && algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
             && (tableValues == null || tableValues[0] == null)) {
             outputsWarningLabel.setVisible(true);
             outputsWarningLabel.setText(Messages.noTableLong);

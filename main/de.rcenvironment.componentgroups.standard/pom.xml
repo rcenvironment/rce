@@ -58,17 +58,23 @@
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.common</module>
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.gui</module>
+		<module>${modules-root}/de.rcenvironment.components.outputwriter.execution.tests</module>
 
 		<!-- parametric study component -->
 		<module>${modules-root}/de.rcenvironment.components.parametricstudy.common</module>
 		<module>${modules-root}/de.rcenvironment.components.parametricstudy.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.parametricstudy.gui</module>
+		<module>${modules-root}/de.rcenvironment.components.parametricstudy.execution.tests</module>
 
 		<!-- script component -->
 		<module>${modules-root}/de.rcenvironment.components.script.common</module>
 		<module>${modules-root}/de.rcenvironment.components.script.execution.python</module>
-		<module>${modules-root}/de.rcenvironment.components.script.execution.jython</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution.python.fragment</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution.python.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution.jython</module> 
+		<module>${modules-root}/de.rcenvironment.components.script.execution.jython.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.script.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.script.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.script.gui</module>
 
 		<!-- joiner component -->

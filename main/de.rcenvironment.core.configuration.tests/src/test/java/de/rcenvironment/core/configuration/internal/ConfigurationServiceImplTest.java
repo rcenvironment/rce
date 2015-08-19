@@ -368,6 +368,15 @@ public class ConfigurationServiceImplTest {
     /** Tests the behavior with no explicit installation path and an undefined OSGi install area. */
     @Test
     public void testUnidentifiableInstallDataLocation() {
+        //Initialize bootstrap configuration to avoid NPE in case it has not been initialized before.
+        if (!bootstrapSettingsInitialized) {
+            try {
+                BootstrapConfiguration.initialize(); // apply simulated home directory
+            } catch (IOException e) {
+                throw new RuntimeException(e); // avoid IOException handling in many tests for a rare failure case
+            }
+            bootstrapSettingsInitialized = true;
+        }        
         System.clearProperty(ConfigurationService.SYSTEM_PROPERTY_OSGI_INSTALL_AREA);
         final ConfigurationServiceImpl service = new ConfigurationServiceImpl();
         try {

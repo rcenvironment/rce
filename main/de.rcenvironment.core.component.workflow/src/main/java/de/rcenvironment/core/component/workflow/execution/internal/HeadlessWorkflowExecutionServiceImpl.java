@@ -60,6 +60,7 @@ import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDes
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateUtils;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -130,7 +131,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             }
             if (!ComponentUtils.hasComponent(compKnowledge.getAllInstallations(), node.getComponentDescription().getIdentifier(),
                 componentNode)) {
-                log.warn(String.format("Component '%s' not installed on configured component node '%s' or node is not available",
+                log.warn(StringUtils.format("Component '%s' not installed on configured component node '%s' or node is not available",
                     node.getComponentDescription().getName(), componentNode));
                 return false;
             }
@@ -175,7 +176,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             }
             headlessWfExeCtx.setLogDirectory(logDirectory);
             // run
-            headlessWfExeCtx.addOutput(String.format("Starting execution of workflow '%s' using log directory '%s'",
+            headlessWfExeCtx.addOutput(StringUtils.format("Starting execution of workflow '%s' using log directory '%s'",
                 wfFile.getAbsolutePath(), logDirectory.getAbsolutePath()));
             try {
                 startWorkflowExecution(workflowDescription, headlessWfExeCtx);
@@ -231,7 +232,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                 ComponentInstallation installation = ComponentUtils.getExactMatchingComponentInstallationForNode(
                     node.getComponentDescription().getIdentifier(), installations, localNode);
                 if (installation == null) {
-                    throw new WorkflowExecutionException(String.format("Component '%s' not installed on node %s "
+                    throw new WorkflowExecutionException(StringUtils.format("Component '%s' not installed on node %s "
                         + node.getName(), node.getComponentDescription().getNode().getAssociatedDisplayName()));
                 }
                 node.getComponentDescription().setComponentInstallationAndUpdateConfiguration(installation);
@@ -304,7 +305,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         
         // subscribe to a console row notification on workflow controller node
         try {
-            distributedNotificationService.subscribe(String.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
+            distributedNotificationService.subscribe(StringUtils.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
                 wfExeCtx.getExecutionIdentifier(), wfExeCtx.getNodeId().getIdString()),
                 consoleRowSubscriber, wfExeCtx.getNodeId());
         } catch (CommunicationException e1) {
@@ -325,7 +326,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             throw new WorkflowExecutionException(e);
         }
         
-        log.debug(String.format("Created workflow from file %s with name '%s', with id %s on node %s (%s)",
+        log.debug(StringUtils.format("Created workflow from file %s with name '%s', with id %s on node %s (%s)",
             wfHeadlessExeCtx.getWorkflowFile().getName(), wfExeInfo.getInstanceName(), wfExeInfo.getExecutionIdentifier(),
             wfExeInfo.getNodeId().getAssociatedDisplayName(), wfExeInfo.getNodeId().getIdString()));
     }
@@ -374,7 +375,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
         final Map<String, Map<String, String>> placeholderValues;
         if (placeholdersFile != null) {
             placeholderValues = readPlaceholdersFile(placeholdersFile);
-            log.debug(String.format("Loaded placeholder values from %s: %s", placeholdersFile.getAbsolutePath(), placeholderValues));
+            log.debug(StringUtils.format("Loaded placeholder values from %s: %s", placeholdersFile.getAbsolutePath(), placeholderValues));
         } else {
             placeholderValues = new HashMap<>();
         }
@@ -420,7 +421,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                 eliminateKnownIrrelevantPlaceholders(wn, missingCIPlaceholderKeys);
 
                 for (String missingKey : missingCIPlaceholderKeys) {
-                    missingPlaceholderValues.add(String.format("\"%s\" -> \"%s\" (%s)", componentId, missingKey, compInstanceId));
+                    missingPlaceholderValues.add(StringUtils.format("\"%s\" -> \"%s\" (%s)", componentId, missingKey, compInstanceId));
                 }
             }
 
@@ -454,7 +455,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                 cPlaceholderValuesToLog.put(cPlaceholderKey, cPlaceholderValues.get(cPlaceholderKey));
             }
         }
-        log.debug(String.format("Applying %d placeholder value(s) to workflow node %s: %s", cPlaceholderValues.size(), wn,
+        log.debug(StringUtils.format("Applying %d placeholder value(s) to workflow node %s: %s", cPlaceholderValues.size(), wn,
             cPlaceholderValuesToLog));
     }
 

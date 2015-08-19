@@ -30,4 +30,16 @@ public final class ImageUtils {
         return PlatformUI.getWorkbench().getSharedImages().getImageDescriptor(eclipseId);
     }
 
+    /**
+     * Creates an {@link ImageDescriptor} from a resource inside a bundle. The given class can be any class within the target bundle. Note
+     * that Enum types can *NOT* be used for this!
+     * 
+     * @param bundleClass a non-enum class in the same bundle as the resource
+     * @param resourcePath the path of the resource, typically starting with "/" for the root of the bundle namespace
+     * @return the generated {@link ImageDescriptor}
+     */
+    public static ImageDescriptor createImageDescriptorFromBundleResource(Class<?> bundleClass, String resourcePath) {
+        return ImageDescriptor.createFromFile(bundleClass, resourcePath);
+    }
+
 }

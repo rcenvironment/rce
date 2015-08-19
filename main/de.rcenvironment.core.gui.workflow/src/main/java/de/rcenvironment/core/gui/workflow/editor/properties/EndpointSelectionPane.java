@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.eclipse.core.runtime.AssertionFailedException;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
@@ -48,8 +49,8 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
@@ -256,7 +257,8 @@ public class EndpointSelectionPane implements Refreshable {
     }
 
     /**
-     * Set the component instance configuration for configuration handling & storage; must not be null.
+     * Set the component instance configuration for configuration handling & storage; must not be
+     * null.
      * 
      * @param configuration Component configuration
      */
@@ -329,10 +331,19 @@ public class EndpointSelectionPane implements Refreshable {
             if (!tableBuilt) {
                 for (String key : shownMetaData) {
                     tableBuilt = true;
-                    TableColumn col = new TableColumn(table, SWT.NONE);
-                    col.setText(key);
-                    final int columnWeight = 20;
-                    tableLayout.setColumnData(col, new ColumnWeightData(columnWeight, true));
+                    TableColumn col = null;
+                    try {
+                        col = new TableColumn(table, SWT.NONE, guiKeyToColumnNumberMap.get(key));
+                        decorateColumn(key, col);
+                        // Due to a layout gui bug under linux, this exception must be catched.
+                        // Afterwards, the decoration of the column can be done without an error.
+                    } catch (AssertionFailedException e) {
+                        if (e.getMessage().contains("assertion failed: Unknown column layout data")) {
+                            decorateColumn(key, table.getColumn(guiKeyToColumnNumberMap.get(key)));
+                        } else {
+                            throw e;
+                        }
+                    }
                 }
             }
             if (showOnlyManagedEndpoints) {
@@ -362,6 +373,12 @@ public class EndpointSelectionPane implements Refreshable {
                 fillCells(dynamicEndpointNames, false);
             }
         }
+    }
+
+    private void decorateColumn(String key, TableColumn col) {
+        final int columnWeight = 20;
+        tableLayout.setColumnData(col, new ColumnWeightData(columnWeight, true));
+        col.setText(key);
     }
 
     private void fillCells(List<String> endpointNames, boolean staticEndpoints) {

@@ -26,6 +26,7 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * The {@link LabelProvider} for the network view.
@@ -100,9 +101,9 @@ public class NetworkViewLabelProvider extends LabelProvider {
                 if (componentInterface.getVersion() != null
                     && componentInterface.getIdentifier().startsWith("de.rcenvironment.integration.common.")
                     || componentInterface.getIdentifier().startsWith("de.rcenvironment.integration.cpacs.")) {
-                    return String.format("%s (%s)", componentInterface.getDisplayName(), componentInterface.getVersion());
+                    return StringUtils.format("%s (%s)", componentInterface.getDisplayName(), componentInterface.getVersion());
                 } else {
-                    return String.format("%s", componentInterface.getDisplayName());
+                    return StringUtils.format("%s", componentInterface.getDisplayName());
                 }
             case RAW_NODE_PROPERTIES_FOLDER:
                 return "Raw Node Properties";
@@ -120,7 +121,7 @@ public class NetworkViewLabelProvider extends LabelProvider {
                 && (disconnectReason != null)) {
                 subState = ": " + disconnectReason.getDisplayText();
             }
-            result = String.format("%s (%s%s)", typedElement.getDisplayName(), connectionState.getDisplayText(), subState);
+            result = StringUtils.format("%s (%s%s)", typedElement.getDisplayName(), connectionState.getDisplayText(), subState);
         } else if (element instanceof NetworkGraphLink) {
             result = ((NetworkGraphLink) element).getLinkId(); // TODO
         } else {

@@ -16,6 +16,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.cluster.common.ClusterComponentConstants;
 import de.rcenvironment.core.gui.workflow.executor.properties.AbstractScriptSection;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 
 /**
@@ -34,7 +35,7 @@ public class ScriptSection extends AbstractScriptSection {
     @Override
     protected void createCompositeContentAtVeryTop(Composite composite, TabbedPropertySheetWidgetFactory factory) {
         isScriptProvidedbutton = factory.createButton(composite,
-            String.format(Messages.isScriptProvided, ClusterComponentConstants.JOB_SCRIPT_NAME), SWT.CHECK);
+            StringUtils.format(Messages.isScriptProvided, ClusterComponentConstants.JOB_SCRIPT_NAME), SWT.CHECK);
         isScriptProvidedbutton.setData(CONTROL_PROPERTY_KEY, ClusterComponentConstants.KEY_IS_SCRIPT_PROVIDED_WITHIN_INPUT_DIR);
         super.createCompositeContentAtVeryTop(composite, factory);
         

@@ -8,12 +8,6 @@
 
 package de.rcenvironment.core.gui.command;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.StringSelection;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -33,6 +27,9 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.custom.VerifyKeyListener;
+import org.eclipse.swt.dnd.Clipboard;
+import org.eclipse.swt.dnd.TextTransfer;
+import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MouseEvent;
@@ -108,7 +105,11 @@ public class CommandConsoleViewer extends ViewPart {
 
     private final List<String> usedCommands = new ArrayList<String>();
 
+    // replacing the line break with the platform-independent one results in errors (invalid argument) in #setSelection(int start);
+    // investigate if "\n" causes issues
     private final String lineBreak = "\n";
+    
+    private final String platformIndependentLineBreak = System.lineSeparator();
 
     /** starts at -1. */
     private int commandPosition = 0 - 1;
@@ -148,21 +149,12 @@ public class CommandConsoleViewer extends ViewPart {
         public void run() {
             // if multiple lines are in the clipboard, extract the first one and put it back to the
             // clipboard so that only this line will be
-            // pasted
-            Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
-            try {
-                if (transferable != null && transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-                    String clipboardText = (String) transferable.getTransferData(DataFlavor.stringFlavor);
-                    if (clipboardText.contains("\n")) {
-                        clipboardText = clipboardText.substring(0, clipboardText.indexOf("\n"));
-                        StringSelection stringSelection = new StringSelection(clipboardText);
-                        Toolkit.getDefaultToolkit().getSystemClipboard().setContents(stringSelection, null);
-                    }
-                }
-            } catch (UnsupportedFlavorException | IOException e) {
-                LogFactory.getLog(getClass()).debug("Error when checking the clipboad for multi-line content: " + e.getMessage());
+            Clipboard clipboard = new Clipboard(Display.getCurrent());
+            String content = ((String) clipboard.getContents(TextTransfer.getInstance()));
+            if (content.contains(platformIndependentLineBreak)){
+                clipboard.setContents(new String[]{content.substring(0, content.indexOf(platformIndependentLineBreak))}, 
+                        new Transfer[]{ TextTransfer.getInstance()});
             }
-
             styledtext.paste();
             String line = getLineWithoutRCEPROMPT(currentLine);
             setStyledRange(caretLinePosition, line.length());
@@ -511,6 +503,13 @@ public class CommandConsoleViewer extends ViewPart {
                 if (getLineWithoutRCEPROMPT(0).isEmpty()) {
                     clearConsoleAction.setEnabled(false);
                 }
+            }
+
+            if (keyEvent.keyCode == SWT.ESC) {
+                styledtext.setSelection(styledtext.getCharCount() - getLineWithoutRCEPROMPT(currentLine).length(),
+                    styledtext.getCharCount());
+                insertText("");
+                setSelection(caretLinePosition);
             }
         }
 

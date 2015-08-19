@@ -1,11 +1,12 @@
 {
   "identifier" : "81725a69-d069-4f8d-bdcf-a4bf31ac55d8",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "Remote_Tool_Access-##TIMESTAMP##-##TOOL_ID##",
   "nodes" : [ {
     "identifier" : "fb3e2b68-74e6-414b-87c7-6f8ab6b53b83",
     "name" : "##TOOL_ID##",
     "location" : "400:180",
+    "platform" : "##TOOL_NODE_ID##",
     "component" : {
       "identifier" : "de.rcenvironment.integration.common.##TOOL_ID##",
       "version" : "##TOOL_VERSION##"

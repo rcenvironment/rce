@@ -24,20 +24,21 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * requests.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class WorkflowGraph implements Serializable {
 
     private static final long serialVersionUID = -2028814913500870207L;
 
-    // executionIdentifier -> WorkflowGraphNode
+    // execution identifier of starting node -> WorkflowGraphNode
     private final Map<String, WorkflowGraphNode> nodes;
 
-    // identifier created by WorkflowGraph#createEdgeIdentifier -> WorkflowGraphEdge
+    // identifier created by WorkflowGraph#createEdgeIdentifier -> set of WorkflowGraphEdge
     private final Map<String, Set<WorkflowGraphEdge>> edges;
 
-    private Map<String, Map<String, Set<Queue<WorkflowGraphHop>>>> cachedResetCycleHops = new HashMap<>();
+    private final Map<String, Map<String, Set<Queue<WorkflowGraphHop>>>> cachedResetCycleHops = new HashMap<>();
 
-    private Map<String, Set<WorkflowGraphNode>> innerResetLinkNodes = new HashMap<>();
+    private final Map<String, Set<WorkflowGraphNode>> innerResetLinkNodes = new HashMap<>();
 
     public WorkflowGraph(Map<String, WorkflowGraphNode> nodes, Map<String, Set<WorkflowGraphEdge>> edges) {
         this.nodes = nodes;
@@ -45,28 +46,31 @@ public class WorkflowGraph implements Serializable {
     }
 
     /**
-     * @param executionIdentifier execution identifier of node
-     * @return ordered list of hops to traverse
+     * @param executionIdentifier execution identifier of the starting node
+     * @return ordered list of hops to traverse for each output of the starting node
      */
     public Map<String, Set<Queue<WorkflowGraphHop>>> getHopsToTraverseWhenResetting(String executionIdentifier) {
-        if (!cachedResetCycleHops.containsKey(executionIdentifier)) {
-            Map<String, Set<Queue<WorkflowGraphHop>>> resetCycleHops = new HashMap<String, Set<Queue<WorkflowGraphHop>>>();
-            WorkflowGraphNode startNode = nodes.get(executionIdentifier);
-            for (String outputIdentifier : startNode.getOutputIdentifiers()) {
-                Set<Queue<WorkflowGraphHop>> endpointHopsSet = new HashSet<Queue<WorkflowGraphHop>>();
-                if (edges.containsKey(StringUtils.escapeAndConcat(executionIdentifier, outputIdentifier))) {
-                    for (WorkflowGraphEdge e : edges.get(StringUtils.escapeAndConcat(executionIdentifier, outputIdentifier))) {
-                        Queue<WorkflowGraphHop> hopsQueue = new LinkedList<WorkflowGraphHop>();
-                        hopsQueue.add(new WorkflowGraphHop(executionIdentifier, startNode.getEndpointName(e.getOutputIdentifier()),
-                            e.getTargetExecutionIdentifier(),
-                            nodes.get(e.getTargetExecutionIdentifier()).getEndpointName(e.getInputIdentifier())));
-                        getHopsRecursive(e.getTargetExecutionIdentifier(), hopsQueue, endpointHopsSet, startNode);
+        synchronized (cachedResetCycleHops) {
+            if (!cachedResetCycleHops.containsKey(executionIdentifier)) {
+                Map<String, Set<Queue<WorkflowGraphHop>>> resetCycleHops = new HashMap<String, Set<Queue<WorkflowGraphHop>>>();
+                WorkflowGraphNode startNode = nodes.get(executionIdentifier);
+                for (String outputIdentifier : startNode.getOutputIdentifiers()) {
+                    Set<Queue<WorkflowGraphHop>> endpointHopsSet = new HashSet<Queue<WorkflowGraphHop>>();
+                    if (edges.containsKey(StringUtils.escapeAndConcat(executionIdentifier, outputIdentifier))) {
+                        for (WorkflowGraphEdge e : edges.get(StringUtils.escapeAndConcat(executionIdentifier, outputIdentifier))) {
+                            Queue<WorkflowGraphHop> hopsQueue = new LinkedList<WorkflowGraphHop>();
+                            hopsQueue.add(new WorkflowGraphHop(executionIdentifier, startNode.getEndpointName(e.getOutputIdentifier()),
+                                e.getTargetExecutionIdentifier(),
+                                nodes.get(e.getTargetExecutionIdentifier()).getEndpointName(e.getInputIdentifier())));
+                            getHopsRecursive(e.getTargetExecutionIdentifier(), hopsQueue, endpointHopsSet, startNode);
+                        }
+                        resetCycleHops.put(startNode.getEndpointName(outputIdentifier), endpointHopsSet);
                     }
-                    resetCycleHops.put(startNode.getEndpointName(outputIdentifier), endpointHopsSet);
                 }
+                cachedResetCycleHops.put(executionIdentifier, resetCycleHops);
             }
-            cachedResetCycleHops.put(executionIdentifier, resetCycleHops);
         }
+        
         Map<String, Set<Queue<WorkflowGraphHop>>> cachedResetCycleHopForExeId = cachedResetCycleHops.get(executionIdentifier);
         Map<String, Set<Queue<WorkflowGraphHop>>> snapshot = new HashMap<>();
         for (String outputName : cachedResetCycleHopForExeId.keySet()) {
@@ -81,12 +85,12 @@ public class WorkflowGraph implements Serializable {
     private void getHopsRecursive(String targetExecutionIdentifier, Queue<WorkflowGraphHop> hopsQueue,
         Set<Queue<WorkflowGraphHop>> endpointHopsSet, WorkflowGraphNode startNode) {
         WorkflowGraphNode currentNode = nodes.get(targetExecutionIdentifier);
+
         if (targetExecutionIdentifier.equals(startNode.getExecutionIdentifier())) {
             // returned to origin OR current node has no outputs to go to.
             endpointHopsSet.add(hopsQueue);
             return;
         }
-
         if ((currentNode.isResetSink() && !getInnerResetLinkNodes(startNode.getExecutionIdentifier()).contains(
             currentNode.getExecutionIdentifier()))
             || currentNode.getOutputIdentifiers().isEmpty()) {

@@ -54,9 +54,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 public abstract class AbstractCpacsRuntimeView extends ViewPart implements ComponentRuntimeView {
 
     protected static final TempFileService TEMP_MANAGER = TempFileServiceAccess.getInstance();
-    
+
     private static final int MINIMUM_HEIGHT_OF_FILE_CONTENT_TEXT = 300;
-    
+
     private static File managedTempDir = null;
 
     /**
@@ -117,7 +117,7 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
                             tempFileReference, cpacsFile, componentInstanceDescriptor.getDefaultStorageNodeId());
                     } catch (final AuthenticationException e) {
                         throw new IllegalStateException(e);
-                    }                    
+                    }
                 }
             } catch (final IOException e) {
                 log.error("Fetching CPACS file failed", e);
@@ -127,7 +127,9 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
 
     @Override
     public void initializeView() {
-        mappedB.setEnabled(cpacsFile != null);
+        if (mappedB != null) { //This button only exists on Windows
+            mappedB.setEnabled(cpacsFile != null);
+        }
         if (cpacsFile != null && cpacsFile.exists()) {
             try {
                 fileContentText.setText(FileUtils.readFileToString(cpacsFile, Charset.defaultCharset()));
@@ -182,8 +184,8 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
     protected abstract void performShowAction(final File file);
 
     /**
-     * Check if there is a recent history entry notification. This is needed to show the last
-     * version of the incoming + mapped CPACS document.
+     * Check if there is a recent history entry notification. This is needed to show the last version of the incoming + mapped CPACS
+     * document.
      * 
      * @return The object or null if unavailable
      */
@@ -208,7 +210,6 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
         return null;
     }
 
-    
     @Override
     public void dispose() {
         super.dispose();

@@ -20,6 +20,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link ParametricStudyService}.
@@ -43,7 +44,7 @@ public class ParametricStudyServiceImpl implements ParametricStudyService {
     public StudyPublisher createPublisher(final String identifier, final String title, final StudyStructure structure) {
         final Study study = new Study(identifier, title, structure);
         final StudyPublisher studyPublisher = new StudyPublisherImpl(study, notificationService);
-        final String notificationId = String.format(ParametricStudyUtils.STRUCTURE_PATTERN, study.getIdentifier());
+        final String notificationId = StringUtils.format(ParametricStudyUtils.STRUCTURE_PATTERN, study.getIdentifier());
         notificationService.setBufferSize(notificationId, 1);
         notificationService.send(notificationId, new Serializable[] { study.getStructure(), title});
         return studyPublisher;
@@ -51,7 +52,7 @@ public class ParametricStudyServiceImpl implements ParametricStudyService {
 
     @Override
     public StudyReceiver createReceiver(final String identifier, final NodeIdentifier node) {
-        final String notificationId = String.format(ParametricStudyUtils.STRUCTURE_PATTERN,
+        final String notificationId = StringUtils.format(ParametricStudyUtils.STRUCTURE_PATTERN,
                 identifier);
         final List<Notification> notifications = distributedNotificationService
                 .getNotifications(notificationId, node).get(notificationId);

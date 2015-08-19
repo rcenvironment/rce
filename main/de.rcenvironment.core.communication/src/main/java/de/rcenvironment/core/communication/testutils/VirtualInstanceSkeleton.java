@@ -134,7 +134,7 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
                 transitionalStateSemaphore.acquire();
             }
             currentState = newState;
-            // log.debug(String.format("State change: Virtual instance '%s' is now %s",
+            // log.debug(StringUtils.format("State change: Virtual instance '%s' is now %s",
             // nodeInformation.getLogName(), newState));
         }
 

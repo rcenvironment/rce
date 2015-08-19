@@ -136,6 +136,12 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String runInformationTitle;
+    
+    /** Constant. */
+    public static String componentRunInformationNode;
+    
+    /** Constant. */
+    public static String componentRunInformationSubtree; 
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

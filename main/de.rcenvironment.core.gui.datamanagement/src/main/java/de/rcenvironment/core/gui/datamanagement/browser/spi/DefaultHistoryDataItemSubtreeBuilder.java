@@ -15,6 +15,7 @@ import java.io.Serializable;
 import de.rcenvironment.core.component.datamanagement.api.DefaultComponentHistoryDataItem;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -49,12 +50,13 @@ public abstract class DefaultHistoryDataItemSubtreeBuilder implements ComponentH
         } else {
             String exceptionInformationText = "";
             if (historyDataItem != null) {
-                exceptionInformationText = String.format("Parsing history data point failed: Expected type %s, but was of type %s",
+                exceptionInformationText = StringUtils.format("Parsing history data point failed: Expected type %s, but was of type %s",
                     String.class.getCanonicalName(),
                     historyDataItem.getClass().getCanonicalName());
             } else {
-                exceptionInformationText = String.format("Parsing history data point failed: Expected type %s, actual type not available.",
-                    String.class.getCanonicalName());
+                exceptionInformationText =
+                    StringUtils.format("Parsing history data point failed: Expected type %s, actual type not available.",
+                        String.class.getCanonicalName());
             }
             throw new IllegalArgumentException(exceptionInformationText);
         }

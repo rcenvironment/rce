@@ -19,6 +19,8 @@ import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.MouseAdapter;
+import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -79,6 +81,8 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
     private Button publishCheckbox;
 
     private Button deleteTempDirNotOnErrorOnceCheckbox;
+
+    private ButtonSelectionListener btnButtonSelectionListener;
 
     protected ToolConfigurationPage(String pageName, Map<String, Object> configurationMap) {
         super(pageName);
@@ -299,7 +303,8 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         tableButtonAdd = new Button(client, SWT.FLAT);
         tableButtonAdd.setText(Messages.add);
         tableButtonAdd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
-        tableButtonAdd.addSelectionListener(new ButtonSelectionListener(tableButtonAdd, toolConfigTable));
+        btnButtonSelectionListener = new ButtonSelectionListener(tableButtonAdd, toolConfigTable);
+        tableButtonAdd.addSelectionListener(btnButtonSelectionListener);
         tableButtonEdit = new Button(client, SWT.FLAT);
         tableButtonEdit.setText(Messages.edit);
         tableButtonEdit.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
@@ -319,6 +324,18 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             @Override
             public void widgetDefaultSelected(SelectionEvent e) {
                 widgetSelected(e);
+            }
+        });
+
+        toolConfigTable.addMouseListener(new MouseAdapter() {
+
+            @Override
+            public void mouseDoubleClick(MouseEvent e) {
+
+                TableItem[] selection = toolConfigTable.getSelection();
+
+                btnButtonSelectionListener.editSelection(selection);
+
             }
         });
 
@@ -355,6 +372,8 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         if (configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT) != null
             && (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT)) {
             publishCheckbox.setSelection(true);
+        } else {
+            publishCheckbox.setSelection(false);
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_USE_ITERATION_DIRECTORIES) != null
             && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_USE_ITERATION_DIRECTORIES)) {
@@ -408,6 +427,24 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                     copyNeverButton.setSelection(false);
                     copyOnceButton.setSelection(true);
                 }
+            }
+
+        } else {
+            if (copyNeverButton.isEnabled()) {
+                copyAlwaysButton.setSelection(false);
+                copyOnceButton.setSelection(false);
+                copyNeverButton.setSelection(true);
+                configurationMap.put(ToolIntegrationConstants.KEY_COPY_TOOL_BEHAVIOUR,
+                    ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_NEVER);
+            } else if (copyAlwaysButton.isEnabled()) {
+                copyAlwaysButton.setSelection(true);
+                copyNeverButton.setSelection(false);
+                copyOnceButton.setSelection(false);
+                configurationMap.put(ToolIntegrationConstants.KEY_COPY_TOOL_BEHAVIOUR,
+                    ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_ALWAYS);
+            } else {
+                configurationMap.put(ToolIntegrationConstants.KEY_COPY_TOOL_BEHAVIOUR,
+                    ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_ONCE);
             }
 
         }
@@ -529,29 +566,9 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                     configs.add(wtcd.getConfig());
                 }
             } else if (button.equals(tableButtonEdit)) {
-                if (selection != null && selection.length > 0) {
-                    List<Map<String, String>> configs =
-                        (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
-                    Map<String, String> selectedConfig = null;
-                    for (Map<String, String> currentConfig : configs) {
-                        if (currentConfig.get(ToolIntegrationConstants.KEY_HOST).equals(selection[0].getText(0))
-                            && currentConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(selection[0].getText(1))) {
-                            selectedConfig = currentConfig;
-                        }
-                    }
-                    Map<String, String> selectedConfigCopy = new HashMap<String, String>();
-                    selectedConfigCopy.putAll(selectedConfig);
-                    WizardToolConfigurationDialog wtcd =
-                        new WizardToolConfigurationDialog(null, Messages.edit + " "
-                            + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), selectedConfigCopy, configs,
-                            ((ToolIntegrationWizard) getWizard()).getCurrentContext(),
-                            true);
-                    int exit = wtcd.open();
-                    if (exit == 0) {
-                        configs.remove(selectedConfig);
-                        configs.add(wtcd.getConfig());
-                    }
-                }
+
+                editSelection(selection);
+
             } else if (button.equals(tableButtonRemove)) {
                 if (selection != null && selection.length > 0) {
 
@@ -569,6 +586,34 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             }
             updateTable();
             updateButtonActivation();
+        }
+
+        private void editSelection(TableItem[] selection) {
+
+            if (selection != null && selection.length > 0) {
+                @SuppressWarnings("unchecked") List<Map<String, String>> configs =
+                    (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
+                Map<String, String> selectedConfig = null;
+                for (Map<String, String> currentConfig : configs) {
+                    if (currentConfig.get(ToolIntegrationConstants.KEY_HOST).equals(selection[0].getText(0))
+                        && currentConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(selection[0].getText(1))) {
+                        selectedConfig = currentConfig;
+                    }
+                }
+                Map<String, String> selectedConfigCopy = new HashMap<String, String>();
+                selectedConfigCopy.putAll(selectedConfig);
+                WizardToolConfigurationDialog wtcd =
+                    new WizardToolConfigurationDialog(null, Messages.edit + " "
+                        + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), selectedConfigCopy, configs,
+                        ((ToolIntegrationWizard) getWizard()).getCurrentContext(),
+                        true);
+                int exit = wtcd.open();
+                if (exit == 0) {
+                    configs.remove(selectedConfig);
+                    configs.add(wtcd.getConfig());
+                }
+            }
+
         }
     }
 

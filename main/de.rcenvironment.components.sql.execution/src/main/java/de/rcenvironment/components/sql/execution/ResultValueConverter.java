@@ -239,7 +239,7 @@ import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
                 }
                 columnLabels = Collections.unmodifiableList(columnLabelsModifiableList);
             } catch (SQLException e) {
-                throw new RuntimeException("Failed to parse ResultSet MetaData:", e);
+                throw new RuntimeException("Failed to parse ResultSet MetaData: " + e.toString());
             }
         }
         
@@ -285,7 +285,7 @@ import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
                         illegalNextGuard = false;
                         return result;
                     } catch (SQLException e) {
-                        throw new RuntimeException("Failed to check whether ResultSet contains more lines:", e);
+                        throw new RuntimeException("Failed to check whether ResultSet contains more lines: " + e.toString());
                     }
                 }
 
@@ -339,7 +339,7 @@ import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
                         }
                         return row;
                     } catch (SQLException e) {
-                        throw new RuntimeException("Failed to retrieve next row from ResultSet:", e);
+                        throw new RuntimeException("Failed to retrieve next row from ResultSet: " + e.toString());
                     }
                 }
 

@@ -37,6 +37,7 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.gui.workflow.Activator;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -85,7 +86,7 @@ public class WorkflowPaletteFactory {
             ToolIntegrationContextRegistry toolIntegrationRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
             if (componentInterface.getVersion() != null
                 && toolIntegrationRegistry.hasId(componentInterface.getIdentifier())) {
-                name = name + String.format(WorkflowEditor.COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
+                name = name + StringUtils.format(WorkflowEditor.COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
             }
             // create the palette entry
             CombinedTemplateCreationEntry component = new CombinedTemplateCreationEntry(name, name,

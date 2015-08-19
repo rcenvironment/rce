@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -237,40 +236,29 @@ public class PythonScriptEngine implements ScriptEngine {
         for (String inputName : compContext.getInputsWithDatum()) {
             switch (compContext.getInputDataType(inputName)) {
             case FileReference:
-                String path = "";
+                FileReferenceTD fileReference = (FileReferenceTD) compContext.readInput(inputName);
+                File fileInputDir = new File(tempDir, inputName);
+                tempFiles.add(fileInputDir);
+                File file = new File(fileInputDir, fileReference.getFileName());
                 try {
-                    // Create Temp file, to handle the file referece
-                    File file =
-                        new File(tempDir + File.separator + inputName, "upload.python-" + UUID.randomUUID().toString()
-                            + ".tmp");
-                    componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext,
-                        (FileReferenceTD) compContext.readInput(inputName), file);
-                    path =
-                        file.getAbsolutePath().toString(); // Remembering File to delete it
-                    tempFiles.add(file);
+                    componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext, fileReference, file);
                 } catch (IOException e) {
-                    LOGGER.error("Could not load file from file reference");
+                    throw new RuntimeException("Failed to load input file from the data management", e);
                 }
-                path = path.replaceAll("\\\\", "/");
-                inputsToWrite.put(inputName, path);
+                inputsToWrite.put(inputName, file.getAbsolutePath().toString().replaceAll("\\\\", "/"));
                 break;
             case DirectoryReference:
-                String dirPath = "";
-                try { //
-
-                    // reate Temp file, to handle the file referece
-                    File file = new File(tempDir + File.separator + inputName + File.separator);
+                DirectoryReferenceTD directoryReference = (DirectoryReferenceTD) compContext.readInput(inputName);
+                File dirInputDir = new File(tempDir, inputName);
+                tempFiles.add(dirInputDir);
+                File dir = new File(dirInputDir, directoryReference.getDirectoryName());
+                try {
                     componentDatamanagementService.copyDirectoryReferenceTDToLocalDirectory(compContext,
-                        (DirectoryReferenceTD) compContext.readInput(inputName), file);
-                    file = new File(file, ((DirectoryReferenceTD) compContext.readInput(inputName)).getDirectoryName());
-                    dirPath =
-                        file.getAbsolutePath().toString(); // Remembering File to delete it
-                    tempFiles.add(file);
+                        (DirectoryReferenceTD) compContext.readInput(inputName), dir);
                 } catch (IOException e) {
-                    LOGGER.error("Could not load file from file reference");
+                    throw new RuntimeException("Failed to load input directory from the data management", e);
                 }
-                dirPath = dirPath.replaceAll("\\\\", "/");
-                inputsToWrite.put(inputName, dirPath);
+                inputsToWrite.put(inputName, dir.getAbsolutePath().toString().replaceAll("\\\\", "/"));
                 break;
             case Boolean:
                 boolean bool = (((BooleanTD) compContext.readInput(inputName)).getBooleanValue());
@@ -287,7 +275,11 @@ public class PythonScriptEngine implements ScriptEngine {
                 inputsToWrite.put(inputName, ((IntegerTD) compContext.readInput(inputName)).getIntValue());
                 break;
             case Float:
-                inputsToWrite.put(inputName, ((FloatTD) compContext.readInput(inputName)).getFloatValue());
+                if (compContext.readInput(inputName) instanceof FloatTD) {
+                    inputsToWrite.put(inputName, ((FloatTD) compContext.readInput(inputName)).getFloatValue());
+                } else if (compContext.readInput(inputName) instanceof IntegerTD) {
+                    inputsToWrite.put(inputName, ((IntegerTD) compContext.readInput(inputName)).getIntValue());
+                }
                 break;
             case Vector:
                 VectorTD vector = (VectorTD) compContext.readInput(inputName);

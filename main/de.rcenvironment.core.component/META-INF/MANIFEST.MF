@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component
 Bundle-SymbolicName: de.rcenvironment.core.component;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
@@ -26,6 +26,7 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.communication.common.impl,
  de.rcenvironment.core.communication.nodeproperties,
  de.rcenvironment.core.communication.nodeproperties.spi,
  de.rcenvironment.core.communication.spi,

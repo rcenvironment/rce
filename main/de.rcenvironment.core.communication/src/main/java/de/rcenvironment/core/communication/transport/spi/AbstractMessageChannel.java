@@ -14,6 +14,7 @@ import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -181,7 +182,7 @@ public abstract class AbstractMessageChannel implements MessageChannel {
         if (simulatingBreakdown) {
             suffix = "; simulating breakdown";
         }
-        return String.format("Channel %s (%s%s)", connectionId, state, suffix);
+        return StringUtils.format("Channel %s (%s%s)", connectionId, state, suffix);
     }
 
     protected abstract void onClosedOrBroken();

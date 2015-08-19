@@ -14,6 +14,8 @@ import java.lang.reflect.Method;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * InvocationHandler for pooled connections.
  * 
@@ -57,7 +59,7 @@ final class PooledConnectionInvocationHandler implements InvocationHandler {
             try {
                 return method.invoke(connection, args);
             } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException e) {
-                throw new RuntimeException(String.format("Failed to execute database query. %s", e.getMessage()));
+                throw new RuntimeException(StringUtils.format("Failed to execute database query. %s", e.getMessage()));
             }
         }
         return null;

@@ -107,6 +107,8 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     private static TypedDatumService typedDatumService;
 
     private static DistributedMetaDataService metaDataService;
+    
+    private static EndpointDatumSerializer endpointDatumSerializer;
 
     private static final ComponentState[][] VALID_COMPONENT_STATE_TRANSITIONS = new ComponentState[][] {
 
@@ -252,7 +254,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
         private void validateIfNestedLoopComponent(String outputName) {
             if (!isNestedLoopComponent) {
-                throw new RuntimeException(getLogMessagesPrefix() + String.format(
+                throw new RuntimeException(getLogMessagesPrefix() + StringUtils.format(
                     "Received reset datum at outout '%s' for a non nested loop component. "
                         + "Reset datums are only allowed to send by nested loop components.", outputName));
             }
@@ -267,12 +269,12 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                             datumToSent = converter.castOrConvert(datumToSent, dataType);
                         } catch (DataTypeException e) {
                             // should not be reached because of isConvertibleTo check before
-                            throw new RuntimeException(getLogMessagesPrefix() + String.format("Failed to convert "
+                            throw new RuntimeException(getLogMessagesPrefix() + StringUtils.format("Failed to convert "
                                 + "the value for output '" + outputName + "' from type " + datumToSent.getDataType()
                                 + " to required data type " + dataType));
                         }
                     } else {
-                        throw new RuntimeException(getLogMessagesPrefix() + String.format("Value for output '" + outputName
+                        throw new RuntimeException(getLogMessagesPrefix() + StringUtils.format("Value for output '" + outputName
                             + "' has invalid data type. Output requires " + dataType + " or a convertable one, but it is of type "
                             + datumToSent.getDataType()));
                     }
@@ -291,7 +293,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 final EndpointDatum endpointDatum = endpointDatumsForExecution.get(inputName);
                 return endpointDatum.getValue();
             } else {
-                throw new NoSuchElementException(getLogMessagesPrefix() + String.format("No datum at input '%s'", inputName));
+                throw new NoSuchElementException(getLogMessagesPrefix() + StringUtils.format("No datum at input '%s'", inputName));
             }
         }
 
@@ -306,7 +308,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 consoleRowBuilder.setPayload(line);
             } else {
                 // TODO introduce new way to communicate timeline events and set filter active again - seid_do
-                // LOG.warn(getLogMessagesPrefix() + String.format("Console row type '%s' not intended to be "
+                // LOG.warn(getLogMessagesPrefix() + StringUtils.format("Console row type '%s' not intended to be "
                 // + "printed by components. Following line was ignored: %s", consoleRowType.name(), line));
                 consoleRowBuilder.setPayload(StringUtils.escapeAndConcat(line, String.valueOf(compDataManagementStorage
                     .getComponentExecutionDataManagementId())));
@@ -328,7 +330,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 closedOutputs.put(outputName, true);
                 writeDatumToOutput(outputName, new InternalTDImpl(InternalTDImpl.InternalTDType.WorkflowFinish));
             } else {
-                LOG.warn(getLogMessagesPrefix() + String.format("Output '%s' already closed. "
+                LOG.warn(getLogMessagesPrefix() + StringUtils.format("Output '%s' already closed. "
                     + "Ignored further closing request.", outputName));
             }
         }
@@ -400,7 +402,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         }
 
         private String getLogMessagesPrefix() {
-            return String.format("Component %s (%s) of workflow '%s (%s): ",
+            return StringUtils.format("Component %s (%s) of workflow '%s (%s): ",
                 compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                 compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier());
         }
@@ -767,7 +769,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             // only log if component and workflow controller doesn't run on the same node to avoid duplicate log messages/stack
             // traces
             if (!compExeCtx.getNodeId().equals(compExeCtx.getWorkflowNodeId())) {
-                LOG.error(String.format("Executing component '%s' (%s) failed", compExeCtx.getInstanceName(),
+                LOG.error(StringUtils.format("Executing component '%s' (%s) failed", compExeCtx.getInstanceName(),
                     compExeCtx.getExecutionIdentifier()), event.getThrowable());
             }
             exceptionThrown = event.getThrowable();
@@ -799,7 +801,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
         private void logInvalidStateChangeRequest(ComponentState currentState, ComponentState requestedState,
             ComponentStateMachineEvent event) {
-            LOG.debug(String.format("Ignored component state change request for component '%s' (%s) of workflow '%s' (%s) "
+            LOG.debug(StringUtils.format("Ignored component state change request for component '%s' (%s) of workflow '%s' (%s) "
                 + "as it will cause an invalid state transition: %s -> %s; event was: %s",
                 compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                 compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier(), currentState, requestedState,
@@ -808,7 +810,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
         @Override
         protected void onStateChanged(ComponentState oldState, ComponentState newState) {
-            LOG.debug(String.format("Component '%s' (%s) of workflow '%s' (%s) is now %s (previous state: %s)",
+            LOG.debug(StringUtils.format("Component '%s' (%s) of workflow '%s' (%s) is now %s (previous state: %s)",
                 compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowInstanceName(),
                 compExeCtx.getWorkflowExecutionIdentifier(), newState, oldState));
             try {
@@ -871,7 +873,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
         @Override
         protected void onStateChangeException(ComponentStateMachineEvent event, StateChangeException e) {
-            LOG.error(String.format("Invalid state change for component '%s' (%s) of workflow '%s' (%s) attempt, caused by event '%s'",
+            LOG.error(StringUtils.format("Invalid state change for component '%s' (%s) of workflow '%s' (%s) attempt, caused by event '%s'",
                 compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowInstanceName(),
                 compExeCtx.getWorkflowExecutionIdentifier(), event), e);
         }
@@ -888,7 +890,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             if (!finalHistoryDataItemWritten.get()
                 && Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
                 if (intermediateHistoryDataWritten.get()) {
-                    LOG.warn(String.format("No final history data item was written for component '%s' (%s) of workflow '%s' (%s)"
+                    LOG.warn(StringUtils.format("No final history data item was written for component '%s' (%s) of workflow '%s' (%s)"
                         + " even if intermediate ones were.",
                         compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                         compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()));
@@ -949,7 +951,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             }
 
             private Component createNewComponentInstance() throws ComponentExecutionException {
-                final String message = String.format("Failed to instantiate component '%s' (%s) of workflow '%s' (%s)",
+                final String message = StringUtils.format("Failed to instantiate component '%s' (%s) of workflow '%s' (%s)",
                     compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                     compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier());
                 try {
@@ -1016,7 +1018,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             try {
                 return TempFileServiceAccess.getInstance().createManagedTempDir("cmp-" + compExeCtx.getExecutionIdentifier());
             } catch (IOException e) {
-                throw new ComponentExecutionException(String.format("Failed to create working directory for component '%s' "
+                throw new ComponentExecutionException(StringUtils.format("Failed to create working directory for component '%s' "
                     + "(%s) of workflow '%s' (%s)", compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                     compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()), e);
             }
@@ -1144,7 +1146,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 for (EndpointDescription output : compExeCtx.getComponentDescription().getOutputDescriptionsManager()
                     .getEndpointDescriptions()) {
                     writeDatumToOutput(output.getName(), indefiniteEndpointDatum.getValue());
-                    LOG.info(String.format("Component '%s' of workflow '%s' did not run because of indefinite "
+                    LOG.info(StringUtils.format("Component '%s' of workflow '%s' did not run because of indefinite "
                         + "value at input '%s'", compExeCtx.getInstanceName(), compExeCtx.getWorkflowInstanceName(),
                         indefiniteEndpointDatum.getInputName()));
                 }
@@ -1204,13 +1206,14 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 try {
                     idlingFuture.get();
                 } catch (InterruptedException e) {
-                    LOG.debug(String.format("Ignored interuption request for component '%s' (%s) of workflow '%s' (%s)",
+                    LOG.debug(StringUtils.format("Ignored interuption request for component '%s' (%s) of workflow '%s' (%s)",
                         compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                         compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()), e);
                 } catch (ExecutionException e) {
-                    LOG.error(String.format("Failed to execute task 'waiting for inputs' for component '%s' (%s) of workflow '%s' (%s)",
-                        compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
-                        compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()), e);
+                    LOG.error(
+                        StringUtils.format("Failed to execute task 'waiting for inputs' for component '%s' (%s) of workflow '%s' (%s)",
+                            compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowInstanceName(),
+                            compExeCtx.getWorkflowExecutionIdentifier()), e);
                     stateMachine.postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PAUSE_ATTEMPT_FAILED));
                 } catch (CancellationException e) {
                     // intended
@@ -1385,7 +1388,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 try {
                     TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(compExeCtx.getWorkingDirectory());
                 } catch (IOException e) {
-                    LOG.error(String.format("Failed to dispose working directory of component '%s' "
+                    LOG.error(StringUtils.format("Failed to dispose working directory of component '%s' "
                         + "(%s) of workflow '%s' (%s)", compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
                         compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier()), e);
                 }
@@ -1462,6 +1465,10 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     protected void bindDistributedMetaDataService(DistributedMetaDataService newService) {
         ComponentExecutionControllerImpl.metaDataService = newService;
     }
+    
+    protected void bindEndpointDatumSerializer(EndpointDatumSerializer newService) {
+        endpointDatumSerializer = newService;
+    }
 
     /**
      * Wrapper class which calls {@link Component#start(de.rcenvironment.core.component.execution.api.ComponentContext)} and
@@ -1523,7 +1530,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
                         @Override
                         public void run() {
-                            wfExeCtrlCallback.onInputProcessed(EndpointDatumSerializer.serializeEndpointDatum(entry.getValue()));
+                            wfExeCtrlCallback.onInputProcessed(endpointDatumSerializer.serializeEndpointDatum(entry.getValue()));
                         }
                     });
                 }
@@ -1623,14 +1630,14 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
         private void handleWorkflowCallbackFailure(Throwable e) {
             int failureCount = wfControllerCallbackFailureCount.incrementAndGet();
-            String message = String.format("Callback from local component '%s' to workflow controller ('%s') failed",
+            String message = StringUtils.format("Callback from local component '%s' to workflow controller ('%s') failed",
                 compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowExecutionIdentifier());
             registerCallbackFailureEvent(message, failureCount, e);
         }
 
         private void handleHeartbeatSentFailure(Throwable e) {
             int failureCount = wfControllerCallbackFailureCount.addAndGet(2); // TODO review: keep increased heartbeat weight?
-            String message = String.format("Heartbeat callback from local component '%s' to workflow controller ('%s') failed",
+            String message = StringUtils.format("Heartbeat callback from local component '%s' to workflow controller ('%s') failed",
                 compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowExecutionIdentifier());
             registerCallbackFailureEvent(message, failureCount, e);
         }

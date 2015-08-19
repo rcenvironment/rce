@@ -14,6 +14,8 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.ui.views.properties.ComboBoxPropertyDescriptor;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * A {@link org.eclipse.ui.views.properties.IPropertyDescriptor} representing a property with a
  * certain set of valid values.
@@ -199,7 +201,7 @@ public class ListPropertyDescriptor extends ComboBoxPropertyDescriptor {
      */
     @Override
     public String toString() {
-        return String.format("%s: (%d) %s", getClass().getSimpleName(),
+        return StringUtils.format("%s: (%d) %s", getClass().getSimpleName(),
                 labels.length, labels);
     }
 

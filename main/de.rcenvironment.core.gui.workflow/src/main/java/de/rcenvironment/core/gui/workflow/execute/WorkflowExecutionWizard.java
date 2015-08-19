@@ -57,6 +57,7 @@ import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidatio
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidatorUtils;
 import de.rcenvironment.core.gui.workflow.view.OpenReadOnlyWorkflowRunEditorAction;
 import de.rcenvironment.core.gui.workflow.view.properties.InputModel;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -261,10 +262,10 @@ public class WorkflowExecutionWizard extends Wizard {
         errorComponents = "";
         List<String> messages = new ArrayList<String>();
         if (placeholderError || workflowError) {
-            messages.add(String.format(Messages.errorMessage, errorAmount));
+            messages.add(StringUtils.format(Messages.errorMessage, errorAmount));
         }
         if (workflowWarning) {
-            messages.add(String.format(Messages.workflowWarningMessage, warningAmount));
+            messages.add(StringUtils.format(Messages.workflowWarningMessage, warningAmount));
         }
 
         for (String message : messages) {
@@ -291,7 +292,7 @@ public class WorkflowExecutionWizard extends Wizard {
         String[] dialogButtons = { Messages.proceedButton, Messages.cancelButton };
         MessageDialog confirmationDialog =
             new MessageDialog(getShell(), Messages.validationTitle, null,
-                String.format(Messages.validationMessage, errorMessage, errorComponents),
+                StringUtils.format(Messages.validationMessage, errorMessage, errorComponents),
                 MessageDialog.QUESTION, dialogButtons, 0);
         int result = confirmationDialog.open();
         return result == 0;

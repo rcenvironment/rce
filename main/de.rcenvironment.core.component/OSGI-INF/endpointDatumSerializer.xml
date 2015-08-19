@@ -1,0 +1,15 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Endpoint Datum Serializer">
+
+	<implementation class="de.rcenvironment.core.component.execution.internal.EndpointDatumSerializerImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.api.EndpointDatumSerializer"/>
+	</service>
+	
+	<reference name="Typed Datum Service"
+		interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+		cardinality="1..1"
+		bind="bindTypedDatumService"
+		policy="dynamic"
+	/>
+	
+</scr:component>

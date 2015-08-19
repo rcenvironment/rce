@@ -14,6 +14,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A writable {@link ComponentInstallation} implementation.
@@ -88,7 +89,7 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
     
     @Override
     public String toString() {
-        return String.format("ComponentInstallation(node=%s,rev=%s)", nodeId, componentRevision);
+        return StringUtils.format("ComponentInstallation(node=%s,rev=%s)", nodeId, componentRevision);
     }
 
     @Override

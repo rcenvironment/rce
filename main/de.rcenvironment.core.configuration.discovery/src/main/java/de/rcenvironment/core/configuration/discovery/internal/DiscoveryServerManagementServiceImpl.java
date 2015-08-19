@@ -13,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.discovery.server.DiscoveryServerManagementService;
 import de.rcenvironment.core.jetty.JettyService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * SOAP/Jetty implementation of {@link DiscoveryServerManagementService}.
@@ -27,7 +28,7 @@ public class DiscoveryServerManagementServiceImpl implements DiscoveryServerMana
 
     @Override
     public void startServer(String address, int port) {
-        String serviceURL = String.format(DiscoveryConstants.SOAP_SERVICE_URL_PATTERN, address, port);
+        String serviceURL = StringUtils.format(DiscoveryConstants.SOAP_SERVICE_URL_PATTERN, address, port);
         logger.info("Starting discovery service at " + serviceURL);
         jettyService.deployWebService(new RemoteDiscoveryServiceImpl(), serviceURL);
     }

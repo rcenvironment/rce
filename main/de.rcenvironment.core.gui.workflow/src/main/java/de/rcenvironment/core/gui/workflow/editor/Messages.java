@@ -80,6 +80,18 @@ public class Messages extends NLS {
     /** Constant. */
     public static String loadingComponents;
 
+    /** Constant. */
+    public static String undo;
+
+    /** Constant. */
+    public static String redo;
+
+    /** Constant. */
+    public static String undoShortcut;
+
+    /** Constant. */
+    public static String redoShortcut;
+
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 
     static {

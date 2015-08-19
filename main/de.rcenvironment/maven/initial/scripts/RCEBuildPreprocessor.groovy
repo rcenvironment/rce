@@ -19,7 +19,7 @@ class RCEBuildPreprocessor {
 
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
-			'platform': 'snapshots/trunk',
+			'platform': 'releases/6.1.0',
 			'dakotaBinaries': 'snapshots/trunk',
 			'tiglViewerBinaries': 'snapshots/trunk',
 			'intermediate': 'snapshots/trunk'

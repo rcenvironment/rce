@@ -14,6 +14,7 @@ import java.util.Map;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -59,9 +60,9 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
         gridData.horizontalSpan = 2;
         noteComposite.setLayoutData(gridData);
         noteComposite.setLayout(new GridLayout(2, false));
-        Label warnLabel = new Label(noteComposite, SWT.READ_ONLY);
-        warnLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16));
-        Label noteLabel = new Label(noteComposite, SWT.READ_ONLY);
+        // TODO wrap text of the noteLabel - SWT.WRAP does not work (see Mantis issue 12257). - stam_mr, June 2015.
+        CLabel noteLabel = new CLabel(noteComposite, SWT.NONE);
+        noteLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16));
         noteLabel.setText(Messages.note);
 
         section.setClient(client);

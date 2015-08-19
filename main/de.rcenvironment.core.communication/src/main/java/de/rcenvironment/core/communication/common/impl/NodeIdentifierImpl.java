@@ -14,6 +14,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.NodeInformation;
 import de.rcenvironment.core.communication.model.internal.NodeInformationHolder;
 import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A {@link NodeIdentifier} based on a persistent globally unique identifier.
@@ -96,7 +97,7 @@ public class NodeIdentifierImpl implements NodeIdentifier {
         if (displayName == null) {
             displayName = "<unnamed>";
         }
-        return String.format("\"%s\" [%s]", displayName, idString);
+        return StringUtils.format("\"%s\" [%s]", displayName, idString);
     }
 
     /**

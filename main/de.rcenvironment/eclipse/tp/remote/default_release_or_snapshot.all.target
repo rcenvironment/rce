@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.8"?><target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="47">
+<?pde version="3.8"?><target includeMode="feature" name="default_release_or_snapshot.all" sequenceNumber="48">
 <locations>
 <location includeAllPlatforms="false" includeConfigurePhase="false" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="de.rcenvironment.thirdparty.nu.psnet.quickimage.feature.feature.group" version="6.1.0.201504132210"/>
-<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="6.1.0.201504132210"/>
+<unit id="de.rcenvironment.thirdparty.nu.psnet.quickimage.feature.feature.group" version="6.1.0.201504140720"/>
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="6.1.0.201504140720"/>
 <repository location="http://software.dlr.de/updates/rce/6.x/repositories/platform/releases/6.1.0"/>
 </location>
 </locations>

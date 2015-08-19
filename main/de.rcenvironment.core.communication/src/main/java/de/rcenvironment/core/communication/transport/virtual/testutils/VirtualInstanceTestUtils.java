@@ -22,6 +22,7 @@ import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceState;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
@@ -95,7 +96,7 @@ public class VirtualInstanceTestUtils {
                     if (verboseLogging) {
                         log.debug("Creating instance " + i2);
                     }
-                    VirtualInstance instance = new VirtualInstance(String.format("RCE-%03d", i2), "RCE Instance " + i2);
+                    VirtualInstance instance = new VirtualInstance(StringUtils.format("RCE-%03d", i2), "RCE Instance " + i2);
                     if (verboseLogging) {
                         log.debug("Finished creating instance " + i2);
                     }
@@ -153,7 +154,7 @@ public class VirtualInstanceTestUtils {
      */
     @Deprecated
     public String getFormattedName(VirtualInstance instance) {
-        return String.format("%s (%s)",
+        return StringUtils.format("%s (%s)",
             instance.getConfigurationService().getLocalNodeId(),
             instance.getConfigurationService().getInitialNodeInformation().getLogDescription());
     }
@@ -162,7 +163,7 @@ public class VirtualInstanceTestUtils {
      * @return a string with a random component
      */
     public String generateUniqueMessageToken() {
-        return String.format("Unique message token: %s", randomGenerator.nextInt(UPPER_UNIQUE_TOKEN_LIMIT));
+        return StringUtils.format("Unique message token: %s", randomGenerator.nextInt(UPPER_UNIQUE_TOKEN_LIMIT));
     }
 
     /**
@@ -221,7 +222,8 @@ public class VirtualInstanceTestUtils {
             if (!compactN.equals(compact0)) {
                 differences++;
                 if (differences == 1) { // only log first
-                    log.warn(String.format("At least two instances do not share a common view of the network topology; first difference:\n"
+                    log.warn(StringUtils.format(
+                        "At least two instances do not share a common view of the network topology; first difference:\n"
                         + "Instance 0 (%s):\n%s\n%s\n%s\nInstance %d (%s):\n %s\n%s\n%s",
                         instance0.getNodeId(), compact0, NetworkFormatter.networkGraphToGraphviz(networkGraph0, true),
                         instance0.getFormattedLSAKnowledge(),

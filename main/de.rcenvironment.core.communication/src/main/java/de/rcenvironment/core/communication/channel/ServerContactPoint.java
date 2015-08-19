@@ -13,6 +13,7 @@ import de.rcenvironment.core.communication.configuration.ConnectionFilter;
 import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Extension of a {@link NetworkContactPoint} to represent transport-specific implementations that accept incoming connections. For example,
@@ -69,7 +70,7 @@ public class ServerContactPoint {
 
     @Override
     public String toString() {
-        return String.format("SCP (NCP='%s', acc=%s, simbr=%s)", networkContactPoint, acceptingMessages, simulatingBreakdown);
+        return StringUtils.format("SCP (NCP='%s', acc=%s, simbr=%s)", networkContactPoint, acceptingMessages, simulatingBreakdown);
     }
 
     public String getTransportId() {

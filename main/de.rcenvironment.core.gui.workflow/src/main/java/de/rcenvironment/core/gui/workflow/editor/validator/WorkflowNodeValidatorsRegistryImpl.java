@@ -105,7 +105,7 @@ public class WorkflowNodeValidatorsRegistryImpl implements WorkflowNodeValidator
     // final Class<?> clazz = classLoader.loadClass(validatorClassName);
     // if (!WorkflowNodeValidator.class.isAssignableFrom(clazz)) {
     // throw new
-    // ClassNotFoundException(String.format("%s is not a valid subtype of WorkflowNodeValidator.",
+    // ClassNotFoundException(StringUtils.format("%s is not a valid subtype of WorkflowNodeValidator.",
     // validatorClassName));
     // }
     // return (Class<? extends WorkflowNodeValidator>) clazz;

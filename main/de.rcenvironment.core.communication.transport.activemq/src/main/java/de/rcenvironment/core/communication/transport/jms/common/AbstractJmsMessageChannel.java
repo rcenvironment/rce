@@ -29,6 +29,7 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.RawNetworkResponseHandler;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
@@ -90,16 +91,17 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                     }
                 } catch (TimeoutException e) {
                     // do not print the irrelevant stacktrace for this exception; only use message
-                    log.warn(String.format("Timeout while waiting for response to request '%s' of type '%s': %s", request.getRequestId(),
-                        request.getMessageType(), e.getMessage()));
+                    log.warn(StringUtils.format("Timeout while waiting for response to request '%s' of type '%s': %s",
+                        request.getRequestId(), request.getMessageType(), e.getMessage()));
                     NetworkResponse response =
                         NetworkResponseFactory.generateResponseForTimeoutWaitingForResponse(request, localNodeId.getIdString(), e);
                     responseHandler.onResponseAvailable(response);
                 } catch (JMSException e) {
                     // TODO detect broken connections
                     responseHandler.onChannelBroken(request, AbstractJmsMessageChannel.this);
-                    log.warn(String.format("Error sending JMS message via channel %s; channel will be marked as broken (exception: %s) ",
-                        getChannelId(), e.toString()));
+                    log.warn(StringUtils.format(
+                        "Error sending JMS message via channel %s; channel will be marked as broken (exception: %s) ", getChannelId(),
+                        e.toString()));
                     // convert to IOException, as transport-specific exceptions fail to deserialize
                     IOException safeException = new IOException(e.getMessage() + " (converted from " + e.getClass().getName() + ")");
                     NetworkResponse response =
@@ -153,7 +155,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                     // ignore exceptions that just report that the temporary queue is already gone,
                     // which is normal on client connection breakdown - misc_ro
                     if (!message.contains("")) {
-                        log.warn(String.format("Exception on sending shutdown signal to Client-to-Broker JMS queue %s: %s",
+                        log.warn(StringUtils.format("Exception on sending shutdown signal to Client-to-Broker JMS queue %s: %s",
                             outgoingRequestQueueName, message));
                     }
                 }
@@ -194,7 +196,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                 tempResponseQueue.delete();
             } catch (JMSException e) {
                 // only log compact exception
-                log.debug(String.format(
+                log.debug(StringUtils.format(
                     "Exception on deleting a temporary response queue for channel %s (%s - %s): %s",
                     getChannelId(), tempResponseQueue.getQueueName(), getState(), e.toString()));
             }
@@ -219,11 +221,11 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                 // null return value indicates timeout
                 MessageChannelState currentState = getState();
                 if (currentState == MessageChannelState.CLOSED || currentState == MessageChannelState.MARKED_AS_BROKEN) {
-                    throw new TimeoutException(String.format(
+                    throw new TimeoutException(StringUtils.format(
                         "Received JMS exception while waiting for a response from message channel %s (on queue %s), "
                             + "which is already %s", getChannelId(), tempResponseQueue.getQueueName(), currentState));
                 } else {
-                    throw new TimeoutException(String.format(
+                    throw new TimeoutException(StringUtils.format(
                         "Timeout (%d ms) exceeded while waiting for a response from message channel %s (on queue %s), "
                             + "which is in state %s", timeoutMsec, getChannelId(), tempResponseQueue.getQueueName(), currentState));
                 }

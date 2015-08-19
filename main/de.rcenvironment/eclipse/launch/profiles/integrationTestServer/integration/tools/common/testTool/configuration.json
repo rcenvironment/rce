@@ -1,0 +1,45 @@
+{
+  "commandScriptLinux" : "mkdir out\r\necho \"Written to standard output: ${in:parameters}\"\r\necho \\\"\"${in:parameters}\"\\\" >out/params.txt\r\necho \"Written to output file: ${in:parameters}\"\necho Input path: \"${in:input}\"\n# find \"${in:input}\"\nfind \"${in:input}\" >out/listing.txt\necho Input listing file written\r\nmkdir out/subdir\r\necho \"subdir file content\" >out/subdir/subdirfile.txt\n",
+  "commandScriptWindows" : "mkdir out\r\necho Written to standard output: \"${in:parameters}\"\r\necho \"${in:parameters}\" >out\\params.txt\r\necho Written to output file: \"${in:parameters}\"\r\necho Input path: \"${in:input}\"\r\nrem dir /s /b \"${in:input}\"\r\ndir /s /b \"${in:input}\" >out\\listing.txt\r\necho nput listing file written\r\nmkdir out\\subdir\r\necho \"subdir file content\" >out\\subdir\\subdirfile.txt\n",
+  "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
+  "enableCommandScriptLinux" : true,
+  "enableCommandScriptWindows" : true,
+  "groupName" : "",
+  "inputs" : [ {
+    "endpointFileName" : "",
+    "endpointDataType" : "DirectoryReference",
+    "endpointName" : "input",
+    "endpointUsage" : "required"
+  }, {
+    "endpointFileName" : "",
+    "endpointDataType" : "ShortText",
+    "endpointName" : "parameters",
+    "endpointUsage" : "required"
+  } ],
+  "isActive" : true,
+  "launchSettings" : [ {
+    "limitInstalltionInstances" : "true",
+    "host" : "RCE",
+    "rootWorkingDirectory" : "",
+    "toolDirectory" : "/tmp",
+    "version" : "1.0",
+    "limitInstallationInstancesNumber" : "10"
+  } ],
+  "outputs" : [ {
+    "endpointFileName" : "",
+    "endpointDataType" : "DirectoryReference",
+    "endpointName" : "output",
+    "endpointUsage" : "-"
+  } ],
+  "postScript" : "${out:output} = \"out\"",
+  "preScript" : "",
+  "toolDescription" : "",
+  "toolIconPath" : "",
+  "toolIntegratorE-Mail" : "",
+  "toolIntegratorName" : "",
+  "toolName" : "testTool",
+  "toolProperties" : {
+    "Default" : { }
+  },
+  "uploadIcon" : true
+}

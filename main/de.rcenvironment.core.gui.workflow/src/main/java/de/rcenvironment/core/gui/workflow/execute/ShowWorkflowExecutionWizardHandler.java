@@ -58,6 +58,7 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.IEditorInput;
 import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IEditorReference;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.handlers.HandlerUtil;
@@ -67,6 +68,7 @@ import org.eclipse.ui.part.FileEditorInput;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.gui.workflow.LoadingWorkflowDescriptionHelper;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Opens the {@link WorkflowExecutionWizard}.
@@ -76,7 +78,9 @@ import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
  */
 public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
 
-    private static final String DUPLICATE_ID_WARNING_MSG = "Could not determine duplicate WF ids: ";
+    private static final String DUPLICATE_ID_WARNING_MSG = "Could not determine duplicate WF ids";
+    
+    private static final String GETTING_ATTR_WARNING_MSG = " - failed to get file attributes for: ";
 
     private static final String NODES = "nodes";
 
@@ -87,20 +91,45 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
     private static final Log LOGGER = LogFactory.getLog(ShowWorkflowExecutionWizardHandler.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
+    
+    private boolean confirm;
 
     @Override
     public Object execute(final ExecutionEvent event) throws ExecutionException {
 
         // retrieve the WorkflowDescription
-        IFile workflowFile;
         final WorkflowDescription displayedWorkflowDescription = getDisplayedWorkflowDescription();
         boolean fromFile = true;
-        workflowFile = getFirstSelectedWorkflowFile(event);
+        IFile workflowFile = getFirstSelectedWorkflowFile(event);
+        confirm = true;
+
         if (workflowFile == null) {
             workflowFile = getDisplayedWorkflowFile();
             fromFile = false;
         }
         if (workflowFile != null) {
+
+            // Compares the project explorer selection with dirty editors and triggers saveChangesDialog if selection is dirty
+            IEditorReference[] currentEditors = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getEditorReferences();
+            for (IEditorReference editor : currentEditors) {
+                IEditorPart editorPart = (IEditorPart) editor.getPart(true);
+                if (editorPart instanceof WorkflowEditor) {
+                    WorkflowEditor workflowEditor = (WorkflowEditor) editorPart;
+                    IFile editorFile = ((FileEditorInput) workflowEditor.getEditorInput()).getFile();
+                    if (workflowFile.getProject().equals(editorFile.getProject())) {
+                        if (workflowFile.getName().equals(editorPart.getTitle()) && editorPart.isDirty()) {
+                            saveChangesDialog(editorPart);
+                            break;
+                        }
+                    }
+                }
+            }
+        
+            // Exit execute method when saving changes has been canceled
+            if (!confirm) {
+                return null;
+            }
+        
             searchAndReplaceDuplicateIDs(workflowFile);
             
             final IFile finalWorkflowFile = workflowFile;
@@ -152,25 +181,32 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
 
     private void searchAndReplaceDuplicateIDs(IFile workflowFile) {
         String absoluteFilePath = workflowFile.getLocation().toString();
-        Set<IResource> wfsWithDuplicateId =
-            searchForDuplicateWFIdentifier(absoluteFilePath);
+        Set<IResource> wfsWithDuplicateId = searchForDuplicateWFIdentifier(absoluteFilePath);
         if (wfsWithDuplicateId != null && !wfsWithDuplicateId.isEmpty()) {
             try {
                 Path orig = Paths.get(absoluteFilePath);
-                BasicFileAttributes viewOrig = Files.getFileAttributeView(orig, BasicFileAttributeView.class)
-                    .readAttributes();
+                BasicFileAttributeView origAttrView = Files.getFileAttributeView(orig, BasicFileAttributeView.class);
+                if (origAttrView == null) {
+                    LOGGER.warn(DUPLICATE_ID_WARNING_MSG + GETTING_ATTR_WARNING_MSG + absoluteFilePath);
+                    return;
+                }
+                BasicFileAttributes attrOrig = origAttrView.readAttributes();
                 for (IResource duplicate : wfsWithDuplicateId) {
                     Path duplicatePath = Paths.get(duplicate.getLocationURI());
-                    BasicFileAttributes viewDuplicate = Files.getFileAttributeView(duplicatePath, BasicFileAttributeView.class)
-                        .readAttributes();
+                    BasicFileAttributeView attrViewDuplicate = Files.getFileAttributeView(duplicatePath, BasicFileAttributeView.class);
+                    if (attrViewDuplicate == null) {
+                        LOGGER.warn(DUPLICATE_ID_WARNING_MSG + GETTING_ATTR_WARNING_MSG + absoluteFilePath);
+                        continue;
+                    }
+                    BasicFileAttributes attrDuplicate = attrViewDuplicate.readAttributes();
 
-                    // Compairing the creation time is buggy on linux machines.
+                    // Comparing the creation time is buggy on linux machines.
                     // It returns the modification time which can be the same as in the original and
                     // thus the original file is modified, doesn't find its placeholder and
                     // falls back to an old placeholder
                     // The bug is fixed in java 8:
                     // http://hg.openjdk.java.net/jdk8/jdk8/jdk/rev/296c9ec816c6
-                    if (viewOrig.creationTime().compareTo(viewDuplicate.creationTime()) > 0) {
+                    if (attrOrig.creationTime().compareTo(attrDuplicate.creationTime()) > 0) {
                         replaceIdentifierInWorkflowFile(absoluteFilePath);
                         workflowFile.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
                     } else {
@@ -190,13 +226,6 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
         final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
         if (part instanceof IEditorPart) {
             final IEditorPart editor = (IEditorPart) part;
-            if (editor.isDirty()) {
-                final boolean save = MessageDialog.openQuestion(part.getSite().getShell(), Messages.askToSaveUnsavedEditorChangesTitle,
-                    Messages.askToSaveUnsavedEditorChangesMessage);
-                if (save) {
-                    editor.doSave(null);
-                }
-            }
             if (editor instanceof WorkflowEditor) {
                 WorkflowEditor workflowEditor = (WorkflowEditor) editor;
                 IEditorInput input = workflowEditor.getEditorInput();
@@ -210,10 +239,25 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
                         + "create one first via File->New->Project->General.");
                 }
             }
+            if (editor.isDirty()) {
+                saveChangesDialog(editor);
+            }
         }
         return null;
     }
-    
+
+
+    // Dialog for saving changes in dirty editors
+    private void saveChangesDialog(IEditorPart editor) {
+        final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+        confirm = MessageDialog.openConfirm(part.getSite().getShell(), Messages.askToSaveUnsavedEditorChangesTitle,
+            StringUtils.format(Messages.askToSaveUnsavedEditorChangesMessage, editor.getTitle()));
+        if (confirm) {
+            editor.doSave(null);
+        } 
+
+    }
+
     private WorkflowDescription getDisplayedWorkflowDescription() {
         final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
         if (part instanceof IEditorPart) {

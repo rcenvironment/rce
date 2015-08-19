@@ -80,6 +80,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     /** Identifier used to find the this view within the workbench. */
     public static final String ID = "de.rcenvironment.gui.TimeTable";
 
+    private static final  Map<String, Image> COMPONENT_ICON_CACHE = new HashMap<>();
+
     private Composite rootComposite = null;
     
     private TimelineNavigationControl navigation = null;
@@ -131,7 +133,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     private boolean actualContentSet = false;
 
     private Label refreshLabel;
-
+    
     public TimelineView() {
         metaDataService = ServiceRegistry.createAccessFor(this).getService(DistributedMetaDataService.class);
     }
@@ -329,7 +331,12 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                                     actualContentSet = true;
                                 }
                                 rootComposite.setEnabled(true);
-                                refreshAction.setEnabled(!workflowTerminated);                                
+                                
+                                // update the scrollbars (needed if new components were contributing to the timeline)
+                                list.setMinSize(list.computeSize(SWT.DEFAULT, SWT.DEFAULT, true));
+                                list.layout();
+                                
+                                refreshAction.setEnabled(!workflowTerminated);
                             }
                         }
                     });
@@ -705,12 +712,13 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             .getCurrentComponentKnowledge().getAllInstallations();
         for (ComponentInstallation installation : installations) {
             if (installation.getInstallationId().startsWith(identifier)) {
-                byte[] icon = installation.getComponentRevision()
-                    .getComponentInterface().getIcon16();
-                Image image = ImageDescriptor.createFromImage(
-                    new Image(Display.getCurrent(),
+                if (!COMPONENT_ICON_CACHE.containsKey(installation.getInstallationId())) {
+                    byte[] icon = installation.getComponentRevision().getComponentInterface().getIcon16();
+                    Image image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
                         new ByteArrayInputStream(icon))).createImage();
-                return image;
+                    COMPONENT_ICON_CACHE.put(installation.getInstallationId(), image);
+                }
+                return COMPONENT_ICON_CACHE.get(installation.getInstallationId());
             }
         }
         return null;
@@ -734,8 +742,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             .getCurrentComponentKnowledge().getAllInstallations();
         for (ComponentInstallation installation : installations) {
             if (installation.getInstallationId().startsWith(identifier)) {
-                return installation.getComponentRevision()
-                    .getComponentInterface().getDisplayName();
+                return installation.getComponentRevision().getComponentInterface().getDisplayName();
             }
         }
         return null;

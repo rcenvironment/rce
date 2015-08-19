@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS Writer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.cpacs.writer.gui;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.cpacs.writer.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.authorization,
@@ -14,6 +14,7 @@ Import-Package: de.rcenvironment.components.cpacs.writer.common,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.workflow.model.api,
+ de.rcenvironment.core.component.xml,
  de.rcenvironment.core.datamanagement,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,

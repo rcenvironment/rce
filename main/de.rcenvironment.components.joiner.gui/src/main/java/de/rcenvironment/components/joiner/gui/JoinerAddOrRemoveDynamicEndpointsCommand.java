@@ -10,12 +10,10 @@ package de.rcenvironment.components.joiner.gui;
 
 import java.util.HashMap;
 
-import org.eclipse.swt.widgets.Combo;
-
 import de.rcenvironment.components.joiner.common.JoinerComponentConstants;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicEndpointCommand;
-import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 
 /**
@@ -25,29 +23,22 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
  */
 public class JoinerAddOrRemoveDynamicEndpointsCommand extends WorkflowNodeCommand {
 
-    private final int lastInputCount;
-
     private final int newCount;
 
-    private final DataType lastDataType;
+    private int oldInputCount;
+    
+    private DataType dataType;
 
-    private final Combo inputCount;
-
-    private final EndpointSelectionPane inputPane;
-
-    public JoinerAddOrRemoveDynamicEndpointsCommand(int currentInputCount, int lastInputCount, int newCount, DataType lastDataType,
-        Combo inputCount, EndpointSelectionPane inputPane) {
+    public JoinerAddOrRemoveDynamicEndpointsCommand(int newCount) {
         super();
-        this.lastInputCount = lastInputCount;
         this.newCount = newCount;
-        this.lastDataType = lastDataType;
-        this.inputCount = inputCount;
-        this.inputPane = inputPane;
     }
 
     @Override
     public void initialize() {
-
+        ConfigurationDescription config = getProperties().getConfigurationDescription();
+        oldInputCount = Integer.valueOf(config.getConfigurationValue(JoinerComponentConstants.INPUT_COUNT));
+        dataType = DataType.valueOf(config.getConfigurationValue(JoinerComponentConstants.DATATYPE));
     }
 
     @Override
@@ -62,48 +53,38 @@ public class JoinerAddOrRemoveDynamicEndpointsCommand extends WorkflowNodeComman
 
     @Override
     public void execute() {
-
-        if (newCount > lastInputCount) {
-            for (int i = lastInputCount + 1; i <= newCount; i++) {
+        if (newCount > oldInputCount) {
+            for (int i = oldInputCount + 1; i <= newCount; i++) {
                 getWorkflowNode().getInputDescriptionsManager().addDynamicEndpointDescription(
-                    JoinerComponentConstants.DYNAMIC_INPUT_ID, JoinerComponentConstants.INPUT_NAME + getString(i), lastDataType,
+                    JoinerComponentConstants.DYNAMIC_INPUT_ID, JoinerComponentConstants.INPUT_NAME + getString(i), dataType,
                     new HashMap<String, String>());
             }
-        } else if (newCount < lastInputCount) {
-            for (int i = lastInputCount; i > newCount && i > 1; i--) {
+        } else if (newCount < oldInputCount) {
+            for (int i = oldInputCount; i > newCount && i > 1; i--) {
                 getWorkflowNode().getInputDescriptionsManager().removeDynamicEndpointDescription(
                     JoinerComponentConstants.INPUT_NAME + getString(i));
             }
         }
-        if (inputCount != null) {
-            inputCount.select(newCount - 1);
-        }
-        if (inputPane != null) {
-            inputPane.refresh();
-        }
+        getProperties().getConfigurationDescription().setConfigurationValue(JoinerComponentConstants.INPUT_COUNT, String.valueOf(newCount));
     }
 
     @Override
     public void undo() {
-        if (newCount > lastInputCount) {
-            for (int i = lastInputCount + 1; i <= newCount; i++) {
+        if (newCount > oldInputCount) {
+            for (int i = oldInputCount + 1; i <= newCount; i++) {
                 getWorkflowNode().getInputDescriptionsManager().removeDynamicEndpointDescription(
                     JoinerComponentConstants.INPUT_NAME + getString(i));
 
             }
-        } else if (newCount < lastInputCount) {
-            for (int i = lastInputCount; i > newCount && i > 1; i--) {
+        } else if (newCount < oldInputCount) {
+            for (int i = oldInputCount; i > newCount && i > 1; i--) {
                 getWorkflowNode().getInputDescriptionsManager().addDynamicEndpointDescription(
-                    JoinerComponentConstants.DYNAMIC_INPUT_ID, JoinerComponentConstants.INPUT_NAME + getString(i), lastDataType,
+                    JoinerComponentConstants.DYNAMIC_INPUT_ID, JoinerComponentConstants.INPUT_NAME + getString(i), dataType,
                     new HashMap<String, String>());
             }
         }
-        if (inputCount != null) {
-            inputCount.select(lastInputCount - 1);
-        }
-        if (inputPane != null) {
-            inputPane.refresh();
-        }
+        getProperties().getConfigurationDescription().setConfigurationValue(JoinerComponentConstants.INPUT_COUNT,
+            String.valueOf(oldInputCount));
     }
 
     // Adds zeros if i is less than 100 so that the order is right.

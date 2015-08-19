@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -97,6 +98,7 @@ import de.rcenvironment.core.gui.datamanagement.commons.DataManagementWorkbenchU
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.view.timeline.TimelineView;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -107,6 +109,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Markus Litz
  * @author Robert Mischke
  * @author Jan Flink
+ * @author Doreen Seider
  */
 public class DataManagementBrowser extends ViewPart implements DMBrowserNodeContentAvailabilityHandler {
 
@@ -146,6 +149,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private Action actionRefreshAll;
 
     private Action openInEditorAction;
+
+    private Action openTiglAction;
 
     private Action doubleClickAction;
 
@@ -218,9 +223,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             savableNodeAsFolder.add(DMBrowserNodeType.IntermediateInputsFolder);
             savableNodeAsFolder.add(DMBrowserNodeType.LogFolder);
             savableNodeAsFolder.add(DMBrowserNodeType.ToolInputOutputFolder);
+            savableNodeAsFolder.add(DMBrowserNodeType.DMDirectoryReference);
             // Set all savable DMBrowserNodeTypes.
             savableNodeTypes.add(DMBrowserNodeType.HistoryRoot);
-            savableNodeTypes.add(DMBrowserNodeType.DMDirectoryReference);
             savableNodeTypes.add(DMBrowserNodeType.DMFileResource);
             savableNodeTypes.add(DMBrowserNodeType.Resource);
             savableNodeTypes.add(DMBrowserNodeType.Float);
@@ -292,13 +297,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                             public void run() {
                                 String location = "";
                                 if (filePath != null) {
-                                    location = String.format(Messages.exportSuccessText,
-                                        browserNodesToSave.toString(), filePath.getAbsolutePath()).replace(BRACKET_OPEN, "")
-                                        .replace(BRACKET_CLOSE, "");
+                                    location =
+                                        StringUtils
+                                            .format(Messages.exportSuccessText, browserNodesToSave.toString(), filePath.getAbsolutePath())
+                                            .replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, "");
                                     // reset filePath
                                     filePath = null;
                                 } else {
-                                    location = String.format(Messages.exportSuccessText,
+                                    location = StringUtils.format(Messages.exportSuccessText,
                                         browserNodesToSave.toString(), ordnerPath.getAbsolutePath()).replace(BRACKET_OPEN, "")
                                         .replace(BRACKET_CLOSE, "");
                                 }
@@ -350,7 +356,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 // delete the nodes recursively
-                monitor.beginTask(String.format("Exporting %d node(s): %s",
+                monitor.beginTask(StringUtils.format("Exporting %d node(s): %s",
                     browserNodesToSave.size(),
                     browserNodesToSave.toString()).replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, ""), 2);
                 monitor.worked(1);
@@ -451,7 +457,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 int i = 0;
                 do {
                     ++i;
-                    result = new File(directory, String.format(
+                    result = new File(directory, StringUtils.format(
                         "%s (%d)%s", prefix, i, postfix));
                 } while (result.exists());
                 return result;
@@ -475,6 +481,65 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         }
 
+    }
+
+    /**
+     * An {@link Action} that opens the data associated with the selected node with the TiGL Viewer.
+     */
+    private final class OpenInTiglAction extends SelectionProviderAction {
+
+        private OpenInTiglAction(ISelectionProvider provider, String text) {
+            super(provider, text);
+        }
+
+        @Override
+        public void selectionChanged(IStructuredSelection selection) {
+            Object obj = selection.getFirstElement();
+            if (obj instanceof DMBrowserNode) {
+                DMBrowserNode node = (DMBrowserNode) obj;
+
+                if (node.isEnabled() && node.getType() == DMBrowserNodeType.DMFileResource)
+                {
+                    setEnabled(true);
+                    return;
+                }
+            }
+            setEnabled(false);
+        }
+
+        @Override
+        public void run() {
+            if (!isEnabled()) {
+                return;
+            }
+            ISelection selection = viewer.getSelection();
+            Object object = ((IStructuredSelection) selection).getFirstElement();
+            if (object instanceof DMBrowserNode) {
+                DMBrowserNode node = (DMBrowserNode) object;
+                // if node type is workflow or directory prevent opening in viewer
+                if (node.getType() != DMBrowserNodeType.Workflow && node.getType() != DMBrowserNodeType.DMDirectoryReference) {
+                    String dataReferenceId = node.getDataReferenceId();
+                    String associatedFilename = node.getAssociatedFilename();
+                    String fileReferencePath = node.getFileReferencePath();
+
+                    if (associatedFilename == null) {
+                        associatedFilename = "default";
+                    }
+
+                    Exception exception;
+                    try {
+                        // try to open in Viewer
+                        DataManagementWorkbenchUtils.getInstance().tryOpenDataReferenceInReadonlyEditor(dataReferenceId, fileReferencePath,
+                            associatedFilename, Session.getInstance().getUser(), node.getNodeWithTypeWorkflow().getNodeIdentifier(), true);
+                        // ok -> return
+                        return;
+                    } catch (AuthenticationException e) {
+                        exception = e;
+                    }
+                    showMessage("Failed to open entry in TiGL Viewer: " + exception.toString());
+                }
+            }
+        }
     }
 
     /**
@@ -548,11 +613,11 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 selectedNodes);
             String jobTitle;
             if (isFileAction) {
-                jobTitle = String.format(Messages.jobTitleDeleteFiles,
+                jobTitle = StringUtils.format(Messages.jobTitleDeleteFiles,
                     browserNodesToDelete.size(),
                     browserNodesToDelete.toString());
             } else {
-                jobTitle = String.format(Messages.jobTitleDelete,
+                jobTitle = StringUtils.format(Messages.jobTitleDelete,
                     browserNodesToDelete.size(),
                     browserNodesToDelete.toString());
             }
@@ -681,7 +746,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     try {
                         // try to open in editor
                         DataManagementWorkbenchUtils.getInstance().tryOpenDataReferenceInReadonlyEditor(dataReferenceId, fileReferencePath,
-                            associatedFilename, Session.getInstance().getUser(), node.getNodeWithTypeWorkflow().getNodeIdentifier());
+                            associatedFilename, Session.getInstance().getUser(), node.getNodeWithTypeWorkflow().getNodeIdentifier(), false);
                         // ok -> return
                         return;
                     } catch (AuthenticationException e) {
@@ -728,7 +793,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 @SuppressWarnings("unchecked") final Iterator<DMBrowserNode> iter = selection.iterator();
                 while (iter.hasNext()) {
                     DMBrowserNode selectedNode = iter.next();
-                    if (refreshableNodes.contains(selectedNode.getType()) && selectedNode.getNodeWithTypeWorkflow().areChildrenKnown()) {
+                    if (refreshableNodes.contains(selectedNode.getType())) {
                         selectedNodes.add(selectedNode);
                     } else {
                         enabled = false;
@@ -1103,34 +1168,42 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         toRefresh.clearChildren();
         contentProvider.clear(toRefresh);
 
-        expandedElements.clear();
-        for (final Object nodeObject : viewer.getExpandedElements()) {
-            if (nodeObject instanceof DMBrowserNode) {
-                final DMBrowserNode bn = (DMBrowserNode) nodeObject;
-                if (bn.getNodeWithTypeWorkflow().equals(node.getNodeWithTypeWorkflow())) {
-                    expandedElements.add(bn);
+        if (viewer.getExpandedState(toRefresh)) {
+            expandedElements.clear();
+            for (final Object nodeObject : viewer.getExpandedElements()) {
+                if (nodeObject instanceof DMBrowserNode) {
+                    final DMBrowserNode bn = (DMBrowserNode) nodeObject;
+                    if (bn.getNodeWithTypeWorkflow().equals(node.getNodeWithTypeWorkflow())) {
+                        expandedElements.add(bn);
+                    }
                 }
             }
-        }
-
-        // remove all expanded Elements a parent of which is not expanded
-        // (hidden expanded elements)
-        final List<DMBrowserNode> hiddenExpandedElements = new LinkedList<DMBrowserNode>();
-        for (final DMBrowserNode bn : expandedElements) {
-            DMBrowserNode parent = bn.getParent();
-            while (parent != null && parent.getParent() != null) {
-                if (!expandedElements.contains(parent)) {
-                    hiddenExpandedElements.add(bn);
+    
+            // remove all expanded Elements a parent of which is not expanded
+            // (hidden expanded elements)
+            final List<DMBrowserNode> hiddenExpandedElements = new LinkedList<DMBrowserNode>();
+            for (final DMBrowserNode bn : expandedElements) {
+                DMBrowserNode parent = bn.getParent();
+                while (parent != null && parent.getParent() != null) {
+                    if (!expandedElements.contains(parent)) {
+                        hiddenExpandedElements.add(bn);
+                    }
+                    parent = parent.getParent();
                 }
-                parent = parent.getParent();
             }
+            for (final DMBrowserNode bn : hiddenExpandedElements) {
+                expandedElements.remove(bn);
+            }
+            // refresh node in viewer
+            viewer.refresh(toRefresh);
+        } else {
+            // Called in order to update the workflow node's title (update "not terminated yet") even if node is not expanded.
+            // viewer.refresh(toRefresh) doesn't do that. Actually, the children don't need to be fetched here, but I didn't find a proper
+            // way to just update the node title by using the RetrieverTask of DMContentProvider. I liked to use the RetrieverTask to make
+            // sure the "in progress" and error handling are performed as well so that nothing gets broken here. As a user usually expand
+            // the node after refresh, fetching the children is not for nothing
+            contentProvider.getChildren(toRefresh);
         }
-        for (final DMBrowserNode bn : hiddenExpandedElements) {
-            expandedElements.remove(bn);
-        }
-
-        // refresh node in viewer
-        viewer.refresh(toRefresh);
     }
 
     @Override
@@ -1231,8 +1304,12 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         manager.add(new Separator());
         manager.add(openInEditorAction);
+        if (OS.isFamilyWindows()) {
+            manager.add(openTiglAction);            
+        }
         manager.add(refreshNodeAction);
         manager.add(actionRefreshAll);
+
         manager.add(new Separator());
         // manager.add(autoRefreshAction);
         manager.add(new Separator());
@@ -1288,6 +1365,10 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         // an action to open a selected entry in a read-only editor
         openInEditorAction = new OpenInEditorAction(selectionProvider, "Open in Editor (read-only)");
         openInEditorAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.OPEN_READ_ONLY_16));
+
+        openTiglAction = new OpenInTiglAction(selectionProvider, "Open in TiGL Viewer");
+        openTiglAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.TIGL_ICON));
+
         doubleClickAction = openInEditorAction;
         deleteNodeAction =
             new CustomDeleteAction(selectionProvider, Messages.deleteNodeActionContextMenuLabel + Messages.shortcutDelete, false);
@@ -1446,7 +1527,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             DMBrowserNode node = (DMBrowserNode) item.getData();
             String nodeID = node.getNodeIdentifier().getIdString();
             if (nodeID.equals(unreachableID)) {
-                node.setTitle(String.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME, node.getTitle(),
+                node.setTitle(StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME, node.getTitle(),
                     "[offline]"));
                 disableNode(node);
             }

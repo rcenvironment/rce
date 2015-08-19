@@ -40,7 +40,7 @@ public class WorkflowInformationColumnSorter extends ViewerSorter {
      * Sets the default sorting column and direction.
      */
     public WorkflowInformationColumnSorter() {
-        columnToSort = 4;
+        columnToSort = 3;
         direction = SORT_DESCENDING;
     }
 

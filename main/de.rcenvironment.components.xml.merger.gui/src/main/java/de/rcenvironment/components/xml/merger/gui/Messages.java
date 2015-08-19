@@ -33,12 +33,6 @@ public class Messages extends NLS {
     public static String loadMessage;
 
     /** Constant. */
-    public static String xmlLabel;
-
-    /** Constant. */
-    public static String xsltLabel;
-
-    /** Constant. */
     public static String actuallyLoadedLabel = null;
 
     /** Validation message. */

@@ -138,12 +138,12 @@ public class GenericSubscriptionManager {
             if (lastMissedNumber != NotificationService.NO_MISSED) {
                 eventProcessor.setNumberOfLastMissingNotification(notifId, node.getIdString(), lastMissedNumber);
                 Log log = LogFactory.getLog(getClass());
-                log.debug(String.format("Starting to fetch stored notifications for id %s from node %s", notifId, node));
+                log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, node));
                 Map<String, List<Notification>> storedNotifications = sns.getNotifications(notifId, node);
-                log.debug(String.format("Received %d stored notification entries for id %s from node %s", storedNotifications.size(),
+                log.debug(StringUtils.format("Received %d stored notification entries for id %s from node %s", storedNotifications.size(),
                     notifId, node));
                 for (Entry<String, List<Notification>> e : storedNotifications.entrySet()) {
-                    log.debug(String.format("  Received %d notifications for topic %s", e.getValue().size(), e.getKey()));
+                    log.debug(StringUtils.format("  Received %d notifications for topic %s", e.getValue().size(), e.getKey()));
                 }
                 for (List<Notification> notifications : storedNotifications.values()) {
                     // TODO 5.0 final: replaced commented-out code with this line; remove old code after testing

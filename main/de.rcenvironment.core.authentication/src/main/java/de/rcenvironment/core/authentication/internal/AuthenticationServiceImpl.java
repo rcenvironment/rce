@@ -47,6 +47,7 @@ import de.rcenvironment.core.authentication.LDAPUser;
 import de.rcenvironment.core.authentication.SingleUser;
 import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -436,9 +437,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 absPath = configurationService.resolveBundleConfigurationPath(bundleSymbolicName, path);
                 certificates.add(CertUtil.loadCertificate(absPath));
             } catch (IOException e) {
-                LOGGER.error(String.format(CERTIFICATE_COULD_NOT_BE_LOADED, absPath));
+                LOGGER.error(StringUtils.format(CERTIFICATE_COULD_NOT_BE_LOADED, absPath));
             } catch (GeneralSecurityException e) {
-                LOGGER.error(String.format(CERTIFICATE_COULD_NOT_BE_LOADED, absPath));
+                LOGGER.error(StringUtils.format(CERTIFICATE_COULD_NOT_BE_LOADED, absPath));
             }
         }
         return certificates;
@@ -460,9 +461,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 absPath = configurationService.resolveBundleConfigurationPath(bundleSymbolicName, path);
                 certificateRevocationLists.add(CertUtil.loadCrl(absPath));
             } catch (IOException e) {
-                LOGGER.error(String.format(CRL_COULD_NOT_BE_LOADED, absPath));
+                LOGGER.error(StringUtils.format(CRL_COULD_NOT_BE_LOADED, absPath));
             } catch (GeneralSecurityException e) {
-                LOGGER.error(String.format(CRL_COULD_NOT_BE_LOADED, absPath));
+                LOGGER.error(StringUtils.format(CRL_COULD_NOT_BE_LOADED, absPath));
             }
         }
 

@@ -23,9 +23,10 @@ import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.component.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService;
+import de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService.Dispose;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotificationSubscriber;
-import de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService.Dispose;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -140,7 +141,7 @@ public class HeadlessWorkflowExecutionContext {
      */
     public synchronized void reportWorkflowTerminated(WorkflowState newState, boolean getDisposed) {
         if (this.finalState != null) {
-            log.warn(String.format("Workflow '%s' (%s) was already marked as %s, new final state: %s (%s)",
+            log.warn(StringUtils.format("Workflow '%s' (%s) was already marked as %s, new final state: %s (%s)",
                 getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
                 finalState.getDisplayName(), newState.getDisplayName(), getWorkflowFile().getAbsolutePath()));
         }
@@ -149,7 +150,7 @@ public class HeadlessWorkflowExecutionContext {
             addOutput("Workflow did not terminated normally (" + finalState.getDisplayName()
                 + "); check log and console output for details");
         }
-        log.debug(String.format("Workflow '%s' (%s) has terminated, final state: %s (%s)",
+        log.debug(StringUtils.format("Workflow '%s' (%s) has terminated, final state: %s (%s)",
             getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
             finalState.getDisplayName(), getWorkflowFile()));
         if (!getDisposed) {
@@ -161,7 +162,7 @@ public class HeadlessWorkflowExecutionContext {
      * @param newState new {@link WorkflowState}
      */
     public synchronized void reportWorkflowDisposed(WorkflowState newState) {
-        log.debug(String.format("Workflow '%s' (%s) is done, disposed: %s (%s)",
+        log.debug(StringUtils.format("Workflow '%s' (%s) is done, disposed: %s (%s)",
             getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
             newState == WorkflowState.DISPOSED, getWorkflowFile()));
         workflowFinishedLatch.countDown();

@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.transport.spi;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import de.rcenvironment.core.communication.channel.MessageChannelIdFactory;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.IdGenerator;
 
 /**
@@ -35,6 +36,6 @@ public class DefaultMessageChannelIdFactoryImpl implements MessageChannelIdFacto
         }
         // the running index is for easy identification in log output; the UUID part ensures
         // uniqueness; the leading "c" is to make it recognizable as a connection id -- misc_ro
-        return String.format("c%d%s-%s", sequence.incrementAndGet(), directionFlag, IdGenerator.randomUUIDWithoutDashes());
+        return StringUtils.format("c%d%s-%s", sequence.incrementAndGet(), directionFlag, IdGenerator.randomUUIDWithoutDashes());
     }
 }

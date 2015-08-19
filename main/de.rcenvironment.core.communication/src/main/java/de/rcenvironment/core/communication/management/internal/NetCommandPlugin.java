@@ -32,6 +32,7 @@ import de.rcenvironment.core.communication.management.BenchmarkSetup;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.GraphvizUtils;
 
 /**
@@ -234,7 +235,7 @@ public class NetCommandPlugin implements CommandPlugin {
             context.println(nodeId.toString());
             Map<String, String> map = entry1.getValue();
             for (Map.Entry<String, String> entry2 : map.entrySet()) {
-                context.println(String.format("  %s = %s", entry2.getKey(), entry2.getValue()));
+                context.println(StringUtils.format("  %s = %s", entry2.getKey(), entry2.getValue()));
             }
         }
 

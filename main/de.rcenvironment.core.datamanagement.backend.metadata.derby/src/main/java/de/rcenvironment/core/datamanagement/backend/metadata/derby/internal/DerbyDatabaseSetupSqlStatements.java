@@ -63,6 +63,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIE
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_TYPEDDATUM;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.WORKFLOW_RUN_ID;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Static strings representing sql statements for setting up database tables and views.
@@ -361,7 +362,7 @@ public abstract class DerbyDatabaseSetupSqlStatements {
 
     protected static String getSqlViewComponentRuns() {
         String sql =
-            String.format(
+            StringUtils.format(
                 CREATE_VIEW + VIEW_COMPONENT_RUNS + AS
                     + SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA
                     + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_ID + COMMA

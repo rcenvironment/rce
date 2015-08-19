@@ -32,6 +32,7 @@ import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVer
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -120,7 +121,7 @@ public class InputProviderPersistentComponentDescriptionUpdater implements Persi
             if (outputNode.get(WorkflowDescriptionPersistenceHandler.DATATYPE).getTextValue().equals(DataType.FileReference.name())) {
                 ObjectNode metaDataNode = (ObjectNode) outputNode.get(WorkflowDescriptionPersistenceHandler.METADATA);
                 metaDataNode.put(InputProviderComponentConstants.META_VALUE,
-                    TextNode.valueOf(String.format(ConfigurationDefinitionConstants.PLACEHOLDER_FORMAT_STRING,
+                    TextNode.valueOf(StringUtils.format(ConfigurationDefinitionConstants.PLACEHOLDER_FORMAT_STRING,
                         outputNode.get(WorkflowDescriptionPersistenceHandler.NAME).getTextValue())));
                 metaDataNode.put(InputProviderComponentConstants.META_FILESOURCETYPE,
                     TextNode.valueOf(FileSourceType.atWorkflowStart.name()));

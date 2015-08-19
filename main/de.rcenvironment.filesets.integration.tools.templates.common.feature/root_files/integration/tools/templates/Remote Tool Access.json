@@ -1,6 +1,6 @@
 {
   "templateName" : "Remote Tool Access",
-  "postScript" : "${out:output} = \"out\"",
+  "postScript" : "RCE.write_output('output', 'out')",
   "inputs" : [ {
     "endpointFileName" : "",
     "endpointDataType" : "DirectoryReference",

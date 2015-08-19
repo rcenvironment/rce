@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * A utility wrapper class that provides a shared ExecutorService using the {@link ThreadPool} interface. Its main purpose is to avoid the
  * redundant creation of thread pools for each service, which would needlessly increase the global thread count. An additional benefit is
@@ -99,7 +101,7 @@ public final class SharedThreadPool implements ThreadPool {
                 }
                 Thread replaced = activeTaskIds.put(taskId, Thread.currentThread());
                 if (replaced != null) {
-                    log.warn(String.format("Task id '%s' used more than once for task '%s' (existing: %s, new: %s)", taskId,
+                    log.warn(StringUtils.format("Task id '%s' used more than once for task '%s' (existing: %s, new: %s)", taskId,
                         taskName, replaced.getName(), Thread.currentThread().getName()), new RuntimeException());
                 }
             } else {
@@ -127,7 +129,7 @@ public final class SharedThreadPool implements ThreadPool {
                 }
                 Thread removed = activeTaskIds.remove(taskId);
                 if (removed == null) {
-                    log.warn(String.format("No registered task id '%s' for task '%s'; was there an id collision before?", taskId,
+                    log.warn(StringUtils.format("No registered task id '%s' for task '%s'; was there an id collision before?", taskId,
                         taskName));
                 }
             } else {
@@ -526,13 +528,13 @@ public final class SharedThreadPool implements ThreadPool {
                     if (statsEntry.activeTaskIds != null && !statsEntry.activeTaskIds.isEmpty()) {
                         sb.append("      Named tasks:\n");
                         for (Entry<String, Thread> taskIdEntry : statsEntry.activeTaskIds.entrySet()) {
-                            sb.append(String.format("          %s [%s]\n", taskIdEntry.getKey(), taskIdEntry.getValue().getName()));
+                            sb.append(StringUtils.format("          %s [%s]\n", taskIdEntry.getKey(), taskIdEntry.getValue().getName()));
                         }
                     }
                     if (statsEntry.anonymousTaskThreads != null && !statsEntry.anonymousTaskThreads.isEmpty()) {
                         sb.append("      Anonymous task threads:\n");
                         for (Thread thread : statsEntry.anonymousTaskThreads) {
-                            sb.append(String.format("          [%s]\n", thread.getName()));
+                            sb.append(StringUtils.format("          [%s]\n", thread.getName()));
                         }
                     }
                 }

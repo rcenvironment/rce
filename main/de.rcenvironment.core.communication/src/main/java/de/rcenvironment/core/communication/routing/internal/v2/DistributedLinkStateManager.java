@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
@@ -203,9 +204,9 @@ public class DistributedLinkStateManager implements ListenerProvider {
                 if (localNodeId != null) {
                     locationInfo = " " + localNodeId.toString();
                 }
-                buffer.append(String.format("Detected %d LSA property changes%s: ", deltaMap.size(), locationInfo));
+                buffer.append(StringUtils.format("Detected %d LSA property changes%s: ", deltaMap.size(), locationInfo));
                 for (Entry<NodeIdentifier, LinkState> entry : deltaMap.entrySet()) {
-                    buffer.append(String.format("\n  %s -> %s", entry.getKey(), entry.getValue().getLinks()));
+                    buffer.append(StringUtils.format("\n  %s -> %s", entry.getKey(), entry.getValue().getLinks()));
                 }
                 log.debug(buffer.toString());
             }

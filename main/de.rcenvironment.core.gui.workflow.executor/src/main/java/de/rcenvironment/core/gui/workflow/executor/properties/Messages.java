@@ -78,6 +78,9 @@ public class Messages extends NLS {
     public static String openInEditor;
     
     /** Constant. */
+    public static String showWhitespace;
+    
+    /** Constant. */
     public static String scriptFileName;
     
     /** Constant. */

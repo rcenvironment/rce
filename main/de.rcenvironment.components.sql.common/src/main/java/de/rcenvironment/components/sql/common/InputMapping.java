@@ -22,6 +22,7 @@ import java.util.Scanner;
 import java.util.regex.Pattern;
 
 import de.rcenvironment.components.sql.common.InputMapping.ColumnMapping;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Input mapping.
@@ -49,7 +50,7 @@ public class InputMapping implements Serializable, Iterable<ColumnMapping> {
         @Override
         public void propertyChange(final PropertyChangeEvent event) {
             final String columnMappingPropertyName = event.getPropertyName();
-            final String propertyName = String.format("columnMapping.%s", columnMappingPropertyName);
+            final String propertyName = StringUtils.format("columnMapping.%s", columnMappingPropertyName);
             final ColumnMapping columnMapping = (ColumnMapping) event.getSource();
             final int index = indexOf(columnMapping);
             if (index >= 0) {
@@ -69,7 +70,7 @@ public class InputMapping implements Serializable, Iterable<ColumnMapping> {
                 final String name = (String) event.getNewValue();
                 if (name != null && !name.isEmpty()) {
                     if (!SQL_NAME_PATTERN.matcher(name).matches()) {
-                        throw new PropertyVetoException(String.format("Not a valid name ('%s').", name), event);
+                        throw new PropertyVetoException(StringUtils.format("Not a valid name ('%s').", name), event);
                     }
                     for (final ColumnMapping otherColumnMapping : columnMappings) {
                         if (columnMapping == otherColumnMapping) {
@@ -526,7 +527,7 @@ public class InputMapping implements Serializable, Iterable<ColumnMapping> {
             } else {
                 typeString = null;
             }
-            return String.format("%s (%s)", name, typeString);
+            return StringUtils.format("%s (%s)", name, typeString);
         }
 
     }

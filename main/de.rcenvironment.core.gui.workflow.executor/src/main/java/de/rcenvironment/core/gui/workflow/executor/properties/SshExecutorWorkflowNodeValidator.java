@@ -15,6 +15,7 @@ import java.util.List;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A {@link AbstractWorkflowNodeValidator} implementation to validate cluster component configuration.
@@ -41,8 +42,8 @@ public class SshExecutorWorkflowNodeValidator extends AbstractWorkflowNodeValida
             new WorkflowNodeValidationMessage(
                 WorkflowNodeValidationMessage.Type.ERROR,
                 configurationKey,
-                String.format("", configurationKey), 
-                Messages.bind(String.format(Messages.errorMissing, configurationKey),
+                StringUtils.format("", configurationKey), 
+                Messages.bind(StringUtils.format(Messages.errorMissing, configurationKey),
                     configurationKey));
         messages.add(validationMessage);
         return messages;
@@ -56,8 +57,8 @@ public class SshExecutorWorkflowNodeValidator extends AbstractWorkflowNodeValida
                 new WorkflowNodeValidationMessage(
                     WorkflowNodeValidationMessage.Type.ERROR,
                     configurationKey,
-                    String.format(Messages.errorMissing, configurationKey),
-                    Messages.bind(String.format(Messages.errorMissing, configurationKey),
+                    StringUtils.format(Messages.errorMissing, configurationKey),
+                    Messages.bind(StringUtils.format(Messages.errorMissing, configurationKey),
                         configurationKey));
             messages.add(validationMessage);
         }

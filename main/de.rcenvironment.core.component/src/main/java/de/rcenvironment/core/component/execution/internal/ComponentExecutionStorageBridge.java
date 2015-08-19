@@ -17,6 +17,7 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.datamanagement.DistributedMetaDataService;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Bridge class to the data management, holding relevant data management ids.
@@ -53,7 +54,7 @@ public class ComponentExecutionStorageBridge {
         this.timestampOffset = timestampOffset;
         this.inputDmIds = compExeCtx.getInputDataManagementIds();
         this.outputDmIds = compExeCtx.getOutputDataManagementIds();
-        errorMessageSuffix = String.format(" of component '%s' (%s) of workflow '%s' (%s)",
+        errorMessageSuffix = StringUtils.format(" of component '%s' (%s) of workflow '%s' (%s)",
             compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
             compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier());
     }
@@ -74,28 +75,29 @@ public class ComponentExecutionStorageBridge {
             return metaDataService.addOutputDatum(compExeDmId, outputDmIds.get(outputName), datum,
                 outputCount.getAndIncrement(outputName), storageNodeId);
         } catch (CommunicationException e) {
-            throw new ComponentExecutionException(String.format("Failed to store output '%s'", outputName) + errorMessageSuffix, e);
+            throw new ComponentExecutionException(StringUtils.format("Failed to store output '%s'", outputName) + errorMessageSuffix, e);
         }
     }
     
     protected synchronized void addInput(String inputName, Long typedDatumId) throws ComponentExecutionException {
         assertCompExeDmIdNotNull();
         if (typedDatumId == null) {
-            throw new ComponentExecutionException(String.format("Failed to store input '%s'", inputName) + errorMessageSuffix + ", "
+            throw new ComponentExecutionException(StringUtils.format("Failed to store input '%s'", inputName) + errorMessageSuffix + ", "
                 + "because given datamanagement id of related ouput was null. Likely, because saving output failed earlier.");
         } else {
             try {
                 metaDataService.addInputDatum(compExeDmId, typedDatumId, inputDmIds.get(inputName),
                     inputCount.getAndIncrement(inputName), storageNodeId);
             } catch (CommunicationException e) {
-                throw new ComponentExecutionException(String.format("Failed to store input '%s'", inputName) + errorMessageSuffix, e);
+                throw new ComponentExecutionException(StringUtils.format("Failed to store input '%s'", inputName) + errorMessageSuffix, e);
             }
         }
     }
     
     protected synchronized void setComponentExecutionFinished() throws ComponentExecutionException {
+        assertCompExeDmIdNotNull();
         try {
-            metaDataService.setComponentRunFinished(compExeDmId, Long.valueOf(System.currentTimeMillis() + timestampOffset), storageNodeId);
+            metaDataService.setComponentRunFinished(compExeDmId, System.currentTimeMillis() + timestampOffset, storageNodeId);
         } catch (CommunicationException e) {
             throw new ComponentExecutionException("Failed to store component execution" + errorMessageSuffix, e);
         }

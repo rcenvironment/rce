@@ -166,7 +166,26 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
     public EndpointDescription addDynamicEndpointDescription(String endpointId, String name, DataType dataType,
         Map<String, String> metaData) throws IllegalArgumentException {
 
-        return addDynamicEndpointDescription(endpointId, name, dataType, metaData, UUID.randomUUID().toString());
+        return addDynamicEndpointDescription(endpointId, name, dataType, metaData, UUID.randomUUID().toString(), true);
+    }
+    
+    /**
+    * Add a dynamic endpoint to the list of dynamic endpoints.
+    * 
+    * @param endpointId identifier of dynamic {@link EndpointDefinition} to chose as
+    *        the underlying {@link EndpointDefinition}
+    * @param name name to set
+    * @param dataType data type to set
+    * @param metaData meta data to set
+    * @param checkIfDeclared perform check if dynamic endpoint is declared
+    * @return {@link EndpointDescription} object created and added or <code>null</code> if the name
+    *         already exists
+    * @throws IllegalArgumentException if dynamic endpoint description with given name already exists or new name is invalid
+    */
+    public EndpointDescription addDynamicEndpointDescription(String endpointId, String name, DataType dataType,
+        Map<String, String> metaData, boolean checkIfDeclared) throws IllegalArgumentException {
+
+        return addDynamicEndpointDescription(endpointId, name, dataType, metaData, UUID.randomUUID().toString(), checkIfDeclared);
     }
     
     /**
@@ -189,9 +208,9 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
         if (checkIfDeclared && (!isDynamicEndpointDefinitionDeclared(endpointId) || !isValidEndpointName(name))) {
             String message;
             if (!isDynamicEndpointDefinitionDeclared(endpointId)) {
-                message = "no dynamic endpoint description with id '" + endpointId + "' declared";
+                message = "No dynamic endpoint description with id '" + endpointId + "' declared";
             } else {
-                message = "desired endpoint name already exists: " + name;
+                message = "Desired endpoint name already exists: " + name;
             }
             throw new IllegalArgumentException(message);
         }
@@ -335,9 +354,34 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
     public synchronized EndpointDescription editStaticEndpointDescription(String name, DataType newDataType,
         Map<String, String> newMetaData) throws IllegalArgumentException {
 
+        return editStaticEndpointDescription(name, newDataType, newMetaData, true);
+    }
+    
+    /**
+     * Edits a static {@link EndpointDescription}.
+     * 
+     * @param name name of {@link EndpointDescription} to edit
+     * @param newDataType new {@link DataType}
+     * @param newMetaData new meta data {@link Map}
+     * @param checkIfDeclared perform check if static endpoint is declared
+     * @return {@link EndpointDescription} edited
+     * @throws IllegalArgumentException if no dynamic endpoint description with given name exists
+     */
+    public synchronized EndpointDescription editStaticEndpointDescription(String name, DataType newDataType,
+        Map<String, String> newMetaData, boolean checkIfDeclared) throws IllegalArgumentException {
+
         EndpointDescription description = staticEndpointDescriptions.get(name);
         if (description == null) {
-            throw new IllegalArgumentException("static endpoint description with name '" + name + "' doesn't exist");
+            if (checkIfDeclared) { 
+                throw new IllegalArgumentException("static endpoint description with name '" + name + "' doesn't exist");
+            } else { // add description
+                description = new EndpointDescription(null, endpointType);
+                description.setName(name);
+                description.setDataType(newDataType);
+                description.setMetaData(newMetaData);
+                staticEndpointDescriptions.put(name, description);
+                return description;
+            }
         }
         
         EndpointDescription oldDescription = description.clone();
@@ -365,9 +409,13 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
      * @param dataType {@link DataType} to add as a connected one
      */
     public void addConnectedDataType(String endpointName, DataType dataType) {
+        
         EndpointDescription endpointDesc = getNotClonedEndpointDescription(endpointName);
+        EndpointDescription oldEndpointDesc = endpointDesc.clone();
+
         if (endpointDesc != null) {
             endpointDesc.addConnectedDataType(dataType);
+            firePropertyChange(PROPERTY_ENDPOINT, new EndpointChange(EndpointChange.Type.Modified, endpointDesc, oldEndpointDesc));
         }
     }
 
@@ -377,8 +425,11 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
      */
     public void removeConnectedDataType(String endpointName, DataType dataType) {
         EndpointDescription endpointDesc = getNotClonedEndpointDescription(endpointName);
+        EndpointDescription oldEndpointDesc = endpointDesc.clone();
+
         if (endpointDesc != null) {
             endpointDesc.removeConnectedDataType(dataType);
+            firePropertyChange(PROPERTY_ENDPOINT, new EndpointChange(EndpointChange.Type.Modified, endpointDesc, oldEndpointDesc));
         }
     }
 

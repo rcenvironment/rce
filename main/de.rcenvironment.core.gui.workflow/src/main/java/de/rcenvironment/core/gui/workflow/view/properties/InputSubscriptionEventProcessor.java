@@ -16,6 +16,7 @@ import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptionEventProcessor;
 import de.rcenvironment.core.notification.Notification;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Subscriber for all input notifications in the overall system.
@@ -28,10 +29,13 @@ public class InputSubscriptionEventProcessor extends GenericSubscriptionEventPro
     private static final long serialVersionUID = 2685613452747737482L;
 
     private final transient InputModel inputModel;
+    
+    private final transient EndpointDatumSerializer endpointDatumSerializer;
 
     public InputSubscriptionEventProcessor(InputModel consoleModel) {
         super();
         this.inputModel = consoleModel;
+        this.endpointDatumSerializer = ServiceRegistry.createAccessFor(this).getService(EndpointDatumSerializer.class);
     }
 
     /**
@@ -45,7 +49,7 @@ public class InputSubscriptionEventProcessor extends GenericSubscriptionEventPro
         for (Notification notification : notifications) {
             Serializable body = notification.getBody();
             if (body instanceof String) {
-                inputs.add(EndpointDatumSerializer.deserializeEndpointDatum((String) body));
+                inputs.add(endpointDatumSerializer.deserializeEndpointDatum((String) body));
             }
         }
         inputModel.addInputs(inputs);

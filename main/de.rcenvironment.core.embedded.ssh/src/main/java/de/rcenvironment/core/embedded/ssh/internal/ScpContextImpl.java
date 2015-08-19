@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 import de.rcenvironment.core.embedded.ssh.api.ScpContext;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -71,6 +72,7 @@ public class ScpContextImpl implements ScpContext {
 
     @Override
     public String toString() {
-        return String.format("User='%s', SCP root path='%s', local root dir='%s'", authorizedUsername, virtualScpRootPath, localRootPath);
+        return StringUtils.format("User='%s', SCP root path='%s', local root dir='%s'", authorizedUsername, virtualScpRootPath,
+            localRootPath);
     }
 }

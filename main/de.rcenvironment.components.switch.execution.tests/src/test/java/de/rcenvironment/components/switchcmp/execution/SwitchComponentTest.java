@@ -48,8 +48,11 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Integration test for {@link SwitchComponent}.
  * 
  * @author David Scholz
+ * @author Doreen Seider
  */
 public class SwitchComponentTest {
+
+    private static final String SHIFT = " << 3";
 
     private static final String AND = " and ";
 
@@ -223,7 +226,7 @@ public class SwitchComponentTest {
 
         context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, SwitchComponentConstants.DATA_INPUT_NAME + " < 3");
         scriptException.expect(ComponentException.class);
-        scriptException.expectMessage("Input with unsupported data type used");
+        scriptException.expectMessage("not supported in script");
         component.start();
     }
 
@@ -290,7 +293,7 @@ public class SwitchComponentTest {
      * @throws ComponentException on unexpected component failures.
      */
     @Test
-    public void testNullScript() throws ComponentException {
+    public void testNullSwitch() throws ComponentException {
         context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME, DataType.Float,
             false,
             null);
@@ -301,6 +304,49 @@ public class SwitchComponentTest {
         scriptException.expectMessage("No condition is defined");
         component.start();
     }
+    
+    /**
+     * 
+     * Test behavior if script contains "<<" or ">>".
+     * 
+     * @throws ComponentException on unexpected component failures.
+     */
+    @Test
+    public void testScriptWithShiftAndFloatInputs() throws ComponentException {
+        context.addSimulatedInput(INPUT_X, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Float, true, null);
+        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, INPUT_X + SHIFT);
+        scriptException.expect(ComponentException.class);
+        scriptException.expectMessage("Syntax error: ");
+        component.start();
+    }
+    
+    /**
+     * 
+     * Test behavior if script contains "<<" or ">>".
+     * 
+     * @throws ComponentException on unexpected component failures.
+     */
+    @Test
+    public void testScriptWithShiftAndIntegerInputs() throws ComponentException {
+        context.addSimulatedInput(INPUT_X, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Integer, true, null);
+        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, INPUT_X + SHIFT);
+        component.start();
+    }
+    
+    
+    /**
+     * 
+     * Test behavior if script contains "<<" or ">>".
+     * 
+     * @throws ComponentException on unexpected component failures.
+     */
+    @Test
+    public void testScriptWithShiftAndBooleanInputs() throws ComponentException {
+        context.addSimulatedInput(INPUT_X, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Boolean, true, null);
+        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, INPUT_X + SHIFT);
+        component.start();
+    }
+    
     
     /**
      * 

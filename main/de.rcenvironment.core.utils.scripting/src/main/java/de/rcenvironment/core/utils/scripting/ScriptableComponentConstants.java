@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.utils.scripting;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Container holding constants for scriptable components.
  * 
@@ -119,7 +121,7 @@ public final class ScriptableComponentConstants {
          * @return the property key of the do script property of the specified context
          */
         public String doScript(final ScriptTime scriptTime, final ComponentRunMode componentRunMode) {
-            return String.format("do%s%sScript", scriptTime.infix(), componentRunMode.infix());
+            return StringUtils.format("do%s%sScript", scriptTime.infix(), componentRunMode.infix());
         }
 
         /**
@@ -130,7 +132,7 @@ public final class ScriptableComponentConstants {
          * @return the property key of the script property of the specified context
          */
         public String script(final ScriptTime scriptTime, final ComponentRunMode componentRunMode) {
-            return String.format("%s%sScript", scriptTime.prefix(), componentRunMode.infix());
+            return StringUtils.format("%s%sScript", scriptTime.prefix(), componentRunMode.infix());
         }
 
         /**
@@ -141,7 +143,7 @@ public final class ScriptableComponentConstants {
          * @return the property key of the script language property of the specified context
          */
         public String language(final ScriptTime scriptTime, final ComponentRunMode componentRunMode) {
-            return String.format("%s%sScriptLanguage", scriptTime.prefix(), componentRunMode.infix());
+            return StringUtils.format("%s%sScriptLanguage", scriptTime.prefix(), componentRunMode.infix());
         }
 
     }

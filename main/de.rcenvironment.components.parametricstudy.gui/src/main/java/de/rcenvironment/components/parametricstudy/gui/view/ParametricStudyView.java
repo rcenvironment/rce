@@ -172,7 +172,7 @@ public class ParametricStudyView extends ViewPart implements ComponentRuntimeVie
 
     @Override
     public void initializeView() {
-        if (study != null) {
+        if (study != null && !dataComposite.isDisposed()) {
             dataComposite.setStudyDatastore(study);
             configurationComposite.setStudyDatastore(study);
         }

@@ -21,6 +21,7 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.utils.common.ServiceUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 
 /**
@@ -82,7 +83,7 @@ public final class WorkflowDescriptionValidator {
                     ni = node.getComponentDescription().getNode();
                 }
                 if (!ComponentUtils.hasComponent(compKnowledge.getAllInstallations(), node.getComponentDescription().getIdentifier(), ni)) {
-                    LOGGER.error(String.format("Workflow description is invalid. Component '%s' not installed on node %s",
+                    LOGGER.error(StringUtils.format("Workflow description is invalid. Component '%s' not installed on node %s",
                         node.getName(), ni.getAssociatedDisplayName()));
                     valid = false;
                     break;

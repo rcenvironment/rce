@@ -23,6 +23,27 @@ import de.rcenvironment.core.communication.model.NetworkContactPoint;
 public interface NodeConfigurationService {
 
     /**
+     * A system property to specify a certain node id for testing. Example usage in command line:
+     * "-Drce.network.overrideNodeId=12312312312312312312312312312312"
+     */
+    String SYSTEM_PROPERTY_OVERRIDE_NODE_ID = "rce.network.overrideNodeId";
+
+    /**
+     * Regular expression for the node id override value.
+     */
+    String NODE_ID_OVERRIDE_PATTERN = "[0-9a-f]{32}";
+
+    /**
+     * A system property that forces local RPCs to be sent through message serialization (to catch serialization issues in local testing).
+     */
+    String SYSTEM_PROPERTY_FORCE_LOCAL_RPC_SERIALIZATION = "rce.internal.forceLocalRPCSerialization";
+
+    /**
+     * Storage property key for the auto-generated local node id.
+     */
+    String PERSISTENT_SETTINGS_KEY_PLATFORM_ID = "rce.network.nodeId";
+
+    /**
      * @return the identifier of the local node
      */
     NodeIdentifier getLocalNodeId();

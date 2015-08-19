@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.impl.NetworkContactPointImpl;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Utility methods related to {@link NetworkContactPoint}s.
@@ -97,7 +98,7 @@ public final class NetworkContactPointUtils {
             attributesSuffix = "(" + attributesSuffix.substring(1, attributesSuffix.length() - 1) + ")";
         }
         // note: intentionally using %s for the port to avoid locale-based formatting
-        return String.format("%s:%s:%s%s", ncp.getTransportId(), ncp.getHost(), ncp.getPort(), attributesSuffix);
+        return StringUtils.format("%s:%s:%s%s", ncp.getTransportId(), ncp.getHost(), ncp.getPort(), attributesSuffix);
     }
 
 }

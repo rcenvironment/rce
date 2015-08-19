@@ -32,6 +32,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.channel.legacy.VariantArray;
 
 /**
@@ -283,7 +284,7 @@ public abstract class AbstractComponent extends DefaultComponent {
             if (found) {
                 result = result2;
             } else {
-                throw new IllegalArgumentException(String.format("Unknown scope '%s'", scope));
+                throw new IllegalArgumentException(StringUtils.format("Unknown scope '%s'", scope));
             }
         }
         return result;
@@ -298,7 +299,7 @@ public abstract class AbstractComponent extends DefaultComponent {
             final VariantArray variantArray = (VariantArray) object;
             result = variantArray.getValue(indexs).getValue();
         } else {
-            throw new RuntimeException(String.format("Unknown data type for indexed access: '%s'", object.getClass()));
+            throw new RuntimeException(StringUtils.format("Unknown data type for indexed access: '%s'", object.getClass()));
         }
         return result;
     }
@@ -523,7 +524,7 @@ public abstract class AbstractComponent extends DefaultComponent {
         @Override
         public Object put(final String key, final Object value) {
             if (locked) {
-                throw new RuntimeException(String.format("Scope '%s' is locked for write-access.", name));
+                throw new RuntimeException(StringUtils.format("Scope '%s' is locked for write-access.", name));
             }
             return super.put(key, value);
         }
@@ -536,7 +537,7 @@ public abstract class AbstractComponent extends DefaultComponent {
             } else if (type.isAssignableFrom(resultObject.getClass())) {
                 result = type.cast(resultObject);
             } else {
-                throw new RuntimeException(String.format("Type '%s' can not be cast to '%s'.",
+                throw new RuntimeException(StringUtils.format("Type '%s' can not be cast to '%s'.",
                         resultObject.getClass().getCanonicalName(), type.getCanonicalName()));
             }
             return result;
@@ -599,7 +600,7 @@ public abstract class AbstractComponent extends DefaultComponent {
 
         private void assertScopeExists(final String scope) {
             if (!scopes.containsKey(scope)) {
-                throw new NoSuchElementException(String.format("Scope '%s' is unknown.", scope));
+                throw new NoSuchElementException(StringUtils.format("Scope '%s' is unknown.", scope));
             }
         }
 
@@ -652,7 +653,7 @@ public abstract class AbstractComponent extends DefaultComponent {
                     exception = (ComponentException) cause;
                 } else {
                     // wrap RuntimeExceptions in a ComponentRunException
-                    exception = new ComponentException(e);
+                    exception = new ComponentException(e.toString());
                 }
                 throw exception;
             }
@@ -661,7 +662,7 @@ public abstract class AbstractComponent extends DefaultComponent {
         protected abstract Boolean execute() throws ComponentException;
 
         protected void handleException(final ComponentException exception) {
-            logger.error(exception);
+            logger.error(exception.toString());
         }
         
     }

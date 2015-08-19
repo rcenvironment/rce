@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS GUI Workflow Integration
 Bundle-SymbolicName: de.rcenvironment.cpacs.gui.workflow.integration;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.datamanagement.history,
@@ -11,6 +11,7 @@ Import-Package: de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.integration,
+ de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.cpacs.component.integration,
  de.rcenvironment.cpacs.gui.xpathchooser,

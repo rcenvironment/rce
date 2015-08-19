@@ -66,15 +66,15 @@ public class SQLCommandComponent extends AbstractSQLComponent {
                 jdbcConnection.setAutoCommit(autoCommit);
             }
         } catch (SQLException e) {
-            logger.error("SQL Exception occured:", e);
-            throw new RuntimeException(e);
+            logger.error("SQL Exception occured: " + e.toString());
+            throw new RuntimeException(e.toString());
         } finally {
             try {
                 if (statement != null) {
                     statement.close();
                 }
             } catch (SQLException e) {
-                logger.error("Statement could not be closed properly:", e);
+                logger.error("Statement could not be closed properly: " + e.toString());
             }
         }
     }

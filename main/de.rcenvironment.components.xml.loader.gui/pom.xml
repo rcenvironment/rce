@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.xml.loader.gui</artifactId>
 	<name>RCE XML Loader Component GUI Bundle</name>
-	<version>6.1.0.qualifier</version>
+	<version>6.2.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

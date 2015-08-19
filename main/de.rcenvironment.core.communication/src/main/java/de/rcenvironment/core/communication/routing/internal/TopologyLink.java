@@ -13,6 +13,7 @@ import java.util.Date;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Represents a logical link between two communicating RCE instances in a network. It is similar to
@@ -58,7 +59,7 @@ public final class TopologyLink implements Comparable<TopologyLink>, Cloneable, 
      */
     @Override
     public String toString() {
-        return String.format("%s --[ConId=%3$s]--> %s, (Hash=%s)", getSource(), getDestination(), getConnectionId(), hashCode());
+        return StringUtils.format("%s --[ConId=%3$s]--> %s, (Hash=%s)", getSource(), getDestination(), getConnectionId(), hashCode());
     }
 
     /**

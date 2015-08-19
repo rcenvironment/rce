@@ -16,9 +16,12 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.internal.win32.OS;
 import org.eclipse.swt.internal.win32.TCHAR;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.part.ViewPart;
 
@@ -68,69 +71,80 @@ public class TIGLViewer extends ViewPart {
      */
     @Override
     public void createPartControl(Composite parent) {
-        Composite nativeComposite = new Composite(parent, SWT.EMBEDDED);
-        String sCommand;
 
-        this.window = this.getViewSite().getWorkbenchWindow();
-        String secondId = this.getViewSite().getSecondaryId();
+        if (org.apache.commons.exec.OS.isFamilyWindows()) {
+            Composite nativeComposite = new Composite(parent, SWT.EMBEDDED);
+            String sCommand;
 
-        // Build special window-title token as unique identifier
-        String token = Long.toString(Math.abs(new Random().nextLong()), RADIX);
-        String title = "TIGLViewer-" + token;
+            this.window = this.getViewSite().getWorkbenchWindow();
+            String secondId = this.getViewSite().getSecondaryId();
 
-        String bundlePath = Platform.getBundle("de.rcenvironment.cpacs.gui.tiglviewer.win32").getLocation();
-        bundlePath = bundlePath.split("reference:file:")[1];
-        if (bundlePath.startsWith(SLASH)) {
-            bundlePath = bundlePath.substring(1);
-        }
-        if (bundlePath.endsWith(SLASH)) {
-            bundlePath = bundlePath.substring(0, bundlePath.length() - 1);
-        }
-        bundlePath = bundlePath + "\"";
-        bundlePath = bundlePath.replaceFirst(SLASH, "\"/");
+            // Build special window-title token as unique identifier
+            String token = Long.toString(Math.abs(new Random().nextLong()), RADIX);
+            String title = "TIGLViewer-" + token;
 
-        try {
-            if (secondId == null) {
-                sCommand = "cmd /C start /MIN " + bundlePath + "/lib/TIGLViewer.exe --windowtitle " + title
-                    + " --controlFile " + bundlePath + "/resources/controlfile.xml";
-                LOGGER.debug("TIGLViewer: starting TIGLViewer application without file: ");
-            } else {
-                secondId = secondId.replaceAll("&#38", ":");
+            String bundlePath = Platform.getBundle("de.rcenvironment.cpacs.gui.tiglviewer.win32").getLocation();
+            bundlePath = bundlePath.split("reference:file:")[1];
+            if (bundlePath.startsWith(SLASH)) {
+                bundlePath = bundlePath.substring(1);
+            }
+            if (bundlePath.endsWith(SLASH)) {
+                bundlePath = bundlePath.substring(0, bundlePath.length() - 1);
+            }
+            bundlePath = bundlePath + "\"";
+            bundlePath = bundlePath.replaceFirst(SLASH, "\"/");
 
-                File file = new File(secondId);
-                if (!file.exists()) {
-                    return;
+            try {
+                if (secondId == null) {
+                    sCommand = "cmd /C start /MIN " + bundlePath + "/lib/TIGLViewer.exe --windowtitle " + title
+                        + " --controlFile " + bundlePath + "/resources/controlfile.xml";
+                    LOGGER.debug("TIGLViewer: starting TIGLViewer application without file: ");
+                } else {
+                    secondId = secondId.replaceAll("&#38", ":");
+
+                    File file = new File(secondId);
+                    if (!file.exists()) {
+                        return;
+                    }
+                    sCommand = "cmd /C start /MIN " + bundlePath + "/lib/TIGLViewer.exe --windowtitle " + title
+                        + " --controlFile " + bundlePath + "/resources/controlfile.xml --filename \"" + secondId + "\"";
+                    LOGGER.debug("TIGLViewer: starting TIGLViewer application with file: " + secondId);
                 }
-                sCommand = "cmd /C start /MIN " + bundlePath + "/lib/TIGLViewer.exe --windowtitle " + title
-                    + " --controlFile " + bundlePath + "/resources/controlfile.xml --filename \"" + secondId + "\"";
-                LOGGER.debug("TIGLViewer: starting TIGLViewer application with file: " + secondId);
+
+                Runtime.getRuntime().exec(sCommand);
+            } catch (IOException e) {
+                LOGGER.error(e);
+
             }
 
-            Runtime.getRuntime().exec(sCommand);
-        } catch (IOException e) {
-            LOGGER.error(e);
+            int[] i = { 0, 0 };
+            TCHAR tChrTitle = new TCHAR(0, title, true);
+            long handle = 0;
 
-        }
-
-        int[] i = { 0, 0 };
-        TCHAR tChrTitle = new TCHAR(0, title, true);
-        long handle = 0;
-
-        try {
-            while (processID == 0) {
-                Thread.sleep(THREAD_SLEEP);
-                handle = OS.FindWindow(null, tChrTitle);
-                OS.GetWindowThreadProcessId((int) handle, i);
-                this.processID = i[0];
-                this.threadID = i[1];
-                LOGGER.debug("TIGLViewer process startet. PID:" + processID + "  -  TID:" + threadID);
+            try {
+                while (processID == 0) {
+                    Thread.sleep(THREAD_SLEEP);
+                    handle = OS.FindWindow(null, tChrTitle);
+                    OS.GetWindowThreadProcessId((int) handle, i);
+                    this.processID = i[0];
+                    this.threadID = i[1];
+                    LOGGER.debug("TIGLViewer process startet. PID:" + processID + "  -  TID:" + threadID);
+                }
+            } catch (InterruptedException e) {
+                LOGGER.error(e);
             }
-        } catch (InterruptedException e) {
-            LOGGER.error(e);
-        }
 
-        OS.SetWindowLong((int) handle, OS.GWL_STYLE, OS.WS_VISIBLE | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS);
-        OS.SetParent((int) handle, nativeComposite.handle);
+            OS.SetWindowLong((int) handle, OS.GWL_STYLE, OS.WS_VISIBLE | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS);
+            OS.SetParent((int) handle, nativeComposite.handle);
+
+        } else {
+            Image image = new Image(Display.getCurrent(), TIGLViewer.class.getResourceAsStream("/resouces/tigl_32.png"));
+            Label label = new Label(parent, SWT.NONE);
+            label.setText("\n  The TiGL Viewer is not supported by the current operating system");
+            Label imageLabel = new Label(parent, SWT.NONE);
+            imageLabel.setImage(image);
+
+        }
     }
 
     @Override

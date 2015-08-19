@@ -184,7 +184,8 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         for (String pathSegment : relativePath.split("/")) {
             @SuppressWarnings("unused") JsonNode oldTreeLocation = treeLocation; // only for debug output
             treeLocation = treeLocation.get(pathSegment);
-            // log.debug(String.format("Traversing JSON tree by path segment '%s': %s -> %s", pathSegment, oldTreeLocation, treeLocation));
+            // log.debug(StringUtils.format("Traversing JSON tree by path segment '%s': %s -> %s", pathSegment, oldTreeLocation,
+            // treeLocation));
             if (treeLocation == null) {
                 return null;
             }

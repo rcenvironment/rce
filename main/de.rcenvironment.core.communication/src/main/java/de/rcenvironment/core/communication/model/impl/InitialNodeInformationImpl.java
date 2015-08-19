@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.model.impl;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Default {@link InitialNodeInformation} implementation.
@@ -115,17 +116,17 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
         if (displayName == null) {
             displayName = "<unnamed>";
         }
-        return String.format("%s [%s]", name, nodeIdString);
+        return StringUtils.format("%s [%s]", name, nodeIdString);
     }
 
     // NOTE: only intended for use in unit tests; not for production use!
     private String getInternalFingerprint() {
-        return String.format("%s#%s#%s#%s", nodeIdString, displayName, softwareVersion, protocolVersion);
+        return StringUtils.format("%s#%s#%s#%s", nodeIdString, displayName, softwareVersion, protocolVersion);
     }
 
     @Override
     public String toString() {
-        return String.format("%s/%s/%s/%s", nodeIdString, displayName, softwareVersion, protocolVersion);
+        return StringUtils.format("%s/%s/%s/%s", nodeIdString, displayName, softwareVersion, protocolVersion);
     }
 
     @Override

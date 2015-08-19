@@ -21,6 +21,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.EndpointContentProvider.Endpoint;
 import de.rcenvironment.core.gui.workflow.editor.properties.Messages;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Class helping handling {@link Endpoint}s.
@@ -78,7 +79,7 @@ public final class EndpointHandlingHelper {
             }
             if (!MessageDialog.openConfirm(Display.getDefault().getActiveShell(),
                 Messages.invalidDataTypeDialogTitle,
-                String.format(Messages.invalidDataTypeDialogMessage,
+                StringUtils.format(Messages.invalidDataTypeDialogMessage,
                     source, oldDesc.getName(), target.toLowerCase(), oldDesc.getName(), oldDesc.getDataType(), newDataType))) {
                 return false;
             }

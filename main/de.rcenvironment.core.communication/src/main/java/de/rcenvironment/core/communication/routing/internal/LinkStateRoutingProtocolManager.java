@@ -40,6 +40,7 @@ import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of a link state based routing table.
@@ -271,7 +272,7 @@ public class LinkStateRoutingProtocolManager {
 
             if (DEBUG_DUMP_INITIAL_LSA_BATCHES) {
                 // TODO add origin/sender information
-                String dump = String.format("Processing LSA cache at %s (as incoming request):", ownNodeId);
+                String dump = StringUtils.format("Processing LSA cache at %s (as incoming request):", ownNodeId);
                 for (NodeIdentifier id : lsaCache.keySet()) {
                     dump += "\n" + id + " -> " + lsaCache.get(id);
                 }
@@ -320,7 +321,7 @@ public class LinkStateRoutingProtocolManager {
 
             if (DEBUG_DUMP_INITIAL_LSA_BATCHES) {
                 // TODO add origin/sender information
-                String dump = String.format("Processing LSA cache at %s (as incoming response):", ownNodeId);
+                String dump = StringUtils.format("Processing LSA cache at %s (as incoming response):", ownNodeId);
                 for (NodeIdentifier id : lsaCache.keySet()) {
                     dump += "\n" + id + " -> " + lsaCache.get(id);
                 }
@@ -437,7 +438,7 @@ public class LinkStateRoutingProtocolManager {
                 throw new IllegalStateException("Existing connection found for connection id " + connectionId);
             }
             connectionsById.put(connectionId, connection);
-            // LOGGER.debug(String.format("Registered new connection %s in node %s",
+            // LOGGER.debug(StringUtils.format("Registered new connection %s in node %s",
             // connection.toString(),
             // ownNodeInformation.getLogName()));
 
@@ -539,7 +540,7 @@ public class LinkStateRoutingProtocolManager {
                 return;
             }
             connectionsById.remove(channelId);
-            log.debug(String.format("Unregistered connection %s from %s", connection.toString(),
+            log.debug(StringUtils.format("Unregistered connection %s from %s", connection.toString(),
                 ownNodeInformation.getLogDescription()));
         }
         broadcastNewLocalLSA();
@@ -557,7 +558,7 @@ public class LinkStateRoutingProtocolManager {
         NetworkContactPoint ncp) {
         networkStats.incFailedCommunications();
 
-        log.debug(String.format(
+        log.debug(StringUtils.format(
             "'%s' reports that a message that was issued by '%s' exeeded the maximum time to live (%s).",
             ownNodeId, MessageMetaData.wrap(metaData).getSender(), timeToLive));
     }
@@ -590,7 +591,7 @@ public class LinkStateRoutingProtocolManager {
      */
     private String generateUniqueMessageId(NodeIdentifier sender, NodeIdentifier receiver,
         Serializable messageContent) {
-        return Integer.toString(String.format("msg-id:%s%s%s%s",
+        return Integer.toString(StringUtils.format("msg-id:%s%s%s%s",
             sender.getIdString(),
             receiver.getIdString(),
             messageContent.hashCode(),

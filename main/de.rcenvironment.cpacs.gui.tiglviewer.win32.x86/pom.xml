@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.cpacs.gui.tiglviewer.win32.x86</artifactId>
 	<name>RCE CPACS GUI TiGL Viewer Win32 Fragment</name>
-	<version>6.1.0.qualifier</version>
+	<version>6.2.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

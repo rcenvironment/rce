@@ -1,7 +1,6 @@
 {
   "identifier" : "5237d07f-b6e5-4259-bde3-7e400958956e",
   "workflowVersion" : "3",
-  "name" : "wfIconTest_2014-11-11_16:14:57_02",
   "nodes" : [ {
     "identifier" : "aa4a9395-a290-4d8a-9d42-b56f03870024",
     "name" : "Sender V, T",
@@ -25,7 +24,7 @@
       "datatype" : "Vector",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "0c4d70cc-a3fe-4450-ba4d-2ae56a2935e3",
@@ -34,7 +33,7 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     } ]
   }, {
@@ -82,7 +81,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "startValue" : "1.44",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "2f4aa500-2296-437e-be98-bd8c51469b1e",
@@ -92,7 +91,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "startValue" : "ichbineintextundhabemehralsdreissigzeichendenkeichdichmal",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "a0b44964-b6f1-4ffb-b8d9-28a018b360a4",
@@ -102,7 +101,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "startValue" : "-",
-        "inputHandling_73b1056e" : "Consuming",
+        "inputHandling_73b1056e" : "Single",
         "fileSourceType" : "atWorkflowStart"
       }
     }, {
@@ -113,7 +112,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "startValue" : "1336",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "1dcb444e-1d93-4b37-9382-8fabdd13592d",
@@ -131,7 +130,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "startValue" : "-",
-        "inputHandling_73b1056e" : "Consuming",
+        "inputHandling_73b1056e" : "Single",
         "fileSourceType" : "atWorkflowStart"
       }
     }, {
@@ -142,7 +141,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "startValue" : "shorty",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     } ]
   }, {
@@ -168,7 +167,7 @@
       "datatype" : "Vector",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "57f1d2b2-cf46-45ce-9556-7f537a3c17d3",
@@ -177,7 +176,7 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     } ]
   }, {
@@ -203,7 +202,7 @@
       "datatype" : "FileReference",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "43df307a-6fc9-4725-916c-57a4d30769df",
@@ -212,7 +211,7 @@
       "datatype" : "ShortText",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "a801c459-816b-400e-b565-6c9003b5a649",
@@ -221,7 +220,7 @@
       "datatype" : "ShortText",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "8ba0bc07-49da-449d-8031-86b13bb13eab",
@@ -230,7 +229,7 @@
       "datatype" : "ShortText",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "a59759a6-9a54-4b44-8fbb-3300aaa9b425",
@@ -239,7 +238,7 @@
       "datatype" : "Integer",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "2d432542-3dde-4fd2-9142-8ffab0b1bb1a",
@@ -248,7 +247,7 @@
       "datatype" : "DirectoryReference",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "f6a248cf-18d5-4b1f-a2f5-c137c1b636f2",
@@ -257,7 +256,7 @@
       "datatype" : "Boolean",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     }, {
       "identifier" : "4dd9bcd6-fb6f-4fb0-aac8-37fbba3efac6",
@@ -266,7 +265,7 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Consuming"
+        "inputHandling_73b1056e" : "Single"
       }
     } ]
   } ],

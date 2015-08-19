@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component GUI Bundle
 Bundle-SymbolicName: de.rcenvironment.components.excel.gui;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: com.jacob.activeX,
  com.jacob.com,
  de.rcenvironment.components.excel.common,
@@ -27,6 +27,7 @@ Import-Package: com.jacob.activeX,
  de.rcenvironment.core.gui.workflow.editor.validator,
  de.rcenvironment.core.gui.workflow.view,
  de.rcenvironment.core.notification,
+ de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.excel.legacy,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.incubator,

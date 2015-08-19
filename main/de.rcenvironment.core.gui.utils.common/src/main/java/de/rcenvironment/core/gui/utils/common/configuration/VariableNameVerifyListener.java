@@ -30,11 +30,13 @@ public class VariableNameVerifyListener implements Listener {
     public static final int NONE = 0;
 
     private int function = NONE;
-    
-    private Text text;
-    
-    public VariableNameVerifyListener() {
 
+    private Text text;
+
+    private boolean allowBlank;
+
+    public VariableNameVerifyListener(boolean allowBlank) {
+        this.allowBlank = allowBlank;
     }
 
     public VariableNameVerifyListener(int function, Text text) {
@@ -49,7 +51,7 @@ public class VariableNameVerifyListener implements Listener {
         for (int i = 0; i < string.length(); i++) {
             char c = string.charAt(i);
             if (!(c >= 'a' && c <= 'z') && !(c >= 'A' && c <= 'Z') && !(c >= '0' && c <= '9')
-                && !(c == '_')) {
+                && !(c == '_') && (!allowBlank && c == ' ')) {
                 arg0.doit = false;
                 return;
             }

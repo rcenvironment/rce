@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS VAMPzero Initializer Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.cpacs.vampzeroinitializer.execution;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.cpacs.vampzeroinitializer.common;version="6.0.0",
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.component.api,
@@ -17,11 +17,12 @@ Import-Package: de.rcenvironment.components.cpacs.vampzeroinitializer.common;ver
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.update.api,
  de.rcenvironment.core.component.update.spi,
+ de.rcenvironment.core.component.xml,
+ de.rcenvironment.core.component.xml.api,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.cpacs.utils.common.components,
- de.rcenvironment.cpacs.utils.common.xml,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;provider=paxlogging,
  org.codehaus.jackson;version="1.9.13"

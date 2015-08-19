@@ -86,6 +86,11 @@ public class ConvergerComponentTest {
         public void configure(ComponentContextMock ctx, String epsA, String epsR, String itsToConsider) {
             configure(ctx, epsA, epsR, itsToConsider, null);
         }
+        
+        public void configure(ComponentContextMock ctx, String epsA, String epsR, String itsToConsider, boolean isNestedLoop) {
+            configure(ctx, epsA, epsR, itsToConsider, null);
+            context.setConfigurationValue(ComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(isNestedLoop));
+        }
 
         // TODO without the "assert" method (which cannot be in non-test bundles), this could be moved to the base class
         /**
@@ -119,6 +124,10 @@ public class ConvergerComponentTest {
         
         public void testForClosedOutput(String name) {
             assertTrue(getCapturedOutputClosings().contains(name));
+        }
+        
+        public void testForResetOutput(String name) {
+            assertTrue(getCapturedOutputResets().contains(name));
         }
     }
 
@@ -289,6 +298,30 @@ public class ConvergerComponentTest {
         expectAllOutputsAreClosed(OUTPUT_X);
     }
     
+    /**
+     * Tests reset of the converger component.
+     * 
+     * @throws ComponentException on unexpected component failures
+     */
+    @Test
+    public void testReset() throws ComponentException {
+        context.addSimulatedInput(INPUT_X, ConvergerComponentConstants.ID_VALUE_TO_CONVERGE, DataType.Float, true, null);
+
+        context.configure(context, STRING_0, STRING_0, STRING_1, true);
+        component.start();
+        
+        expectProcessInputsWithoutConverging(INPUT_X, OUTPUT_X, 1.0);
+        expectProcessInputsWithoutConverging(INPUT_X, OUTPUT_X, 2.0);
+        
+        expectProcessInputsWithConvergingOnReset(INPUT_X, OUTPUT_X, 2.0);
+        
+        context.testForResetOutput(OUTPUT_X);
+        
+        component.reset();
+        
+        expectFinalValuesSentAfterReset(INPUT_X, OUTPUT_X, 2.0);
+    }
+    
     private void expectProcessInputsWithoutConverging(String valueInput, String valueOutput, double value) throws ComponentException {
         context.setInputValue(valueInput, typedDatumFactory.createFloat(value));
         component.processInputs();
@@ -305,6 +338,22 @@ public class ConvergerComponentTest {
         context.testForSingleValueOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, value);
         context.testForSingleBooleanOutput(OUTPUT_CONVERGED, true);
         context.testForSingleBooleanOutput(OUTPUT_OUTER_LOOP_DONE, true);
+    }
+    
+    private void expectProcessInputsWithConvergingOnReset(String valueInput, String valueOutput, double value) throws ComponentException {
+        context.setInputValue(valueInput, typedDatumFactory.createFloat(value));
+        component.processInputs();
+        context.testForNoOutputValueSent(valueOutput);
+        context.testForNoOutputValueSent(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX);
+        context.testForNoOutputValueSent(OUTPUT_CONVERGED);
+        context.testForNoOutputValueSent(OUTPUT_OUTER_LOOP_DONE);
+    }
+    
+    private void expectFinalValuesSentAfterReset(String valueInput, String valueOutput, double value) throws ComponentException {
+        context.testForNoOutputValueSent(valueOutput);
+        context.testForSingleValueOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, value);
+        context.testForSingleBooleanOutput(OUTPUT_CONVERGED, true);
+        context.testForNoOutputValueSent(OUTPUT_OUTER_LOOP_DONE);
     }
     
     private void expectProcessInputsWithoutConvergingButWithDone(String valueInput, String valueOutput, double value)
@@ -324,6 +373,4 @@ public class ConvergerComponentTest {
         context.testForClosedOutput(OUTPUT_OUTER_LOOP_DONE);
     }
     
-    // TODO test: reset; start values configured; some start values configured and some aren't
-
 }

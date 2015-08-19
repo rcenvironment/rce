@@ -29,6 +29,7 @@ import de.rcenvironment.core.communication.testutils.TestNetworkRequestHandler;
 import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceState;
 import de.rcenvironment.core.communication.transport.virtual.VirtualTransportTestConfiguration;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * @author Robert Mischke
@@ -231,7 +232,7 @@ public class LargeScaleScenarioDuplexTests extends AbstractLargeScaleTest {
             List<? extends NetworkGraphLink> route = vi1.getRouteTo(vi2);
 
             // Route should exist
-            assertTrue(String.format("Could not find a valid route from %s to %s",
+            assertTrue(StringUtils.format("Could not find a valid route from %s to %s",
                 vi1.getConfigurationService().getLocalNodeId(),
                 vi2.getConfigurationService().getLocalNodeId()),
                 route != null);
@@ -289,7 +290,7 @@ public class LargeScaleScenarioDuplexTests extends AbstractLargeScaleTest {
                 }
             }
 
-            log.debug(String.format("%s attempts to communicate with %s.",
+            log.debug(StringUtils.format("%s attempts to communicate with %s.",
                 instanceUtils.getFormattedName(sender),
                 instanceUtils.getFormattedName(receiver)));
 
@@ -297,7 +298,7 @@ public class LargeScaleScenarioDuplexTests extends AbstractLargeScaleTest {
             assertTrue("Could not send a message", response.isSuccess());
 
             assertTrue(
-                String.format("%s failed to send routed message to %s. \n\n %s",
+                StringUtils.format("%s failed to send routed message to %s. \n\n %s",
                     instanceUtils.getFormattedName(sender),
                     instanceUtils.getFormattedName(receiver),
                     sender.getFormattedLegacyNetworkGraph()),

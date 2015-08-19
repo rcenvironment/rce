@@ -17,11 +17,9 @@
 			and output data, as well as log files, are transfered using SCP. To demonstrate this
 			interface, and how to interact with it, example script files are provided for Windows
 			and Linux. This documentation explains how to set up and use these scripts.</para>
-		<para>Note that these scripts are not the Remote Access interface itself, but only examples of how
-			to use it. An application that wants to invoke tools in RCE with minimal latency will
-			probably be better off using the SSH interface directly. Native system libraries (e.g. a
-			Windows DLL) are planned for future releases, which will simplify the direct,
-			low-latency usage of this interface.</para>
+		<para>Note that these scripts are not the Remote Access interface itself, but only prototype
+			examples of how to use it. Native command-line tools and system libraries (e.g. Windows
+			.dll and Linux .so files) are under development, and will be available soon.</para>
 	</sect2>
 	<sect2>
 		<title>Prerequisites</title>
@@ -279,22 +277,22 @@
 						successfully published. Fix any errors until the workflow is
 						published.</para>
 					<note>
-						<para>Currently, published workflows are not persistent, so they must be published again after
-							a restart. To make a workflow permanently available from a server
-							instance after a restart, you can add the <code>ra-admin
-								publish-wf</code> command as a startup <code>--exec "..."</code>
-							parameter. Note that any double quotes in the command (for example the
-							ones enclosing the workflow file's path) must be prefixed with a
-							backslash ("\").</para>
-						<para>Example: <code>rce --exec "ra-admin publish-wf \"my workflow file with spaces.wf\"
-								myPublishId" --headless -noSplash</code></para>
+						<para>Starting with RCE 6.2.0, published workflows are persistent by default, so they will
+							still be available after the local RCE instance is restarted. Use the
+								<code>ra-admin unpublish-wf &lt;id></code> command to remove a
+							published workflow from remote access.</para>
+						<para>To publish a workflow for the current RCE instance's life-time only,
+							use the <code>-t</code> option: <code>ra-admin publish-wf -t
+									"<replaceable>&lt;workflow file></replaceable>"
+									<replaceable>&lt;id></replaceable></code>.</para>
 					</note>
 				</listitem>
 				<listitem>
-					<para>If some of the workflow's components use placeholders for configuration
-						values, you can use the <code>-p</code> option to specify a placeholder
-						values file. The structure of placeholder value files is explained in
-						<xref  linkend="placeholder_files"/>.</para>
+					<para>If some of the workflow's components use placeholders for configuration values, you can
+						use the <code>-p</code> option to specify a placeholder values file. The
+						structure of placeholder value files is explained in <xref
+							linkend="placeholder_files"/>. Placeholder files can used with both
+						persistent and non-persistent workflows (see above).</para>
 					<para>Example: <code>ra-admin publish-wf -p myPlaceholderValues.json myWorkflowFile.wf
 							myPublishId</code></para>
 				</listitem>

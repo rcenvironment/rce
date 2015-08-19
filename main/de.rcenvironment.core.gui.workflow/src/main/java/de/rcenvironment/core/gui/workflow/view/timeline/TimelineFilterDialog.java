@@ -27,7 +27,6 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
@@ -165,13 +164,6 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
         createButton(parent, IDialogConstants.CANCEL_ID, IDialogConstants.CANCEL_LABEL, true);
         createButton(parent, IDialogConstants.OK_ID, IDialogConstants.OK_LABEL, true);
 
-    }
-
-    @Override
-    protected Point getInitialSize() {
-        final int width = 227;
-        final int height = 384;
-        return new Point(width, height);
     }
 
     @Override

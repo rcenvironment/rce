@@ -23,9 +23,10 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link EndpointMetaDataDefinition}.
@@ -191,8 +192,7 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
             if (!rawMetaData.containsKey(key)) {
                 combinedRawMetaData.put(key, metaDataExtension.get(key));
             } else {
-                LogFactory.getLog(getClass()).warn(String.format(
-                    "Meta data key '%s' is already defined and will be ignored", key));
+                LogFactory.getLog(getClass()).warn(StringUtils.format("Meta data key '%s' is already defined and will be ignored", key));
             }
         }
     }

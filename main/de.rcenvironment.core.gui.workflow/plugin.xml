@@ -392,7 +392,7 @@
             <command
                   commandId="de.rcenvironment.core.gui.advanced.show"
                   label="%advancedTabCommandName"
-                  style="push">
+                  style="toggle">
             </command>
             </menu>
       </menuContribution>
@@ -419,7 +419,7 @@
             allPopups="false"
             locationURI="menu:file?after=de.rcenvironment.core.gui.workflowproject.create">
          <separator
-               name="separator"
+               name="separator2"
                visible="true">
          </separator>
       </menuContribution>
@@ -523,6 +523,10 @@
                   style="push"
                   tooltip="%createWorkflowTooltip">
             </command>
+            <separator
+                  name="separator"
+                  visible="true">
+            </separator>
             <command
                   commandId="de.rcenvironment.core.gui.workflow.connectioneditor"
                   icon="resources/icons/connectEditor16.png"
@@ -539,14 +543,13 @@
                      </reference>
                   </or>
                </visibleWhen>
-            </command>  
+            </command>
             <separator
-                  name="separator"
+                  name="separatorExecute"
                   visible="true">
             </separator>
-			<command
+            <command
                   commandId="de.rcenvironment.core.gui.workflow.execute"
-                  disableIcon="resources/icons/states/run_disable.gif"
                   icon="resources/icons/states/run_enabled.gif"
                   label="%executeWorkflowLabel"
                   style="push">

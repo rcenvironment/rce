@@ -18,6 +18,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.PlatformMessage;
 import de.rcenvironment.core.start.common.validation.PlatformValidator;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
@@ -56,7 +57,7 @@ public class TempFolderWritableValidator implements PlatformValidator {
             log.error("Error creating a temporary test file; a validation error will be generated", e);
         }
         result.add(new PlatformMessage(PlatformMessage.Type.ERROR, ValidatorsBundleActivator.bundleSymbolicName,
-            String.format(Messages.failedToCreateTempFile, configurationService.getParentTempDirectoryRoot().getAbsolutePath())));
+            StringUtils.format(Messages.failedToCreateTempFile, configurationService.getParentTempDirectoryRoot().getAbsolutePath())));
 
         return result;
     }

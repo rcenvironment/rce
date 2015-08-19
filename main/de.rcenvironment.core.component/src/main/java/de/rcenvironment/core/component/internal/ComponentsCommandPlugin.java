@@ -23,6 +23,7 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A {@link CommandPlugin} providing "components [...]" commands.
@@ -80,7 +81,7 @@ public class ComponentsCommandPlugin implements CommandPlugin {
 
         for (String nodeId : components.keySet()) {
             String nodeName = NodeIdentifierFactory.fromNodeId(nodeId).getAssociatedDisplayName();
-            context.println(String.format("Components available on '%s' [%s]:", nodeName, nodeId));
+            context.println(StringUtils.format("Components available on '%s' [%s]:", nodeName, nodeId));
             for (String component : components.get(nodeId)) {
                 context.println("  " + component);
             }

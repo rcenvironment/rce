@@ -114,7 +114,7 @@ public final class ConnectionUtils {
      * @param workflowDescription The workflow description to be considered
      * @param classAndMethod The calling class and method.
      */
-    public static void validateConnectionWrapperBySameBendpointCount(WorkflowDescription workflowDescription,
+    public static void validateConnectionWrapperForEqualBendpointLocations(WorkflowDescription workflowDescription,
         ConnectionWrapper connectionWrapper, String classAndMethod) {
         List<Connection> connections = getConnectionsByWrapper(workflowDescription, connectionWrapper);
         validateConnections(connections, classAndMethod);
@@ -129,14 +129,30 @@ public final class ConnectionUtils {
     public static void validateConnections(List<Connection> connections, String classAndMethod) {
         int numberOfBendpoints = connections.get(0).getBendpoints().size();
         for (Connection connection : connections) {
-            if (connection.getBendpoints().size() != numberOfBendpoints) {
-                LOGGER.error("Connections' bendpoints are inconsistent! "
-                    + connection.getSourceNode().getName() + " - " + connection.getTargetNode().getName()
-                    + " - It has " + connection.getBendpoints().size() + " bendpoints, but should have " + numberOfBendpoints 
-                    + ". Caused by " + classAndMethod);
+            if (!checkIfBendpointListsAreEqual(connections.get(0).getBendpoints(), connection.getBendpoints())) {
+                LOGGER.error("Connections' bendpoints are inconsistent! Connection between '"
+                    + connection.getSourceNode().getName() + "' and '" + connection.getTargetNode().getName()
+                    + "' is affected. It has " + connection.getBendpoints().size() + " bendpoints (" + connection.getBendpoints() 
+                    + "), but should have " + numberOfBendpoints + " bendpoints (" + connections.get(0).getBendpoints()
+                    + "). Caused by " + classAndMethod);
                 break;
             }
         }
+    }
+    
+    private static boolean checkIfBendpointListsAreEqual(List<Location> bendpointList, List<Location> bendpointListToCompare){
+        if (bendpointList.size() != bendpointListToCompare.size()){
+            return false;
+        }
+        for (int i = 0; i < bendpointList.size(); i++){
+            if ((bendpointList.get(i).x != bendpointListToCompare.get(i).x 
+                && bendpointList.get(i).x != bendpointListToCompare.get(bendpointList.size() - i - 1).x) 
+                || (bendpointList.get(i).y != bendpointListToCompare.get(i).y
+                && bendpointList.get(i).y != bendpointListToCompare.get(bendpointList.size() - i - 1).y)){
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

@@ -1,6 +1,6 @@
 {
   "identifier" : "493d807a-e203-48ec-bcab-de8f678d8bdf",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "nodes" : [ {
     "identifier" : "84b4f5dc-1d69-46d8-826e-89c4b089ad13",
     "name" : "Joiner",
@@ -8,12 +8,12 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2",
-      "name" : "Joiner"
+      "name" : "Joiner",
+      "version" : "3.3"
     },
     "configuration" : {
-      "Joined" : "2",
-      "dataType" : "Float"
+      "inputCount" : "2",
+      "datatype" : "Float"
     },
     "dynamicInputs" : [ {
       "identifier" : "19e4fb6c-f640-459e-8328-7e6fb98361af",

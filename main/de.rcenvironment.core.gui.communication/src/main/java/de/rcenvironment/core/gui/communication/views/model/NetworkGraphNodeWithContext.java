@@ -14,6 +14,7 @@ import de.rcenvironment.core.communication.common.NetworkGraphNode;
 import de.rcenvironment.core.communication.common.WorkflowHostUtils;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Representation of a tree node within the subtree of a {@link NetworkGraphNode}, including the subtree root.
@@ -209,6 +210,6 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
     @Override
     public String toString() {
         // very simple; does not cover component installations etc.
-        return String.format("%s [%s]", getDisplayNameOfNode(), context);
+        return StringUtils.format("%s [%s]", getDisplayNameOfNode(), context);
     }
 }

@@ -97,8 +97,9 @@ public final class StringSubstitutionSecurityUtils {
         Matcher matcher = context.getForbiddenCharactersRegexp().matcher(string);
         if (matcher.find()) {
             if (!suppressLogMessageOnDeniedSubstitution) {
-                LOG.warn(String.format("Denied string \"%s\" for substitution in context %s because of insecure character sequence <%s>",
-                    string, context.name(), matcher.group(0)));
+                LOG.warn(de.rcenvironment.core.utils.common.StringUtils.format(
+                    "Denied string \"%s\" for substitution in context %s because of insecure character sequence <%s>", string,
+                    context.name(), matcher.group(0)));
             }
             return false;
         } else {

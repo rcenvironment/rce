@@ -39,6 +39,7 @@ import de.rcenvironment.core.component.execution.api.ExecutionContext;
 import de.rcenvironment.core.component.execution.api.WorkflowExecutionControllerCallback;
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionInformationImpl;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
@@ -222,7 +223,7 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
     }
 
     private String createPropertyFilter(String compCtrlId) {
-        return String.format("(%s=%s)", ExecutionConstants.EXECUTION_ID_OSGI_PROP_KEY, compCtrlId);
+        return StringUtils.format("(%s=%s)", ExecutionConstants.EXECUTION_ID_OSGI_PROP_KEY, compCtrlId);
     }
 
     private ComponentExecutionController getComponentController(String executionId) {
@@ -237,9 +238,9 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
             }
         } catch (InvalidSyntaxException e) {
             // should not happen
-            LogFactory.getLog(getClass()).error(String.format("Filter '%s' is not valid", filter));
+            LogFactory.getLog(getClass()).error(StringUtils.format("Filter '%s' is not valid", filter));
         }
-        throw new RuntimeException(String.format("%s with id '%s' not registered as OSGi service",
+        throw new RuntimeException(StringUtils.format("%s with id '%s' not registered as OSGi service",
             ComponentExecutionController.class.getSimpleName(), executionId));
     }
 
@@ -258,7 +259,9 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
 
     @Override
     public Collection<ComponentExecutionInformation> getComponentExecutionInformations() {
-        return new HashSet<ComponentExecutionInformation>(componentExecutionInformations.values());
+        synchronized (componentExecutionInformations) {
+            return new HashSet<ComponentExecutionInformation>(componentExecutionInformations.values());
+        }
     }
 
 }

@@ -64,4 +64,20 @@ public final class ConfigurationSegmentUtils {
         return new ConfigurationStoreImpl(tempFile).getSnapshotOfRootSegment();
     }
 
+    /**
+     * Reads a JSON configuration file created from the given content.
+     * 
+     * @param data the JSON data to read
+     * @return the configuration object
+     * @throws IOException on uncaught errors
+     */
+    public static ConfigurationSegment readTestConfigurationFromString(String data) throws IOException {
+        if (data == null) {
+            throw new IOException("JSON content cannot be null");
+        }
+        File tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("*.json");
+        FileUtils.write(tempFile, data);
+        return new ConfigurationStoreImpl(tempFile).getSnapshotOfRootSegment();
+    }
+
 }

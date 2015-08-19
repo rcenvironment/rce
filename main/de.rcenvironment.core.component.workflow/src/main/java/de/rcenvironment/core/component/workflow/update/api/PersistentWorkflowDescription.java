@@ -46,13 +46,12 @@ public class PersistentWorkflowDescription implements Serializable {
         this.workflowDescriptionString = workflowDescriptionString;
 
         // parse information for convenient access via getter
-        JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(workflowDescriptionString);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(jsonParser);
+        try (JsonParser jsonParser = new JsonFactory().createJsonParser(workflowDescriptionString)) {
+            JsonNode node = new ObjectMapper().readTree(jsonParser);
 
-        if (node.get(WORKFLOW_VERSION) != null){
-            workflowVersion = node.get(WORKFLOW_VERSION).getTextValue();
+            if (node.get(WORKFLOW_VERSION) != null) {
+                workflowVersion = node.get(WORKFLOW_VERSION).getTextValue();
+            }
         }
 
     }

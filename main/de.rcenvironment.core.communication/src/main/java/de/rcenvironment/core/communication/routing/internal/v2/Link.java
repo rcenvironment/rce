@@ -9,6 +9,7 @@
 package de.rcenvironment.core.communication.routing.internal.v2;
 
 import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Represents a "link" in the Link State Routing terminology. Internally, this is equivalent to an
@@ -46,6 +47,6 @@ public final class Link {
 
     @Override
     public String toString() {
-        return String.format("Link(%s)->%s", linkId, nodeId);
+        return StringUtils.format("Link(%s)->%s", linkId, nodeId);
     }
 }

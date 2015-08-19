@@ -26,6 +26,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkRoutingInformation;
 import de.rcenvironment.core.communication.protocol.MessageMetaData;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.GraphvizUtils;
 import de.rcenvironment.core.utils.incubator.GraphvizUtils.DotFileBuilder;
 
@@ -70,7 +71,7 @@ public final class NetworkFormatter {
         Collections.sort(linkList);
 
         for (TopologyLink link : linkList) {
-            result += String.format("  %s --[%s]--> %s (Hash=%s)\n",
+            result += StringUtils.format("  %s --[%s]--> %s (Hash=%s)\n",
                 link.getSource().getIdString(),
                 link.getConnectionId(),
                 link.getDestination().getIdString(),
@@ -98,8 +99,8 @@ public final class NetworkFormatter {
                 nodeIdInfo += "*";
             }
             result +=
-                String.format("  [%9$s] %1$s, --%4$s-> * --%5$s->, '%8$s', Seq=%2$s, Created=%3$tk:%3$tM:%3$tS, Conv=%6$s, Hash=%7$s\n",
-                    nodeIdInfo,
+                StringUtils.format(
+                    "  [%9$s] %1$s, --%4$s-> * --%5$s->, '%8$s', Seq=%2$s, Created=%3$tk:%3$tM:%3$tS, Conv=%6$s, Hash=%7$s\n", nodeIdInfo,
                     // TODO quick & dirty; improve
                     networkNode.getSequenceNumber() + " (" + timestampFormat.format(new Date(networkNode.getSequenceNumber()))
                         + ")",
@@ -121,7 +122,7 @@ public final class NetworkFormatter {
      * @return A string representation for debugging/displaying.
      */
     public static String graphMetaData(TopologyMap networkGraph) {
-        return String.format("  Local Node Id: %s, Nodes: %s, Links: %s, Fully conv.: %s, Hash=%s\n",
+        return StringUtils.format("  Local Node Id: %s, Nodes: %s, Links: %s, Fully conv.: %s, Hash=%s\n",
             networkGraph.getLocalNodeId().getIdString(),
             networkGraph.getNodeCount(),
             networkGraph.getLinkCount(),
@@ -136,7 +137,7 @@ public final class NetworkFormatter {
      * @return A string representation for debugging/displaying.
      */
     public static String summary(TopologyMap networkGraph) {
-        return String.format("Topology Metadata:\n%sKnown Nodes:\n%sLinks:\n%s",
+        return StringUtils.format("Topology Metadata:\n%sKnown Nodes:\n%sLinks:\n%s",
             NetworkFormatter.graphMetaData(networkGraph),
             NetworkFormatter.nodeList(networkGraph),
             NetworkFormatter.linkList(networkGraph));
@@ -185,7 +186,7 @@ public final class NetworkFormatter {
      */
     public static String message(Serializable messageContent, Map<String, String> metaData) {
         MessageMetaData handler = MessageMetaData.wrap(metaData);
-        return String.format("Src='%s', Dst='%s', Body='%s', HopC=%d, MsgId='%s', Trace='%s'",
+        return StringUtils.format("Src='%s', Dst='%s', Body='%s', HopC=%d, MsgId='%s', Trace='%s'",
             handler.getSender(),
             handler.getFinalRecipient(),
             messageContent.toString(),
@@ -201,7 +202,7 @@ public final class NetworkFormatter {
      * @return A string representation for debugging/displaying.
      */
     public static String lsa(LinkStateAdvertisement lsa) {
-        return String.format("owner=%s, links=%s, seq=%s, type=%s, hash=%s\n%s",
+        return StringUtils.format("owner=%s, links=%s, seq=%s, type=%s, hash=%s\n%s",
             lsa.getOwner(),
             lsa.getLinks().size(),
             lsa.getSequenceNumber(),
@@ -217,7 +218,7 @@ public final class NetworkFormatter {
      * @return A string representation for debugging/displaying.
      */
     public static String lsaCache(LinkStateAdvertisementBatch lsaCache) {
-        String result = String.format("size=%s\n", lsaCache.size());
+        String result = StringUtils.format("size=%s\n", lsaCache.size());
         for (LinkStateAdvertisement lsa : lsaCache.values()) {
             result += lsa(lsa) + "\n";
         }
@@ -232,10 +233,10 @@ public final class NetworkFormatter {
      */
     public static String networkRoute(NetworkRoute networkRoute) {
         String result =
-            String.format("length: %s, %s, time: %s ms", networkRoute.getPath().size(), networkRoute.getSource().getIdString(),
+            StringUtils.format("length: %s, %s, time: %s ms", networkRoute.getPath().size(), networkRoute.getSource().getIdString(),
                 networkRoute.getComputationalEffort());
         for (TopologyLink link : networkRoute.getPath()) {
-            result += String.format(" --> %s", link.getDestination().getIdString());
+            result += StringUtils.format(" --> %s", link.getDestination().getIdString());
         }
         return result;
     }
@@ -247,7 +248,7 @@ public final class NetworkFormatter {
      * @return A string representation for debugging/displaying.
      */
     public static String networkStats(NetworkStats networkStats) {
-        return String.format(
+        return StringUtils.format(
             "\nSuccessful communications: %s\n"
                 + "Failed communications: %s\n\n"
                 + "LSAs send:     %s\n"
@@ -283,7 +284,7 @@ public final class NetworkFormatter {
      * @return A string representation for debugging/displaying.
      */
     public static String networkResponseToString(NetworkResponse networkResponse) {
-        return String.format("id=%s, succ=%s, code=%s, header=%s",
+        return StringUtils.format("id=%s, succ=%s, code=%s, header=%s",
             networkResponse.getRequestId(),
             networkResponse.isSuccess(),
             networkResponse.getResultCode(),
@@ -298,7 +299,7 @@ public final class NetworkFormatter {
      * @return the formatted, multi-line string
      */
     public static String formatTopologyMap(TopologyMap topologyMap, boolean extendedInfo) {
-        return String.format("Nodes:\n%sConnections:\n%s",
+        return StringUtils.format("Nodes:\n%sConnections:\n%s",
             NetworkFormatter.formatTopologyNodes(topologyMap, extendedInfo),
             NetworkFormatter.formatTopologyLinks(topologyMap, extendedInfo));
     }
@@ -314,11 +315,11 @@ public final class NetworkFormatter {
         List<NodeIdentifier> networkNodes = new ArrayList<NodeIdentifier>(networkGraph.getNodeIds());
         buffer.append("Reachable network nodes (" + networkNodes.size() + " total):\n");
         for (NodeIdentifier nodeId : networkNodes) {
-            buffer.append(String.format("  %s [%s]\n", nodeId.getAssociatedDisplayName(), nodeId.getIdString()));
+            buffer.append(StringUtils.format("  %s [%s]\n", nodeId.getAssociatedDisplayName(), nodeId.getIdString()));
         }
         buffer.append("Message channels (" + networkGraph.getLinkCount() + " total):\n");
         for (NetworkGraphLink link : networkGraph.getLinks()) {
-            buffer.append(String.format("  %s--[%s]->[%s]\n", link.getSourceNodeId(), link.getLinkId(), link.getTargetNodeId()));
+            buffer.append(StringUtils.format("  %s--[%s]->[%s]\n", link.getSourceNodeId(), link.getLinkId(), link.getTargetNodeId()));
         }
         return buffer.toString();
     }
@@ -405,7 +406,7 @@ public final class NetworkFormatter {
                 markers += " <self>";
             }
             result.append(
-                String.format("  %s%s\n",
+                StringUtils.format("  %s%s\n",
                     nodeId,
                     markers));
         }
@@ -418,7 +419,7 @@ public final class NetworkFormatter {
         Collections.sort(linkList);
 
         for (TopologyLink link : linkList) {
-            result.append(String.format("  %s --[%s]--> %s\n",
+            result.append(StringUtils.format("  %s --[%s]--> %s\n",
                 link.getSource(),
                 link.getConnectionId(),
                 link.getDestination()));

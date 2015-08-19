@@ -48,6 +48,7 @@ import de.rcenvironment.core.gui.workflow.UncompletedJobsShutdownListener;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorHelpContextProvider;
 import de.rcenvironment.core.gui.workflow.parts.ReadOnlyEditPartFactory;
 import de.rcenvironment.core.notification.SimpleNotificationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -78,6 +79,10 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
 
     public ReadOnlyWorkflowRunEditor() {
         setEditDomain(new DefaultEditDomain(this));
+    }
+    
+    public boolean isWorkflowExecutionInformationSet() {
+        return wfExeInfo != null;
     }
 
     @Override
@@ -151,7 +156,7 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
         // set the model of the editor
         viewer.setContents(wei);
 
-        Job job = new Job(String.format("Initializing state of workflow '%s'", wei.getInstanceName())) {
+        Job job = new Job(StringUtils.format("Initializing state of workflow '%s'", wei.getInstanceName())) {
 
             @Override
             protected IStatus run(IProgressMonitor monitor) {
@@ -177,7 +182,7 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
                             }
                         }
                     } catch (CommunicationException e) {
-                        LOG.error(String.format("Getting state of workflow '%s' failed", wfExeInfo.getInstanceName()));
+                        LOG.error(StringUtils.format("Getting state of workflow '%s' failed", wfExeInfo.getInstanceName()));
                     }
                 }
                 return Status.OK_STATUS;

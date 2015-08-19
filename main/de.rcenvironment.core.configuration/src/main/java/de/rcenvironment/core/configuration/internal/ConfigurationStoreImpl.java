@@ -21,6 +21,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonGenerator;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
+import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.codehaus.jackson.util.DefaultPrettyPrinter.Lf2SpacesIndenter;
@@ -31,6 +32,7 @@ import de.rcenvironment.core.configuration.ConfigurationSegment;
  * Default {@link ConfigurationStore} implementation.
  * 
  * @author Robert Mischke
+ * @author Doreen Seider
  */
 public class ConfigurationStoreImpl implements ConfigurationStore {
 
@@ -52,10 +54,23 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
             ObjectMapper mapper = new ObjectMapper();
             mapper.configure(org.codehaus.jackson.JsonParser.Feature.ALLOW_COMMENTS, true);
             mapper.configure(org.codehaus.jackson.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
+            validateJsonSyntax(mapper);
             JsonNode node = mapper.readTree(storageFile);
             return new WritableConfigurationSegmentImpl(node);
         } catch (JsonParseException e) {
             throw new IOException("Malformed configuration file: " + e.toString());
+        }
+    }
+    
+    // mapper.readTree() (the way to read the file in the first place) does not check the syntax of the entire file, but that's needed to
+    // inform the user about a malformed configuration file. Feel free to improve the syntax check. Didn't find any nicer.
+    private void validateJsonSyntax(ObjectMapper mapper) throws JsonParseException, IOException {
+        try (JsonParser parser = mapper.getJsonFactory().createJsonParser(storageFile)) {
+            // syntax check of entire file
+            while (parser.nextToken() != null) {
+                // nothing to do here
+                parser.version(); // for checkstyle purposes
+            }
         }
     }
 
@@ -101,12 +116,13 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
     private void writeJsonFile(JsonNode jsonRootNode, File file) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonFactory jsonFactory = new JsonFactory();
-        JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(file, JsonEncoding.UTF8);
-        DefaultPrettyPrinter prettyPrinter = new DefaultPrettyPrinter();
-        CustomIndenter customIndenter = new CustomIndenter();
-        prettyPrinter.indentObjectsWith(customIndenter);
-        prettyPrinter.indentArraysWith(customIndenter);
-        jsonGenerator.setPrettyPrinter(prettyPrinter);
-        mapper.writeTree(jsonGenerator, jsonRootNode);
+        try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(file, JsonEncoding.UTF8)) {
+            DefaultPrettyPrinter prettyPrinter = new DefaultPrettyPrinter();
+            CustomIndenter customIndenter = new CustomIndenter();
+            prettyPrinter.indentObjectsWith(customIndenter);
+            prettyPrinter.indentArraysWith(customIndenter);
+            jsonGenerator.setPrettyPrinter(prettyPrinter);
+            mapper.writeTree(jsonGenerator, jsonRootNode);
+        }
     }
 }

@@ -20,6 +20,7 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Execution handler for "cn [...]" commands.
@@ -90,9 +91,8 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
                     optionalSuffix = " [" + currentChannelId + "]";
                 }
             }
-            context.println(String.format("  (%d) '%s' [%s] - %s%s", setup.getId(), setup.getDisplayName(),
-                setup.getNetworkContactPointString(),
-                setup.getState(), optionalSuffix));
+            context.println(StringUtils.format("  (%d) '%s' [%s] - %s%s", setup.getId(), setup.getDisplayName(),
+                setup.getNetworkContactPointString(), setup.getState(), optionalSuffix));
         }
     }
 

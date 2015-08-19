@@ -30,6 +30,7 @@ import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -188,7 +189,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
                     return CommandExecutionResult.EXIT_REQUESTED;
                 } else {
                     // TODO review: this logs all console commands, which may be a problem when the log is accessible from remote - misc_ro
-                    logger.debug(String.format("Executing shell command '%s' for user '%s'", command, username));
+                    logger.debug(StringUtils.format("Executing shell command '%s' for user '%s'", command, username));
                     // TODO pass invoker information for non-temporary accounts as well
                     return sendToExecutionService(command, userAccount);
                 }

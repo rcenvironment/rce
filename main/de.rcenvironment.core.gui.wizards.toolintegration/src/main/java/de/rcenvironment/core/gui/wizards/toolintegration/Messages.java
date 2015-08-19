@@ -217,7 +217,7 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String toolFilenameInvalid;
-    
+
     /** NLS Constant. */
     public static String toolFilenameUsed;
 
@@ -388,6 +388,39 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String deleteNotOnErrorOnce;
+
+    /** NLS Constant. */
+    public static String copyDialogShellText;
+
+    /** NLS Constant. */
+    public static String copy;
+
+    /** NLS Constant. */
+    public static String customPath;
+
+    /** NLS Constant. */
+    public static String copyFileToFile;
+
+    /** NLS Constant. */
+    public static String copyFileToDir;
+
+    /** NLS Constant. */
+    public static String copyDirToDir;
+
+    /** NLS Constant. */
+    public static String insertCommand;
+
+    /** NLS Constant. */
+    public static String source;
+
+    /** NLS Constant. */
+    public static String target;
+
+    /** NLS Constant. */
+    public static String predefinedPath;
+
+    /** NLS Constant. */
+    public static String subfolderOrFilename;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

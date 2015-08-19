@@ -99,7 +99,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         fileChooser = toolkit.createButton(fileGroup, Messages.fileLinkButtonLabel, SWT.PUSH);
         
         fileEditor = toolkit.createButton(fileGroup, Messages.fileEditorButtonLabel, SWT.PUSH);
-
+        
         layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         contentGroup = toolkit.createComposite(client);
         contentGroup.setLayoutData(layoutData);
@@ -190,24 +190,9 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         }
     }
     
-    private void setFileEditorLabel() {
-        if (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME) != null) {
-            if (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME).equals(XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC)) {
-                fileEditor.setText(Messages.xmlLabel);
-                return;
-            } else if (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME)
-                .equals(XmlMergerComponentConstants.MAPPINGTYPE_XSLT)) {
-                fileEditor.setText(Messages.xsltLabel);
-                return;
-            }
-        }
-        fileEditor.setText(Messages.fileEditorButtonLabel);
-    }
-
     @Override
     protected void refreshBeforeValidation() {
         fileEditor.setEnabled(getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME) != null);
-        setFileEditorLabel();
         setXMLContent();
         fileGroup.pack(true);
     }

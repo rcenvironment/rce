@@ -137,6 +137,7 @@ import de.rcenvironment.core.gui.workflow.parts.ConnectionPart;
 import de.rcenvironment.core.gui.workflow.parts.EditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowPart;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -156,7 +157,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
 
     /** Property change event. */
     public static final int PROP_FINAL_WORKFLOW_DESCRIPTION_SET = 0x300;
-    
+
     /** Property change event. */
     public static final int PROP_WORKFLOW_VAILDATION_FINISHED = 0x400;
 
@@ -219,9 +220,9 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     private File inputFile = null;
 
     private IFile workspaceFile = null;
-    
+
     private int mouseX;
-    
+
     private int mouseY;
 
     private final ServiceRegistryPublisherAccess serviceRegistryAccess;
@@ -572,6 +573,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                 });
                 v.getControl().addMouseListener(new MouseAdapter() {
 
+                    private final int offset = 20;
+
                     @Override
                     public void mouseDoubleClick(MouseEvent e) {
                         if (v.getActiveTool().getLabel().equals(WorkflowLabel.PALETTE_ENTRY_NAME)) {
@@ -581,7 +584,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                             Rectangle rectangle = new Rectangle(TILE_OFFSET, TILE_OFFSET, MINUS_ONE, MINUS_ONE);
                             WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(label, model, rectangle);
                             WorkflowNodeLabelConnectionCreateCommand createCommand = helper.createCommand();
-                            createCommand.execute();
+                            getEditorsCommandStack().execute(createCommand);
                             getExistingPaletteGroups();
                             v.setActiveTool(v.getPaletteRoot().getDefaultEntry());
                         }
@@ -597,7 +600,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                             if (inst.getComponentRevision().getComponentInterface().getVersion() != null
                                 && toolIntegrationRegistry.hasId(inst.getComponentRevision().getComponentInterface().getIdentifier())) {
                                 name = name
-                                    + String.format(COMPONENTNAMES_WITH_VERSION, inst.getComponentRevision().getComponentInterface()
+                                    + StringUtils.format(COMPONENTNAMES_WITH_VERSION, inst.getComponentRevision().getComponentInterface()
                                         .getVersion());
                             }
                             if (name.equals(v.getActiveTool().getLabel())) {
@@ -612,8 +615,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                         for (WorkflowNode node : model.getWorkflowNodes()) {
                             Rectangle nodeRect = new Rectangle(node.getX(), node.getY(), TILE_SIZE, TILE_SIZE);
                             if (nodeRect.intersects(rectangle)) {
-                                rectangle.translate(TILE_OFFSET, TILE_OFFSET);
-                                break;
+                                rectangle.translate(offset, offset);
                             }
                         }
 
@@ -624,8 +626,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                             WorkflowNode node = new WorkflowNode(description);
                             WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper(node, model, rectangle);
                             WorkflowNodeLabelConnectionCreateCommand createCommand = helper.createCommand();
-                            CommandStack commandStack = (CommandStack) getAdapter(CommandStack.class);
-                            commandStack.execute(createCommand);
+                            getEditorsCommandStack().execute(createCommand);
                             // activate properties tab for added node
                             for (Object editpart : viewer.getContents().getChildren()) {
                                 if (editpart instanceof EditPart && editpart instanceof WorkflowNodePart) {
@@ -906,7 +907,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             if (installation.getComponentRevision().getComponentInterface().getVersion() != null
                 && toolIntegrationRegistry.hasId(installation.getComponentRevision().getComponentInterface().getIdentifier())) {
                 name = name
-                    + String.format(COMPONENTNAMES_WITH_VERSION, installation.getComponentRevision().getComponentInterface()
+                    + StringUtils.format(COMPONENTNAMES_WITH_VERSION, installation.getComponentRevision().getComponentInterface()
                         .getVersion());
             }
             existingComponentNames.add(name);
@@ -938,7 +939,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         String name = componentInterface.getDisplayName();
         if (componentInterface.getVersion() != null
             && toolIntegrationRegistry.hasId(componentInterface.getIdentifier())) {
-            name = name + String.format(COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
+            name = name + StringUtils.format(COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
         }
         // create the palette entry
         CombinedTemplateCreationEntry component = new CombinedTemplateCreationEntry(name, name,
@@ -1015,7 +1016,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             if (installation.getComponentRevision().getComponentInterface().getVersion() != null
                 && toolIntegrationRegistry.hasId(installation.getComponentRevision().getComponentInterface().getIdentifier())) {
                 name = name
-                    + String.format(COMPONENTNAMES_WITH_VERSION, installation.getComponentRevision().getComponentInterface()
+                    + StringUtils.format(COMPONENTNAMES_WITH_VERSION, installation.getComponentRevision().getComponentInterface()
                         .getVersion());
             }
             if (!paletteEntries.contains(name)) {
@@ -1064,7 +1065,12 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                 @Override
                 public void run() {
                     refreshPalette(cis);
-                    viewer.setContents(workflowDescription);
+                    try {
+                        viewer.setContents(workflowDescription);
+                    } catch (SWTException e) {
+                        //To avoid the error described in https://www.sistec.dlr.de/mantis/view.php?id=12228
+                        LogFactory.getLog(getClass()).debug("Caught SWTException, probably the affected widget is already disposed.");
+                    }
                 }
             });
         }
@@ -1073,11 +1079,11 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     public int getMouseX() {
         return mouseX;
     }
-    
+
     public int getMouseY() {
         return mouseY;
     }
-    
+
     // removed as it causes NPE on start up, if connection is not established, when workflow is opened under some circumstances
     // @Override
     // public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {

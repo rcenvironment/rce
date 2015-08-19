@@ -26,6 +26,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.testutils.TestNetworkRequestHandler;
 import de.rcenvironment.core.communication.testutils.VirtualInstance;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * @author Phillip Kroll
@@ -268,10 +269,8 @@ public class LargeScaleScenarioTests extends AbstractLargeScaleTest {
             List<? extends NetworkGraphLink> route = vi1.getRouteTo(vi2);
 
             // Route should exist
-            assertTrue(String.format("Could not find a valid route from %s to %s",
-                vi1.getConfigurationService().getLocalNodeId(),
-                vi2.getConfigurationService().getLocalNodeId()),
-                route != null);
+            assertTrue(StringUtils.format("Could not find a valid route from %s to %s",
+                vi1.getConfigurationService().getLocalNodeId(), vi2.getConfigurationService().getLocalNodeId()), route != null);
 
             // Route should not be larger than the number of nodes in the network
             assertTrue(route.size() < instanceUtils.getRandomInstance(allInstances).getKnownNodeCount());
@@ -326,7 +325,7 @@ public class LargeScaleScenarioTests extends AbstractLargeScaleTest {
                 }
             }
 
-            log.debug(String.format("%s attempts to communicate with %s.",
+            log.debug(StringUtils.format("%s attempts to communicate with %s.",
                 instanceUtils.getFormattedName(sender),
                 instanceUtils.getFormattedName(receiver)));
 
@@ -334,7 +333,7 @@ public class LargeScaleScenarioTests extends AbstractLargeScaleTest {
             assertTrue("Could not send a message", response.isSuccess());
 
             assertTrue(
-                String.format("%s failed to send routed message to %s. \n\n %s",
+                StringUtils.format("%s failed to send routed message to %s. \n\n %s",
                     instanceUtils.getFormattedName(sender),
                     instanceUtils.getFormattedName(receiver),
                     sender.getFormattedLegacyNetworkGraph()),
@@ -385,7 +384,7 @@ public class LargeScaleScenarioTests extends AbstractLargeScaleTest {
             waitForNextMessage();
             waitForNetworkSilence();
 
-            log.debug(String.format("%s attempts to communicate with %s.",
+            log.debug(StringUtils.format("%s attempts to communicate with %s.",
                 instanceUtils.getFormattedName(sender),
                 instanceUtils.getFormattedName(receiver)));
 
@@ -395,7 +394,7 @@ public class LargeScaleScenarioTests extends AbstractLargeScaleTest {
                 assertTrue(response.getDeserializedContent().toString(), response.isSuccess());
 
                 assertTrue(
-                    String.format("%s failed to send routed message to %s. \n\n %s",
+                    StringUtils.format("%s failed to send routed message to %s. \n\n %s",
                         instanceUtils.getFormattedName(sender),
                         instanceUtils.getFormattedName(receiver),
                         sender.getFormattedLegacyNetworkGraph()),

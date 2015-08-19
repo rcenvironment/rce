@@ -19,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.management.BenchmarkSubtask;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Default {@link BenchmarkSubtask} implementation.
@@ -225,7 +226,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
                 }
                 int numFailures = numMessages - resultContainer.getNumSuccess();
                 array[i++] =
-                    String.format(
+                    StringUtils.format(
                         "%s: Avg actual time: %d ms, Avg raw time: %d ms, Failures: %d, Total time: %d ms",
                         targetNode, avgActualSuccessMsec, avgRawSuccessMsec, numFailures, timeToFinish);
             }

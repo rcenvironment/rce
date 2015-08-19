@@ -14,10 +14,10 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.commons.io.IOUtils;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
@@ -42,7 +42,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  */
 public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistoryDataItemSubtreeBuilder {
 
-    private static Map<String, byte[]> componentIcons = Collections.synchronizedMap(new HashMap<String, byte[]>());
+    private static Image defaultIconImage;
+    
+    private final Map<String, Image> componentIconImageCache = new HashMap<>();
 
     @Override
     public String[] getSupportedHistoryDataItemIdentifier() {
@@ -82,32 +84,37 @@ public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistor
 
     @Override
     public Image getComponentIcon(String identifier) {
-        if (!componentIcons.containsKey(identifier)) {
+        if (!componentIconImageCache.containsKey(identifier)) {
+            byte[] icon = null;
             ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-            DistributedComponentKnowledgeService componentKnowledgeService =
-                serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class);
-            Collection<ComponentInstallation> installations =
-                componentKnowledgeService.getCurrentComponentKnowledge().getAllInstallations();
+            DistributedComponentKnowledgeService componentKnowledgeService = serviceRegistryAccess
+                .getService(DistributedComponentKnowledgeService.class);
+            Collection<ComponentInstallation> installations = componentKnowledgeService.getCurrentComponentKnowledge()
+                .getAllInstallations();
             for (ComponentInstallation installation : installations) {
                 if (installation.getInstallationId().startsWith(identifier)) {
-                    synchronized (componentIcons) {
-                        componentIcons.put(identifier, installation.getComponentRevision().getComponentInterface().getIcon16());
-                    }
+                    icon = installation.getComponentRevision().getComponentInterface().getIcon16();
+                    break;
                 }
             }
-        }
-        byte[] icon = null;
-        Image image = null;
-        synchronized (componentIcons) {
-            icon = componentIcons.get(identifier);
             if (icon != null) {
-                image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(), new ByteArrayInputStream(icon))).createImage();
-            } else {
-                InputStream inputStream =
-                    IntegrationHistoryDataItemSubtreeBuilder.class.getResourceAsStream("/resources/icons/tool16.png");
-                image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(), inputStream)).createImage();
+                componentIconImageCache.put(identifier, ImageDescriptor.createFromImage(new Image(Display.getCurrent(),
+                    new ByteArrayInputStream(icon))).createImage());
             }
         }
-        return image;
+        if (componentIconImageCache.containsKey(identifier)) {
+            return componentIconImageCache.get(identifier);            
+        } else {
+            if (defaultIconImage == null) {
+                InputStream inputStream = null;
+                try {
+                    inputStream = IntegrationHistoryDataItemSubtreeBuilder.class.getResourceAsStream("/resources/icons/tool16.png");
+                    defaultIconImage = ImageDescriptor.createFromImage(new Image(Display.getCurrent(), inputStream)).createImage();
+                } finally {
+                    IOUtils.closeQuietly(inputStream);
+                }
+            }
+            return defaultIconImage;
+        }
     }
 }

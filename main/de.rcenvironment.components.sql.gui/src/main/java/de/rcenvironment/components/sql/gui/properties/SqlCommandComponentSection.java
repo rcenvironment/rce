@@ -43,6 +43,7 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodePropertySection;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -55,7 +56,7 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
 
     private static final String PLACEHOLDER_PATTERN = "${%s}";
     
-    private static final String OUTPUT_PATTERN = String.format(PLACEHOLDER_PATTERN, "out:%s");
+    private static final String OUTPUT_PATTERN = StringUtils.format(PLACEHOLDER_PATTERN, "out:%s");
 
     private static final int WIDTH_HINT = 200;
     
@@ -101,12 +102,16 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
         
         final Composite content = new LayoutComposite(parent);
         content.setLayout(new GridLayout(2, true));
+        content.setBackgroundMode(SWT.INHERIT_DEFAULT);
         
         // Connections Sections
         final Composite jdbcContainer = toolkit.createFlatFormComposite(content);
         initConnectionsSection(toolkit, jdbcContainer);
         
-        toolkit.createComposite(content);
+        // Composite in parent's color to make layout look nice
+        final Composite dummyLayoutComposite = toolkit.createComposite(content);
+        dummyLayoutComposite.setBackground(parent.getBackground());
+        
 //        // SQL Section
 //        final Composite sqlContainer = toolkit.createFlatFormComposite(content);
 //        initSqlSection(toolkit, sqlContainer);
@@ -118,7 +123,7 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
         // Run Section
         final Composite runContainer = toolkit.createFlatFormComposite(content);
         initRunSection(toolkit, runContainer);
-       
+        
         parent.getParent().addListener(SWT.Resize,  new Listener() {
             @Override
             public void handleEvent(Event e) {
@@ -155,7 +160,7 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
         jdbcClient.setLayout(new GridLayout(2, false));
         final Label jdbcLabel = new Label(jdbcClient, SWT.NONE);
         jdbcLabel.setText(Messages.readerSectionJDBCProfileLabel);
-        jdbcProfileCombo = toolkit.createCCombo(jdbcClient, SWT.DROP_DOWN | SWT.READ_ONLY);
+        jdbcProfileCombo = toolkit.createCCombo(jdbcClient, SWT.DROP_DOWN/* | SWT.READ_ONLY*/);
         jdbcProfileCombo.setData(CONTROL_PROPERTY_KEY, SqlComponentConstants.METADATA_JDBC_PROFILE_PROPERTY);
         layoutData = new GridData(GridData.FILL_HORIZONTAL);
         jdbcProfileCombo.setLayoutData(layoutData);
@@ -430,13 +435,13 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
         final String tableNameLabel = Messages.bind(Messages.readerSectionTableNameLabelMeta, tableNamePlaceholder);
         initVariablesCombo.add(tableNameLabel);
         runVariablesCombo.add(tableNameLabel);
-        variablesPlaceholders.put(tableNameLabel, String.format(PLACEHOLDER_PATTERN, tableNamePlaceholder));
+        variablesPlaceholders.put(tableNameLabel, StringUtils.format(PLACEHOLDER_PATTERN, tableNamePlaceholder));
         // add input replacement values
         for (final EndpointDescription desc : configuration.getInputDescriptionsManager().getEndpointDescriptions()) {
             String inputName = desc.getName();
             final String inputType = configuration.getInputDescriptionsManager().getEndpointDescription(inputName).getDataType().toString();
             final String label = Messages.bind(Messages.variablesInputPattern, inputName, inputType);
-            final String placeholder = String.format(PLACEHOLDER_PATTERN, inputName);
+            final String placeholder = StringUtils.format(PLACEHOLDER_PATTERN, inputName);
             runVariablesCombo.add(label);
             variablesPlaceholders.put(label, placeholder);
         }
@@ -446,12 +451,31 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
             final String outputType = configuration.getOutputDescriptionsManager().getEndpointDescription(outputName)
                 .getDataType().toString();
             final String label = Messages.bind(Messages.variablesOutputPattern, outputName, outputType);
-            final String placeholder = String.format(OUTPUT_PATTERN, outputName);
+            final String placeholder = StringUtils.format(OUTPUT_PATTERN, outputName);
             initVariablesCombo.add(label);
             runVariablesCombo.add(label);
             variablesPlaceholders.put(label, placeholder);
         }
         updateVariableInsertControls();
+        handleFocus();
+    }
+
+    private void handleFocus() {
+        // No profile selected yet -> focus profile combo box
+        if (jdbcProfileCombo.getText().isEmpty()){
+            jdbcProfileCombo.setFocus();
+        } else {
+            if (sqlInitStatementText.isEnabled()) {
+                // profile already selected -> if init enabled -> focus it
+                sqlInitStatementText.setFocus();
+            } else if (sqlStatementText.isEnabled()){
+                // profile already selected -> if init not enabled, but run -> focus it
+                sqlStatementText.setFocus();
+            } else {
+                // fallback: focus sql init check box
+                sqlInitStatementCheckbox.setFocus();
+            }
+        }
     }
 
     protected void refreshSqlStatement() {

@@ -24,6 +24,7 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionControlle
 import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
 import de.rcenvironment.core.component.execution.api.ExecutionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -52,6 +53,8 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
     private CommunicationService communicationService;
     
     private PlatformService platformService;
+    
+    private EndpointDatumSerializer endpointDatumSerializer;
 
     protected void activate(BundleContext context) {
         bundleContext = context;
@@ -60,7 +63,7 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
     @Override
     @AllowRemoteAccess
     public void onEndpointDatumReceived(String serializedEndpointDatum) {
-        final EndpointDatum endpointDatum = EndpointDatumSerializer.deserializeEndpointDatum(serializedEndpointDatum);
+        final EndpointDatum endpointDatum = endpointDatumSerializer.deserializeEndpointDatum(serializedEndpointDatum);
         final String executionId = endpointDatum.getInputComponentExecutionIdentifier();
         final NodeIdentifier node = endpointDatum.getInputsNodeId();
         executionQueue.enqueue(new Runnable() {
@@ -80,8 +83,8 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
     private void forwardEndpointDatum(NodeIdentifier node, EndpointDatum endpointDatum) {
         EndpointDatumProcessor processor = null;
         synchronized (endpointDatumProcessors) {
-            if (endpointDatumProcessors.containsKey(node.getIdString())) {
-                processor = endpointDatumProcessors.get(node.getIdString()).get();
+            if (endpointDatumProcessors.containsKey(node)) {
+                processor = endpointDatumProcessors.get(node).get();
             }
             if (processor == null) {
                 processor = (EndpointDatumProcessor) communicationService.getService(
@@ -89,7 +92,7 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
                 endpointDatumProcessors.put(node, new WeakReference<EndpointDatumProcessor>(processor));
             }
         }
-        processor.onEndpointDatumReceived(EndpointDatumSerializer.serializeEndpointDatum(endpointDatum));
+        processor.onEndpointDatumReceived(endpointDatumSerializer.serializeEndpointDatum(endpointDatum));
     }
     
     private void processEndpointDatum(String executionId, EndpointDatum endpointDatum) {
@@ -107,7 +110,7 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
                     compExeCtrls.put(executionId, new WeakReference<ComponentExecutionController>(ctrl));
                 } catch (IllegalStateException e) {
                     Log log = LogFactory.getLog(getClass());
-                    log.warn(String.format("Endpoint datum '%s' not processed, because component controller (%s) is not available",
+                    log.warn(StringUtils.format("Endpoint datum '%s' not processed, because component controller (%s) is not available",
                         endpointDatum.toString(), executionId));
                     log.debug("Failed to get ComponentExecutionController (OSGi service)", e);
                     return;
@@ -123,6 +126,10 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
     
     protected void bindPlatformService(PlatformService newService) {
         platformService = newService;
+    }
+    
+    protected void bindEndpointDatumSerializer(EndpointDatumSerializer newService) {
+        endpointDatumSerializer = newService;
     }
 
 }

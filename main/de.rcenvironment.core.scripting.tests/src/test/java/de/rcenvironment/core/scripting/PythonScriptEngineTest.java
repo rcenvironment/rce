@@ -26,6 +26,7 @@ import org.python.jsr223.PyScriptEngine;
 import org.python.jsr223.PyScriptEngineFactory;
 
 import de.rcenvironment.core.scripting.python.PythonOutputWriter;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Tests the execution behavior of the Python script engine. Especially, during parallel script execution.
@@ -102,9 +103,9 @@ public class PythonScriptEngineTest {
             Writer errWriter = new PythonOutputWriterStub(new Object(), OUTPUT_PREFIX_STDERR, suffix);
             engine.getContext().setErrorWriter(errWriter);
 
-            engine.eval(String.format(SCRIPT, OUTPUT_PREFIX_STDOUT, suffix, OUTPUT_PREFIX_STDERR, suffix,
+            engine.eval(StringUtils.format(SCRIPT, OUTPUT_PREFIX_STDOUT, suffix, OUTPUT_PREFIX_STDERR, suffix,
                 OUTPUT_PREFIX_STDOUT, suffix));
-            engine.eval(String.format(
+            engine.eval(StringUtils.format(
                 "sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                 PythonOutputWriter.CONSOLE_END, PythonOutputWriter.CONSOLE_END));
 

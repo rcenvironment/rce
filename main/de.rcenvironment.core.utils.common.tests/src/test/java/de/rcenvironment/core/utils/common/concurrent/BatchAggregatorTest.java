@@ -29,6 +29,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProcessor;
 
 /**
@@ -133,7 +134,7 @@ public class BatchAggregatorTest {
             public void run() {
                 int threadId = threadIdGenerator.incrementAndGet();
                 for (int i = 1; i <= numMsgPerThread; i++) {
-                    aggregator.enqueue(String.format("Thread %d, Msg %d", threadId, i));
+                    aggregator.enqueue(StringUtils.format("Thread %d, Msg %d", threadId, i));
                 }
             }
         };

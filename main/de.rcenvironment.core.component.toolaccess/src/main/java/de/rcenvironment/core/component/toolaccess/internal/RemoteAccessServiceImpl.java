@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.toolaccess.internal;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,7 +42,10 @@ import de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowEx
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
@@ -52,10 +56,9 @@ import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutR
  * 
  * @author Robert Mischke
  */
+// TODO @7.0.0: remove duplicate javadoc
+// TODO @7.0.0: use better exception class than WorkflowExecutionException
 public class RemoteAccessServiceImpl implements RemoteAccessService {
-
-    /** Placeholder for an input directory. */
-    public static final String WF_PLACEHOLDER_INPUT_DIR = "##RUNTIME_INPUT_DIRECTORY##";
 
     private static final String INTERFACE_ENDPOINT_NAME_INPUT = "input";
 
@@ -64,6 +67,8 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     private static final String INTERFACE_ENDPOINT_NAME_OUTPUT = "output";
 
     private static final String WF_PLACEHOLDER_PARAMETERS = "##RUNTIME_PARAMETERS##";
+
+    private static final String WF_PLACEHOLDER_INPUT_DIR = "##RUNTIME_INPUT_DIRECTORY##";
 
     private static final String WF_PLACEHOLDER_OUTPUT_PARENT_DIR = "##RUNTIME_OUTPUT_DIRECTORY##";
 
@@ -75,9 +80,15 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
     private static final String WF_PLACEHOLDER_TOOL_VERSION = "##TOOL_VERSION##";
 
+    private static final String WF_PLACEHOLDER_TOOL_NODE_ID = "##TOOL_NODE_ID##";
+
     private static final String WF_PLACEHOLDER_TIMESTAMP = "##TIMESTAMP##";
 
     private static final String WORKFLOW_FILE_ENCODING = "UTF-8";
+
+    private static final String PUBLISHED_WF_DATA_FILE_SUFFIX = ".wf.dat";
+
+    private static final String PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX = ".ph.dat";
 
     private static final String OUTPUT_INDENT = "    ";
 
@@ -92,6 +103,10 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
     private HeadlessWorkflowExecutionService workflowExecutionService;
+
+    private ConfigurationService configurationService;
+
+    private File publishedWfStorageDir;
 
     /**
      * Simple holder for execution parameters, including the workflow template file.
@@ -160,16 +175,16 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         }
     }
 
+    /**
+     * OSGi life-cycle method.
+     */
+    public void activate() {
+        initAndRestoreFromPublishedWfStorage();
+    }
+
     @Override
     public void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format) {
-        List<ComponentInstallation> components = new ArrayList<>();
-
-        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
-        for (ComponentInstallation ci : compKnowledge.getAllInstallations()) {
-            if (isComponentSuitableAsRemoteAccessTool(ci)) {
-                components.add(ci);
-            }
-        }
+        List<ComponentInstallation> components = getMatchingPublishedTools();
 
         if ("csv".equals(format)) {
             printComponentsListAsCsv(components, outputReceiver);
@@ -178,6 +193,364 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         } else {
             throw new IllegalArgumentException("Unrecognized output format: " + format);
         }
+    }
+
+    @Override
+    public void printListOfAvailableWorkflows(TextOutputReceiver outputReceiver, String format) {
+        if (!"token-stream".equals(format)) {
+            throw new IllegalArgumentException("Unrecognized output format: " + format);
+        }
+        SortedSet<String> wfIds = new TreeSet<String>(publishedWorkflowTemplates.keySet());
+
+        outputReceiver.addOutput(Integer.toString(wfIds.size())); // number of entries
+        outputReceiver.addOutput("4"); // number of tokens per entry
+        for (String publishId : wfIds) {
+            // NOTE: the output format is made to match printListOfAvailableTools(); most fields are not used yet
+            outputReceiver.addOutput(publishId);
+            outputReceiver.addOutput("1"); // version; hardcoded for now
+            outputReceiver.addOutput(""); // node id; not used yet
+            outputReceiver.addOutput(""); // node id; not used yet
+        }
+    }
+
+    /**
+     * Creates a workflow file from an internal template and the given parameters, and executes it.
+     * 
+     * @param toolId the id of the integrated tool to run (see CommonToolIntegratorComponent)
+     * @param toolVersion the version of the integrated tool to run
+     * @param toolNodeId the node id of the instance to run the tool on; must NOT be null (resolve+validate this first)
+     * @param parameterString an optional string containing tool-specific parameters
+     * @param inputFilesDir the local file system path to read input files from
+     * @param outputFilesDir the local file system path to write output files to
+     * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
+     * @return the state the generated workflow finished in
+     * @throws IOException on I/O errors
+     * @throws WorkflowExecutionException on workflow execution errors
+     */
+    @Override
+    public FinalWorkflowState runSingleToolWorkflow(String toolId, String toolVersion, String toolNodeId, String parameterString,
+        File inputFilesDir, File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException,
+        WorkflowExecutionException {
+        validateIdOrVersionString(toolId);
+        validateIdOrVersionString(toolVersion);
+        ExecutionSetup executionSetup =
+            generateSingleToolExecutionSetup(toolId, toolVersion, toolNodeId, parameterString, inputFilesDir, outputFilesDir);
+        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver);
+    }
+
+    /**
+     * Executes a previously published workflow template.
+     * 
+     * @param workflowId the id of the published workflow template
+     * @param parameterString an optional string containing tool-specific parameters
+     * @param inputFilesDir the local file system path to read input files from
+     * @param outputFilesDir the local file system path to write output files to
+     * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
+     * @return the state the generated workflow finished in
+     * @throws IOException on I/O errors
+     * @throws WorkflowExecutionException on workflow execution errors
+     */
+    @Override
+    public FinalWorkflowState runPublishedWorkflowTemplate(String workflowId, String parameterString, File inputFilesDir,
+        File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException, WorkflowExecutionException {
+        validateIdOrVersionString(workflowId);
+        // TODO validate version once added
+        ExecutionSetup executionSetup =
+            generateWorkflowExecutionSetup(workflowId, parameterString, inputFilesDir, outputFilesDir);
+        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver);
+    }
+
+    /**
+     * Checks if the given workflow file can be used with the "wf-run" console command, and if this check is positive, the workflow file is
+     * published under the given id.
+     * 
+     * @param wfFile the workflow file
+     * @param placeholdersFile TODO
+     * @param publishId the id by which the workflow file should be made available
+     * @param outputReceiver receiver for user feedback
+     * @param persistent make the publishing persistent
+     * @throws WorkflowExecutionException on failure to load/parse the workflow file
+     */
+    @Override
+    public void checkAndPublishWorkflowFile(File wfFile, File placeholdersFile, String publishId, TextOutputReceiver outputReceiver,
+        boolean persistent) throws WorkflowExecutionException {
+
+        validateIdOrVersionString(publishId);
+
+        WorkflowDescription wd = workflowExecutionService.parseWorkflowFile(wfFile, outputReceiver);
+
+        if (placeholdersFile != null) {
+            workflowExecutionService.validatePlaceholdersFile(placeholdersFile);
+        }
+
+        File workflowStorageFile = getWorkflowStorageFile(publishId);
+        File placeholderStorageFile = getPlaceholderStorageFile(publishId);
+
+        // sanity check / user accident prevention
+        if (!persistent && workflowStorageFile.exists()) {
+            throw new WorkflowExecutionException(
+                "You are trying to overwrite a persistently published workflow with a temporary/transient one; "
+                    + "if this is what you want to do, unpublish the old workflow first, then publish the new one again");
+        }
+
+        outputReceiver.addOutput(StringUtils.format("Checking workflow file \"%s\"", wfFile.getAbsolutePath()));
+        if (validateWorkflowFileAsTemplate(wd, outputReceiver)) {
+            try {
+                String wfFileContent = readFile(wfFile);
+                String replaced = publishedWorkflowTemplates.put(publishId, wfFileContent);
+                // store wf file if told to persist
+                if (persistent) {
+                    FileUtils.writeStringToFile(workflowStorageFile, wfFileContent);
+                }
+
+                if (placeholdersFile != null) {
+                    String placeholdersFileContent = readFile(placeholdersFile);
+                    publishedWorkflowTemplatePlaceholders.put(publishId, placeholdersFileContent);
+                    // store placeholder file if told to persist
+                    if (persistent) {
+                        FileUtils.writeStringToFile(placeholderStorageFile, placeholdersFileContent);
+                    }
+                } else {
+                    // remove any pre-existing placeholder file's content
+                    publishedWorkflowTemplatePlaceholders.put(publishId, null);
+                }
+
+                if (replaced == null) {
+                    outputReceiver.addOutput(StringUtils.format("Successfully published workflow \"%s\"", publishId));
+                } else {
+                    outputReceiver.addOutput(StringUtils.format("Successfully updated the published workflow \"%s\"", publishId));
+                }
+            } catch (IOException e) {
+                // avoid dangling, undefined workflow files on failure
+                publishedWorkflowTemplates.remove(publishId);
+                FileUtils.deleteQuietly(workflowStorageFile);
+                throw new WorkflowExecutionException("Error publishing workflow file " + wfFile.getAbsolutePath());
+            }
+        }
+    }
+
+    @Override
+    public void unpublishWorkflowForId(String publishId, TextOutputReceiver outputReceiver) throws WorkflowExecutionException {
+
+        validateIdOrVersionString(publishId);
+
+        String removed = publishedWorkflowTemplates.remove(publishId);
+        publishedWorkflowTemplatePlaceholders.remove(publishId);
+
+        // always try to delete the storage files; if publishing was temporary, they are simply not found
+        File workflowStorageFile = getWorkflowStorageFile(publishId);
+        if (workflowStorageFile.isFile()) {
+            try {
+                Files.delete(workflowStorageFile.toPath());
+            } catch (IOException e) {
+                throw new WorkflowExecutionException("Failed to unpublish the specified workflow; its storage file may be write-protected");
+            }
+        }
+        File placeholderStorageFile = getPlaceholderStorageFile(publishId);
+        if (placeholderStorageFile.isFile()) {
+            try {
+                Files.delete(placeholderStorageFile.toPath());
+            } catch (IOException e) {
+                throw new WorkflowExecutionException("Failed to unpublish the published placeholder file "
+                    + "for the specified workflow; its storage file may be write-protected");
+            }
+        }
+
+        if (removed != null) {
+            outputReceiver.addOutput(StringUtils.format("Successfully unpublished workflow \"%s\"", publishId));
+        } else {
+            outputReceiver.addOutput(StringUtils.format("ERROR: There is no workflow with id \"%s\" to unpublish", publishId));
+        }
+    }
+
+    /**
+     * Prints human-readable information about all published workflows.
+     * 
+     * @param outputReceiver the receiver for the generated output
+     */
+    @Override
+    public void printSummaryOfPublishedWorkflows(TextOutputReceiver outputReceiver) {
+        if (publishedWorkflowTemplates.isEmpty()) {
+            outputReceiver.addOutput("There are no workflows published for remote execution");
+            return;
+        }
+        outputReceiver.addOutput("Workflows published for remote execution:");
+        for (String publishId : publishedWorkflowTemplates.keySet()) {
+            String placeholders = "no";
+            if (publishedWorkflowTemplatePlaceholders.get(publishId) != null) {
+                placeholders = "yes";
+            }
+            outputReceiver.addOutput(StringUtils.format("- %s (using placeholders: %s)", publishId, placeholders));
+        }
+    }
+
+    @Override
+    // TODO add unit test
+    public String validateToolParametersAndGetFinalNodeId(String toolId, String toolVersion, String nodeId)
+        throws WorkflowExecutionException {
+        List<ComponentInstallation> availableTools = getMatchingPublishedTools();
+
+        // note: not strictly necessary, but gives more consistent error messages instead of "tool not found"
+        validateIdOrVersionString(toolId);
+        validateIdOrVersionString(toolVersion);
+
+        // only needed for nodeId == null to detect ambiguous matches
+        ComponentInstallation nodeMatch = null;
+
+        // TODO once components are cached, optimize with map lookup
+        for (ComponentInstallation compInst : availableTools) {
+            ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
+            // TODO "display name" sounds odd here, but seems to be the public id; check
+            if (toolId.equals(compInterface.getDisplayName())) {
+                if (toolVersion.equals(compInterface.getVersion())) {
+                    if (nodeId != null) {
+                        // specific node id: exit on first match
+                        if (nodeId.equals(compInst.getNodeId())) {
+                            return compInst.getNodeId();
+                        }
+                    } else {
+                        if (nodeMatch == null) {
+                            nodeMatch = compInst;
+                        } else {
+                            throw new WorkflowExecutionException(String.format("Tool selection is ambiguous without a node id; "
+                                + "tool '%s', version '%s' is provided by more than one node", toolId, toolVersion));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (nodeId == null) {
+            if (nodeMatch != null) {
+                // success; single node match
+                return nodeMatch.getNodeId();
+            } else {
+                throw new WorkflowExecutionException(String.format("No matching tool for tool '%s' in version '%s'", toolId,
+                    toolVersion, nodeId));
+            }
+        } else {
+            throw new WorkflowExecutionException(String.format("No matching tool for tool '%s' in version '%s', "
+                + "running on a node with id '%s'", toolId, toolVersion, nodeId));
+        }
+
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    public void bindWorkflowExecutionService(HeadlessWorkflowExecutionService newInstance) {
+        this.workflowExecutionService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    public void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
+        this.componentKnowledgeService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    public void bindConfigurationService(ConfigurationService newInstance) {
+        this.configurationService = newInstance;
+    }
+
+    private void initAndRestoreFromPublishedWfStorage() {
+        // initialize the storage location for published workflows and placeholder data
+        publishedWfStorageDir =
+            new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA), "ra/published-wf");
+        publishedWfStorageDir.mkdirs();
+        if (!publishedWfStorageDir.isDirectory()) {
+            log.error("Failed to create Remote Access workflow storage directory " + publishedWfStorageDir.getAbsolutePath());
+            publishedWfStorageDir = null;
+            return;
+        }
+
+        // restore persisted data
+        for (File f : publishedWfStorageDir.listFiles()) {
+            String filename = f.getName();
+            if (filename.endsWith(PUBLISHED_WF_DATA_FILE_SUFFIX)) {
+                String wfId = filename.substring(0, filename.length() - PUBLISHED_WF_DATA_FILE_SUFFIX.length());
+                try {
+                    publishedWorkflowTemplates.put(wfId, FileUtils.readFileToString(f));
+                } catch (IOException e) {
+                    log.error("Failed to restore data of published RemoteAccess workflow from storage file " + f.getAbsolutePath(), e);
+                }
+            } else if (filename.endsWith(PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX)) {
+                String wfId = filename.substring(0, filename.length() - PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX.length());
+                try {
+                    publishedWorkflowTemplatePlaceholders.put(wfId, FileUtils.readFileToString(f));
+                } catch (IOException e) {
+                    log.error("Failed to restore placeholder data of published RemoteAccess workflow "
+                        + "from storage file " + f.getAbsolutePath(), e);
+                }
+            } else {
+                log.error("Unexpected file in RemoteAccess storage directory, ignoring: " + f.getAbsolutePath());
+            }
+        }
+
+        // TODO check for placeholder data without a workflow file? only sanity check; no actual harm in them - misc_ro
+    }
+
+    private File getWorkflowStorageFile(String id) throws WorkflowExecutionException {
+        if (publishedWfStorageDir == null) {
+            throw new WorkflowExecutionException(
+                "The workflow storage directory was not properly initialized; cannot execute this command");
+        }
+        File file = new File(publishedWfStorageDir, id + PUBLISHED_WF_DATA_FILE_SUFFIX);
+        log.debug("Resolved workflow publish id to storage filename " + file.getAbsolutePath());
+        return file;
+    }
+
+    private File getPlaceholderStorageFile(String id) throws WorkflowExecutionException {
+        if (publishedWfStorageDir == null) {
+            throw new WorkflowExecutionException(
+                "The workflow storage directory was not properly initialized; cannot execute this command");
+        }
+        return new File(publishedWfStorageDir, id + PUBLISHED_WF_PLACEHOLDER_FILE_SUFFIX);
+    }
+
+    private boolean isComponentSuitableAsRemoteAccessTool(ComponentInstallation compInst) {
+        ComponentInterface compInterf = compInst.getComponentRevision().getComponentInterface();
+        EndpointDefinition endpoint;
+        // do not allow more that two static inputs, as this may block execution
+        if (compInterf.getInputDefinitionsProvider().getStaticEndpointDefinitions().size() != 2)
+        {
+            return false;
+        }
+        endpoint = compInterf.getInputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_INPUT);
+        if (endpoint == null || !endpoint.getPossibleDataTypes().contains(DataType.DirectoryReference)) {
+            return false;
+        }
+        endpoint = compInterf.getInputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_PARAMETERS);
+        if (endpoint == null || !endpoint.getPossibleDataTypes().contains(DataType.ShortText)) {
+            return false;
+        }
+        // additional outputs are allowed for now
+        endpoint = compInterf.getOutputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_OUTPUT);
+        if (endpoint == null || endpoint.getDefaultDataType() != DataType.DirectoryReference) {
+            return false;
+        }
+        return true;
+    }
+
+    private List<ComponentInstallation> getMatchingPublishedTools() {
+        List<ComponentInstallation> components = new ArrayList<>();
+        DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
+        for (ComponentInstallation ci : compKnowledge.getAllPublishedInstallations()) {
+            if (isComponentSuitableAsRemoteAccessTool(ci)) {
+                components.add(ci);
+            }
+        }
+        // TODO sort?
+        return components;
     }
 
     private void printComponentsListAsCsv(List<ComponentInstallation> components, TextOutputReceiver outputReceiver) {
@@ -206,189 +579,6 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
             outputReceiver.addOutput(nodeId);
             outputReceiver.addOutput(nodeName);
         }
-    }
-
-    @Override
-    public void printListOfAvailableWorkflows(TextOutputReceiver outputReceiver, String format) {
-        if (!"token-stream".equals(format)) {
-            throw new IllegalArgumentException("Unrecognized output format: " + format);
-        }
-        SortedSet<String> wfIds = new TreeSet<String>(publishedWorkflowTemplates.keySet());
-
-        outputReceiver.addOutput(Integer.toString(wfIds.size())); // number of entries
-        outputReceiver.addOutput("4"); // number of tokens per entry
-        for (String publishId : wfIds) {
-            // NOTE: the output format is made to match printListOfAvailableTools(); most fields are not used yet
-            outputReceiver.addOutput(publishId);
-            outputReceiver.addOutput("1"); // version; hardcoded for now
-            outputReceiver.addOutput(""); // node id; not used yet
-            outputReceiver.addOutput(""); // node id; not used yet
-        }
-    }
-
-    /**
-     * Creates a workflow file from an internal template and the given parameters, and executes it.
-     * 
-     * @param toolId the id of the integrated tool to run (see CommonToolIntegratorComponent)
-     * @param toolVersion the version of the integrated tool to run
-     * @param parameterString an optional string containing tool-specific parameters
-     * @param inputFilesDir the local file system path to read input files from
-     * @param outputFilesDir the local file system path to write output files to
-     * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
-     * @return the state the generated workflow finished in
-     * @throws IOException on I/O errors
-     * @throws WorkflowExecutionException on workflow execution errors
-     */
-    @Override
-    public FinalWorkflowState runSingleToolWorkflow(String toolId, String toolVersion, String parameterString, File inputFilesDir,
-        File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException, WorkflowExecutionException {
-        ExecutionSetup executionSetup =
-            generateSingleToolExecutionSetup(toolId, toolVersion, parameterString, inputFilesDir, outputFilesDir);
-        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver);
-    }
-
-    /**
-     * Executes a previously published workflow template.
-     * 
-     * @param workflowId the id of the published workflow template
-     * @param parameterString an optional string containing tool-specific parameters
-     * @param inputFilesDir the local file system path to read input files from
-     * @param outputFilesDir the local file system path to write output files to
-     * @param consoleRowReceiver an optional listener for all received ConsoleRows; pass null to deactivate
-     * @return the state the generated workflow finished in
-     * @throws IOException on I/O errors
-     * @throws WorkflowExecutionException on workflow execution errors
-     */
-    @Override
-    public FinalWorkflowState runPublishedWorkflowTemplate(String workflowId, String parameterString, File inputFilesDir,
-        File outputFilesDir, SingleConsoleRowsProcessor consoleRowReceiver) throws IOException, WorkflowExecutionException {
-        ExecutionSetup executionSetup =
-            generateWorkflowExecutionSetup(workflowId, parameterString, inputFilesDir, outputFilesDir);
-        return executeConfiguredWorkflow(executionSetup, consoleRowReceiver);
-    }
-
-    /**
-     * Checks if the given workflow file can be used with the "wf-run" console command, and if this check is positive, the workflow file is
-     * published under the given id.
-     * 
-     * @param wfFile the workflow file
-     * @param placeholdersFile TODO
-     * @param publishId the id by which the workflow file should be made available
-     * @param outputReceiver receiver for user feedback
-     * @throws WorkflowExecutionException on failure to load/parse the workflow file
-     */
-    @Override
-    public void checkAndPublishWorkflowFile(File wfFile, File placeholdersFile, String publishId, TextOutputReceiver outputReceiver)
-        throws WorkflowExecutionException {
-
-        WorkflowDescription wd = workflowExecutionService.parseWorkflowFile(wfFile, outputReceiver);
-
-        if (placeholdersFile != null) {
-            workflowExecutionService.validatePlaceholdersFile(placeholdersFile);
-        }
-
-        outputReceiver.addOutput(String.format("Checking workflow file \"%s\"", wfFile.getAbsolutePath()));
-        if (validateWorkflowFileAsTemplate(wd, outputReceiver)) {
-            try {
-                // TODO make persistent
-                String replaced = publishedWorkflowTemplates.put(publishId, readFile(wfFile));
-                if (placeholdersFile != null) {
-                    publishedWorkflowTemplatePlaceholders.put(publishId, readFile(placeholdersFile));
-                } else {
-                    // remove any pre-existing placeholder file's content
-                    publishedWorkflowTemplatePlaceholders.put(publishId, null);
-                }
-                if (replaced == null) {
-                    outputReceiver.addOutput(String.format("Successfully published workflow \"%s\"", publishId));
-                } else {
-                    outputReceiver.addOutput(String.format("Successfully updated the published workflow \"%s\"", publishId));
-                }
-            } catch (IOException e) {
-                throw new WorkflowExecutionException("Error publishing workflow file " + wfFile.getAbsolutePath());
-            }
-        }
-    }
-
-    /**
-     * Makes the published workflow with the given id unavailable for remote invocation. If no such workflow exists, a text warning is
-     * written to the output receiver.
-     * 
-     * @param publishId the id of the workflow to unpublish
-     * @param outputReceiver the receiver for user feedback
-     */
-    @Override
-    public void unpublishWorkflowForId(String publishId, TextOutputReceiver outputReceiver) {
-        String replaced = publishedWorkflowTemplates.put(publishId, null);
-        publishedWorkflowTemplatePlaceholders.put(publishId, null);
-
-        if (replaced != null) {
-            outputReceiver.addOutput(String.format("Successfully unpublished workflow \"%s\"", publishId));
-        } else {
-            outputReceiver.addOutput(String.format("ERROR: There is no workflow with id \"%s\" to unpublish", publishId));
-        }
-    }
-
-    /**
-     * Prints human-readable information about all published workflows.
-     * 
-     * @param outputReceiver the receiver for the generated output
-     */
-    @Override
-    public void printSummaryOfPublishedWorkflows(TextOutputReceiver outputReceiver) {
-        if (publishedWorkflowTemplates.isEmpty()) {
-            outputReceiver.addOutput("There are no workflows published for remote execution");
-            return;
-        }
-        outputReceiver.addOutput("Workflows published for remote execution:");
-        for (String publishId : publishedWorkflowTemplates.keySet()) {
-            String placeholders = "no";
-            if (publishedWorkflowTemplatePlaceholders.get(publishId) != null) {
-                placeholders = "yes";
-            }
-            outputReceiver.addOutput(String.format("- %s (using placeholders: %s)", publishId, placeholders));
-        }
-    }
-
-    /**
-     * OSGi-DS bind method.
-     * 
-     * @param newInstance the new service instance
-     */
-    public void bindWorkflowExecutionService(HeadlessWorkflowExecutionService newInstance) {
-        this.workflowExecutionService = newInstance;
-    }
-
-    /**
-     * OSGi-DS bind method.
-     * 
-     * @param newInstance the new service instance
-     */
-    public void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
-        this.componentKnowledgeService = newInstance;
-    }
-
-    private boolean isComponentSuitableAsRemoteAccessTool(ComponentInstallation compInst) {
-        ComponentInterface compInterf = compInst.getComponentRevision().getComponentInterface();
-        EndpointDefinition endpoint;
-        // do not allow more that two static inputs, as this may block execution
-        if (compInterf.getInputDefinitionsProvider().getStaticEndpointDefinitions().size() != 2)
-        {
-            return false;
-        }
-        endpoint = compInterf.getInputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_INPUT);
-        if (endpoint == null || !endpoint.getPossibleDataTypes().contains(DataType.DirectoryReference)) {
-            return false;
-        }
-        endpoint = compInterf.getInputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_PARAMETERS);
-        if (endpoint == null || !endpoint.getPossibleDataTypes().contains(DataType.ShortText)) {
-            return false;
-        }
-        // additional outputs are allowed for now
-        endpoint = compInterf.getOutputDefinitionsProvider().getStaticEndpointDefinition(INTERFACE_ENDPOINT_NAME_OUTPUT);
-        if (endpoint == null || endpoint.getDefaultDataType() != DataType.DirectoryReference) {
-            return false;
-        }
-        return true;
     }
 
     private boolean validateWorkflowFileAsTemplate(WorkflowDescription wd, TextOutputReceiver outputReceiver)
@@ -424,7 +614,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                     }
                     validateEquals("false", compConfig.get("SelectRootOnWorkflowStart"), "Invalid \"Select at workflow start\" setting");
                 } else {
-                    printEndpointValidationMessage(outputReceiver, String.format(
+                    printEndpointValidationMessage(outputReceiver, StringUtils.format(
                         "Ignoring this Output Writer as its \"Root folder\" setting is not the \"%s\" marker",
                         WF_PLACEHOLDER_OUTPUT_PARENT_DIR));
                 }
@@ -463,34 +653,34 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
             if (nameMatches && dataTypeMatches && hasMarkerValue) {
                 allMatched = true;
             } else {
-                printEndpointValidationMessage(outputReceiver, String.format(
+                printEndpointValidationMessage(outputReceiver, StringUtils.format(
                     "Output \"%s\" is a candidate for the %s, but it does not quite match: ", expectedName, description));
                 if (!nameMatches) {
                     printEndpointValidationMessage(outputReceiver,
-                        String.format("  - Unexpected name \"%s\" instead of \"%s\"", actualName, expectedName));
+                        StringUtils.format("  - Unexpected name \"%s\" instead of \"%s\"", actualName, expectedName));
                 }
                 if (!dataTypeMatches) {
                     printEndpointValidationMessage(outputReceiver,
-                        String.format("  - Unexpected data type \"%s\" instead of \"%s\"", actualDataType.getDisplayName(),
+                        StringUtils.format("  - Unexpected data type \"%s\" instead of \"%s\"", actualDataType.getDisplayName(),
                             expectedDataType.getDisplayName()));
                 }
                 if (!hasMarkerValue) {
                     printEndpointValidationMessage(outputReceiver,
-                        String.format("  - Marker value \"%s\" not found", placeholderMarker));
+                        StringUtils.format("  - Marker value \"%s\" not found", placeholderMarker));
                 }
                 return;
             }
         } else {
             if (!nameMatches || !dataTypeMatches) {
-                printEndpointValidationMessage(outputReceiver, String.format(
+                printEndpointValidationMessage(outputReceiver, StringUtils.format(
                     "Input \"%s\" is a candidate for the %s, but it does not quite match: ", actualName, description));
                 if (!nameMatches) {
                     printEndpointValidationMessage(outputReceiver,
-                        String.format("  - Unexpected name \"%s\" instead of \"%s\"", actualName, expectedName));
+                        StringUtils.format("  - Unexpected name \"%s\" instead of \"%s\"", actualName, expectedName));
                 }
                 if (!dataTypeMatches) {
                     printEndpointValidationMessage(outputReceiver,
-                        String.format("  - Unexpected data type \"%s\" instead of \"%s\"", actualDataType.getDisplayName(),
+                        StringUtils.format("  - Unexpected data type \"%s\" instead of \"%s\"", actualDataType.getDisplayName(),
                             expectedDataType.getDisplayName()));
                 }
                 return;
@@ -512,7 +702,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         if (detectionFlag.getValue()) {
             throw new WorkflowExecutionException("Found more than one " + description + " provider");
         } else {
-            printEndpointValidationMessage(outputReceiver, String.format("Found %s \"%s\"", description, actualName));
+            printEndpointValidationMessage(outputReceiver, StringUtils.format("Found %s \"%s\"", description, actualName));
             detectionFlag.setValue(true);
         }
     }
@@ -523,7 +713,16 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
     private void validateEquals(Object expected, Object actual, String message) throws WorkflowExecutionException {
         if (!expected.equals(actual)) {
-            throw new WorkflowExecutionException(String.format("%s: Expected \"%s\", but found \"%s\"", message, expected, actual));
+            throw new WorkflowExecutionException(StringUtils.format("%s: Expected \"%s\", but found \"%s\"", message, expected, actual));
+        }
+    }
+
+    private void validateIdOrVersionString(String id) throws WorkflowExecutionException {
+        // TODO add integration for high-level commands using this
+        // TODO pre-compile pattern?
+        if (!id.matches("[a-zA-Z0-9\\-\\.+_]+")) {
+            throw new WorkflowExecutionException("Invalid character(s) in tool id, workflow id, or version \"" + id
+                + "\"; only alphanumeric characters, \"-\", \".\", \"+\" and \"_\" are permitted");
         }
     }
 
@@ -542,8 +741,8 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         }
     }
 
-    private ExecutionSetup generateSingleToolExecutionSetup(String toolId, String toolVersion, String parameterString, File inputFilesDir,
-        File outputFilesDir) throws IOException {
+    private ExecutionSetup generateSingleToolExecutionSetup(String toolId, String toolVersion, String toolNodeId, String parameterString,
+        File inputFilesDir, File outputFilesDir) throws IOException {
         InputStream templateStream = getClass().getResourceAsStream(WORKFLOW_TEMPLATE_RESOURCE_PATH);
         if (templateStream == null) {
             throw new IOException("Failed to read tool access template");
@@ -559,6 +758,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         String workflowContent = template
             .replace(WF_PLACEHOLDER_TOOL_ID, toolId)
             .replace(WF_PLACEHOLDER_TOOL_VERSION, toolVersion)
+            .replace(WF_PLACEHOLDER_TOOL_NODE_ID, toolNodeId)
             .replace(WF_PLACEHOLDER_PARAMETERS, parameterString) // FIXME 5.1: escaping?!
             .replace(WF_PLACEHOLDER_TIMESTAMP, timestampString)
             .replace(WF_PLACEHOLDER_INPUT_DIR, formatPathForWorkflowFile(inputFilesDir))

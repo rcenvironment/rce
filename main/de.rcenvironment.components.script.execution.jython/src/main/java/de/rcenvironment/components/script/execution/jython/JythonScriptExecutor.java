@@ -10,22 +10,23 @@ package de.rcenvironment.components.script.execution.jython;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Map;
 
 import javax.script.ScriptException;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
 import de.rcenvironment.components.script.execution.DefaultScriptExecutor;
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.scripting.WorkflowConsoleForwardingWriter;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
-import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.ScriptingUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
@@ -45,6 +46,8 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
 
     private static final String SLASH = "/";
 
+    private static final Log LOGGER = LogFactory.getLog(JythonScriptExecutor.class);
+
     protected String preHeader;
 
     protected String header;
@@ -57,43 +60,10 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
 
     protected String workingPath = "";
 
-    private Map<String, Object> stateMap;
-
     @Override
-    public void reset() {
-        stateMap = new HashMap<String, Object>();
-    }
+    public boolean prepareExecutor(ComponentContext componentContext) {
 
-    @Override
-    protected void bindScriptingService(final ScriptingService service) {
-        scriptingService = service;
-    }
-
-    @Override
-    protected void unbindScriptingService(final ScriptingService service) {
-        /*
-         * nothing to do here, this unbind method is only needed, because DS is throwing an
-         * exception when disposing otherwise. probably a bug
-         */
-    }
-
-    @Override
-    protected void bindTypedDatumService(TypedDatumService newTypedDatumService) {
-        typedDatumFactory = newTypedDatumService.getFactory();
-    }
-
-    @Override
-    protected void unbindTypedDatumService(TypedDatumService noldTypedDatumService) {
-        /*
-         * nothing to do here, this unbind method is only needed, because DS is throwing an
-         * exception when disposing otherwise. probably a bug
-         */
-    }
-
-    @Override
-    public boolean prepareExecutor(ComponentContext componentContext, DistributedNotificationService inNotificationService) {
-
-        super.prepareExecutor(componentContext, inNotificationService);
+        super.prepareExecutor(componentContext);
 
         try {
             // this method determins the locaton of the jython.jar
@@ -109,6 +79,8 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         workingPath = workingPath.replaceAll(ESCAPESLASH, SLASH);
         tempFiles.add(file);
         stateMap = new HashMap<String, Object>();
+        scriptingService = componentContext.getService(ScriptingService.class);
+        typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
         return false;
     }
 
@@ -124,7 +96,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         foot =
             "\nRCE_Dict_OutputChannels = RCE.get_output_internal()\nRCE_CloseOutputChannelsList = RCE.get_closed_outputs_internal()\n"
                 + "RCE_NotAValueOutputList = RCE.get_indefinite_outputs_internal()\n"
-                + String.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
+                + StringUtils.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                     WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
     }
 
@@ -192,7 +164,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
     }
 
     @Override
-    protected void bindComponentDataManagementService(ComponentDataManagementService compDataManagementService) {
-        componentDatamanagementService = compDataManagementService;
+    public void setWorkingPath(String workingPath) {
+        this.workingPath = workingPath;
     }
 }

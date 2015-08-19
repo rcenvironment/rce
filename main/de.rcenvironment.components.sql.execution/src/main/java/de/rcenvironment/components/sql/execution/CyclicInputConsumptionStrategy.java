@@ -17,6 +17,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * {@link InputConsumptionStrategy} considering a run, if certain or all {@link Input}s have a
  * value. If no specific inputs are used for construction (via
@@ -66,7 +68,7 @@ public class CyclicInputConsumptionStrategy {
         final String inputName = input.getName();
         assert inputNames.contains(inputName);
         if (!inputs.containsKey(inputName)) {
-            throw new IllegalArgumentException(String.format("Unknown input (name='%s')"));
+            throw new IllegalArgumentException(StringUtils.format("Unknown input (name='%s')"));
         }
         inputs.get(inputName).add(input);
     }

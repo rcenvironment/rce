@@ -12,6 +12,7 @@ import java.util.Map;
 
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A disconnected representation of a network node, in the sense that changes to the actual, live network state will not automatically
@@ -31,7 +32,7 @@ public final class NetworkGraphNodeImpl implements NetworkGraphNode {
 
     public NetworkGraphNodeImpl(NodeIdentifier nodeId, Map<String, String> nodeProperties) {
         if (nodeId == null) {
-            throw new NullPointerException(String.format("%s / %s", nodeId, nodeProperties));
+            throw new NullPointerException(StringUtils.format("%s / %s", nodeId, nodeProperties));
         }
         this.nodeId = nodeId;
         this.nodeProperties = nodeProperties;
@@ -80,7 +81,7 @@ public final class NetworkGraphNodeImpl implements NetworkGraphNode {
 
     @Override
     public String toString() {
-        return String.format("%s ('%s')", nodeId.getIdString(), getDisplayName());
+        return StringUtils.format("%s ('%s')", nodeId.getIdString(), getDisplayName());
     }
 
     @Override

@@ -25,11 +25,11 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ZipFolderUtil;
 import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
 import de.rcenvironment.cpacs.utils.common.components.ConsoleLogger;
 import de.rcenvironment.cpacs.utils.common.components.ToolWrapperComponentHistoryDataItem;
-import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
 
 /**
  * Wrapper of CPACS and Tool behavior.
@@ -244,7 +244,7 @@ public class CpacsToolWrapper {
                     new File(tool.toolCPACSBehaviorConfiguration.getToolInput()), CpacsComponentConstants.TOOL_INPUT_FILENAME);
             twrs.setToolIn(uuidToolIn);
             historyDataItem.setToolInFileReference(uuidToolIn);
-            final String errorMessage = String.format("Executing tool '%s' (v. %s) failed", toolConfiguration.getToolName(),
+            final String errorMessage = StringUtils.format("Executing tool '%s' (v. %s) failed", toolConfiguration.getToolName(),
                 toolConfiguration.getToolVersion());
             try {
                 String tmpToolInputFile = FileUtils.readFileToString(new File(tool.toolCPACSBehaviorConfiguration.getToolInput()));

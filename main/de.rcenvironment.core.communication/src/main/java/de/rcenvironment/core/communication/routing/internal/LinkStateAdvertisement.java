@@ -15,6 +15,7 @@ import java.util.HashSet;
 import java.util.List;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Encapsulates information about a network node and its direct neighborhood. This is called a link
@@ -151,11 +152,11 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
      */
     @Override
     public String toString() {
-        String result = String.format("LinkStateAdvertisement(%s): %s [", getSequenceNumber(), getOwner());
+        String result = StringUtils.format("LinkStateAdvertisement(%s): %s [", getSequenceNumber(), getOwner());
         for (TopologyLink link : links) {
-            result = String.format("%s, %s", result, link);
+            result = StringUtils.format("%s, %s", result, link);
         }
-        return String.format("%s]", result);
+        return StringUtils.format("%s]", result);
     }
 
     /**

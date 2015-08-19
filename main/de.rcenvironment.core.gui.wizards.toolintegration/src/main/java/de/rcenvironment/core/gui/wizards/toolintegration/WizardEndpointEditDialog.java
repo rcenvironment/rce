@@ -55,15 +55,15 @@ public class WizardEndpointEditDialog extends Dialog {
     private static List<EndpointDefinition.InputDatumHandling> inputDatumHandlings;
 
     private static List<EndpointDefinition.InputExecutionContraint> inputExecutionConstraints;
-    
+
     private Text nameText;
 
     private Combo dataTypeCombo;
 
     private Button[] inputDatumHandlingButtons = new Button[3];
-    
+
     private Button[] inputExecutionConstraintButtons = new Button[3];
-    
+
     private Text filenameText;
 
     private final Map<String, String> config;
@@ -81,13 +81,13 @@ public class WizardEndpointEditDialog extends Dialog {
         inputDatumHandlings.add(EndpointDefinition.InputDatumHandling.Constant);
         inputDatumHandlings.add(EndpointDefinition.InputDatumHandling.Single);
         inputDatumHandlings.add(EndpointDefinition.InputDatumHandling.Queue);
-        
+
         inputExecutionConstraints = new ArrayList<>();
         inputExecutionConstraints.add(EndpointDefinition.InputExecutionContraint.Required);
         inputExecutionConstraints.add(EndpointDefinition.InputExecutionContraint.RequiredIfConnected);
         inputExecutionConstraints.add(EndpointDefinition.InputExecutionContraint.NotRequired);
     }
-    
+
     /**
      * Dialog for creating or editing an endpoint.
      * 
@@ -103,7 +103,7 @@ public class WizardEndpointEditDialog extends Dialog {
         this.type = type;
         this.allEndpointNames = allEndpointNames;
         oldName = null;
-        
+
     }
 
     public WizardEndpointEditDialog(Shell parentShell, String title, String type,
@@ -146,30 +146,30 @@ public class WizardEndpointEditDialog extends Dialog {
         if (type.equals(InOutputConfigurationPage.INPUTS)) {
             if (config.containsKey(InOutputConfigurationPage.HANDLING)) {
                 for (String handling : StringUtils.splitAndUnescape(config.get(InOutputConfigurationPage.HANDLING))) {
-                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition
-                            .InputDatumHandling.valueOf(handling))].setSelection(true);
+                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.valueOf(
+                            handling))].setSelection(true);
                 }
             } else if (config.containsKey(InOutputConfigurationPage.USAGE)) {
                 if (config.get(InOutputConfigurationPage.USAGE).equals("initial")) {
-                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition
-                            .InputDatumHandling.Constant)].setSelection(true);
+                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.Constant)]
+                        .setSelection(true);
                 } else {
-                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition
-                            .InputDatumHandling.Single)].setSelection(true);
+                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(
+                            EndpointDefinition.InputDatumHandling.Single)].setSelection(true);
                 }
             }
             if (config.containsKey(InOutputConfigurationPage.CONSTRAINT)) {
                 for (String constraint : StringUtils.splitAndUnescape(config.get(InOutputConfigurationPage.CONSTRAINT))) {
-                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition
-                            .InputExecutionContraint.valueOf(constraint))].setSelection(true);
+                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(
+                            EndpointDefinition.InputExecutionContraint.valueOf(constraint))].setSelection(true);
                 }
             } else if (config.containsKey(InOutputConfigurationPage.USAGE)) {
                 if (config.get(InOutputConfigurationPage.USAGE).equals("optional")) {
-                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition
-                            .InputExecutionContraint.NotRequired)].setSelection(true);
+                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(
+                            EndpointDefinition.InputExecutionContraint.NotRequired)].setSelection(true);
                 } else {
-                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition
-                            .InputExecutionContraint.Required)].setSelection(true);
+                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition.InputExecutionContraint.Required)]
+                        .setSelection(true);
                 }
             }
         }
@@ -190,7 +190,7 @@ public class WizardEndpointEditDialog extends Dialog {
         nameText = new Text(propertyContainer, SWT.BORDER);
         GridData textGridData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
         nameText.setLayoutData(textGridData);
-        nameText.addListener(SWT.Verify, new VariableNameVerifyListener());
+        nameText.addListener(SWT.Verify, new VariableNameVerifyListener(true));
 
         List<DataType> supportedDataTypes = new LinkedList<DataType>();
         supportedDataTypes.add(DataType.ShortText);
@@ -232,7 +232,7 @@ public class WizardEndpointEditDialog extends Dialog {
             new Label(propertyContainer, SWT.NONE);
             inputExecutionConstraintButtons[2] = new Button(propertyContainer, SWT.CHECK);
             inputExecutionConstraintButtons[2].setText(inputExecutionConstraints.get(2).getDisplayName());
-            
+
             Label fileNameLabel = new Label(propertyContainer, SWT.NONE);
             fileNameLabel.setText(Messages.filenameColon);
             filenameText = new Text(propertyContainer, SWT.BORDER);
@@ -253,7 +253,7 @@ public class WizardEndpointEditDialog extends Dialog {
             int i = 0;
             for (Button b : inputDatumHandlingButtons) {
                 if (b.getSelection()) {
-                    parts.add(inputDatumHandlings.get(i).name());                    
+                    parts.add(inputDatumHandlings.get(i).name());
                 }
                 i++;
             }
@@ -262,7 +262,7 @@ public class WizardEndpointEditDialog extends Dialog {
             i = 0;
             for (Button b : inputExecutionConstraintButtons) {
                 if (b.getSelection()) {
-                    parts.add(inputExecutionConstraints.get(i).name());                    
+                    parts.add(inputExecutionConstraints.get(i).name());
                 }
                 i++;
             }

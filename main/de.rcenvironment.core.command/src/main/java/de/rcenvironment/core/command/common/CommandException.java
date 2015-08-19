@@ -132,7 +132,8 @@ public final class CommandException extends Exception {
 
     @Override
     public String toString() {
-        return String.format("Type=%s, Tokens=%s, ShowDevHelp=%s, Message=%s", type, commandTokens, showDeveloperHelp, getMessage());
+        return de.rcenvironment.core.utils.common.StringUtils.format("Type=%s, Tokens=%s, ShowDevHelp=%s, Message=%s", type, commandTokens,
+            showDeveloperHelp, getMessage());
     }
 
 }

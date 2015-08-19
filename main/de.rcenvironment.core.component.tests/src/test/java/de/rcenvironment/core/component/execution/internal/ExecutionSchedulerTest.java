@@ -76,6 +76,8 @@ public class ExecutionSchedulerTest {
     private static final String INPUT_7 = "input_6";
     
     private static final String OR_GROUP = "orGroup";
+    
+    private static final String AND_GROUP = "andGroup";
 
     private static final boolean CONNECTED = true;
 
@@ -413,8 +415,8 @@ public class ExecutionSchedulerTest {
         assertEquals(resetTD, executionScheduler.getResetDatum());
 
         endpointDatumsToSend = new ArrayList<>();
-        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
         endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
 
         sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
 
@@ -476,21 +478,33 @@ public class ExecutionSchedulerTest {
     public void testResetLoopForSuccess() throws Exception {
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
-            EndpointDefinition.InputExecutionContraint.Required));
+            EndpointDefinition.InputExecutionContraint.Required, AND_GROUP, CONNECTED));
         inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
-            EndpointDefinition.InputExecutionContraint.Required));
+            EndpointDefinition.InputExecutionContraint.Required, AND_GROUP, CONNECTED));
+        inputMockInfos.add(new InputMockInformation(INPUT_3, EndpointDefinition.InputDatumHandling.Constant,
+            EndpointDefinition.InputExecutionContraint.Required, OR_GROUP, CONNECTED));
+        inputMockInfos.add(new InputMockInformation(INPUT_4, EndpointDefinition.InputDatumHandling.Queue,
+            EndpointDefinition.InputExecutionContraint.Required, OR_GROUP, CONNECTED));
+        
+        List<InputGroupMockInformation> inputGroupMockInfos = new ArrayList<>();
+        inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.Type.Or));
+        inputGroupMockInfos.add(new InputGroupMockInformation(AND_GROUP, EndpointGroupDefinition.Type.And, OR_GROUP));
+        
         final BlockingDeque<EndpointDatum> endpointDatumsReceived = new LinkedBlockingDeque<>();
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
         String executionId = UUID.randomUUID().toString();
-        ExecutionScheduler executionScheduler = setUpExecutionScheduler(inputMockInfos, endpointDatumsReceived, capturedEvent, executionId);
+        ExecutionScheduler executionScheduler = setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, endpointDatumsReceived,
+            capturedEvent, executionId);
 
+        sendAndCheckSendingDataToLoopDriverComponent(executionScheduler, endpointDatumsReceived);
+        
+        executionScheduler.getEndpointDatums();
         Set<String> identifiers = new HashSet<>();
         identifiers.add(UUID.randomUUID().toString());
         identifiers.add(UUID.randomUUID().toString());
         assertFalse(executionScheduler.isLoopResetRequested());
         executionScheduler.addResetDataIdsSent(identifiers);
         assertTrue(executionScheduler.isLoopResetRequested());
-        List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
 
         Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
         WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
@@ -498,17 +512,47 @@ public class ExecutionSchedulerTest {
         EasyMock.replay(workflowGraphHopMock);
         resetCycleHops.add(workflowGraphHopMock);
         
+        List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
         for (String id : identifiers) {
             InternalTDImpl resetTD = new InternalTDImpl(InternalTDType.NestedLoopReset, id, resetCycleHops);
             endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, resetTD));
         }
         sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
-
+        
         assertEquals(State.IDLING, executionScheduler.getSchedulingState());
         assertEquals(State.LOOP_RESET, executionScheduler.getSchedulingState());
+        
+        sendAndCheckSendingDataToLoopDriverComponent(executionScheduler, endpointDatumsReceived);
 
         checkForStateMachineEvents(capturedEvent);
         tearDownExecutionScheduler(executionScheduler);
+    }
+    
+    private void sendAndCheckSendingDataToLoopDriverComponent(ExecutionScheduler executionScheduler,
+        BlockingDeque<EndpointDatum> endpointDatumsReceived) throws InterruptedException, ComponentExecutionException {
+        
+        List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, new TypedDatumMock(DataType.Float)));
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_3, new TypedDatumMock(DataType.Float)));
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_4, new TypedDatumMock(DataType.Float)));
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_4, new TypedDatumMock(DataType.Float)));
+
+        sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
+        
+        assertEquals(State.IDLING, executionScheduler.getSchedulingState());
+        assertEquals(State.IDLING, executionScheduler.getSchedulingState());
+        assertEquals(State.PROCESS_INPUT_DATA, executionScheduler.getSchedulingState());
+        checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(0), endpointDatumsToSend.get(2));
+        assertEquals(State.PROCESS_INPUT_DATA, executionScheduler.getSchedulingState());
+        checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(1), endpointDatumsToSend.get(2));
+        assertEquals(State.PROCESS_INPUT_DATA, executionScheduler.getSchedulingState());
+        checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(3));
+        assertEquals(State.PROCESS_INPUT_DATA, executionScheduler.getSchedulingState());
+        checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(4));
+        assertEquals(State.PROCESS_INPUT_DATA, executionScheduler.getSchedulingState());
+        checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(5));
     }
     
     /**
@@ -744,6 +788,7 @@ public class ExecutionSchedulerTest {
     }
 
     private void checkForStateMachineEvents(Capture<ComponentStateMachineEvent> capturedEvent) throws InterruptedException {
+        Thread.sleep(SLEEP_INTERVAL_MSEC);
         assertFalse(capturedEvent.hasCaptured());
     }
 

@@ -356,7 +356,7 @@ public class ChartConfigurationComposite extends Composite implements
         // .getStructure().getMeasures()) {
         // final ChartConfiguration.Trace trace = new ChartConfiguration.Trace(
         // configuration);
-        // trace.setName(String.format("%s - %s", dimension.getName(),
+        // trace.setName(StringUtils.format("%s - %s", dimension.getName(),
         // measure.getName()));
         // trace.setXAxis(configuration.getXAxis(dimension.getName()));
         // trace.setYAxis(configuration.getYAxis(measure.getName()));

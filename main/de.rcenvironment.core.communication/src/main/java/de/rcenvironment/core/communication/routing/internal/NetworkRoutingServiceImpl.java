@@ -49,6 +49,7 @@ import de.rcenvironment.core.communication.routing.internal.v2.NoRouteToNodeExce
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
@@ -77,9 +78,9 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         public void onLinkStateKnowledgeChanged(Map<NodeIdentifier, LinkState> knowledge) {
             if (verboseLogging) {
                 StringBuilder buffer = new StringBuilder();
-                buffer.append(String.format("New link state knowledge of %s (%d entries):", localNodeId, knowledge.size()));
+                buffer.append(StringUtils.format("New link state knowledge of %s (%d entries):", localNodeId, knowledge.size()));
                 for (Entry<NodeIdentifier, LinkState> entry : knowledge.entrySet()) {
-                    buffer.append(String.format("\n  Link state for %s: %s", entry.getKey(), entry.getValue()));
+                    buffer.append(StringUtils.format("\n  Link state for %s: %s", entry.getKey(), entry.getValue()));
                 }
                 log.debug(buffer.toString());
             }
@@ -108,7 +109,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
                 expectedGraphSize++;
             }
             if (rawGraph.getNodeCount() != expectedGraphSize) {
-                throw new IllegalStateException(String.format("Graph with %d nodes constructed, but expectes size was %d",
+                throw new IllegalStateException(StringUtils.format("Graph with %d nodes constructed, but expectes size was %d",
                     rawGraph.getNodeCount(), localNodeId));
             }
 
@@ -168,7 +169,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         public void onNetworkTopologyChanged() {
             NetworkGraphImpl rawNetworkGraph;
             synchronized (topologyMap) {
-                log.debug(String.format("Low-level topology change detected; the topology map of %s"
+                log.debug(StringUtils.format("Low-level topology change detected; the topology map of %s"
                     + " now contains %d node(s) and %d connection(s)", localNodeId,
                     topologyMap.getNodeCount(), topologyMap.getLinkCount()));
 
@@ -201,6 +202,10 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     private final NetworkTopologyChangeTracker topologyChangeTracker = new NetworkTopologyChangeTracker();
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
+
+    // NOTE: used in several locations
+    private final boolean forceLocalRPCSerialization = System
+        .getProperty(NodeConfigurationService.SYSTEM_PROPERTY_FORCE_LOCAL_RPC_SERIALIZATION) != null;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -241,7 +246,17 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     @Override
     public Future<NetworkResponse> performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver) {
-        NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, localNodeId, receiver);
+        final NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, localNodeId, receiver);
+        if (forceLocalRPCSerialization && receiver.equals(localNodeId)) {
+            return threadPool.submit(new Callable<NetworkResponse>() {
+
+                @Override
+                @TaskDescription("Simulate local RPC (forced serialization)")
+                public NetworkResponse call() throws Exception {
+                    return messageChannelService.handleLocalForcedSerializationRPC(request, localNodeId);
+                }
+            });
+        }
         return sendToNextHop(request);
     }
 
@@ -255,7 +270,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     public List<? extends NetworkGraphLink> getRouteTo(NodeIdentifier destination) {
         return cachedReachableNetworkGraph.getRoutingInformation().getRouteTo(destination);
     }
-    
+
     @Override
     public synchronized NetworkGraph getRawNetworkGraph() {
         return cachedRawNetworkGraph;
@@ -342,7 +357,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         cachedReachableNetworkGraph = rawNetworkGraph.reduceToReachableGraph();
 
         if (verboseLogging) {
-            log.debug(String.format(
+            log.debug(StringUtils.format(
                 "Updating %s with a raw graph of %d nodes and %d edges resulted in a reachable graph of %d nodes and %d edges",
                 localNodeId,
                 rawNetworkGraph.getNodeCount(), rawNetworkGraph.getLinkCount(),
@@ -377,22 +392,22 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         try {
             response = responseFuture.get(configurationService.getForwardingTimeoutMsec(), TimeUnit.MILLISECONDS);
         } catch (TimeoutException e) {
-            log.warn(String.format("Timeout while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver, ownNodeIdString,
-                requestId));
+            log.warn(StringUtils.format("Timeout while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
+                ownNodeIdString, requestId));
             response = NetworkResponseFactory.generateResponseForExceptionWhileRouting(forwardingRequest, ownNodeIdString, e);
         } catch (InterruptedException e) {
-            log.warn(String.format("Interrupted while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
+            log.warn(StringUtils.format("Interrupted while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
                 ownNodeIdString, requestId), e);
             response = NetworkResponseFactory.generateResponseForExceptionWhileRouting(forwardingRequest, ownNodeIdString, e);
         } catch (ExecutionException e) {
             log.warn(
-                String.format("Error while forwarding message from %s to %s at %s (ReqId=%s)", sender,
+                StringUtils.format("Error while forwarding message from %s to %s at %s (ReqId=%s)", sender,
                     receiver, ownNodeIdString, requestId), e);
             response = NetworkResponseFactory.generateResponseForExceptionWhileRouting(forwardingRequest, ownNodeIdString, e);
         }
         if (response == null) {
             throw new IllegalStateException(
-                String.format("NULL response after forwarding message from %s to %s at %s (ReqId=%s)", sender,
+                StringUtils.format("NULL response after forwarding message from %s to %s at %s (ReqId=%s)", sender,
                     receiver, ownNodeIdString, requestId));
         }
         return response;
@@ -406,7 +421,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             nextLink = cachedReachableNetworkGraph.getRoutingInformation().getNextLinkTowards(receiver);
         } catch (NoRouteToNodeException e) {
             final NodeIdentifier sender = request.accessMetaData().getSender();
-            log.warn(String.format("Found no route for a request from %s to %s (occurred on %s, type=%s, trace=%s)",
+            log.warn(StringUtils.format("Found no route for a request from %s to %s (occurred on %s, type=%s, trace=%s)",
                 sender, receiver, localNodeId, request.getMessageType(), request.accessMetaData().getTrace()));
             // convert to Future containing failure response
             return threadPool.submit(new Callable<NetworkResponse>() {
@@ -424,7 +439,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         }
 
         // if (verboseLogging) {
-        // log.debug(String.format("Sending routed message for %s towards %s via link %s",
+        // log.debug(StringUtils.format("Sending routed message for %s towards %s via link %s",
         // receiver, nextLink.getTargetNodeId(), nextLink.getLinkId()));
         // }
 
@@ -455,7 +470,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         // route = protocolManager.getRouteTo(receiver);
         // }
         // }
-        // throw new CommunicationException(String.format("'%s' could not find a route to '%s'.",
+        // throw new CommunicationException(StringUtils.format("'%s' could not find a route to '%s'.",
         // ownNodeId, receiver));
     }
 
@@ -481,7 +496,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
                         // used for logging only
                         loggableContent = "Failed to deserialize content: " + e;
                     }
-                    log.warn(String.format("Received non-success response for request id '%s' at '%s': result code: %s, body: '%s'",
+                    log.warn(StringUtils.format("Received non-success response for request id '%s' at '%s': result code: %s, body: '%s'",
                         response.getRequestId(), localNodeId, response.getResultCode(), loggableContent));
                 }
                 if (outerResponseHander != null) {

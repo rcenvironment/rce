@@ -40,6 +40,8 @@
 		<module>${projects-root}/de.rcenvironment.core.component.workflow</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.wrapper</module>
+		<module>${projects-root}/de.rcenvironment.core.component.xml</module>
+		<module>${projects-root}/de.rcenvironment.core.component.xml.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.bootstrap</module>
 		<module>${projects-root}/de.rcenvironment.core.configuration.tests</module>
@@ -56,6 +58,8 @@
 		<module>${projects-root}/de.rcenvironment.core.embedded.ssh</module>
 		<module>${projects-root}/de.rcenvironment.core.embedded.ssh.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.eventlog</module>
+		<module>${projects-root}/de.rcenvironment.core.instancemanagement</module>
+		<module>${projects-root}/de.rcenvironment.core.instancemanagement.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.jetty</module>
 		<module>${projects-root}/de.rcenvironment.core.jetty.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.log</module>

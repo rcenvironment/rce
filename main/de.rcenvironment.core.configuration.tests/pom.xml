@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.configuration.tests</artifactId>
 	<name>RCE Core Configuration Bundle Tests</name>
-	<version>6.1.0.qualifier</version>
+	<version>6.2.0.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

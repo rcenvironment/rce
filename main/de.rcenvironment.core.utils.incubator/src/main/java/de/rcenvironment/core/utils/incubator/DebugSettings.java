@@ -13,6 +13,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Provisional solution for "verbose logging" flag handling. Could benefit from startup (or even runtime) configuration.
  * 
@@ -51,7 +53,7 @@ public final class DebugSettings {
             }
         }
         CACHE.put(callerClass, result); // thread-safe map
-        LogFactory.getLog(DebugSettings.class).debug(String.format("Set 'verbose logging' flag to %s for %s", result, className));
+        LogFactory.getLog(DebugSettings.class).debug(StringUtils.format("Set 'verbose logging' flag to %s for %s", result, className));
         return result;
     }
 }

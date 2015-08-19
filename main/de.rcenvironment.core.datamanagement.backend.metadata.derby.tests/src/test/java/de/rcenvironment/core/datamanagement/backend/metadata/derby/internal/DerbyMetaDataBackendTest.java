@@ -54,6 +54,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumFactoryDefaultStub;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumSerializerDefaultStub;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumServiceDefaultStub;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -278,16 +279,16 @@ public class DerbyMetaDataBackendTest {
     private void performAddDeleteWorkflowWithDataCycle(int numComponents, int numRunsPerComponent, long waitBeforeDeleteMsec) {
         Long wfRunId = derbyMetaDataBackend.addWorkflowRun(STRING_TEST_RUN, UUID.randomUUID().toString(), UUID.randomUUID().toString(),
             System.currentTimeMillis());
-        log.debug(String.format("Added workflow run (id %d)", wfRunId));
+        log.debug(StringUtils.format("Added workflow run (id %d)", wfRunId));
         Collection<ComponentInstance> componentInstances = createComponentInstances(numComponents);
         Map<String, Long> componentInstanceIdMap = derbyMetaDataBackend.addComponentInstances(wfRunId, componentInstances);
-        log.debug(String.format("Added component instances to workflow run id %d", wfRunId));
+        log.debug(StringUtils.format("Added component instances to workflow run id %d", wfRunId));
         Collection<EndpointInstance> endpointInstances = getEndpointInstances();
         Map<String, Long> endpointInstanceIdMap = new HashMap<String, Long>();
         for (Long id : componentInstanceIdMap.values()) {
             endpointInstanceIdMap.putAll(derbyMetaDataBackend.addEndpointInstances(id, endpointInstances));
         }
-        log.debug(String.format("Added endpoint instances to workflow run id %d", wfRunId));
+        log.debug(StringUtils.format("Added endpoint instances to workflow run id %d", wfRunId));
         for (int crunCounter = 1; crunCounter <= numRunsPerComponent; crunCounter++) {
             Set<Long> crunIds = new HashSet<Long>();
             for (Long ciid : componentInstanceIdMap.values()) {
@@ -319,13 +320,13 @@ public class DerbyMetaDataBackendTest {
             derbyMetaDataBackend.addDataReferenceToComponentRun(crunId,
                 new DataReference(key, NodeIdentifierFactory.fromNodeId(UUID.randomUUID().toString()), brefs));
         }
-        log.debug(String.format("Added %d component runs to workflow run id %d", (numComponents * numRunsPerComponent), wfRunId));
+        log.debug(StringUtils.format("Added %d component runs to workflow run id %d", (numComponents * numRunsPerComponent), wfRunId));
         // mark as finished, otherwise file deletion will (correctly) fail
         derbyMetaDataBackend.setWorkflowRunFinished(wfRunId, System.currentTimeMillis(), FinalWorkflowState.FINISHED);
-        log.debug(String.format("Set workflow run id %d finished", wfRunId));
+        log.debug(StringUtils.format("Set workflow run id %d finished", wfRunId));
 
         assertEquals(STRING_TEST_RUN, derbyMetaDataBackend.getWorkflowRun(wfRunId).getWorkflowTitle());
-        log.debug(String.format("Retrieved worklfow run data of id %d", wfRunId));
+        log.debug(StringUtils.format("Retrieved worklfow run data of id %d", wfRunId));
 
         try {
             Thread.sleep(waitBeforeDeleteMsec);
@@ -337,11 +338,11 @@ public class DerbyMetaDataBackendTest {
         if ((wfRunId % 2) == 0) {
             // Delete data references
             derbyMetaDataBackend.deleteWorkflowRunFiles(wfRunId);
-            log.debug(String.format("Deleted files of workflow run id %d", wfRunId));
+            log.debug(StringUtils.format("Deleted files of workflow run id %d", wfRunId));
         } else {
             // Delete workflow run
             derbyMetaDataBackend.deleteWorkflowRun(wfRunId);
-            log.debug(String.format("Deleted workflow run id %d", wfRunId));
+            log.debug(StringUtils.format("Deleted workflow run id %d", wfRunId));
         }
     }
 

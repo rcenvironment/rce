@@ -37,6 +37,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsMa
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinition;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -73,7 +74,7 @@ public class ExecutionScheduler {
     
     private final Set<String> constantInputs = new HashSet<>();
     
-    private final Set<String> constantInputsProcessed = new HashSet<>();
+    private final Set<String> constantInputsProcessed = Collections.synchronizedSet(new HashSet<String>());
     
     private final Set<String> requiredInputsOrGroups = new HashSet<>();
     
@@ -122,9 +123,10 @@ public class ExecutionScheduler {
     protected ExecutionScheduler(ComponentExecutionContext compExeContext, BlockingDeque<EndpointDatum> endpointDatumsToProcess,
         ComponentStateMachine stateMachine) {
         componentExeutionIdentifier = compExeContext.getExecutionIdentifier();
-        logMessagPrefix = String.format("'%s' (%s) of workflow '%s' (%s): ",
-            compExeContext.getInstanceName(), compExeContext.getExecutionIdentifier(),
-            compExeContext.getWorkflowInstanceName(), compExeContext.getWorkflowExecutionIdentifier());
+        logMessagPrefix =
+            StringUtils.format("'%s' (%s) of workflow '%s' (%s): ", compExeContext.getInstanceName(),
+                compExeContext.getExecutionIdentifier(), compExeContext.getWorkflowInstanceName(),
+                compExeContext.getWorkflowExecutionIdentifier());
         this.endpointDatumsToProcess = endpointDatumsToProcess;
         this.stateMachine = stateMachine;
     }
@@ -162,7 +164,7 @@ public class ExecutionScheduler {
                 }
             } else if (inputExecutionConstraint.equals(EndpointDefinition.InputExecutionContraint.None.name())) {
                 if (endpointDescription.getGroupName() == null) {
-                    throw new ComponentExecutionException(String.format(
+                    throw new ComponentExecutionException(StringUtils.format(
                         "Input '%s' of component '%s' is declared as not required, but it is not part of an input group of type 'or'",
                         endpointDescription.getName(), compExeContext.getInstanceName()));
                 } else if (endpointDescription.isConnected()) {
@@ -174,7 +176,7 @@ public class ExecutionScheduler {
                 }
             } else {
                 if (!endpointDescription.isConnected()) {
-                    throw new ComponentExecutionException(String.format("Input '%s' of component '%s' is declared as required, "
+                    throw new ComponentExecutionException(StringUtils.format("Input '%s' of component '%s' is declared as required, "
                         + "but it is not connected to an ouput.",
                         endpointDescription.getName(), compExeContext.getInstanceName()));
                 }
@@ -217,12 +219,12 @@ public class ExecutionScheduler {
             synchronized (inputsOccupied) {
                 if (inputsOccupied.containsKey(endpointDatum.getInputName())) {
                     if (constantInputs.contains(endpointDatum.getInputName())) {
-                        throw new ComponentExecutionException(logMessagPrefix + String.format(
+                        throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
                             "A second value at input '%s' type 'constant' received. Only one value is allowed. "
                             + "First: %s. Second: %s. (Except in inner loops. There, one value is allowed for each inner loop run.)",
                             endpointDatum.getInputName(), inputsOccupied.get(endpointDatum.getInputName()), endpointDatum));
                     } else if (!queuedConsumingInputs.contains(endpointDatum.getInputName())) {
-                        throw new ComponentExecutionException(logMessagPrefix + String.format(
+                        throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
                             "A new value at input '%s' of type 'single' received, but the current one was not consumed yet. "
                             + "Current: %s. New: %s. Queue of values is not allowed at inputs of type 'single'. "
                             + "Use input type 'queue' if queuing is intended.",
@@ -326,7 +328,6 @@ public class ExecutionScheduler {
         }
     }
     
-    
     protected InternalTDImpl getResetDatum() {
         InternalTDImpl resetDatum = (InternalTDImpl) resetDatumToFoward.getValue();
         resetDatumToFoward = null;
@@ -350,12 +351,12 @@ public class ExecutionScheduler {
         if (loopResetRequested.get() && (endpointDatum.getValue().getDataType() != DataType.Internal
             || ((InternalTDImpl) endpointDatum.getValue()).getType() != InternalTDImpl.InternalTDType.NestedLoopReset)) {
             if (endpointDatum.getValue().getDataType() == DataType.Internal) {
-                throw new ComponentExecutionException(logMessagPrefix + String.format(
+                throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
                     "Received input at '%s' of type 'Internal (Finished)', "
                     + "but component is waiting for datums of type 'Internal (Reset)'",
                     endpointDatum.getInputName()));
             } else {
-                throw new ComponentExecutionException(logMessagPrefix + String.format(
+                throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
                     "Received input at '%s' of type '%s', "
                     + "but component is waiting for datums of type 'Internal (Reset)'",
                     endpointDatum.getInputName(), endpointDatum.getValue().getDataType().getDisplayName()));
@@ -376,7 +377,7 @@ public class ExecutionScheduler {
                     throw new ComponentExecutionException(logMessagPrefix
                         + "Received reset datum, but component is not the latest recipient");
                 } else if (resetDataIdsForwarded.contains(internalDatum.getIdentifier())) {
-                    throw new ComponentExecutionException(logMessagPrefix + String.format(
+                    throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
                         "Received reset datum forwarded at input '%s' again", endpointDatum.getInputName()));
                 } else {
                     resetDatumToFoward = endpointDatum;
@@ -384,7 +385,7 @@ public class ExecutionScheduler {
                 }
             } else {
                 if (!resetDataIdsSent.remove(internalDatum.getIdentifier())) {
-                    throw new ComponentExecutionException(logMessagPrefix + String.format(
+                    throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
                         "Received unexpected (wrong identifier) input at '%s' of type '%s'-Reset",
                         endpointDatum.getInputName(), endpointDatum.getValue().getDataType().getDisplayName()));
                 }
@@ -446,6 +447,7 @@ public class ExecutionScheduler {
         } else if (loopReset.get()) {
             loopReset.set(false);
             loopResetRequested.set(false);
+            resetConstantInputs();
             state = State.LOOP_RESET;
         } else {
             state = State.IDLING;
@@ -456,6 +458,7 @@ public class ExecutionScheduler {
         for (String constantInputName : constantInputs) {
             if (!finishedInputs.contains(constantInputName)) {
                 endpointDatums.get(constantInputName).clear();
+                constantInputsProcessed.remove(constantInputName);
                 synchronized (inputsOccupied) {
                     inputsOccupied.remove(constantInputName);
                 }
@@ -475,7 +478,7 @@ public class ExecutionScheduler {
                     buffer.append(", ");
                 }
                 buffer.delete(buffer.length() - 3, buffer.length() - 1);
-                logMessage = logMessagPrefix + String.format("Component is finished or reset, "
+                logMessage = logMessagPrefix + StringUtils.format("Component is finished or reset, "
                     + "but values for input '%s' are not processed yet: %s", inputName, buffer.toString());
                 if (notRequiredInputs.contains(inputName)) {
                     LogFactory.getLog(ExecutionScheduler.class).warn(logMessage);

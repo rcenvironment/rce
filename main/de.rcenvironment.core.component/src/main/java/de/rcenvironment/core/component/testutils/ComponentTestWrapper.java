@@ -76,8 +76,20 @@ public class ComponentTestWrapper {
         context.incrementExecutionCount();
         context.resetOutputData();
         context.resetOutputClosings();
+        context.resetOutputResets();
         component.processInputs();
         context.resetInputData();
+    }
+    
+    /**
+     * Calls {@link Component#reset()} on the component with added checks and context calls.
+     * @throws ComponentException as thrown by {@link Component#processInputs()}
+     */
+    public synchronized void reset() throws ComponentException {
+        if (!started) {
+            throw new IllegalStateException("reset() called before start()");
+        }
+        component.reset();
     }
 
     /**

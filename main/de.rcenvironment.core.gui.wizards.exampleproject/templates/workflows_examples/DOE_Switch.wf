@@ -208,8 +208,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2",
-      "name" : "Joiner"
+      "name" : "Joiner",
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "3e87e32c-92c7-4070-adc1-674863fcddbb",
@@ -227,7 +227,11 @@
       "name" : "Joined",
       "epIdentifier" : null,
       "datatype" : "Float"
-    } ]
+    } ],
+    "configuration" : {
+      "inputCount" : "2",
+      "datatype" : "Float"
+    }
   }, {
     "identifier" : "5d26fc5b-f5a5-457c-8334-871c53091322",
     "name" : "Joiner (1)",
@@ -235,8 +239,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2",
-      "name" : "Joiner"
+      "name" : "Joiner",
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "bef28d1e-73e6-478b-b780-1e143d5280e1",
@@ -254,7 +258,11 @@
       "name" : "Joined",
       "epIdentifier" : null,
       "datatype" : "Float"
-    } ]
+    } ],
+    "configuration" : {
+      "inputCount" : "2",
+      "datatype" : "Float"
+    }
   }, {
     "identifier" : "6db40143-a638-4aaf-8613-cdb29a9996b3",
     "name" : "Switch",
@@ -262,8 +270,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.switchcmp",
-      "version" : "1.0",
-      "name" : "Switch"
+      "name" : "Switch",
+      "version" : "1.1"
     },
     "configuration" : {
       "conditionKey" : "To_forward >= 3",

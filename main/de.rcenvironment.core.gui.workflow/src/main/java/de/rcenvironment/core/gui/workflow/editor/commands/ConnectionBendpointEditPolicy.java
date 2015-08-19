@@ -51,9 +51,9 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
             Point translatedPoint = getTranslatedPointByViewersOffset(request);
             command.setConnectionsInModel(connections);
             command.setConnectionsInModelInverse(connectionsInverse);
-            command.setReferencedModel((ConnectionWrapper) request.getSource().getModel());
+            command.setReferencedwrapper((ConnectionWrapper) request.getSource().getModel());
             command.setWorkflowDescription((WorkflowDescription) model);
-            command.setLocation(translatedPoint);
+            command.setNewLocation(translatedPoint);
             command.setIndex(request.getIndex());
             return command;
         } else {
@@ -77,7 +77,7 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
             BendpointDeleteCommand command = new BendpointDeleteCommand();
             command.setConnectionsInModel(connections);
             command.setConnectionsInModelInverse(connectionsInverse);
-            command.setReferencedModel((ConnectionWrapper) request.getSource().getModel());
+            command.setReferencedwrapper((ConnectionWrapper) request.getSource().getModel());
             command.setWorkflowDescription((WorkflowDescription) model);
             command.setIndex(request.getIndex());
             return command;
@@ -102,9 +102,9 @@ public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
             Point translatedPoint = getTranslatedPointByViewersOffset(request);
             command.setConnectionsInModel(connections);
             command.setConnectionsInModelInverse(connectionsInverse);
-            command.setReferencedModel((ConnectionWrapper) request.getSource().getModel());
+            command.setReferencedwrapper((ConnectionWrapper) request.getSource().getModel());
             command.setWorkflowDescription((WorkflowDescription) model);
-            command.setLocation(translatedPoint);
+            command.setNewLocation(translatedPoint);
             command.setIndex(request.getIndex());
             return command;
         } else {

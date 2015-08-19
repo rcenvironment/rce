@@ -53,6 +53,16 @@ public interface ConfigurationService {
     String CONFIGURATION_PLACEHOLDER_HOST_NAME = "${hostName}";
 
     /**
+     * A placeholder in certain configuration properties that is resolved to the last part of the current profile's file system path.
+     */
+    String CONFIGURATION_PLACEHOLDER_PROFILE_NAME = "${profileName}";
+
+    /**
+     * A placeholder in certain configuration properties that is resolved to the last part of the current profile's file system path.
+     */
+    String CONFIGURATION_PLACEHOLDER_VERSION = "${version}";
+
+    /**
      * Default value for configuration key "general/instanceName".
      */
     String DEFAULT_INSTANCE_NAME_VALUE = "Unnamed instance started by \"${systemUser}\" on ${hostName}";
@@ -321,5 +331,25 @@ public interface ConfigurationService {
      * @return the parent root; it is guaranteed to exist when this service is activated
      */
     File getParentTempDirectoryRoot();
+
+    /**
+     * 
+     * Determines if the configuration file could not be found, or it could not be loaded and instead the default configuration file is
+     * loaded.
+     * 
+     * @return true if the default configuration file is used.
+     */
+    boolean isUsingDefaultConfigurationValues();
+    
+    
+    /**
+     * Returns the installation directory.
+     * 
+     * @return the installation directory
+     */
+    File getInstallationDir();
+    
+    
+    
 
 }

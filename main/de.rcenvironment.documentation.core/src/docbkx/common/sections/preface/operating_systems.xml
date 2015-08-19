@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN"
-                         "http://docbook.org/xml/4.4/docbookx.dtd">
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://docbook.org/xml/4.4/docbookx.dtd">
 <sect1 id="operating_systems">
     <title>Compatible Operating Systems</title>
     <para>RCE releases are provided for Windows and Linux. It is regularly tested on<itemizedlist>
@@ -41,5 +40,27 @@
             with these packages, please contact the RCE developers so we can take this into
             account.</para>
     </sect2>
+    <sect2>
+        <title>Known Issues</title>
+        <para>On Red Hat Enterprise Linux 7 with KDE 4, Eclipse applications (as RCE is) can cause a
+              segmentation fault at startup. If you encounter such an issue, you can try choosing a different GTK2 theme:</para>
+        <para>
+            <orderedlist>
+                <listitem>
+                    <para>Open the <emphasis role="bold">System Settings </emphasis>application
+                        (systemsettings).</para>
+                </listitem>
+                <listitem>
+                    <para>Go to <emphasis role="bold">Application Appearence</emphasis></para>
+                </listitem>
+                <listitem>
+                    <para>Open <emphasis role="bold">GTK</emphasis> page</para>
+                </listitem>
+                <listitem>
+                    <para>Switch the GTK2 theme to "Raleigh" or "Adwaita" and click on <emphasis
+                            role="bold">Apply</emphasis></para>
+                </listitem>
+            </orderedlist>
+        </para>
+    </sect2>
 </sect1>
-<!--TODO add "known issues" section?-->

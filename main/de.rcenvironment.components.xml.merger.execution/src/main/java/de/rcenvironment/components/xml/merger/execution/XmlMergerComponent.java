@@ -9,20 +9,10 @@
 package de.rcenvironment.components.xml.merger.execution;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.stream.StreamResult;
-import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.io.FileUtils;
@@ -36,18 +26,17 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.component.xml.XMLComponentConstants;
+import de.rcenvironment.core.component.xml.XmlComponentHistoryDataItem;
+import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.incubator.XMLHelper;
 import de.rcenvironment.core.utils.incubator.xml.XMLException;
-import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
-import de.rcenvironment.cpacs.utils.common.components.XmlComponentHistoryDataItem;
-import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
-import de.rcenvironment.cpacs.utils.common.xml.XMLMapper;
-import de.rcenvironment.cpacs.utils.common.xml.XMLMappingInformation;
+import de.rcenvironment.core.utils.incubator.xml.api.XMLMapperService;
+import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
 
 /**
  * Implementing class for XMLMerger functionality with file support.
@@ -55,20 +44,25 @@ import de.rcenvironment.cpacs.utils.common.xml.XMLMappingInformation;
  * @author Markus Kunde
  * @author Miriam Lenk#
  * @author Jan FLink
+ * @author Brigitte Boden
  */
 public class XmlMergerComponent extends DefaultComponent {
 
     private static final String FAILED_TO_DELETE_TEMP_FILE = "Failed to delete temp file: ";
 
     private static final Log LOG = LogFactory.getLog(XmlMergerComponent.class);
-    
+
     private ComponentContext componentContext;
-    
+
     private ComponentDataManagementService dataManagementService;
+
+    private EndpointXMLService endpointXmlUtils;
+
+    private XMLMapperService xmlMapper;
 
     private XmlComponentHistoryDataItem historyDataItem = null;
 
-    private XMLHelper xmlHelper = new XMLHelper();
+    private XMLSupportService xmlSupport;
 
     private File tempMainFile = null;
 
@@ -82,19 +76,20 @@ public class XmlMergerComponent extends DefaultComponent {
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
     }
-    
+
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
+        xmlSupport = componentContext.getService(XMLSupportService.class);
+        xmlMapper = componentContext.getService(XMLMapperService.class);
+        endpointXmlUtils = componentContext.getService(EndpointXMLService.class);
     }
-    
+
     @Override
     public void processInputs() throws ComponentException {
         initializeNewHistoryDataItem();
-        
-        TempFileService tempFileService = TempFileServiceAccess.getInstance();
-        final ComponentVariableMapper varMapper = new ComponentVariableMapper();
 
+        TempFileService tempFileService = TempFileServiceAccess.getInstance();
         String mappingContent = componentContext.getConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
         String mappingType = componentContext.getConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME);
 
@@ -127,18 +122,18 @@ public class XmlMergerComponent extends DefaultComponent {
         }
         if (!variableInputs.isEmpty()) {
             try {
-                varMapper.updateXMLWithInputs(tempMainFile.getAbsolutePath(), variableInputs, componentContext);
+                endpointXmlUtils.updateXMLWithInputs(tempMainFile, variableInputs, componentContext);
             } catch (DataTypeException e2) {
                 throw new ComponentException(e2.getMessage(), e2);
             }
             try {
                 String xmlVariableIn = dataManagementService.createTaggedReferenceFromLocalFile(componentContext, tempMainFile,
-                        ChameleonCommonConstants.CHAMELEON_CPACS_FILENAME);
+                    XMLComponentConstants.FILENAME);
                 if (historyDataItem != null && !variableInputs.isEmpty()) {
                     historyDataItem.setXmlWithVariablesFileReference(xmlVariableIn);
                 }
             } catch (IOException e1) {
-                LOG.debug("Cannot write incoming variables to history browser.");
+                throw new ComponentException("Cannot write incoming variables to history browser.", e1);
             }
         }
         if (mappingType.equals(XmlMergerComponentConstants.MAPPINGTYPE_XSLT)) {
@@ -150,14 +145,13 @@ public class XmlMergerComponent extends DefaultComponent {
                 mappingContent = mappingContent.replaceAll(XmlMergerComponentConstants.INTEGRATING_INPUT_PLACEHOLDER, tempFilePath);
                 FileUtils.writeStringToFile(xsltFile, mappingContent);
             } catch (IOException e) {
-                throw new ComponentException("Cannot create temp files for xslt mapping file.");
+                throw new ComponentException("Cannot create temp files for xslt mapping file.", e);
             }
 
-            if (!transformXSLT(
-                tempMainFile.getAbsolutePath(),
-                xsltFile.getAbsolutePath(),
-                resultFile.getAbsolutePath())) {
-                throw new ComponentException("XSL-Transformation in XML Merger component fails.");
+            try {
+                xmlMapper.transformXMLFileWithXSLT(tempMainFile, resultFile, xsltFile);
+            } catch (XMLException e) {
+                throw new ComponentException("XSL transformation failed", e);
             }
 
             if (tempMainFile == null || tempIntegratingFile == null || xsltFile == null || resultFile == null) {
@@ -174,7 +168,7 @@ public class XmlMergerComponent extends DefaultComponent {
         }
 
         try {
-            varMapper.updateOutputsFromXML(resultFile.getAbsolutePath(), XmlMergerComponentConstants.INPUT_NAME_XML, componentContext);
+            endpointXmlUtils.updateOutputsFromXML(resultFile, componentContext);
         } catch (DataTypeException e) {
             throw new ComponentException(e.getMessage(), e);
         }
@@ -184,14 +178,14 @@ public class XmlMergerComponent extends DefaultComponent {
         try {
             fileReference =
                 dataManagementService.createFileReferenceTDFromLocalFile(componentContext, resultFile,
-                    componentContext.getInstanceName() + ChameleonCommonConstants.XML_APPENDIX_FILENAME);
+                    componentContext.getInstanceName() + XMLComponentConstants.XML_APPENDIX_FILENAME);
 
             componentContext.writeOutput(XmlMergerComponentConstants.INPUT_NAME_XML, fileReference);
 
         } catch (IOException e) {
             throw new ComponentException("Cannot write XML to output channel in XML Merger component.");
         }
-        
+
         storeHistoryDataItem();
         deleteTempFiles();
     }
@@ -203,7 +197,7 @@ public class XmlMergerComponent extends DefaultComponent {
             deleteTempFiles();
         }
     }
-    
+
     private void deleteTempFiles() {
         TempFileService tempFileService = TempFileServiceAccess.getInstance();
         try {
@@ -237,9 +231,8 @@ public class XmlMergerComponent extends DefaultComponent {
             LogFactory.getLog(getClass()).warn(FAILED_TO_DELETE_TEMP_FILE + xsltFile.getAbsolutePath(), e);
         }
 
-
     }
-    
+
     private void initializeNewHistoryDataItem() {
         if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             historyDataItem = new XmlComponentHistoryDataItem(XmlMergerComponentConstants.COMPONENT_ID);
@@ -261,21 +254,21 @@ public class XmlMergerComponent extends DefaultComponent {
      * @throws ComponentException Thrown if XML mapping fails.
      */
     private File mapping(final File main, final File integrating) throws ComponentException {
-        LOG.debug("mapping in aggregator component.");
-        final XMLMapper xmlMapper = new XMLMapper();
+        LOG.debug("Mapping in merger component.");
         if ((main != null) && (integrating != null)) {
             LOG.debug("Using classic output mapping");
             // Mapping document
             final String mappingRules = componentContext.getConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
-
+            if (mappingRules == null || mappingRules.equals("null")) {
+                throw new ComponentException("Mapping cannot be done because mapping rules are null");
+            }
             try {
-                final Document mappingDoc = xmlHelper.readXMLFromString(mappingRules);
-                final Document updatingDoc = xmlHelper.readXMLFromFile(integrating);
-                final List<XMLMappingInformation> mappings = xmlMapper.readXMLMapping(mappingDoc);
-                final Document cpacsInOut = xmlHelper.readXMLFromFile(main);
-                xmlMapper.map(updatingDoc, cpacsInOut, mappings);
+                final Document mappingDoc = xmlSupport.readXMLFromString(mappingRules);
+                final Document updatingDoc = xmlSupport.readXMLFromFile(integrating);
+                final Document cpacsInOut = xmlSupport.readXMLFromFile(main);
+                xmlMapper.transformXMLFileWithXMLMappingInformation(updatingDoc, cpacsInOut, mappingDoc);
                 resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("xml*.xml");
-                xmlHelper.writeXML(cpacsInOut, resultFile.getAbsolutePath());
+                xmlSupport.writeXMLtoFile(cpacsInOut, resultFile);
                 return resultFile;
             } catch (XPathExpressionException | XMLException | IOException e) {
                 throw new ComponentException("Error while processing XML mapping", e);
@@ -284,36 +277,4 @@ public class XmlMergerComponent extends DefaultComponent {
             return null;
         }
     }
-
-    /**
-     * Helper for the XML transformation.
-     * 
-     * @param fileNameXml The file to transform
-     * @param fileNameXslt The transformation prescription
-     * @param fileNameResult The file of results
-     * @return True if successful
-     */
-    private boolean transformXSLT(final String fileNameXml, final String fileNameXslt, final String fileNameResult) {
-        final TransformerFactory tFactory = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null);
-        Transformer transformer = null;
-
-        try {
-            OutputStream outputStream = new FileOutputStream(fileNameResult);
-            transformer = tFactory.newTransformer(new StreamSource(fileNameXslt));
-            transformer.transform(new StreamSource(fileNameXml), new StreamResult(outputStream));
-            outputStream.flush();
-            outputStream.close();
-            return true;
-        } catch (final TransformerConfigurationException e) {
-            LOG.error(e);
-        } catch (final FileNotFoundException e) {
-            LOG.error(e);
-        } catch (final TransformerException e) {
-            LOG.error(e);
-        } catch (IOException e) {
-            LOG.error(e);
-        }
-        return false;
-    }
-
 }

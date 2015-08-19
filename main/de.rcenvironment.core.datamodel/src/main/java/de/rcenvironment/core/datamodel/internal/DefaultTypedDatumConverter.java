@@ -21,6 +21,7 @@ import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.datamodel.types.internal.MatrixTDImpl;
 import de.rcenvironment.core.datamodel.types.internal.SmallTableTDImpl;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Default {@link TypedDatumConverter} implementation.
@@ -49,7 +50,7 @@ class DefaultTypedDatumConverter implements TypedDatumConverter {
             return input;
         }
         if (!isConvertibleTo(input, targetType)) {
-            throw new DataTypeException(String.format(STRING_CAN_NOT_CONVERT, input.getDataType().toString(), targetType.toString()));
+            throw new DataTypeException(StringUtils.format(STRING_CAN_NOT_CONVERT, input.getDataType().toString(), targetType.toString()));
         }
 
         if (targetType.equals(DataType.SmallTable)) {
@@ -96,7 +97,7 @@ class DefaultTypedDatumConverter implements TypedDatumConverter {
             IntegerTD integer = factory.createInteger(((DateTimeTD) input).getDateTimeInMilliseconds());
             return castOrConvert(integer, targetType);
         default:
-            throw new DataTypeException(String.format(STRING_CAN_NOT_CONVERT, inputType.toString(), targetType.toString()));
+            throw new DataTypeException(StringUtils.format(STRING_CAN_NOT_CONVERT, inputType.toString(), targetType.toString()));
         }
     }
 
@@ -130,7 +131,7 @@ class DefaultTypedDatumConverter implements TypedDatumConverter {
             return input;
         }
         if (!isUnsafeConvertibleTo(input, targetType)) {
-            throw new DataTypeException(String.format(STRING_CAN_NOT_CONVERT, inputType.toString(), targetType.toString()));
+            throw new DataTypeException(StringUtils.format(STRING_CAN_NOT_CONVERT, inputType.toString(), targetType.toString()));
         }
         // currently, only conversions to ShortText are unsafe possible.
         switch (inputType) {
@@ -143,7 +144,7 @@ class DefaultTypedDatumConverter implements TypedDatumConverter {
         case Float:
             return factory.createShortText(input.toString());
         default:
-            throw new DataTypeException(String.format(STRING_CAN_NOT_CONVERT, inputType.toString(), targetType.toString()));
+            throw new DataTypeException(StringUtils.format(STRING_CAN_NOT_CONVERT, inputType.toString(), targetType.toString()));
         }
     }
 

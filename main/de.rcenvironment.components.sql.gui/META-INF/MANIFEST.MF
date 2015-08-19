@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SQL Component GUI Bundle
 Bundle-SymbolicName: de.rcenvironment.components.sql.gui;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.sql.common,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.model.spi,
@@ -11,6 +11,7 @@ Import-Package: de.rcenvironment.components.sql.common,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.workflow.editor.properties,
+ de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.incubator,
  org.apache.commons.logging;version="1.1.1"

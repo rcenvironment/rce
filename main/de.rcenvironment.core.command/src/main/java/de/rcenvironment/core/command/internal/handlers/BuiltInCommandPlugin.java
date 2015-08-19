@@ -22,6 +22,7 @@ import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
@@ -144,7 +145,7 @@ public class BuiltInCommandPlugin implements CommandPlugin {
 
     private void performCrash(CommandContext context) {
         int delayMsec = Integer.parseInt(context.consumeNextToken());
-        LogFactory.getLog(getClass()).warn(String.format("Killing the instance (using System.exit(1)) in %,d msec...", delayMsec));
+        LogFactory.getLog(getClass()).warn(StringUtils.format("Killing the instance (using System.exit(1)) in %,d msec...", delayMsec));
         SharedThreadPool.getInstance().scheduleAfterDelay(new Runnable() {
 
             @Override
@@ -173,7 +174,7 @@ public class BuiltInCommandPlugin implements CommandPlugin {
         for (Map.Entry<String, Map<String, Long>> category : report.entrySet()) {
             context.println(category.getKey());
             for (Map.Entry<String, Long> entry : category.getValue().entrySet()) {
-                context.println(String.format("  %,d - %s", entry.getValue(), entry.getKey()));
+                context.println(StringUtils.format("  %,d - %s", entry.getValue(), entry.getKey()));
             }
         }
     }

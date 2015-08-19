@@ -22,6 +22,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Writes given start values into outputs.
@@ -91,16 +92,16 @@ public class InputProviderComponent extends DefaultComponent {
     private TypedDatum getTypedDatumForFile(String value, String outputName) throws ComponentException {
         File file = createFileObject(value);
         if (file == null) {
-            throw new ComponentException(String.format("%s: No file name given for output '%s'",
+            throw new ComponentException(StringUtils.format("%s: No file name given for output '%s'",
                 componentContext.getInstanceName(), outputName));
         } else if (!file.exists()) {
-            throw new ComponentException(String.format("%s: File doesn't exist on node %s: %s",
+            throw new ComponentException(StringUtils.format("%s: File doesn't exist on node %s: %s",
                 componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), file.getAbsolutePath()));
         }
         try {
             return dataManagementService.createFileReferenceTDFromLocalFile(componentContext, file, file.getName());
         } catch (IOException ex) {
-            throw new ComponentException(String.format("%s: Writing file to data management failed",
+            throw new ComponentException(StringUtils.format("%s: Writing file to data management failed",
                 componentContext.getInstanceName()), ex);
         }
     }
@@ -108,17 +109,17 @@ public class InputProviderComponent extends DefaultComponent {
     private TypedDatum getTypedDatumForDirectory(String value) throws ComponentException {
         File dir = createFileObject(value);
         if (!dir.exists()) {
-            throw new ComponentException(String.format("%s: Directory doesn't exist on node %s: %s",
+            throw new ComponentException(StringUtils.format("%s: Directory doesn't exist on node %s: %s",
                 componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
         }
         if (!dir.isDirectory()) {
-            throw new ComponentException(String.format("%s: Given path doesn't refer to a directory on node %s: %s",
+            throw new ComponentException(StringUtils.format("%s: Given path doesn't refer to a directory on node %s: %s",
                 componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
         }
         try {
             return dataManagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, dir, dir.getName());
         } catch (IOException ex) {
-            throw new ComponentException(String.format("%s: Writing directory to data management failed",
+            throw new ComponentException(StringUtils.format("%s: Writing directory to data management failed",
                 componentContext.getInstanceName()), ex);
         }
     }

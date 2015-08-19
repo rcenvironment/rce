@@ -10,13 +10,23 @@ package de.rcenvironment.cpacs.component.integration;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Map;
+
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMResult;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.w3c.dom.Document;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -24,15 +34,20 @@ import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagemen
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.integration.CommonToolIntegratorComponent;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
+import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.scripting.ScriptingService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.xml.XSLTErrorHandler;
+import de.rcenvironment.core.utils.incubator.xml.XMLException;
+import de.rcenvironment.core.utils.incubator.xml.api.XMLMapperService;
+import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
 import de.rcenvironment.cpacs.utils.common.components.CpacsChannelFilter;
-import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
 
 /**
  * Main class for the CPACS tool integration.
@@ -45,9 +60,43 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
     private static final String FILE_SUFFIX_MAPPED = "-mapped";
 
-    private final CpacsMapper cpacsMapper;
+    private static final String STRING_CPACS_RESULT_FILE_CREATED = "CPACS result file created (%s)): %s";
 
-    private final ComponentVariableMapper dynamicEndpointMapper;
+    private static final String STRING_TOOL_OUTPUT_FILE_EXISTS = "Tool output file exists: %s";
+
+    private static final String SUFFIX_MAPPED = "-mapped";
+
+    private static final String STRING_TOOL_INPUT_FILE_NOT_FOUND = "Tool input file '%s' not found.";
+
+    private static final String STRING_XML_ERROR_DURING_MAPPING = "XML error during %s mapping.";
+
+    private static final String STRING_TOOL_INPUT_CREATED = "Tool input file created (%s)): %s";
+
+    private static final String STRING_MAPPING_USAGE = "%s: Use %s %s mapping";
+
+    private static final String STRING_MAPPING_TYPE_XML = "pairing";
+
+    private static final String STRING_MAPPING_TYPE_XSL = "raw XSLT";
+
+    private static final String STRING_MAPPING_DIRECTION_INPUT = "input";
+
+    private static final String STRING_MAPPING_DIRECTION_OUTPUT = "output";
+
+    private static final String STRING_MAPPING_DIRECTION_TOOLSPECIFIC = "tool sepecific input";
+
+    private static final String STRING_MAPPING_FILE_NOT_FOUND = "Mapping file '%s' not found.";
+
+    private static final String STRING_ERROR_SOLVING_FILE_EXTENSION = "Error solving file extension of mapping file '%s'.";
+
+    private static final String CREATE_MAPPING_XSLT_FILEPATH = "/resources/CreateMapping.xslt";
+
+    private static final String XMLFILE_SEPARATOR = "/";
+
+    private XMLMapperService xmlMapper;
+
+    private XMLSupportService xmlSupport;
+
+    private EndpointXMLService dynamicEndpointMapper;
 
     private String lastRunToolinputFile;
 
@@ -55,10 +104,8 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
     public CpacsToolIntegratorComponent() {
         super();
-        cpacsMapper = new CpacsMapper(this);
-        dynamicEndpointMapper = new ComponentVariableMapper();
     }
-    
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
@@ -66,6 +113,9 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
     @Override
     public void start() throws ComponentException {
+        dynamicEndpointMapper = componentContext.getService(EndpointXMLService.class);
+        xmlMapper = componentContext.getService(XMLMapperService.class);
+        xmlSupport = componentContext.getService(XMLSupportService.class);
         super.start();
         lastRunToolinputFile = null;
     }
@@ -78,19 +128,58 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
         try {
             String cpacsInitial = inputNamesToLocalFile.get(getCpacsInitialEndpointName());
             if (cpacsInitial == null) {
-                throw new ComponentException(String.format(
+                throw new ComponentException(StringUtils.format(
                     "%s: Error on reading input of incoming CPACS endpoint. An endpoint '%s' is not configured.",
                     toolName, getCpacsInitialEndpointName()));
             }
-            boolean mappedWithVariables = dynamicEndpointMapper.updateXMLWithInputs(cpacsInitial, dynamicInputs, componentContext);
-            if (!dynamicInputs.isEmpty() && getHistoryDataItem() != null && mappedWithVariables) {
+            dynamicEndpointMapper.updateXMLWithInputs(new File(cpacsInitial), dynamicInputs, componentContext);
+            if (!dynamicInputs.isEmpty() && getHistoryDataItem() != null) {
                 String cpacsWithVariablesFileReference =
                     datamanagementService.createTaggedReferenceFromLocalFile(componentContext,
                         new File(cpacsInitial), "cpacsWithVariables.xml");
                 getHistoryDataItem().setCpacsWithVariablesFileReference(cpacsWithVariablesFileReference);
             }
             createIntermediateFolders();
-            cpacsMapper.mapInput(cpacsInitial);
+            final File mappingFile = new File(getInputMapping());
+
+            if (mappingFile.exists()) {
+                if (mappingFile.getName().endsWith(CpacsToolIntegrationConstants.FILE_SUFFIX_XML)) {
+                    LOG.debug(StringUtils.format(STRING_MAPPING_USAGE, getToolName(),
+                        STRING_MAPPING_TYPE_XML,
+                        STRING_MAPPING_DIRECTION_INPUT));
+                    try {
+                        Document mappingDoc =
+                            transformXMLMapping(mappingFile.getAbsolutePath(), cpacsInitial, org.apache.commons.lang3.StringUtils.EMPTY);
+                        // Build tool input document
+                        final Document myToolDoc = xmlSupport.createDocument();
+                        Document cpacsIncoming = xmlSupport.readXMLFromFile(new File(cpacsInitial));
+                        xmlMapper.transformXMLFileWithXMLMappingInformation(cpacsIncoming, myToolDoc, mappingDoc);
+                        String toolInputFilePath = getToolInput();
+                        xmlSupport.writeXMLtoFile(myToolDoc, new File(toolInputFilePath));
+                        LOG.debug(StringUtils.format(STRING_TOOL_INPUT_CREATED,
+                            toolInputFilePath, String.valueOf(new File(toolInputFilePath).exists())));
+                    } catch (XPathExpressionException | XMLException e) {
+                        throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
+                            STRING_MAPPING_DIRECTION_INPUT), e);
+                    }
+                } else if (mappingFile.getName().endsWith(CpacsToolIntegrationConstants.FILE_SUFFIX_XSL)) {
+                    LOG.debug(StringUtils.format(STRING_MAPPING_USAGE, getToolName(),
+                        STRING_MAPPING_TYPE_XSL,
+                        STRING_MAPPING_DIRECTION_INPUT));
+                    try {
+                        xmlMapper.transformXMLFileWithXSLT(new File(cpacsInitial), new File(getToolInput()), mappingFile);
+                    } catch (XMLException e) {
+                        throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
+                            STRING_MAPPING_DIRECTION_INPUT), e);
+                    }
+                } else {
+                    throw new ComponentException(StringUtils.format(
+                        STRING_ERROR_SOLVING_FILE_EXTENSION, getInputMapping()));
+                }
+            } else {
+                throw new ComponentException(StringUtils.format(STRING_MAPPING_FILE_NOT_FOUND,
+                    getInputMapping()));
+            }
             if (hasToolspecificinputfile()) {
                 if (getHistoryDataItem() != null) {
                     String toolInputFileReference =
@@ -98,7 +187,56 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                             new File(getToolInput()), getToolInputFileName() + FILE_SUFFIX_MAPPED);
                     getHistoryDataItem().setToolInputWithoutToolspecificFileReference(toolInputFileReference);
                 }
-                cpacsMapper.mergeToolspecificInput();
+                final File mappingFile1 = new File(getToolspecificInputMapping());
+
+                if (mappingFile1.exists()) {
+                    if (mappingFile1.getName().endsWith(CpacsToolIntegrationConstants.FILE_SUFFIX_XML)) {
+                        LOG.debug(StringUtils.format(STRING_MAPPING_USAGE, getToolName(),
+                            STRING_MAPPING_TYPE_XML,
+                            STRING_MAPPING_DIRECTION_TOOLSPECIFIC));
+
+                        Document mappedDoc;
+                        try {
+                            mappedDoc = xmlSupport.readXMLFromFile(new File(getToolInput()));
+                            final Document toolDoc = xmlSupport.readXMLFromFile(new File(getToolspecificInputData()));
+                            final Document mappingDoc = transformXMLMapping(getToolspecificInputMapping(),
+                                getToolspecificInputData(), getToolInput());
+
+                            xmlMapper.transformXMLFileWithXMLMappingInformation(toolDoc, mappedDoc, mappingDoc);
+
+                            // overwrite old tool input file
+                            xmlSupport.writeXMLtoFile(mappedDoc, new File(getToolInput()));
+                        } catch (XPathExpressionException | XMLException e) {
+                            throw new ComponentException(StringUtils.format(
+                                STRING_XML_ERROR_DURING_MAPPING, STRING_MAPPING_DIRECTION_TOOLSPECIFIC), e);
+                        }
+                    } else if (mappingFile1.getName().endsWith(CpacsToolIntegrationConstants.FILE_SUFFIX_XSL)) {
+                        LOG.debug(StringUtils.format(STRING_MAPPING_USAGE, getToolName(),
+                            STRING_MAPPING_TYPE_XSL,
+                            STRING_MAPPING_DIRECTION_TOOLSPECIFIC));
+                        File toolInputMapped = new File(getToolInput() + SUFFIX_MAPPED);
+                        File toolInput = new File(getToolInput());
+                        try {
+                            FileUtils.copyFile(toolInput, toolInputMapped, true);
+                            xmlMapper.transformXMLFileWithXSLT(new File(getToolInput() + SUFFIX_MAPPED), new File(getToolInput()),
+                                new File(getToolspecificInputMapping()));
+                        } catch (IOException e) {
+                            throw new ComponentException(StringUtils.format(
+                                STRING_TOOL_INPUT_FILE_NOT_FOUND,
+                                getToolInput()), e);
+                        } catch (XMLException e) {
+                            throw new ComponentException(StringUtils.format(
+                                STRING_XML_ERROR_DURING_MAPPING, STRING_MAPPING_DIRECTION_TOOLSPECIFIC));
+                        }
+
+                    } else {
+                        throw new ComponentException(StringUtils.format(
+                            STRING_ERROR_SOLVING_FILE_EXTENSION, getToolspecificInputMapping()));
+                    }
+                } else {
+                    throw new ComponentException(StringUtils.format(
+                        STRING_MAPPING_FILE_NOT_FOUND, getToolspecificInputMapping()));
+                }
             }
             if (getHistoryDataItem() != null) {
                 File toolInputFile = new File(getToolInput());
@@ -108,9 +246,9 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 getHistoryDataItem().setToolInputFile(toolInputFile.getName(), toolInputFileReference);
             }
         } catch (DataTypeException e) {
-            throw new ComponentException(String.format("%s: Error on executing dynamic endpoint mapping on input site.", toolName), e);
+            throw new ComponentException(StringUtils.format("%s: Error on executing dynamic endpoint mapping on input site.", toolName), e);
         } catch (IOException e) {
-            throw new ComponentException(String.format("%s: Error on creating mapped file. ", toolName), e);
+            throw new ComponentException(StringUtils.format("%s: Error on creating mapped file. ", toolName), e);
         }
     }
 
@@ -128,7 +266,8 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 }
 
             } catch (IOException e) {
-                throw new ComponentException(String.format("%s: Error on generating intermediate tool input/output folders.", toolName), e);
+                throw new ComponentException(
+                    StringUtils.format("%s: Error on generating intermediate tool input/output folders.", toolName), e);
             }
         }
     }
@@ -146,9 +285,9 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 return true;
             }
         } catch (IOException e) {
-            throw new ComponentException(String.format("%s: Error on reading tool input file. ", toolName), e);
+            throw new ComponentException(StringUtils.format("%s: Error on reading tool input file. ", toolName), e);
         }
-        LOG.debug(String.format("%s: Running current step not required due to non changing input.", toolName));
+        LOG.debug(StringUtils.format("%s: Running current step not required due to non changing input.", toolName));
         return false;
     }
 
@@ -261,7 +400,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     outputFile, outputFile.getName());
                 getHistoryDataItem().setToolOutputFile(outputFile.getName(), toolOutputFileReference);
             } catch (IOException e) {
-                throw new ComponentException(String.format("%s: Unable to find tool output file '%s'.", toolName, getToolOutput()), e);
+                throw new ComponentException(StringUtils.format("%s: Unable to find tool output file '%s'.", toolName, getToolOutput()), e);
             }
         }
     }
@@ -278,8 +417,59 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     FileUtils.copyFile(tmpOutputFile, new File(getToolOutput()));
                 }
             }
-            cpacsMapper.mapOutput(inputNamesToLocalFile.get(getCpacsInitialEndpointName()));
-            dynamicEndpointMapper.updateOutputsFromCPACS(getCpacsResult(), componentContext);
+            String cpacsInitial = inputNamesToLocalFile.get(getCpacsInitialEndpointName());
+            if (new File(getToolOutput()).exists()) {
+                LOG.debug(StringUtils.format(STRING_TOOL_OUTPUT_FILE_EXISTS,
+                    new File(getToolOutput()).exists()));
+
+                final File mappingFile = new File(getOutputMapping());
+
+                if (mappingFile.exists()) {
+                    if (mappingFile.getName().endsWith(CpacsToolIntegrationConstants.FILE_SUFFIX_XML)) {
+                        LOG.debug(StringUtils.format(STRING_MAPPING_USAGE, getToolName(),
+                            STRING_MAPPING_TYPE_XML,
+                            STRING_MAPPING_DIRECTION_OUTPUT));
+                        try {
+                            Document toolDoc;
+                            toolDoc = xmlSupport.readXMLFromFile(new File(getToolOutput()));
+                            // Build CPACS-Result-File through mapping
+                            final Document mappingDoc = transformXMLMapping(mappingFile.getAbsolutePath(),
+                                getToolOutput(), cpacsInitial);
+
+                            Document cpacsInOut = xmlSupport.readXMLFromFile(new File(cpacsInitial));
+
+                            xmlMapper.transformXMLFileWithXMLMappingInformation(toolDoc, cpacsInOut, mappingDoc);
+
+                            // Update CPACS-File
+                            String cpacsResultFilePath = getCpacsResult();
+                            xmlSupport.writeXMLtoFile(cpacsInOut, new File(cpacsResultFilePath));
+                            LOG.debug(StringUtils.format(STRING_CPACS_RESULT_FILE_CREATED,
+                                cpacsResultFilePath, String.valueOf(new File(cpacsResultFilePath).exists())));
+                        } catch (XPathExpressionException | XMLException e2) {
+                            throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
+                                STRING_MAPPING_DIRECTION_OUTPUT), e2);
+                        }
+
+                    } else if (mappingFile.getName().endsWith(CpacsToolIntegrationConstants.FILE_SUFFIX_XSL)) {
+                        LOG.debug(StringUtils.format(STRING_MAPPING_USAGE, getToolName(),
+                            STRING_MAPPING_TYPE_XSL,
+                            STRING_MAPPING_DIRECTION_OUTPUT));
+                        try {
+                            xmlMapper.transformXMLFileWithXSLT(new File(cpacsInitial), new File(getCpacsResult()), mappingFile);
+                        } catch (XMLException e1) {
+                            throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
+                                STRING_MAPPING_DIRECTION_OUTPUT), e1);
+                        }
+                    } else {
+                        throw new ComponentException(StringUtils.format(
+                            STRING_ERROR_SOLVING_FILE_EXTENSION, getOutputMapping()));
+                    }
+                } else {
+                    throw new ComponentException(StringUtils.format(STRING_MAPPING_FILE_NOT_FOUND,
+                        getOutputMapping()));
+                }
+            }
+            dynamicEndpointMapper.updateOutputsFromXML(new File(getCpacsResult()), componentContext);
             File resultFile = new File(getCpacsResult());
             FileReferenceTD outgoingCPACSFileReference =
                 datamanagementService.createFileReferenceTDFromLocalFile(componentContext, resultFile,
@@ -288,7 +478,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 componentContext.writeOutput(componentContext.getConfigurationValue(CpacsToolIntegrationConstants
                     .KEY_CPACS_OUTGOING_ENDPOINTNAME), outgoingCPACSFileReference);
             } catch (NullPointerException e) {
-                throw new ComponentException(String.format(
+                throw new ComponentException(StringUtils.format(
                     "%s: Error on writing output to outgoing CPACS endpoint. An endpoint '%s' is not configured.",
                     toolName, componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_OUTGOING_ENDPOINTNAME)), e);
             }
@@ -297,9 +487,10 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     .KEY_CPACS_OUTGOING_ENDPOINTNAME), outgoingCPACSFileReference);
             }
         } catch (DataTypeException e) {
-            throw new ComponentException(String.format("%s: Error on executing dynamic endpoint mapping on output site. ", toolName), e);
+            throw new ComponentException(StringUtils.format("%s: Error on executing dynamic endpoint mapping on output site. ", toolName),
+                e);
         } catch (IOException e) {
-            throw new ComponentException(String.format("%s: Error on creating result file. ", toolName), e);
+            throw new ComponentException(StringUtils.format("%s: Error on creating result file. ", toolName), e);
         }
 
     }
@@ -379,5 +570,56 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     @Override
     protected void bindComponentDataManagementService(ComponentDataManagementService compDataManagementService) {
         super.bindComponentDataManagementService(compDataManagementService);
+    }
+
+    /**
+     * --- MOVED HERE FROM OLD CPACSMAPPER ---
+     * 
+     * Transforms a XML mapping stylesheet to the final mapping XML document by surrounding it with a XSLT header and executing this XSLT
+     * stylesheet. This method rearranges, e.g., xslt loops to simple source/target mappings.
+     * 
+    * @param mappingFilename The file name of the mapping file to be transformed.
+     * @param sourceFilename The file name of an input (source) file.
+     * @param targetFilename The file name of the target file, in which the source file should be imported. If content is empty ("") a new
+     *        file will be created.
+     * 
+     * @return Returns the final mapping XML document as DOM document.
+     * @throws ComponentException Thrown if mapping fails.
+     */
+    private Document transformXMLMapping(final String mappingFilename, final String sourceFilename, final String targetFilename)
+        throws XMLException {
+        try {
+            final TransformerFactory transformerFac = TransformerFactory.newInstance();
+            transformerFac.setErrorListener(new XSLTErrorHandler());
+
+            // First read in the mapping XML file and transform it to a valid
+            // XSLT stylesheet by surrounding it with the appropiate stylesheet elements.
+            // This is done via the stylesheet CreateMapping.xslt which is loaded from
+            // the jar file or the package path.
+            final InputStream inStream = this.getClass().getResourceAsStream(CREATE_MAPPING_XSLT_FILEPATH);
+            final Transformer transformer1 = transformerFac.newTransformer(new StreamSource(inStream));
+            transformer1.setErrorListener(new XSLTErrorHandler());
+            final DOMSource mappingSrc = new DOMSource(xmlSupport.readXMLFromFile(new File(mappingFilename)));
+            final Document tempDoc = xmlSupport.createDocument();
+            final DOMResult tempXSLT = new DOMResult(tempDoc);
+            transformer1.transform(mappingSrc, tempXSLT);
+            // Now transform the resulting mapping XSLT to the final mapping file which
+            // only contains mapping elements and no more xsl elements like loops, conditions etc.
+            final DOMSource sourceXSLT = new DOMSource(tempDoc);
+            final Transformer transformer2 = transformerFac.newTransformer(sourceXSLT);
+            transformer2.setErrorListener(new XSLTErrorHandler());
+
+            transformer2.setParameter("sourceFilename", sourceFilename.replace("\\", XMLFILE_SEPARATOR));
+            transformer2.setParameter("targetFilename", targetFilename.replace("\\", XMLFILE_SEPARATOR));
+
+            final DOMSource source = new DOMSource(xmlSupport.createDocument());
+            final Document resultDoc = xmlSupport.createDocument();
+            final DOMResult result = new DOMResult(resultDoc);
+            transformer2.transform(source, result);
+
+            return resultDoc;
+        } catch (final NullPointerException | TransformerException | XMLException e) {
+            throw new XMLException("XML-Transformation failed: " + e.toString());
+        }
     }
 }

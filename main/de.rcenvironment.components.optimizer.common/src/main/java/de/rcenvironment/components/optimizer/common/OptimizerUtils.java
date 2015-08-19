@@ -8,6 +8,7 @@
  
 package de.rcenvironment.components.optimizer.common;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Utility class for identifier construction.
@@ -23,10 +24,10 @@ public final class OptimizerUtils {
     private OptimizerUtils() {}
     
     protected static String createStructureIdentifier(final ResultSet study) {
-        return String.format(STRUCTURE_PATTERN, study.getIdentifier());
+        return StringUtils.format(STRUCTURE_PATTERN, study.getIdentifier());
     }
 
     protected static String createDataIdentifier(final ResultSet study) {
-        return String.format(DATA_PATTERN, study.getIdentifier());
+        return StringUtils.format(DATA_PATTERN, study.getIdentifier());
     }
 }

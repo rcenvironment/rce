@@ -17,6 +17,7 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
@@ -71,7 +72,7 @@ public class CpacsWriterSection extends ValidatingWorkflowNodePropertySection {
         client.setLayoutData(layoutData);
         client.setLayout(new GridLayout(1, false));
 
-        Text localFolderTitle = new Text(client, STANDARD_LABEL_WIDTH | SWT.READ_ONLY);
+        Label localFolderTitle = new Label(client, STANDARD_LABEL_WIDTH);
         localFolderTitle.setText(Messages.localFolderTitle);
 
         fileGroup = toolkit.createComposite(client);

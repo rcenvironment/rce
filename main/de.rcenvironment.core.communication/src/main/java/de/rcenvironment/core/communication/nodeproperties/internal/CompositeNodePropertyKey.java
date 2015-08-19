@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.communication.nodeproperties.internal;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * A combined key comprised of a node id and a metadata key.
  * 
@@ -24,7 +26,7 @@ public class CompositeNodePropertyKey {
     public CompositeNodePropertyKey(String nodeId, String dataKey) {
         this.nodeId = nodeId;
         this.dataKey = dataKey;
-        this.compositeKey = String.format("%s:%s", nodeId, dataKey);
+        this.compositeKey = StringUtils.format("%s:%s", nodeId, dataKey);
     }
 
     public String getNodeIdString() {

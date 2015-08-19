@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
 
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -205,6 +206,9 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             boolean toolDirIsCwd = (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_SET_TOOL_DIR_AS_WORKING_DIR);
             setWorkingDirAsCwdButton.setSelection(!toolDirIsCwd);
             setToolDirAsCwdButton.setSelection(toolDirIsCwd);
+        } else {
+            setWorkingDirAsCwdButton.setSelection(true);
+            setToolDirAsCwdButton.setSelection(false);
         }
 
         setWorkingDirAsCwdButton.setEnabled(true);
@@ -415,11 +419,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             outputCombo.setLayoutData(outputComboData);
             Button outputInsertButton = new Button(buttonComposite, SWT.PUSH);
             outputInsertButton.setText(Messages.insertButtonLabel);
-            if (buttonIndex == 0) {
-                outputInsertButton.addSelectionListener(new InsertButtonListener(outputCombo, scriptArea, scriptAreaWin, OUTPUT_COMBO));
-            } else {
-                outputInsertButton.addSelectionListener(new InsertButtonListener(outputCombo, scriptArea, OUTPUT_COMBO));
-            }
+            outputInsertButton.addSelectionListener(new InsertButtonListener(outputCombo, scriptArea, OUTPUT_COMBO));
             outputCombos[buttonIndex] = outputCombo;
 
         }
@@ -475,17 +475,18 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         }
 
-        /*
-         * TODO : Since the usability was not quite good for the 6.1 release, this button was
-         * postponed.
-         * 
-         * if (buttonIndex > 0) { new Label(buttonComposite, SWT.NONE).setText(""); new
-         * Label(buttonComposite, SWT.NONE).setText(""); Button insertCopyCommand = new
-         * Button(buttonComposite, SWT.PUSH); GridData copyData = new GridData();
-         * copyData.horizontalSpan = 2; insertCopyCommand.setLayoutData(copyData);
-         * insertCopyCommand.setText("Insert copy of file/dir");
-         * insertCopyCommand.addSelectionListener(new CopyInputListener(scriptArea)); }
-         */
+        if (buttonIndex > 0) {
+            new Label(buttonComposite, SWT.NONE).setText("");
+            new Label(buttonComposite, SWT.NONE).setText("");
+            Button insertCopyCommand = new
+                Button(buttonComposite, SWT.PUSH);
+            GridData copyData = new GridData();
+            copyData.horizontalSpan = 2;
+            insertCopyCommand.setLayoutData(copyData);
+            insertCopyCommand.setText("Insert copy of file/dir");
+            insertCopyCommand.addSelectionListener(new CopyInputListener(scriptArea));
+        }
+
     }
 
     private void addScriptSelectButtonListener() {
@@ -683,16 +684,27 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
-            @SuppressWarnings("unchecked") Map<String, Object> properties =
-                (Map<String, Object>) configurationMap.get(ToolIntegrationConstants.KEY_PROPERTIES);
-
+            @SuppressWarnings("unchecked") List<Map<String, String>> endpointList =
+                (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_INPUTS);
+            List<String> endpointNames = new LinkedList<>();
+            if (endpointList != null) {
+                for (Map<String, String> endpoint : endpointList) {
+                    if (endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.FileReference.name())) {
+                        endpointNames.add("File : " + endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
+                    }
+                    if (endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.DirectoryReference.name())) {
+                        endpointNames.add("Directory : " + endpoint.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
+                    }
+                }
+            }
             WizardInsertCopyCommandDialog dialog =
-                new WizardInsertCopyCommandDialog(getShell(), inputCombos[1].getItems(), outputCombos[1].getItems(),
-                    propertiesCombos[1].getItems(), directoryCombos[1].getItems(), properties);
+                new WizardInsertCopyCommandDialog(getShell(), endpointNames, directoryCombos[1].getItems());
             if (dialog.open() == Dialog.OK) {
                 String command = dialog.getCopyCommand();
-                text.insert(command + "\n");
-                text.setFocus();
+                if (!text.isDisposed()) {
+                    text.insert(command + "\n");
+                    text.setFocus();
+                }
             }
         }
     }

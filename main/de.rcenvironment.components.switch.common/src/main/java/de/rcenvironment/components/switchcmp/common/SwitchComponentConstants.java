@@ -26,6 +26,12 @@ public final class SwitchComponentConstants {
     /**
      * Constants.
      */
+    public static final String[] COMPONENT_IDS = { COMPONENT_ID,
+        "de.rcenvironment.components.switchcmp.execution.SwitchComponent_Switch" };
+
+    /**
+     * Constants.
+     */
     public static final String CONDITION_INPUT_ID = "conditionToInput";
 
     /**
@@ -52,17 +58,17 @@ public final class SwitchComponentConstants {
      * Constants.
      */
     public static final String CONDITION_KEY = "conditionKey";
-    
+
     /**
      * Constants.
      */
     public static final String NEVER_CLOSE_OUTPUTS_KEY = "neverCloseOutputs";
-    
+
     /**
      * Constants.
      */
     public static final String CLOSE_OUTPUTS_ON_TRUE_KEY = "closeOutputsOnTrue";
-    
+
     /**
      * Constants.
      */

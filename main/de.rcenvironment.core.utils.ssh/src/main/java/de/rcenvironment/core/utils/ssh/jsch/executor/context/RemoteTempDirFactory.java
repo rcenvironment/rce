@@ -9,6 +9,8 @@ package de.rcenvironment.core.utils.ssh.jsch.executor.context;
 
 import java.util.Random;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Simple abstraction of remote temporary directory path generation. Could be expanded into a
  * management class that keeps track of and disposes the generated directories.
@@ -53,7 +55,7 @@ class RemoteTempDirFactory {
     public String createTempDirPath(String contextHint, String separator) {
         // although the JavaDoc does not state this, nextInt() is implemented thread-safely
         int randInt = random.nextInt();
-        return String.format("%s%s%s%d%s%d", rootDir, contextHint, separator, System.currentTimeMillis(), separator,
+        return StringUtils.format("%s%s%s%d%s%d", rootDir, contextHint, separator, System.currentTimeMillis(), separator,
             Math.abs(randInt));
     }
     

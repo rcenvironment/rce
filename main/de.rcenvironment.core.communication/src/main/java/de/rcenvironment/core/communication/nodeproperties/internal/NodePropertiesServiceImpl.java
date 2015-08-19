@@ -174,7 +174,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 if (verboseLogging) {
                     int i = 1;
                     for (NodeProperty property : newProperties) {
-                        log.debug(String.format("Raw node property change (%d/%d) received by %s, published by %s: '%s' := '%s' [%d]",
+                        log.debug(StringUtils.format("Raw node property change (%d/%d) received by %s, published by %s: '%s' := '%s' [%d]",
                             i++, newProperties.size(), localNodeId.getIdString(), property.getNodeIdString(),
                             property.getKey(), property.getValue(), property.getSequenceNo()));
                     }
@@ -187,7 +187,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                         String nodeIdString = property.getNodeIdString();
                         String displayName = property.getValue();
                         if (verboseLogging) {
-                            log.debug(String.format("Setting associated display name for node %s to '%s'", nodeIdString, displayName));
+                            log.debug(StringUtils.format("Setting associated display name for node %s to '%s'", nodeIdString, displayName));
                         }
                         NodeInformationRegistryImpl.getInstance().getWritableNodeInformation(nodeIdString)
                             .setDisplayName(displayName);
@@ -344,7 +344,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 // TODO check: on failure, the "sender" field is undefined
                 NodeIdentifier sender = response.accessMetaData().getSender();
                 if (!response.isSuccess()) {
-                    log.warn(String.format("Initial node property exchange via channel %s failed with result code %s ",
+                    log.warn(StringUtils.format("Initial node property exchange via channel %s failed with result code %s ",
                         channel.getChannelId(), response.getResultCode()));
                     return;
                 }
@@ -383,13 +383,13 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     if (localNodeIsRelay) {
                         // relay: calculate complementing knowledge using the full knowledge set
                         complementingKnowledge = completeKnowledgeRegistry.getComplementingKnowledge(parsedUpdate.entries);
-                        log.debug(String.format("Responding to initial node property exchange with %d complementing entries "
+                        log.debug(StringUtils.format("Responding to initial node property exchange with %d complementing entries "
                             + "(out of %d in the complete set)",
                             complementingKnowledge.size(), completeKnowledgeRegistry.getEntryCount()));
                     } else {
                         // non-relay: calculate complementing knowledge using only the local entries set
                         complementingKnowledge = locallyPublishedKnowledgeRegistry.getComplementingKnowledge(parsedUpdate.entries);
-                        log.debug(String.format("Responding to initial node property exchange with %d complementing entries "
+                        log.debug(StringUtils.format("Responding to initial node property exchange with %d complementing entries "
                             + "(out of %d in the local set)", complementingKnowledge.size(),
                             locallyPublishedKnowledgeRegistry.getEntryCount()));
                     }

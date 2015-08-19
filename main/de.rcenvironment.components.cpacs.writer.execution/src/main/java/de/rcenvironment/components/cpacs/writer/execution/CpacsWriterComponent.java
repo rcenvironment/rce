@@ -24,16 +24,17 @@ import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.api.LazyDisposal;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.component.xml.XmlComponentHistoryDataItem;
+import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
 import de.rcenvironment.cpacs.utils.common.components.CpacsChannelFilter;
-import de.rcenvironment.cpacs.utils.common.components.XmlComponentHistoryDataItem;
-import de.rcenvironment.cpacs.utils.common.xml.ComponentVariableMapper;
 
 /**
  * Implementing class for Destination functionality with file support.
@@ -61,6 +62,8 @@ public class CpacsWriterComponent extends DefaultComponent {
     private File tempDir = null;
 
     private XmlComponentHistoryDataItem historyDataItem = null;
+    
+    private EndpointXMLService endpointXmlUtils;
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
@@ -70,6 +73,7 @@ public class CpacsWriterComponent extends DefaultComponent {
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
+        endpointXmlUtils = componentContext.getService(EndpointXMLService.class);
         notificationService = componentContext.getService(DistributedNotificationService.class);
 
         notificationService.setBufferSize(componentContext.getExecutionIdentifier() + CpacsWriterComponentConstants.RUNTIME_CPACS_UUIDS, 1);
@@ -103,7 +107,7 @@ public class CpacsWriterComponent extends DefaultComponent {
                 localFolder = folder;
             } else {
                 localFolder = null;
-                String message = String.format("Could not write output file. Path '%s' is not absolute.", folder.getPath());
+                String message = StringUtils.format("Could not write output file. Path '%s' is not absolute.", folder.getPath());
                 componentContext.printConsoleLine(message, ConsoleRow.Type.COMPONENT_OUTPUT);
                 LogFactory.getLog(CpacsWriterComponent.class).warn(message);
             }
@@ -116,8 +120,7 @@ public class CpacsWriterComponent extends DefaultComponent {
 
             // update incoming CPACS with singular input-variables
             Map<String, TypedDatum> varInputs = CpacsChannelFilter.getVariableInputs(componentContext);
-            final ComponentVariableMapper varMapper = new ComponentVariableMapper();
-            varMapper.updateXMLWithInputs(tempFile.getAbsolutePath(), varInputs, componentContext);
+            endpointXmlUtils.updateXMLWithInputs(tempFile, varInputs, componentContext);
 
             final String fileName;
             if (!overwriteEachRun) {
@@ -144,8 +147,7 @@ public class CpacsWriterComponent extends DefaultComponent {
             // write output to channel(s)
             componentContext.writeOutput(ChameleonCommonConstants.CHAMELEON_CPACS_NAME, fileReference);
             // update singular output variables with data from CPACS
-            varMapper.updateOutputsFromXML(tempFile.getAbsolutePath(),
-                ChameleonCommonConstants.CHAMELEON_CPACS_NAME, componentContext);
+            endpointXmlUtils.updateOutputsFromXML(tempFile, componentContext);
             notificationService.send(componentContext.getExecutionIdentifier()
                 + CpacsWriterComponentConstants.RUNTIME_CPACS_UUIDS, fileReference.getFileReference());
         } catch (IOException | DataTypeException e) {

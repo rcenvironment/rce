@@ -1076,6 +1076,12 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
                 if (!valueOrDefault.equals(combobox.getText())) {
                     combobox.setText(valueOrDefault);
                 }
+            } else if (control instanceof Combo && (newValue == null || newValue instanceof String)) {
+                Combo combobox = (Combo) control;
+                final String valueOrDefault = valueOrDefault(newValue, "");
+                if (!valueOrDefault.equals(combobox.getText())) {
+                    combobox.setText(valueOrDefault);
+                }
             }
         }
 

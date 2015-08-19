@@ -33,8 +33,8 @@
 						<row>
 							<entry>batch "&lt;command string>"</entry>
 							<entry>RCE</entry>
-							<entry>Works like "exec" command but always shuts down RCE after
-								execution and implies the "--headless" command.</entry>
+							<entry>Behaves like the "exec" command, but also implies the "--headless" option and always
+								shuts down RCE after execution.</entry>
 						</row>
 						<row>
 							<entry>headless</entry>
@@ -46,17 +46,28 @@
 							<entry>exec "&lt;command string>"</entry>
 							<entry align="center">RCE</entry>
 							<entry>
-								<para>Executes one or more shell commands defined by &lt;command
-									string>. For the list of available commands, refer to the
-									command shell documentation<!--TODO add link-->. This argument
-									is usually used together with --headless to run RCE in batch
-									mode. Multiple commands can be chained within &lt;command
-									string> by separating them with " ; " (note the spaces); each
-									command is completed before the next is started. To shut down
-									RCE at the end of a command sequence, use the "stop" command. </para>
-								<para>As a typical example, <code>rce --headless --exec "wf run
-										example.wf ; stop"</code> will execute the "example.wf"
-									workflow in headless mode and then shut down RCE. </para>
+								<para>Executes one or more shell commands defined by &lt;command string>. For the list of
+									available commands, refer to the command shell
+									documentation<!--TODO add link-->. This argument is usually used
+									together with --headless to run RCE in batch mode. Multiple
+									commands can be chained within &lt;command string> by separating
+									them with " ; " (note the spaces); each command is completed
+									before the next is started.</para>
+								<para>You can use the "<code>stop</code>" command at the end of the
+									command sequence to shut down RCE after the other commands have
+									been executed. However, any error during execution of these
+									commands will cancel the sequence, and prevent the
+										"<code>stop</code>" command from being executed. To ensure
+									shut down at the end of the command sequence, use the
+										<code>--batch</code> option instead of
+									"<code>--exec</code>". </para>
+								<para>As an example, <code>rce --headless --exec "wf run example.wf ; stop"</code> will
+									execute the "example.wf" workflow in headless mode and then shut
+									down RCE. However, if the workflow fails to start, RCE will keep
+									running, as the "<code>stop</code>" command is never executed.
+									To attempt execution of the workflow file, but then always shut
+									down regardless of the outcome,  use <code>rce --batch "wf run
+										example.wf"</code> instead.</para>
 							</entry>
 						</row>
 						<row>
@@ -167,7 +178,7 @@
 				<title>Shell Commands</title>
 				<tgroup cols="2">
 					<colspec colname="c1" colnum="1" colwidth="1*"/>
-					<colspec colname="c2" colnum="2" colwidth="3.19*"/>
+					<colspec colname="c2" colnum="2" colwidth="3.15*"/>
 					<thead>
 						<row>
 							<entry>Argument</entry>
@@ -180,9 +191,41 @@
 							<entry>Lists all available commands.</entry>
 						</row>
 						<row>
+							<entry>components</entry>
+							<entry>Short form of "components list".</entry>
+						</row>
+						<row>
+							<entry>components list</entry>
+							<entry>Lists components published by reachable RCE nodes.</entry>
+						</row>
+						<row>
+							<entry>cn </entry>
+							<entry>Short form of "cn list".</entry>
+						</row>
+						<row>
+							<entry>cn add &lt;target> ["&lt;description>"]</entry>
+							<entry>Adds a new network connection. (Example: cn add
+								activemq-tcp:rceserver.example.com:20001 "Our RCE Server")</entry>
+						</row>
+						<row>
+							<entry>cn list</entry>
+							<entry>Lists all network connections, including ids and connection
+								states.</entry>
+						</row>
+						<row>
+							<entry>cn start &lt;id></entry>
+							<entry>Starts/Connects a READY or DISCONNECTED connection (use "cn list"
+								to get the id).</entry>
+						</row>
+						<row>
+							<entry>cn stop &lt;id></entry>
+							<entry>Stops/Disconnects an ESTABLISHED connection (use "cn list" to get
+								the id).</entry>
+						</row>
+						<row>
 							<entry>net</entry>
 							<entry>
-								<para>Lists the nodes in the known RCE network. </para>
+								<para>Short form of "net info".</para>
 							</entry>
 						</row>
 						<row>
@@ -194,6 +237,14 @@
 							<entry>Reloads the IP whitelist configuration.</entry>
 						</row>
 						<row>
+							<entry>net info</entry>
+							<entry>Lists all reachable RCE nodes.</entry>
+						</row>
+						<row>
+							<entry>restart </entry>
+							<entry>Restarts RCE.</entry>
+						</row>
+						<row>
 							<entry>shutdown</entry>
 							<entry>Shuts down the local RCE instance.</entry>
 						</row>
@@ -202,16 +253,17 @@
 							<entry>Shuts down the local RCE instance (alias of "shutdown").</entry>
 						</row>
 						<row>
-							<entry>verify [--dispose &lt;onfinished|always|never>] [--pr &lt;parallel runs>] [--sr
-								&lt;serial runs>] [-p &lt;placeholder value file>] --basedir
-								&lt;directory> &lt;workflow file> [&lt;workflow file> ...]</entry>
-							<entry>Runs several workflows and creates a summary which failed and which
-									succeeded.<para>The "--pr" option defines how often the workflow
-									is started in parallel. The "--sr" options defines how often the
-									workflow is started in serial. E.g. "--pr 5 --sr 3" starts the
-									workflow three times with five in parallel. If "*" is used with
-									the "--basedir" option or multiple workflow filenames are
-									passed, "--pr" and "--sr" are applied for each of the
+							<entry>verify [--dispose &lt;onfinished|always|never>] [--pr
+								&lt;parallel runs>] [--sr &lt;serial runs>] [-p &lt;placeholder
+								value file>] --basedir &lt;directory> &lt;workflow file>
+								[&lt;workflow file> ...]</entry>
+							<entry>Runs several workflows and creates a summary which failed and
+								which succeeded.<para>The "--pr" option defines how often the
+									workflow is started in parallel. The "--sr" options defines how
+									often the workflow is started in serial. E.g. "--pr 5 --sr 3"
+									starts the workflow three times with five in parallel. If "*" is
+									used with the "--basedir" option or multiple workflow filenames
+									are passed, "--pr" and "--sr" are applied for each of the
 									workflows.</para><para>For "--dispose" and "-p" option refer to
 									"wf run" below.</para><para>Needs the "--basedir &lt;directory>"
 									parameter, which defines a directory containing workflow files.
@@ -222,17 +274,52 @@
 									must be enclosed in double quotes ("...").</para></entry>
 						</row>
 						<row>
-							<entry>wf run  [--dispose &lt;onfinished|always|never>] [-p &lt;placeholder value file>]
-								&lt;workflow file></entry>
+							<entry>version</entry>
+							<entry>Shows version information.</entry>
+						</row>
+						<row>
+							<entry>wf</entry>
+							<entry>Short form of "wf list"</entry>
+						</row>
+						<row>
+							<entry>wf list</entry>
+							<entry>Lists all current workflows, their states and execution
+								ids.</entry>
+						</row>
+						<row>
+							<entry>wf details &lt;workflow execution id></entry>
+							<entry>Shows details about one workflow.</entry>
+						</row>
+						<row>
+							<entry>wf cancel &lt;workflow execution id></entry>
+							<entry>Cancels a running or paused workflow.</entry>
+						</row>
+						<row>
+							<entry>wf dispose &lt;workflow execution id></entry>
+							<entry>Disposes a finished, cancelled or failed workflow.</entry>
+						</row>
+						<row>
+							<entry>wf pause &lt;workflow execution id></entry>
+							<entry>Pause a running workflow.</entry>
+						</row>
+						<row>
+							<entry>wf resume &lt;workflow execution id></entry>
+							<entry>Resume a paused workflow.</entry>
+						</row>
+						<row>
+							<entry>wf run [--dispose &lt;onfinished|always|never>] [-p
+								&lt;placeholder value file>] &lt;workflow file></entry>
 							<entry>
 								<para>Executes the given workflow file and waits until it has
 									completed. Workflow file paths containing spaces must be
 									enclosed in double quotes ("...").</para>
-								<para>The "--dispose" option defines the disposal behavior after workflow completion. If a
-									workflow is disposed, its resources are freed. The result data
-									are kept in either case. Default is "onfinished": The workflow
-									is disposed if it terminated in state "Finished".</para>
-								<para>The "-p" option can be used to define a placeholder value file (see below).</para>
+								<para>The "--dispose" option defines the disposal behavior after
+									workflow completion. If a workflow is disposed, its resources
+									are freed. The result data are kept in either case. Default is
+									"onfinished": The workflow is disposed if it terminated in state
+									"Finished".</para>
+								<para>The "-p" option can be used to define a placeholder value file
+									(see below).</para>
 							</entry>
 						</row>
 					</tbody>

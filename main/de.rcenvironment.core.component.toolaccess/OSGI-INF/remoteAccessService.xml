@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" configuration-policy="optional" immediate="true" name="RemoteAccessService">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" configuration-policy="optional" immediate="true" name="RemoteAccessService" activate="activate">
 
 	<implementation class="de.rcenvironment.core.component.toolaccess.internal.RemoteAccessServiceImpl"/>
 		
@@ -13,6 +13,12 @@
 		name="DistributedComponentKnowledgeService" 
 		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService" 
 		bind="bindDistributedComponentKnowledgeService" 
+	/>
+
+	<reference 
+		name="ConfigurationService" 
+		interface="de.rcenvironment.core.configuration.ConfigurationService" 
+		bind="bindConfigurationService" 
 	/>
 
 	<service>

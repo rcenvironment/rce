@@ -16,6 +16,7 @@ import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.jms.common.JmsArtifactFactory;
 import de.rcenvironment.core.communication.transport.jms.common.JmsBroker;
 import de.rcenvironment.core.communication.transport.jms.common.RemoteInitiatedMessageChannelFactory;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Factory for creating embedded ActiveMQ broker instances and related classes. Its purpose is to
@@ -32,7 +33,7 @@ public class ActiveMQJmsFactory implements JmsArtifactFactory {
 
     @Override
     public ConnectionFactory createConnectionFactory(NetworkContactPoint ncp) {
-        String url = String.format("tcp://%s:%d?keepAlive=true", ncp.getHost(), ncp.getPort());
+        String url = StringUtils.format("tcp://%s:%d?keepAlive=true", ncp.getHost(), ncp.getPort());
         ConnectionFactory connectionFactory = createConnectionFactory(url);
         return connectionFactory;
     }

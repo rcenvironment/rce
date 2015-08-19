@@ -25,6 +25,7 @@ import de.rcenvironment.core.component.model.configuration.impl.ConfigurationDef
 import de.rcenvironment.core.component.model.configuration.impl.ConfigurationExtensionDefinitionImpl;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionsProviderImpl;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A writable {@link ComponentInterface} implementation.
@@ -270,7 +271,7 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
 
     @Override
     public String toString() {
-        return String.format("ComponentInterface(id=%s)", getIdentifier());
+        return StringUtils.format("ComponentInterface(id=%s)", getIdentifier());
     }
 
 }

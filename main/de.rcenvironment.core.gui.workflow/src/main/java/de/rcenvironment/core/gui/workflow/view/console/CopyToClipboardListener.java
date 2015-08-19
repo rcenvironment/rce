@@ -33,7 +33,9 @@ public class CopyToClipboardListener implements SelectionListener {
     @Override
     public void widgetSelected(SelectionEvent e) {
         CopyToClipboardHelper helper = new CopyToClipboardHelper(tableViewer);
-        helper.copyToClipboard();
+        String copyCommand = e.getSource().toString();
+        helper.copyToClipboard(copyCommand);
+        
     }
 
 }

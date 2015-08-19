@@ -16,8 +16,7 @@
             "defaultInputHandling":"Queue",
             "inputExecutionConstraintOptions":[
                 "Required",
-                "RequiredIfConnected",
-                "NotRequired"
+                "RequiredIfConnected"
             ],
             "defaultInputExecutionConstraint":"Required"
         }
@@ -44,9 +43,7 @@
             ],
             "defaultInputHandling":"Queue",
             "inputExecutionConstraintOptions":[
-                "Required",
-                "RequiredIfConnected",
-                "NotRequired"
+                "Required"
             ]
 		}
 	]

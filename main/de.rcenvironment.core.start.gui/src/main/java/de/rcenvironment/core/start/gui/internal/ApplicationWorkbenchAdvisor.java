@@ -17,6 +17,7 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
@@ -35,6 +36,7 @@ import org.eclipse.ui.wizards.IWizardDescriptor;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.gui.utils.incubator.ContextMenuItemRemover;
 import de.rcenvironment.core.start.Application;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * This class advises the creation of the workbench of the {@link Application}.
@@ -42,6 +44,10 @@ import de.rcenvironment.core.start.Application;
  * @author Christian Weiss
  */
 public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
+
+    private static final int MINIMUM_HEIGHT = 250;
+
+    private static final int MINIMUM_WIDTH = 500;
 
     private static final Log LOGGER = LogFactory.getLog(ApplicationWorkbenchAdvisor.class);
 
@@ -60,7 +66,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         IWorkbenchWindowConfigurer windowConfigurer = configurer;
         String platformName = configService.getInstanceName();
         if (platformName != null) {
-            windowConfigurer.setTitle(String.format(windowTitle, windowConfigurer.getTitle(), platformName));
+            windowConfigurer.setTitle(StringUtils.format(windowTitle, windowConfigurer.getTitle(), platformName));
         }
         return new ApplicationWorkbenchWindowAdvisor(configurer);
     }
@@ -87,6 +93,13 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
     @Override
     public void postStartup() {
         super.postStartup();
+        // For 6.2.0, the NPE which occurs sometimes on Linux is just catched (see Mantis issue 12230).
+        // After 6.2.0 the cause of the NPE should be investigated (see Mantis issue 0012243) and this code improved. - seid_do, June 2015
+        try {
+            Display.getDefault().getActiveShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
+        } catch (NullPointerException e) { 
+            LOGGER.warn("Failed to set the minimum size of  RCE's main window");
+        }
         // refreshes the Resource Explorer, otherwise projects will not be shown
         IWorkbenchWindow[] workbenchs =
             PlatformUI.getWorkbench().getWorkbenchWindows();

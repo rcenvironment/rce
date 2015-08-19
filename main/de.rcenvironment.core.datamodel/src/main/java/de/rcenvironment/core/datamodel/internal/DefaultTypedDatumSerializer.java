@@ -27,11 +27,12 @@ import de.rcenvironment.core.datamodel.types.api.DateTimeTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
-import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
+import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Default {@link TypedDatumSerializer} implementation.
@@ -74,7 +75,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
         TypedDatum returnDatum = null;
 
         if (input.length() == 0) {
-            throw new IllegalArgumentException(String.format(UNABLE_TO_DESERIALIZE_STRING, input.toString()));
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input.toString()));
         }
 
         DefaultTypedDatumFactory factory = new DefaultTypedDatumFactory();
@@ -157,18 +158,18 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             case StructuredData:
             case BigTable:
             default:
-                throw new IllegalArgumentException(String.format(UNABLE_TO_DESERIALIZE_STRING, input));
+                throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input));
             }
 
         } catch (JsonParseException e) {
-            LOGGER.error(String.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
-            throw new IllegalArgumentException(String.format(UNABLE_TO_DESERIALIZE_STRING, input));
+            LOGGER.error(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input));
         } catch (JsonProcessingException e) {
-            LOGGER.error(String.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
-            throw new IllegalArgumentException(String.format(UNABLE_TO_DESERIALIZE_STRING, input));
+            LOGGER.error(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input));
         } catch (IOException e) {
-            LOGGER.error(String.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
-            throw new IllegalArgumentException(String.format(UNABLE_TO_DESERIALIZE_STRING, input));
+            LOGGER.error(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input));
         }
 
         return returnDatum;
@@ -262,7 +263,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
         case BigTable:
         case StructuredData:
         default:
-            throw new IllegalArgumentException(String.format(UNABLE_TO_SERIALIZE_STRING, input.getDataType().getDisplayName()));
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_SERIALIZE_STRING, input.getDataType().getDisplayName()));
         }
         return rootNode.toString();
     }

@@ -51,7 +51,7 @@ public class WorkflowExecutionStorageBridge {
     
     public WorkflowExecutionStorageBridge(WorkflowExecutionContext wfExeCtx, MetaDataService metaDataService) {
         this.metaDataService = metaDataService;
-        errorMessageSuffix = String.format(" of workflow '%s' (%s)", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
+        errorMessageSuffix = StringUtils.format(" of workflow '%s' (%s)", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
     }
 
     protected Long addWorkflowExecution(WorkflowExecutionContext wfExeCtx) throws WorkflowExecutionException {
@@ -143,7 +143,7 @@ public class WorkflowExecutionStorageBridge {
                     throw new WorkflowExecutionException("Failed to store end of timeline interval" + errorMessageSuffix, e);
                 }
             } else {
-                throw new WorkflowExecutionException(String.format("Failed to store end of timeline interval '%s' for component '%s'"
+                throw new WorkflowExecutionException(StringUtils.format("Failed to store end of timeline interval '%s' for component '%s'"
                     + " as no valid dm id exists", intervalType.name(), compRunDmId));
             }
         }

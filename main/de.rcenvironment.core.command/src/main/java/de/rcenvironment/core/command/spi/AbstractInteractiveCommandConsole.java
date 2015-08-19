@@ -13,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.command.common.CommandException;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -62,25 +63,25 @@ public abstract class AbstractInteractiveCommandConsole implements TextOutputRec
             switch (ce.getType()) {
             case SYNTAX_ERROR:
                 // do not log anything
-                // log.info(String.format("Syntax error in command \"%s\"; message=%s", ce.getCommandString(), ce.getMessage()));
+                // log.info(StringUtils.format("Syntax error in command \"%s\"; message=%s", ce.getCommandString(), ce.getMessage()));
                 if (ce.getMessage() != null) {
-                    addOutput(String.format("Syntax error: %s", ce.getMessage()));
-                    addOutput(String.format("Use \"%shelp\" to see all available commands.", commandPrefix));
+                    addOutput(StringUtils.format("Syntax error: %s", ce.getMessage()));
+                    addOutput(StringUtils.format("Use \"%shelp\" to see all available commands.", commandPrefix));
                 } else {
-                    addOutput(String.format("Syntax error. Use \"%shelp\" to see all available commands.", commandPrefix));
+                    addOutput(StringUtils.format("Syntax error. Use \"%shelp\" to see all available commands.", commandPrefix));
                 }
                 break;
             case UNKNOWN_COMMAND:
                 // do not log anything
-                addOutput(String.format("Unknown command \"%s\". Use \"%shelp\" to see all available commands.",
+                addOutput(StringUtils.format("Unknown command \"%s\". Use \"%shelp\" to see all available commands.",
                     ce.getCommandString(), commandPrefix));
                 break;
             case EXECUTION_ERROR:
-                log.warn(String.format("Error executing command \"%s\"; message=%s", ce.getCommandString(), ce.getMessage()));
+                log.warn(StringUtils.format("Error executing command \"%s\"; message=%s", ce.getCommandString(), ce.getMessage()));
                 if (ce.getMessage() != null) {
-                    addOutput(String.format("Error executing command \"%s\": %s", ce.getCommandString(), ce.getMessage()));
+                    addOutput(StringUtils.format("Error executing command \"%s\": %s", ce.getCommandString(), ce.getMessage()));
                 } else {
-                    addOutput(String.format("Error executing command \"%s\". "
+                    addOutput(StringUtils.format("Error executing command \"%s\". "
                         + "No message text available; check the log file for more information.", ce.getCommandString()));
                 }
                 break;

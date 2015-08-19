@@ -22,13 +22,11 @@ public final class JoinerComponentConstants {
     public static final String[] COMPONENT_IDS = new String[] { COMPONENT_ID,
         "de.rcenvironment.components.merger.execution.MergerComponent_Merger" };
     /**Constant. */
-    public static final String DATATYPE = "dataType"; 
+    public static final String DATATYPE = "datatype"; 
     /**Constant. */
     public static final String INPUT_COUNT = "inputCount"; 
     /**Constant. */
     public static final String OUTPUT_NAME = "Joined";
-    /**Constant. */
-    public static final String KEY_JOINED = "joined";
     /**Constant. */
     public static final String DYNAMIC_OUTPUT_ID = "joined";
     /**Constant. */

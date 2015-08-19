@@ -15,6 +15,7 @@ import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * A Label within a {@link WorkflowDescription}.
@@ -236,9 +237,9 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
 
     @Override
     public String toString() {
-        return String.format("'%s' (x=%d, y=%d, size=%s, alpha=%d, color=%d %d %d, background=%d %d %d, border=%b, font size=%d)", 
-            text, x, y, size.toString(), alpha, colorText[0], colorText[1], colorText[2],
-            colorBackground[0], colorBackground[1], colorBackground[2], hasBorder, textSize);
+        return StringUtils.format("'%s' (x=%d, y=%d, size=%s, alpha=%d, color=%d %d %d, background=%d %d %d, border=%b, font size=%d)", 
+            text, x, y, size.toString(), alpha, colorText[0], colorText[1], colorText[2], colorBackground[0], colorBackground[1],
+            colorBackground[2], hasBorder, textSize);
     }
 
     /**

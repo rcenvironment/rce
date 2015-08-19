@@ -3,18 +3,22 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS VAMPzero Initializer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.cpacs.vampzeroinitializer.gui;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.cpacs.vampzeroinitializer.common,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.datamanagement.history,
  de.rcenvironment.core.component.workflow.model.api,
+ de.rcenvironment.core.component.xml,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.utils.common.components,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.xml,
+ de.rcenvironment.core.utils.incubator.xml.api,
  de.rcenvironment.cpacs.gui.xpathchooser;version="6.0.0",
  de.rcenvironment.cpacs.utils.common.components,
  org.apache.commons.io;version="1.4.9999",

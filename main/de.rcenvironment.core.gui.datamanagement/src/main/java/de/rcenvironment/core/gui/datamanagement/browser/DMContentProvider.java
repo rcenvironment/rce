@@ -59,6 +59,7 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryData
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -71,6 +72,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Markus Litz
  * @author Robert Mischke
  * @author Christian Weiss
+ * @author Brigitte Boden
  */
 public class DMContentProvider implements ITreeContentProvider {
 
@@ -92,9 +94,9 @@ public class DMContentProvider implements ITreeContentProvider {
 
     private static final String NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME = "%s <%s>";
 
-    private static final String NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP = "%s (%s)";
+    private static final String NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST = "%s (%s)  <%s>";
 
-    private static final String COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP = "%s - %s (%s)";
+    private static final String COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST = "%s - %s (%s)  <%s>";
 
     private static final MetaData METADATA_COMPONENT_CONTEXT_ID = new MetaData(
         MetaDataKeys.COMPONENT_CONTEXT_UUID, true, true);
@@ -192,52 +194,35 @@ public class DMContentProvider implements ITreeContentProvider {
 
     @Override
     public DMBrowserNode[] getChildren(Object parent) {
-        final DMBrowserNode[] result = getChildren(parent, true);
-        return result;
-    }
-
-    /**
-     * Returns the child elements of the given parent element with the option to choose between synchronous and asynchronous execution.
-     * 
-     * @param parent the parent {@link DMBrowserNode}
-     * @param async true, if execution shall be performed asynchronously in a different thread
-     * @return the children
-     */
-    public DMBrowserNode[] getChildren(Object parent, boolean async) {
         final DMBrowserNode node = (DMBrowserNode) parent;
 
         if (node.areChildrenKnown()) {
             return node.getChildrenAsArray();
         } else {
             final Runnable retrieverTask = new RetrieverTask(node);
-            if (async) {
-                Job job = new Job(Messages.dataManagementBrowser) {
+            Job job = new Job(Messages.dataManagementBrowser) {
 
-                    @Override
-                    protected IStatus run(IProgressMonitor monitor) {
-                        try {
-                            monitor.beginTask(Messages.fetchingData, 3);
-                            monitor.worked(2);
-                            retrieverTask.run();
-                            monitor.worked(1);
-                            return Status.OK_STATUS;
-                        } finally {
-                            monitor.done();
-                        }
-                    };
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    try {
+                        monitor.beginTask(Messages.fetchingData, 3);
+                        monitor.worked(2);
+                        retrieverTask.run();
+                        monitor.worked(1);
+                        return Status.OK_STATUS;
+                    } finally {
+                        monitor.done();
+                    }
                 };
-                job.setUser(true);
-                job.schedule();
-                // return a wait signal node as only child
-                final DMBrowserNode waitSignalNode = new DMBrowserNode(
-                    Messages.waitSignalNodeLabel);
-                waitSignalNode.setType(DMBrowserNodeType.Loading);
-                waitSignalNode.markAsLeaf();
-                return new DMBrowserNode[] { waitSignalNode };
-            } else {
-                retrieverTask.run();
-                return node.getChildrenAsArray();
-            }
+            };
+            job.setUser(true);
+            job.schedule();
+            // return a wait signal node as only child
+            final DMBrowserNode waitSignalNode = new DMBrowserNode(
+                Messages.waitSignalNodeLabel);
+            waitSignalNode.setType(DMBrowserNodeType.Loading);
+            waitSignalNode.markAsLeaf();
+            return new DMBrowserNode[] { waitSignalNode };
         }
     }
 
@@ -290,10 +275,10 @@ public class DMContentProvider implements ITreeContentProvider {
         WorkflowRun result = metaDataService.getWorkflowRun(workflowRunID, workflowNode.getNodeIdentifier());
         final long millis = System.currentTimeMillis() - start;
         if (result == null) {
-            log.warn(String.format("Unable to fetch meta data of workflow %d from node %s.", workflowRunID, workflowNode.getName()));
+            log.warn(StringUtils.format("Unable to fetch meta data of workflow %d from node %s.", workflowRunID, workflowNode.getName()));
             return null;
         }
-        log.debug(String.format("metadata query for workflow \'%s\' took %d ms", result.getWorkflowTitle(),
+        log.debug(StringUtils.format("metadata query for workflow \'%s\' took %d ms", result.getWorkflowTitle(),
             millis));
         workflowMetaDataMap.put(workflowRunID, result);
         return result;
@@ -303,7 +288,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
         final long start = System.currentTimeMillis();
         Set<WorkflowRunDescription> workflowDescriptions = metaDataService.getWorkflowRunDescriptions();
-        log.debug(String.format("query for all workflow run descriptions on all known nodes took %d ms",
+        log.debug(StringUtils.format("query for all workflow run descriptions on all known nodes took %d ms",
             (System.currentTimeMillis() - start)));
 
         // map<id, node> to keep track of already-known contexts and their tree nodes
@@ -436,11 +421,11 @@ public class DMContentProvider implements ITreeContentProvider {
         } else {
             workflowNode.setWorkflowHostName(REMOTE);
         }
-        String wfNodeTitle = String.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME,
+        String wfNodeTitle = StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME,
             workflowNode.getName(), workflowNode.getWorkflowHostName());
         if (workflowNode.getMetaData().getValue(METADATA_WORKFLOW_FINAL_STATE) == null) {
             wfNodeTitle =
-                String.format(NODE_TEXT_FORMAT_TITLE_PLUS_STATE, wfNodeTitle,
+                StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_STATE, wfNodeTitle,
                     NOT_TERMINATED_YET);
         }
         workflowNode.setTitle(wfNodeTitle);
@@ -471,41 +456,71 @@ public class DMContentProvider implements ITreeContentProvider {
 
         NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(workflowRun.getControllerNodeID());
         if (nodeId != null) {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationControllerNode, nodeId.getAssociatedDisplayName()),
+            DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationControllerNode, nodeId.getAssociatedDisplayName()),
                 DMBrowserNodeType.InformationText, runInformation);
         }
+        // create component run information subtree
+        DMBrowserNode componentHostInformation = new DMBrowserNode(Messages.componentRunInformationSubtree);
+        componentHostInformation.setType(DMBrowserNodeType.InformationText);
+        runInformation.addChild(componentHostInformation);
+
+        for (final ComponentInstance componentInstance : workflowRun.getComponentRuns().keySet()) {
+
+            if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
+
+                final NodeIdentifier componentRunHostID =
+                    NodeIdentifierFactory.fromNodeId(workflowRun.getComponentRuns().get(componentInstance).iterator().next().getNodeID());
+
+                if (componentRunHostID != null) {
+                    DMBrowserNode compNode =  DMBrowserNode.addNewLeafNode(
+                        StringUtils.format("%s: %s", componentInstance.getComponentInstanceName(),
+                            componentRunHostID.getAssociatedDisplayName()),
+                        DMBrowserNodeType.Component, componentHostInformation);
+                    MetaDataSet metaDataSet = new MetaDataSet();
+                    final String componentName = componentInstance.getComponentInstanceName();
+                    metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
+                    metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
+                    compNode.setMetaData(metaDataSet);
+                    
+                    setComponentIconForDMBrowserNode(compNode);
+                }
+
+            }
+
+        }
+
+        // create timeline sub-tree
         if (starttime != null) {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationStarttime, dateFormat.format(new Date(starttime))),
+            DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationStarttime, dateFormat.format(new Date(starttime))),
                 DMBrowserNodeType.InformationText, runInformation);
         }
         if (endtime != null) {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, dateFormat.format(new Date(endtime))),
+            DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationEndtime, dateFormat.format(new Date(endtime))),
                 DMBrowserNodeType.InformationText, runInformation);
         } else {
             if (finalState != null && finalState.equals(FinalWorkflowState.CORRUPTED)) {
-                DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, UNKNOWN),
+                DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationEndtime, UNKNOWN),
                     DMBrowserNodeType.InformationText, runInformation);
             } else {
-                DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, NOT_YET_AVAILABLE),
+                DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationEndtime, NOT_YET_AVAILABLE),
                     DMBrowserNodeType.InformationText, runInformation);
             }
         }
         if (finalState != null) {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationFinalState, finalState.getDisplayName()),
+            DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationFinalState, finalState.getDisplayName()),
                 DMBrowserNodeType.InformationText,
                 runInformation);
         } else {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationFinalState, NOT_YET_AVAILABLE),
+            DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationFinalState, NOT_YET_AVAILABLE),
                 DMBrowserNodeType.InformationText,
                 runInformation);
         }
         if (areFilesDeleted) {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationAdditionalInformation, Messages.runInformationFilesDeleted),
-                DMBrowserNodeType.InformationText,
-                runInformation);
+            DMBrowserNode.addNewLeafNode(
+                StringUtils.format(Messages.runInformationAdditionalInformation, Messages.runInformationFilesDeleted),
+                DMBrowserNodeType.InformationText, runInformation);
         }
         workflowNode.addChild(runInformation);
-        // create timeline sub-tree
         final DMBrowserNode timelineDMObject = new DMBrowserNode("Timeline");
         timelineDMObject.setType(DMBrowserNodeType.Timeline);
         workflowNode.addChild(timelineDMObject);
@@ -523,17 +538,26 @@ public class DMContentProvider implements ITreeContentProvider {
         }
         for (final ComponentInstance componentInstance : workflowRun.getComponentRuns().keySet()) {
             for (final ComponentRun componentRun : workflowRun.getComponentRuns().get(componentInstance)) {
+                final NodeIdentifier componentRunHostID = NodeIdentifierFactory.fromNodeId(componentRun.getNodeID());
+                final String componentRunHostName;
+                if (componentRunHostID.getIdString().equals(localNodeID.getIdString())) {
+                    componentRunHostName = LOCAL;
+                } else {
+                    componentRunHostName = REMOTE;
+                }
+
                 MetaDataSet metaDataSet = new MetaDataSet();
                 final Long startTime = componentRun.getStartTime();
                 metaDataSet.setValue(METADATA_HISTORY_ORDERING, startTime.toString());
                 final String startDateString = dateFormat.format(new Date(startTime));
-                final String componentSpecificText = String.format("Run %d", componentRun.getRunCounter());
+                final String componentSpecificText = StringUtils.format("Run %d", componentRun.getRunCounter());
                 metaDataSet.setValue(METADATA_HISTORY_USER_INFO_TEXT, componentSpecificText);
                 final String componentName = componentInstance.getComponentInstanceName();
                 metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
                 metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
-                DMBrowserNode dmoChild = new DMBrowserNode(String.format(COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP,
-                    componentName, componentSpecificText, startDateString), timelineNode);
+                DMBrowserNode dmoChild =
+                    new DMBrowserNode(StringUtils.format(COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
+                        componentName, componentSpecificText, startDateString, componentRunHostName), timelineNode);
                 // dmoChild.setDataReferenceId(dataReferenceId);
                 dmoChild.setMetaData(metaDataSet);
                 dmoChild.setType(DMBrowserNodeType.HistoryObject);
@@ -558,24 +582,45 @@ public class DMContentProvider implements ITreeContentProvider {
             final String componentName = componentInstance.getComponentInstanceName();
             metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
             metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
+            final String componentHostName;
+            if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
+                if (NodeIdentifierFactory.fromNodeId(
+                    workflowRun.getComponentRuns().get(componentInstance).iterator().next().getNodeID()).getIdString()
+                    .equals(localNodeID.getIdString())) {
+                    componentHostName = LOCAL;
+                } else {
+                    componentHostName = REMOTE;
+                }
+            } else {
+                componentHostName = "";
+            }
             DMBrowserNode componentNode =
-                new DMBrowserNode(String.format("%s (Runs: %d)", componentName, workflowRun.getComponentRuns().get(componentInstance)
-                    .size()));
+                new DMBrowserNode(StringUtils.format("%s (Runs: %d) <%s>", componentName,
+                    workflowRun.getComponentRuns().get(componentInstance)
+                        .size(), componentHostName));
             componentNode.setType(DMBrowserNodeType.Component);
             componentNode.setMetaData(metaDataSet);
             setComponentIconForDMBrowserNode(componentNode);
             componentsNode.addChild(componentNode);
             for (final ComponentRun componentRun : workflowRun.getComponentRuns().get(componentInstance)) {
+                final NodeIdentifier componentRunHostID = NodeIdentifierFactory.fromNodeId(componentRun.getNodeID());
+                final String componentRunHostName;
+                if (componentRunHostID.getIdString().equals(localNodeID.getIdString())) {
+                    componentRunHostName = LOCAL;
+                } else {
+                    componentRunHostName = REMOTE;
+                }
+
                 final Long startTime = componentRun.getStartTime();
                 MetaDataSet metaDataSetRun = new MetaDataSet();
                 metaDataSetRun.setValue(METADATA_COMPONENT_NAME, componentName);
                 metaDataSetRun.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
                 metaDataSetRun.setValue(METADATA_HISTORY_ORDERING, startTime.toString());
                 final String startDateString = dateFormat.format(new Date(startTime));
-                final String componentSpecificText = String.format("Run %d", componentRun.getRunCounter());
+                final String componentSpecificText = StringUtils.format("Run %d", componentRun.getRunCounter());
                 metaDataSetRun.setValue(METADATA_HISTORY_USER_INFO_TEXT, componentSpecificText);
-                DMBrowserNode dmoChild = new DMBrowserNode(String.format(NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP,
-                    componentSpecificText, startDateString), componentsNode);
+                DMBrowserNode dmoChild = new DMBrowserNode(StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
+                    componentSpecificText, startDateString, componentRunHostName), componentsNode);
                 dmoChild.setMetaData(metaDataSetRun);
                 dmoChild.setType(DMBrowserNodeType.HistoryObject);
                 setComponentIconForDMBrowserNode(dmoChild);
@@ -601,6 +646,14 @@ public class DMContentProvider implements ITreeContentProvider {
     private void createChildrenForHistoryObjectNode(final DMBrowserNode node, ComponentRun componentRun) {
 
         ComponentHistoryDataItemSubtreeBuilder builder = getComponentHistoryDataItemSubtreeBuilder(node);
+
+        final NodeIdentifier componentRunHostID = NodeIdentifierFactory.fromNodeId(componentRun.getNodeID());
+
+        if (componentRunHostID != null) {
+            DMBrowserNode.addNewLeafNode(
+                StringUtils.format(Messages.componentRunInformationNode, componentRunHostID.getAssociatedDisplayName()),
+                DMBrowserNodeType.InformationText, node);
+        }
         String historyDataItem = componentRun.getHistoryDataItem();
         if (historyDataItem != null) {
             if (builder == null) {
@@ -622,7 +675,7 @@ public class DMContentProvider implements ITreeContentProvider {
                             }
                         }
                         MessageDialog.openWarning(Display.getDefault().getActiveShell(), Messages.historyNodeWarningTitle,
-                            String.format(Messages.historyNodeWarningMessage, node.getTitle()));
+                            StringUtils.format(Messages.historyNodeWarningMessage, node.getTitle()));
                         synchronized (warningIsShown) {
                             warningIsShown.remove(node.getPath());
                         }

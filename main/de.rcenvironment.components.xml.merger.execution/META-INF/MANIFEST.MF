@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Merger Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.xml.merger.execution;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.authorization,
@@ -19,6 +19,8 @@ Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.update.api,
  de.rcenvironment.core.component.update.spi,
+ de.rcenvironment.core.component.xml,
+ de.rcenvironment.core.component.xml.api,
  de.rcenvironment.core.datamanagement.commons,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
@@ -26,10 +28,11 @@ Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.common.variables.legacy,
+ de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.incubator.xml,
+ de.rcenvironment.core.utils.incubator.xml.api,
  de.rcenvironment.cpacs.utils.common.components,
- de.rcenvironment.cpacs.utils.common.xml,
  net.sf.saxon;version="9.4.0.1",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;provider=paxlogging,

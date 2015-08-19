@@ -28,6 +28,7 @@ import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.channel.legacy.VariantArray;
 import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
 
@@ -208,7 +209,7 @@ public abstract class AbstractSQLComponent extends AbstractComponent {
         }
         final JDBCProfile profile = jdbcService.getProfileByLabel(profileLabel);
         if (profile == null) {
-            throw new RuntimeException(String.format("JDBC profile with the label '%s' does not exist.", profileLabel));
+            throw new RuntimeException(StringUtils.format("JDBC profile with the label '%s' does not exist.", profileLabel));
         }
         return profile;
     }
@@ -229,7 +230,7 @@ public abstract class AbstractSQLComponent extends AbstractComponent {
             try {
                 connection.close();
             } catch (SQLException e) {
-                logger.error("Database connection could not be closed.", e);
+                logger.error("Database connection could not be closed. " + e.toString());
             }
             connection = null;
         }
@@ -336,8 +337,8 @@ public abstract class AbstractSQLComponent extends AbstractComponent {
                 jdbcConnection.setAutoCommit(autoCommit);
             }
         } catch (SQLException e) {
-            logger.error("SQL Exception occured.", e);
-            throw new RuntimeException(e);
+            logger.error("SQL Exception occured. " + e.toString());
+            throw new RuntimeException(e.toString());
         } finally {
             try {
                 if (resultSet != null) {
@@ -347,7 +348,7 @@ public abstract class AbstractSQLComponent extends AbstractComponent {
                     statement.close();
                 }
             } catch (SQLException e) {
-                logger.error("ResultSet or Statement could not be closed properly.", e);
+                logger.error("ResultSet or Statement could not be closed properly. " + e.toString());
             }
         }
     }

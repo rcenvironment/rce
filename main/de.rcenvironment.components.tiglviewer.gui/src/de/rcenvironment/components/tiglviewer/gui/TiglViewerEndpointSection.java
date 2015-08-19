@@ -22,7 +22,7 @@ public class TiglViewerEndpointSection extends DefaultEndpointPropertySection {
     
     public TiglViewerEndpointSection() {
         super();
-        EndpointSelectionPane inputPane = new EndpointSelectionPane(Messages.outputs,
+        EndpointSelectionPane inputPane = new EndpointSelectionPane(Messages.inputs,
             EndpointType.INPUT, this, false, null, false);
 
         EndpointSelectionPane outputPane = new EndpointSelectionPane(Messages.outputs,

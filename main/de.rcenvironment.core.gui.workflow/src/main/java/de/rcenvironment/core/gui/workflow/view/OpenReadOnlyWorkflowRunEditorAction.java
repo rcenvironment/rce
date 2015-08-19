@@ -25,6 +25,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.FileEditorInput;
 
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 
@@ -57,7 +58,7 @@ public class OpenReadOnlyWorkflowRunEditorAction extends Action {
     
     @Override
     public void run() {
-        final String filename = String.format("%s.wfr", wfExeInfo.getExecutionIdentifier());
+        final String filename = StringUtils.format("%s.wfr", wfExeInfo.getExecutionIdentifier());
         final File tempFile = new File(getFolder(), filename);
         final IPath location = new Path(tempFile.getAbsolutePath());
         final IFile file = ResourcesPlugin.getWorkspace().getRoot().getProject("External Files").getFile(location);
@@ -70,7 +71,9 @@ public class OpenReadOnlyWorkflowRunEditorAction extends Action {
         } catch (PartInitException e) {
             throw new RuntimeException(e);
         }
-        ((ReadOnlyWorkflowRunEditor) editorPart).setWorkflowExecutionInformation(wfExeInfo);
+        if (!((ReadOnlyWorkflowRunEditor) editorPart).isWorkflowExecutionInformationSet()) {
+            ((ReadOnlyWorkflowRunEditor) editorPart).setWorkflowExecutionInformation(wfExeInfo);            
+        }
     }
 
 }

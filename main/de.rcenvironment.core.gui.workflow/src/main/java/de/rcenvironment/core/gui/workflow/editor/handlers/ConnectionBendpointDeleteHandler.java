@@ -18,7 +18,6 @@ import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.PlatformUI;
 
-import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.gui.workflow.ConnectionUtils;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
@@ -56,16 +55,16 @@ public class ConnectionBendpointDeleteHandler extends AbstractHandler {
             if (element instanceof ConnectionPart) {
                 ConnectionPart part = (ConnectionPart) element;
                 connectionWrapper = (ConnectionWrapper) part.getModel();
+                BendpointDeleteAllCommand bendpointDeleteCommand = new BendpointDeleteAllCommand();
+                bendpointDeleteCommand.setConnections(ConnectionUtils.getConnectionsBetweenNodes(
+                    connectionWrapper.getSource(), connectionWrapper.getTarget(), model));
+                bendpointDeleteCommand.setReferencedModel(connectionWrapper);
+                bendpointDeleteCommand.setWorkflowDescription(model);
+                commandStack.execute(bendpointDeleteCommand);
+                break;
             }
         }
 
-        List<Connection> connectionsToDelete = 
-            ConnectionUtils.getConnectionsBetweenNodes(connectionWrapper.getSource(), connectionWrapper.getTarget(), model);
-        BendpointDeleteAllCommand bendpointDeleteCommand = new BendpointDeleteAllCommand();
-        bendpointDeleteCommand.setConnections(connectionsToDelete);
-        bendpointDeleteCommand.setReferencedModel(connectionWrapper);
-        bendpointDeleteCommand.setWorkflowDescription(model);
-        commandStack.execute(bendpointDeleteCommand);
         return null;
     }
 

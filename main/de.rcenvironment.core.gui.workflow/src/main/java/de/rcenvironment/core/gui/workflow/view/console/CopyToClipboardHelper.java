@@ -30,6 +30,12 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow;
  */
 public class CopyToClipboardHelper {
 
+    /** Constant for copy message hotkeys. */
+    public static final String COPY_MESSAGE = "CopyMessage";
+
+    /** Constant for copy line hotkeys. */
+    public static final String COPY_LINE = "CopyLine";
+
     private TableViewer tableViewer;
     
     public CopyToClipboardHelper(TableViewer aTableViewer) {
@@ -39,10 +45,13 @@ public class CopyToClipboardHelper {
     /**
      * Copies the current selection to the clipboard.
      * 
+     * @param copyEvent distinguishes between copy and copy Message only
      */
-    public void copyToClipboard(){
+    public void copyToClipboard(String copyEvent) {
         Clipboard cb = new Clipboard(Display.getDefault());
         ISelection selection = tableViewer.getSelection();
+        
+        
         List<ConsoleRow> consoleRows = new ArrayList<ConsoleRow>();
         if (selection != null && selection instanceof IStructuredSelection) {
             IStructuredSelection sel = (IStructuredSelection) selection;
@@ -52,12 +61,22 @@ public class CopyToClipboardHelper {
                 consoleRows.add(row);
             }
         }
+        
         StringBuilder sb = new StringBuilder();
-        for (ConsoleRow row : consoleRows) {
-            sb.append(row.getPayload() + System.getProperty("line.separator")); //$NON-NLS-1$
+        
+        if (copyEvent.contains(Messages.copyMessage) || copyEvent.equals(COPY_MESSAGE)) { // Copy the message only
+            for (ConsoleRow row : consoleRows) {
+                sb.append(row.getPayload() + System.getProperty("line.separator")); //$NON-NLS-1$
+            }
+        } else if (copyEvent.contains(Messages.copyLine) || copyEvent.equals(COPY_LINE)) { // Copy the whole line
+            for (ConsoleRow row : consoleRows) {
+                sb.append(row + System.getProperty("line.separator")); //$NON-NLS-1$
+            }
         }
+        
         TextTransfer textTransfer = TextTransfer.getInstance();
-        cb.setContents(new Object[] { sb.toString() }, new Transfer[] { textTransfer });    
+        cb.setContents(new Object[] { sb.toString() }, new Transfer[] { textTransfer });
+
     }
     
 }

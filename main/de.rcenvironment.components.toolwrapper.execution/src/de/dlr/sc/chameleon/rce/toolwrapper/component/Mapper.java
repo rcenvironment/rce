@@ -26,19 +26,16 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import javax.xml.xpath.XPathExpressionException;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.commons.io.FileUtils;
 import org.w3c.dom.Document;
 
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.utils.incubator.XSLTErrorHandler;
-import de.rcenvironment.core.utils.incubator.XSLTransformer;
-import de.rcenvironment.core.utils.incubator.XMLHelper;
+import de.rcenvironment.core.utils.common.xml.XMLMappingInformation;
+import de.rcenvironment.core.utils.common.xml.XSLTErrorHandler;
 import de.rcenvironment.core.utils.incubator.xml.XMLException;
-import de.rcenvironment.cpacs.utils.common.xml.XMLMapper;
-import de.rcenvironment.cpacs.utils.common.xml.XMLMappingInformation;
 
 /**
  * Mapping.
@@ -101,7 +98,7 @@ public class Mapper {
                 xmlMapper.map(cpacsIncoming, myToolDoc, mappings);
                 String toolInputFilePath = tool.toolCPACSBehaviorConfiguration.getToolInput();
                 xmlHelper.writeXML(myToolDoc, toolInputFilePath);
-                LOGGER.debug(String.format("Tool input file created (%s)): %s",
+                LOGGER.debug(de.rcenvironment.core.utils.common.StringUtils.format("Tool input file created (%s)): %s",
                     toolInputFilePath, String.valueOf(new File(toolInputFilePath).exists())));
             } catch (XMLException | XPathExpressionException e) {
                 throw new ComponentException("XML error during input mapping.", e);
@@ -203,7 +200,7 @@ public class Mapper {
                     // Update CPACS-File
                     String cpacsResultFilePath = tool.toolCPACSBehaviorConfiguration.getCpacsResult();
                     xmlHelper.writeXML(cpacsInOut, cpacsResultFilePath);
-                    LOGGER.debug(String.format("CPACS result file created (%s)): %s",
+                    LOGGER.debug(de.rcenvironment.core.utils.common.StringUtils.format("CPACS result file created (%s)): %s",
                         cpacsResultFilePath, String.valueOf(new File(cpacsResultFilePath).exists())));
                 } catch (XPathExpressionException | XMLException e) {
                     throw new ComponentException("XML error during output mapping", e);

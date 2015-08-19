@@ -117,7 +117,7 @@ public enum StandardImages implements ImageSource {
      * Datatype Indefinite icon.
      */
     DATATYPE_INDEFINITE_16(fromLocalBundle("datatype_indefinite16.gif")),
-    
+
     /**
      * Datatype File icon.
      */
@@ -207,16 +207,36 @@ public enum StandardImages implements ImageSource {
      * Tool input/output folder icon in workflow data browser.
      */
     TOOL_INPUT_OUTPUT_16(fromLocalBundle("tool_input_output.gif")),
-    
+
     /**
      * Common text node icon in workflow data browser.
      */
     COMMON_TEXT_16(fromLocalBundle("common_text_node.gif")),
     
     /**
+     * Icon for TIGLViewer.
+     */
+    TIGL_ICON(fromLocalBundle("TIGLViewer.png")),
+
+    /**
      * Question mark node icon in workflow data browser.
      */
-    QUESTION_MARK_16(fromLocalBundle("question_mark.gif"));
+    QUESTION_MARK_16(fromLocalBundle("question_mark.gif")),
+
+    /**
+     * Snap to geometry icon in toolbar.
+     */
+    SNAP_TO_GEOMETRY(fromLocalBundle("snapToGeometry.png")),
+
+    /**
+     * Snap to grid icon in toolbar.
+     */
+    SNAP_TO_GRID(fromLocalBundle("snapToGrid.png")),
+
+    /**
+     * Show number of channels per connection icon in toolbar.
+     */
+    SHOW_CONNECTION_NUMBERS(fromLocalBundle("connectNumbers.gif"));
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 
@@ -232,9 +252,8 @@ public enum StandardImages implements ImageSource {
     }
 
     private static ImageDescriptor fromLocalBundle(String filename) {
-        // Note: the enum itself cannot be used for the class parameter, but any class in the bundle
-        // works - misc_ro
-        return ImageDescriptor.createFromFile(ImageManager.class, IMAGE_PATH_PREFIX + filename);
+        // Note: the enum itself cannot be used for the class parameter, but any class in the bundle works - misc_ro
+        return ImageUtils.createImageDescriptorFromBundleResource(ImageManager.class, IMAGE_PATH_PREFIX + filename);
     }
 
     private static ImageDescriptor fromEclipseShared(String eclipseId) {

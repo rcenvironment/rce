@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Test cases for {@link CallbackServiceImpl}.
@@ -76,14 +77,15 @@ public class CallbackServiceImplTest {
         
         try {
             service.callback(id, "unknownMethod", new ArrayList<Serializable>());
-            fail(String.format("Method 'unknownMethod' is not defined for  %s", DummyObject.class.getSimpleName()));
+            fail(StringUtils.format("Method 'unknownMethod' is not defined for  %s", DummyObject.class.getSimpleName()));
         } catch (CommunicationException e) {
             assertTrue(true);
         }
         
         try {
             service.callback(id, "someMethod", new ArrayList<Serializable>());
-            fail(String.format("Method 'someMethod' of %s is not allowed to be called from remote.", DummyObject.class.getSimpleName()));
+            fail(StringUtils
+                .format("Method 'someMethod' of %s is not allowed to be called from remote.", DummyObject.class.getSimpleName()));
         } catch (CommunicationException e) {
             assertTrue(true);
         }

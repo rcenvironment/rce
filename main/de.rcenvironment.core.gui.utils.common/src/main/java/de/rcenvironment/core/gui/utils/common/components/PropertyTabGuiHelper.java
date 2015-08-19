@@ -54,6 +54,8 @@ import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Helper class to create unified-looking GUIs for everything connected with loading/saving of user
  * data.
@@ -363,17 +365,17 @@ public final class PropertyTabGuiHelper {
             if (page != null) {
                 final IEditorPart editor = page.getActiveEditor();
                 if (editor == null) {
-                    LOGGER.debug(String.format(source, "No active editor in workbench page"));
+                    LOGGER.debug(StringUtils.format(source, "No active editor in workbench page"));
                     return null;
                 } else {
                     input = editor.getEditorInput();
                 }
             } else {
-                LOGGER.debug(String.format(source, "No active page in workbench"));
+                LOGGER.debug(StringUtils.format(source, "No active page in workbench"));
                 return null;
             }
         } else {
-            LOGGER.debug(String.format(source, "No active workbench window"));
+            LOGGER.debug(StringUtils.format(source, "No active workbench window"));
             return null;
         }
         // second if-chain to avoid deep nesting
@@ -386,10 +388,10 @@ public final class PropertyTabGuiHelper {
                 }
                 return path.segment(0);
             } else {
-                LOGGER.debug(String.format(source, "Wrong type of active editor input " + input.getClass()));
+                LOGGER.debug(StringUtils.format(source, "Wrong type of active editor input " + input.getClass()));
             }
         } else {
-            LOGGER.debug(String.format(source, "Editor input does not exist"));
+            LOGGER.debug(StringUtils.format(source, "Editor input does not exist"));
         }
         return null;
     }

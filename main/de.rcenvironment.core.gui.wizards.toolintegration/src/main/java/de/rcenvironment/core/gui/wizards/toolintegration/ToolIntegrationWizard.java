@@ -44,6 +44,7 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPageContributor;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPageContributorRegistry;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -232,55 +233,56 @@ public class ToolIntegrationWizard extends Wizard {
     @Override
     public boolean performFinish() {
 
-        Job job = new Job(String.format(Messages.integrateToolJobTitle, configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))) {
+        Job job =
+            new Job(StringUtils.format(Messages.integrateToolJobTitle, configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))) {
 
-            @Override
-            protected IStatus run(IProgressMonitor monitor) {
-                if (checkConfiguration(configurationMap)) {
-                    IntegrationWatcher.setWatcherActive(false);
-                    determineIntegrationContext();
-                    configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, true);
-                    if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) {
-                        File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
-                        if (!icon.isAbsolute()) {
-                            File toolConfigFile =
-                                new File(integrationContext.getRootPathToToolIntegrationDirectory(),
-                                    integrationContext.getNameOfToolIntegrationDirectory()
-                                        + File.separator
-                                        + integrationContext.getToolDirectoryPrefix()
-                                        + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
-                            icon = new File(toolConfigFile, icon.getName());
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    if (checkConfiguration(configurationMap)) {
+                        IntegrationWatcher.setWatcherActive(false);
+                        determineIntegrationContext();
+                        configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, true);
+                        if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) {
+                            File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
+                            if (!icon.isAbsolute()) {
+                                File toolConfigFile =
+                                    new File(integrationContext.getRootPathToToolIntegrationDirectory(),
+                                        integrationContext.getNameOfToolIntegrationDirectory()
+                                            + File.separator
+                                            + integrationContext.getToolDirectoryPrefix()
+                                            + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+                                icon = new File(toolConfigFile, icon.getName());
+                            }
+                            if (icon.exists() && icon.isFile()) {
+                                configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, icon.getAbsolutePath());
+                            }
                         }
-                        if (icon.exists() && icon.isFile()) {
-                            configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, icon.getAbsolutePath());
+
+                        Boolean publish = (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
+                        String toolPath = integrationContext.getRootPathToToolIntegrationDirectory() + File.separator
+                            + integrationContext.getNameOfToolIntegrationDirectory() + File.separator
+                            + integrationContext.getToolDirectoryPrefix()
+                            + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+                        if (publish != null && publish) {
+                            integrationService.addPublishedTool(toolPath);
+                            configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
+                        } else {
+                            integrationService.unpublishTool(toolPath);
                         }
-                    }
+                        integrationService.savePublishedComponents(integrationContext);
+                        integrationService.updatePublishedComponents(integrationContext);
 
-                    Boolean publish = (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
-                    String toolPath = integrationContext.getRootPathToToolIntegrationDirectory() + File.separator
-                        + integrationContext.getNameOfToolIntegrationDirectory() + File.separator
-                        + integrationContext.getToolDirectoryPrefix()
-                        + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
-                    if (publish != null && publish) {
-                        integrationService.addPublishedTool(toolPath);
-                        configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
-                    } else {
-                        integrationService.unpublishTool(toolPath);
+                        integrationService.writeToolIntegrationFile(configurationMap, integrationContext);
+                        if (!integrationService.isToolIntegrated(configurationMap, integrationContext)) {
+                            integrationService.integrateTool(configurationMap, integrationContext);
+                        }
+                        IntegrationWatcher.setWatcherActive(true);
+                        return Status.OK_STATUS;
                     }
-                    integrationService.savePublishedComponents(integrationContext);
-                    integrationService.updatePublishedComponents(integrationContext);
-
-                    integrationService.writeToolIntegrationFile(configurationMap, integrationContext);
-                    if (!integrationService.isToolIntegrated(configurationMap, integrationContext)) {
-                        integrationService.integrateTool(configurationMap, integrationContext);
-                    }
-                    IntegrationWatcher.setWatcherActive(true);
-                    return Status.OK_STATUS;
+                    return Status.CANCEL_STATUS;
                 }
-                return Status.CANCEL_STATUS;
-            }
 
-        };
+            };
 
         job.schedule();
 
@@ -382,7 +384,7 @@ public class ToolIntegrationWizard extends Wizard {
         updateAllPages();
         for (Entry<String, List<ToolIntegrationWizardPage>> addPages : additionalPages.entrySet()) {
             if (newPreviousConfiguration != null
-                && addPages.getKey() != newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE)) {
+                && !addPages.getKey().equals(newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE))) {
                 for (ToolIntegrationWizardPage page : addPages.getValue()) {
                     page.setPageComplete(true);
                 }

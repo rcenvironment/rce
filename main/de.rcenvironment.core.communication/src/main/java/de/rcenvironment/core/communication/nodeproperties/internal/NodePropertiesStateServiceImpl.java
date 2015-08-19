@@ -28,6 +28,7 @@ import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesC
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.utils.common.AutoCreationMap;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
@@ -168,7 +169,7 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
             final Set<NodeProperty> updatedPropertiesCopy = Collections.unmodifiableSet(updatedProperties);
             final Set<NodeProperty> removedPropertiesCopy = Collections.unmodifiableSet(removedProperties);
 
-            log.debug(String.format("Reporting node property state change: %d properties added, %d updated, %d removed",
+            log.debug(StringUtils.format("Reporting node property state change: %d properties added, %d updated, %d removed",
                 addedPropertiesCopy.size(), updatedPropertiesCopy.size(), removedPropertiesCopy.size()));
 
             callbackManager.enqueueCallback(new AsyncCallback<NodePropertiesChangeListener>() {
@@ -259,7 +260,7 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
         // }
 
         if (!disconnectedProperties.isEmpty() || !reconnectedProperties.isEmpty()) {
-            log.debug(String.format(
+            log.debug(StringUtils.format(
                 "Reporting node property state change after topology change: %d properties disconnected, %d reconnected",
                 disconnectedProperties.size(), reconnectedProperties.size()));
 

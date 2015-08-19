@@ -488,6 +488,7 @@ public class SqlWriterComponentSection extends WorkflowNodePropertySection {
         updateDropTableEnabledState();
         // input mapping
         refreshInputMapping();
+        jdbcProfileCombo.setFocus();
         super.refreshSection();
     }
 

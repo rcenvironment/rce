@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.PlatformMessage;
 import de.rcenvironment.core.start.common.validation.PlatformValidator;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Validator to prevent accidental use of same instance data directory if multiple RCE instances are running on the same machine. The check
@@ -36,8 +37,8 @@ public class InstanceDataDirectoryAcquiredValidator implements PlatformValidator
 
         if (!configService.isUsingIntendedProfileDirectory()) {
             result.add(new PlatformMessage(PlatformMessage.Type.ERROR,
-                ValidatorsBundleActivator.bundleSymbolicName,
-                String.format(Messages.instanceIdAlreadyInUse, configService.getOriginalProfileDirectory().getAbsolutePath())));
+                ValidatorsBundleActivator.bundleSymbolicName, StringUtils.format(Messages.instanceIdAlreadyInUse, configService
+                    .getOriginalProfileDirectory().getAbsolutePath())));
         }
 
         return result;

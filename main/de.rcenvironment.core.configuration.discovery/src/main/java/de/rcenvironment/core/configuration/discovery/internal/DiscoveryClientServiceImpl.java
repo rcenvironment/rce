@@ -13,6 +13,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.discovery.client.DiscoveryClientService;
 import de.rcenvironment.core.jetty.JettyService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * SOAP/Jetty implementation of {@link DiscoveryClientService}.
@@ -27,7 +28,7 @@ public class DiscoveryClientServiceImpl implements DiscoveryClientService {
 
     @Override
     public String getReflectedIpFromDiscoveryServer(String address, int port) {
-        String serviceURL = String.format(DiscoveryConstants.SOAP_SERVICE_URL_PATTERN, address, port);
+        String serviceURL = StringUtils.format(DiscoveryConstants.SOAP_SERVICE_URL_PATTERN, address, port);
         logger.info("Querying discovery service at " + serviceURL + " for the reflected local IP address");
         final RemoteDiscoveryService client =
             (RemoteDiscoveryService) jettyService.createWebServiceClient(RemoteDiscoveryService.class, serviceURL);

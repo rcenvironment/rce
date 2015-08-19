@@ -20,6 +20,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPan
  * @author David Scholz
  */
 public class SwitchEndpointPropertiesSection extends EndpointPropertySection {
+   
 
     public SwitchEndpointPropertiesSection() {
 

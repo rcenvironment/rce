@@ -52,7 +52,7 @@ public class BendpointDeleteAllCommand extends Command {
             }
             connection.removeAllBendpoints();
         }
-        ConnectionUtils.validateConnectionWrapperBySameBendpointCount(workflowDescription, referencedWrapper, 
+        ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedWrapper, 
             this.getClass().getSimpleName() + " execute or redo");
     }
 
@@ -70,7 +70,7 @@ public class BendpointDeleteAllCommand extends Command {
                 connection.addBendpoints(bendpointsToRestore);
             }
         }
-        ConnectionUtils.validateConnectionWrapperBySameBendpointCount(workflowDescription, referencedWrapper, 
+        ConnectionUtils.validateConnectionWrapperForEqualBendpointLocations(workflowDescription, referencedWrapper, 
             this.getClass().getSimpleName() + " undo");
     }
     

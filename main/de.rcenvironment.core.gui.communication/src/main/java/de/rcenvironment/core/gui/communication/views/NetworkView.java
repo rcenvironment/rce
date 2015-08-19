@@ -7,6 +7,8 @@
  */
 package de.rcenvironment.core.gui.communication.views;
 
+import java.awt.Toolkit;
+import java.awt.datatransfer.StringSelection;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,13 +18,19 @@ import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
+import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.KeyListener;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
+import org.eclipse.swt.events.MouseEvent;
+import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
@@ -47,6 +55,8 @@ import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
+import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext.Context;
 import de.rcenvironment.core.gui.communication.views.model.NetworkViewModel;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
@@ -59,8 +69,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Sascha Zur
  * @author Robert Mischke
  * @author Oliver Seebach
+ * @param <E>
  */
-public class NetworkView extends ViewPart {
+public class NetworkView<E> extends ViewPart {
 
     /**
      * The ID of the view as specified by the extension.
@@ -79,7 +90,11 @@ public class NetworkView extends ViewPart {
     private static final ImageDescriptor STOP =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/cancel_enabled.gif"));
 
+    private static final ImageDescriptor COPY = ImageManager.getInstance().getImageDescriptor(StandardImages.COPY_16);
+
     private static final ImageDescriptor DELETE = ImageManager.getInstance().getImageDescriptor(StandardImages.DELETE_16);
+
+    private static final String TAB = "\t";
 
     private Display display;
 
@@ -90,6 +105,8 @@ public class NetworkView extends ViewPart {
     private Action toggleRawNodePropertiesVisibleAction;
 
     private Action addNetworkConnectionAction;
+
+    private Action copyRawNodePropertiesToClipBoard;
 
     private Action editNetworkConnectionAction;
 
@@ -130,6 +147,21 @@ public class NetworkView extends ViewPart {
 
     }
 
+    /** A {@link KeyListener} to react on pressedkey's. */
+    private final class NetworkViewKeyListener extends KeyAdapter {
+
+        @Override
+        public void keyPressed(KeyEvent event) {
+            if (event.stateMask == SWT.CTRL) {
+                if (event.keyCode == 'c') {
+                    copyRawNodePropertiesToClipBoard.run();
+                }
+            } else if (event.keyCode == SWT.DEL) {
+                deleteNetworkConnectionAction.run();
+            }
+        }
+    }
+
     private void createActions() {
         // add "show nodeIds" option
         // TODO add icon
@@ -153,21 +185,44 @@ public class NetworkView extends ViewPart {
                 viewer.refresh(NetworkViewContentProvider.NETWORK_ROOT_NODE, false);
             }
         };
+        // copies the selected raw node properties to the clipboard
+        copyRawNodePropertiesToClipBoard = new Action("Copy" + TAB + "Ctrl+C", COPY) {
+
+            @Override
+            public void run() {
+                IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+                NetworkGraphNodeWithContext selectionObject = (NetworkGraphNodeWithContext) selection.getFirstElement();
+                if (selectionObject.getContext() == Context.RAW_NODE_PROPERTY) {
+                    // single raw node selected
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(
+                        labelProvider.getText(selectionObject)), null);
+                } else if (selectionObject.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
+                    // all raw nodes folder selected
+                    String allRawNodeProperties = "RAW NODE PROPERTIES: \n\n";
+                    Map<NodeIdentifier, Map<String, String>> nodeProperties = model.getNodeProperties();
+                    for (NodeIdentifier identifier : nodeProperties.keySet()) {
+                        if (identifier.getAssociatedDisplayName() == selectionObject.getDisplayNameOfNode()) {
+                            for (String nodeProperty : nodeProperties.get(identifier).keySet()) {
+                                allRawNodeProperties += nodeProperty + ": " + nodeProperties.get(identifier).get(nodeProperty) + "\n";
+                            }
+                        }
+                    }
+                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(allRawNodeProperties), null);
+                }
+            }
+        };
 
         // add "add network connection" option
         addNetworkConnectionAction = new Action("Add Network Connection...", ADD) {
 
             @Override
             public void run() {
-
                 AddNetworkConnectionDialog dialog = new AddNetworkConnectionDialog(viewer.getTree().getShell());
 
                 if (dialog.open() == Window.OK) {
-
                     String connectionName = dialog.getConnectionName();
                     boolean connectImmediately = dialog.getConnectImmediately();
                     NetworkContactPoint ncp = dialog.getParsedNetworkContactPoint();
-
                     if (ncp != null) {
                         if (connectionName.isEmpty()) {
                             connectionName = ncp.getHost() + ":" + ncp.getPort();
@@ -186,16 +241,13 @@ public class NetworkView extends ViewPart {
 
             @Override
             public void run() {
-
                 ConnectionSetup setup = getSelectedSetup();
-
                 if (setup != null) {
                     String connectionName = setup.getDisplayName();
                     String networkContactString = setup.getNetworkContactPointString();
                     EditNetworkConnectionDialog dialog =
                         new EditNetworkConnectionDialog(viewer.getTree().getShell(), connectionName, networkContactString);
                     if (dialog.open() == Window.OK) {
-
                         String newConnectionName = dialog.getConnectionName();
                         boolean newConnectImmediately = dialog.getConnectImmediately();
                         NetworkContactPoint ncp = dialog.getParsedNetworkContactPoint();
@@ -215,7 +267,7 @@ public class NetworkView extends ViewPart {
         };
 
         // add "delete network connection" option
-        deleteNetworkConnectionAction = new Action("Delete Network Connection...", DELETE) {
+        deleteNetworkConnectionAction = new Action("Delete Network Connection..." + TAB + "Delete", DELETE) {
 
             @Override
             public void run() {
@@ -229,14 +281,13 @@ public class NetworkView extends ViewPart {
                     dialog.setText("Delete Connection");
                     dialog.setMessage("Do you really want to delete connection \"" + connectionName
                         + "\" to contact point \"" + networkContactString + "\" ?");
-
                     if (dialog.open() == SWT.OK) {
                         connectionSetupService.disposeConnectionSetup(setup);
                     }
                 }
             }
         };
-
+        deleteNetworkConnectionAction.setAccelerator(SWT.DEL);
         // add "start network connection" option
         startNetworkConnectionAction = new Action("Start/Connect", START) {
 
@@ -279,13 +330,30 @@ public class NetworkView extends ViewPart {
 
         viewer.setInput(model);
         viewer.expandToLevel(2);
-
+        viewer.getControl().addKeyListener(new NetworkViewKeyListener());
         // Update context menu on open
         viewer.getTree().addMenuDetectListener(new MenuDetectListener() {
 
             @Override
             public void menuDetected(MenuDetectEvent event) {
                 enablePossibleActionsForSelection(getSelectedSetup());
+            }
+        });
+        
+        viewer.getTree().addMouseListener(new MouseListener() {
+            
+            @Override
+            public void mouseUp(MouseEvent event) {}
+            
+            @Override
+            public void mouseDown(MouseEvent event) {}
+            
+            @Override
+            public void mouseDoubleClick(MouseEvent event) {
+                if (editNetworkConnectionAction.isEnabled()) {
+                    editNetworkConnectionAction.run();
+                    
+                }
             }
         });
 
@@ -447,6 +515,7 @@ public class NetworkView extends ViewPart {
     }
 
     private void enablePossibleActionsForSelection(ConnectionSetup setup) {
+
         if (setup != null) {
             ConnectionSetupState state = setup.getState();
             startNetworkConnectionAction.setEnabled(state.isReasonableToAllowStart());
@@ -454,9 +523,21 @@ public class NetworkView extends ViewPart {
             boolean isDisconnected = state == ConnectionSetupState.DISCONNECTED;
             editNetworkConnectionAction.setEnabled(isDisconnected);
             deleteNetworkConnectionAction.setEnabled(isDisconnected);
+
         } else {
             disableAllActions();
         }
+
+        copyRawNodePropertiesToClipBoard.setEnabled(false);
+        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+
+        if (selection.getFirstElement() instanceof NetworkGraphNodeWithContext) {
+            NetworkGraphNodeWithContext selectionObj = (NetworkGraphNodeWithContext) selection.getFirstElement();
+            if (selectionObj.getContext() == Context.RAW_NODE_PROPERTY || selectionObj.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
+                copyRawNodePropertiesToClipBoard.setEnabled(true);
+            }
+        }
+
     }
 
     private void addToolbarActions() {
@@ -484,7 +565,10 @@ public class NetworkView extends ViewPart {
         menuManager.add(editNetworkConnectionAction);
         menuManager.add(deleteNetworkConnectionAction);
         menuManager.add(new Separator());
+        menuManager.add(copyRawNodePropertiesToClipBoard);
+        menuManager.add(new Separator());
         menuManager.add(subMenuManager);
+        menuManager.updateAll(true);
         Menu menu = menuManager.createContextMenu(viewer.getTree());
         viewer.getTree().setMenu(menu);
         getSite().registerContextMenu(menuManager, viewer);

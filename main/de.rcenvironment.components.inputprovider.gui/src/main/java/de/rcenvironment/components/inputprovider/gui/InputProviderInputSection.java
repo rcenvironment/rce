@@ -17,6 +17,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPan
  * @author Sascha Zur
  * @author Mark Geiger
  */
+// TODO rename class - stam_mr, June 2015.
 public class InputProviderInputSection extends DefaultEndpointPropertySection {
 
     public InputProviderInputSection() {

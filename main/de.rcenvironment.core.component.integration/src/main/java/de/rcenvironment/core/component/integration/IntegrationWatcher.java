@@ -85,7 +85,7 @@ public class IntegrationWatcher implements Runnable {
                         try {
                             Thread.sleep(WAIT_TIME_AFTER_NEW_DIRECTORY_IS_CREATED);
                         } catch (InterruptedException e1) {
-                            LOGGER.error(INTEGRATION_WATCHER + e1);
+                            LOGGER.error(INTEGRATION_WATCHER, e1);
                         }
                         WatchEvent<Path> ev = (WatchEvent<Path>) event;
                         Path filename = ev.context();
@@ -144,14 +144,13 @@ public class IntegrationWatcher implements Runnable {
         }
         String toolName = integrationService.getToolNameToPath(removeConfig.getAbsolutePath());
         if (toolName != null) {
-            integrationService.removeTool(toolName,
-                context);
+            integrationService.removeTool(toolName, context);
         }
     }
 
     private void integrateFile(File newConfiguration) {
         try {
-            if (newConfiguration.getAbsolutePath().endsWith(".json")) {
+            if (newConfiguration.exists() && newConfiguration.getAbsolutePath().endsWith(".json")) {
                 @SuppressWarnings("unchecked") Map<String, Object> configuration =
                     mapper.readValue(newConfiguration, new HashMap<String, Object>().getClass());
                 integrationService.integrateTool(configuration, context);
@@ -159,7 +158,7 @@ public class IntegrationWatcher implements Runnable {
                     newConfiguration.getParentFile());
             }
         } catch (IOException e) {
-            LOGGER.error(e);
+            LOGGER.error("Could not read tool configuration", e);
         }
     }
 

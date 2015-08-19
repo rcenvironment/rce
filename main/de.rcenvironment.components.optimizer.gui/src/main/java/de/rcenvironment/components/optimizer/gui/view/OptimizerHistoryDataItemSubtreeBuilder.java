@@ -26,6 +26,7 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataIte
 import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryDataItemSubtreeBuilder;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -93,12 +94,13 @@ public class OptimizerHistoryDataItemSubtreeBuilder implements ComponentHistoryD
         } else {
             String exceptionInformationText = "";
             if (historyDataItem != null) {
-                exceptionInformationText = String.format("Parsing history data point failed: Expected type %s, but was of type %s",
+                exceptionInformationText = StringUtils.format("Parsing history data point failed: Expected type %s, but was of type %s",
                     String.class.getCanonicalName(),
                     historyDataItem.getClass().getCanonicalName());
             } else {
-                exceptionInformationText = String.format("Parsing history data point failed: Expected type %s, actual type not available.",
-                    String.class.getCanonicalName());
+                exceptionInformationText =
+                    StringUtils.format("Parsing history data point failed: Expected type %s, actual type not available.",
+                        String.class.getCanonicalName());
             }
             throw new IllegalArgumentException(exceptionInformationText);
         }

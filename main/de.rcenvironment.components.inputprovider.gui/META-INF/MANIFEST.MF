@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Input Provider Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.gui;singleton:=true
-Bundle-Version: 6.1.0.qualifier
+Bundle-Version: 6.2.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin
@@ -23,6 +23,7 @@ Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
+ de.rcenvironment.core.utils.common,
  org.apache.commons.logging;version="1.1.1",
  org.eclipse.core.internal.resources,
  org.eclipse.core.resources,

@@ -8,10 +8,15 @@
 
 package de.rcenvironment.components.script.common.registry;
 
+import java.io.File;
+import java.io.Writer;
+import java.util.Map;
+
+import javax.script.ScriptEngine;
+
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
@@ -25,11 +30,9 @@ public interface ScriptExecutor {
      * Prepares the executor when the component is started.
      * 
      * @param componentContext current {@link ComponentContext}
-     * @param notificationService current DistributedNotificationService
      * @return true, if preparing was successful.
      */
-    // TODO seid_do20130523: why is notification service "injected" here and not via OSGi DS
-    boolean prepareExecutor(ComponentContext componentContext, DistributedNotificationService notificationService);
+    boolean prepareExecutor(ComponentContext componentContext);
 
     /**
      * This method is called each time before the runScript method. It is for preparing the next
@@ -72,4 +75,56 @@ public interface ScriptExecutor {
      * Reset method for nested loops.
      */
     void reset();
+
+    /**
+     * @param componentContext .
+     */
+    void setComponentContext(ComponentContext componentContext);
+
+    /**
+     * 
+     * @param scriptEngine .
+     */
+    void setScriptEngine(ScriptEngine scriptEngine);
+
+    /**
+     * @param historyDataItem .
+     */
+    void setHistoryDataItem(ScriptComponentHistoryDataItem historyDataItem);
+
+    /**
+     * 
+     * @param stateMap .
+     */
+    void setStateMap(Map<String, Object> stateMap);
+
+    /**
+     * 
+     * 
+     * @param stdoutLogFile .
+     */
+    void setStdoutLogFile(File stdoutLogFile);
+
+    /**
+     * @param stdoutWriter .
+     */
+    void setStdoutWriter(Writer stdoutWriter);
+
+    /**
+     * 
+     * @param stderrWriter .
+     */
+    void setStderrWriter(Writer stderrWriter);
+
+    /**
+     * 
+     * @param path .
+     */
+    void setWorkingPath(String path);
+
+    /**
+     * 
+     * @param stderrLogFile .
+     */
+    void setStderrLogFile(File stderrLogFile);
 }

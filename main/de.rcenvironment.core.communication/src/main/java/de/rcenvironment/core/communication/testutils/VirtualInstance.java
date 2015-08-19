@@ -39,6 +39,7 @@ import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Provides a simulated/"virtual" node instance. Intended for use in integration testing; a major use case is setting up networks of virtual
@@ -220,9 +221,9 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     public String getFormattedLSAKnowledge() {
         StringBuilder buffer = new StringBuilder();
         Map<NodeIdentifier, Map<String, String>> properties = getService(NodePropertiesService.class).getAllNodeProperties();
-        buffer.append(String.format("LSA properties as seen by %s (%d entries):", getNodeId(), properties.size()));
+        buffer.append(StringUtils.format("LSA properties as seen by %s (%d entries):", getNodeId(), properties.size()));
         for (Entry<NodeIdentifier, Map<String, String>> entry : properties.entrySet()) {
-            buffer.append(String.format("\n  %s: %s", entry.getKey(), entry.getValue().get(NodePropertyConstants.KEY_LSA)));
+            buffer.append(StringUtils.format("\n  %s: %s", entry.getKey(), entry.getValue().get(NodePropertyConstants.KEY_LSA)));
         }
         return buffer.toString();
     }

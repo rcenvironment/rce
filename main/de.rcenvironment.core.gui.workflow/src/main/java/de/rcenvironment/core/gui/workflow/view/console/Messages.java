@@ -39,7 +39,10 @@ public class Messages extends NLS {
     public static String search;
 
     /** Constant. */
-    public static String copy;
+    public static String copyMessage;
+    
+    /** Constant. */
+    public static String copyLine;
 
     /** Constant. */
     public static String type;

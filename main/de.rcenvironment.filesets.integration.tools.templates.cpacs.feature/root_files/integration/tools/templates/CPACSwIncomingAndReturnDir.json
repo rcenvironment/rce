@@ -1,7 +1,7 @@
 {
   "templateName" : "CPACS Tool with incoming and return directory",
-  "preScript" : "shutil.rmtree(\"${dir:tool}\\\\IncomingDirectory\", True)\r\nshutil.copytree(\"${in:Incoming directory}\", \"${dir:tool}\\\\IncomingDirectory\")\r\n",
-  "postScript" : "${out:Return directory} = \"${dir:tool}\\\\ReturnDirectory\"",
+  "preScript" : "shutil.rmtree('${dir:tool}/IncomingDirectory', True)\r\nshutil.copytree('${in:Incoming directory}', '${dir:tool}/IncomingDirectory')\r\n",
+  "postScript" : "RCE.write_output('Return directory', '${dir:tool}/ReturnDirectory')",
   "alwaysRun" : true,
   "groupName" : "CPACS",
   "setToolDirAsWorkingDir" : true,

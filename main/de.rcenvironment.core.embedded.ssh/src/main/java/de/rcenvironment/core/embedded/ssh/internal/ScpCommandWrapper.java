@@ -26,6 +26,7 @@ import org.apache.sshd.server.command.ScpCommandFactory;
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.embedded.ssh.api.ScpContext;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Class for pre-processing SCP commands before handing them over to the native {@link ScpCommand}.
@@ -83,7 +84,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
                     throw e;
                 }
             } else {
-                throw new AuthenticationException(String.format("No permission to access SCP path \"%s\"", virtualScpPath));
+                throw new AuthenticationException(StringUtils.format("No permission to access SCP path \"%s\"", virtualScpPath));
             }
         } catch (AuthenticationException e) {
             logger.warn("Denied SCP access for user " + username + ": " + e.toString());
@@ -124,7 +125,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
         String originalCommandStart = originalCommand.substring(0, startOfPath);
         String originalPath = originalCommand.substring(startOfPath);
 
-        logger.debug(String.format("Rewriting access to logical file path '%s' (command prefix: '%s')",
+        logger.debug(StringUtils.format("Rewriting access to logical file path '%s' (command prefix: '%s')",
             originalPath, originalCommandStart));
         if (!originalPath.startsWith(scpContext.getVirtualScpRootPath())) {
             throw new IllegalStateException("Virtual SCP path '" + originalPath + "' does not start with expected root path '"

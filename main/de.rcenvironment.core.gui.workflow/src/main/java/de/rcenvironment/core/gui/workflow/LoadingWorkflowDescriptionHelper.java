@@ -35,6 +35,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPer
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateUtils;
 import de.rcenvironment.core.component.workflow.update.api.SimplePersistentWorkflowDescriptionUpdateService;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Utility class for loading workflows.
@@ -64,49 +65,50 @@ public final class LoadingWorkflowDescriptionHelper {
 
         try {
             if (checkForUpdates) {
-                SimplePersistentWorkflowDescriptionUpdateService updateService = new SimplePersistentWorkflowDescriptionUpdateService();
-                PersistentWorkflowDescription persistentDescription =
-                    updateService
-                        .createPersistentWorkflowDescription(
-                            IOUtils.toString(getContent(file, workspaceFile), WorkflowConstants.ENCODING_UTF8),
-                            Activator
-                                .getInstance().getUser());
+                try (InputStream fileInputStream = getContent(file, workspaceFile)) {
+                    SimplePersistentWorkflowDescriptionUpdateService updateService = new SimplePersistentWorkflowDescriptionUpdateService();
+                    PersistentWorkflowDescription persistentDescription = updateService.createPersistentWorkflowDescription(
+                        IOUtils.toString(fileInputStream, WorkflowConstants.ENCODING_UTF8),
+                                Activator.getInstance().getUser());
 
-                boolean hasUpdate = updateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, false);
-                boolean isUpdateNonSilent = hasUpdate;
-
-                if (!hasUpdate) {
-                    hasUpdate = updateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, true);
-                }
-                if (hasUpdate) {
-                    if (isUpdateNonSilent) {
-
-                        Display.getDefault().asyncExec(new Runnable() {
-
-                            @Override
-                            public void run() {
-                                IPreferenceStore prefs = Activator.getInstance().getPreferenceStore();
-                                if (!prefs.getString(PREFS_KEY_UPDATEAUTOMATICALLY).equals(String.valueOf(true))) {
-                                    MessageDialogWithToggle dialog = MessageDialogWithToggle.openInformation(
-                                        PlatformUI.getWorkbench().getDisplay().getActiveShell(),
-                                        Messages.incompatibleVersionTitle,
-                                        Messages.incompatibleVersionMessage,
-                                        Messages.updateIncompatibleVersionSilently,
-                                        false, prefs, PREFS_KEY_UPDATEAUTOMATICALLY);
-                                    prefs.putValue(PREFS_KEY_UPDATEAUTOMATICALLY, String.valueOf(dialog.getToggleState()));
-                                }
-                            }
-                        });
+                    boolean hasUpdate = updateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, false);
+                    boolean isUpdateNonSilent = hasUpdate;
+    
+                    if (!hasUpdate) {
+                        hasUpdate = updateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, true);
                     }
-                    if (workspaceFile != null) {
-                        updateWorkflow(persistentDescription, workspaceFile, isUpdateNonSilent);
-                    } else if (file != null) {
-                        updateWorkflow(persistentDescription, file, isUpdateNonSilent);
+                    if (hasUpdate) {
+                        if (isUpdateNonSilent) {
+    
+                            Display.getDefault().asyncExec(new Runnable() {
+    
+                                @Override
+                                public void run() {
+                                    IPreferenceStore prefs = Activator.getInstance().getPreferenceStore();
+                                    if (!prefs.getString(PREFS_KEY_UPDATEAUTOMATICALLY).equals(String.valueOf(true))) {
+                                        MessageDialogWithToggle dialog = MessageDialogWithToggle.openInformation(
+                                            PlatformUI.getWorkbench().getDisplay().getActiveShell(),
+                                            Messages.incompatibleVersionTitle,
+                                            Messages.incompatibleVersionMessage,
+                                            Messages.updateIncompatibleVersionSilently,
+                                            false, prefs, PREFS_KEY_UPDATEAUTOMATICALLY);
+                                        prefs.putValue(PREFS_KEY_UPDATEAUTOMATICALLY, String.valueOf(dialog.getToggleState()));
+                                    }
+                                }
+                            });
+                        }
+                        if (workspaceFile != null) {
+                            updateWorkflow(persistentDescription, workspaceFile, isUpdateNonSilent);
+                        } else if (file != null) {
+                            updateWorkflow(persistentDescription, file, isUpdateNonSilent);
+                        }
                     }
                 }
             }
-            return new WorkflowDescriptionPersistenceHandler()
-                .readWorkflowDescriptionFromStream(getContent(file, workspaceFile), Activator.getInstance().getUser());
+            try (InputStream fileInputStream = getContent(file, workspaceFile)) {
+                return new WorkflowDescriptionPersistenceHandler().readWorkflowDescriptionFromStream(
+                    fileInputStream, Activator.getInstance().getUser());
+            }
         } catch (IOException | CoreException | ParseException e) {
             handleError(LoadingWorkflowDescriptionHelper.getNameOfWorkflowFile(file, workspaceFile), silentUpdate, e);
             throw new RuntimeException(e);
@@ -157,7 +159,7 @@ public final class LoadingWorkflowDescriptionHelper {
             @Override
             public void run() {
                 MessageDialog.openError(Display.getDefault().getActiveShell(), Messages.workflowUpdateFailureTitle,
-                    String.format(message, e.getMessage()));
+                    StringUtils.format(message, e.getMessage()));
             }
         });
 

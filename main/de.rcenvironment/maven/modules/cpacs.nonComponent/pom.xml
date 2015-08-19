@@ -15,7 +15,6 @@
 
 	<modules>
 		<module>${projects-root}/de.rcenvironment.cpacs.utils.common</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.utils.common.tests</module>
 
 		<module>${projects-root}/de.rcenvironment.cpacs.component.integration</module>
 
@@ -23,11 +22,6 @@
 		<module>${projects-root}/de.rcenvironment.cpacs.gui.wizards.toolintegration</module>
 		<module>${projects-root}/de.rcenvironment.cpacs.gui.wizards.exampleproject</module>
 		<module>${projects-root}/de.rcenvironment.cpacs.gui.workflow.integration</module>
-
-		<module>${projects-root}/de.rcenvironment.cpacs.branding</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.branding.login</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.branding.workflow</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.branding.feature</module>
 
 		<module>${projects-root}/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature</module>
 	</modules>

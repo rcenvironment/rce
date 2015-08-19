@@ -12,6 +12,7 @@ import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -96,7 +97,7 @@ public class PlaceholderPage extends WizardPage {
 
     private Map<Integer, String> treeItemToUUIDMap;
 
-    private Map<String, List<String>> placeholderValidators;
+    private Map<String, Set<String>> placeholderValidators;
 
     /**
      * The Constructor.
@@ -236,7 +237,8 @@ public class PlaceholderPage extends WizardPage {
                     Control control = controlMap.get(secondLevel.hashCode());
                     if (control instanceof Text) {
                         Text current = (Text) control;
-                        parent.setExpanded(true); // Always expand. Copy into if branch, if it should
+                        parent.setExpanded(true); // Always expand. Copy into if branch, if it
+                                                  // should
                         // only open when nothing is in it
                         if (current != null && (current.getText().equals("")
                             || current.getText() == null)) {
@@ -274,7 +276,7 @@ public class PlaceholderPage extends WizardPage {
         TreeColumn column4 = new TreeColumn(componentPlaceholderTree, SWT.CENTER);
         column4.setText("");
         column4.setWidth(HUNDRED);
-        placeholderValidators = new HashMap<String, List<String>>();
+        placeholderValidators = new HashMap<String, Set<String>>();
         Set<String> componentTypesWithPlaceholder = placeholderHelper.getIdentifiersOfPlaceholderContainingComponents();
         String[] componentTypesWithPlaceholderArray =
             componentTypesWithPlaceholder.toArray(new String[componentTypesWithPlaceholder.size()]);
@@ -296,6 +298,9 @@ public class PlaceholderPage extends WizardPage {
             for (String componentPlaceholder : globalPlaceholderOrder) {
                 TreeItem compPHTreeItem = new TreeItem(componentIDTreeItem, 0);
                 String guiName = placeholderMetaData.getGuiName(componentPlaceholder);
+                if (guiName == null) {
+                    guiName = "";
+                }
                 treeItemNameToPlaceholder.put(compPHTreeItem.hashCode(), componentPlaceholder);
 
                 compPHTreeItem.setText(0, guiName);
@@ -534,16 +539,16 @@ public class PlaceholderPage extends WizardPage {
     }
 
     private void addPlaceholderValidator(final String componentName, String placeholderName) {
-        List<String> placeholderNames = placeholderValidators.get(componentName);
+        Set<String> placeholderNames = placeholderValidators.get(componentName);
         if (placeholderNames == null) {
-            placeholderNames = new LinkedList<String>();
+            placeholderNames = new HashSet<String>();
         }
         placeholderNames.add(placeholderName);
         placeholderValidators.put(componentName, placeholderNames);
     }
 
     private void removePlaceholderValidator(final String componentName, final String placeholderName) {
-        List<String> placeholderNames = placeholderValidators.get(componentName);
+        Set<String> placeholderNames = placeholderValidators.get(componentName);
         placeholderNames.remove(placeholderName);
         if (placeholderNames.isEmpty()) {
             placeholderValidators.remove(componentName);
@@ -803,7 +808,7 @@ public class PlaceholderPage extends WizardPage {
         }
 
         @Override
-        public void widgetSelected(SelectionEvent arg0) {
+        public void widgetSelected(SelectionEvent event) {
             Control current = getControl(parentTreeItem.hashCode());
             if (current != null) {
                 String replaceText = null;
@@ -845,38 +850,8 @@ public class PlaceholderPage extends WizardPage {
         }
 
         @Override
-        public void widgetDefaultSelected(SelectionEvent arg0) {
-            widgetSelected(arg0);
-        }
-    }
-
-    /**
-     * 
-     * {@link PlaceholderValidator} stores the information about the component and the {@link Type}. It is only created when a component has
-     * an error (e.g. input text is missing)
-     *
-     * @author Marc Stammerjohann
-     */
-    private static class PlaceholderValidator {
-
-        private Type type;
-
-        public PlaceholderValidator(Type type) {
-            this.type = type;
-        }
-
-        public Type getType() {
-            return type;
-        }
-
-        /**
-         * 
-         * The type of {@link PlaceholderValidator}.
-         *
-         * @author Marc Stammerjohann
-         */
-        private enum Type {
-            ERROR;
+        public void widgetDefaultSelected(SelectionEvent event) {
+            widgetSelected(event);
         }
     }
 

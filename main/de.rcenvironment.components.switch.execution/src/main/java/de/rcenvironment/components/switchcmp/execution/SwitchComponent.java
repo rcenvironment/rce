@@ -8,8 +8,8 @@
 
 package de.rcenvironment.components.switchcmp.execution;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import javax.script.ScriptEngine;
@@ -29,6 +29,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.ScriptingUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
@@ -81,9 +82,8 @@ public class SwitchComponent extends DefaultComponent {
         scriptLanguage = ScriptLanguage.getByName(SwitchComponentConstants.SCRIPT_LANGUAGE);
         scriptingService = componentContext.getService(ScriptingService.class);
         engine = scriptingService.createScriptEngine(scriptLanguage);
-        String errorMessage =
-            ScriptValidation.validateScript(condition, engine, getInputNames(),
-                componentContext.getInputDataType(SwitchComponentConstants.DATA_INPUT_NAME));
+        String errorMessage = ScriptValidation.validateScript(condition, engine, getInputAndConnectionStatus(),
+                getInputsAndDataTypes());
         if (!errorMessage.isEmpty()) { // validation before workflowstart
             componentContext.printConsoleLine(errorMessage, ConsoleRow.Type.STDERR);
             throw new ComponentException(errorMessage);
@@ -138,7 +138,7 @@ public class SwitchComponent extends DefaultComponent {
         }
 
         if (historyDataItem != null) {
-            historyDataItem.setActualCondition(String.format("%s = %b", conditionWithActualValues, returnValue));
+            historyDataItem.setActualCondition(StringUtils.format("%s = %b", conditionWithActualValues, returnValue));
             historyDataItem.setConditionPattern(condition);
         }
 
@@ -156,7 +156,7 @@ public class SwitchComponent extends DefaultComponent {
             }
             outputName = SwitchComponentConstants.FALSE_OUTPUT;
         }
-        componentContext.printConsoleLine(String.format("Wrote to '%s': %s", outputName, switchDatum),
+        componentContext.printConsoleLine(StringUtils.format("Wrote to '%s': %s", outputName, switchDatum),
             ConsoleRow.Type.COMPONENT_OUTPUT);
 
         writeFinalHistoryDataItem();
@@ -174,14 +174,30 @@ public class SwitchComponent extends DefaultComponent {
         }
     }
 
-    private List<String> getInputNames() {
-        List<String> inputNames = new ArrayList<>();
-
+    private Map<String, Boolean> getInputAndConnectionStatus() {
+        Map<String, Boolean> inputs = new HashMap<>();
+        
         for (String name : componentContext.getInputs()) {
-            inputNames.add(name);
+            inputs.put(name, true);
+        }
+        
+        for (String name : componentContext.getInputsNotConnected()) {
+            inputs.put(name, false);
         }
 
-        return inputNames;
+        return inputs;
+    }
+    
+    private Map<String, DataType> getInputsAndDataTypes() {
+        Map<String, DataType> inputs = new HashMap<>();
+        
+        for (String name : componentContext.getInputs()) {
+            inputs.put(name, componentContext.getInputDataType(name));
+        }
+        for (String name : componentContext.getInputsNotConnected()) {
+            inputs.put(name, componentContext.getInputDataType(name));
+        }
+        return inputs;
     }
 
 }

@@ -101,36 +101,25 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             WorkflowDescription workflowDescription = getWorkflowDescriptionFromModelObject(modelObject);
             ConnectionWrapper connectionWrapper = (ConnectionWrapper) getModel();
 
-            Connection matchingConnection = null;
-            // TODO check if these flags are actually required and if code can be written more compact without side effects.
-            boolean forward = false;
-            // boolean backward = false;
-
             for (Connection connection : workflowDescription.getConnections()) {
-                if (connectionWrapper.getSource().getIdentifier().equals(connection.getSourceNode().getIdentifier())
-                    && connectionWrapper.getTarget().getIdentifier().equals(connection.getTargetNode().getIdentifier())) {
-                    matchingConnection = connection;
-                    forward = true;
-                    break;
+                if ((connectionWrapper.getSource().getIdentifier().equals(connection.getSourceNode().getIdentifier())
+                    && connectionWrapper.getTarget().getIdentifier().equals(connection.getTargetNode().getIdentifier()))
+                    || (connectionWrapper.getSource().getIdentifier().equals(connection.getTargetNode().getIdentifier())
+                    && connectionWrapper.getTarget().getIdentifier().equals(connection.getSourceNode().getIdentifier()))) {
+                    addBendpointsFromModelToGraphics(connection);
+                    return;
                 }
             }
-            if (!forward) {
-                for (Connection connection : workflowDescription.getConnections()) {
-                    if (connectionWrapper.getSource().getIdentifier().equals(connection.getTargetNode().getIdentifier())
-                        && connectionWrapper.getTarget().getIdentifier().equals(connection.getSourceNode().getIdentifier())) {
-                        matchingConnection = connection;
-                        // backward = true;
-                        break;
-                    }
-                }
-            }
-            org.eclipse.draw2d.Connection connection = getConnectionFigure();
-            List<AbsoluteBendpoint> figureConstraint = new ArrayList<AbsoluteBendpoint>();
-            for (Location location : matchingConnection.getBendpoints()) {
-                figureConstraint.add(new AbsoluteBendpoint(new Point(location.x, location.y)));
-            }
-            connection.setRoutingConstraint(figureConstraint);
         }
+    }
+
+    private void addBendpointsFromModelToGraphics(Connection matchingConnection) {
+        org.eclipse.draw2d.Connection connection = getConnectionFigure();
+        List<AbsoluteBendpoint> figureConstraint = new ArrayList<AbsoluteBendpoint>();
+        for (Location location : matchingConnection.getBendpoints()) {
+            figureConstraint.add(new AbsoluteBendpoint(new Point(location.x, location.y)));
+        }
+        connection.setRoutingConstraint(figureConstraint);
     }
 
     @Override
