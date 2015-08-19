@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -161,10 +161,10 @@ public class EFSDataBackendTest {
     @Test
     public void testDelete() {
         // create file (on base of URI) in file system to delete
-        String dirPath = new File(config.getEfsStorage()).getAbsoluteFile().getAbsolutePath() + File.separator + uuid;
+        String dirPath = new File(config.getEfsStorage()).getAbsoluteFile().getAbsolutePath();
         File dir = new File(dirPath);
         dir.mkdirs();
-        File file = new File(dirPath + File.separator + "file-1");
+        File file = new File(dirPath + File.separator + uuid);
         try {
             file.createNewFile();
         } catch (IOException e) {
@@ -204,6 +204,11 @@ public class EFSDataBackendTest {
         @Override
         public File getProfileDirectory() {
             return new File(System.getProperty("java.io.tmpdir"), "unittest-temp"); // TODO improve
+        }
+
+        @Override
+        public File initializeSubDirInConfigurablePath(ConfigurablePathId pathId, String relativePath) {
+            return new File(config.getEfsStorage());
         }
 
     }

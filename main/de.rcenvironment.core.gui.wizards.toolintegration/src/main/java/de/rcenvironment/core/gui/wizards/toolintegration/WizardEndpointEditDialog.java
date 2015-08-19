@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,6 +33,7 @@ import org.eclipse.swt.widgets.Text;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.gui.utils.common.configuration.VariableNameVerifyListener;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -191,17 +192,18 @@ public class WizardEndpointEditDialog extends Dialog {
         nameText.setLayoutData(textGridData);
         nameText.addListener(SWT.Verify, new VariableNameVerifyListener());
 
-        List<DataType> forbiddenTypes = new LinkedList<DataType>();
-        forbiddenTypes.add(DataType.BigTable);
-        forbiddenTypes.add(DataType.DateTime);
-        forbiddenTypes.add(DataType.Empty);
-        forbiddenTypes.add(DataType.StructuredData);
-        forbiddenTypes.add(DataType.Matrix);
-        forbiddenTypes.add(DataType.SmallTable);
+        List<DataType> supportedDataTypes = new LinkedList<DataType>();
+        supportedDataTypes.add(DataType.ShortText);
+        supportedDataTypes.add(DataType.Boolean);
+        supportedDataTypes.add(DataType.Integer);
+        supportedDataTypes.add(DataType.Float);
+        supportedDataTypes.add(DataType.Vector);
+        supportedDataTypes.add(DataType.FileReference);
+        supportedDataTypes.add(DataType.DirectoryReference);
         new Label(propertyContainer, SWT.NONE).setText(Messages.dataTypeColon);
         dataTypeCombo = new Combo(propertyContainer, SWT.READ_ONLY);
         for (DataType t : DataType.values()) {
-            if (!forbiddenTypes.contains(t)) {
+            if (supportedDataTypes.contains(t)) {
                 dataTypeCombo.add(t.getDisplayName());
                 guiNameToDataType.put(t.getDisplayName(), t);
             }

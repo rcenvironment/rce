@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -41,11 +41,9 @@ public class DMLabelProvider extends ColumnLabelProvider {
             result = DMBrowserImages.IMG_TIMELINE;
         } else if (node.getType() == DMBrowserNodeType.Components) {
             result = DMBrowserImages.IMG_COMPONENTS;
-        } else if (node.getType() == DMBrowserNodeType.Component
-            || node.getType() == DMBrowserNodeType.HistoryObject) {
-            if (node.getIcon() != null) {
-                result = node.getIcon();
-            }
+        } else if ((node.getType() == DMBrowserNodeType.Component || node.getType() == DMBrowserNodeType.HistoryObject)
+            && node.getIcon() != null) {
+            result = node.getIcon();
         } else if (node.getType() == DMBrowserNodeType.DMDirectoryReference) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.FOLDER_16);
         } else if (node.getType() == DMBrowserNodeType.DMFileResource) {
@@ -95,6 +93,10 @@ public class DMLabelProvider extends ColumnLabelProvider {
             result = imageManager.getSharedImage(StandardImages.TOOL_INPUT_OUTPUT_16);
         } else if (node.getType() == DMBrowserNodeType.IntermediateInputsFolder) {
             result = imageManager.getSharedImage(StandardImages.INTERMEDIATE_INPUT_16);
+        } else if (node.getType() == DMBrowserNodeType.CommonText) {
+            result = imageManager.getSharedImage(StandardImages.COMMON_TEXT_16);
+        } else if (node.getType() == DMBrowserNodeType.Custom && node.getIcon() != null) {
+            result = node.getIcon();
         }
         return result;
     }

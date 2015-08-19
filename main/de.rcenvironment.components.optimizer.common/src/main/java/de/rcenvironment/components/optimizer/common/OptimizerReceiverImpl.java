@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,6 +10,9 @@ package de.rcenvironment.components.optimizer.common;
 
 import java.util.List;
 
+import org.apache.commons.logging.LogFactory;
+
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
@@ -54,8 +57,14 @@ public final class OptimizerReceiverImpl implements OptimizerReceiver {
     @Override
     public void initialize() {
         final String notificationId = OptimizerUtils.createDataIdentifier(study);
-        Long missedNumber = notificationService.subscribe(
-            notificationId, notificationSubscriber, platform).get(notificationId);
+        Long missedNumber;
+        try {
+            missedNumber = notificationService.subscribe(
+                notificationId, notificationSubscriber, platform).get(notificationId);
+        } catch (CommunicationException e) {
+            LogFactory.getLog(getClass()).error("Failed to set up subscription for Optimizer data: " + e.getMessage());
+            return; // preserve the "old" RTE behavior for now 
+        }
         // process missed notifications
         if (missedNumber > MINUS_ONE) {
             if (missedNumber > OptimizerPublisher.BUFFER_SIZE - 1) {

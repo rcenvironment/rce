@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -48,19 +50,30 @@ public class BackendSupportTest {
 
     private static String dataScheme = "ftp";
 
-    private static String catalogBackendProvider = "charlie";
+    private static String catalogBackendProvider = "de.rcenvironment.core.datamanagement.backend.metadata.derby";
 
     private MetaDataBackendService catalogBackend = EasyMock.createNiceMock(MetaDataBackendService.class);
 
-    private DataBackend dataBackend = EasyMock.createNiceMock(DataBackend.class);
+    private DataBackend dataBackend;
 
     private BackendSupport backendSupport;
 
     /** Set up. */
     @Before
     public void setUp() {
+        dataBackend = EasyMock.createNiceMock(DataBackend.class);
+        EasyMock.expect(dataBackend.get(EasyMock.anyObject(URI.class))).andReturn(new InputStream() {
+
+            @Override
+            public int read() throws IOException {
+                return 0;
+            }
+        });
+        EasyMock.replay(dataBackend);
+
         backendSupport = new BackendSupport();
         backendSupport.bindConfigurationService(new DummyConfigurationService());
+        backendSupport.bindDataBackendService(dataBackend);
         backendSupport.activate(createBundleContext(catalogBackend, dataBackend));
     }
 

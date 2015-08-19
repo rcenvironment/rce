@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -38,9 +38,9 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
 
     private int iterationsToConsider;
 
-    private int maxIterations = NO_MAX_ITERATIONS;
+    private int maxConvergenceChecks = NO_MAX_ITERATIONS;
 
-    private int iterations = 1;
+    private int convergenceChecks = 0;
 
     private Boolean[] isConverged;
 
@@ -53,11 +53,10 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
             .KEY_ITERATIONS_TO_CONSIDER);
         iterationsToConsider = Integer.parseInt(iterationsToConsiderAsString);
 
-        String maxIterationsAsString = componentContext.getConfigurationValue(ConvergerComponentConstants.KEY_MAX_ITERATIONS);
-        if (maxIterationsAsString != null && !maxIterationsAsString.isEmpty()) {
-            maxIterations = Integer.parseInt(maxIterationsAsString);
+        String maxConvergenceChecksAsString = componentContext.getConfigurationValue(ConvergerComponentConstants.KEY_MAX_CONV_CHECKS);
+        if (maxConvergenceChecksAsString != null && !maxConvergenceChecksAsString.isEmpty()) {
+            maxConvergenceChecks = Integer.parseInt(maxConvergenceChecksAsString);
         }
-
         initializeIterationValues();
 
         isConverged = new Boolean[2];
@@ -82,7 +81,7 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
     }
 
     private boolean areMaxIterationsReached() {
-        return maxIterations != NO_MAX_ITERATIONS && iterations >= maxIterations;
+        return maxConvergenceChecks != NO_MAX_ITERATIONS && convergenceChecks >= maxConvergenceChecks;
     }
 
     private Boolean[] isConverged() {
@@ -101,14 +100,15 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
                 if (Math.abs((maxValue - minValue) / maxValue) > epsR) {
                     isConvergedRel = false;
                 }
+                convergenceChecks++;
                 componentContext.printConsoleLine(String.format("%s -> min: %s; max: %s; converged abs: %s; converged rel: %s",
-                    inputName + iterations, minValue, maxValue, isConvergedAbs, isConvergedRel), ConsoleRow.Type.STDOUT);
+                    inputName + convergenceChecks, minValue, maxValue, isConvergedAbs, isConvergedRel), ConsoleRow.Type.STDOUT);
             } else {
                 isConvergedAbs = false;
                 isConvergedRel = false;
                 componentContext.printConsoleLine(
                     String.format("%s -> skipped convergence check - not enough iterations yet (current: %s, required: %s)",
-                        inputName + iterations, iterations, iterationsToConsider), ConsoleRow.Type.STDOUT);
+                        inputName + convergenceChecks, convergenceChecks, iterationsToConsider), ConsoleRow.Type.STDOUT);
             }
         }
         return new Boolean[] { isConvergedAbs, isConvergedRel };
@@ -134,7 +134,7 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
 
     @Override
     protected void resetInnerLoopHook() {
-        iterations = 1;
+        convergenceChecks = 0;
         for (CircularFifoQueue<Double> queues : iterationsValues.values()) {
             queues.clear();
         }
@@ -158,7 +158,6 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
     protected void processInputsHook() {
         addValuesToLastIterationsValues();
         isConverged = isConverged();
-        iterations++;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -212,7 +212,7 @@ public class CommunicationServiceImplTest {
         private <T> T createNullService(final Class<T> clazz) {
             return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz },
                 new InvocationHandler() {
-
+                    @Override
                     public Object invoke(Object proxy, Method method, Object[] parameters) throws Throwable {
                         throw new UndeclaredThrowableException(new RuntimeException("Service not available"));
                     }

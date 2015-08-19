@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -64,6 +64,7 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
         this.nodeIdString = nodeId;
     }
 
+    @Override
     public String getDisplayName() {
         return displayName;
     }

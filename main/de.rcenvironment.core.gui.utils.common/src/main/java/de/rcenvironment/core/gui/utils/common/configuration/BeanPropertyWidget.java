@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -154,15 +154,18 @@ public class BeanPropertyWidget extends Composite {
 
             };
 
+            @Override
             public void cancelEditor() {
                 Display.getCurrent().asyncExec(runnable);
             }
 
+            @Override
             public void editorValueChanged(boolean oldValidState,
                     boolean newValidState) {
                 // Do nothing
             }
 
+            @Override
             public void applyEditorValue() {
                 final Object newValue;
                 if (descriptor instanceof SelectionPropertyDescriptor) {

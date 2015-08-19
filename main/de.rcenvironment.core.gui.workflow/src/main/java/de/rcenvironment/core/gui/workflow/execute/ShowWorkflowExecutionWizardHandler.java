@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -81,8 +81,6 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
     private static final String NODES = "nodes";
 
     private static final String IDENTIFIER = "identifier";
-
-    private static final String DE_RCENVIRONMENT_RCE_GUI_WORKFLOW = "de.rcenvironment.rce.gui.workflow";
 
     private static final Pattern WORKFLOW_FILENAME_PATTERN = Pattern.compile("^.*\\.wf$");
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -92,15 +92,19 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  */
 public class WorkflowNodePart extends AbstractGraphicalEditPart implements PropertyChangeListener, NodeEditPart {
 
+    /** The width and height of a small workflow node's bounds. */
+    public static final int SMALL_WORKFLOW_NODE_WIDTH = 38;
+    
+    /**
+     * The width and height of a medium sized workflow node.
+     */
+    public static final int WORKFLOW_NODE_WIDTH = 75;
+
     private static final int MAX_LABELTEXT_SIZE = 30;
 
     private static final String LABEL_TEXT_SEPARATOR = "...";
 
     private static final int MAX_LABEL_WIDTH = 73;
-
-    private static final int SMALL_WORKFLOW_NODE_WIDTH = 38;
-
-    private static final int WORKFLOW_NODE_WIDTH = 75;
 
     private static final Image ERROR_IMAGE = ImageDescriptor.createFromURL(
         ComponentStateFigureImpl.class.getResource("/resources/icons/error.gif")).createImage();
@@ -152,8 +156,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * {@link WorkflowNodeValidityStateListener} to update the valid state of this
-     * {@link WorkflowNodePart} using {@link #updateValid(boolean)}.
+     * {@link WorkflowNodeValidityStateListener} to update the valid state of this {@link WorkflowNodePart} using
+     * {@link #updateValid(boolean)}.
      */
     private final WorkflowNodeValidityStateListener validityStateListener = new WorkflowNodeValidityStateListener() {
 
@@ -178,12 +182,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     public void activate() {
         super.activate();
         ((PropertiesChangeSupport) getModel()).addPropertyChangeListener(this);
-        Display.getDefault().asyncExec(new Runnable() {
+        Display.getDefault().syncExec(new Runnable() {
 
             @Override
             public void run() {
-                validationSupport.setWorkflowNode(getWorkflowNode());
-                updateValid();
+                verifyValid();
             }
         });
     }
@@ -197,7 +200,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             @Override
             @TaskDescription("Clear workflow node in validation support.")
             public void run() {
-                validationSupport.setWorkflowNode(null);
+                validationSupport.setWorkflowNodeAndValidation(null);
             }
         });
     }
@@ -229,8 +232,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Updates the visual indicators for {@link WorkflowNodeValidationMessage}s and refreshes the
-     * graphical representation of this {@link WorkflowNodePart}.
+     * Updates the visual indicators for {@link WorkflowNodeValidationMessage}s and refreshes the graphical representation of this
+     * {@link WorkflowNodePart}.
      * 
      * @param valid true, if validation yielded not {@link WorkflowNodeValidationMessage}s.
      */
@@ -415,7 +418,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         }
         return generateTooltipTextBase(node) + ": " + enabled;
     }
-    
+
     protected String generateTooltipTextBase(WorkflowNode node) {
         if (node.getComponentDescription().getVersion() != null
             && toolIntegrationRegistry.hasId(node.getComponentDescription().getIdentifier())) {
@@ -623,8 +626,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Checks for registered editor actions and if it finds one for the selected component, this is
-     * invoked. As no action is currently required here, the method is deprecated.
+     * Checks for registered editor actions and if it finds one for the selected component, this is invoked. As no action is currently
+     * required here, the method is deprecated.
      */
     @Deprecated
     private void performDefaultAction() {
@@ -658,6 +661,15 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         }
     }
 
+    /**
+     * Verifies the valid state of the {@link WorkflowNode} and refreshes the visuals of the {@link WorkflowNodePart}.
+     */
+    public void verifyValid() {
+        WorkflowNode workflowNode = getWorkflowNode();
+        validationSupport.setWorkflowNodeAndValidation(workflowNode);
+        updateValid();
+        workflowNode.setValid(true);
+    }
 
     /**
      * EditPolicy that allows connections.
@@ -693,8 +705,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Anchor for the depiction of reconnections, i.e. connections from one component to the same.
-     * Handles the source anchor.
+     * Anchor for the depiction of reconnections, i.e. connections from one component to the same. Handles the source anchor.
      * 
      * @author Oliver Seebach
      */
@@ -716,8 +727,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Anchor for the depiction of reconnections, i.e. connections from one component to the same.
-     * Handles the target anchor.
+     * Anchor for the depiction of reconnections, i.e. connections from one component to the same. Handles the target anchor.
      * 
      * @author Oliver Seebach
      */

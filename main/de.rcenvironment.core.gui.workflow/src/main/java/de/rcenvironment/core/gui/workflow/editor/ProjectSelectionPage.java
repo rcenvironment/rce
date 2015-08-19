@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -298,8 +298,10 @@ final class ProjectSelectionPage extends WizardPage {
                             break;
                         }
                     }
-                    currentCandidates = matchedItem.getItems();
-                    lastItem = matchedItem;
+                    if (matchedItem != null) {
+                        currentCandidates = matchedItem.getItems();
+                        lastItem = matchedItem;
+                    }
                 }
                 if (lastItem != null) {
                     projectTreeViewer.getTree().setSelection(lastItem);

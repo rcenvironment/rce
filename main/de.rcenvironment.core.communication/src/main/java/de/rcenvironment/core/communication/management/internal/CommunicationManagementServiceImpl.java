@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -126,7 +126,8 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
             final String displayName = String.format("%s:%s", ncp.getHost(), ncp.getPort());
             boolean connectOnStartup = !"false".equals(ncp.getAttributes().get("connectOnStartup"));
             ConnectionSetup setup = connectionSetupService.createConnectionSetup(ncp, displayName, connectOnStartup);
-            log.debug("Loaded pre-configured network connection \"%s\" (Settings: %s)" + setup.getDisplayName());
+            log.debug(String.format("Loaded pre-configured network connection \"%s\" (Settings: %s)",
+                setup.getDisplayName(), ncp.getAttributes()));
             if (setup.getConnnectOnStartup()) {
                 setup.signalStartIntent();
             }

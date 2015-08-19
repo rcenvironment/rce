@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -150,4 +150,15 @@ public enum DMBrowserNodeType {
      * Node type for intermediate inputs folder node.
      */
     IntermediateInputsFolder,
+    
+    /**
+     * Node type for common text nodes. Content will be opened in editor and must be provided via
+     * {@link DMBrowserNode#setFileContentAndName(String, String)}.
+     */
+    CommonText,
+    
+    /**
+     * Node type for condition folder nodes.
+     */
+    Custom;
 }

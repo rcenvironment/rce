@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,11 +14,9 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
 import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -75,11 +73,11 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String V3_2 = "3.2";
     
-    private static final String CURRENT_VERSION = V3_2;
+    private static final String V4_0 = "4.0";
+    
+    private static final String CURRENT_VERSION = V4_0;
     
     private static TypedDatumService typedDatumService;
-
-    private JsonFactory jsonFactory;
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -113,7 +111,6 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
     public PersistentComponentDescription performComponentDescriptionUpdate(int formatVersion, PersistentComponentDescription description,
         boolean silent) throws IOException {
         if (!silent) {
-            jsonFactory = new JsonFactory();
             if (formatVersion == PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE) {
                 description = firstUpdate(description);
                 description.setComponentVersion(V1_0);
@@ -127,18 +124,37 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                 if (description.getComponentVersion().compareTo(V3_2) < 0) {
                     description = updateFrom31To32(description);
                 }
+                if (description.getComponentVersion().compareTo(V4_0) < 0) {
+                    description = updateFrom32To40(description);
+                }
             }
         }
         return description;
     }
 
+    private PersistentComponentDescription updateFrom32To40(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        ObjectNode configNode = (ObjectNode) node.get("configuration");
+        JsonNode maxIterNode = configNode.get("maxIterations");
+        if (maxIterNode != null) {
+            String maxConvChecks = maxIterNode.getTextValue();
+            configNode.remove("maxIterations");
+            configNode.put(ConvergerComponentConstants.KEY_MAX_CONV_CHECKS, maxConvChecks);
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+        description.setComponentVersion(V4_0);
+        return description;
+    }
+    
     private PersistentComponentDescription updateFrom31To32(PersistentComponentDescription description)
         throws JsonParseException, IOException {
         description = PersistentComponentDescriptionUpdaterUtils.updateIsNestedLoop(description);
 
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(jsonParser);
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         
         JsonNode dynInputsNode = node.get("dynamicInputs");
         
@@ -263,9 +279,8 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
      * */
     private PersistentComponentDescription firstUpdate(PersistentComponentDescription description) throws IOException, JsonParseException,
         JsonProcessingException, JsonGenerationException, JsonMappingException {
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(jsonParser);
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         description = replaceEpsDataType(mapper, node, "epsR");
         description = replaceEpsDataType(mapper, node, "epsA");

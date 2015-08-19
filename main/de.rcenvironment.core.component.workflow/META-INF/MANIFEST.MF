@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,
@@ -47,11 +47,13 @@ Import-Package: de.rcenvironment.core.authentication,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
  org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.annotate;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.node;version="1.9.13",
  org.codehaus.jackson.type;version="1.9.13",
  org.codehaus.jackson.util;version="1.9.13",
  org.eclipse.core.runtime;version="3.4.0",
+ org.eclipse.draw2d,
  org.eclipse.draw2d.geometry,
  org.eclipse.equinox.security.storage;version="1.0.0",
  org.osgi.framework,

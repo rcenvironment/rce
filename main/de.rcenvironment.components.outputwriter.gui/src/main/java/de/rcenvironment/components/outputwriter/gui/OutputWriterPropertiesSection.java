@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -60,14 +60,19 @@ public class OutputWriterPropertiesSection extends DefaultEndpointPropertySectio
         parent.setLayout(new FillLayout(SWT.VERTICAL));
         super.createCompositeContent(parent, aTabbedPropertySheetPage);
         TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
-        final Section sectionProperties = factory.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+        Composite root = new LayoutComposite(parent);
+        Composite rootComposite = factory.createFlatFormComposite(root);
+        rootComposite.setLayout(new GridLayout(1, true));
+        
+        final Section sectionProperties = factory.createSection(rootComposite, Section.TITLE_BAR | Section.EXPANDED);
         sectionProperties.setText("Root Folder");
-        final Composite sectionInstallationClient = factory.createFlatFormComposite(sectionProperties);
+        GridData layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
+        sectionProperties.setLayoutData(layoutData);
+        final Composite sectionInstallationClient = factory.createComposite(sectionProperties);
         sectionInstallationClient.setLayout(new GridLayout(1, true));
         createRootSection(sectionInstallationClient);
         sectionProperties.setClient(sectionInstallationClient);
         sectionProperties.setVisible(true);
-        sectionProperties.setExpanded(true);
     }
 
     private Composite createRootSection(final Composite parent) {

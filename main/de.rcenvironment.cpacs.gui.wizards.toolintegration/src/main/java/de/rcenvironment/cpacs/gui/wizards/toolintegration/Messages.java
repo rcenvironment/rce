@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -67,6 +67,12 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String mappingTitle;
+
+    /** NLS Constant. */
+    public static String toolSpecMappingTitle;
+
+    /** NLS Constant. */
+    public static String executionOptionsTitle;
 
     /** NLS Constant. */
     public static String labelOutgoingCpacsEndpoint;

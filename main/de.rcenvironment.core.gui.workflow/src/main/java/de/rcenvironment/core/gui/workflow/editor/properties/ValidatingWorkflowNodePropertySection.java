@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,13 +16,15 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IPropertyListener;
 
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage.Type;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationSupport;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateEvent;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateListener;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage.Type;
 
 /**
  * {@link WorkflowNodePropertySection} with capabilities to validate controls.
@@ -42,6 +44,16 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     private final WorkflowNodeValidityStateListener validatorStateListener = createErrorStateUpdateListener();
 
     private final WorkflowNodeValidationSupport validationSupport = new WorkflowNodeValidationSupport();
+    
+    private IPropertyListener propertyListener = new IPropertyListener() {
+        
+        @Override
+        public void propertyChanged(Object obj, int property) {
+            if (property == WorkflowEditor.PROP_WORKFLOW_VAILDATION_FINISHED) {
+                updateErrorStates();                    
+            }
+        }
+    };
 
     public ValidatingWorkflowNodePropertySection() {
         validationSupport.addWorkflowNodeValidityStateListener(getErrorStateUpdateListener());
@@ -70,6 +82,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
         validationSupport.setWorkflowNode((WorkflowNode) getConfiguration());
         updateErrorStates();
         afterInitializingModelBindingWithValidation();
+        getPart().addPropertyListener(propertyListener);
     }
 
     protected void afterInitializingModelBindingWithValidation() {
@@ -81,6 +94,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
         try {
             beforeTearingDownModelBindingWithValidation();
         } finally {
+            getPart().removePropertyListener(propertyListener);
             validationSupport.setWorkflowNode(null);
         }
     }
@@ -90,7 +104,8 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     }
 
     protected void updateErrorStates() {
-        final List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>(validationSupport.getMessages());
+        final List<WorkflowNodeValidationMessage> messages =
+            new LinkedList<WorkflowNodeValidationMessage>(validationSupport.getRecentMessages());
         updateErrorStates(messages);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,13 +10,11 @@ package de.rcenvironment.core.gui.datamanagement.browser.spi;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.Set;
-import java.util.UUID;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,7 +28,6 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
-import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
@@ -50,10 +47,18 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
      */
     public static final String EXECUTION_LOG_FOLDER_NODE_TITLE = "Execution Log";
 
-    private static final String COLON = ": ";
+    /**
+     * short text seperator between content and title.
+     */
+    public static final String COLON = ": ";
 
-    private static final Integer MAX_LABEL_LENGTH = 30;
+    /**
+     * max length of short text content.
+     */
+    public static final int MAX_LABEL_LENGTH = 30;
 
+    private static final String LEAF_TEXT_FORMAT = "%s: %s";
+    
     private static Log logger = LogFactory.getLog(CommonHistoryDataItemSubtreeBuilderUtils.class);
 
     private CommonHistoryDataItemSubtreeBuilderUtils() {};
@@ -220,7 +225,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             FileReferenceTD fileReference = (FileReferenceTD) item.getValue();
             node.setAssociatedFilename(fileReference.getFileName());
             node.setDataReferenceId(fileReference.getFileReference());
-            node.setTitle(String.format("%s: %s", item.getEndpointName(), fileReference.getFileName()));
+            node.setTitle(String.format(LEAF_TEXT_FORMAT, item.getEndpointName(), fileReference.getFileName()));
         }
     }
 
@@ -229,107 +234,34 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             DirectoryReferenceTD directoryReference = (DirectoryReferenceTD) item.getValue();
             node.setAssociatedFilename(directoryReference.getDirectoryName());
             node.setDataReferenceId(directoryReference.getDirectoryReference());
-            node.setTitle(String.format("%s: %s", item.getEndpointName(), directoryReference.getDirectoryName()));
+            node.setTitle(String.format(LEAF_TEXT_FORMAT, item.getEndpointName(), directoryReference.getDirectoryName()));
         }
     }
 
-    private static String handleCommonTextLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node,
-        String historyItemDataReferenceId, EndpointType endpointType) {
-        String text = item.getValue().toString();
-        String formattedLabel = "";
-        String fullContent = text;
-
-        formattedLabel += endpointName;
-        formattedLabel += COLON;
-        if (text.length() > MAX_LABEL_LENGTH) {
-            text = text.substring(0, MAX_LABEL_LENGTH - 4) + "...";
-        }
-        formattedLabel += String.format("'%s'", text);
-
-        node.setTitle(formattedLabel);
-
-        addTextAsFileReferenceToNode(endpointName, fullContent, node, historyItemDataReferenceId, endpointType);
-
-        return formattedLabel;
+    private static String handleBooleanDigitShortTextLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
+        String fullContent = item.getValue().toString();
+        return handleLabel(fullContent, org.apache.commons.lang3.StringUtils.abbreviate(fullContent, MAX_LABEL_LENGTH), endpointName, node);
     }
 
-    private static String handleShortTextLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node,
-        String historyItemDataReferenceId, EndpointType endpointType) {
-        String text = "";
-        String formattedLabel = "";
-        String fullContent = "";
-
-        formattedLabel += endpointName;
-        formattedLabel += COLON;
-        if (item.getValue() instanceof ShortTextTD) {
-            ShortTextTD shortText = (ShortTextTD) item.getValue();
-            text += shortText.toLengthLimitedString(MAX_LABEL_LENGTH);
-            fullContent = shortText.toString();
-        }
-
-        formattedLabel += String.format("'%s'", text);
-        node.setTitle(formattedLabel);
-
-        addTextAsFileReferenceToNode(endpointName, fullContent, node, historyItemDataReferenceId, endpointType);
-
-        return formattedLabel;
+    private static String handleSmallTableLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
+        String fullContent = item.getValue().toString();
+        return handleLabel(fullContent, ((SmallTableTD) item.getValue()).toLengthLimitedString(MAX_LABEL_LENGTH), endpointName, node);
     }
 
-    private static String handleSmallTableLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node,
-        String historyItemDataReferenceId, EndpointType endpointType) {
-        String formattedLabel = "";
-        String fullContent = "";
-
-        formattedLabel += endpointName;
-        formattedLabel += COLON;
-        if (item.getValue() instanceof SmallTableTD) {
-            SmallTableTD smallTable = (SmallTableTD) item.getValue();
-            formattedLabel += smallTable.toLengthLimitedString(MAX_LABEL_LENGTH);
-            fullContent = smallTable.toString();
-        }
-        node.setTitle(formattedLabel);
-
-        addTextAsFileReferenceToNode(endpointName, fullContent, node, historyItemDataReferenceId, endpointType);
-
-        return formattedLabel;
+    private static String handleVectorLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
+        String fullContent = item.getValue().toString();
+        return handleLabel(fullContent, ((VectorTD) item.getValue()).toLengthLimitedString(MAX_LABEL_LENGTH), endpointName, node);
     }
 
-    private static String handleVectorLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node,
-        String historyItemDataReferenceId, EndpointType endpointType) {
-        String formattedLabel = "";
-        String fullContent = "";
-
-        formattedLabel += endpointName;
-        formattedLabel += COLON;
-        if (item.getValue() instanceof VectorTD) {
-            VectorTD vector = (VectorTD) item.getValue();
-            formattedLabel += vector.toLengthLimitedString(MAX_LABEL_LENGTH);
-            fullContent += vector.toString();
-        }
-
-        node.setTitle(formattedLabel);
-
-        addTextAsFileReferenceToNode(endpointName, fullContent, node, historyItemDataReferenceId, endpointType);
-
-        return formattedLabel;
+    private static String handleMatrixLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
+        String fullContent = item.getValue().toString();
+        return handleLabel(fullContent, ((MatrixTD) item.getValue()).toLengthLimitedString(MAX_LABEL_LENGTH), endpointName, node);
     }
-
-    private static String handleMatrixLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node,
-        String historyItemDataReferenceId, EndpointType endpointType) {
-        String formattedLabel = "";
-        String fullContent = "";
-
-        formattedLabel += endpointName;
-        formattedLabel += COLON;
-        if (item.getValue() instanceof MatrixTD) {
-            MatrixTD matrix = (MatrixTD) item.getValue();
-            formattedLabel += matrix.toLengthLimitedString(MAX_LABEL_LENGTH);
-            fullContent += matrix.toString();
-        }
-
+    
+    private static String handleLabel(String fullContent, String abbreviatedContent, String endpointName, DMBrowserNode node) {
+        String formattedLabel = String.format(LEAF_TEXT_FORMAT, endpointName, abbreviatedContent);
         node.setTitle(formattedLabel);
-
-        addTextAsFileReferenceToNode(endpointName, fullContent, node, historyItemDataReferenceId, endpointType);
+        node.setFileContentAndName(fullContent, endpointName);
 
         return formattedLabel;
     }
@@ -346,17 +278,16 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
         }
 
         if (currentDataType == DataType.SmallTable) {
-            handleSmallTableLabel(item, name, node, historyItemDataReferenceId, endpointType);
+            handleSmallTableLabel(item, name, node);
         } else if (currentDataType == DataType.Vector) {
-            handleVectorLabel(item, name, node, historyItemDataReferenceId, endpointType);
-        } else if (currentDataType == DataType.ShortText) {
-            handleShortTextLabel(item, name, node, historyItemDataReferenceId, endpointType);
-        } else if (currentDataType == DataType.Boolean
+            handleVectorLabel(item, name, node);
+        } else if (currentDataType == DataType.ShortText
+            || currentDataType == DataType.Boolean
             || currentDataType == DataType.Integer
             || currentDataType == DataType.Float) {
-            handleCommonTextLabel(item, name, node, historyItemDataReferenceId, endpointType);
+            handleBooleanDigitShortTextLabel(item, name, node);
         } else if (currentDataType == DataType.Matrix) {
-            handleMatrixLabel(item, name, node, historyItemDataReferenceId, endpointType);
+            handleMatrixLabel(item, name, node);
         } else if (currentDataType == DataType.FileReference) {
             addFileReference(item, node);
         } else if (currentDataType == DataType.DirectoryReference) {
@@ -365,7 +296,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 buildSubtreeForDirectoryItem(item, node, parent);
             }
         } else {
-            node.setTitle(name + COLON + item.getValue());
+            node.setTitle(String.format(LEAF_TEXT_FORMAT, name, item.getValue()));
         }
     }
 
@@ -404,31 +335,6 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             } else {
                 node.markAsLeaf();
             }
-        }
-    }
-
-    private static void addTextAsFileReferenceToNode(String filename, String text, DMBrowserNode node,
-        String historyItemDataReferenceId, EndpointType endpointType) {
-        if (!node.isBuiltForDeletionPurpose()) {
-            File tempFile = null;
-            try {
-                File tempDir = new File(Activator.getInstance().getBundleSpecificTempDir(), UUID.randomUUID().toString());
-                tempDir.mkdir();
-                File endpointTempDir = new File(tempDir, endpointType.name());
-                endpointTempDir.mkdir();
-                tempFile = new File(endpointTempDir, filename);
-                if (!tempFile.exists()) {
-                    PrintWriter out = new PrintWriter(tempFile);
-                    out.write(text);
-                    out.flush();
-                    out.close();
-                }
-            } catch (IOException e) {
-                logger.error(e.getStackTrace());
-            }
-
-            node.setAssociatedFilename(filename);
-            node.setFileReferencePath(tempFile.getAbsolutePath());
         }
     }
 

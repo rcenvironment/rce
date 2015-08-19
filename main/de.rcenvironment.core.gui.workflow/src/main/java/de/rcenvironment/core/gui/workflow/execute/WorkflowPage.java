@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -116,7 +116,7 @@ final class WorkflowPage extends WizardPage {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         PlatformService platformService = serviceRegistryAccess.getService(PlatformService.class);
         final NodeIdentifier localNode = platformService.getLocalNodeId();
-        workflowComposite.controllerTargetNodeCombo.add(Messages.localPlatformSelectionTitle);
+        workflowComposite.controllerTargetNodeCombo.add(localNode.getAssociatedDisplayName() + " " +  Messages.localPlatformSelectionTitle);
         workflowComposite.controllerTargetNodeCombo.setData(PLATFORM_DATA_PREFIX + 0, null);
         final List<NodeIdentifier> nodes = helper.getWorkflowControllerNodesSortedByName();
         nodes.remove(localNode);
@@ -362,7 +362,10 @@ final class WorkflowPage extends WizardPage {
             final Table componentsTable = componentsTableViewer.getTable();
             componentsTable.setLinesVisible(true);
             componentsTable.setHeaderVisible(true);
-            componentsTable.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1));
+            final int visibleRows = 5;
+            GridData grid = new GridData(SWT.FILL, SWT.FILL, true, true, 1, 1);
+            grid.heightHint = (visibleRows + 1) * componentsTable.getItemHeight();
+            componentsTable.setLayoutData(grid);
 
             // Set table model for individual components
             String[] titles = { Messages.component, Messages.targetPlatform };
@@ -389,7 +392,7 @@ final class WorkflowPage extends WizardPage {
                     throw new AssertionError();
                 }
             }
-
+            
             Group groupAdditionalInformation = new Group(this, SWT.NONE);
             groupAdditionalInformation.setLayout(new GridLayout(1, false));
             groupAdditionalInformation.setText(de.rcenvironment.core.gui.workflow.view.list.Messages.additionalInformationColon);

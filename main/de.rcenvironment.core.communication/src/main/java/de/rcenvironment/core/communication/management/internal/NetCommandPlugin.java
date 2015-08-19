@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -62,7 +62,7 @@ public class NetCommandPlugin implements CommandPlugin {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
         contributions.add(new CommandDescription(CMD_NET, "", false, "short version of \"net info\""));
         contributions.add(new CommandDescription("net info", "", false, "show a list of reachable RCE nodes"));
-        contributions.add(new CommandDescription("net graph", "[<base name>]", false,
+        contributions.add(new CommandDescription("net graph", "[<base name>]", true,
             "generates a Graphviz file of the current network topology"));
         contributions.add(new CommandDescription("net filter", "", false, "show IP filter status"));
         contributions.add(new CommandDescription("net filter reload", "", false, "reloads the IP filter configuration"));

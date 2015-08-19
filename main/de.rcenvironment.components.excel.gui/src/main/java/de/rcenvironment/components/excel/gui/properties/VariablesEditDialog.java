@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,6 +29,7 @@ import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelException;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
@@ -46,10 +47,10 @@ public class VariablesEditDialog extends EndpointEditDialog {
     private CellSelectionDialog selectionDialog;
 
     
-    public VariablesEditDialog(Shell parentShell, String title, ComponentInstanceProperties configuration,
+    public VariablesEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
         EndpointType direction, String id, boolean isStatic, Image icon,
         EndpointMetaDataDefinition metaData, Map<String, String> metadataValues, final File xlFile) {
-        super(parentShell, title, configuration, direction, id, isStatic, metaData, metadataValues);
+        super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);
         
         this.xlFile = xlFile;
     }

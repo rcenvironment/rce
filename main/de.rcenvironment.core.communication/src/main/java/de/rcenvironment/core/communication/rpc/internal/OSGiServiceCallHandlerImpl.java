@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -160,7 +160,7 @@ public class OSGiServiceCallHandlerImpl implements ServiceCallHandler {
     protected Object lookupService(String service, String filter, int numAttempts, int delayBetweenAttemptsMsec)
         throws CommunicationException {
 
-        ServiceReference[] serviceReferences = null;
+        ServiceReference<?>[] serviceReferences = null;
 
         int attempt = 1;
         while (attempt <= numAttempts) {
@@ -197,6 +197,7 @@ public class OSGiServiceCallHandlerImpl implements ServiceCallHandler {
                 }
             }
         }
-        throw new CommunicationException(ERROR_GET_SERVICE + service + " - service not available; made " + numAttempts + " attempt(s)");
+        throw new CommunicationException(ERROR_GET_SERVICE + service + " (filter: " + filter + ") - service not available; made "
+            + numAttempts + " attempt(s)");
     }
 }

@@ -3,14 +3,15 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
  org.eclipse.help,
  org.eclipse.gef,
  org.eclipse.core.resources,
- de.rcenvironment.core.component
+ de.rcenvironment.core.component,
+ org.eclipse.jface
 Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.common,
@@ -24,6 +25,7 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.component.spi,
  de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.execution.api,
+ de.rcenvironment.core.component.workflow.execution.impl,
  de.rcenvironment.core.component.workflow.execution.spi,
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.component.workflow.model.spi,

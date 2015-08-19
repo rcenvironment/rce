@@ -45,20 +45,9 @@
    </extension>
 
 	<!--  New Workflow Dialog -->
-	<!--
-	<extension point="org.eclipse.ui.newWizards">
-		<wizard id="de.rcenvironment.core.gui.workflow.wizard" name="Workflow"
-			category="de.rcenvironment.core" icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/workflow16.gif"
-			class="de.rcenvironment.core.gui.workflow.editor.NewWorkflowWizard">
-			<description>
-				Creates a new Workflow file
-            </description>
-			<selection class="org.eclipse.core.resources.IResource" />
-		</wizard>
-	</extension>
 	<extension point="org.eclipse.ui.newWizards">
 		<wizard id="de.rcenvironment.core.gui.workflowproject.wizard" name="Workflow"
-			category="de.rcenvironment.core" icon="resources/icons/newWorkflow16.png"
+			category="de.rcenvironment.rce.wizard.category" icon="resources/icons/newWorkflow16.png"
 			class="de.rcenvironment.core.gui.workflow.editor.NewWorkflowProjectWizard">
 			<description>
 				Creates a new Workflow file
@@ -66,7 +55,6 @@
 			<selection class="org.eclipse.core.resources.IResource" />
 		</wizard>
 	</extension>
-	-->
 	<extension
          point="org.eclipse.ui.perspectiveExtensions">
       <perspectiveExtension targetID="de.rcenvironment.core">
@@ -77,30 +65,15 @@
    </extension>
 
 	<!--  New Workflow Dialog Context Menu -->
-	<extension point="org.eclipse.ui.navigator.navigatorContent">
-		<commonWizard type="new"
-			wizardId="de.rcenvironment.core.gui.workflow.wizard" menuGroupId="de.rcenvironment.core">
-			<enablement>
-				<or>
-					<adapt type="org.eclipse.core.resources.IFolder" />
-					<adapt type="org.eclipse.core.resources.IProject" />
-					<adapt type="org.eclipse.core.resources.IWorkspaceRoot" />
-				</or>
-			</enablement>
-		</commonWizard>
-	</extension>
-	<extension point="org.eclipse.ui.navigator.navigatorContent">
-		<commonWizard type="new"
-			wizardId="de.rcenvironment.core.gui.workflowproject.wizard" menuGroupId="de.rcenvironment.core">
-			<enablement>
-				<or>
-					<adapt type="org.eclipse.core.resources.IFolder" />
-					<adapt type="org.eclipse.core.resources.IProject" />
-					<adapt type="org.eclipse.core.resources.IWorkspaceRoot" />
-				</or>
-			</enablement>
-		</commonWizard>
-	</extension>
+	<extension
+   		point="org.eclipse.ui.navigator.navigatorContent">
+		<commonWizard 
+			menuGroupId="de.rcenvironment.core.gui.workflowproject.wizard"
+			type="new" 
+			wizardId="de.rcenvironment.core.gui.workflowproject.wizard">
+			<enablement />
+ 		</commonWizard>   
+   </extension> 
 	
 	<!-- Tabbed Properties in Workflow Editor -->
 	<extension point="org.eclipse.ui.views.properties.tabbed.propertyContributor">
@@ -135,7 +108,7 @@
                id="workflow.editor.tab.connections">
          </propertyTab>
          <propertyTab
-               label="Settings"
+               label="Label"
                category="advanced"
                id="workflow.editor.tab.label">
          </propertyTab>
@@ -374,13 +347,10 @@
             id="de.rcenvironment.core.gui.workflow.connectioneditor"
             name="connectioneditor">
       </command>
+      	  <!-- ### -->
       <command
-            id="de.rcenvironment.core.gui.workflow.configurationFile"
-            name="configurationFile">
-      </command>
-      <command
-            id="de.rcenvironment.core.gui.workflow.configurationInformation"
-            name="configurationInformation">
+            id="de.rcenvironment.core.gui.workflow.bendpoints.delete"
+            name="bendpoints_delete">
       </command>
       <command
             id="de.rcenvironment.core.gui.workflow.propertiesview"
@@ -434,6 +404,7 @@
                visible="true">
          </separator>
       </menuContribution>
+      <!-- Additional contributions for "New Workflow" wizard to context menu -->
       <menuContribution
             locationURI="menu:file?before=new">
             <command
@@ -443,6 +414,7 @@
                   style="push">
             </command>
       </menuContribution>
+      
       <menuContribution
             allPopups="false"
             locationURI="menu:file?after=de.rcenvironment.core.gui.workflowproject.create">
@@ -451,11 +423,7 @@
                visible="true">
          </separator>
       </menuContribution>
-      <menuContribution
-            allPopups="false"
-            locationURI="menu:file?after=de.rcenvironment.core.gui.workflowproject.create">
-      <separator name="separator" visible="true" />
-      </menuContribution>
+          
       <menuContribution
             allPopups="false"
             locationURI="popup:org.eclipse.ui.popup.any?after=de.rcenvironment.core.gui.workflowproject.create">
@@ -473,29 +441,7 @@
                tooltip="Create a new Workflow">
          </command>
       </menuContribution>
-      <menuContribution
-            locationURI="menu:help?before=de.rcenvironment.core.gui.workflow.configurationInformation">
-            <command
-               commandId="de.rcenvironment.core.gui.workflow.configurationFile"
-               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/toolbar/openConfigFile.png"
-               label="Open Configuration File"
-               style="push">
-            </command>
-      </menuContribution>
-      <menuContribution
-            locationURI="menu:help?before=about">
-            <command
-               commandId="de.rcenvironment.core.gui.workflow.configurationInformation"
-               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/toolbar/openConfigInformation.gif"
-               label="Open Configuration Information"
-               style="push">
-            </command>
-      </menuContribution>
-      <menuContribution
-            allPopups="false"
-            locationURI="menu:help?after=de.rcenvironment.core.gui.workflow.configurationInformation">
-      <separator name="separator" visible="true" />
-      </menuContribution>
+       
       <menuContribution
             allPopups="false"
             locationURI="popup:de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor?before=additions">
@@ -514,10 +460,19 @@
        </command>
        <command
                commandId="de.rcenvironment.core.gui.workflow.connectioneditor"
-               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/connectEditor16.gif"
+               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/connectEditor16.png"
                label="%connectioneditor"
                style="push">
        </command>
+       
+              <!-- ### -->
+       <command
+               commandId="de.rcenvironment.core.gui.workflow.bendpoints.delete"
+               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/delete_bendpoint_16.png"
+               label="Reset Connection Path"
+               style="push">
+       </command>
+       
        <separator name="separator2" visible="true" />
          <command
                commandId="de.rcenvironment.core.gui.workflow.node.copy"
@@ -570,8 +525,7 @@
             </command>
             <command
                   commandId="de.rcenvironment.core.gui.workflow.connectioneditor"
-                  disableIcon="resources/icons/connectEditor16disable.gif"
-                  icon="resources/icons/connectEditor16.gif"
+                  icon="resources/icons/connectEditor16.png"
                   label="%connectioneditor"
                   style="push">
                <visibleWhen
@@ -586,19 +540,6 @@
                   </or>
                </visibleWhen>
             </command>  
-            <separator name="separatorConfig" visible="true" />
-            <command
-               commandId="de.rcenvironment.core.gui.workflow.configurationFile"
-               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/toolbar/openConfigFile.png"
-               label="Open Configuration File"
-               style="push">
-       		</command>
-       		<command
-               commandId="de.rcenvironment.core.gui.workflow.configurationInformation"
-               icon="platform:/plugin/de.rcenvironment.core.gui.workflow/resources/icons/toolbar/openConfigInformation.gif"
-               label="Open Configuration Information"
-               style="push">
-       		</command>
             <separator
                   name="separator"
                   visible="true">
@@ -662,7 +603,7 @@
             commandId="de.rcenvironment.core.gui.workflow.node.copy">
          <enabledWhen>
             <reference
-                  definitionId="workflowNodesSelected">
+                  definitionId="workflowNodesOrLabelsSelected">
             </reference>
          </enabledWhen>
          <visibleWhen>
@@ -676,7 +617,7 @@
             commandId="de.rcenvironment.core.gui.workflow.node.cut">
          <enabledWhen>
             <reference
-                  definitionId="workflowNodesSelected">
+                  definitionId="workflowNodesOrLabelsSelected">
             </reference>
          </enabledWhen>
          <visibleWhen>
@@ -713,12 +654,30 @@
             </reference>
          </visibleWhen>
       </handler>
+      
+            <!-- ### -->
+      <handler
+            class="de.rcenvironment.core.gui.workflow.editor.handlers.ConnectionBendpointDeleteHandler"
+           	commandId="de.rcenvironment.core.gui.workflow.bendpoints.delete">
+         <enabledWhen>
+            <reference
+                  definitionId="connectionSelected">
+            </reference>
+         </enabledWhen>
+         <visibleWhen>
+            <reference
+                  definitionId="workflowNodeContext">
+            </reference>
+         </visibleWhen>
+      </handler>
+      
+      
       <handler
             class="de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowNodeDeleteHandler"
            	commandId="de.rcenvironment.core.gui.workflow.node.delete">
          <enabledWhen>
             <reference
-                  definitionId="workflowNodesSelected">
+                  definitionId="workflowNodesOrConnectionSelected">
             </reference>
          </enabledWhen>
          <visibleWhen>
@@ -732,7 +691,7 @@
             commandId="de.rcenvironment.core.gui.workflow.propertiesview">
          <enabledWhen>
             <reference
-                  definitionId="workflowNodeSelected">
+                  definitionId="workflowNodeOrLabelSelected">
             </reference>
          </enabledWhen>
          <visibleWhen>
@@ -768,14 +727,6 @@
                   definitionId="workflowEditorContext">
             </reference>
          </visibleWhen>
-      </handler>
-            <handler
-            class="de.rcenvironment.core.gui.workflow.editor.handlers.OpenConfigurationFileHandler"
-            commandId="de.rcenvironment.core.gui.workflow.configurationFile">
-      </handler>
-      <handler
-            class="de.rcenvironment.core.gui.workflow.editor.handlers.OpenConfigurationInformationDialogHandler"
-            commandId="de.rcenvironment.core.gui.workflow.configurationInformation">
       </handler>
    </extension>
    <extension
@@ -841,7 +792,7 @@
          </with>
       </definition>
       <definition
-            id="workflowNodesSelected">
+            id="workflowNodesOrLabelsSelected">
         <and>
 			<with
 	            variable="selection"> 
@@ -876,7 +827,37 @@
         </and>
       </definition>
       <definition
-            id="workflowNodeSelected">
+            id="workflowNodesSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	        	    <and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart">
+	            </instanceof>
+	               </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="*">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+         <definition
+            id="workflowNodeOrLabelSelected">
         <and>
 			<with
 	            variable="selection"> 
@@ -900,6 +881,134 @@
 	        	variable="selection">
 	            <count
 	            	value="1">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+      <definition
+            id="workflowNodeSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	        	    <and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart">
+	            </instanceof>
+	               </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="1">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+         <definition
+            id="workflowLabelSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	               <and>
+	             <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart">
+	            </instanceof>
+	            </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="1">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+      
+            <!-- ### -->
+	<definition
+            id="connectionSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	            <and>
+	             <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.ConnectionPart">
+	            </instanceof>
+	            </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+      
+      
+      <definition
+            id="workflowNodesOrConnectionSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	        	    <and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart">
+	            </instanceof>
+	               </and>
+	               <and>
+	             <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart">
+	            </instanceof>
+	            </and>
+	            <and>
+	             <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.ConnectionPart">
+	            </instanceof>
+	            </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="*">
 	            </count>
 			</with>
 			<with
@@ -948,25 +1057,37 @@
       </key>
       <key
             commandId="de.rcenvironment.core.gui.workflow.node.copy"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            schemeId="de.rcenvironment.core.start.gui.binding"
+            contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
             sequence="M1+C">
       </key>
       <key
             commandId="de.rcenvironment.core.gui.workflow.node.cut"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            schemeId="de.rcenvironment.core.start.gui.binding"
+            contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
             sequence="M1+X">
       </key>
       <key
             commandId="de.rcenvironment.core.gui.workflow.node.paste"
-            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            schemeId="de.rcenvironment.core.start.gui.binding"
+            contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
             sequence="M1+V">
       </key>
-     <!-- <key
+      <key
             commandId="de.rcenvironment.core.gui.workflow.node.delete"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
             sequence="DEL">
       </key>
-      -->
+      
+            <!-- ### -->
+      <key
+            commandId="de.rcenvironment.core.gui.workflow.bendpoints.delete"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
+            sequence="M1+DEL">
+      </key>
+      
       <key
             commandId="de.rcenvironment.core.gui.workflow.node.rename"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
@@ -978,6 +1099,12 @@
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="M1+M2+Q">
       </key>
+      <key
+            commandId="de.rcenvironment.core.gui.workflow.helpview"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
+            sequence="F1">
+      </key>      
    </extension>
    <extension
          id="de.rcenvironment.core.gui.workflow.keybinding.workflow.edit"
@@ -1005,6 +1132,11 @@
    		<context
    			id="de.rcenvironment.rce.gui.workflow.editor.scope"
    			name="Workflow Editor Context"
+   			parentId="org.eclipse.ui.contexts.window">
+   		</context>
+   		<context
+   			id="de.rcenvironment.rce.gui.workflow.editor.anotherscope"
+   			name="Workflow Editor Anothercontext"
    			parentId="org.eclipse.ui.contexts.window">
    		</context>
    </extension>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -108,11 +108,27 @@ public final class LoadingWorkflowDescriptionHelper {
             return new WorkflowDescriptionPersistenceHandler()
                 .readWorkflowDescriptionFromStream(getContent(file, workspaceFile), Activator.getInstance().getUser());
         } catch (IOException | CoreException | ParseException e) {
-            handleError(silentUpdate, e);
+            handleError(LoadingWorkflowDescriptionHelper.getNameOfWorkflowFile(file, workspaceFile), silentUpdate, e);
             throw new RuntimeException(e);
         } catch (RuntimeException e) {
-            handleError(silentUpdate, e);
+            handleError(LoadingWorkflowDescriptionHelper.getNameOfWorkflowFile(file, workspaceFile), silentUpdate, e);
             throw e;
+        }
+    }
+    
+    /**
+     * Returns the path of the file passed, which is not null.
+     * @param file {@link File} object
+     * @param workspaceFile {@link IFile} object
+     * @return absolute path of one of the file passed
+     */
+    public static String getNameOfWorkflowFile(File file, IFile workspaceFile) {
+        if (file != null && file.exists()) {
+            return file.getAbsolutePath();
+        } else if (workspaceFile != null && workspaceFile.exists()) {
+            return workspaceFile.getRawLocation().toOSString();
+        } else {
+            return "File doesn't exist";
         }
     }
 
@@ -127,13 +143,13 @@ public final class LoadingWorkflowDescriptionHelper {
         return inputStream;
     }
 
-    private static void handleError(boolean silent, final Throwable e) {
+    private static void handleError(String filename, boolean silent, final Throwable e) {
         final String message;
         if (silent) {
-            LOGGER.error("Opening workflow failed", e);
+            LOGGER.error("Failed to open workflow: " + filename, e);
             message = Messages.silentWorkflowUpdateFailureMessage;
         } else {
-            LOGGER.error("updating workflow failed", e);
+            LOGGER.error("Failed to update workflow: " + filename, e);
             message = Messages.workflowUpdateFailureMessage;
         }
         Display.getDefault().asyncExec(new Runnable() {
@@ -162,10 +178,10 @@ public final class LoadingWorkflowDescriptionHelper {
             file.setContents(tempInputStream, true, false, new NullProgressMonitor());
             tempInputStream.close();
         } catch (IOException e) {
-            handleError(hasNonSilentUpdate, e);
+            handleError(file.getRawLocation().toOSString(), hasNonSilentUpdate, e);
             throw new RuntimeException(e);
         } catch (CoreException e) {
-            handleError(hasNonSilentUpdate, e);
+            handleError(file.getRawLocation().toOSString(), hasNonSilentUpdate, e);
             throw new RuntimeException(e);
         }
 
@@ -179,11 +195,16 @@ public final class LoadingWorkflowDescriptionHelper {
                     file.getName());
                 FileUtils.copyFile(file, new File(file.getParentFile().getAbsolutePath(), backupFilename + ".wf"));
             }
-            InputStream tempInputStream = IOUtils.toInputStream(new SimplePersistentWorkflowDescriptionUpdateService()
-                .performWorkflowDescriptionUpdate(description).getWorkflowDescriptionAsString(), WorkflowConstants.ENCODING_UTF8);
-            FileUtils.write(file, IOUtils.toString(tempInputStream));
         } catch (IOException e) {
-            handleError(hasNonSilentUpdate, e);
+            handleError(file.getAbsolutePath(), hasNonSilentUpdate, e);
+            throw new RuntimeException(e);
+        }
+        try (InputStream tempInputStream = IOUtils.toInputStream(new SimplePersistentWorkflowDescriptionUpdateService()
+            .performWorkflowDescriptionUpdate(description).getWorkflowDescriptionAsString(), WorkflowConstants.ENCODING_UTF8)) {
+            FileUtils.write(file, IOUtils.toString(tempInputStream));
+            tempInputStream.close();
+        } catch (IOException e) {
+            handleError(file.getAbsolutePath(), hasNonSilentUpdate, e);
             throw new RuntimeException(e);
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -72,6 +72,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog{
             | SWT.APPLICATION_MODAL); 
     }
 
+    @Override
     protected Control createDialogArea(final Composite parent) {
 
         container = (Composite) super.createDialogArea(parent);
@@ -91,6 +92,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog{
 
         // resize the row height using a MeasureItem listener
         componentPlaceholderTree.addListener(SWT.MeasureItem, new Listener() {
+            @Override
             public void handleEvent(Event event) {
                 event.height = 2 * 10;
             }
@@ -112,6 +114,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog{
         componentPlaceholderTree.addListener(SWT.Collapse, listener);
         componentPlaceholderTree.addListener(SWT.Expand, listener);
         componentPlaceholderTree.addListener(SWT.Selection, new Listener() {
+            @Override
             public void handleEvent(Event event) {
                 checkItems((TreeItem) event.item, ((TreeItem) event.item).getChecked());
             }
@@ -252,6 +255,7 @@ public class WorkflowPageClearHistoryDialog extends Dialog{
         super.okPressed();
     }
 
+    @Override
     protected Button createButton(Composite parent, int id,
         String label, boolean defaultButton) {
         if (id == IDialogConstants.OK_ID){

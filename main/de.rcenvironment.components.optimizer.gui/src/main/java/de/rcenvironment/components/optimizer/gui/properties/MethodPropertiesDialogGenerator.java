@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -212,31 +212,33 @@ public class MethodPropertiesDialogGenerator extends Dialog {
             } else if (methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(widget))) {
                 settings = methodDescription.getResponsesSettings().get(widgetToKeyMap.get(widget));
             }
-            String dataType = settings.get(OptimizerComponentConstants.DATA_TYPE_KEY);
-            String swtWidget = settings.get(OptimizerComponentConstants.SWTWIDGET_KEY);
-            String validation = settings.get(OptimizerComponentConstants.VALIDATION_KEY);
-            if (swtWidget.equals(OptimizerComponentConstants.WIDGET_TEXT)) {
-                if (((Text) widget).getText().equals("") && (validation.contains("required"))) {
-                    isValid = false;
-                } else if (!((Text) widget).getText().equals("")) {
-                    if (dataType.equalsIgnoreCase(OptimizerComponentConstants.TYPE_INT)) {
-                        int value = Integer.MAX_VALUE;
-                        try {
-                            value = Integer.parseInt(((Text) widget).getText());
-                            isValid &= checkValidation(value, validation);
-                        } catch (NumberFormatException e) {
-                            value = Integer.MAX_VALUE;
-                            isValid &= false;
+            if (settings != null) {
+                String dataType = settings.get(OptimizerComponentConstants.DATA_TYPE_KEY);
+                String swtWidget = settings.get(OptimizerComponentConstants.SWTWIDGET_KEY);
+                String validation = settings.get(OptimizerComponentConstants.VALIDATION_KEY);
+                if (swtWidget.equals(OptimizerComponentConstants.WIDGET_TEXT)) {
+                    if (((Text) widget).getText().equals("") && (validation.contains("required"))) {
+                        isValid = false;
+                    } else if (!((Text) widget).getText().equals("")) {
+                        if (dataType.equalsIgnoreCase(OptimizerComponentConstants.TYPE_INT)) {
+                            int value = Integer.MAX_VALUE;
+                            try {
+                                value = Integer.parseInt(((Text) widget).getText());
+                                isValid &= checkValidation(value, validation);
+                            } catch (NumberFormatException e) {
+                                value = Integer.MAX_VALUE;
+                                isValid &= false;
+                            }
                         }
-                    }
-                    if (dataType.equalsIgnoreCase(OptimizerComponentConstants.TYPE_REAL)) {
-                        double value = Double.MAX_VALUE;
-                        try {
-                            value = Double.parseDouble(((Text) widget).getText());
-                            isValid &= checkValidation(value, validation);
-                        } catch (NumberFormatException e) {
-                            value = Double.MAX_VALUE;
-                            isValid &= false;
+                        if (dataType.equalsIgnoreCase(OptimizerComponentConstants.TYPE_REAL)) {
+                            double value = Double.MAX_VALUE;
+                            try {
+                                value = Double.parseDouble(((Text) widget).getText());
+                                isValid &= checkValidation(value, validation);
+                            } catch (NumberFormatException e) {
+                                value = Double.MAX_VALUE;
+                                isValid &= false;
+                            }
                         }
                     }
                 }

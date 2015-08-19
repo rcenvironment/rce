@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -155,7 +155,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 // its changig the working directory.
                 scriptEngine.eval(header);
             } catch (ScriptException e) {
-                throw new ComponentException("Failed to run Jython script", e);
+                throw new ComponentException("Failed to run Jython script: " + e.toString());
             }
             try {
                 // execute the script, written by the user.
@@ -163,7 +163,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
             } catch (ScriptException e) {
                 String line = "Script has errors!\n " + e.getCause().toString();
                 componentContext.printConsoleLine(line, ConsoleRow.Type.STDERR);
-                throw new ComponentException("Could not run script. Maybe the script has errors? \n\n", e);
+                throw new ComponentException("Could not run script. Maybe the script has errors? \n\n: " + e.toString());
             }
             try {
                 // this script defines the outputChannel, so that all outputs sent with
@@ -172,9 +172,9 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 ((WorkflowConsoleForwardingWriter) scriptEngine.getContext().getWriter()).awaitPrintingLinesFinished();
                 ((WorkflowConsoleForwardingWriter) scriptEngine.getContext().getErrorWriter()).awaitPrintingLinesFinished();
             } catch (ScriptException e) {
-                throw new ComponentException("Failed reading Output Channels! \n\n", e);
+                throw new ComponentException("Failed reading Output Channels! \n\n: " + e.toString());
             } catch (InterruptedException e) {
-                LOGGER.error("Waiting for stdout or stderr writer was interrupted", e);
+                LOGGER.error("Waiting for stdout or stderr writer was interrupted: " + e.toString());
             }
         }
     }

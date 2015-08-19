@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -77,7 +77,7 @@ public class SplashHandler extends BasicSplashHandler {
         splash.setBackgroundMode(SWT.INHERIT_FORCE);
         splash.setBackgroundImage(splashImg);
         splash.addPaintListener(new PaintListener() {
-
+            @Override
             public void paintControl(PaintEvent e) {
                 e.gc.setFont(new Font(e.gc.getDevice(), "Arial", 8, SWT.BOLD));
                 e.gc.setForeground(new Color(null, GRAY, GRAY, GRAY));

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.integration;
 
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -19,6 +18,8 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
+import de.rcenvironment.core.gui.resources.api.FontManager;
+import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
@@ -56,7 +57,7 @@ public class BaseScriptReadOnlySection extends ValidatingWorkflowNodePropertySec
         scriptText = new Text(scriptComposite, SWT.BORDER | SWT.MULTI | SWT.WRAP | SWT.READ_ONLY);
         scriptText.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         // scriptText.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        scriptText.setFont(JFaceResources.getFont(JFaceResources.TEXT_FONT));
+        scriptText.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
         ((GridData) scriptText.getLayoutData()).heightHint = MINIMUM_HEIGHT;
         scriptSection.setClient(scriptComposite);
         scriptText.setEditable(false);

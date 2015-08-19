@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.cpacs.gui.tiglviewer.feature</artifactId>
 	<name>RCE CPACS GUI TiGL Viewer Feature</name>
-	<version>6.0.3.qualifier</version>
+	<version>6.1.0.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

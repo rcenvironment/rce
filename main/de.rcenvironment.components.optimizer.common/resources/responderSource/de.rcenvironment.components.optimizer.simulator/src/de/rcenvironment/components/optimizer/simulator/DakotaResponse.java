@@ -139,8 +139,8 @@ public class DakotaResponse {
                     fw.close();
                 }
             }
-        } catch (IOException e1) {
-            System.err.println(e1.getStackTrace());
+        } catch (IOException e) {
+            System.err.println(e);
         }
     }
 

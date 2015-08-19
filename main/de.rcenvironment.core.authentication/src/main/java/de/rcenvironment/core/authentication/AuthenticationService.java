@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -65,7 +65,7 @@ public interface AuthenticationService {
         /**
          * The password for decrypting the private key is empty or null.
          */
-        PASSWORD_INVALID,
+        PASSWORD__OR_USERNAME_INVALID,
         /**
          * The password for decrypting the private key is incorrect.
          */

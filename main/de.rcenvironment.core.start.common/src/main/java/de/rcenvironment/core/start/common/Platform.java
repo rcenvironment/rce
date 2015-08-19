@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,8 +44,8 @@ public class Platform {
     }
 
     /**
-     * Injects the {@link InstanceRunner} to use for startup. Trying to call this method twice throws an exception (to detect invalid
-     * setups).
+     * Injects the {@link InstanceRunner} to use for startup. Trying to call this method twice
+     * throws an exception (to detect invalid setups).
      * 
      * @param newRunner the new instance
      */
@@ -58,7 +58,8 @@ public class Platform {
     }
 
     /**
-     * Fetches the {@link InstanceRunner} to use for startup. Throws an exception if no runner has been set.
+     * Fetches the {@link InstanceRunner} to use for startup. Throws an exception if no runner has
+     * been set.
      * 
      * @return the runner instance (guaranteed to be non-null)
      */
@@ -110,6 +111,13 @@ public class Platform {
 
     /* default */static void resetShutdown() {
         shutdownLatch = new CountDownLatch(1);
+    }
+
+    /**
+     * Restarts the RCE platform.
+     */
+    public static void restart() {
+        getRunner().triggerRestart();
     }
 
 }

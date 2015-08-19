@@ -22,6 +22,7 @@ REM ****************************************************************************
 set PUTTY_INSTALLATION_PATH=C:\Program Files (x86)\PuTTY
 
 set WORKFLOW_ID=###
+set WORKFLOW_VERSION=1
 set WORKFLOW_PARAMETERS=###
 
 set USERNAME=ra_demo
@@ -50,7 +51,7 @@ echo Uploading input files...
 %SCP_COMMAND% -r input/* %SCP_ROOT_PATH%/input
 
 echo Executing remote tool...
-%SSH_COMMAND% ra run-wf %SESSION_TOKEN% --show-output %WORKFLOW_ID% %WORKFLOW_PARAMETERS%
+%SSH_COMMAND% ra run-wf %SESSION_TOKEN% --show-output %WORKFLOW_ID% %WORKFLOW_VERSION% %WORKFLOW_PARAMETERS%
 set EXIT_CODE=%ERRORLEVEL%
 echo Exit code of remote execution command: %EXIT_CODE%
 

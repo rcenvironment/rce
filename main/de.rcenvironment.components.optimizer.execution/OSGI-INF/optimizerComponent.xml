@@ -13,7 +13,7 @@
 	<property name="rce.component.name" type="String" value="Optimizer"/>
 	
 	<property name="rce.component.group" type="String" value="Studies"/>
-	<property name="rce.component.version" type="String" value="6.0"/>
+	<property name="rce.component.version" type="String" value="6.1"/>
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.optimizer.execution.OptimizerComponent"/>
 	
 	<property name="rce.component.icon-16" type="String" value="/resources/optimizer16.png"/>

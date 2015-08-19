@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
 import de.rcenvironment.core.datamanagement.FileDataService;
+import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.testutils.FileDataServiceDefaultStub;
@@ -58,6 +59,8 @@ public class FileServiceImplTest {
 
     private User user = EasyMock.createNiceMock(User.class);
 
+    private MetaDataBackendService metaDataBackendService;
+
     /**
      * Set up.
      * 
@@ -71,12 +74,17 @@ public class FileServiceImplTest {
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
 
-        dataRef = new DataReference(dmUuid.toString(), NodeIdentifierFactory.fromHostAndNumberString("lump:6"), birefs);
+        dataRef = new DataReference(dmUuid.toString(), NodeIdentifierFactory.fromNodeId("lump:6"), birefs);
         inputStream = EasyMock.createNiceMock(InputStream.class);
         EasyMock.expect(inputStream.read()).andReturn(noOfBytes).anyTimes();
         EasyMock.expect(inputStream.read(EasyMock.aryEq(new byte[noOfBytes]),
             EasyMock.eq(0), EasyMock.eq(noOfBytes.intValue()))).andReturn(noOfBytes).anyTimes();
         EasyMock.replay(inputStream);
+
+        metaDataBackendService = EasyMock.createNiceMock(MetaDataBackendService.class);
+        EasyMock.expect(metaDataBackendService.getDataReference(dmUri)).andReturn(dataRef).anyTimes();
+        EasyMock.replay(metaDataBackendService);
+        fileService.bindMetadataBackendService(metaDataBackendService);
 
     }
 

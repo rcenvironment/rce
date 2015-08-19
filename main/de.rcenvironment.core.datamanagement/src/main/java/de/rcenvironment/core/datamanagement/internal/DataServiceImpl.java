@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -38,21 +38,8 @@ abstract class DataServiceImpl implements DataService {
     @AllowRemoteAccess
     public void deleteReference(String binaryReferenceKey) {
 
-        // MetaDataBackendService catalogBackend = BackendSupport.getMetaDataBackend();
-        //
-        // DataReference catalogDataReference = catalogBackend.getDataReference(dataReference.getDataReferenceKey());
-        // if (catalogDataReference == null) {
-        // throw new IllegalArgumentException("Data reference not available in catalog: " + dataReference.getDataReferenceKey());
-        // }
-        // catalogBackend.deleteDataReference(catalogDataReference.getDataReferenceKey());
         DataBackend dataService =
             BackendSupport.getDataBackend();
-        // String gzipReferenceKey = null;
-        // for (BinaryReference br : dataReference.getBinaryReferences()) {
-        // if (br.getCompression().equals(CompressionFormat.GZIP)) {
-        // gzipReferenceKey = br.getBinaryReferenceKey();
-        // }
-        // }
         URI location =
             dataService.suggestLocation(
                 UUID.fromString(binaryReferenceKey));

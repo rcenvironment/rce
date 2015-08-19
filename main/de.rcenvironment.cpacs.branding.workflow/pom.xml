@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
     <artifactId>de.rcenvironment.cpacs.branding.workflow</artifactId>
     <name>RCE CPACS Workflow Branding Fragment</name>
-    <version>6.0.3.qualifier</version>
+    <version>6.1.0.qualifier</version>
     <packaging>eclipse-plugin</packaging>
     
 	<parent>

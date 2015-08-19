@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.w3c.dom.Document;
 
+import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.utils.incubator.XMLHelper;
 import de.rcenvironment.core.utils.incubator.xml.XMLException;
 import de.rcenvironment.cpacs.utils.common.xml.internal.EMappingMode;
@@ -78,10 +79,11 @@ public class XMLMapperTest {
      * Test if correct mapping informations will be created.
      * 
      * @throws XMLException Error in XML handling
+     * @throws ComponentException Mapping error.
      * 
      */
     @Test
-    public void testReadXMLMapping() throws XMLException {
+    public void testReadXMLMapping() throws XMLException, ComponentException {
         List<XMLMappingInformation> inputSimple = xmlMapper.readXMLMapping(xmlHelper.readXMLFromFile(mappingInputSimple));
         List<XMLMappingInformation> inputComplex = xmlMapper.readXMLMapping(xmlHelper.readXMLFromFile(mappingInputComplex));
         List<XMLMappingInformation> output = xmlMapper.readXMLMapping(xmlHelper.readXMLFromFile(mappingOutput));
@@ -127,10 +129,11 @@ public class XMLMapperTest {
      * 
      * @throws XPathExpressionException Thrown if mapping fails.
      * @throws XMLException Error in XML handling
+     * @throws ComponentException Mapping error.
      * 
      */
     @Test
-    public void testMap() throws XPathExpressionException, XMLException {
+    public void testMap() throws XPathExpressionException, XMLException, ComponentException {
 
         List<XMLMappingInformation> inputSimple = xmlMapper.readXMLMapping(xmlHelper.readXMLFromFile(mappingInputSimple));
         List<XMLMappingInformation> output = xmlMapper.readXMLMapping(xmlHelper.readXMLFromFile(mappingOutput));

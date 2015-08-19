@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,6 +32,8 @@ import de.rcenvironment.core.component.workflow.execution.api.EndpointChangeList
  * 
  * @author Roland Gude
  * @author Heinrich Wendel
+ * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class WorkflowDescription extends PropertiesChangeSupport implements Serializable, Cloneable {
 
@@ -63,7 +65,9 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
 
     private final List<Connection> connections = new ArrayList<Connection>();
 
-    private final List<WorkflowLabel> labels = new ArrayList<WorkflowLabel>();
+    // removed temporarily the final declaration to initialize the labels later on due to backwards compatibility: <=6.1. -seid_do, April
+    // 2014
+    private List<WorkflowLabel> labels = new ArrayList<WorkflowLabel>();
     
     /**
      * @param identifier The identifier of the {@link WorkflowDescription}.
@@ -117,7 +121,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     }
     
     /**
-     * Adds a new label to the list of @link {@link WorkflowLabel} and fires a property change
+     * Adds a new label to the list of @link {@link WorkflowLabel}s and fires a property change
      * event.
      * 
      * @param label the new label
@@ -128,14 +132,24 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     }
 
     /**
-     * Adds a new label to the list of @link {@link WorkflowLabel} and fires a property change event.
+     * Adds a labels to the list of @link {@link WorkflowLabel}s and fires a property change event.
      * 
-     * @param labelsToAdd the new label
+     * @param labelsToAdd the new labels
      */
     public void addWorkflowLabels(List<WorkflowLabel> labelsToAdd) {
         for (WorkflowLabel label : labelsToAdd) {
             labels.add(label);
         }
+        firePropertyChange(PROPERTY_LABEL);
+    }
+    
+    /**
+     * Set new labels. It replaces the current list of @link {@link WorkflowLabel}s and fires a property change event.
+     * 
+     * @param labelsToSet the new labels to set
+     */
+    public void setWorkflowLabels(List<WorkflowLabel> labelsToSet) {
+        labels = labelsToSet;
         firePropertyChange(PROPERTY_LABEL);
     }
 
@@ -463,6 +477,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
      * 
      * @return the cloned {@link WorkflowDescription}.
      */
+    @Override
     public WorkflowDescription clone() {
 
         try {

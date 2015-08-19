@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -130,7 +130,7 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
         // remove last comma and whitespace
         text = text.substring(0, text.length() - 1);
         if (text.length() > maxLength) {
-            text = text.substring(0, maxLength - 4) + "...";
+            text = text.substring(0, maxLength) + "...";
         }
         text += "]";
         text += "...";

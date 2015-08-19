@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -130,7 +130,7 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
         final String projectName = projectPage.getProjectNameTextField().getText();
         
         IRunnableWithProgress op = new IRunnableWithProgress() {
-
+            @Override
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
                     doFinish(projectName, workflowName, monitor, usage);
@@ -279,19 +279,16 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
     @Override
     public void handlePageChanging(PageChangingEvent pageChangingEvent) {
         // handles activation of finish button
+        allowFinish();
         if (pageChangingEvent.getTargetPage().getClass()
                 .equals(ProjectSelectionPage.class)) {
-            allowFinish();
             projectPage.getProjectNameTextField().setText(sharedWorkflowName);
             if (projectPage.getNewProjectRadioButton().getSelection()) {
                 projectPage.getNewProjectRadioButton().notifyListeners(SWT.Selection, new Event());
             } else {
                 projectPage.getExistingProjectRadioButton().notifyListeners(SWT.Selection, new Event());
             }
-        } else {
-            preventFinish();
         }
-
     }
 
     public static IStructuredSelection getWorkbenchSelection() {

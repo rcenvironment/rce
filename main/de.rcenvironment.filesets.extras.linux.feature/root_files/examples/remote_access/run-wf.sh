@@ -18,6 +18,7 @@
 ###############################################################################
 
 WORKFLOW_ID=###
+WORKFLOW_VERSION=1
 WORKFLOW_PARAMETERS=###
 
 USERNAME=ra_demo
@@ -47,7 +48,7 @@ echo Uploading input files...
 ${SCP_COMMAND} -r input/* ${SCP_REMOTE_ROOT_PATH}/input
 
 echo Executing remote tool...
-${SSH_COMMAND} ra run-wf ${SESSION_TOKEN} --show-output ${WORKFLOW_ID} ${WORKFLOW_PARAMETERS}
+${SSH_COMMAND} ra run-wf ${SESSION_TOKEN} --show-output ${WORKFLOW_ID} ${WORKFLOW_VERSION} ${WORKFLOW_PARAMETERS}
 EXIT_CODE=$?
 if [ "${EXIT_CODE}" -ne "0" ]; then
 	echo Tool run ended with an error, skipping download of output

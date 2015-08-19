@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -102,15 +102,28 @@ public final class OptimizerFileLoader {
         }
 
         // read generic entries
-        String configFolder =
+        File configFolder =
             new File(configService.getConfigurablePath(ConfigurablePathId.DEFAULT_WRITEABLE_INTEGRATION_ROOT).getAbsolutePath(),
-                "optimizer").getAbsolutePath();
+                "optimizer");
         List<File> genericOptimizerFolder = new LinkedList<File>();
         methodNamesToFileLinking = new HashMap<String, String>();
-        File config = new File(configFolder);
-        if (config != null && config.exists() && config.isDirectory()) {
-            for (File f : config.listFiles()) {
-                if (f.getName().contains(algorithmFolder.substring(1) + "_")) {
+        if (configFolder.exists() && configFolder.isDirectory()) {
+            for (File f : configFolder.listFiles()) {
+                boolean sourceFolder = false;
+                boolean guiFolder = false;
+                for (File f2 : f.listFiles()) {
+                    if (f2.getName().equals(OptimizerComponentConstants.GENERIC_GUI_CONFIG)) {
+                        if (new File(f2, "algorithms.json").exists() && new File(f2, "defaults.json").exists()) {
+                            guiFolder = true;
+                        }
+                    }
+                    if (f2.getName().equals("source")) {
+                        if (new File(f2, "Evaluate.py").exists() && new File(f2, "Generic_Optimizer.py").exists()) {
+                            sourceFolder = true;
+                        }
+                    }
+                }
+                if (sourceFolder && guiFolder) {
                     genericOptimizerFolder.add(f);
                 }
             }
@@ -122,7 +135,7 @@ public final class OptimizerFileLoader {
                 File[] guiConfigContent = guiConfigFolder.listFiles();
                 File algorithmsFile = null;
                 for (File f : guiConfigContent) {
-                    if (f.getName().contains("Algorithms")) {
+                    if (f.getName().equals("algorithms.json")) {
                         algorithmsFile = f;
                     }
                 }
@@ -133,22 +146,23 @@ public final class OptimizerFileLoader {
                         methodNamesToFileLinking.putAll(loadedMethods);
                     }
                 }
-                for (Entry<String, String> method : loadedMethods.entrySet()) {
-                    File newMethod = new File(guiConfigFolder + File.separator + method.getValue() + ".json");
-                    if (newMethod.exists()) {
-                        MethodDescription newDescription = mapper.readValue(newMethod,
-                            MethodDescription.class);
-                        if (newDescription != null && newDescription.getOptimizerPackage() != null) {
-                            File newCommonGenericInputFile =
-                                new File(guiConfigFolder + File.separator + "/defaults.json");
-                            newDescription.setCommonSettings(mapper.readValue(newCommonGenericInputFile,
-                                new HashMap<String, Map<String, String>>().getClass()));
-                        }
-                        if (newDescription != null) {
-                            String foldername = optimizerFolder.getName().substring(
-                                optimizerFolder.getName().indexOf("_"));
-                            newDescription.setConfigValue("genericFolder", foldername);
-                            methodDescriptions.put(method.getKey() + " [" + foldername.substring(1) + "'s method]", newDescription);
+                if (loadedMethods != null) {
+                    for (Entry<String, String> method : loadedMethods.entrySet()) {
+                        File newMethod = new File(new File(guiConfigFolder, method.getValue()) + ".json");
+                        if (newMethod.exists()) {
+                            MethodDescription newDescription = mapper.readValue(newMethod,
+                                MethodDescription.class);
+                            if (newDescription != null && newDescription.getOptimizerPackage() != null) {
+                                File newCommonGenericInputFile =
+                                    new File(guiConfigFolder + File.separator + "/defaults.json");
+                                newDescription.setCommonSettings(mapper.readValue(newCommonGenericInputFile,
+                                    new HashMap<String, Map<String, String>>().getClass()));
+                            }
+                            if (newDescription != null) {
+                                String foldername = optimizerFolder.getName();
+                                newDescription.setConfigValue("genericFolder", foldername);
+                                methodDescriptions.put(method.getKey() + " [" + foldername + "'s method]", newDescription);
+                            }
                         }
                     }
                 }

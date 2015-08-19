@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -41,6 +41,7 @@ import org.eclipse.ui.internal.registry.IActionSetDescriptor;
 
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.start.Application;
 
 /**
  * This class advises the creation of the action bar of the {@link Application}.
@@ -158,6 +159,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         super(configurer);
     }
 
+    @Override
     protected void makeActions(IWorkbenchWindow window) {
         this.workbenchWindow = window;
         
@@ -299,6 +301,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         }
     }
 
+    @Override
     protected void fillMenuBar(IMenuManager menuBar) {
 
         // File -> New submenu
@@ -407,6 +410,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         menuBar.add(helpMenu);
     }
     
+    @Override
     protected void fillCoolBar(ICoolBarManager coolBar) {
         coolBar.add(new GroupMarker(IIDEActionConstants.GROUP_FILE));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@ package de.rcenvironment.cpacs.gui.xpathchooser;
 
 import java.lang.reflect.Field;
 
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnViewer;
 import org.eclipse.jface.viewers.ComboBoxCellEditor;
@@ -124,13 +125,13 @@ public class XSDEditingSupport extends EditingSupport {
             XPathChooserHelper.setCurrentElementValue(elem, column, newValue);
             getViewer().update(element, null);
         } catch (final SecurityException e) {
-            int i = 0;
+            LogFactory.getLog(getClass()).debug("Catched SecurityException");
         } catch (final NoSuchFieldException e) {
-            int i = 0;
+            LogFactory.getLog(getClass()).debug("Catched NoSuchFieldException");
         } catch (final IllegalArgumentException e) {
-            int i = 0;
+            LogFactory.getLog(getClass()).debug("Catched IllegalArgumentException");
         } catch (final IllegalAccessException e) {
-            int i = 0;
+            LogFactory.getLog(getClass()).debug("Catched IllegalAccessException");
         }
     }
 

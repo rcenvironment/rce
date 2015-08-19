@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -112,7 +112,7 @@ public class WorkflowNodeValidatorsRegistryImpl implements WorkflowNodeValidator
     // }
 
     @Override
-    public synchronized List<WorkflowNodeValidator> getValidatorsForWorkflowNode(final WorkflowNode workflowNode) {
+    public synchronized List<WorkflowNodeValidator> getValidatorsForWorkflowNode(final WorkflowNode workflowNode, boolean onWorkflowStart) {
         List<WorkflowNodeValidator> result = new LinkedList<WorkflowNodeValidator>();
         Iterator<ComponentFilter> it = validatorMappings.keySet().iterator();
         while (it.hasNext()) {
@@ -125,7 +125,7 @@ public class WorkflowNodeValidatorsRegistryImpl implements WorkflowNodeValidator
                 // final WorkflowNodeValidator validator = clazz.newInstance();
 
                 final WorkflowNodeValidator validator = validatorMappings.get(filter).newInstance();
-                validator.setWorkflowNode(workflowNode);
+                validator.setWorkflowNode(workflowNode, onWorkflowStart);
                 result.add(validator);
                 // } catch (final IllegalAccessException e) {
                 // LOGGER.error("Failed to instantiate WorkflowNodeValidator instance.", e);

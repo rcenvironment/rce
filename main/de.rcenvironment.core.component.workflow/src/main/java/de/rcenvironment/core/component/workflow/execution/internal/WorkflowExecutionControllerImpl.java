@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,8 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -73,9 +75,9 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionControllerImpl.class);
 
     /**
-     * After 10 minutes without heartbeat from component, the workflow will fail.
+     * After 2 minutes without heartbeat from component, the workflow will fail.
      */
-    private static final int MAX_HEARTBEAT_INTERVAL_MSEC = 2 * 60 * 1000;
+    private static final int MAX_HEARTBEAT_INTERVAL_MSEC = 1200 * 1000;
     
     private static MetaDataService metaDataService;
     
@@ -525,7 +527,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 }
 
                 if (wfExeCtx.getWorkflowDescription().getWorkflowNodes().isEmpty()) {
-                    postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISHED));
+                    setWorkflowExecutionFinishedAndPostFinishedEvent();
                     return;
                 }
                 
@@ -822,8 +824,8 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             public void run() {
                 if (currentFuture != null) {
                     try {
-                        currentFuture.get();
-                    } catch (ExecutionException e) {
+                        currentFuture.get(3, TimeUnit.MINUTES);
+                    } catch (ExecutionException | TimeoutException e) {
                         stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_ATTEMPT_FAILED, e));
                         return;
                     } catch (InterruptedException e) {
@@ -902,15 +904,21 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             public void run() {
                 try {
                     workflowTerminatedLatch.await();
-                    wfDataManagementStorage.setWorkflowExecutionFinished(FinalWorkflowState.FINISHED);
-                    stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISHED));
+                    setWorkflowExecutionFinishedAndPostFinishedEvent();
                 } catch (InterruptedException e) {
                     LOG.error(String.format("Waiting for workflow '%s' (%s) to finish failed", wfExeCtx.getInstanceName(),
                         wfExeCtx.getExecutionIdentifier()), e);
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FAILED, e));
-                } catch (WorkflowExecutionException e) {
-                    stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISH_ATTEMPT_FAILED, e));
                 }
+            }
+        }
+        
+        private void setWorkflowExecutionFinishedAndPostFinishedEvent() {
+            try {
+                wfDataManagementStorage.setWorkflowExecutionFinished(FinalWorkflowState.FINISHED);
+                stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISHED));                
+            } catch (WorkflowExecutionException e) {
+                stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISH_ATTEMPT_FAILED, e));
             }
         }
 

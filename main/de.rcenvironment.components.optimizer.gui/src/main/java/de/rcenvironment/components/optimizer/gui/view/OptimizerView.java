@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -72,7 +72,6 @@ public class OptimizerView extends ViewPart implements ComponentRuntimeView, ISe
             }
 
         });
-
         dataComposite = new ChartDataComposite(tabFolder, SWT.NONE, componentExecutionInformation);
         dataComposite.createControls();
 

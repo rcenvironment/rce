@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -78,6 +78,18 @@ public final class FileSystemOperations {
                 log.warn("Unexpected type of directory (please examine manually): " + dir.toString());
                 return FileVisitResult.SKIP_SUBTREE;
             }
+            // If the directory is a junction, the junction itself is deleted, but the contents are not.
+            if (attrs.isOther()) {
+                try {
+                    log.debug(String.format("Deleting junction point %s", dir.toString()));
+                    Files.delete(dir);
+                    stats.junctionsDeleted++;
+                } catch (IOException e) {
+                    log.warn(String.format("Failed to delete junction point %s: %s", dir.toString(), e.toString()));
+                    stats.errors++;
+                }
+                return FileVisitResult.SKIP_SUBTREE;
+            }
             return super.preVisitDirectory(dir, attrs);
         }
 
@@ -95,9 +107,17 @@ public final class FileSystemOperations {
 
         @Override
         public FileVisitResult visitFileFailed(Path file, IOException e) throws IOException {
-            // log compact exception, as the stack trace is irrelevant (and always the same) - misc_ro
-            log.warn("Failed to access " + file.toString() + " for deletion: " + e.toString());
-            stats.errors++;
+            try {
+                /* One possibility why the visit could have failed is that the file is a junction to a directory that does not exist
+                 anymore. Therefore, the file is deleted now.*/
+                log.debug(String.format("Deleting unknown type of file/directory %s (possibly a link/junction to a non-existing target)",
+                    file.toString()));
+                Files.delete(file);
+                stats.unknownDeleted++;
+            } catch (IOException e1) {
+                log.warn(String.format("Failed to delete unknown type of file/directory %s: %s", file.toString(), e1.toString()));
+                stats.errors++;
+            }
             return FileVisitResult.CONTINUE;
         }
     }
@@ -115,6 +135,10 @@ public final class FileSystemOperations {
 
         private int directoriesDeleted = 0;
 
+        private int junctionsDeleted = 0;
+
+        private int unknownDeleted = 0;
+
         private int errors = 0;
     }
 
@@ -123,14 +147,12 @@ public final class FileSystemOperations {
     }
 
     /**
-     * WARNING: This method is not sufficiently tested yet; DO NOT USE before this is done!
+     * Recursively deletes the given directory, with additional protection against symbolic links or junction points in that directory that
+     * point to locations outside of it. This kind of symbolic links is dangerous as it might delete files outside of the given directory
+     * with the permissions of the current system user.
      * 
-     * Recursively deletes the given directory, with additional protection against symbolic links in that directory that point to locations
-     * outside of it. This kind of symbolic links is dangerous as it might delete files outside of the given directory with the permissions
-     * of the current system user.
-     * 
-     * If a symbolic link is encountered, a warning is logged and an attempt is made to delete the symbolic link (instead of the target it
-     * points to).
+     * If a symbolic link is encountered, a debug message is logged and an attempt is made to delete the symbolic link (instead of the
+     * target it points to).
      * 
      * @param directory the directory to delete (with all its contents)
      */
@@ -147,12 +169,19 @@ public final class FileSystemOperations {
             log.error(String.format("Uncaught exception while trying to delete directory %s", absoluteDirectory.toString()), e);
         }
         if (!directory.exists()) {
-            log.debug(String.format("Successfully deleted %s (which consisted of %d files, %d symbolic links, and %d directories)",
-                absoluteDirectory.toString(), stats.filesDeleted, stats.symlinksDeleted, stats.directoriesDeleted));
+            log.debug(String
+                .format(
+                    "Successfully deleted %s (which consisted of %d files, %d symbolic links, %d directories, %d junctions and"
+                        + " %d files/directories of unknown type.)",
+                    absoluteDirectory.toString(), stats.filesDeleted, stats.symlinksDeleted, stats.directoriesDeleted,
+                    stats.junctionsDeleted, stats.unknownDeleted));
         } else {
-            log.warn(String.format(
-                "Failed to fully delete directory %s (deleted %d files, %d symbolic links, and %d directories; encountered %d errors)",
-                absoluteDirectory.toString(), stats.filesDeleted, stats.symlinksDeleted, stats.directoriesDeleted, stats.errors));
+            log.warn(String
+                .format(
+                    "Failed to fully delete directory %s (deleted %d files, %d symbolic links, %d directories %d junctions and"
+                        + " %d files/directories of unknown type; encountered %d errors)",
+                    absoluteDirectory.toString(), stats.filesDeleted, stats.symlinksDeleted, stats.directoriesDeleted,
+                    stats.junctionsDeleted, stats.unknownDeleted, stats.errors));
         }
     }
 }

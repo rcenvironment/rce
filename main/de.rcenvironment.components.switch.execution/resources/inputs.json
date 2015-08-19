@@ -1,0 +1,53 @@
+{
+    "dynamicInputs": [
+        {
+            "identifier": "conditionToInput",
+            "dataTypes": [
+                "Float",
+                "Integer",
+                "Boolean"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Constant",
+	            "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected",
+                "NotRequired"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+     ],
+	"staticInputs": [
+		{
+			"name": "To_forward",
+			"dataTypes": [
+				"Float",
+				"Integer",
+				"Boolean",
+				"ShortText",
+				"Vector",
+				"Matrix",
+				"SmallTable",
+				"FileReference",
+				"DirectoryReference"
+			],
+			"defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Constant",
+	            "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Queue",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected",
+                "NotRequired"
+            ]
+		}
+	]
+}

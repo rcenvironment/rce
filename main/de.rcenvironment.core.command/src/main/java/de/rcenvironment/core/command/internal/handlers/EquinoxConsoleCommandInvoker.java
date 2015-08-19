@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -55,7 +55,7 @@ public class EquinoxConsoleCommandInvoker {
         }
 
         final BundleContext bundleContext = FrameworkUtil.getBundle(getClass()).getBundleContext();
-        ServiceReference[] refs;
+        ServiceReference<?>[] refs;
         try {
             refs = bundleContext.getAllServiceReferences(CommandProvider.class.getName(), null);
         } catch (InvalidSyntaxException e) {

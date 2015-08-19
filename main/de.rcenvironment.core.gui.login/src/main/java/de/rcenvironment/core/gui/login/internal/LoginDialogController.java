@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -175,6 +175,7 @@ public class LoginDialogController {
         
         certificateDirectoryButton.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetSelected(SelectionEvent event) {
                 FileDialog fileDialog = new FileDialog(loginDialog.getShell(), SWT.OPEN);
                 fileDialog.setText(Messages.chooseCert);
@@ -200,7 +201,7 @@ public class LoginDialogController {
                     }
                 }
             }
-
+            @Override
             public void widgetDefaultSelected(SelectionEvent e) {
             }
 
@@ -231,6 +232,7 @@ public class LoginDialogController {
         
         keyFileButton.addSelectionListener(new SelectionListener() {
 
+            @Override
             public void widgetSelected(SelectionEvent event) {
                 FileDialog fileDialog = new FileDialog(loginDialog.getShell(), SWT.OPEN);
                 fileDialog.setFilterPath(keyPath);
@@ -258,6 +260,7 @@ public class LoginDialogController {
                 }
             }
 
+            @Override
             public void widgetDefaultSelected(SelectionEvent e) { }
         });
     }

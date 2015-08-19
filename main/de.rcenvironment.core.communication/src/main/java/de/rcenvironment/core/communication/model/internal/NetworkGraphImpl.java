@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -239,6 +239,7 @@ public class NetworkGraphImpl implements NetworkGraphWithProperties {
         return c;
     }
 
+    @Override
     public NodeIdentifier getLocalNodeId() {
         return localNodeId;
     }

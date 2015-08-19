@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,6 +36,7 @@ import static de.rcenvironment.components.optimizer.dakota.execution.internal.Da
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.HESSIAN_STEP_SIZE;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.INTERVAL_TYPE_HESSIAN_KEY;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.INTERVAL_TYPE_KEY;
+import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.META_IS_DISCRETE;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.NEWLINE;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.NORMAL;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.NO_GRADIENTS;
@@ -51,6 +52,11 @@ import static de.rcenvironment.components.optimizer.dakota.execution.internal.Da
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_CONSTRAINT_LOWER;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_CONSTRAINT_UPPER;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_CONTINUOUS_DESIGN_COUNT;
+import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_DDV_INITIAL_POINT;
+import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_DDV_LOWER_BOUNDS;
+import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_DDV_NAMES;
+import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_DDV_UPPER_BOUNDS;
+import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_DISCRETE_DESIGN_COUNT;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_DRIVER_FOR_OS;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_GRADIENT_2_SECTION;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.PLACEHOLDER_GRADIENT_SECTION;
@@ -344,7 +350,9 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
             while (xStrg != null && xStrg[j].isEmpty()) {
                 j++;
             }
-            newOutput.put(xStrg[j + 1], Double.parseDouble(xStrg[j]));
+            if (xStrg != null) {
+                newOutput.put(xStrg[j + 1], Double.parseDouble(xStrg[j]));
+            }
 
         }
         fr.readLine();
@@ -355,7 +363,11 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         while (asvLine != null && asvLine[j].isEmpty()) {
             j++;
         }
-        currentActiveSetVectorNumber = Integer.parseInt(asvLine[j]);
+        if (asvLine != null) {
+            currentActiveSetVectorNumber = Integer.parseInt(asvLine[j]);
+        } else {
+            currentActiveSetVectorNumber = 0;
+        }
         fr.close();
         outputValueMap.clear();
         for (String key : newOutput.keySet()) {
@@ -460,36 +472,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                     + createMethodsProperties(description3.getSpecificSettings()));
             }
 
-            valuesForSampleFile.put(PLACEHOLDER_CONTINUOUS_DESIGN_COUNT, "" + countOutputs());
-            String startValuesString = "";
-            for (int i = 0; i < variableOrderForWholeExecution.length; i++) {
-                if (outputValues.get(variableOrderForWholeExecution[i]).getDataType() == DataType.Vector) {
-                    for (int j = 0; j < Integer.parseInt(compContext.getOutputMetaDataValue(variableOrderForWholeExecution[i],
-                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); j++) {
-                        startValuesString +=
-                            (TABS + ((VectorTD) outputValues.get(variableOrderForWholeExecution[i])).getFloatTDOfElement(j));
-                    }
-                } else {
-                    startValuesString += (TABS + outputValues.get(variableOrderForWholeExecution[i]));
-                }
-            }
-            valuesForSampleFile.put(PLACEHOLDER_CDV_INITIAL_POINT, startValuesString);
-            valuesForSampleFile.put(PLACEHOLDER_CDV_LOWER_BOUNDS, getDVBounds(META_LOWERBOUND));
-            valuesForSampleFile.put(PLACEHOLDER_CDV_UPPER_BOUNDS, getDVBounds(META_UPPERBOUND));
-
-            String dvNames = "";
-            for (int i = 0; i < variableOrderForWholeExecution.length; i++) {
-                if (outputValues.get(variableOrderForWholeExecution[i]).getDataType() == DataType.Vector) {
-                    for (int j = 0; j < Integer.parseInt(compContext.getOutputMetaDataValue(variableOrderForWholeExecution[i],
-                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); j++) {
-                        dvNames += (TABS + APOSTROPHE + variableOrderForWholeExecution[i]
-                            + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j) + APOSTROPHE;
-                    }
-                } else {
-                    dvNames += (TABS + APOSTROPHE + variableOrderForWholeExecution[i] + APOSTROPHE);
-                }
-            }
-            valuesForSampleFile.put(PLACEHOLDER_CDV_NAMES, dvNames);
+            writeContinousDesignVariables(valuesForSampleFile);
+            writeDiscreteDesignVariables(valuesForSampleFile);
 
             if (OS.isFamilyWindows()) {
                 valuesForSampleFile.put(PLACEHOLDER_DRIVER_FOR_OS, "'dakotaBlackBox.bat'");
@@ -520,20 +504,104 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
             dakotaInputFile = new File(workingDir.getAbsolutePath() + File.separator + inputFileName);
             dakotaInputFile.createNewFile();
             FileUtils.writeStringToFile(dakotaInputFile, content);
-
             // FileUtils.copyFile(f, new File("C:/testInputBounds.in"));
         } catch (IOException e) {
             LOGGER.error(e.getMessage());
         }
     }
 
-    private int countOutputs() {
+    private void writeContinousDesignVariables(Map<String, String> valuesForSampleFile) {
+        int cdvCount = countOutputs(false);
+        if (cdvCount > 0) {
+            valuesForSampleFile.put(PLACEHOLDER_CONTINUOUS_DESIGN_COUNT, "" + cdvCount);
+        } else {
+            valuesForSampleFile.put(PLACEHOLDER_CONTINUOUS_DESIGN_COUNT, "");
+        }
+        String startValuesString = createString(true, false);
+        valuesForSampleFile.put(PLACEHOLDER_CDV_INITIAL_POINT, startValuesString);
+        valuesForSampleFile.put(PLACEHOLDER_CDV_LOWER_BOUNDS, getDVBounds(META_LOWERBOUND, false));
+        valuesForSampleFile.put(PLACEHOLDER_CDV_UPPER_BOUNDS, getDVBounds(META_UPPERBOUND, false));
+
+        String dvNames = createString(false, false);
+        valuesForSampleFile.put(PLACEHOLDER_CDV_NAMES, dvNames);
+    }
+
+    private void writeDiscreteDesignVariables(Map<String, String> valuesForSampleFile) {
+        int ddvCount = countOutputs(true);
+        if (ddvCount > 0) {
+            valuesForSampleFile.put(PLACEHOLDER_DISCRETE_DESIGN_COUNT, "" + ddvCount);
+        } else {
+            valuesForSampleFile.put(PLACEHOLDER_DISCRETE_DESIGN_COUNT, "");
+        }
+        String startValuesString = createString(true, true);
+        valuesForSampleFile.put(PLACEHOLDER_DDV_INITIAL_POINT, startValuesString);
+        valuesForSampleFile.put(PLACEHOLDER_DDV_LOWER_BOUNDS, getDVBounds(META_LOWERBOUND, true));
+        valuesForSampleFile.put(PLACEHOLDER_DDV_UPPER_BOUNDS, getDVBounds(META_UPPERBOUND, true));
+
+        String dvNames = createString(false, true);
+        valuesForSampleFile.put(PLACEHOLDER_DDV_NAMES, dvNames);
+    }
+
+    private String createString(boolean readFromMap, boolean isDiscrete) {
+        String resultString = "";
+        for (int i = 0; i < variableOrderForWholeExecution.length; i++) {
+            boolean discrete = false;
+            String variableName = variableOrderForWholeExecution[i];
+            if (!compContext.getOutputs().contains(variableOrderForWholeExecution[i])
+                && variableOrderForWholeExecution[i].contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+                variableName =
+                    variableOrderForWholeExecution[i].substring(0,
+                        variableOrderForWholeExecution[i].lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
+            }
+
+            if (compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE) != null
+                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE))) {
+                discrete = true;
+            }
+            if (isDiscrete == discrete) {
+                if (outputValues.get(variableOrderForWholeExecution[i]).getDataType() == DataType.Vector) {
+                    for (int j = 0; j < Integer.parseInt(compContext.getOutputMetaDataValue(variableOrderForWholeExecution[i],
+                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); j++) {
+                        if (readFromMap) {
+                            resultString +=
+                                (TABS + ((VectorTD) outputValues.get(variableOrderForWholeExecution[i])).getFloatTDOfElement(j));
+                        } else {
+                            resultString += (TABS + APOSTROPHE + variableOrderForWholeExecution[i]
+                                + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j) + APOSTROPHE;
+                        }
+                    }
+                } else {
+                    if (readFromMap) {
+                        resultString += (TABS + outputValues.get(variableOrderForWholeExecution[i]));
+                    } else {
+                        resultString += (TABS + APOSTROPHE + variableOrderForWholeExecution[i] + APOSTROPHE);
+                    }
+                }
+            }
+        }
+        return resultString;
+    }
+
+    private int countOutputs(boolean discrete) {
         int count = 0;
         for (String e : outputValues.keySet()) {
-            if (compContext.getOutputDataType(e) == DataType.Vector) {
-                count += Integer.valueOf(compContext.getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE));
-            } else {
-                count++;
+            boolean isDiscrete = false;
+            String variableName = e;
+            if (!compContext.getOutputs().contains(e)
+                && e.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+                variableName = e.substring(0, e.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
+            }
+            if (compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE) != null
+                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE))) {
+                isDiscrete = true;
+            }
+            if (discrete == isDiscrete) {
+                if (compContext.getOutputDataType(e) == DataType.Vector) {
+                    count += Integer.valueOf(compContext.getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE));
+                } else {
+                    count++;
+                }
+
             }
         }
         return count;
@@ -577,7 +645,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         }
     }
 
-    private String getDVBounds(String boundType) {
+    private String getDVBounds(String boundType, boolean isDiscrete) {
         String result = "";
         Map<String, Double> boundValues = null;
         if (boundType == META_LOWERBOUND) {
@@ -585,16 +653,34 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         } else {
             boundValues = upperMap;
         }
+
         for (int i = 0; i < variableOrderForWholeExecution.length; i++) {
-            if (compContext.getOutputDataType(variableOrderForWholeExecution[i]) == DataType.Vector) {
-                for (int j = 0; j < 2; j++) {
-                    result +=
-                        (TABS + boundValues.get(variableOrderForWholeExecution[i]
-                            + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j));
-                }
-            } else {
-                result += (TABS + boundValues.get(variableOrderForWholeExecution[i]));
+            boolean discrete = false;
+            String variableName = variableOrderForWholeExecution[i];
+            if (!compContext.getOutputs().contains(variableOrderForWholeExecution[i])
+                && variableOrderForWholeExecution[i].contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+                variableName =
+                    variableOrderForWholeExecution[i].substring(0,
+                        variableOrderForWholeExecution[i].lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
             }
+
+            if (compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE) != null
+                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE))) {
+                discrete = true;
+            }
+
+            if (discrete == isDiscrete) {
+                if (compContext.getOutputDataType(variableOrderForWholeExecution[i]) == DataType.Vector) {
+                    for (int j = 0; j < 2; j++) {
+                        result +=
+                            (TABS + boundValues.get(variableOrderForWholeExecution[i]
+                                + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j));
+                    }
+                } else {
+                    result += (TABS + boundValues.get(variableOrderForWholeExecution[i]));
+                }
+            }
+
         }
         return result;
     }
@@ -796,7 +882,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                         dakotaInputFile,
                         "dakotaInput.in");
             } catch (IOException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             }
         }
         historyItem.setInputFileReference(dakotaInputFileReference.getFileReference());

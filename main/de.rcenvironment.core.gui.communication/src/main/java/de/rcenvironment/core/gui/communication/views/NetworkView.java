@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,8 +11,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
@@ -110,8 +108,6 @@ public class NetworkView extends ViewPart {
     private final ServiceRegistryPublisherAccess serviceRegistryAccess;
 
     private ConnectionSetupService connectionSetupService;
-
-    private final Log log = LogFactory.getLog(getClass());
 
     private NetworkViewModel model;
 

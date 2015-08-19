@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,6 +34,7 @@ import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -69,6 +70,10 @@ import de.rcenvironment.core.gui.workflow.Activator;
  */
 public class PlaceholderPage extends WizardPage {
 
+    private static final Color COLOR_WHITE = Display.getCurrent().getSystemColor(SWT.COLOR_WHITE);
+
+    private static final Color COLOR_RED = Display.getCurrent().getSystemColor(SWT.COLOR_RED);
+
     private static final int HUNDRED = 100;
 
     private static final Log LOGGER = LogFactory.getLog(PlaceholderPage.class);
@@ -90,6 +95,8 @@ public class PlaceholderPage extends WizardPage {
     private Map<Integer, String> treeItemNameToPlaceholder;
 
     private Map<Integer, String> treeItemToUUIDMap;
+
+    private Map<String, List<String>> placeholderValidators;
 
     /**
      * The Constructor.
@@ -223,8 +230,6 @@ public class PlaceholderPage extends WizardPage {
     }
 
     private void openItems() {
-        Display display = Display.getCurrent();
-
         for (TreeItem parent : componentPlaceholderTree.getItems()) {
             for (TreeItem secondLevel : parent.getItems()) {
                 if (secondLevel.getItemCount() == 0) {
@@ -232,10 +237,10 @@ public class PlaceholderPage extends WizardPage {
                     if (control instanceof Text) {
                         Text current = (Text) control;
                         parent.setExpanded(true); // Always expand. Copy into if branch, if it should
-                                              // only open when nothing is in it
+                        // only open when nothing is in it
                         if (current != null && (current.getText().equals("")
                             || current.getText() == null)) {
-                            current.setBackground(display.getSystemColor(SWT.COLOR_RED));
+                            current.setBackground(COLOR_RED);
                         }
                     }
                 } else {
@@ -244,11 +249,11 @@ public class PlaceholderPage extends WizardPage {
                         if (control instanceof Text) {
                             Text current = (Text) control;
                             parent.setExpanded(true); // Always expand. Copy into if branch, if it
-                                                  // should only open when nothing is in it
+                            // should only open when nothing is in it
                             secondLevel.setExpanded(true);
                             if (current.getText().equals("")
                                 || current.getText() == null) {
-                                current.setBackground(display.getSystemColor(SWT.COLOR_RED));
+                                current.setBackground(COLOR_RED);
                             }
                         }
                     }
@@ -269,6 +274,7 @@ public class PlaceholderPage extends WizardPage {
         TreeColumn column4 = new TreeColumn(componentPlaceholderTree, SWT.CENTER);
         column4.setText("");
         column4.setWidth(HUNDRED);
+        placeholderValidators = new HashMap<String, List<String>>();
         Set<String> componentTypesWithPlaceholder = placeholderHelper.getIdentifiersOfPlaceholderContainingComponents();
         String[] componentTypesWithPlaceholderArray =
             componentTypesWithPlaceholder.toArray(new String[componentTypesWithPlaceholder.size()]);
@@ -395,6 +401,7 @@ public class PlaceholderPage extends WizardPage {
         boolean isInteger = false;
         boolean isFloat = false;
         String dataType = placeholderHelper.getPlaceholdersDataType().get(placeholderName);
+        final String componentName = placeholderName.split("\\" + dot)[0];
         if (dataType != null) {
             if (dataType.equals(PlaceholdersMetaDataConstants.TYPE_FILE) || dataType.equals(PlaceholdersMetaDataConstants.TYPE_DIR)) {
                 isPathField = true;
@@ -416,7 +423,7 @@ public class PlaceholderPage extends WizardPage {
 
             @Override
             public void modifyText(ModifyEvent e) {
-                validateInput((Text) e.getSource());
+                validateInput((Text) e.getSource(), componentName, placeholderName);
             }
 
         };
@@ -445,7 +452,7 @@ public class PlaceholderPage extends WizardPage {
                 }
             }
             finalProposal = allProposals[allProposals.length - 1]; // set default value to
-                                                                            // recent one
+                                                                   // recent one
         }
         String[] additionalProposals = placeholderHelper.getOtherPlaceholderHistoryValues(treeItemNameToPlaceholder.get(item.hashCode()));
 
@@ -464,11 +471,11 @@ public class PlaceholderPage extends WizardPage {
         } else {
             allProposals = additionalProposals;
         }
-        
-        if (finalProposal != null) {
+
+        if (finalProposal != null && !finalProposal.equals("")) {
             if (!isBoolean) {
                 placeholderText.setText(finalProposal);
-            } else {
+            } else if (booleanCombo != null) {
                 booleanCombo.setText(finalProposal);
             }
         }
@@ -492,6 +499,9 @@ public class PlaceholderPage extends WizardPage {
         if (isBoolean) {
             textEditor.setEditor(booleanCombo, item, 1);
             return booleanCombo;
+        }
+        if (isTextEmpty(placeholderText)) {
+            addPlaceholderValidator(componentName, placeholderName);
         }
         textEditor.setEditor(placeholderText, item, 1);
         if (isEncrypted) {
@@ -521,6 +531,23 @@ public class PlaceholderPage extends WizardPage {
             placeholderText.addVerifyListener(integerListener);
         }
         return placeholderText;
+    }
+
+    private void addPlaceholderValidator(final String componentName, String placeholderName) {
+        List<String> placeholderNames = placeholderValidators.get(componentName);
+        if (placeholderNames == null) {
+            placeholderNames = new LinkedList<String>();
+        }
+        placeholderNames.add(placeholderName);
+        placeholderValidators.put(componentName, placeholderNames);
+    }
+
+    private void removePlaceholderValidator(final String componentName, final String placeholderName) {
+        List<String> placeholderNames = placeholderValidators.get(componentName);
+        placeholderNames.remove(placeholderName);
+        if (placeholderNames.isEmpty()) {
+            placeholderValidators.remove(componentName);
+        }
     }
 
     private void addApplyToAllButton(TreeItem item) {
@@ -603,12 +630,58 @@ public class PlaceholderPage extends WizardPage {
         return control;
     }
 
-    private void validateInput(Text source) {
-        if (source.getText() != null && !source.getText().equals("")) {
-            source.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
+    private boolean isTextEmpty(Text source) {
+        return source.getText() == null || source.getText().equals("");
+    }
+
+    private void validateInput(Text source, String componentName, String placeholdername) {
+        if (!isTextEmpty(source)) {
+            if (source.getBackground().equals(COLOR_RED)) {
+                source.setBackground(COLOR_WHITE);
+                removePlaceholderValidator(componentName, placeholdername);
+            }
         } else {
-            source.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_RED));
+            source.setBackground(COLOR_RED);
+            addPlaceholderValidator(componentName, placeholdername);
         }
+    }
+
+    /**
+     * 
+     * Verify placeholderPage for errors. Missing input is defined as an error.
+     * 
+     * @return whether errors exist or not.
+     */
+    public boolean validateErrors() {
+        return !placeholderValidators.isEmpty();
+    }
+
+    /**
+     * @return amount of errors
+     */
+    public int getErrorAmount() {
+        return placeholderValidators.size();
+    }
+
+    /**
+     * 
+     * Retrieve the component names which have an error.
+     * 
+     * @param indicator when its true {@link Messages#missingPlaceholder} is placed behind the name
+     * @return set of component names
+     */
+    public Map<String, String> getComponentNamesWithError(boolean indicator) {
+        Set<String> componentNames = placeholderValidators.keySet();
+        Map<String, String> newComponentNames = new HashMap<String, String>();
+        for (String name : componentNames) {
+            String additionalInfos = "";
+            if (indicator) {
+                additionalInfos = " " + Messages.missingPlaceholder;
+            }
+            newComponentNames.put(name, additionalInfos);
+        }
+        return newComponentNames;
+
     }
 
     /**
@@ -743,8 +816,17 @@ public class PlaceholderPage extends WizardPage {
                     for (TreeItem componentIDItems : parentTreeItem.getParentItem().getParentItem().getItems()) {
                         for (TreeItem instanceItems : componentIDItems.getItems()) {
                             if (instanceItems.getText().equals(parentTreeItem.getText())) {
-                                Control nextControl = getControl(instanceItems.hashCode());
-                                replaceText(nextControl, replaceText);
+                                // Only apply placeholder if data types match
+                                String type1 =
+                                    getPlaceholderAttributes(parentTreeItem.getParentItem().getParentItem().getText()).getDataType(
+                                        treeItemNameToPlaceholder.get(parentTreeItem.hashCode()));
+                                String type2 =
+                                    getPlaceholderAttributes(instanceItems.getParentItem().getParentItem().getText()).getDataType(
+                                        treeItemNameToPlaceholder.get(instanceItems.hashCode()));
+                                if (type1.equals(type2)) {
+                                    Control nextControl = getControl(instanceItems.hashCode());
+                                    replaceText(nextControl, replaceText);
+                                }
                             }
                         }
                     }
@@ -767,4 +849,35 @@ public class PlaceholderPage extends WizardPage {
             widgetSelected(arg0);
         }
     }
+
+    /**
+     * 
+     * {@link PlaceholderValidator} stores the information about the component and the {@link Type}. It is only created when a component has
+     * an error (e.g. input text is missing)
+     *
+     * @author Marc Stammerjohann
+     */
+    private static class PlaceholderValidator {
+
+        private Type type;
+
+        public PlaceholderValidator(Type type) {
+            this.type = type;
+        }
+
+        public Type getType() {
+            return type;
+        }
+
+        /**
+         * 
+         * The type of {@link PlaceholderValidator}.
+         *
+         * @author Marc Stammerjohann
+         */
+        private enum Type {
+            ERROR;
+        }
+    }
+
 }

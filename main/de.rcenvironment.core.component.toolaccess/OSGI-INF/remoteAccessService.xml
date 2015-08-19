@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" configuration-policy="optional" immediate="true" name="RemoteAccessService">
+
+	<implementation class="de.rcenvironment.core.component.toolaccess.internal.RemoteAccessServiceImpl"/>
+		
+	<reference
+		name="WorkflowExecutionService"
+		interface="de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService"
+		bind="bindWorkflowExecutionService"
+	/>
+	
+	<reference 
+		name="DistributedComponentKnowledgeService" 
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService" 
+		bind="bindDistributedComponentKnowledgeService" 
+	/>
+
+	<service>
+		<provide interface="de.rcenvironment.core.component.toolaccess.internal.RemoteAccessService"/>
+	</service>
+	
+</scr:component>

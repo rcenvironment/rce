@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -39,6 +39,7 @@ import de.rcenvironment.components.excel.common.ExcelService;
 import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.components.excel.common.SimpleExcelService;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicEndpointCommand;
@@ -224,8 +225,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
         ExcelService excelService = new SimpleExcelService();
         if (excelFile != null && !excelFile.isEmpty() && excelService.isValidExcelFile(xlFile)) {
             EndpointEditDialog dialog =
-                new VariablesEditDialog(Display.getDefault().getActiveShell(),
-                    String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.newMessage, endpointType), configuration,
+                new VariablesEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
                     endpointType, endpointIdToManage, false,
                     icon, endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
                         .getMetaDataDefinition(), new HashMap<String, String>(), xlFile);
@@ -253,8 +253,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         EndpointEditDialog dialog =
-            new VariablesEditDialog(Display.getDefault().getActiveShell(),
-                String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.editMessage, endpointType), configuration,
+            new VariablesEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                 endpointType, endpointIdToManage, isStaticEndpoint,
                 icon, endpoint.getDeclarativeEndpointDescription()
                     .getMetaDataDefinition(), newMetaData, xlFile);

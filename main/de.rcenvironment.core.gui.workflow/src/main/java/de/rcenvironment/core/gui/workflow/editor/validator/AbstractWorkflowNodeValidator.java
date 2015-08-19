@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,10 +16,8 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
-import java.util.regex.Matcher;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -30,6 +28,8 @@ import de.rcenvironment.core.datamodel.api.DataType;
  * @author Christian Weiss
  */
 public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValidator {
+
+    private static final String WORKFLOW_NODE_ALREADY_SET = "WorkflowNode already set.";
 
     private WorkflowNode workflowNode;
 
@@ -44,13 +44,13 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
     private Boolean valid;
 
     @Override
-    public final void setWorkflowNode(final WorkflowNode workflowNode) {
+    public final void setWorkflowNode(final WorkflowNode node, boolean onWorkflowStart) {
         if (this.workflowNode != null) {
-            throw new IllegalStateException("WorkflowNode already set.");
+            throw new IllegalStateException(WORKFLOW_NODE_ALREADY_SET);
         }
-        this.workflowNode = workflowNode;
+        this.workflowNode = node;
         initializeModelBinding();
-        revalidate();
+        revalidate(onWorkflowStart);
     }
 
     private void initializeModelBinding() {
@@ -75,15 +75,39 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
         return new DefaultWorkflowNodeChangeListener();
     }
 
-    private void revalidate() {
+    private void revalidate(boolean onWorkflowStart) {
         if (workflowNode == null) {
-            throw new IllegalStateException("WorkflowNode not set.");
+            throw new IllegalStateException(WORKFLOW_NODE_ALREADY_SET);
         }
+        WorkflowNodeValidatonMessageStore validatonStore = WorkflowNodeValidatonMessageStore.getInstance();
         messages.clear();
-        final Collection<WorkflowNodeValidationMessage> validateMessages = validate();
-        if (validateMessages != null) {
-            messages.addAll(validateMessages);
+        final Collection<WorkflowNodeValidationMessage> validateMessages;
+        if (onWorkflowStart) {
+            List<WorkflowNodeValidationMessage> retrieveValidatonMessages =
+                validatonStore.retrieveValidatonMessages(workflowNode.getIdentifier());
+            if (retrieveValidatonMessages != null) {
+                messages.addAll(retrieveValidatonMessages);
+            }
+            validateMessages = validateOnStart();
+        } else {
+            validateMessages = validate();
         }
+        if (validateMessages != null) {
+            addValidationMessages(validateMessages);
+            if (!onWorkflowStart) {
+                validatonStore.addValidatonMessages(workflowNode.getIdentifier(), messages);
+            }
+        }
+    }
+
+    private void addValidationMessages(Collection<WorkflowNodeValidationMessage> validateMessages) {
+        List<WorkflowNodeValidationMessage> validationMessages = new LinkedList<WorkflowNodeValidationMessage>();
+        for (WorkflowNodeValidationMessage message : validateMessages) {
+            if (!messages.contains(message)) {
+                validationMessages.add(message);
+            }
+        }
+        messages.addAll(validationMessages);
     }
 
     @Override
@@ -103,6 +127,19 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
      *         {@link WorkflowNodeValidationMessage} that explain the failures/errors.
      */
     protected abstract Collection<WorkflowNodeValidationMessage> validate();
+
+    /**
+     * 
+     * Returns all {@link WorkflowNodeValidationMessage} that hint for failures or errors in the configuration. It is only executed on
+     * workflow start.
+     * 
+     * @return 'null' or an empty collection, if no failures/errors were found, otherwise all {@link WorkflowNodeValidationMessage} that
+     *         explain the failures/errors.
+     */
+    protected Collection<WorkflowNodeValidationMessage> validateOnStart() {
+        // do nothing, can be implemented to validate the component on workflow start
+        return null;
+    }
 
     @Override
     public boolean isValid() {
@@ -124,7 +161,7 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
 
     protected void refreshValid() {
         final List<WorkflowNodeValidationMessage> oldMessages = new ArrayList<WorkflowNodeValidationMessage>(messages);
-        revalidate();
+        revalidate(false);
         if (valid == null || !messages.equals(oldMessages)) {
             final boolean newValid = messages == null || messages.isEmpty();
             setValid(newValid);
@@ -231,14 +268,8 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
 
         @Override
         public void propertyChange(final PropertyChangeEvent event) {
-            final Matcher propertiesPatternMatcher = WorkflowNode.PROPERTIES_PATTERN.matcher(event.getPropertyName());
-            if (propertiesPatternMatcher.matches() || EndpointDescriptionsManager.PROPERTY_ENDPOINT.equals(event.getPropertyName())) {
-                refresh();
-            }
-        }
-
-        protected void refresh() {
-            AbstractWorkflowNodeValidator.this.refreshValid();
+            // propertyChange is called several times
+            workflowNode.setValid(false);
         }
 
     }

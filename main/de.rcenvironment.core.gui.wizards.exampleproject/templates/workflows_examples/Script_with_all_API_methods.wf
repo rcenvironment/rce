@@ -1,11 +1,11 @@
 {
   "identifier" : "eaa90fd6-875b-4d2b-b3e4-89d51e136a1e",
-  "workflowVersion" : "3",
-  "name" : "Script_API_with_Python2014-12-03_12:59:07_03",
+  "workflowVersion" : "4",
+  "name" : "Script_API_with_Python2014-12-03_12:59:07_03_2015-04-10_16:20:06_06",
   "nodes" : [ {
-    "identifier" : "565c8d1c-bb7e-461d-986b-f7d5b22ab5f4",
-    "name" : "SUM Jython",
-    "location" : "342:253",
+    "identifier" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
+    "name" : "API Jython",
+    "location" : "342:38",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -13,32 +13,46 @@
       "name" : "Script"
     },
     "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "sum = RCE.read_state_variable_default(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n\tRCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))",
       "usageOfScript" : "NEW",
-      "scriptLanguage" : "Jython"
+      "scriptLanguage" : "Jython",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Test read_input(), value should be 1 ...\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 1\r\n\r\nprint \"Test  get_input_names_with_datum(), values should be x and y ...\"\r\nprint RCE.get_input_names_with_datum()\r\nprint RCE.get_input_names_with_datum() == [\"x\", \"y\"] or RCE.get_input_names_with_datum() == [\"y\", \"x\"]\r\n\r\n\r\nprint \"Test  get_output_names(), values should be f and g ...\"\r\nprint RCE.get_output_names()\r\nprint RCE.get_output_names() == [\"f\", \"g\"] or RCE.get_output_names() == [\"g\", \"f\"]\r\n\r\nprint \"Test get_execution_count() ...\"\r\nprint RCE.get_execution_count()\r\nprint RCE.get_execution_count() == 1\r\n\r\nprint \"Test write_output with value 3\"\r\nRCE.write_output(\"f\", 3)\r\n\r\nprint \"Test write_not_a_value_output\"\r\nRCE.write_not_a_value_output(\"g\")\r\n"
     },
     "dynamicInputs" : [ {
-      "identifier" : "4305c542-b0a9-489b-94bb-09bc0f1b7908",
+      "identifier" : "94be55fb-c76f-4648-a007-2fcb7c6e1314",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    }, {
+      "identifier" : "8bfb15f3-2c80-40d7-8fe4-fcc06c0cb59e",
       "name" : "x",
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Queue"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ],
     "dynamicOutputs" : [ {
-      "identifier" : "55e896cc-f608-4a91-b013-7e3033661fdf",
+      "identifier" : "aa8eab76-50fa-4820-be2b-6d20df3e65a9",
       "name" : "f",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "59f3f0ad-e669-4c54-a7db-b7511712b1e7",
+      "name" : "g",
       "epIdentifier" : "default",
       "datatype" : "Float"
     } ]
   }, {
-    "identifier" : "61e55c63-ba36-424e-8462-c2e21966b0b3",
-    "name" : "Validation Sum Python",
-    "location" : "500:358",
+    "identifier" : "079eaef6-e844-421d-b919-edfd6fe9916b",
+    "name" : "API Python",
+    "location" : "342:144",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -46,20 +60,141 @@
       "name" : "Script"
     },
     "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print \"Check if sum is correct (55):\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 55\r\n\r\nif not RCE.read_input(\"x\") == 55:\r\n  RCE.fail(\"Sum not correct\")",
       "usageOfScript" : "NEW",
-      "scriptLanguage" : "Python"
+      "scriptLanguage" : "Python",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Test read_input(), value should be 1 ...\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 1\r\n\r\nprint \"Test  get_input_names_with_datum(), values should be x and y ...\"\r\nprint RCE.get_input_names_with_datum()\r\nprint RCE.get_input_names_with_datum() == [\"x\", \"y\"] or RCE.get_input_names_with_datum() == [\"y\", \"x\"]\r\n\r\n\r\nprint \"Test  get_output_names(), values should be f and g ...\"\r\nprint RCE.get_output_names()\r\nprint RCE.get_output_names() == [\"f\", \"g\"] or RCE.get_output_names() == [\"g\", \"f\"]\r\n\r\nprint \"Test get_execution_count() ...\"\r\nprint RCE.get_execution_count()\r\nprint RCE.get_execution_count() == 1\r\n\r\nprint \"Test write_output with value 3\"\r\nRCE.write_output(\"f\", 3)\r\n\r\nprint \"Test write_not_a_value_output\"\r\nRCE.write_not_a_value_output(\"g\")\r\n"
     },
     "dynamicInputs" : [ {
-      "identifier" : "e6af525b-2e74-47b6-897d-84ddd081f885",
+      "identifier" : "60741dbc-0801-4e78-82b0-ac036dac67c9",
       "name" : "x",
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    }, {
+      "identifier" : "e58478dc-9c13-4247-a57e-2ba9bf700ff1",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "0f1b2196-db42-4935-bddf-3b4d78c97f73",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "83f604f8-01dd-4a88-b647-083e9f36320e",
+      "name" : "g",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "a4d42e69-594b-4781-aab9-2ea9774cb281",
+    "name" : "Input Provider",
+    "location" : "202:475",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "e6e122be-9512-4f8d-94a9-919f2f75303a",
+      "name" : "z",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "11"
+      }
+    } ]
+  }, {
+    "identifier" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
+    "name" : "Parametric Study API Jython",
+    "location" : "183:38",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "3.1",
+      "name" : "Parametric Study"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "2a0c4386-32b0-4374-b626-6dda86a390a0",
+      "name" : "y",
+      "epIdentifier" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    }, {
+      "identifier" : "f69b4a80-0238-4833-8567-f60c987964b4",
+      "name" : "x",
+      "epIdentifier" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "cb3f1e29-2d09-4d1e-97d8-207f63d25b71",
+      "name" : "Design Variable",
+      "epIdentifier" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "StepSize" : "1",
+        "fitStepSizeToBounds" : "true",
+        "ToValue" : "1",
+        "FromValue" : "1"
+      }
+    } ]
+  }, {
+    "identifier" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
+    "name" : "Parametric Study API Python",
+    "location" : "183:144",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "3.1",
+      "name" : "Parametric Study"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "870ba87a-4f36-4792-b2a2-4d05b86266e9",
+      "name" : "x",
+      "epIdentifier" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    }, {
+      "identifier" : "c12c0603-cee6-45c4-86e1-b3db532f2d79",
+      "name" : "y",
+      "epIdentifier" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "45613eef-9431-4992-bdc7-be31aecc9f8a",
+      "name" : "Design Variable",
+      "epIdentifier" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "StepSize" : "1",
+        "fitStepSizeToBounds" : "true",
+        "ToValue" : "1",
+        "FromValue" : "1"
       }
     } ]
   }, {
@@ -78,203 +213,10 @@
       "epIdentifier" : null,
       "datatype" : "Float",
       "metadata" : {
-        "FromValue" : "0",
         "StepSize" : "1",
-        "ToValue" : "10"
-      }
-    } ]
-  }, {
-    "identifier" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
-    "name" : "Parametric Study API Python",
-    "location" : "183:144",
-    "active" : "true",
-    "component" : {
-      "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.1",
-      "name" : "Parametric Study"
-    },
-    "dynamicInputs" : [ {
-      "identifier" : "c12c0603-cee6-45c4-86e1-b3db532f2d79",
-      "name" : "y",
-      "epIdentifier" : "parameters",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    }, {
-      "identifier" : "870ba87a-4f36-4792-b2a2-4d05b86266e9",
-      "name" : "x",
-      "epIdentifier" : "parameters",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    } ],
-    "staticOutputs" : [ {
-      "identifier" : "45613eef-9431-4992-bdc7-be31aecc9f8a",
-      "name" : "Design Variable",
-      "epIdentifier" : null,
-      "datatype" : "Float",
-      "metadata" : {
-        "FromValue" : "1",
-        "StepSize" : "1",
-        "ToValue" : "1"
-      }
-    } ]
-  }, {
-    "identifier" : "079eaef6-e844-421d-b919-edfd6fe9916b",
-    "name" : "API Python",
-    "location" : "342:144",
-    "active" : "true",
-    "component" : {
-      "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
-      "name" : "Script"
-    },
-    "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print \"Test read_input(), value should be 1 ...\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 1\r\n\r\nprint \"Test  get_input_names_with_datum(), values should be x and y ...\"\r\nprint RCE.get_input_names_with_datum()\r\nprint RCE.get_input_names_with_datum() == [\"x\", \"y\"] or RCE.get_input_names_with_datum() == [\"y\", \"x\"]\r\n\r\n\r\nprint \"Test  get_output_names(), values should be f and g ...\"\r\nprint RCE.get_output_names()\r\nprint RCE.get_output_names() == [\"f\", \"g\"] or RCE.get_output_names() == [\"g\", \"f\"]\r\n\r\nprint \"Test get_execution_count() ...\"\r\nprint RCE.get_execution_count()\r\nprint RCE.get_execution_count() == 1\r\n\r\nprint \"Test write_output with value 3\"\r\nRCE.write_output(\"f\", 3)\r\n\r\nprint \"Test write_not_a_value_output\"\r\nRCE.write_not_a_value_output(\"g\")\r\n",
-      "usageOfScript" : "NEW",
-      "scriptLanguage" : "Python"
-    },
-    "dynamicInputs" : [ {
-      "identifier" : "e58478dc-9c13-4247-a57e-2ba9bf700ff1",
-      "name" : "y",
-      "epIdentifier" : "default",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    }, {
-      "identifier" : "60741dbc-0801-4e78-82b0-ac036dac67c9",
-      "name" : "x",
-      "epIdentifier" : "default",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    } ],
-    "dynamicOutputs" : [ {
-      "identifier" : "83f604f8-01dd-4a88-b647-083e9f36320e",
-      "name" : "g",
-      "epIdentifier" : "default",
-      "datatype" : "Float"
-    }, {
-      "identifier" : "0f1b2196-db42-4935-bddf-3b4d78c97f73",
-      "name" : "f",
-      "epIdentifier" : "default",
-      "datatype" : "Float"
-    } ]
-  }, {
-    "identifier" : "91838d3a-619d-4c3e-8d35-f0d14963840a",
-    "name" : "SUM Python",
-    "location" : "342:358",
-    "active" : "true",
-    "component" : {
-      "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
-      "name" : "Script"
-    },
-    "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "sum = RCE.read_state_variable_default(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n\tRCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))",
-      "usageOfScript" : "NEW",
-      "scriptLanguage" : "Python"
-    },
-    "dynamicInputs" : [ {
-      "identifier" : "61c05725-0535-4b7a-b7f6-61caba46098c",
-      "name" : "x",
-      "epIdentifier" : "default",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Queue"
-      }
-    } ],
-    "dynamicOutputs" : [ {
-      "identifier" : "5d50f1e7-87a5-4734-b6b8-01c14785fb61",
-      "name" : "f",
-      "epIdentifier" : "default",
-      "datatype" : "Float"
-    } ]
-  }, {
-    "identifier" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
-    "name" : "API Jython",
-    "location" : "342:38",
-    "active" : "true",
-    "component" : {
-      "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
-      "name" : "Script"
-    },
-    "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print \"Test read_input(), value should be 1 ...\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 1\r\n\r\nprint \"Test  get_input_names_with_datum(), values should be x and y ...\"\r\nprint RCE.get_input_names_with_datum()\r\nprint RCE.get_input_names_with_datum() == [\"x\", \"y\"] or RCE.get_input_names_with_datum() == [\"y\", \"x\"]\r\n\r\n\r\nprint \"Test  get_output_names(), values should be f and g ...\"\r\nprint RCE.get_output_names()\r\nprint RCE.get_output_names() == [\"f\", \"g\"] or RCE.get_output_names() == [\"g\", \"f\"]\r\n\r\nprint \"Test get_execution_count() ...\"\r\nprint RCE.get_execution_count()\r\nprint RCE.get_execution_count() == 1\r\n\r\nprint \"Test write_output with value 3\"\r\nRCE.write_output(\"f\", 3)\r\n\r\nprint \"Test write_not_a_value_output\"\r\nRCE.write_not_a_value_output(\"g\")\r\n",
-      "usageOfScript" : "NEW",
-      "scriptLanguage" : "Jython"
-    },
-    "dynamicInputs" : [ {
-      "identifier" : "94be55fb-c76f-4648-a007-2fcb7c6e1314",
-      "name" : "y",
-      "epIdentifier" : "default",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    }, {
-      "identifier" : "8bfb15f3-2c80-40d7-8fe4-fcc06c0cb59e",
-      "name" : "x",
-      "epIdentifier" : "default",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    } ],
-    "dynamicOutputs" : [ {
-      "identifier" : "59f3f0ad-e669-4c54-a7db-b7511712b1e7",
-      "name" : "g",
-      "epIdentifier" : "default",
-      "datatype" : "Float"
-    }, {
-      "identifier" : "aa8eab76-50fa-4820-be2b-6d20df3e65a9",
-      "name" : "f",
-      "epIdentifier" : "default",
-      "datatype" : "Float"
-    } ]
-  }, {
-    "identifier" : "4745ae76-6de9-46d8-b7c8-c0d8cc155fe2",
-    "name" : "Validation SUM Jython",
-    "location" : "500:253",
-    "active" : "true",
-    "component" : {
-      "identifier" : "de.rcenvironment.script",
-      "version" : "3.4",
-      "name" : "Script"
-    },
-    "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print \"Check if sum is correct (55):\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 55\r\n\r\nif not RCE.read_input(\"x\") == 55:\r\n  RCE.fail(\"Sum not correct\")",
-      "usageOfScript" : "NEW",
-      "scriptLanguage" : "Jython"
-    },
-    "dynamicInputs" : [ {
-      "identifier" : "c81232fe-5127-4e49-8b23-29588df555b9",
-      "name" : "x",
-      "epIdentifier" : "default",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "fitStepSizeToBounds" : "true",
+        "ToValue" : "10",
+        "FromValue" : "0"
       }
     } ]
   }, {
@@ -293,55 +235,16 @@
       "epIdentifier" : null,
       "datatype" : "Float",
       "metadata" : {
-        "FromValue" : "0",
         "StepSize" : "1",
-        "ToValue" : "10"
+        "fitStepSizeToBounds" : "true",
+        "ToValue" : "10",
+        "FromValue" : "0"
       }
     } ]
   }, {
-    "identifier" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
-    "name" : "Parametric Study API Jython",
-    "location" : "183:38",
-    "active" : "true",
-    "component" : {
-      "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.1",
-      "name" : "Parametric Study"
-    },
-    "dynamicInputs" : [ {
-      "identifier" : "f69b4a80-0238-4833-8567-f60c987964b4",
-      "name" : "x",
-      "epIdentifier" : "parameters",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    }, {
-      "identifier" : "2a0c4386-32b0-4374-b626-6dda86a390a0",
-      "name" : "y",
-      "epIdentifier" : "parameters",
-      "datatype" : "Float",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    } ],
-    "staticOutputs" : [ {
-      "identifier" : "cb3f1e29-2d09-4d1e-97d8-207f63d25b71",
-      "name" : "Design Variable",
-      "epIdentifier" : null,
-      "datatype" : "Float",
-      "metadata" : {
-        "FromValue" : "1",
-        "StepSize" : "1",
-        "ToValue" : "1"
-      }
-    } ]
-  }, {
-    "identifier" : "e7871fb0-d151-45d7-a82d-16b06b8e0e31",
-    "name" : "Validation Python",
-    "location" : "500:144",
+    "identifier" : "565c8d1c-bb7e-461d-986b-f7d5b22ab5f4",
+    "name" : "SUM Jython",
+    "location" : "342:253",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -349,20 +252,104 @@
       "name" : "Script"
     },
     "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print \"Test if output for input x was 3 ...\" \r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 3\r\n\r\nif not RCE.read_input(\"x\") == 3:\r\n   RCE.fail(\"Input was not correct\")",
       "usageOfScript" : "NEW",
-      "scriptLanguage" : "Python"
+      "scriptLanguage" : "Jython",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "sum = RCE.read_state_variable_default(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n\tRCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))"
     },
     "dynamicInputs" : [ {
-      "identifier" : "614bb301-d2cd-461d-88dd-e733f97d30cc",
+      "identifier" : "4305c542-b0a9-489b-94bb-09bc0f1b7908",
       "name" : "x",
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "inputHandling_73b1056e" : "Queue",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "55e896cc-f608-4a91-b013-7e3033661fdf",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "91838d3a-619d-4c3e-8d35-f0d14963840a",
+    "name" : "SUM Python",
+    "location" : "342:358",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Python",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "sum = RCE.read_state_variable_default(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n\tRCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "61c05725-0535-4b7a-b7f6-61caba46098c",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Queue",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "5d50f1e7-87a5-4734-b6b8-01c14785fb61",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "e387ed95-f52f-48e9-90f9-498c5855fe60",
+    "name" : "Script API defaults",
+    "location" : "342:456",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Python",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "#set state variable x to 5\r\nRCE.write_state_variable(\"x\", 5)\r\n#read state variable\r\nprint RCE.read_state_variable(\"x\")\r\n#read state variable with default value if no value is set (this is not the case here, so it returns '5')\r\nprint RCE.read_state_variable(\"x\", 1)\r\n#read state variable with default value if no value is set (this time, there is no value so '1' is read)\r\nprint RCE.read_state_variable(\"y\", 1)\r\n#read state variable with default value if no value is set (this time, there is the default value fronm the last call, so '1' is read)\r\nprint RCE.read_state_variable(\"y\", 2)\r\n\r\n#reads the input \"x\". Since it is not connected, the default value 1 is returned.\r\nprint RCE.read_input(\"x\", 1)\r\n#reads the input \"y\", but it is neither connected nor is a default value given, so 'an exception is returned.\r\ntry:\r\n   print RCE.read_input(\"y\")\r\nexcept ValueError: \r\n   print \"No value\"\r\n#reads the input \"z\", since it is connected, the input value is retunred.\r\nprint RCE.read_input(\"z\")\r\n"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "645a3923-2f22-4bcb-9b67-ee0f5ccae887",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected"
+      }
+    }, {
+      "identifier" : "7e70d976-2620-4c25-abb3-41d38b2dc891",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected"
+      }
+    }, {
+      "identifier" : "7006d0d8-6fde-4f57-ad5c-3d6eb413cfb9",
+      "name" : "z",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ]
   }, {
@@ -376,11 +363,11 @@
       "name" : "Script"
     },
     "configuration" : {
-      "storeComponentHistoryData" : "false",
-      "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print \"Test if output for input x was 3 ...\" \r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 3\r\n\r\nif not RCE.read_input(\"x\") == 3:\r\n   RCE.fail(\"Input was not correct\")",
       "usageOfScript" : "NEW",
-      "scriptLanguage" : "Jython"
+      "scriptLanguage" : "Jython",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Test if output for input x was 3 ...\" \r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 3\r\n\r\nif not RCE.read_input(\"x\") == 3:\r\n   RCE.fail(\"Input was not correct\")"
     },
     "dynamicInputs" : [ {
       "identifier" : "c3cf55cf-fe38-4b63-b536-0f2820913bb5",
@@ -388,41 +375,97 @@
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ]
+  }, {
+    "identifier" : "e7871fb0-d151-45d7-a82d-16b06b8e0e31",
+    "name" : "Validation Python",
+    "location" : "500:144",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Python",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Test if output for input x was 3 ...\" \r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 3\r\n\r\nif not RCE.read_input(\"x\") == 3:\r\n   RCE.fail(\"Input was not correct\")"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "614bb301-d2cd-461d-88dd-e733f97d30cc",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ]
+  }, {
+    "identifier" : "4745ae76-6de9-46d8-b7c8-c0d8cc155fe2",
+    "name" : "Validation SUM Jython",
+    "location" : "500:253",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Jython",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Check if sum is correct (55):\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 55\r\n\r\nif not RCE.read_input(\"x\") == 55:\r\n  RCE.fail(\"Sum not correct\")"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c81232fe-5127-4e49-8b23-29588df555b9",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
+      }
+    } ]
+  }, {
+    "identifier" : "61e55c63-ba36-424e-8462-c2e21966b0b3",
+    "name" : "Validation Sum Python",
+    "location" : "500:358",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "usageOfScript" : "NEW",
+      "scriptLanguage" : "Python",
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Check if sum is correct (55):\"\r\nprint RCE.read_input(\"x\")\r\nprint RCE.read_input(\"x\") == 55\r\n\r\nif not RCE.read_input(\"x\") == 55:\r\n  RCE.fail(\"Sum not correct\")"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "e6af525b-2e74-47b6-897d-84ddd081f885",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ]
   } ],
   "connections" : [ {
-    "source" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
-    "output" : "aa8eab76-50fa-4820-be2b-6d20df3e65a9",
-    "target" : "1334f5ca-d7ac-4c59-8189-9427352211bd",
-    "input" : "c3cf55cf-fe38-4b63-b536-0f2820913bb5"
-  }, {
-    "source" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
-    "output" : "59f3f0ad-e669-4c54-a7db-b7511712b1e7",
-    "target" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
-    "input" : "2a0c4386-32b0-4374-b626-6dda86a390a0"
-  }, {
-    "source" : "91838d3a-619d-4c3e-8d35-f0d14963840a",
-    "output" : "5d50f1e7-87a5-4734-b6b8-01c14785fb61",
-    "target" : "61e55c63-ba36-424e-8462-c2e21966b0b3",
-    "input" : "e6af525b-2e74-47b6-897d-84ddd081f885"
-  }, {
-    "source" : "d2793969-34f7-4e38-9693-5acdff148c6c",
-    "output" : "19fac3c3-fd34-4ede-860a-fe3e5e1ff36e",
-    "target" : "91838d3a-619d-4c3e-8d35-f0d14963840a",
-    "input" : "61c05725-0535-4b7a-b7f6-61caba46098c"
-  }, {
-    "source" : "079eaef6-e844-421d-b919-edfd6fe9916b",
-    "output" : "83f604f8-01dd-4a88-b647-083e9f36320e",
-    "target" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
-    "input" : "c12c0603-cee6-45c4-86e1-b3db532f2d79"
-  }, {
-    "source" : "565c8d1c-bb7e-461d-986b-f7d5b22ab5f4",
-    "output" : "55e896cc-f608-4a91-b013-7e3033661fdf",
-    "target" : "4745ae76-6de9-46d8-b7c8-c0d8cc155fe2",
-    "input" : "c81232fe-5127-4e49-8b23-29588df555b9"
+    "source" : "a4d42e69-594b-4781-aab9-2ea9774cb281",
+    "output" : "e6e122be-9512-4f8d-94a9-919f2f75303a",
+    "target" : "e387ed95-f52f-48e9-90f9-498c5855fe60",
+    "input" : "7006d0d8-6fde-4f57-ad5c-3d6eb413cfb9"
   }, {
     "source" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
     "output" : "cb3f1e29-2d09-4d1e-97d8-207f63d25b71",
@@ -434,6 +477,16 @@
     "target" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
     "input" : "f69b4a80-0238-4833-8567-f60c987964b4"
   }, {
+    "source" : "079eaef6-e844-421d-b919-edfd6fe9916b",
+    "output" : "0f1b2196-db42-4935-bddf-3b4d78c97f73",
+    "target" : "e7871fb0-d151-45d7-a82d-16b06b8e0e31",
+    "input" : "614bb301-d2cd-461d-88dd-e733f97d30cc"
+  }, {
+    "source" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
+    "output" : "aa8eab76-50fa-4820-be2b-6d20df3e65a9",
+    "target" : "1334f5ca-d7ac-4c59-8189-9427352211bd",
+    "input" : "c3cf55cf-fe38-4b63-b536-0f2820913bb5"
+  }, {
     "source" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
     "output" : "cb3f1e29-2d09-4d1e-97d8-207f63d25b71",
     "target" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
@@ -442,26 +495,46 @@
     "source" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
     "output" : "45613eef-9431-4992-bdc7-be31aecc9f8a",
     "target" : "079eaef6-e844-421d-b919-edfd6fe9916b",
+    "input" : "e58478dc-9c13-4247-a57e-2ba9bf700ff1"
+  }, {
+    "source" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
+    "output" : "45613eef-9431-4992-bdc7-be31aecc9f8a",
+    "target" : "079eaef6-e844-421d-b919-edfd6fe9916b",
     "input" : "60741dbc-0801-4e78-82b0-ac036dac67c9"
-  }, {
-    "source" : "079eaef6-e844-421d-b919-edfd6fe9916b",
-    "output" : "0f1b2196-db42-4935-bddf-3b4d78c97f73",
-    "target" : "e7871fb0-d151-45d7-a82d-16b06b8e0e31",
-    "input" : "614bb301-d2cd-461d-88dd-e733f97d30cc"
-  }, {
-    "source" : "079eaef6-e844-421d-b919-edfd6fe9916b",
-    "output" : "0f1b2196-db42-4935-bddf-3b4d78c97f73",
-    "target" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
-    "input" : "870ba87a-4f36-4792-b2a2-4d05b86266e9"
   }, {
     "source" : "758dca4d-1250-4a49-abc9-f4c5e0d8b8b9",
     "output" : "e3c076f8-ff90-47da-900a-8b69f5721fb6",
     "target" : "565c8d1c-bb7e-461d-986b-f7d5b22ab5f4",
     "input" : "4305c542-b0a9-489b-94bb-09bc0f1b7908"
   }, {
-    "source" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
-    "output" : "45613eef-9431-4992-bdc7-be31aecc9f8a",
-    "target" : "079eaef6-e844-421d-b919-edfd6fe9916b",
-    "input" : "e58478dc-9c13-4247-a57e-2ba9bf700ff1"
+    "source" : "d2793969-34f7-4e38-9693-5acdff148c6c",
+    "output" : "19fac3c3-fd34-4ede-860a-fe3e5e1ff36e",
+    "target" : "91838d3a-619d-4c3e-8d35-f0d14963840a",
+    "input" : "61c05725-0535-4b7a-b7f6-61caba46098c"
+  }, {
+    "source" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
+    "output" : "59f3f0ad-e669-4c54-a7db-b7511712b1e7",
+    "target" : "1093129f-d311-4194-bf79-bbbc1bdfca35",
+    "input" : "2a0c4386-32b0-4374-b626-6dda86a390a0"
+  }, {
+    "source" : "565c8d1c-bb7e-461d-986b-f7d5b22ab5f4",
+    "output" : "55e896cc-f608-4a91-b013-7e3033661fdf",
+    "target" : "4745ae76-6de9-46d8-b7c8-c0d8cc155fe2",
+    "input" : "c81232fe-5127-4e49-8b23-29588df555b9"
+  }, {
+    "source" : "91838d3a-619d-4c3e-8d35-f0d14963840a",
+    "output" : "5d50f1e7-87a5-4734-b6b8-01c14785fb61",
+    "target" : "61e55c63-ba36-424e-8462-c2e21966b0b3",
+    "input" : "e6af525b-2e74-47b6-897d-84ddd081f885"
+  }, {
+    "source" : "079eaef6-e844-421d-b919-edfd6fe9916b",
+    "output" : "83f604f8-01dd-4a88-b647-083e9f36320e",
+    "target" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
+    "input" : "c12c0603-cee6-45c4-86e1-b3db532f2d79"
+  }, {
+    "source" : "079eaef6-e844-421d-b919-edfd6fe9916b",
+    "output" : "0f1b2196-db42-4935-bddf-3b4d78c97f73",
+    "target" : "3a432def-af5e-4473-94cd-efa8a7e48bb8",
+    "input" : "870ba87a-4f36-4792-b2a2-4d05b86266e9"
   } ]
 }

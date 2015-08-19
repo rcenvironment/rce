@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -61,7 +61,7 @@ public class RoutingProtocolTest extends AbstractVirtualInstanceTest {
 
     private static final String FAILED_TO_CONNECT = "Failed to connect.";
 
-    private static final String NETWORK_NOT_FULLY_CONVERGED = "The network graph of every instance is supposed to be the same.";
+    //private static final String NETWORK_NOT_FULLY_CONVERGED = "The network graph of every instance is supposed to be the same.";
 
     /**
      * Create a chain of instances that are not connected in a ring.

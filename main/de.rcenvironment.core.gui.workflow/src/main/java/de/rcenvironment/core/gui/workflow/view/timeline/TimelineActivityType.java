@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,8 +14,7 @@ import java.util.Map;
 import org.eclipse.swt.graphics.RGB;
 
 /**
- * Contains the type of a activity.
- *
+ * Contains the type of an activity.
  * @author Hendrik Abbenhaus
  */
 public enum TimelineActivityType {
@@ -62,10 +61,9 @@ public enum TimelineActivityType {
         }
     }
     /**
-     * 
-     * 
-     * @param jsonName the json Name 
-     * @return the actiontype
+     * Reverse search-service: get the {@link TimelineActivityType} by it`s name.
+     * @param jsonName the json Name of TimelineActivityType 
+     * @return the activitytype
      */
     public static TimelineActivityType valueOfjsonName(String jsonName) {
         return map.get(jsonName);

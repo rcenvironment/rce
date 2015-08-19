@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -67,6 +67,7 @@ public class NotificationServiceImplTest {
         myOtherPublisherName = NotificationTestConstants.OTHER_NOTIFICATION_IDENTIFIER;
         notificationSubscriber = new DefaultNotificationSubscriber() {
 
+            @Override
             public void processNotification(Notification n) {}
 
             @Override
@@ -250,6 +251,7 @@ public class NotificationServiceImplTest {
 
         NotificationSubscriber subscriber = new DefaultNotificationSubscriber() {
 
+            @Override
             public void processNotification(Notification notification) {
                 assertNotNull(notification);
                 assertEquals(notification.getHeader().getNotificationIdentifier(), notificationId);
@@ -287,7 +289,7 @@ public class NotificationServiceImplTest {
     @Test
     public final void testUnsubscribeForSanity() {
         NotificationSubscriber subscriber = new DefaultNotificationSubscriber() {
-
+            @Override
             public void processNotification(Notification notification) {
                 myCounter++;
                 fail("This subscriber should not get a notification after beeing unsubscribed!");

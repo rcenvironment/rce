@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -45,6 +45,7 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
+import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -56,6 +57,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Sascha Zur
  */
 public class PersistentWorkflowDescriptionUpdateServiceImpl implements PersistentWorkflowDescriptionUpdateService {
+
+    private static final String WORKFLOW_VERSION = "workflowVersion";
 
     private static final String DYNAMIC_OUTPUTS = "dynamicOutputs";
 
@@ -69,7 +72,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     private static final String STATIC_OUTPUTS = "staticOutputs";
 
-    private static final String CURRENT_VERSION = "3";
+    private static final String CURRENT_VERSION = String.valueOf(WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER);
+
+    private static final String VERSION_3 = "3";
 
     private static final String NAME = "name";
 
@@ -109,12 +114,16 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     private DistributedPersistentComponentDescriptionUpdateService componentUpdateService;
 
     private DistributedComponentKnowledgeService componentKnowledgeService;
-    
+
     private NodeIdentifier localNode;
 
     @Override
     public boolean isUpdateForWorkflowDescriptionAvailable(PersistentWorkflowDescription description, boolean silent) {
         if (!silent) {
+            if (description.getWorkflowVersion().compareTo(VERSION_3) < 0) {
+                return true;
+            }
+        } else {
             if (description.getWorkflowVersion().compareTo(CURRENT_VERSION) < 0) {
                 return true;
             }
@@ -142,16 +151,38 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.FOR_VERSION_THREE, description, false);
 
         description = checkForConnectionDescriptionUpdateAndPerformOnDemand(description, workflowVersion);
-    
+
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.AFTER_VERSION_THREE, description, true);
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.AFTER_VERSION_THREE, description, false);
+
+        description = updateWorkflowToCurrentVersion(description);
 
         return description;
     }
 
+    private PersistentWorkflowDescription updateWorkflowToCurrentVersion(PersistentWorkflowDescription description) {
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
+            ((ObjectNode) workflowDescriptionAsTree).put(WORKFLOW_VERSION, TextNode.valueOf(CURRENT_VERSION));
+
+            ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+
+            JsonNode nodes = workflowDescriptionAsTree.get(NODES);
+            return new PersistentWorkflowDescription(createComponentDescriptions(nodes, null),
+                writer.writeValueAsString(workflowDescriptionAsTree));
+        } catch (JsonProcessingException e) {
+            LOGGER.error(e.getStackTrace());
+        } catch (IOException e) {
+            LOGGER.error(e.getStackTrace());
+        }
+        return null;
+
+    }
+
     private PersistentWorkflowDescription checkForWorkflowDescriptionUpdateAndPerformOnDemand(PersistentWorkflowDescription description,
         String version) throws IOException {
-        if (version.compareTo(CURRENT_VERSION) < 0) {
+        if (version.compareTo(VERSION_3) < 0) {
             description = performWorkflowDescriptionUpdateVersionOneToTwo(description);
         }
         return description;
@@ -159,7 +190,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     private PersistentWorkflowDescription checkForConnectionDescriptionUpdateAndPerformOnDemand(PersistentWorkflowDescription description,
         String version) throws IOException {
-        if (version.compareTo(CURRENT_VERSION) < 0) {
+        if (version.compareTo(VERSION_3) < 0) {
             description = performWorkflowDescriptionUpdateVersionOneToTwoForConnections(description);
         }
         return description;
@@ -195,9 +226,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
             return new PersistentWorkflowDescription(componentDescriptions, writer.writeValueAsString(workflowDescriptionAsTree));
         } catch (JsonProcessingException e) {
-            LOGGER.error(e.getStackTrace());
+            LOGGER.error(e);
         } catch (IOException e) {
-            LOGGER.error(e.getStackTrace());
+            LOGGER.error(e);
         }
         return null;
     }
@@ -234,8 +265,8 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         nodes = updateNodesToVersion3(nodes, jsonFactory);
 
         ((ObjectNode) workflowDescriptionAsTree).remove(NODES);
-        ((ObjectNode) workflowDescriptionAsTree).remove("workflowVersion");
-        ((ObjectNode) workflowDescriptionAsTree).put("workflowVersion", TextNode.valueOf(CURRENT_VERSION));
+        ((ObjectNode) workflowDescriptionAsTree).remove(WORKFLOW_VERSION);
+        ((ObjectNode) workflowDescriptionAsTree).put(WORKFLOW_VERSION, TextNode.valueOf(VERSION_3));
         if (nodes != null) {
             ((ObjectNode) workflowDescriptionAsTree).put(NODES, nodes);
         }
@@ -477,9 +508,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
                 && (compDesc.getComponentVersion().equals("")
                 || compInterface.getVersion().compareTo(compDesc.getComponentVersion()) >= 0)) {
                 if (((compInst.getNodeId() == null || compInst.getNodeId().equals(localNode.getIdString()))
-                        && compDesc.getComponentNodeIdentifier() == null)
+                    && compDesc.getComponentNodeIdentifier() == null)
                     || compInst.getNodeId() != null && compDesc.getComponentNodeIdentifier() != null
-                        && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getIdString())) {
+                    && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getIdString())) {
                     return compDesc;
                 } else {
                     matchingComponents.add(compInst);
@@ -509,7 +540,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService service) {
         this.componentKnowledgeService = service;
     }
-    
+
     protected void bindPlatformService(PlatformService platformService) {
         localNode = platformService.getLocalNodeId();
     }

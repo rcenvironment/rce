@@ -15,6 +15,16 @@ def readinput_internal():
     except IOError:
         return {}
 
+def readinput_req_if_connected_internal():
+    """ 
+    INTERNAL METHOD
+    Reads the input channel that are only required if connected
+    """
+    try:
+        return json.load(open("pythonInputReqIfConnected.rced", "r"))
+    except IOError:
+        return []
+    
 def read_state_variables_internal():
     """ 
     INTERNAL METHOD
@@ -59,16 +69,22 @@ def writeoutput_internal():
     indefiniteOutputs = open("pythonSetOutputsIndefinit.rceo", "w")
     json.dump(RCE_INDEFINITE_OUTPUTS, indefiniteOutputs)
     
-def read_input(name):
+   
+def read_input(name, defaultValue = None):
     """ 
-    Gets the value for the given input name
+    Gets the value for the given input name or returns the default value if there is no input connected and the input not required
     """
-    if RCE_CHANNEL_INPUT.has_key(name):
-        return RCE_CHANNEL_INPUT[name]
+    if name in RCE_CHANNEL_REQ_IF_CONNECTED and (defaultValue is None):
+        raise ValueError("Input " + str(name) + " not connected.")
+    elif name in RCE_CHANNEL_REQ_IF_CONNECTED and not (defaultValue is None):
+        return defaultValue
     else:
-        raise ValueError("Input " + str(name) + " not defined or has no value.")
-        return None
-
+        if RCE_CHANNEL_INPUT.has_key(name):
+            return RCE_CHANNEL_INPUT[name]
+        else:
+            raise ValueError("Input " + str(name) + " not defined or has no value.")
+            return None
+    
 def close_output(name):
     """ 
     Closes the RCE channel of the given output
@@ -127,8 +143,7 @@ def read_state_variable(name):
     else :
         return RCE_STATE_VARIABLES[name]
     
-
-def read_state_variable_default(name, defaultValue):
+def read_state_variable(name, defaultValue = 0):
     """ 
     Reads the given state variables value, if it exists, else a default value is returned and stored in the dict
     """
@@ -137,6 +152,10 @@ def read_state_variable_default(name, defaultValue):
     else:
         RCE_STATE_VARIABLES[name] = defaultValue
         return defaultValue 
+    
+def read_state_variable_default(name, defaultValue):
+    print "The method 'read_state_variable_default' is deprecated. Please use 'read_state_variable(name, defaultValue)."
+    return read_state_variable(name, defaultValue)
     
 def get_state_dict():
     """ 
@@ -164,6 +183,7 @@ def close_all_outputs():
         close_output(output)
 
 RCE_CHANNEL_INPUT = readinput_internal()
+RCE_CHANNEL_REQ_IF_CONNECTED = readinput_req_if_connected_internal()
 RCE_CHANNEL_OUTPUT_NAMES = read_output_names_internal()
 RCE_CHANNEL_OUTPUT = {}
 RCE_CHANNEL_CLOSE = []

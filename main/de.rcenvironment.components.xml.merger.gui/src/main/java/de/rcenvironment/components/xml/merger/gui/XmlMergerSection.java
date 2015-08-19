@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -154,7 +154,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
             
             EditorsHelper.openExternalFileInEditor(tempFile, new Runnable[] {
                 new Runnable() {
-
+                    @Override
                     public void run() {
                         try {
                             final String newValue = FileEncodingUtils.loadUnicodeStringFromFile(tempFile);
@@ -163,22 +163,22 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
                             if (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME) == null
                                 || (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME) 
                                     instanceof String
-                                && ((String) getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME))
+                                && getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME)
                                     .isEmpty())) {
                                 // Just guessing it is XSLT
                                 setProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME,
                                     XmlMergerComponentConstants.MAPPINGTYPE_XSLT);
                             }
                         } catch (final IOException e) {
-                            logger.error("Could not read temporary edited CPACS configuration file", e);
+                            logger.error("Could not read temporary edited file", e);
                         }
                     }
                 }
             });
         } catch (IOException e) {
-            logger.error("Could not create temporary CPACS configuration file", e);
+            logger.error("Could not create temporary file", e);
         } catch (PartInitException e) {
-            logger.error(e.getStackTrace());
+            logger.error(e);
         }
     }
     

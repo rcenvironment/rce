@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -38,6 +38,11 @@ public final class WidgetGroupFactory {
     public static final int ONLY_INTEGER = 2;
 
     /**
+     * Option if a textfield should only allow only inputs > 0.
+     */
+    public static final int GREATER_OR_EQUAL_ZERO = 4;
+
+    /**
      * Option if a textfield should align the text in the (standard is left).
      */
     public static final int ALIGN_CENTER = 16777216;
@@ -69,7 +74,7 @@ public final class WidgetGroupFactory {
         gridData.widthHint = textWidth;
         propertyText.setLayoutData(gridData);
         if (function != WidgetGroupFactory.NONE) {
-            propertyText.addVerifyListener(new NumericalTextConstraintListener(propertyText, function));            
+            propertyText.addVerifyListener(new NumericalTextConstraintListener(propertyText, function));
         }
 
         LabelAndTextForProperty labelAndText = new LabelAndTextForProperty();
@@ -77,25 +82,23 @@ public final class WidgetGroupFactory {
         labelAndText.label = propertyLabel;
         return labelAndText;
     }
-    
+
     /**
      * Container for {@link Text} and {@link Label}.
      * 
      * @author Doreen Seider
      */
     public static class LabelAndTextForProperty {
-        
+
         /**
          * Text field for property.
          */
         public Text text = null;
-        
+
         /**
          * Label for property.
          */
         public Label label = null;
-        
+
     }
 }
-
-

@@ -3,7 +3,6 @@
 	<name>de.rcenvironment.cpacs.gui.tiglviewer.win32.x86_64</name>
 	<comment></comment>
 	<projects>
-		<project>de.dlr.sc.chameleon.rce.tixi</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

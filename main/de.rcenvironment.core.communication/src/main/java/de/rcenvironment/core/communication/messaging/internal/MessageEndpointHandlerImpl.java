@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -64,11 +64,7 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
                 // FIXME restore or remove "previous hop" parameter
                 NodeIdentifier prevHopId = null;
                 response = handler.handleRequest(request, prevHopId);
-            } catch (RuntimeException e) {
-                response = logAndWrapException(request, e);
-            } catch (SerializationException e) {
-                response = logAndWrapException(request, e);
-            } catch (CommunicationException e) {
+            } catch (RuntimeException | SerializationException | CommunicationException e) {
                 response = logAndWrapException(request, e);
             }
         } else {
@@ -105,7 +101,7 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
 
     private NetworkResponse logAndWrapException(NetworkRequest request, Throwable e) {
         NetworkResponse response;
-        log.warn("Error while handling incoming request", e);
+        log.warn("Returning an exception response for an incoming request:", e);
         response = NetworkResponseFactory.generateResponseForExceptionAtDestination(request, e);
         return response;
     }

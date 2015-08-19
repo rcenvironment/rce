@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -663,6 +663,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
      * 
      * @param newService the service to bind
      */
+    @Override
     public void setMessageEndpointHandler(MessageEndpointHandler newService) {
         this.messageEndpointHandler = newService;
     }

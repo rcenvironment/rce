@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -63,6 +63,9 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     protected static final String MAIN_CONFIGURATION_FILENAME = "configuration.json";
 
+    // debug option that writes/exports the active configuration to the profile's output folder
+    private static final boolean AUTO_EXPORT_CONFIGURATION_ON_STARTUP = false;
+
     private static final String SPACE_CHARACTER = " ";
 
     private File configurationLocation;
@@ -74,8 +77,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private final Map<ConfigurablePathId, File> configurablePathMap = new HashMap<>();
 
     private final Map<ConfigurablePathListId, List<File>> configurablePathListMap = new HashMap<>();
-
-    private boolean acquiredConfiguredInstanceDataDir = false;
 
     private final ObjectMapper mapper; // reusable JSON mapper object
 
@@ -132,6 +133,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         initializeProfileDirFromBootstrapSettings();
         initializeConfigurablePaths();
         loadRootConfiguration(false);
+        exportConfigIfConfigured(false);
         initializeGeneralSettings();
 
         // initialize parent temp directory root
@@ -180,8 +182,12 @@ public class ConfigurationServiceImpl implements ConfigurationService {
             currentRootConfiguration = configurationStore.createEmptyPlaceholder();
         }
 
-        if (!isReload) {
-            // TODO 6.0.0 originally added for debugging; keep for release?
+        log.debug("(Re-)loaded root configuration");
+    }
+
+    @SuppressWarnings("unused")
+    private void exportConfigIfConfigured(boolean isReload) {
+        if (!isReload && AUTO_EXPORT_CONFIGURATION_ON_STARTUP) {
             try {
                 configurationStore.exportToFile(currentRootConfiguration,
                     new File(getProfileDirectory(), "output/autoExportOnStartup.json"));
@@ -189,8 +195,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                 log.error(e.toString());
             }
         }
-
-        log.debug("(Re-)loaded root configuration");
     }
 
     @Override
@@ -503,12 +507,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     private void initializeInstanceTempDirectoryRoot() {
         String instanceTempDirectoryPrefix;
-        if (acquiredConfiguredInstanceDataDir) {
-            // TODO this uses the last part of the instance data dir for identification - sufficient?
-            instanceTempDirectoryPrefix = profileDirectory.getName();
-        } else {
-            instanceTempDirectoryPrefix = "default";
-        }
+        // TODO this uses the last part of the instance data dir for identification - sufficient?
+        instanceTempDirectoryPrefix = profileDirectory.getName();
         try {
             TempFileServiceAccess.setupLiveEnvironment(parentTempDirectoryRoot, instanceTempDirectoryPrefix);
         } catch (IOException e) {

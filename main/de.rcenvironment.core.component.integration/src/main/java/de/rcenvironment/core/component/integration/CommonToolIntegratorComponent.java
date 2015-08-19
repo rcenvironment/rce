@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -163,6 +163,10 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
     private Map<String, Object> stateMap;
 
+    private boolean keepOnFailure;
+
+    private Map<String, String> outputMapping;
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
@@ -206,13 +210,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         if (copyToolBehaviour == null) {
             copyToolBehaviour = ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_NEVER;
         }
-        if (componentContext.getConfigurationValue(
-            ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR) != null) {
-            deleteToolBehaviour = componentContext.getConfigurationValue(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
-        } else {
-            // if nothing is selected, set delete behavior to "once"
-            deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER;
-        }
+        getToolDeleteBehaviour();
 
         try {
             if (rootWDPath == null || rootWDPath.isEmpty()) {
@@ -248,6 +246,36 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
         }
 
+    }
+
+    private void getToolDeleteBehaviour() {
+        if (componentContext.getConfigurationValue(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR) != null) {
+            deleteToolBehaviour = componentContext.getConfigurationValue(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
+        } else {
+            boolean deleteNeverActive =
+                Boolean.parseBoolean(componentContext
+                    .getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER));
+            boolean deleteOnceActive =
+                Boolean.parseBoolean(componentContext
+                    .getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE));
+            boolean deleteAlwaysActive =
+                Boolean.parseBoolean(componentContext
+                    .getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS));
+
+            if (deleteAlwaysActive) {
+                deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS;
+            } else if (deleteOnceActive) {
+                deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE;
+            } else if (deleteNeverActive) {
+                deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER;
+            }
+        }
+        keepOnFailure = false;
+        if (componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE) != null) {
+            keepOnFailure =
+                Boolean.parseBoolean(componentContext
+                    .getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
+        }
     }
 
     @Override
@@ -409,10 +437,10 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         super.tearDown(state);
         switch (state) {
         case CANCELLED:
-            deleteBaseWorkingDirectory();
+            deleteBaseWorkingDirectory(false);
             break;
         case FINISHED:
-            deleteBaseWorkingDirectory();
+            deleteBaseWorkingDirectory(true);
             File parentFile = null;
             if (stderrLogFile != null) {
                 parentFile = stderrLogFile.getParentFile();
@@ -431,9 +459,17 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     }
                 }
             } catch (NullPointerException e) {
-                LOG.warn("Failed to delete temp files: " + parentFile.getAbsolutePath());
+                if (parentFile != null) {
+                    LOG.warn("Failed to delete temp files: " + parentFile.getAbsolutePath());
+                } else {
+                    LOG.warn("Failed to delete temp files");
+                }
+
             }
 
+            break;
+        case FAILED:
+            deleteBaseWorkingDirectory(false);
             break;
         default:
             break;
@@ -443,7 +479,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     @Override
     public void dispose() {
         super.dispose();
-        deleteBaseWorkingDirectory();
+        deleteBaseWorkingDirectory(false);
     }
 
     private void deleteLogs() {
@@ -491,7 +527,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             try {
                 exitCode = executor.waitForTermination();
             } catch (InterruptedException e) {
-                deleteBaseWorkingDirectory();
+                deleteBaseWorkingDirectory(false);
                 throw new ComponentException("Executor Interrupted: " + e.getMessage());
             }
             stdoutWatcher.waitForTermination();
@@ -503,11 +539,11 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
             if (!dontCrashOnNonZeroExitCodes && exitCode != 0) {
                 componentContext.printConsoleLine(COMMAND_SCRIPT_TERMINATED_ABNORMALLY_ERROR_MSG + exitCode, ConsoleRow.Type.STDERR);
-                deleteBaseWorkingDirectory();
+                deleteBaseWorkingDirectory(false);
                 throw new ComponentException(COMMAND_SCRIPT_TERMINATED_ABNORMALLY_ERROR_MSG + exitCode);
             }
         } catch (IOException e) {
-            deleteBaseWorkingDirectory();
+            deleteBaseWorkingDirectory(false);
             throw new ComponentException(toolName + ": Could not create Executor: " + e.getMessage());
         }
         return exitCode;
@@ -534,6 +570,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 try {
                     engine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath + QUOTE);
                     engine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
+
                     String headerScript =
                         ScriptingUtils.prepareHeaderScript(stateMap, componentContext, TempFileServiceAccess.getInstance()
                             .createManagedTempDir(), new LinkedList<File>());
@@ -560,13 +597,13 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 } catch (ScriptException | IOException e) {
                     componentContext.printConsoleLine(scriptPrefix + SCRIPT_TERMINATED_ABNORMALLY_ERROR_MSG, ConsoleRow.Type.STDERR);
                     componentContext.printConsoleLine(e.getMessage(), ConsoleRow.Type.STDERR);
-                    deleteBaseWorkingDirectory();
-                    throw new ComponentException(e);
+                    deleteBaseWorkingDirectory(false);
+                    throw new ComponentException("Pre or post script execution failed: " + e.toString());
                 } catch (InterruptedException e) {
                     LOG.error("Waiting for stdout or stderr writer was interrupted", e);
                 }
                 if (exitCode != null && exitCode.intValue() != 0) {
-                    deleteBaseWorkingDirectory();
+                    deleteBaseWorkingDirectory(false);
 
                     throw new ComponentException(scriptPrefix + SCRIPT_TERMINATED_ABNORMALLY_ERROR_MSG + exitCode);
                 }
@@ -616,20 +653,20 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             if (scriptExecConfig != null) {
                 scriptExecConfig.put(key, value);
             }
-            if (value != null && key.startsWith(ComponentUtils.OUTPUT_TAG) && key.endsWith(ComponentUtils.OUTPUT_TAG)) {
-                if (componentContext.getOutputDataType(ComponentUtils.extractOutputName(key)) == DataType.FileReference
-                    || componentContext.getOutputDataType(ComponentUtils.extractOutputName(key)) == DataType.DirectoryReference) {
+            if (value != null && outputMapping.containsKey(key)) {
+                if (componentContext.getOutputDataType(outputMapping.get(key)) == DataType.FileReference
+                    || componentContext.getOutputDataType(outputMapping.get(key)) == DataType.DirectoryReference) {
                     File file = new File(value.toString());
                     if (!file.isAbsolute()) {
                         file = new File(currentWorkingDirectory, value.toString());
                     }
                     if (!file.exists()) {
-                        componentContext.printConsoleLine("Could not find file for output " + ComponentUtils.extractOutputName(key)
+                        componentContext.printConsoleLine("Could not find file for output " + outputMapping.get(key)
                             + ": " + file.getAbsolutePath(), ConsoleRow.Type.STDOUT);
                     }
                     try {
-                        if (componentContext.getOutputDataType(ComponentUtils.extractOutputName(key)) == DataType.FileReference) {
-                            String metafilename = componentContext.getOutputMetaDataValue(ComponentUtils.extractOutputName(key),
+                        if (componentContext.getOutputDataType(outputMapping.get(key)) == DataType.FileReference) {
+                            String metafilename = componentContext.getOutputMetaDataValue(outputMapping.get(key),
                                 ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
                             String filename = file.getName();
                             if (metafilename != null && !metafilename.isEmpty()) {
@@ -637,10 +674,10 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                             }
                             FileReferenceTD uuid = datamanagementService.createFileReferenceTDFromLocalFile(componentContext, file,
                                 filename);
-                            componentContext.writeOutput(ComponentUtils.extractOutputName(key), uuid);
-                            lastRunStaticOutputValues.put(ComponentUtils.extractOutputName(key), uuid);
+                            componentContext.writeOutput(outputMapping.get(key), uuid);
+                            lastRunStaticOutputValues.put(outputMapping.get(key), uuid);
                         } else {
-                            String metafilename = componentContext.getOutputMetaDataValue(ComponentUtils.extractOutputName(key),
+                            String metafilename = componentContext.getOutputMetaDataValue(outputMapping.get(key),
                                 ToolIntegrationConstants.KEY_ENDPOINT_FILENAME);
                             String filename = file.getName();
                             if (metafilename != null && !metafilename.isEmpty()) {
@@ -648,8 +685,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                             }
                             DirectoryReferenceTD uuid = datamanagementService.createDirectoryReferenceTDFromLocalDirectory(
                                 componentContext, file, filename);
-                            componentContext.writeOutput(ComponentUtils.extractOutputName(key), uuid);
-                            lastRunStaticOutputValues.put(ComponentUtils.extractOutputName(key), uuid);
+                            componentContext.writeOutput(outputMapping.get(key), uuid);
+                            lastRunStaticOutputValues.put(outputMapping.get(key), uuid);
                         }
                     } catch (IOException e) {
                         LOG.error("Writing output from script: ", e);
@@ -657,8 +694,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
                 } else {
                     TypedDatum valueTD = ScriptDataTypeHelper.getTypedDatum(value, typedDatumFactory);
-                    componentContext.writeOutput(ComponentUtils.extractOutputName(key), valueTD);
-                    lastRunStaticOutputValues.put(ComponentUtils.extractOutputName(key), valueTD);
+                    componentContext.writeOutput(outputMapping.get(key), valueTD);
+                    lastRunStaticOutputValues.put(outputMapping.get(key), valueTD);
                 }
             }
         }
@@ -706,7 +743,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
         }
 
-        script = ComponentUtils.replaceOutputVariables(script, componentContext.getOutputs(), OUTPUT_PLACEHOLDER);
+        script = replaceOutputVariables(script, componentContext.getOutputs(), OUTPUT_PLACEHOLDER);
         Map<String, String> properties = new HashMap<>();
         // get properties!
         for (String configKey : componentContext.getConfigurationKeys()) {
@@ -729,6 +766,16 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         script = ComponentUtils.replaceVariable(script, executionToolDirectory.getAbsolutePath(),
             ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[3], DIRECTORY_PLACEHOLDER_TEMPLATE);
 
+        return script;
+    }
+
+    private String replaceOutputVariables(String script, Set<String> outputs, String outputPlaceholder) {
+        outputMapping = new HashMap<>();
+        for (String outputName : outputs) {
+            String outputID = "_RCE_OUTPUT_" + UUID.randomUUID().toString().replaceAll("-", "_");
+            script = script.replace(String.format(outputPlaceholder, outputName), outputID);
+            outputMapping.put(outputID, outputName);
+        }
         return script;
     }
 
@@ -790,9 +837,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 + targetToolDir.getAbsolutePath(), ConsoleRow.Type.COMPONENT_OUTPUT);
             copiedToolDir = true;
         } catch (IOException e) {
-            deleteBaseWorkingDirectory();
-            throw new ComponentException(toolName + ": Could not copy tooldirectory " + sourceToolDirectory.getAbsolutePath()
-                + " to sandbox: ", e);
+            deleteBaseWorkingDirectory(false);
+            throw new ComponentException(toolName + ": Could not copy tool directory " + sourceToolDirectory.getAbsolutePath()
+                + " to sandbox", e);
         }
         if (copiedToolDir) {
             executionToolDirectory = targetToolDir;
@@ -818,9 +865,10 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         LOG.debug(toolName + ": Created folder structure in " + directory.getAbsolutePath());
     }
 
-    private void deleteBaseWorkingDirectory() {
+    private void deleteBaseWorkingDirectory(boolean workflowSuccess) {
         if ((ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE.equals(deleteToolBehaviour)
             || ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS.equals(deleteToolBehaviour))
+            && !(keepOnFailure && !workflowSuccess)
             && baseWorkingDirectory.exists()) {
             try {
                 if (rootWDPath == null || rootWDPath.isEmpty()) {

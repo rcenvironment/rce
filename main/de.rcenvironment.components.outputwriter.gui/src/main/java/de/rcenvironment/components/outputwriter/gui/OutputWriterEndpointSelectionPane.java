@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import org.eclipse.swt.widgets.TableColumn;
 
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
@@ -47,8 +48,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
             paths.add(getMetaData(endpointName).get(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING));
         }
         OutputWriterEndpointEditDialog dialog =
-            new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(),
-                String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.newMessage, endpointType), configuration,
+            new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
                 endpointType,
                 endpointIdToManage, false,
                 endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
@@ -70,8 +70,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         OutputWriterEndpointEditDialog dialog =
-            new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(),
-                String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.editMessage, endpointType), configuration,
+            new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                 endpointType,
                 endpointIdToManage, isStaticEndpoint, endpoint.getDeclarativeEndpointDescription()
                     .getMetaDataDefinition(), newMetaData, paths);
@@ -82,7 +81,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void fillTable() {
         super.fillTable();
-        if (table.getColumnCount() < 4) {
+        if (table.getColumnCount() < 6) {
             TableColumn col = new TableColumn(table, SWT.NONE);
             col.setText("Target folder");
             final int columnWeight = 20;
@@ -94,9 +93,14 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         int i = 0;
         for (String endpoint : dynamicEndpointNames) {
             if (table.getItemCount() > i) {
-                table.getItem(i).setText(3, getMetaData(endpoint).get("folderForSaving"));
+                table.getItem(i).setText(5, getMetaData(endpoint).get("folderForSaving"));
             }
             i++;
         }
+        
+        //Fix a bug in the GUI under some Linux distributions
+        final int columnWeight = 20;
+        tableLayout.setColumnData(table.getColumn(3), new ColumnWeightData(columnWeight, true));
+
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@ package de.rcenvironment.components.optimizer.execution;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -48,11 +49,20 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class OptimizerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
+    private static final String GOAL = "goal";
+
+    private static final String DYNAMIC_INPUTS = "dynamicInputs";
+
+    private static final String SPECIFIC_SETTINGS = "specificSettings";
+
+    private static final String DAKOTA_COLINY_EVOLUTIONARY_ALGORITHM = "Dakota Coliny Evolutionary Algorithm";
+
+    private static final String DAKOTA_COLINY_COBYLA_CONSTRAINT_OPTIMIZATION_BY_LINEAR_APPROXIMATIONS =
+        "Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)";
+
     private static final String DAKOTA_QUASI_NEWTON_METHOD = "Dakota Quasi-Newton method";
 
     private static final String EP_IDENTIFIER = "epIdentifier";
-
-    private static final String GOAL = "goal";
 
     private static final String CONSTRAINT = "Constraint";
 
@@ -88,9 +98,11 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String V6_1 = "6.1";
 
+    private static final String V6_2 = "6.2";
+
     private static ObjectMapper mapper = new ObjectMapper();
 
-    private final String currentVersion = V6_1;
+    private final String currentVersion = V6_2;
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -122,6 +134,10 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             && persistentComponentDescriptionVersion.compareTo(V6_0) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
+        if (silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V6_1) < 0) {
+            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+        }
         return versionsToUpdate;
     }
 
@@ -147,7 +163,62 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                 && description.getComponentVersion().compareTo(V6_0) < 0) {
                 description = updateToVersion60(description);
             }
+            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
+                && description.getComponentVersion().compareTo(V6_1) < 0) {
+                description = updateToVersion61(description);
+            }
         }
+        return description;
+    }
+
+    @SuppressWarnings("unchecked")
+    private PersistentComponentDescription updateToVersion61(PersistentComponentDescription description)
+        throws JsonParseException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+
+        ((ObjectNode) node.get(CONFIGURATION)).put("preCalcFilePath", "${preCalcFilePath}");
+        TextNode methodConfigurations = (TextNode) node.get(CONFIGURATION).get(METHOD_CONFIGURATIONS);
+        Map<String, Object> configs = mapper.readValue(methodConfigurations.getTextValue(), new HashMap<String, Object>().getClass());
+        ObjectNode accuracyNode = mapper.createObjectNode();
+        accuracyNode.put("GuiName", "Solution accuracy");
+        accuracyNode.put("dataType", "Real");
+        accuracyNode.put("SWTWidget", "Text");
+        accuracyNode.put("DefaultValue", "1.E-4");
+        accuracyNode.put("Value", "");
+        accuracyNode.put("Validation", "required");
+        if (configs != null && configs.get(DAKOTA_COLINY_COBYLA_CONSTRAINT_OPTIMIZATION_BY_LINEAR_APPROXIMATIONS) != null) {
+
+            Map<String, Object> specifics =
+                (Map<String, Object>) ((HashMap<String, Object>) configs
+                    .get(DAKOTA_COLINY_COBYLA_CONSTRAINT_OPTIMIZATION_BY_LINEAR_APPROXIMATIONS)).get(
+                    SPECIFIC_SETTINGS);
+            specifics.put("solution_accuracy", accuracyNode);
+
+        }
+        if (configs != null && configs.get(DAKOTA_COLINY_EVOLUTIONARY_ALGORITHM) != null) {
+            Map<String, Object> specifics =
+                (Map<String, Object>) ((HashMap<String, Object>) configs.get(DAKOTA_COLINY_EVOLUTIONARY_ALGORITHM)).get(
+                    SPECIFIC_SETTINGS);
+            specifics.put("solution_accuracy", accuracyNode);
+
+        }
+        ((ObjectNode) node.get(CONFIGURATION)).remove(METHOD_CONFIGURATIONS);
+        ((ObjectNode) node.get(CONFIGURATION)).put(METHOD_CONFIGURATIONS, mapper.writeValueAsString(configs));
+        ArrayNode inputs = ((ArrayNode) node.get(DYNAMIC_INPUTS));
+        if (inputs != null) {
+            Iterator<JsonNode> it = inputs.iterator();
+            while (it.hasNext()) {
+                ObjectNode input = (ObjectNode) it.next();
+                if (((ObjectNode) input.get(METADATA)).get(GOAL) != null
+                    && ((ObjectNode) input.get(METADATA)).get(GOAL).getTextValue().equals("Solve for")) {
+                    ((ObjectNode) input.get(METADATA)).put(GOAL, "Minimize");
+                    ((ObjectNode) input.get(METADATA)).remove("solve");
+                }
+            }
+        }
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+        description.setComponentVersion(V6_1);
         return description;
     }
 
@@ -160,17 +231,24 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
         ArrayNode statEndpoints = (ArrayNode) node.get("staticOutputs");
-
         if (statEndpoints != null) {
             ObjectNode gradientRequest = mapper.createObjectNode();
             gradientRequest.put("identifier", UUID.randomUUID().toString());
-            gradientRequest.put("name", OptimizerComponentConstants.DERIVATIVES_NEEDED);
+            gradientRequest.put(NAME, OptimizerComponentConstants.DERIVATIVES_NEEDED);
             gradientRequest.put(EP_IDENTIFIER, NullNode.instance);
             gradientRequest.put("datatype", "Boolean");
             statEndpoints.add(gradientRequest);
+            for (JsonNode o : statEndpoints) {
+                ObjectNode outNode = (ObjectNode) o;
+                if (outNode.get(NAME).getTextValue().equals("Iteration count")) {
+                    outNode.remove(NAME);
+                    outNode.put(NAME, "Iteration");
+                }
+            }
         }
+
         ((ObjectNode) node.get(CONFIGURATION)).put("preCalcFilePath", "${preCalcFilePath}");
-        TextNode methodConfigurations = (TextNode) node.get("configuration").get(METHOD_CONFIGURATIONS);
+        TextNode methodConfigurations = (TextNode) node.get(CONFIGURATION).get(METHOD_CONFIGURATIONS);
         Map<String, Object> configs = mapper.readValue(methodConfigurations.getTextValue(), new HashMap<String, Object>().getClass());
         if (configs != null && configs.get("Dakota Surrogate-Based Local") != null) {
             ((HashMap<String, Object>) configs.get("Dakota Surrogate-Based Local")).put("methodCode", "surrogate_based_local");
@@ -178,7 +256,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         }
         if (configs != null && configs.get(DAKOTA_QUASI_NEWTON_METHOD) != null) {
             Map<String, Object> specifics =
-                (Map<String, Object>) ((HashMap<String, Object>) configs.get(DAKOTA_QUASI_NEWTON_METHOD)).get("specificSettings");
+                (Map<String, Object>) ((HashMap<String, Object>) configs.get(DAKOTA_QUASI_NEWTON_METHOD)).get(SPECIFIC_SETTINGS);
             specifics.remove("central_path");
             ((Map<String, Object>) specifics.get("merit_function")).put("dataType", "None");
             ((Map<String, Object>) specifics.get("merit_function")).put("defaultValue", "argaez_tapia");
@@ -195,9 +273,11 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         moga.put("commonSettings", defaults);
         soga.put("commonSettings", defaults);
 
-        configs.put("Dakota Multi Objective Genetic Algorithm", moga);
-        configs.put("Dakota Single Objective Genetic Algorithm", soga);
-        ((ObjectNode) node.get(CONFIGURATION)).remove("methodConfigurations");
+        if (configs != null) {
+            configs.put("Dakota Multi Objective Genetic Algorithm", moga);
+            configs.put("Dakota Single Objective Genetic Algorithm", soga);
+        }
+        ((ObjectNode) node.get(CONFIGURATION)).remove(METHOD_CONFIGURATIONS);
         ((ObjectNode) node.get(CONFIGURATION)).put(METHOD_CONFIGURATIONS, mapper.writeValueAsString(configs));
 
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
@@ -213,7 +293,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
-        ArrayNode dynEndpoints = (ArrayNode) node.get("dynamicInputs");
+        ArrayNode dynEndpoints = (ArrayNode) node.get(DYNAMIC_INPUTS);
 
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
@@ -279,7 +359,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
-        JsonNode dynEndpoints = node.get("dynamicInputs");
+        JsonNode dynEndpoints = node.get(DYNAMIC_INPUTS);
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
                 if (endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER) == null
@@ -486,13 +566,13 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             }
             if (algorithmItem[2] != null && !algorithmItem[2].contains("Dakota")) {
                 if (algorithmItem[2].contains("COBYLA")) {
-                    returnNode = TextNode.valueOf(prefix + "Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)");
+                    returnNode = TextNode.valueOf(prefix + DAKOTA_COLINY_COBYLA_CONSTRAINT_OPTIMIZATION_BY_LINEAR_APPROXIMATIONS);
                 }
                 if (algorithmItem[2].contains("Newton")) {
                     returnNode = TextNode.valueOf(prefix + DAKOTA_QUASI_NEWTON_METHOD);
                 }
                 if (algorithmItem[2].contains("Evolutionary")) {
-                    returnNode = TextNode.valueOf(prefix + "Dakota Coliny Evolutionary Algorithm");
+                    returnNode = TextNode.valueOf(prefix + DAKOTA_COLINY_EVOLUTIONARY_ALGORITHM);
                 }
             }
         }

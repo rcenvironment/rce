@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -69,6 +68,9 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  */
 public class DerbyMetaDataBackendTest {
 
+    // "safety net" test timeout to avoid blocking continuous integration test runs
+    private static final int COMPLEX_SCENARIO_TEST_TIMEOUT = 60000;
+
     private static final String STRING_TEST_RUN = "TestRun";
 
     private static File tempDirectory;
@@ -82,8 +84,6 @@ public class DerbyMetaDataBackendTest {
     private TypedDatumFactory typedDatumFactory = new TypedDatumFactoryDefaultStub();
 
     private TypedDatumSerializer typedDatumSerializer = new TypedDatumSerializerDefaultStub();
-
-    private AtomicInteger uniqueIdSequence = new AtomicInteger();
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -132,6 +132,9 @@ public class DerbyMetaDataBackendTest {
         derbyMetaDataBackend.bindDataService(mockDataService);
 
         derbyMetaDataBackend.activate(bundleContext);
+
+        System.setProperty("derby.locks.monitor", "true");
+        System.setProperty("derby.locks.deadlockTrace", "true");
     }
 
     /** Tear down. */
@@ -226,17 +229,18 @@ public class DerbyMetaDataBackendTest {
     }
 
     /** Test. */
-    @Test
+    @Test(timeout = COMPLEX_SCENARIO_TEST_TIMEOUT)
     public void testAddDeleteData() {
-        // test single-workflow deletion with 10 components and 500 runs each
-        final int numRunsPerComponent = 500;
-        performAddDeleteWorkflowWithDataCycle(10, numRunsPerComponent, 0);
+        // test single-workflow deletion with the defined components and number of runs per component each
+        final int numComponents = 10;
+        final int numRunsPerComponent = 50;
+        performAddDeleteWorkflowWithDataCycle(numComponents, numRunsPerComponent, 0);
     }
 
     /** Test. */
-    @Test
+    @Test(timeout = COMPLEX_SCENARIO_TEST_TIMEOUT)
     public void testParallelAddDeleteData() {
-        final int parallelTasks = 100; // increase to test for high-contention problems
+        final int parallelTasks = 50; // low value for CI test runs; increase for manual tests of high-contention problems
         final int numComponents = 20;
         final int numRunsPerComponent = 20; // increase in manual testing
         // the following wait interval can be set to leave the workflow data in the database for some time
@@ -310,7 +314,7 @@ public class DerbyMetaDataBackendTest {
 
             // Generate data reference and add it to a component run
             Set<BinaryReference> brefs = new HashSet<BinaryReference>();
-            String key = "asdf-adsfas-adsfas-asdf-" + uniqueIdSequence.incrementAndGet();
+            String key = UUID.randomUUID().toString();
             brefs.add(new BinaryReference(key, CompressionFormat.GZIP, "1.1"));
             derbyMetaDataBackend.addDataReferenceToComponentRun(crunId,
                 new DataReference(key, NodeIdentifierFactory.fromNodeId(UUID.randomUUID().toString()), brefs));
@@ -321,7 +325,6 @@ public class DerbyMetaDataBackendTest {
         log.debug(String.format("Set workflow run id %d finished", wfRunId));
 
         assertEquals(STRING_TEST_RUN, derbyMetaDataBackend.getWorkflowRun(wfRunId).getWorkflowTitle());
-        derbyMetaDataBackend.getWorkflowTimeline(wfRunId);
         log.debug(String.format("Retrieved worklfow run data of id %d", wfRunId));
 
         try {

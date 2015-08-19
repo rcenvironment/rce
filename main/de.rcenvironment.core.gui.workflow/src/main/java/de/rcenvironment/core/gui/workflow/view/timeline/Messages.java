@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,28 +11,40 @@ package de.rcenvironment.core.gui.workflow.view.timeline;
 import org.eclipse.osgi.util.NLS;
 
 /**
- * Messages class.
+ * Contains all {@link String} Messages.
  *
  * @author Hendrik Abbenhaus
  */
 public class Messages extends NLS {
 
-    /***/
+    /**
+     * Dialog string select Components.
+     */
     public static String selectComponents;
 
-    /***/
+    /**
+     * Filter Dialog title.
+     */
     public static String filterDialogTitle;
 
-    /***/
+    /**
+     * Default Filter for Filter Dialog.
+     */
     public static String filterDialogFilterDefault;
 
-    /***/
+    /**
+     * Tooltip text for Filter Dialog.
+     */
     public static String filterDialogToolTipText;
 
-    /***/
+    /**
+     * Zoom in text.
+     */
     public static String zoomin;
 
-    /***/
+    /**
+     * Zoom out text.
+     */
     public static String zoomout;
     
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";

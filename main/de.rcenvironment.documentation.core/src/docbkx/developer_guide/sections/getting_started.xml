@@ -12,8 +12,7 @@
                 <listitem>
                     <para>Make sure you have a <ulink
                             url="http://www.oracle.com/technetwork/java/javase/downloads/index.html"
-                            >Java Development Kit</ulink>, Version 7, installed on your system.
-                     <note>
+                            >Java Development Kit</ulink>, Version 7, installed on your system. <note>
                             <para>If you are installing a JDK on a centrally administered computer
                                 that already has Java installed, it is usually a good idea to
                                     <emphasis>uncheck</emphasis> the "Install public JRE" option
@@ -44,8 +43,7 @@
                                     url="http://www.polarion.com/products/svn/subversive.php"
                                     >Subversive</ulink>. Note that when using Subclipse, you may
                                 have to switch to the "SvnKit" SVN interface in the "Team > SVN"
-                                preferences; this is
-                                normal.<!--TODO check: still the case with Kepler?--></para>
+                                preferences; this is normal.</para>
                         </listitem>
                         <listitem>
                             <para><ulink
@@ -100,7 +98,7 @@
                         <itemizedlist>
                             <listitem>
                                 <para>In the Project Explorer, navigate to the
-                                        <code>de.rcenvironment.core/eclipse/tp</code> folder.</para>
+                                        <code>de.rcenvironment/eclipse/tp</code> folder.</para>
                             </listitem>
                             <listitem>
                                 <para>Open the
@@ -150,8 +148,8 @@
         <itemizedlist>
             <listitem>
                 <para>There are several pre-defined launch configurations for RCE. To find them,
-                    navigate to <code>de.rcenvironment/utils/launch</code> in the "Project Explorer"
-                    on the left.</para>
+                    navigate to <code>de.rcenvironment/eclipse/launch</code> in the "Project
+                    Explorer" on the left.</para>
             </listitem>
             <listitem>
                 <para>A good starting point is the "default" configuration. Expand the "default"
@@ -235,9 +233,42 @@
         </itemizedlist>
     </sect2>
     <sect2>
-        <title>Additional Topics</title>
-        <para>This guide currently being migrated from the previous Wiki documentation; please refer
-            to <ulink url="http://code.google.com/a/eclipselabs.org/p/rce/wiki/GettingStarted"/> for
-            the remaining parts.</para>
+        <title>Building a standalone RCE version from Eclipse</title>
+        <para>You can also build a standalone version of  RCE from Eclipse using Maven.</para>
+        <itemizedlist>
+            <listitem>
+                <para>If you haven't already done so, download Maven 3.0.5 from <ulink
+                        url="http://maven.apache.org/">http://maven.apache.org/</ulink> (the build
+                    doesn't work with the embedded Maven in Eclipse.)</para>
+            </listitem>
+            <listitem>
+                <para>There are several pre-defined buildconfigurations for RCE. To find them,
+                    navigate to <code>de.rcenvironment/eclipse/build</code> in the "Project
+                    Explorer" on the left.</para>
+            </listitem>
+            <listitem>
+                <para>A good starting point is the "RCE 6.x - product.singleStep (snapshot).launch"
+                    configuration in the "using default (release or snapshot) remote repositories"
+                    folder. Before you launch it for the first time, right-click on it and choose
+                    "Run As > Run configurations" from the context menu. In the run configuration
+                    for this launch file (near the bottom of the page), select your  downloaded
+                    maven version as "Maven Runtime" instead of the embedded maven and click
+                    "Run".</para>
+            </listitem>
+            <listitem>
+                <para>If you already changed the run configuration and want to build RCE again,
+                    right-click on the "RCE 6.x - product.singleStep (snapshot).launch" file and
+                    choose "Run As > RCE 6.x - product.singleStep (snapshot).launch" from the
+                    context menu.</para>
+            </listitem>
+            <listitem>
+                <para>RCE should now be build, which will take several minutes. When the build is
+                    completed, you will find the .zip files containing the final product in the
+                    folder
+                        <code>de.rcenvironment/target/de.rcenvironment.modules.repository.mainProduct/products</code>
+                    (You may have to refresh the de.rcenvironment project in the Project Explorer to
+                    see it.)</para>
+            </listitem>
+        </itemizedlist>
     </sect2>
 </sect1>

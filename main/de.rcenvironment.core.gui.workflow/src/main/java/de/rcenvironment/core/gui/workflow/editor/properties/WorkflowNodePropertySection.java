@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,7 +44,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Spinner;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbenchPart;
-import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
@@ -93,7 +92,7 @@ import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
  * @author Doreen Seider
  * @author Markus Kunde
  */
-public abstract class WorkflowNodePropertySection extends AbstractPropertySection implements WorkflowNodeCommand.Executor {
+public abstract class WorkflowNodePropertySection extends WorkflowPropertySection implements WorkflowNodeCommand.Executor {
 
     /** The key of {@link Control} data fields identifying the managed workflow node property. */
     public static final String CONTROL_PROPERTY_KEY = "property.control";
@@ -105,7 +104,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
     public static final String ENUM_VALUE_KEY = "property.enum.value";
 
     protected final Log logger = LogFactory.getLog(this.getClass());
-    
+
     protected WorkflowNode node;
 
     private final Map<String, Map<Enum<?>, Set<Control>>> enumGroups = new HashMap<String, Map<Enum<?>, Set<Control>>>();
@@ -113,9 +112,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
     private ComponentInstanceProperties modelBindingTarget;
 
     private ComponentInstanceProperties lastRefreshConfiguration;
-    
-    private CommandStack commandStack;
-    
+
     private EditConfigurationValueCommand openEditCommand;
 
     private Composite composite;
@@ -134,20 +131,15 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         final WorkflowNodePart workflowNodePart = (WorkflowNodePart) firstSelectionElement;
         final WorkflowNode workflowNode = (WorkflowNode) workflowNodePart.getModel();
         if (getPart() == null || !getPart().equals(part)
-                || node == null || !node.equals(workflowNode)) {
+            || node == null || !node.equals(workflowNode)) {
             super.setInput(part, selection);
-            commandStack = (CommandStack) part.getAdapter(CommandStack.class);
             setWorkflowNodeBase(workflowNode);
         }
     }
-    
+
     protected Composite getComposite() {
         return composite;
-    }
-
-    protected CommandStack getCommandStack() {
-        return commandStack;
-    }
+    } 
 
     private void setWorkflowNodeBase(final WorkflowNode workflowNode) {
         tearDownModelBindingBase();
@@ -182,7 +174,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
     protected void afterInitializingModelBinding() {
         /* empty default implementation */
     }
-    
+
     @Override
     public void dispose() {
         tearDownModelBindingBase();
@@ -216,9 +208,11 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
 
     @Override
     /*
-     * #createCompositeContent(Composite, TabbedPropertySheet) should be used to benefit from Controller, Synchronizer and Updater.
+     * #createCompositeContent(Composite, TabbedPropertySheet) should be used to benefit from
+     * Controller, Synchronizer and Updater.
      */
-    @Deprecated // see comment above
+    @Deprecated
+    // see comment above
     public void createControls(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         super.createControls(parent, aTabbedPropertySheetPage);
         composite = parent;
@@ -289,8 +283,8 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
                 initializeEnumGroups((Composite) control);
             }
             final String property = (String) control.getData(CONTROL_PROPERTY_KEY);
-            @SuppressWarnings("unchecked")
-            final Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) control.getData(ENUM_TYPE_KEY);
+            @SuppressWarnings("unchecked") final Class<? extends Enum<?>> enumType =
+                (Class<? extends Enum<?>>) control.getData(ENUM_TYPE_KEY);
             final Enum<?> enumValue = (Enum<?>) control.getData(ENUM_VALUE_KEY);
             if (property != null && enumType != null && enumValue != null) {
                 if (!enumType.isAssignableFrom(enumValue.getClass())) {
@@ -310,8 +304,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
 
     protected boolean isEnumControl(final Control control) {
         final String property = (String) control.getData(CONTROL_PROPERTY_KEY);
-        @SuppressWarnings("unchecked")
-        final Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) control.getData(ENUM_TYPE_KEY);
+        @SuppressWarnings("unchecked") final Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) control.getData(ENUM_TYPE_KEY);
         final Enum<?> enumValue = (Enum<?>) control.getData(ENUM_VALUE_KEY);
         boolean result = control instanceof Button && (control.getStyle() & SWT.RADIO) != 0;
         result &= property != null && enumType != null && enumValue != null;
@@ -337,11 +330,11 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
     protected void addPropertyChangeListener(PropertyChangeListener listener) {
         node.addPropertyChangeListener(listener);
     }
-    
+
     protected void removePropertyChangeListener(PropertyChangeListener listener) {
         node.removePropertyChangeListener(listener);
     }
-    
+
     protected ComponentInstanceProperties getReadableConfiguration() {
         return node;
     }
@@ -352,7 +345,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
      * @return {@link ReadableComponentInstanceConfiguration}
      */
     public ComponentInstanceProperties getConfiguration() {
-        if (commandStack == null || node == null) {
+        if (getCommandStack() == null || node == null) {
             throw new IllegalStateException("Property input not set");
         }
         return node;
@@ -395,14 +388,14 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
     }
 
     protected String getProperty(final String key) {
-        if (node != null){
+        if (node != null) {
             String s = WorkflowNodeUtil.getConfigurationValue(node, key);
             return s;
         } else {
             return null;
         }
     }
-    
+
     protected void setProperty(final String key, final String value) {
         final String newValue = WorkflowNodeUtil.getConfigurationValue(node, key);
         setProperty(key, newValue, value);
@@ -415,25 +408,25 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
             execute(command);
         }
     }
-    
+
     protected EditConfigurationValueCommand editProperty(final String key) {
         final String oldValue = WorkflowNodeUtil.getConfigurationValue(node, key);
         final EditConfigurationValueCommand command = new EditConfigurationValueCommand(key, oldValue);
         execute(command);
         return command;
     }
-    
+
     @Override
     public void execute(final WorkflowNodeCommand command) {
         if (openEditCommand != null) {
             openEditCommand.finishEditing();
             openEditCommand = null;
         }
-        command.setCommandStack(commandStack);
+        command.setCommandStack(getCommandStack());
         command.setWorkflowNode(node);
         command.initialize();
         if (command.canExecute()) {
-            commandStack.execute(new CommandWrapper(command));
+            getCommandStack().execute(new NodeCommandWrapper(command));
             if (command instanceof EditConfigurationValueCommand) {
                 openEditCommand = (EditConfigurationValueCommand) command;
             }
@@ -473,53 +466,30 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
     }
 
     private static boolean isBooleanButton(final Control button) {
-        return button instanceof Button && (button.getStyle() & SWT.CHECK) != 0 || (button.getStyle() & SWT.TOGGLE) != 0;
+        return button instanceof Button && (button.getStyle() & SWT.CHECK) != 0 || (button.getStyle() & SWT.TOGGLE) != 0
+            || (button.getStyle() & SWT.RADIO) != 0;
     }
 
     /**
      * A wrapper class to wrap {@link WorkflowNodeCommand}s in GEF {@link Command}s.
-     *
+     * 
      * @author Christian Weiss
      */
-    private static final class CommandWrapper extends Command {
+    private static final class NodeCommandWrapper extends WorkflowPropertySection.CommandWrapper {
 
         /** The backing command, invokations are forwarded to. */
         private final WorkflowNodeCommand command;
-        
-        private CommandWrapper(final WorkflowNodeCommand command) {
-            this.command = command;
-        }
-        
-        @Override
-        public boolean canExecute() {
-            return command.canExecute();
-        }
-        
-        @Override
-        public void execute() {
-            command.execute();
-        }
-        
-        @Override
-        public void redo() {
-            command.redo();
-        }
 
-        @Override
-        public boolean canUndo() {
-            return command.canUndo();
-        }
-        
-        @Override
-        public void undo() {
-            command.undo();
+        private NodeCommandWrapper(final WorkflowNodeCommand command) {
+            super(command);
+            this.command = command;
         }
         
         @Override
         public String getLabel() {
             return command.getLabel();
         }
-        
+
     }
 
     /**
@@ -529,31 +499,31 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
      * @author Christian Weiss
      */
     protected static class SetConfigurationValueCommand extends AbstractWorkflowNodeCommand {
-    
+
         private final String key;
-    
+
         private final String oldValue;
-    
+
         private final String newValue;
-        
+
         public SetConfigurationValueCommand(final String key, final String oldValue, final String newValue) {
             this.key = key;
             this.oldValue = oldValue;
             this.newValue = newValue;
         }
-    
+
         @Override
         public void execute2() {
             ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
-            configDesc.setConfigurationValue(key,  newValue);
+            configDesc.setConfigurationValue(key, newValue);
         }
-    
+
         @Override
         public void undo2() {
             ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
             configDesc.setConfigurationValue(key, oldValue);
         }
-    
+
     }
 
     /**
@@ -571,7 +541,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         private String newValue;
 
         private boolean editable = true;
-        
+
         private EditConfigurationValueCommand(final String key, final String oldValue) {
             this(key, oldValue, oldValue);
         }
@@ -619,7 +589,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
                 ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
                 // execute methods needs to set new value to be able to restore changes upon redo
                 configDesc.setConfigurationValue(key, newValue);
-                
+
             }
         }
 
@@ -634,8 +604,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         }
 
     }
-    
-    
+
     /**
      * Controller interface. Needs to be implemented by controllers which want to use the
      * {@link WorkflowNodePropertySection#initializeController(Controller, Composite)} method to
@@ -690,7 +659,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         protected void widgetSelected(final SelectionEvent event, final Control source) {
             /* empty default implementation */
         }
-        
+
         protected void widgetSelected(final SelectionEvent event, final Control source, final String property) {
             if (source instanceof Button) {
                 final Button button = (Button) source;
@@ -701,8 +670,12 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
             } else if (source instanceof Spinner) {
                 final Spinner spinner = (Spinner) source;
                 final Integer spinnerValue = spinner.getSelection();
-                final Integer propertyValue = Integer.valueOf(getProperty(property));
-                if (spinnerValue != null && !spinnerValue.equals(propertyValue)) {
+                if (getProperty(property) != null) {
+                    final Integer propertyValue = Integer.valueOf(getProperty(property));
+                    if (spinnerValue != null && !spinnerValue.equals(propertyValue)) {
+                        setProperty(property, String.valueOf(spinnerValue));
+                    }
+                } else if (spinnerValue != null) {
                     setProperty(property, String.valueOf(spinnerValue));
                 }
             }
@@ -746,7 +719,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
          * <li>Editing in a {@link Text} control starts or continues an open 'edit session' for a
          * property encapsulated in a {@link EditConfigurationValueCommand}.</li>
          * </ul>
-         *
+         * 
          * @see org.eclipse.swt.events.ModifyListener#modifyText(org.eclipse.swt.events.ModifyEvent)
          */
         @Override
@@ -808,13 +781,13 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
             if (source instanceof Text) {
                 final Text text = (Text) source;
                 if (isCarriageReturn(event)
-                        && !isMultiLineText(text)) {
+                    && !isMultiLineText(text)) {
                     text.traverse(SWT.TRAVERSE_TAB_NEXT);
                 }
             } else if (source instanceof StyledText) {
                 final StyledText text = (StyledText) source;
                 if (isCarriageReturn(event)
-                        && !isMultiLineText(text)) {
+                    && !isMultiLineText(text)) {
                     text.traverse(SWT.TRAVERSE_TAB_NEXT);
                 }
             } else if (source instanceof CCombo) {
@@ -832,14 +805,13 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         protected boolean isMultiLineText(final Text text) {
             return (text.getStyle() & SWT.MULTI) != 0;
         }
-        
+
         protected boolean isMultiLineText(final StyledText text) {
             return (text.getStyle() & SWT.MULTI) != 0;
         }
 
         @Override
-        public void keyReleased(final KeyEvent event) {
-        }
+        public void keyReleased(final KeyEvent event) {}
 
         /**
          * Replaces the current selection or cursor position in a {@link Text} control with the
@@ -991,7 +963,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
 
     /**
      * Interface for handlers updating the UI.
-     *
+     * 
      * @author Christian Weiss
      */
     protected interface Updater {
@@ -1019,7 +991,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
 
     /**
      * Default {@link Updater} implementation of the handler to update the UI.
-     *
+     * 
      * @author Christian Weiss
      */
     protected class DefaultUpdater implements Updater {
@@ -1033,8 +1005,9 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
          * oldValue.
          * </p>
          * 
-         * @see de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodePropertySection.Updater#initializeControl(
-         *      org.eclipse.swt.widgets.Control, java.lang.String, java.io.Serializable)
+         * @see de.rcenvironment.core.gui.workflow.editor.
+         *      properties.WorkflowNodePropertySection.Updater#initializeControl(org.eclipse.swt.widgets.Control,
+         *      java.lang.String, java.io.Serializable)
          */
         @Override
         public void initializeControl(final Control control, final String propertyName, final String value) {
@@ -1054,19 +1027,19 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
                 if (!valueOrDefault.equals(textControl.getText())) {
                     textControl.setText(valueOrDefault);
                 }
-            /*
-             * Text inputs are only set, if the value is a String - otherwise a formatter should be
-             * used in a custom Updater.
-             */
+                /*
+                 * Text inputs are only set, if the value is a String - otherwise a formatter should
+                 * be used in a custom Updater.
+                 */
             } else if (control instanceof StyledText && (newValue == null || newValue instanceof String)) {
                 final StyledText textControl = (StyledText) control;
                 final String valueOrDefault = valueOrDefault(newValue, "");
                 if (!valueOrDefault.equals(textControl.getText())) {
                     textControl.setText(valueOrDefault);
                 }
-            /*
-             * Label outputs are set to the String value of the value.
-             */
+                /*
+                 * Label outputs are set to the String value of the value.
+                 */
             } else if (control instanceof Label) {
                 final Label labelControl = (Label) control;
                 final String valueOrDefault = stringValue(control, newValue, "");
@@ -1090,11 +1063,11 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
                     spinnerControl.setSelection(Integer.valueOf(valueOrDefault));
                 }
             } else if (control instanceof Button && isEnumControl(control)) {
-                @SuppressWarnings("unchecked")
-                final Class<? extends Enum<?>> enumType = (Class<? extends Enum<?>>) control.getData(ENUM_TYPE_KEY);
+                @SuppressWarnings("unchecked") final Class<? extends Enum<?>> enumType =
+                    (Class<? extends Enum<?>>) control.getData(ENUM_TYPE_KEY);
                 final Enum<?> enumValue = (Enum<?>) control.getData(ENUM_VALUE_KEY);
                 final Enum<?> newEnumValue;
-                newEnumValue = getEnum(enumType, (String) newValue);
+                newEnumValue = getEnum(enumType, newValue);
                 final boolean isSelected = enumValue.equals(newEnumValue);
                 ((Button) control).setSelection(isSelected);
             } else if (control instanceof CCombo && (newValue == null || newValue instanceof String)) {
@@ -1164,8 +1137,8 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         /**
          * State memorizer used to ignore the first with hint.
          * <p>
-         * The first width hint has to be ignored as the <code>ControlListener</code> gets registered too
-         * late to get the first meaningful width hint.
+         * The first width hint has to be ignored as the <code>ControlListener</code> gets
+         * registered too late to get the first meaningful width hint.
          * </p>
          */
         private boolean first = true;
@@ -1189,9 +1162,7 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
         @Override
         public Point computeSize(int wHint, int hHint, boolean changed) {
             /*
-             * If a width hint is provided.
-             * >> Ignore, if it is the first one.
-             * >> Store, otherwise.
+             * If a width hint is provided. >> Ignore, if it is the first one. >> Store, otherwise.
              */
             if (wHint != SWT.DEFAULT) {
                 if (!first) {
@@ -1208,7 +1179,8 @@ public abstract class WorkflowNodePropertySection extends AbstractPropertySectio
             }
             final Point result = super.computeSize(wHint, hHint, changed);
             /*
-             * Store the default (min) width of the tree, if this is the very first call using no width hint.
+             * Store the default (min) width of the tree, if this is the very first call using no
+             * width hint.
              */
             if (first && wHint == SWT.DEFAULT) {
                 this.widthHint = result.x;

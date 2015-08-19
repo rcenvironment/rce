@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -22,11 +23,13 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
@@ -34,7 +37,6 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
-import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
@@ -103,8 +105,8 @@ public final class ScriptingUtils {
     private static String findJythonPath(File file) throws IOException {
         if (file.isDirectory()) {
             File[] children = file.listFiles();
-            for (int i = 0; i < children.length; i++) {
-                String path = findJythonPath(children[i]);
+            for (File element : children) {
+                String path = findJythonPath(element);
                 if (path != null) {
                     return path;
                 }
@@ -167,7 +169,31 @@ public final class ScriptingUtils {
         wrappingScript += "]\n";
         currentHeader += String.format("RCE_CURRENT_RUN_NUMBER = %s\n", componentContext.getExecutionCount());
         currentHeader += wrappingScript;
-        currentHeader += "RCE.setDictionary_internal(RCE_Dict_InputChannels)\n";
+        currentHeader += "RCE.setDictionary_internal(RCE_Dict_InputChannels)\nimport shutil\n";
+        List<String> notConnected = new LinkedList<String>();
+        for (String input : componentContext.getInputsNotConnected()) {
+            if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
+                    InputExecutionContraint.RequiredIfConnected.name())
+                || componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
+                    InputExecutionContraint.NotRequired.name()))) {
+                notConnected.add(input);
+            }
+        }
+        for (String input : componentContext.getInputs()) {
+            if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
+                    InputExecutionContraint.NotRequired.name()) && !componentContext.getInputsWithDatum().contains(input)) {
+                notConnected.add(input);
+            }
+        }
+        String notConnectedValues = "[";
+        for (String input : notConnected) {
+            notConnectedValues += "\"" + input + "\",";
+        }
+        notConnectedValues.substring(0, notConnectedValues.length() - 1);
+        notConnectedValues += "]";
+        currentHeader += String.format("RCE_LIST_REQ_IF_CONNECTED_INPUTS = %s\n", notConnectedValues);
         return currentHeader;
     }
 
@@ -316,9 +342,8 @@ public final class ScriptingUtils {
         }
 
         if (engine.get("RCE_NotAValueOutputList") != null) {
-            NotAValueTD notAValue = typedDatumFactory.createNotAValue();
             for (String endpointName : (List<String>) engine.get("RCE_NotAValueOutputList")) {
-                componentContext.writeOutput(endpointName, notAValue);
+                componentContext.writeOutput(endpointName, typedDatumFactory.createNotAValue());
             }
         }
         Map<String, Object> stateMapOutput = (Map<String, Object>) engine.get("RCE_STATE_VARIABLES");

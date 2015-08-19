@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.PlatformUI;
@@ -67,8 +68,6 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
 
     private Label labelInputMappingFile;
 
-    private Label separator1;
-
     private Text mappingInputFilename;
 
     private Button mappingInputFileChooser;
@@ -78,8 +77,6 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
     private Text mappingOutputFilename;
 
     private Button mappingOutputFileChooser;
-
-    private Label separator2;
 
     private Label labelCpacsResultFilename;
 
@@ -168,47 +165,52 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
     @Override
     public void createControl(Composite parent) {
         Composite container = new Composite(parent, SWT.NONE);
-
-        GridLayout layout = new GridLayout(3, true);
+        GridLayout layout = new GridLayout(1, false);
+        layout.marginWidth = 0;
+        layout.marginHeight = 0;
         container.setLayout(layout);
-        GridData containerData =
-            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
-        container.setLayoutData(containerData);
+        Group mappingsGroup = new Group(container, SWT.NONE);
+        mappingsGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+        Group toolSpecMappingsGroup = new Group(container, SWT.NONE);
+        toolSpecMappingsGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 1, 1));
+        Group alwaysRunGroup = new Group(container, SWT.NONE);
+        alwaysRunGroup.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
 
-        Label mappingTitle = new Label(container, SWT.NONE);
-        GridData gridDataMappingTitle = new GridData(SWT.LEFT, SWT.TOP, false, false, 3, 1);
-        gridDataMappingTitle.heightHint = TITLE_HEIGHT;
-        mappingTitle.setLayoutData(gridDataMappingTitle);
-        mappingTitle.setText(Messages.mappingTitle);
+        GridLayout layout1 = new GridLayout(3, true);
+        mappingsGroup.setLayout(layout1);
+        mappingsGroup.setText(Messages.mappingTitle);
 
-        createIncomingCpacsEndpointConfig(container);
-        new Label(container, SWT.NONE);
+        GridLayout layout2 = new GridLayout(3, true);
+        toolSpecMappingsGroup.setLayout(layout2);
+        toolSpecMappingsGroup.setText(Messages.toolSpecMappingTitle);
 
-        createInputMappingConfig(container);
+        GridLayout layout3 = new GridLayout(1, true);
+        alwaysRunGroup.setLayout(layout3);
+        alwaysRunGroup.setText(Messages.executionOptionsTitle);
 
-        createToolInputConfig(container);
-        new Label(container, SWT.NONE);
+        createIncomingCpacsEndpointConfig(mappingsGroup);
+        new Label(mappingsGroup, SWT.NONE);
 
-        createToolOutputConfig(container);
-        new Label(container, SWT.NONE);
+        createInputMappingConfig(mappingsGroup);
 
-        createToolOutputMappingConfig(container);
+        createToolInputConfig(mappingsGroup);
+        new Label(mappingsGroup, SWT.NONE);
 
-        createCpacsResultConfig(container);
+        createToolOutputConfig(mappingsGroup);
+        new Label(mappingsGroup, SWT.NONE);
 
-        createOutgoingCpacsEndpointConfig(container);
+        createToolOutputMappingConfig(mappingsGroup);
 
-        separator1 = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
-        separator1.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 3, 1));
+        createCpacsResultConfig(mappingsGroup);
 
-        createToolSpecificInputConfig(container);
+        createOutgoingCpacsEndpointConfig(mappingsGroup);
+        new Label(mappingsGroup, SWT.NONE);
 
-        separator2 = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
-        separator2.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 3, 1));
+        createToolSpecificInputConfig(toolSpecMappingsGroup);
 
-        createAlwaysRunConfig(container);
-        new Label(container, SWT.NONE);
-        new Label(container, SWT.NONE);
+        createAlwaysRunConfig(alwaysRunGroup);
+        new Label(alwaysRunGroup, SWT.NONE);
+        new Label(alwaysRunGroup, SWT.NONE);
 
         setControl(container);
         updatePageComplete();
@@ -610,7 +612,7 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
 
         @Override
         public void modifyText(ModifyEvent arg0) {
-            if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
+            if (configurationMap != null && configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
                 CpacsToolIntegrationConstants.CPACS_TOOL_INTEGRATION_CONTEXT_TYPE)) {
                 configurationMap.put(key, ((Text) arg0.getSource()).getText());
             }

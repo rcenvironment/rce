@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -312,7 +312,6 @@ public class CpacsMapper {
             final Document tempDoc = xmlHelper.createDocument();
             final DOMResult tempXSLT = new DOMResult(tempDoc);
             transformer1.transform(mappingSrc, tempXSLT);
-
             // Now transform the resulting mapping XSLT to the final mapping file which
             // only contains mapping elements and no more xsl elements like loops, conditions etc.
             final DOMSource sourceXSLT = new DOMSource(tempDoc);
@@ -328,7 +327,7 @@ public class CpacsMapper {
             transformer2.transform(source, result);
 
             return resultDoc;
-        } catch (final TransformerException | XMLException e) {
+        } catch (final NullPointerException | TransformerException | XMLException e) {
             throw new XMLException("XML-Transformation fails.", e);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -73,7 +73,7 @@ public final class BackendSupport {
         String metadataProvider = dmConfig.getMetaDataBackend();
         MetaDataBackendService metaDataBackend = null;
         String filterString = OPEN_BRACKET + MetaDataBackendService.PROVIDER + EQUALS_SIGN + metadataProvider + CLOSE_BRACKET;
-        ServiceReference[] serviceReferences = null;
+        ServiceReference<?>[] serviceReferences = null;
         try {
             serviceReferences = bundleContext.getServiceReferences(MetaDataBackendService.class.getName(), filterString);
         } catch (InvalidSyntaxException e) {
@@ -99,7 +99,7 @@ public final class BackendSupport {
         String scheme = dataURI.getScheme();
         DataBackend dataBackend = null;
         String filterString = OPEN_BRACKET + DataBackend.SCHEME + EQUALS_SIGN + scheme + CLOSE_BRACKET;
-        ServiceReference[] serviceReferences = null;
+        ServiceReference<?>[] serviceReferences = null;
         try {
             serviceReferences = bundleContext.getServiceReferences(DataBackend.class.getName(), filterString);
         } catch (InvalidSyntaxException e) {
@@ -131,7 +131,7 @@ public final class BackendSupport {
         //
         // DataBackend dataBackend = null;
         // String filterString = OPEN_BRACKET + DataBackend.PROVIDER + EQUALS_SIGN + dataBackendProvider + CLOSE_BRACKET;
-        // ServiceReference[] serviceReferences = null;
+        // ServiceReference<?>[] serviceReferences = null;
         // try {
         // serviceReferences = bundleContext.getServiceReferences(DataBackend.class.getName(), filterString);
         // } catch (InvalidSyntaxException e) {

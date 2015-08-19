@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -35,9 +35,11 @@ public class ReadOnlyEditPartFactory implements EditPartFactory {
         } else if (model instanceof WorkflowExecutionInformation) {
             part = new WorkflowExecutionInformationPart();
         } else if (model instanceof WorkflowLabel) {
-            part = new WorkflowLabelPart();
+            part = new ReadOnlyWorkflowLabelPart();
         }
-        part.setModel(model);
+        if (part != null) {
+            part.setModel(model);
+        }
         return part;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -25,7 +25,7 @@ class RCEBuildPreprocessor {
 			'intermediate': 'snapshots/trunk'
 		],
 		'rc_or_release': [
-			'platform': 'releases/6.0.0',
+			'platform': 'releases/6.1.0',
 			'dakotaBinaries': 'releases/6.0.0',
 			'tiglViewerBinaries': 'releases/6.0.0',
 			'intermediate': 'releases/6.0.0'

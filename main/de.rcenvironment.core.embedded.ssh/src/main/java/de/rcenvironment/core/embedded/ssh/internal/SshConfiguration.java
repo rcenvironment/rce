@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
@@ -49,7 +50,22 @@ public class SshConfiguration {
 
         enabled = configurationSegment.getBoolean("enabled", false);
 
-        host = configurationSegment.getString("host", DEFAULT_HOST);
+        String oldHostSetting = configurationSegment.getString("host"); // deprecated alias
+        String newHostSetting = configurationSegment.getString("ip");
+        if (oldHostSetting != null) {
+            LogFactory.getLog(getClass()).warn("Deprecated SSH server configuration parameter \"host\" used - use \"ip\" instead");
+            host = oldHostSetting;
+        }
+        if (newHostSetting != null) {
+            if (oldHostSetting != null) {
+                LogFactory.getLog(getClass()).error(
+                    "Both \"host\" and \"ip\" settings of SSH server used; ignoring deprecated \"host\" setting");
+            }
+            host = newHostSetting;
+        }
+        if (host == null) {
+            host = DEFAULT_HOST;
+        }
         port = configurationSegment.getInteger("port", DEFAULT_PORT);
 
         for (Entry<String, ConfigurationSegment> entry : configurationSegment.listElements("accounts").entrySet()) {

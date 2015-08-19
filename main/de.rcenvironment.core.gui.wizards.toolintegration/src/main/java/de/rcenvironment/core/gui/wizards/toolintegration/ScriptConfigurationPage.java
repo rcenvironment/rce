@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,8 +11,8 @@ package de.rcenvironment.core.gui.wizards.toolintegration;
 import java.util.List;
 import java.util.Map;
 
+import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.DialogPage;
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
@@ -35,6 +35,8 @@ import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.gui.resources.api.FontManager;
+import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 
 /**
@@ -374,7 +376,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         for (int i = 0; i < textFields.length; i++) {
             if (textFields[i] != null) {
-                textFields[i].setFont(JFaceResources.getFont(JFaceResources.TEXT_FONT));
+                textFields[i].setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
             }
         }
         return scriptArea;
@@ -419,6 +421,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                 outputInsertButton.addSelectionListener(new InsertButtonListener(outputCombo, scriptArea, OUTPUT_COMBO));
             }
             outputCombos[buttonIndex] = outputCombo;
+
         }
         GridData labelDataProperties = new GridData();
         labelDataProperties.horizontalSpan = 2;
@@ -471,6 +474,18 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             addPropInsertButton.addSelectionListener(new InsertButtonListener(addPropCombo, scriptArea, 3));
 
         }
+
+        /*
+         * TODO : Since the usability was not quite good for the 6.1 release, this button was
+         * postponed.
+         * 
+         * if (buttonIndex > 0) { new Label(buttonComposite, SWT.NONE).setText(""); new
+         * Label(buttonComposite, SWT.NONE).setText(""); Button insertCopyCommand = new
+         * Button(buttonComposite, SWT.PUSH); GridData copyData = new GridData();
+         * copyData.horizontalSpan = 2; insertCopyCommand.setLayoutData(copyData);
+         * insertCopyCommand.setText("Insert copy of file/dir");
+         * insertCopyCommand.addSelectionListener(new CopyInputListener(scriptArea)); }
+         */
     }
 
     private void addScriptSelectButtonListener() {
@@ -643,6 +658,41 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                         + ToolIntegrationConstants.PLACEHOLDER_SUFFIX);
                 }
                 currentText.setFocus();
+            }
+        }
+    }
+
+    /**
+     * Listener for the insert copy command button.
+     * 
+     * @author Sascha Zur
+     */
+    private class CopyInputListener implements SelectionListener {
+
+        private final Text text;
+
+        public CopyInputListener(Text text) {
+            this.text = text;
+        }
+
+        @Override
+        public void widgetDefaultSelected(SelectionEvent arg0) {
+            widgetSelected(arg0);
+
+        }
+
+        @Override
+        public void widgetSelected(SelectionEvent arg0) {
+            @SuppressWarnings("unchecked") Map<String, Object> properties =
+                (Map<String, Object>) configurationMap.get(ToolIntegrationConstants.KEY_PROPERTIES);
+
+            WizardInsertCopyCommandDialog dialog =
+                new WizardInsertCopyCommandDialog(getShell(), inputCombos[1].getItems(), outputCombos[1].getItems(),
+                    propertiesCombos[1].getItems(), directoryCombos[1].getItems(), properties);
+            if (dialog.open() == Dialog.OK) {
+                String command = dialog.getCopyCommand();
+                text.insert(command + "\n");
+                text.setFocus();
             }
         }
     }

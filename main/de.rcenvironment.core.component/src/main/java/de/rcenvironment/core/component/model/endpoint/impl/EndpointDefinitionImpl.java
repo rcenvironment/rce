@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -221,8 +221,20 @@ public class EndpointDefinitionImpl implements Serializable, EndpointDefinition 
 
         definition.remove(KEY_METADATA);
 
-        // sanity check
-        DataType.valueOf((String) definition.get(KEY_DEFAULT_DATATYPE));
+        // sanity checks
+        if (!dataTypes.contains(getDefaultDataType())) {
+            throw new IllegalArgumentException(String.format("Declared default data type '%s' not in declared list of allowed data "
+                + "types '%s'", getDefaultDataType(), dataTypes));
+        }
+        if (!inputDatumHandlings.contains(getDefaultInputDatumHandling())) {
+            throw new IllegalArgumentException(String.format("Declared default input handling option '%s' not in declared list of "
+                + "allowed input handling options '%s'", getDefaultInputDatumHandling(), inputDatumHandlings));
+        }
+        if (!inputExecutionContraints.contains(getDefaultInputExecutionConstraint())) {
+            throw new IllegalArgumentException(String.format("Declared default input execution constraint option '%s' not in "
+                + "declared list of allowed input execution constraint options '%s'", getDefaultInputExecutionConstraint(),
+                inputExecutionContraints));
+        }
         
         initialEndpointDefinitions = new ArrayList<InitialDynamicEndpointDefinitionImpl>();
         List<Map<String, Object>> rawInitialEndpoints = (List<Map<String, Object>>) definition.get(KEY_INITIAL_ENDPOINTS);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,8 +23,8 @@ import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
 
 /**
- * Utililty class to remove items from context menus.
- * As context menus are created at runtime, it is not possible to remove the items in advanced at a centralized location.
+ * Utililty class to remove items from context menus. As context menus are created at runtime, it is not possible to remove the items in
+ * advanced at a centralized location.
  * 
  * @author Oliver Seebach
  */
@@ -42,7 +42,7 @@ public final class ContextMenuItemRemover {
      * @param control The control where the context menu should be edited.
      */
     public static void removeUnwantedMenuEntries(Control control) {
-        
+
         final Properties unwanted = new Properties();
         try {
             unwanted.load(ContextMenuItemRemover.class.getResourceAsStream("unwanted.properties"));
@@ -51,8 +51,8 @@ public final class ContextMenuItemRemover {
         }
         String unwantedEntriesProperty = unwanted.getProperty("unwantedContextMenuEntries");
         itemsToRemove = new ArrayList<String>(Arrays.asList(unwantedEntriesProperty.split(",")));
-        
-        if (control.getMenu() != null) {
+
+        if (!control.isDisposed() && control.getMenu() != null) {
             // prevent multiple listener registration
             if (control.getData("MenuDetectToken") == null) {
                 control.setData("MenuDetectToken", true);
@@ -63,7 +63,8 @@ public final class ContextMenuItemRemover {
     }
 
     /**
-     * Menu listener to remove unwanted items.
+     * Menu listener to remove unwanted items. Items are removed if they are in the list of unwanted items or if they are a separator and
+     * preceeded by a separator (which can occur when other items are removed).
      * 
      * @author Oliver Seebach
      */
@@ -71,15 +72,68 @@ public final class ContextMenuItemRemover {
 
         private final Menu menu;
 
+        /**
+         * Submenu listener to remove unwanted items. Items are removed if they are in the list of unwanted items or if they are a separator
+         * and preceeded by a separator (which can occur when other items are removed).
+         * 
+         * @author Oliver Seebach
+         */
+        private final class CustomSubMenuListener implements MenuListener {
+
+            @Override
+            public void menuShown(MenuEvent event) {
+                MenuItem preceedingSubMenuItem = null;
+                final Menu subMenu = ((Menu) event.widget);
+                for (MenuItem subMenuItem : subMenu.getItems()) {
+                    if (preceedingSubMenuItem != null && preceedingSubMenuItem.isDisposed()) {
+                        preceedingSubMenuItem = null;
+                    }
+                    if (itemsToRemove.contains(subMenuItem.getText())
+                        || (preceedingSubMenuItem != null
+                            && preceedingSubMenuItem.getText().isEmpty()
+                            && subMenuItem.getText().isEmpty())) {
+                        subMenuItem.dispose();
+                    } else {
+                        preceedingSubMenuItem = subMenuItem;
+                    }
+                }
+            }
+
+            @Override
+            public void menuHidden(MenuEvent arg0) {}
+        }
+
         public RemoveItemsMenuListener(Menu menu) {
             this.menu = menu;
         }
 
         @Override
         public void menuShown(MenuEvent menuEvent) {
-            for (MenuItem item : menu.getItems()) {
-                if (itemsToRemove.contains(item.getText())) {
-                    item.dispose();
+            MenuItem preceedingMainMenuItem = null;
+
+            for (MenuItem mainMenuItem : menu.getItems()) {
+                MenuItem itemToHandle = null;
+                if (mainMenuItem.isDisposed()) {
+                    itemToHandle = null;
+                } else {
+                    itemToHandle = mainMenuItem;
+                }
+                if (itemsToRemove.contains(mainMenuItem.getText())
+                    || (preceedingMainMenuItem != null
+                        && preceedingMainMenuItem.getText().isEmpty()
+                        && itemToHandle.getText().isEmpty())) {
+                    itemToHandle.dispose();
+                } else {
+                    preceedingMainMenuItem = itemToHandle;
+                }
+
+                // handle submenu
+                if (!itemToHandle.isDisposed() && itemToHandle.getMenu() != null) {
+                    // prevent multiple listener registration
+                    if (itemToHandle.getMenu().getData("SubMenuListenerToken") == null) {
+                        itemToHandle.getMenu().setData("SubMenuListenerToken", true);
+                        itemToHandle.getMenu().addMenuListener(new CustomSubMenuListener());
+                    }
                 }
             }
         }
@@ -98,7 +152,7 @@ public final class ContextMenuItemRemover {
         @Override
         public void menuDetected(MenuDetectEvent event) {
             final Menu menu = ((Control) event.widget).getMenu();
-            if (menu != null) {
+            if (!menu.isDisposed() && menu != null) {
                 // prevent multiple listener registration
                 if (menu.getData("MenuListenerToken") == null) {
                     menu.setData("MenuListenerToken", true);

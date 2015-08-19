@@ -1,6 +1,6 @@
 {
   "alwaysRun" : true,
-  "commandScriptLinux" : "",
+  "commandScriptLinux" : "echo Generating tool output\r\ncp toolOutput.xml ToolOutput/toolOutput.xml\r\n\r\necho Generating a return directory\r\nmkdir ReturnDirectory\r\n\r\necho Generating content for the return directory\r\necho You should find this file in the return directory of the Simple CPACS Tool. > ReturnDirectory/return.txt",
   "commandScriptWindows" : "echo Generating tool output\r\ncopy toolOutput.xml ToolOutput\\toolOutput.xml\r\n\r\necho Generating a return directory\r\nmkdir ReturnDirectory\r\n\r\necho Generating content for the return directory\r\necho You should find this file in the return directory of the Simple CPACS Tool. > ReturnDirectory\\return.txt",
   "copyToolBehavior" : "once",
   "cpacsInitialEndpointName" : "CPACSInitial",
@@ -72,7 +72,7 @@
     "endpointName" : "ReturnDirectory",
     "endpointUsage" : "-"
   } ],
-  "postScript" : "${out:ReturnDirectory} = \"${dir:tool}\\\\ReturnDirectory\"",
+  "postScript" : "${out:ReturnDirectory} = \"${dir:tool}/ReturnDirectory\"",
   "preScript" : "",
   "setToolDirAsWorkingDir" : true,
   "templateName" : "CPACS Tool with return directory",

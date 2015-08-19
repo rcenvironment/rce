@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -96,7 +96,7 @@ public class LocalCommandLineExecutor extends AbstractCommandLineExecutor implem
         if (stdinStream != null) {
             final OutputStream stdin = process.getOutputStream();
             new Thread() {
-
+                @Override
                 public void run() {
                     try {
                         IOUtils.copy(stdinStream, stdin);

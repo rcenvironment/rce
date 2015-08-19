@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.workflow</artifactId>
 	<name>RCE Core Workflow Bundle</name>
-	<version>6.0.3.qualifier</version>
+	<version>6.1.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

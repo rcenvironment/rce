@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -59,13 +59,14 @@ public class CpacsGeomView extends AbstractCpacsRuntimeView implements Observer 
             String secondId = null;
             try {
                 secondId = tempFile.getCanonicalPath();
+                secondId = secondId.replaceAll(":", "&#38");
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
+                    .showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
+                        secondId, IWorkbenchPage.VIEW_ACTIVATE);
             } catch (IOException e) {
                 LOGGER.error(e);
             }
-            secondId = secondId.replaceAll(":", "&#38");
-            PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-                .showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
-                    secondId, IWorkbenchPage.VIEW_ACTIVATE);
+           
         } catch (final PartInitException e) {
             LOGGER.error(e);
             MessageDialog.openWarning(form.getShell(), "Could not open editor", e.getMessage());

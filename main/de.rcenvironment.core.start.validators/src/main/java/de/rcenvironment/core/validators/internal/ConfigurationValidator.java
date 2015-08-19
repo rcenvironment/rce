@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -51,7 +51,9 @@ public class ConfigurationValidator implements PlatformValidator {
         if (true) {
             return result;
         }
-
+        
+        //Suppress warnings; code is intentionally unused until rework.
+        @SuppressWarnings("unused")
         File configArea = configService.getConfigurablePath(ConfigurablePathId.DEFAULT_WRITEABLE_CONFIGURATION_ROOT);
         for (File f : configArea.listFiles()) {
             if (f.getName().endsWith(".json")) {

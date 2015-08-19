@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.workflow.model.api;
 import java.io.Serializable;
 import java.util.UUID;
 
+import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Dimension;
 
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
@@ -19,12 +20,17 @@ import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
  * A Label within a {@link WorkflowDescription}.
  * 
  * @author Sascha Zur
+ * @author Marc Stammerjohann
+ * @author Doreen Seider
  */
 public class WorkflowLabel extends PropertiesChangeSupport implements Serializable {
 
     /** Constant for the palette name entry. */
     public static final String PALETTE_ENTRY_NAME = "Add Label";
 
+    /** Constant for the default fonz size. */
+    public static final int DEFAULT_FONT_SIZE = 9;
+    
     /** Constant for label initial text. */
     public static final String INITIAL_TEXT = "New label";
 
@@ -32,13 +38,13 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     public static final int STANDARD_ALPHA = 128;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_BLUE = 173;
+    public static final int STANDARD_COLOR_BLUE = 0x22;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_GREEN = 176;
+    public static final int STANDARD_COLOR_GREEN = 0x92;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_RED = 155;
+    public static final int STANDARD_COLOR_RED = 0x39;
 
     /** Constant for label color. */
     public static final int STANDARD_COLOR_BLACK = 0;
@@ -46,11 +52,23 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     /** Property that is fired when a label property changes. */
     public static final String PROPERTY_CHANGE = "de.rcenvironment.rce.component.workflow.WorkflowLabelProperty";
 
+    /** Property that is fired when a label command property changes. */
+    public static final String COMMAND_CHANGE = "de.rcenvironment.rce.component.workflow.WorkflowLabelCommand";
+
     private static final int INT_255 = 255;
 
-    /**
-     * Constant.
-     */
+    private static final int CENTER_LABEL_ALIGNMENT = PositionConstants.CENTER;
+
+    private static final int LEFT_LABEL_ALIGNMENT = PositionConstants.LEFT;
+
+    private static final int RIGHT_LABEL_ALIGNMENT = PositionConstants.RIGHT;
+
+    private static final int CENTER_TEXT_ALIGNMENT = PositionConstants.CENTER;
+
+    private static final int TOP_TEXT_ALIGNMENT = PositionConstants.TOP;
+
+    private static final int BOTTOM_TEXT_ALIGNMENT = PositionConstants.BOTTOM;
+
     private static final long serialVersionUID = 3420597804308218542L;
 
     private String text;
@@ -69,11 +87,20 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
 
     private int[] colorText;
 
+    private boolean hasBorder;
+
+    private AlignmentType alignmentType;
+    
+    private int textSize;
+
     public WorkflowLabel(String text) {
         this.text = text;
         identifier = UUID.randomUUID().toString();
         setColorBackground(new int[] { STANDARD_COLOR_RED, STANDARD_COLOR_GREEN, STANDARD_COLOR_BLUE });
         setColorText(new int[] { STANDARD_COLOR_BLACK, STANDARD_COLOR_BLACK, STANDARD_COLOR_BLACK });
+        setAlignmentType(AlignmentType.CENTER);
+        setHasBorder(false);
+        setTextSize(DEFAULT_FONT_SIZE);
     }
 
     public String getText() {
@@ -171,6 +198,92 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
      */
     public void setColorText(int[] colorText) {
         this.colorText = colorText;
+    }
+
+    /**
+     * @return <code>true</code> if {@link WorkflowLabel} has border, otherwise <code>false</code>
+     */
+    public boolean hasBorder() {
+        return hasBorder;
+    }
+
+    public void setHasBorder(boolean hasBorder) {
+        this.hasBorder = hasBorder;
+    }
+
+    public AlignmentType getAlignmentType() {
+        return alignmentType;
+    }
+
+    public void setAlignmentType(AlignmentType alignmentType) {
+        this.alignmentType = alignmentType;
+    }
+
+    public int getTextSize() {
+        return textSize;
+    }
+
+    public void setTextSize(int textSize) {
+        this.textSize = textSize;
+    }
+    
+    /**
+     * Fires property change event.
+     */
+    public void firePropertChangeEvent() {
+        firePropertyChange(PROPERTY_CHANGE);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("'%s' (x=%d, y=%d, size=%s, alpha=%d, color=%d %d %d, background=%d %d %d, border=%b, font size=%d)", 
+            text, x, y, size.toString(), alpha, colorText[0], colorText[1], colorText[2],
+            colorBackground[0], colorBackground[1], colorBackground[2], hasBorder, textSize);
+    }
+
+    /**
+     * Contains all label alignment types.
+     * 
+     * @author Marc Stammerjohann
+     */
+    public enum AlignmentType {
+
+        /** top left. */
+        TOPLEFT(LEFT_LABEL_ALIGNMENT, TOP_TEXT_ALIGNMENT),
+        /** top center. */
+        TOPCENTER(CENTER_LABEL_ALIGNMENT, TOP_TEXT_ALIGNMENT),
+        /** top right. */
+        TOPRIGHT(RIGHT_LABEL_ALIGNMENT, TOP_TEXT_ALIGNMENT),
+        /** center left. */
+        CENTERLEFT(LEFT_LABEL_ALIGNMENT, CENTER_TEXT_ALIGNMENT),
+        /** center. */
+        CENTER(CENTER_LABEL_ALIGNMENT, CENTER_TEXT_ALIGNMENT),
+        /** center right. */
+        CENTERRIGHT(RIGHT_LABEL_ALIGNMENT, CENTER_TEXT_ALIGNMENT),
+        /** bottom left. */
+        BOTTOMLEFT(LEFT_LABEL_ALIGNMENT, BOTTOM_TEXT_ALIGNMENT),
+        /** bottom center. */
+        BOTTOMCENTER(CENTER_LABEL_ALIGNMENT, BOTTOM_TEXT_ALIGNMENT),
+        /** bottom right. */
+        BOTTOMRIGHT(RIGHT_LABEL_ALIGNMENT, BOTTOM_TEXT_ALIGNMENT);
+
+        private int labelAlignment;
+
+        private int textAlignment;
+
+        AlignmentType(int labelAlignment, int textAlignment) {
+            this.labelAlignment = labelAlignment;
+            this.textAlignment = textAlignment;
+        }
+
+        public int getLabelAlignment() {
+            return labelAlignment;
+        }
+
+        public int getTextAlignment() {
+            return textAlignment;
+        }
+
     }
 
 }

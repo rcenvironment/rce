@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -107,10 +107,9 @@ public class EndpointDatumProcessorImpl implements EndpointDatumProcessor {
                     compExeCtrls.put(executionId, new WeakReference<ComponentExecutionController>(ctrl));
                 } catch (IllegalStateException e) {
                     Log log = LogFactory.getLog(getClass());
-                    log.warn(String.format("Endpoint datum '%s' not processed, because component is not available",
-                        endpointDatum.toString()));
-                    log.debug(String.format("Endpoint datum '%s' not processed by component '%s':",
-                        endpointDatum.toString(), e.getMessage()));
+                    log.warn(String.format("Endpoint datum '%s' not processed, because component controller (%s) is not available",
+                        endpointDatum.toString(), executionId));
+                    log.debug("Failed to get ComponentExecutionController (OSGi service)", e);
                     return;
                 }
             }

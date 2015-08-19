@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -42,8 +42,9 @@ public interface WorkflowNodeValidator {
      * Sets the {@link WorkflowNode} to validate.
      * 
      * @param workflowNode the {@link WorkflowNode} to validate
+     * @param onWorkflowStart identifies if the workflow is executed
      */
-    void setWorkflowNode(WorkflowNode workflowNode);
+    void setWorkflowNode(WorkflowNode workflowNode, boolean onWorkflowStart);
 
     /**
      * Returns, whether this {@link WorkflowNodeValidator} has a validation status of successful.
@@ -88,5 +89,6 @@ public interface WorkflowNodeValidator {
      * @param listener the {@link WorkflowNodeValidityStateListener} to remove
      */
     void removeWorkflowNodeValidityStateListener(WorkflowNodeValidityStateListener listener);
+
 
 }

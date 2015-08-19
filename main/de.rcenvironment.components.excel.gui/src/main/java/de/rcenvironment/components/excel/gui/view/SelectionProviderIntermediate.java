@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -43,6 +43,7 @@ public class SelectionProviderIntermediate implements IPostSelectionProvider {
      * Selection listener with selection changed event listener.
      */
     private ISelectionChangedListener selectionListener = new ISelectionChangedListener() {
+        @Override
         public void selectionChanged(SelectionChangedEvent event) {
             if (event.getSelectionProvider() == delegate) {
                 fireSelectionChanged(event.getSelection());
@@ -54,6 +55,7 @@ public class SelectionProviderIntermediate implements IPostSelectionProvider {
      * Post selection listener with selection changed event listener.
      */
     private ISelectionChangedListener postSelectionListener = new ISelectionChangedListener() {
+        @Override
         public void selectionChanged(SelectionChangedEvent event) {
             if (event.getSelectionProvider() == delegate) {
                 firePostSelectionChanged(event.getSelection());
@@ -115,8 +117,8 @@ public class SelectionProviderIntermediate implements IPostSelectionProvider {
     private void fireSelectionChanged(ListenerList list, ISelection selection) {
         SelectionChangedEvent event = new SelectionChangedEvent(delegate, selection);
         Object[] listeners = list.getListeners();
-        for (int i = 0; i < listeners.length; i++) {
-            ISelectionChangedListener listener = (ISelectionChangedListener) listeners[i];
+        for (Object listener2 : listeners) {
+            ISelectionChangedListener listener = (ISelectionChangedListener) listener2;
             listener.selectionChanged(event);
         }
     }

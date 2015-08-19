@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,8 +26,6 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
 public class EndpointPropertySection extends ValidatingWorkflowNodePropertySection {
 
     private static final int OFFSET_ENPOINTPANES = 20;
-
-    private static final int OFFSET_PANES = 50;
 
     protected Composite endpointsComposite;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -80,7 +80,7 @@ public class Messages extends NLS {
     public static String outputs;
 
     /** Constant. */
-    public static String maxIterations;
+    public static String maxConvChecks;
     
     /** Constant. */
     public static String iterationsToConsider;

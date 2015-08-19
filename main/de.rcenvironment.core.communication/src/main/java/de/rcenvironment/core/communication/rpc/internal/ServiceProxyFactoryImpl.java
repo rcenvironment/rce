@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -150,18 +150,21 @@ public final class ServiceProxyFactoryImpl implements ServiceProxyFactory {
                     serviceCallResult =
                         remoteServiceCallService.performRemoteServiceCall(serviceCallRequest);
                     if (serviceCallResult == null) {
-                        // TODO >5.0.0 find cause and fix
+                        // should not happen in version 6.1.0 or higher anymore; left in for safety
                         throw new RuntimeException(String.format(
-                            "Received null service call result for RPC to method %s#%s() on %s",
-                            serviceCallRequest.getService(), method.getName(), serviceCallRequest.getRequestedPlatform()));
+                            "Unexpected null service call result for RPC to method %s#%s() on %s",
+                            serviceCallRequest.getService(), serviceCallRequest.getServiceMethod(),
+                            serviceCallRequest.getRequestedPlatform()));
                     }
                     Throwable throwable = serviceCallResult.getThrowable();
                     if (throwable != null) {
                         // TODO review: check for UndeclaredThrowables here and log as warning? - misc_ro
                         // TODO @5.0? - add "failure reporting node" information when available - misc_ro
-                        LOGGER.debug(String.format(
-                            "Exception during RPC to method %s#%s() on %s (the error may have occurred on an intermediate node)",
-                            serviceCallRequest.getService(), method.getName(), serviceCallRequest.getRequestedPlatform()), throwable);
+                        LOGGER.debug(String
+                            .format("Exception caught in response to RPC for %s#%s() on %s "
+                                + "(the error may also have occurred on an intermediate node)",
+                                serviceCallRequest.getService(), method.getName(), serviceCallRequest.getRequestedPlatform()),
+                            throwable);
                         throw throwable;
                     }
                     Object returnValue = serviceCallResult.getReturnValue();

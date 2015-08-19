@@ -2,11 +2,12 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Scripting
 Bundle-SymbolicName: de.rcenvironment.core.scripting;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.internal,
- de.rcenvironment.core.scripting.python
+ de.rcenvironment.core.scripting.python,
+ de.rcenvironment.core.scripting.testutils
 Bundle-ClassPath: .
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.authentication,
@@ -16,6 +17,7 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.component.datamanagement.history,
  de.rcenvironment.core.component.datamanagement.stateful,
  de.rcenvironment.core.component.execution.api,
+ de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,

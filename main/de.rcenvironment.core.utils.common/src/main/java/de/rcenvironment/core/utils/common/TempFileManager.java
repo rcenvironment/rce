@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -411,10 +411,16 @@ public class TempFileManager {
             antiCollisionAttempt++;
             antiCollisionSuffix = "(" + antiCollisionAttempt + ")";
         }
-        throw new IOException(String.format(
-            "Failed to create unique instance temp directory after %s attempts; last attempted path was %s",
-            MAX_ROOT_DIR_ANTI_COLLISION_ATTEMPTS,
-            newInstanceRootDir.getAbsolutePath()));
+        if (newInstanceRootDir != null) {
+            throw new IOException(String.format(
+                "Failed to create unique instance temp directory after %s attempts; last attempted path was %s",
+                MAX_ROOT_DIR_ANTI_COLLISION_ATTEMPTS,
+                newInstanceRootDir.getAbsolutePath()));
+        } else {
+            throw new IOException(String.format(
+                "Failed to create unique instance temp directory after %s attempts; last attempted path was null",
+                MAX_ROOT_DIR_ANTI_COLLISION_ATTEMPTS));
+        }
     }
 
     private static boolean isActualSubfolderOf(File expectedInner, File expectedOuter) throws IOException {

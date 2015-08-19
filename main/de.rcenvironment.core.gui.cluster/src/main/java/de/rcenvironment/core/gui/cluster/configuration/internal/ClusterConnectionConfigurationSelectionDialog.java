@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -58,6 +58,7 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
         
         Button newButton = createButton(parent, NEW, Messages.newButtonTitle, false);
         newButton.addSelectionListener(new SelectionAdapter() {
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 controller.openNewClusterConnectionConfigurationDialog();
                 updateDialog();
@@ -66,6 +67,7 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
         
         editButton = createButton(parent, EDIT, Messages.editButtonTitle, false);
         editButton.addSelectionListener(new SelectionAdapter() {
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 controller.openEditClusterConnectionConfigurationDialog((ClusterConnectionConfiguration) getSelectedElements()[0]);
                 updateDialog();
@@ -75,6 +77,7 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
         
         deleteButton = createButton(parent, DELETE, Messages.deleteButtonTitle, false);
         deleteButton.addSelectionListener(new SelectionAdapter() {
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 controller.openDeleteConfirmationDialog((ClusterConnectionConfiguration) getSelectedElements()[0]);
                 updateDialog();
@@ -84,6 +87,7 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
         
         connectButton = createButton(parent, CONNECT, Messages.connectButtonTitle, true);
         connectButton.addSelectionListener(new SelectionAdapter() {
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 setSelectedConfiguration();
                 setReturnCode(CONNECT);
@@ -93,6 +97,7 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
         
         Button cancelButton = createButton(parent, CANCEL, Messages.cancelButtonTitle, false);
         cancelButton.addSelectionListener(new SelectionAdapter() {
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 setReturnCode(CANCEL);
                 close();

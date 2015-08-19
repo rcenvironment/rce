@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -304,7 +304,7 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
     protected void createButtonsForButtonBar(Composite parent) {
         createButton = createButton(parent, CREATE, Messages.createButtonTitle, true);
         createButton.addSelectionListener(new SelectionAdapter() {
-
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 if (isValidInput()) {
                     saveInput();
@@ -315,7 +315,7 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         });
         Button cancelButton = createButton(parent, CANCEL, Messages.cancel, false);
         cancelButton.addSelectionListener(new SelectionAdapter() {
-
+            @Override
             public void widgetSelected(SelectionEvent e) {
                 setReturnCode(CANCEL);
                 close();

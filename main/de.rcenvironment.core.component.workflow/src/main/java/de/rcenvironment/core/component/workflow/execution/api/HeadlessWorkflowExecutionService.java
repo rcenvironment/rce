@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,7 +9,10 @@
 package de.rcenvironment.core.component.workflow.execution.api;
 
 import java.io.File;
+import java.util.Set;
 
+import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
@@ -94,5 +97,66 @@ public interface HeadlessWorkflowExecutionService {
     FinalWorkflowState executeWorkflow(File wfFile, File placeholdersFile, File customLogDirectory,
         TextOutputReceiver outputReceiver, SingleConsoleRowsProcessor customConsoleRowReceiver)
         throws WorkflowExecutionException;
+    
+    /**
+     * @return {@link WorkflowExecutionInformation} objects of all active workflows
+     */
+    Set<WorkflowExecutionInformation> getWorkflowExecutionInformations();
+    
+    /**
+     * @param forceRefresh <code>true</code> if the cache of {@link WorkflowExecutionInformation}s shall be refreshed, <code>false</code>
+     *        otherwise
+     * @return {@link WorkflowExecutionInformation} objects of all active workflows
+     */
+    Set<WorkflowExecutionInformation> getWorkflowExecutionInformations(boolean forceRefresh);
+    
+    
+    /**
+     * Triggers workflow to cancel.
+     * 
+     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
+     * @param node the node of the workflow controller
+     * @throws CommunicationException if communication error occurs (cannot occur if controller and components run locally)
+     */
+    void cancel(String executionId, NodeIdentifier node) throws CommunicationException;
+    
+    /**
+     * Triggers workflow to pause.
+     * 
+     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
+     * @param node the node of the workflow controller
+     * @throws CommunicationException if communication error occurs (cannot occur if controller and components run locally)
+     */
+    void pause(String executionId, NodeIdentifier node) throws CommunicationException;
+    
+    /**
+     * Triggers workflow to resume when paused.
+     * 
+     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
+     * @param node the node of the workflow controller
+     * @throws CommunicationException if communication error occurs (cannot occur if controller and components run locally)
+     */
+    void resume(String executionId, NodeIdentifier node) throws CommunicationException;
+    
+    /**
+     * Triggers workflow to dispose.
+     * 
+     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to cancel
+     * @param node the node of the workflow controller
+     * @throws CommunicationException if communication error occurs (cannot occur if controller and components run locally)
+     */
+    void dispose(String executionId, NodeIdentifier node) throws CommunicationException;
+    
+    /**
+     * Gets current workflow state.
+     * 
+     * @param executionId execution identifier (part of {@link WorkflowExecutionInformation}) of the workflow to get the state for
+     * @param node the node of the workflow controller
+     * @return {@link WorkflowState}
+     * @throws CommunicationException if communication error occurs (cannot occur if controller and components run locally)
+     */
+    WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws CommunicationException;
 
 }
+
+    

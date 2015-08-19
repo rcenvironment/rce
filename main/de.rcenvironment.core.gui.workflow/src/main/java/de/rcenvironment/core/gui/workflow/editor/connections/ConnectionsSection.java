@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -61,12 +61,6 @@ public class ConnectionsSection extends AbstractPropertySection {
     private TabbedPropertySheetPage sheetPage;
 
     @Override
-    public void aboutToBeShown() {
-        deselectTrees();
-        super.aboutToBeShown();
-    }
-
-    @Override
     public void setInput(IWorkbenchPart part, ISelection selection) {
         // initialize
         if (part instanceof WorkflowEditor && connectionDialogComposite.getWorkflowDescription() == null) {
@@ -98,8 +92,6 @@ public class ConnectionsSection extends AbstractPropertySection {
             workflowDescriptionPropertyListener = new WorkflowDescriptionPropertyListener();
             workflowDescription.addPropertyChangeListener(workflowDescriptionPropertyListener);
         }
-
-        deselectTrees();
     }
 
     private void setSizeOfConnectionComposite(Composite parent) {
@@ -124,11 +116,6 @@ public class ConnectionsSection extends AbstractPropertySection {
     public void dispose() {
         workflowDescription.removePropertyChangeListener(workflowDescriptionPropertyListener);
         super.dispose();
-    }
-
-    private void deselectTrees() {
-        connectionDialogComposite.getTargetTreeViewer().getTree().deselectAll();
-        connectionDialogComposite.getSourceTreeViewer().getTree().deselectAll();
     }
 
     @Override
@@ -173,7 +160,7 @@ public class ConnectionsSection extends AbstractPropertySection {
 
         // Create target mode group
         Group targetFilterModeGroup = new Group(connectionDialogComposite.getTargetGroup(), SWT.NONE);
-        targetFilterModeGroup.setText("Keep nodes that ... ");
+        targetFilterModeGroup.setText("Keep components that ... ");
         targetFilterModeGroup.setLayout(new GridLayout(3, true));
         targetFilterModeGroup.setLayoutData(gridDataTargetFilterModeGroup);
         Button targetFilterModeButtonIsExactly = new Button(targetFilterModeGroup, SWT.RADIO);
@@ -223,7 +210,7 @@ public class ConnectionsSection extends AbstractPropertySection {
 
         // Create source mode group
         Group sourceFilterModeGroup = new Group(connectionDialogComposite.getSourceGroup(), SWT.NONE);
-        sourceFilterModeGroup.setText("Keep nodes that ... ");
+        sourceFilterModeGroup.setText("Keep components that ... ");
         sourceFilterModeGroup.setLayout(new GridLayout(3, true));
         sourceFilterModeGroup.setLayoutData(gridDataSourceFilterModeGroup);
         Button sourceFilterModeButtonIsExactly = new Button(sourceFilterModeGroup, SWT.RADIO);

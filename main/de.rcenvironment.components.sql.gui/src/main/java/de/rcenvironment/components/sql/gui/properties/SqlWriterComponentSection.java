@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -109,7 +109,7 @@ public class SqlWriterComponentSection extends WorkflowNodePropertySection {
         final Composite content = new LayoutComposite(parent);
         content.setLayout(new GridLayout(2, true));
         GridData layoutData;
-        
+
         /*
          * Connection Settings
          */
@@ -131,7 +131,7 @@ public class SqlWriterComponentSection extends WorkflowNodePropertySection {
         jdbcProfileCombo.setLayoutData(layoutData);
         // set client
         jdbcSection.setClient(jdbcClient);
-        
+
         /*
          * SQL Configuration
          */
@@ -185,7 +185,7 @@ public class SqlWriterComponentSection extends WorkflowNodePropertySection {
         modeText.setLayoutData(layoutData);
         // set client
         modeSection.setClient(modeClient);
-        
+
         /*
          * Input Settings
          */
@@ -419,7 +419,7 @@ public class SqlWriterComponentSection extends WorkflowNodePropertySection {
             value = null;
         }
         final String oldValue = getProperty(key);
-        if (!value.equals(oldValue)) {
+        if (value != null && !value.equals(oldValue)) {
             setProperty(key, value);
             if (this.inputMapping != inputMapping) {
                 refreshInputMapping();

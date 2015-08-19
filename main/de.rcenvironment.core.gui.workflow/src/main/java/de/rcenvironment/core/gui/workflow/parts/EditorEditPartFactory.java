@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,7 +34,9 @@ public class EditorEditPartFactory implements EditPartFactory {
         } else if (model instanceof WorkflowLabel) {
             part = new WorkflowLabelPart();
         }
-        part.setModel(model);
+        if (part != null) {
+            part.setModel(model);
+        }
         return part;
     }
 

@@ -5,7 +5,7 @@
     <title>Compatible Operating Systems</title>
     <para>RCE releases are provided for Windows and Linux. It is regularly tested on<itemizedlist>
             <listitem>
-                <para>CentOS 7 (64 bit)</para>
+                <para>Red Hat Enterprise Linux 6 Workstation (64 bit)</para>
             </listitem>
             <listitem>
                 <para>Debian 7 stable (64 bit)</para>
@@ -21,13 +21,10 @@
                 <para>Mint 17 (64 bit)</para>
             </listitem>
             <listitem>
-                <para>Red Hat Enterprise Linux 6 Workstation (64 bit)</para>
+                <para>CentOS 7 (64 bit)</para>
             </listitem>
             <listitem>
                 <para>SUSE Linux Enterprise Server ("SLES") 11 SP2 (64 bit)</para>
-            </listitem>
-            <listitem>
-                <para>Ubuntu 12 LTS (64 bit)</para>
             </listitem>
             <listitem>
                 <para>Ubuntu 14 LTS (64 bit)</para>

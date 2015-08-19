@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,11 +20,11 @@ public final class CpacsWriterComponentConstants {
 
     /** Identifier of the Joiner component. */
     public static final String COMPONENT_ID = ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "cpacswriter";
-    
+
     /** Identifiers of the Joiner component. */
     public static final String[] COMPONENT_IDS = new String[] { COMPONENT_ID,
         "de.dlr.sc.chameleon.rce.cpacsdestination.component.Destination_CPACS Saving" };
-    
+
     /** Constant. */
     public static final String OUTPUT_NAME_CPACS = "CPACS";
 
@@ -37,14 +37,7 @@ public final class CpacsWriterComponentConstants {
 
     // notification ids
     /** Constant. */
-    public static final String RUNTIME_CPACS_UUIDS = ":rce.component.destination";
-
-    // view ids
-    /** Constant. */
-    public static final String RUNTIME_TEXTVIEW_ID = "de.dlr.sc.chameleon.rce.cpacsdestination.gui.runtime.CpacsSavingView";
-
-    /** Constant. */
-    public static final String RUNTIME_TIGLVIEW_ID = "de.dlr.sc.chameleon.rce.cpacsdestination.gui.runtime.CpacsSavingView";
+    public static final String RUNTIME_CPACS_UUIDS = ":rce.component.cpacswriter";
 
     private CpacsWriterComponentConstants() {}
 }

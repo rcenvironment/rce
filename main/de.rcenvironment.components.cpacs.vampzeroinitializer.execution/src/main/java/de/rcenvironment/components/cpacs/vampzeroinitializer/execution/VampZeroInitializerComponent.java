@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -96,34 +96,34 @@ public class VampZeroInitializerComponent extends DefaultComponent {
         } catch (IOException e) {
             LOG.error(e);
         }
-        // Dynamic input values
-        Map<String, TypedDatum> variableInputs = CpacsChannelFilter.getVariableInputs(componentContext);
-        if (historyDataItem != null && !variableInputs.isEmpty()) {
-            historyDataItem.setPlainXMLFileReference(cpacs);
-        }
-        try {
-            varMapper.updateXMLWithInputs(tempFile.getAbsolutePath(), variableInputs, componentContext);
-        } catch (DataTypeException e1) {
-            throw new ComponentException(e1.getMessage(), e1);
-        }
-
-        // Cpacs with dynamic input values in history object
-        final FileReferenceTD fileReference;
-        try {
-            fileReference = dataManagementService.createFileReferenceTDFromLocalFile(componentContext, tempFile,
+        if (tempFile != null) {
+            // Dynamic input values
+            Map<String, TypedDatum> variableInputs = CpacsChannelFilter.getVariableInputs(componentContext);
+            if (historyDataItem != null && !variableInputs.isEmpty()) {
+                historyDataItem.setPlainXMLFileReference(cpacs);
+            }
+            try {
+                varMapper.updateXMLWithInputs(tempFile.getAbsolutePath(), variableInputs, componentContext);
+            } catch (DataTypeException e1) {
+                throw new ComponentException(e1.getMessage(), e1);
+            }
+            // Cpacs with dynamic input values in history object
+            final FileReferenceTD fileReference;
+            try {
+                fileReference = dataManagementService.createFileReferenceTDFromLocalFile(componentContext, tempFile,
                     ChameleonCommonConstants.CHAMELEON_CPACS_FILENAME);
-            // Write Output
-            componentContext.writeOutput(ChameleonCommonConstants.CHAMELEON_CPACS_NAME, fileReference);
-        } catch (IOException e) {
-            LOG.debug(e);
+                // Write Output
+                componentContext.writeOutput(ChameleonCommonConstants.CHAMELEON_CPACS_NAME, fileReference);
+            } catch (IOException e) {
+                LOG.debug(e);
+            }
+            try {
+                varMapper.updateOutputsFromXML(tempFile.getAbsolutePath(), ChameleonCommonConstants.CHAMELEON_CPACS_NAME, componentContext);
+            } catch (DataTypeException e1) {
+                throw new ComponentException(e1.getMessage(), e1);
+            }
+            storeHistoryDataItem();
         }
-
-        try {
-            varMapper.updateOutputsFromXML(tempFile.getAbsolutePath(), ChameleonCommonConstants.CHAMELEON_CPACS_NAME, componentContext);
-        } catch (DataTypeException e1) {
-            throw new ComponentException(e1.getMessage(), e1);
-        }
-        storeHistoryDataItem();
     }
 
     @Override

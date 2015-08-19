@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,11 +44,11 @@ public class ConvergerParameterSection extends ValidatingWorkflowNodePropertySec
                 | WidgetGroupFactory.ALIGN_CENTER);
         WidgetGroupFactory.addLabelAndTextfieldForPropertyToComposite(sectionInstallationClient,
             Messages.iterationsToConsider, ConvergerComponentConstants.KEY_ITERATIONS_TO_CONSIDER, TEXT_WIDTH,
-            WidgetGroupFactory.ONLY_INTEGER | WidgetGroupFactory.ALIGN_CENTER);
-        Text maxIterationsText = WidgetGroupFactory.addLabelAndTextfieldForPropertyToComposite(sectionInstallationClient,
-            Messages.maxIterations, ConvergerComponentConstants.KEY_MAX_ITERATIONS, TEXT_WIDTH, WidgetGroupFactory.ONLY_INTEGER
-                | WidgetGroupFactory.ALIGN_CENTER).text;
-        maxIterationsText.setMessage(Messages.noMaxIterations);
+            WidgetGroupFactory.ONLY_INTEGER | WidgetGroupFactory.GREATER_OR_EQUAL_ZERO | WidgetGroupFactory.ALIGN_CENTER);
+        Text maxConvChecksText = WidgetGroupFactory.addLabelAndTextfieldForPropertyToComposite(sectionInstallationClient,
+            Messages.maxConvChecks, ConvergerComponentConstants.KEY_MAX_CONV_CHECKS, TEXT_WIDTH, WidgetGroupFactory.ONLY_INTEGER
+                | WidgetGroupFactory.GREATER_OR_EQUAL_ZERO | WidgetGroupFactory.ALIGN_CENTER).text;
+        maxConvChecksText.setMessage(Messages.noMaxIterations);
         
         sectionProperties.setClient(sectionInstallationClient);
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,6 +27,7 @@ public class TemporarySshAccountImpl extends SshAccountImpl implements Temporary
 
     public TemporarySshAccountImpl() {}
 
+    @Override
     public String getVirtualScpRootPath() {
         return virtualScpRootPath;
     }
@@ -35,6 +36,7 @@ public class TemporarySshAccountImpl extends SshAccountImpl implements Temporary
         this.virtualScpRootPath = path;
     }
 
+    @Override
     public File getLocalScpRootPath() {
         return localScpRootPath;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -35,13 +35,18 @@ public class NumericalTextConstraintListener implements VerifyListener {
      */
     public static final int ONLY_INTEGER = WidgetGroupFactory.ONLY_INTEGER;
 
+    /**
+     * Option if a textfield should only allow only inputs > 0.
+     */
+    public static final int GREATER_ZERO = WidgetGroupFactory.GREATER_OR_EQUAL_ZERO;
+
     private static final String SMALL_E = "e";
 
     private static final String MINUS = "-";
 
     private static final String E = "E";
 
-    private int function;
+    private final int function;
 
     public NumericalTextConstraintListener(Text text, int function) {
         this.function = function;
@@ -55,6 +60,10 @@ public class NumericalTextConstraintListener implements VerifyListener {
         final String oldS = text.getText();
         String newS = oldS.substring(0, e.start) + e.text + oldS.substring(e.end);
         boolean isFloat = true;
+        if (!text.getText().contains(MINUS) && e.text.equals(MINUS) && text.getCaretPosition() == 0) {
+            e.doit = true;
+            return;
+        }
         if (!newS.isEmpty()) {
             if ((function & WidgetGroupFactory.ONLY_FLOAT) > 0) {
                 try {
@@ -127,6 +136,11 @@ public class NumericalTextConstraintListener implements VerifyListener {
             }
             if (e.text.equalsIgnoreCase(E) && newS.length() == 1) {
                 e.doit = false;
+            }
+            if ((function & WidgetGroupFactory.GREATER_OR_EQUAL_ZERO) >= 0 && (isFloat || isInt)) {
+                if (e.text.contains(MINUS)) {
+                    e.doit = false;
+                }
             }
         }
     }

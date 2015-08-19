@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -40,16 +40,7 @@ public class Messages extends NLS {
     public static String newProfile;
 
     /** Constant. */
-    public static String inheritedFrom;
-
-    /** Constant. */
-    public static String add;
-
-    /** Constant. */
-    public static String edit;
-
-    /** Constant. */
-    public static String remove;
+    public static String inheritedFrom;   
 
     /** Constant. */
     public static String name;
@@ -68,12 +59,6 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String configurationHeader;
-
-    /** Constant. */
-    public static String newMessage;
-
-    /** Constant. */
-    public static String editMessage;
 
     /** Constant. */
     public static String noConfig;
@@ -110,6 +95,12 @@ public class Messages extends NLS {
     
     /** Constant. */
     public static String connections;
+
+    /** Constant. */
+    public static String title;
+
+    /** Constant. */
+    public static String labelAlignment;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

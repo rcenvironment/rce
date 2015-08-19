@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,8 @@ public abstract class AbstractWorkflowNodeEditHandler extends AbstractHandler {
 
     protected GraphicalViewer viewer;
     
+    protected WorkflowEditor editor;
+    
     protected CommandStack commandStack;
     
     @Override
@@ -35,7 +37,7 @@ public abstract class AbstractWorkflowNodeEditHandler extends AbstractHandler {
         final IWorkbenchPart activePart = PlatformUI.getWorkbench()
                 .getActiveWorkbenchWindow().getActivePage().getActivePart();
         if (activePart instanceof WorkflowEditor) {
-            WorkflowEditor editor = (WorkflowEditor) activePart;            
+            editor = (WorkflowEditor) activePart;            
             viewer = editor.getViewer();
             commandStack = (CommandStack) editor.getAdapter(CommandStack.class);
             edit();

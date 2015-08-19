@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -140,21 +140,20 @@ public class ComponentContextDefaultStub implements ComponentContext {
 
     @Override
     public void writeOutput(String outputName, TypedDatum value) {
-        
-    }
-    
-    @Override
-    public void resetOutput(String outputName) {
+
     }
 
     @Override
+    public void resetOutput(String outputName) {}
+
+    @Override
     public void closeOutput(String outputName) {
-        
+
     }
 
     @Override
     public void closeAllOutputs() {
-        
+
     }
 
     @Override
@@ -164,7 +163,7 @@ public class ComponentContextDefaultStub implements ComponentContext {
 
     @Override
     public void printConsoleLine(String line, Type consoleLineType) {
-        
+
     }
 
     @Override
@@ -198,12 +197,10 @@ public class ComponentContextDefaultStub implements ComponentContext {
     }
 
     @Override
-    public void writeIntermediateHistoryData(ComponentHistoryDataItem historyDataItem) {
-    }
+    public void writeIntermediateHistoryData(ComponentHistoryDataItem historyDataItem) {}
 
     @Override
-    public void writeFinalHistoryDataItem(ComponentHistoryDataItem historyDataItem) {
-    }
+    public void writeFinalHistoryDataItem(ComponentHistoryDataItem historyDataItem) {}
 
     @Override
     public String getComponentName() {
@@ -218,6 +215,11 @@ public class ComponentContextDefaultStub implements ComponentContext {
     @Override
     public boolean isOutputClosed(String outputName) {
         return false;
+    }
+
+    @Override
+    public Set<String> getInputsNotConnected() {
+        return null;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -68,7 +68,7 @@ public abstract class AbstractEditScriptRunnable implements Runnable {
         try {
             FileEncodingUtils.saveUnicodeStringToFile(script, tempFile);
         } catch (IOException e) {
-            LOGGER.error(e.getStackTrace());
+            LOGGER.error(e);
         }
     }
 

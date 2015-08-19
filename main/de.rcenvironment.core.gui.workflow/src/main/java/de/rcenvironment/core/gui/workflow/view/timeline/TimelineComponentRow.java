@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -13,8 +13,7 @@ import java.util.Date;
 import org.eclipse.swt.graphics.Image;
 
 /**
- * 
- *
+ * Each instance of a component gets it's own {@link TimelineComponentRow}.
  * @author Hendrik Abbenhaus
  */
 public class TimelineComponentRow implements Comparable<TimelineComponentRow> {
@@ -49,17 +48,24 @@ public class TimelineComponentRow implements Comparable<TimelineComponentRow> {
         return this.activities;
     }
     
+    /**
+     * 
+     * @return an Icon for the current Component Instance. 
+     */
     public Image getIcon(){
         return TimelineView.getImageIconFromId(this.componentID, this);
     }
     
+    /**
+     * 
+     * @return the Display name of the current Component.
+     */
     public String getName(){
         return this.name;
     }
     
     /**
-     * 
-     * 
+     * Returns an identifier of the current Component.
      * @return the identifier
      */
     public String getComponentID(){

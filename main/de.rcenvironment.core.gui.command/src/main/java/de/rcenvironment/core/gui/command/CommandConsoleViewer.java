@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -54,7 +54,9 @@ import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.command.spi.AbstractInteractiveCommandConsole;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
+import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -122,6 +124,7 @@ public class CommandConsoleViewer extends ViewPart {
             super(clearConsoleActionContextMenuLabel);
         }
 
+        @Override
         public void run() {
             currentLine = 0;
             styledtext.selectAll();
@@ -141,8 +144,10 @@ public class CommandConsoleViewer extends ViewPart {
             super(text);
         }
 
+        @Override
         public void run() {
-            // if multiple lines are in the clipboard, extract the first one and put it back to the clipboard so that only this line will be
+            // if multiple lines are in the clipboard, extract the first one and put it back to the
+            // clipboard so that only this line will be
             // pasted
             Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
             try {
@@ -176,6 +181,7 @@ public class CommandConsoleViewer extends ViewPart {
             super(text);
         }
 
+        @Override
         public void run() {
             styledtext.copy();
         }
@@ -203,7 +209,7 @@ public class CommandConsoleViewer extends ViewPart {
         styledtext.addTraverseListener(new CommandTraverseListener());
         styledtext.addMouseListener(new CommandMouseListener());
         styledtext.addVerifyKeyListener(new CommandVerifyKeyListener());
-
+        styledtext.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
         insertRCEPrompt();
 
         makeActions();
@@ -227,6 +233,7 @@ public class CommandConsoleViewer extends ViewPart {
         menuMgr.setRemoveAllWhenShown(true);
         menuMgr.addMenuListener(new IMenuListener() {
 
+            @Override
             public void menuAboutToShow(IMenuManager manager) {
                 CommandConsoleViewer.this.fillContextMenu(manager);
             }
@@ -272,8 +279,8 @@ public class CommandConsoleViewer extends ViewPart {
         String commands = persistentSettingsService.readStringValue(KEYCOMMAND);
         if (commands != null) {
             String[] commandSplit = StringUtils.splitAndUnescape(commands);
-            for (int i = 0; i < commandSplit.length; i++) {
-                addUsedCommand(commandSplit[i]);
+            for (String element : commandSplit) {
+                addUsedCommand(element);
             }
         }
     }
@@ -486,8 +493,8 @@ public class CommandConsoleViewer extends ViewPart {
     }
 
     /**
-     * If a key (between 'a' and 'z', '0' and '9') is pressed, caret selects the command line (where the latest RCEPROMPT is). If command
-     * line contains text, caret is set at the end.
+     * If a key (between 'a' and 'z', '0' and '9') is pressed, caret selects the command line (where
+     * the latest RCEPROMPT is). If command line contains text, caret is set at the end.
      */
     private void moveCaretToCommandLine() {
         String line = getLineWithoutRCEPROMPT(currentLine);
@@ -497,6 +504,7 @@ public class CommandConsoleViewer extends ViewPart {
     /** A {@link KeyListener} to react on pressed or released key's. */
     private class CommandKeyListener implements KeyListener {
 
+        @Override
         public void keyReleased(KeyEvent keyEvent) {
             // disable clearConsoleAction, if after Backspace/Delete the first line is empty
             if (keyEvent.keyCode == SWT.BS || keyEvent.keyCode == SWT.DEL) {
@@ -506,6 +514,7 @@ public class CommandConsoleViewer extends ViewPart {
             }
         }
 
+        @Override
         public void keyPressed(KeyEvent keyEvent) {
             if (!getLineWithoutRCEPROMPT(0).isEmpty()) {
                 clearConsoleAction.setEnabled(true);
@@ -567,7 +576,8 @@ public class CommandConsoleViewer extends ViewPart {
 
         /**
          * "Return" is enabled: if the selected line has text. <br>
-         * "Return" is disabled: if the selected line is empty or the selected line is above the command
+         * "Return" is disabled: if the selected line is empty or the selected line is above the
+         * command
          * 
          * @param event
          */
@@ -580,7 +590,8 @@ public class CommandConsoleViewer extends ViewPart {
                 disableEvent(event);
             } else {
                 if (!line.isEmpty()) {
-                    // setSelection(styledtext.getCaretOffset() + (line.length() - (styledtext.getCaretOffset() -
+                    // setSelection(styledtext.getCaretOffset() + (line.length() -
+                    // (styledtext.getCaretOffset() -
                     // caretPosition)));
                     setSelection(styledtext.getCaretOffset() + line.length());
                 }
@@ -590,7 +601,8 @@ public class CommandConsoleViewer extends ViewPart {
 
     /**
      * A {@link VerifyKeyListener} to change the keys behavior.<br>
-     * Changes the behavior of the key, if the current caret position is lower than the {@link CommandConsoleViewer#caretLinePosition}.
+     * Changes the behavior of the key, if the current caret position is lower than the
+     * {@link CommandConsoleViewer#caretLinePosition}.
      */
     private class CommandVerifyKeyListener implements VerifyKeyListener {
 
@@ -611,7 +623,8 @@ public class CommandConsoleViewer extends ViewPart {
             int currentCaretLocation = getCurrentCaretLocation();
             int selectionRangeStart = styledtext.getSelectionRange().x;
             boolean emptyLine = getLine(currentLine).isEmpty();
-            // disable all key actions if caret location or selection range start is above caret line position or if line is empty
+            // disable all key actions if caret location or selection range start is above caret
+            // line position or if line is empty
             if (emptyLine || (caretLinePosition > currentCaretLocation || caretLinePosition > selectionRangeStart)) {
                 if (!enabledEvents.contains(event.keyCode)) {
                     if (event.stateMask == 0
@@ -703,9 +716,9 @@ public class CommandConsoleViewer extends ViewPart {
     /** Thread to execute the command. */
     private class ExecuteCommand implements Runnable {
 
-        private String command;
+        private final String command;
 
-        private Display display = Display.getDefault();
+        private final Display display = Display.getDefault();
 
         private int line;
 
@@ -728,7 +741,10 @@ public class CommandConsoleViewer extends ViewPart {
             // waitForExecToFinish(asyncExecMultiCommand);
         }
 
-        /** waiting for the execution to finish, while text is displayed user cannot enter new commands. */
+        /**
+         * waiting for the execution to finish, while text is displayed user cannot enter new
+         * commands.
+         */
         private void waitWithDelay() {
             int sleepTime = 5;
             try {
@@ -738,7 +754,8 @@ public class CommandConsoleViewer extends ViewPart {
 
                         @Override
                         public void run() {
-                            // TODO this line can throw an "Index out of bounds" exception; check before this code is being used again
+                            // TODO this line can throw an "Index out of bounds" exception; check
+                            // before this code is being used again
                             if (styledtext.isDisposed() || (writing && getLineWithoutRCEPROMPT(line++).isEmpty())) {
                                 writing = false;
                             }
@@ -766,8 +783,8 @@ public class CommandConsoleViewer extends ViewPart {
         private List<String> getTokens() {
             final List<String> tokens = new LinkedList<String>();
             String[] arguments = command.split(" ");
-            for (int i = 0; i < arguments.length; i++) {
-                tokens.add(arguments[i]);
+            for (String argument : arguments) {
+                tokens.add(argument);
             }
             return tokens;
         }
@@ -776,7 +793,7 @@ public class CommandConsoleViewer extends ViewPart {
     /** Thread to interact with the swt styledtext. */
     private class DisplayText implements Runnable {
 
-        private String text;
+        private final String text;
 
         public DisplayText(String text) {
             this.text = text;
@@ -796,13 +813,14 @@ public class CommandConsoleViewer extends ViewPart {
     /** Class for handling command input and printing out the output. */
     private class CommandConsoleOutputAdapter extends AbstractInteractiveCommandConsole {
 
-        private Display display = Display.getDefault();
+        private final Display display = Display.getDefault();
 
         public CommandConsoleOutputAdapter() {
             super(commandExecutionService);
         }
 
         /** Adds an Output to the console. */
+        @Override
         public void addOutput(String line) {
             if (line.contains("\n")) {
                 while (line.contains("\n")) {

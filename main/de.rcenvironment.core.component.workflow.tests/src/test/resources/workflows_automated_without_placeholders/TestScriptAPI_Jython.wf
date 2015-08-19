@@ -2,7 +2,6 @@
   "identifier" : "eaa90fd6-875b-4d2b-b3e4-89d51e136a1e",
   "workflowVersion" : "3",
   "name" : "TestScriptAPI_2014-11-22_23:13:03_02",
-  "platform" : "f5151e6266f649199a22f548d9906e18",
   "nodes" : [ {
     "identifier" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
     "name" : "API Jython",

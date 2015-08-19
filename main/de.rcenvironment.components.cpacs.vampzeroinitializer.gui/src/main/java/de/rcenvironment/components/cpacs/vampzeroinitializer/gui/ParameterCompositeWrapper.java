@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -143,7 +143,7 @@ public class ParameterCompositeWrapper {
         ((TableWrapData) revertButton.getLayoutData()).grabHorizontal = true;
 
         final Runnable applyAction = new Runnable() {
-
+            @Override
             public void run() {
                 final int index = parameterList.getSelectionIndex();
                 if ((index >= 0) && (index < parameterList.getItemCount())) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -7,6 +7,8 @@
  */
 
 package de.rcenvironment.core.gui.workflow.view;
+
+import java.util.ArrayList;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,6 +23,7 @@ import org.eclipse.gef.editparts.ScalableFreeformRootEditPart;
 import org.eclipse.gef.editparts.ZoomManager;
 import org.eclipse.gef.ui.parts.GraphicalEditor;
 import org.eclipse.help.IContextProvider;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseWheelListener;
@@ -37,6 +40,9 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionS
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotificationSubscriber;
 import de.rcenvironment.core.component.workflow.execution.spi.WorkflowStateChangeListener;
+import de.rcenvironment.core.component.workflow.model.api.Connection;
+import de.rcenvironment.core.component.workflow.model.api.Location;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.UncompletedJobsShutdownListener;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorHelpContextProvider;
@@ -126,6 +132,22 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
      */
     public void setWorkflowExecutionInformation(final WorkflowExecutionInformation wei) {
         this.wfExeInfo = wei;
+        // FIXME: separate workflow execution information from workflow layout information to allow changes on gui side even if
+        // backward compatibility is required - two following for-loops should be removed as soon as issue #0011902 is resolved or with
+        // 7.0 as backward compatibility is not needed any longer -seid_do, April 2015
+        if ((!wfExeInfo.getWorkflowDescription().getConnections().isEmpty()
+                && wfExeInfo.getWorkflowDescription().getConnections().get(0).getBendpoints() == null)
+            || (!wfExeInfo.getWorkflowDescription().getWorkflowLabels().isEmpty()
+                && wfExeInfo.getWorkflowDescription().getWorkflowLabels().get(0).getAlignmentType() == null)) {
+            wfExeInfo.getWorkflowDescription().setWorkflowLabels(new ArrayList<WorkflowLabel>());
+            for (Connection connection : wfExeInfo.getWorkflowDescription().getConnections()) {
+                connection.setBendpoints(new ArrayList<Location>());
+            }
+            MessageDialog.openInformation(Display.getDefault().getActiveShell(), "Labels/custom connection paths",
+                    "Labels and/or custom connection paths cannot be displayed, as the controller was executed on an RCE instance <= 6.1, "
+                    + "which neither supports labels nor custom connection paths.");
+        }
+        
         // set the model of the editor
         viewer.setContents(wei);
 
@@ -133,8 +155,14 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
 
             @Override
             protected IStatus run(IProgressMonitor monitor) {
-                sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
-                    workflowStateChangeSubscriber, wfExeInfo.getNodeId());
+                try {
+                    sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
+                        workflowStateChangeSubscriber, wfExeInfo.getNodeId());
+                } catch (CommunicationException e1) {
+                    // TODO review: how to react on this?
+                    LOG.error("Failed to subscribe for workflow state changes: " + e1.getMessage());
+                    return Status.CANCEL_STATUS; // should be the closest to the "old" RTE behavior for now 
+                }
 
                 if (!initialWorkflowStateSet) {
                     // TODO set initial state if no new state received yet
@@ -167,8 +195,13 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
             @Override
             protected IStatus run(IProgressMonitor monitor) {
                 if (wfExeInfo != null) {
-                    sns.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
-                        workflowStateChangeSubscriber, wfExeInfo.getNodeId());
+                    try {
+                        sns.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
+                            workflowStateChangeSubscriber, wfExeInfo.getNodeId());
+                    } catch (CommunicationException e) {
+                        LOG.error("Failed to unsubscribe workflow execution view from workflow host: " + e.getMessage());
+                        return Status.CANCEL_STATUS;
+                    }
                 }
                 return Status.OK_STATUS;
             }
@@ -238,14 +271,14 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
         initialWorkflowStateSet = true;
         if (newState == WorkflowState.DISPOSING || newState == WorkflowState.DISPOSED) {
             Display.getDefault().asyncExec(new Runnable() {
-
+                @Override
                 public void run() {
                     ReadOnlyWorkflowRunEditor.this.getSite().getPage().closeEditor(ReadOnlyWorkflowRunEditor.this, false);
                 }
             });
         } else {
             Display.getDefault().asyncExec(new Runnable() {
-
+                @Override
                 public void run() {
                     updateTitle(newState);
                     updateTabIcon(newState);

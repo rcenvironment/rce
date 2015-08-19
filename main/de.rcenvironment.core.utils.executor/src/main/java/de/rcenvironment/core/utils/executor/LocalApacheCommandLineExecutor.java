@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -41,7 +41,7 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
 
     private File workDir;
 
-    private Log log = LogFactory.getLog(getClass());
+    private final Log log = LogFactory.getLog(getClass());
 
     private DefaultExecutor executor;
 
@@ -89,23 +89,19 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
 
         // build the top-level token array
         String[] commandTokens;
-        CommandLine cmd;
+        CommandLine cmd = null;
         if (OS.isFamilyWindows()) {
             commandTokens = Arrays.copyOf(WINDOWS_SHELL_TOKENS, WINDOWS_SHELL_TOKENS.length);
             commandTokens[WINDOWS_SHELL_TOKENS.length - 1] = commandString;
-            String command = "";
-            for (String str : commandTokens) {
-                command += str + " ";
-            }
-            cmd = CommandLine.parse(command);
 
         } else {
             commandTokens = Arrays.copyOf(LINUX_SHELL_TOKENS, LINUX_SHELL_TOKENS.length);
             commandTokens[LINUX_SHELL_TOKENS.length - 1] = commandString;
-            cmd = new CommandLine(commandTokens[0]);
-            for (int i = 1; i < commandTokens.length; i++) {
-                cmd.addArgument(commandTokens[i], false);
-            }
+        }
+
+        cmd = new CommandLine(commandTokens[0]);
+        for (int i = 1; i < commandTokens.length; i++) {
+            cmd.addArgument(commandTokens[i], false);
         }
         pipedStdOutputStream = new PipedOutputStream();
         pipedErrOutputStream = new PipedOutputStream();

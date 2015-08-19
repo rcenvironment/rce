@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,12 +29,6 @@ public class Messages extends NLS {
 
     /** Constant.  */
     public static String outputs;
-
-    /** Constant.  */
-    public static String newOutput;
-
-    /** Constant.  */
-    public static String edit;
 
     /** Constant.  */
     public static String selectFromProject;

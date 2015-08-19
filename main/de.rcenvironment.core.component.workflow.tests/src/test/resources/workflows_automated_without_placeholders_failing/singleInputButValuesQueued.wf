@@ -2,7 +2,6 @@
   "identifier" : "1bddadb7-7a08-4405-8403-626a1944e8fe",
   "workflowVersion" : "3",
   "name" : "not required_2014-11-22_22:40:14_06",
-  "platform" : "f5151e6266f649199a22f548d9906e18",
   "nodes" : [ {
     "identifier" : "2faa322a-0bb4-41fc-ad06-924c5af95ba2",
     "name" : "Parametric Study",

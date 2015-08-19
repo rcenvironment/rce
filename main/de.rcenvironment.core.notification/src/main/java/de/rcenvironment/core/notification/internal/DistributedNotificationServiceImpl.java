@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -24,6 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
@@ -85,7 +86,7 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
 
     @Override
     public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber,
-        NodeIdentifier publishPlatform) {
+        NodeIdentifier publishPlatform) throws CommunicationException {
         try {
             Pattern.compile(notificationId);
         } catch (RuntimeException e) {
@@ -97,9 +98,9 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
                 .subscribe(notificationId, subscriber);
         } catch (RuntimeException e) {
             String message = MessageFormat.format("Failed to subscribe to publisher @{0}: ", publishPlatform);
-            LOGGER.error(message, e);
+            //LOGGER.error(message, e);
             // TODO use better exception type here? - misc_ro
-            throw new IllegalStateException(message, e);
+            throw new CommunicationException(message + e.toString());
         }
     }
 
@@ -140,12 +141,14 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
     }
 
     @Override
-    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform) {
+    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+        throws CommunicationException {
         try {
             ((NotificationService) communicationService.getService(NotificationService.class, publishPlatform, context))
                 .unsubscribe(notificationId, subscriber);
         } catch (RuntimeException e) {
-            LOGGER.error(MessageFormat.format("Failed to unsubscribe from remote publisher @{0}: ", publishPlatform), e);
+            throw new CommunicationException(MessageFormat.format("Failed to unsubscribe from remote publisher @{0}: ", publishPlatform)
+                + e.getMessage());
         }
     }
 

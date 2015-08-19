@@ -1,5 +1,5 @@
 /*
-s * Copyright (C) 2006-2014 DLR, Germany
+s * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.execution.api.ExecutionConstants;
 import de.rcenvironment.core.component.execution.api.WorkflowExecutionControllerCallback;
@@ -46,6 +47,8 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  */
 public class WorkflowExecutionControllerServiceImpl implements WorkflowExecutionControllerService {
 
+    private static final String NOT_REGISTERED_AS_OSGI_SERVICE = "not registered as OSGi service";
+    
     private BundleContext bundleContext;
 
     private WorkflowHostService workflowHostService;
@@ -72,7 +75,7 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
                 + "not declared as workflow host: %s (%s)", wfExeCtx.getNodeId().getAssociatedDisplayName(),
                 wfExeCtx.getNodeId().getIdString()));
         }
-        WorkflowExecutionController workflowController = new WorkflowExecutionControllerImpl((WorkflowExecutionContext) wfExeCtx);
+        WorkflowExecutionController workflowController = new WorkflowExecutionControllerImpl(wfExeCtx);
         workflowController.setComponentExecutionAuthTokens(executionAuthTokens);
 
         Dictionary<String, String> properties = new Hashtable<String, String>();
@@ -115,13 +118,32 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
                 @Override
                 public void processNotification(Notification notification) {
                     super.processNotification(notification);
-                    notificationService.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + executionId, this, null);
+                    try {
+                        notificationService.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + executionId, this, null);
+                    } catch (CommunicationException e) {
+                        LogFactory.getLog(getClass()).warn("Failed to unsubscribe from workflow state changes: " + e.getMessage());
+                    }
                 }
             };
             
-        notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID
-            + executionId, workflowStateDisposedListener, null);
-        getWorkflowExecutionController(executionId).dispose();
+        try {
+            notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID
+                + executionId, workflowStateDisposedListener, null);
+        } catch (CommunicationException e) {
+            LogFactory.getLog(getClass()).error("Failed to subscribe for workflow state changes before disposing: " + e.getMessage());
+            return; // preserve the "old" RTE behavior for now
+        }
+        try {
+            getWorkflowExecutionController(executionId).dispose();
+        } catch (RuntimeException e) {
+            if (e.getMessage().contains(NOT_REGISTERED_AS_OSGI_SERVICE)) {
+                LogFactory.getLog(WorkflowExecutionControllerServiceImpl.class).warn(
+                    String.format("Failed to dispose workflow (%s). It seems to be already disposed (%s).",
+                        executionId, e.getMessage()));
+            } else {
+                throw e;
+            }
+        }
         synchronized (workflowExecutionInformations) {
             workflowExecutionInformations.remove(executionId);
         }
@@ -192,7 +214,7 @@ public class WorkflowExecutionControllerServiceImpl implements WorkflowExecution
             LogFactory.getLog(getClass()).warn("Bundle seems to be shutted down. "
                 + "If this occurs at any time thant shut down, it is an error", e);
         }
-        throw new RuntimeException(String.format("%s with id '%s' not registered as OSGi service",
+        throw new RuntimeException(String.format("%s with id '%s' " + NOT_REGISTERED_AS_OSGI_SERVICE,
             WorkflowExecutionController.class.getSimpleName(), executionId));
     }
 

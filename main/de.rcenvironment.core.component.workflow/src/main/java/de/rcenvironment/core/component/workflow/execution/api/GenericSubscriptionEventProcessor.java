@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -64,6 +64,7 @@ public abstract class GenericSubscriptionEventProcessor extends DefaultNotificat
                 });
     }
 
+    @Override
     protected void processNotification(Notification notification) {
 
         // FIXME catching up missing notifications certainly doesn't work -> rework!

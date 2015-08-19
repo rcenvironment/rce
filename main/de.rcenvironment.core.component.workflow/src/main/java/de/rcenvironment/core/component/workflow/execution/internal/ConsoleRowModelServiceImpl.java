@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -120,6 +120,7 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
     /**
      * Updates subscriptions to known server instances.
      */
+    @Override
     public synchronized void updateSubscriptions() {
         try {
             initialSubscriptionLatch.await();
@@ -270,6 +271,7 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
     /**
      * Removes all console rows.
      **/
+    @Override
     public synchronized void clearAll() {
         sequenceIdCounter++;
         resetModel();

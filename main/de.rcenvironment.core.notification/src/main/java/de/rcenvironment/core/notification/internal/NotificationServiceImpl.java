@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -150,8 +150,6 @@ public class NotificationServiceImpl implements NotificationService {
         new WeakHashMap<NotificationSubscriber, NotificationServiceImpl.LocalSubscriberMetaData>();
 
     private PlatformService platformService;
-
-    private Object lock = new Object();
 
     protected void bindPlatformService(PlatformService newPlatformService) {
         platformService = newPlatformService;

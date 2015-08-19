@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -195,7 +195,7 @@ public class XPathChooserHelper {
 
         // make sash movable
         sash.addSelectionListener(new SelectionAdapter() {
-
+            @Override
             public void widgetSelected(final SelectionEvent event) {
                 ((FormData) sash.getLayoutData()).top = new FormAttachment(0, event.y);
                 sash.getParent().layout();
@@ -439,6 +439,7 @@ public class XPathChooserHelper {
     private void addTableListeners(final VariableLabelProvider labelProvider) {
         table.addMouseListener(new MouseAdapter() {
 
+            @Override
             public void mouseDown(final MouseEvent event) {
                 if (!(event.button != 1)) {
                     final Point clickLocation = new Point(event.x, event.y);
@@ -611,7 +612,7 @@ public class XPathChooserHelper {
         XSDElement element = doc;
         // traverse downwards to model item
         for (final String name : path) {
-            for (final XSDElement e : ((XSDElement) element).getElements()) {
+            for (final XSDElement e : element.getElements()) {
                 if (e.getName().equals(name)) {
                     element = e;
                     elements.add(element);

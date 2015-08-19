@@ -1,0 +1,31 @@
+{
+    "configuration":[
+    	{
+            "key":"method",
+            "defaultValue":"Full factorial design"
+        },
+      {
+            "key":"startSample",
+            "defaultValue":"0"
+        },
+      {
+            "key":"endSample",
+            "defaultValue":"0"
+        },{
+            "key":"behaviourFailedRun",
+            "defaultValue":"Skip sample and continue"
+        },{
+            "key":"table",
+            "defaultValue":""
+        },{
+            "key":"runNumber",
+            "defaultValue":"2"
+        },{
+            "key":"seedNumber",
+            "defaultValue":"0"
+        }
+        
+        
+        
+    		]
+}

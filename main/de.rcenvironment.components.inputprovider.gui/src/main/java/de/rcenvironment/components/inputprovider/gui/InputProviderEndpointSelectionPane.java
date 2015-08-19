@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,6 +27,7 @@ import de.rcenvironment.components.inputprovider.common.InputProviderComponentCo
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
@@ -88,7 +89,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
 
         InputProviderEndpointEditDialog dialog =
             new InputProviderEndpointEditDialog(Display.getDefault().getActiveShell(),
-                Messages.newOutput, configuration, endpointType, endpointIdToManage, false,
+                EndpointActionType.ADD, configuration, endpointType, endpointIdToManage, false,
                 icon, endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
                     .getMetaDataDefinition(), metaData);
 
@@ -122,7 +123,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
 
         InputProviderEndpointEditDialog dialog =
             new InputProviderEndpointEditDialog(Display.getDefault().getActiveShell(),
-                Messages.edit, configuration, endpointType,
+                EndpointActionType.EDIT, configuration, endpointType,
                 endpointIdToManage, false, icon, endpoint.getDeclarativeEndpointDescription()
                     .getMetaDataDefinition(), newMetaData);
 

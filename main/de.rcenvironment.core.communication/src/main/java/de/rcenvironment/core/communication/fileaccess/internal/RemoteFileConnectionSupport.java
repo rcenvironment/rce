@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -64,7 +64,7 @@ public final class RemoteFileConnectionSupport {
         // try to get the remote input stream access object by getting and calling the remote input
         // stream access factory
         // service
-        ServiceReference[] factoryReferences = null;
+        ServiceReference<?>[] factoryReferences = null;
         try {
             factoryReferences = bundleContext.getAllServiceReferences(RemoteFileConnectionFactory.class.getName(), null);
         } catch (InvalidSyntaxException e) {

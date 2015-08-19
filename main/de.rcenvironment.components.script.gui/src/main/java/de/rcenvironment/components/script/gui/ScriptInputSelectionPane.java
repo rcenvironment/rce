@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -50,8 +50,9 @@ public class ScriptInputSelectionPane extends EndpointSelectionPane {
         GridData gridData = new GridData();
         gridData.horizontalSpan = 2;
         noteComposite.setLayoutData(gridData);
-        noteComposite.setLayout(new GridLayout(2, false));
+        noteComposite.setLayout(new GridLayout(1, false));
         orGroupCheckbox = new Button(noteComposite, SWT.CHECK);
+        orGroupCheckbox.setText("Execute on each new input value");
         orGroupCheckbox.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -73,7 +74,7 @@ public class ScriptInputSelectionPane extends EndpointSelectionPane {
             }
         });
         Label noteLabel = new Label(noteComposite, SWT.READ_ONLY);
-        noteLabel.setText("Execute on each new input value\n(ie inputs have an 'xor' relation instead of an 'and' relation)");
+        noteLabel.setText("(ie inputs have an 'xor' relation instead of an 'and' relation)");
 
         section.setClient(client);
         toolkit.paintBordersFor(client);

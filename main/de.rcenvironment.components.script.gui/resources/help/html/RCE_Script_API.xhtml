@@ -18,7 +18,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.close_all_outputs </td>
+                                    RCE.close_all_outputs </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramname" rowspan="1" colspan="1"></td>
                                 <td rowspan="1" colspan="1">)</td>
@@ -38,8 +38,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.close_output </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.close_output </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td class="paramname" rowspan="1" colspan="1"><em>name</em></td>
@@ -60,7 +59,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def RCE_Channel.fail </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.fail </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td class="paramname" rowspan="1" colspan="1"><em>reason</em></td>
@@ -82,7 +81,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.get_execution_count </td>
+                                    RCE.get_execution_count </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramname" rowspan="1" colspan="1"></td>
                                 <td rowspan="1" colspan="1">)</td>
@@ -103,7 +102,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.get_input_names_with_datum </td>
+                                    RCE.get_input_names_with_datum </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramname" rowspan="1" colspan="1"></td>
                                 <td rowspan="1" colspan="1">)</td>
@@ -123,8 +122,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.get_output_names </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.get_output_names </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramname" rowspan="1" colspan="1"></td>
                                 <td rowspan="1" colspan="1">)</td>
@@ -144,8 +142,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.get_state_dict </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.get_state_dict </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramname" rowspan="1" colspan="1"></td>
                                 <td rowspan="1" colspan="1">)</td>
@@ -165,8 +162,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.getallinputs </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.getallinputs </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramname" rowspan="1" colspan="1"></td>
                                 <td rowspan="1" colspan="1">)</td>
@@ -186,8 +182,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.read_input </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.read_input </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td class="paramname" rowspan="1" colspan="1"><em>name</em></td>
@@ -202,6 +197,29 @@
 </pre>
                 </div>
             </div>
+            <a class="anchor" id="ade495eda9cd7fd8ae5c07e118240a621" shape="rect"></a>
+            <div class="memitem">
+                <div class="memproto">
+                    <table class="memname">
+                        <tbody>
+                            <tr>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.read_input </td>
+                                <td rowspan="1" colspan="1">(</td>
+                                <td class="paramtype" rowspan="1" colspan="1"> </td>
+                                <td class="paramname" rowspan="1" colspan="1"><em>name</em></td>
+                                <td rowspan="1" colspan="1">, </td>
+                                <td rowspan="1" colspan="1"><i>defaultvalue</i></td>
+                                <td rowspan="1" colspan="1">)</td>
+                                <td rowspan="1" colspan="1"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="memdoc">
+                    <pre class="fragment" xml:space="preserve">Gets the value for the given input name or returns the default value if there is no input connected and the input not required
+</pre>
+                </div>
+            </div>
             <a class="anchor" id="aad233c5cbe5d29468bfde45d8f0dcb51" shape="rect"></a>
             <div class="memitem">
                 <div class="memproto">
@@ -209,7 +227,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.read_state_variable </td>
+                                    RCE.read_state_variable </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td class="paramname" rowspan="1" colspan="1"><em>name</em></td>
@@ -231,7 +249,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.read_state_variable_default </td>
+                                    RCE.read_state_variable </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td rowspan="1" colspan="1"><i>name, </i></td>
@@ -255,7 +273,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.write_not_a_value_output </td>
+                                    RCE.write_not_a_value_output </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td class="paramname" rowspan="1" colspan="1"><em>name</em></td>
@@ -276,8 +294,7 @@
                     <table class="memname">
                         <tbody>
                             <tr>
-                                <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.write_output </td>
+                                <td class="memname" rowspan="1" colspan="1">def RCE.write_output </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td rowspan="1" colspan="1"><i>name, </i></td>
@@ -299,7 +316,7 @@
                         <tbody>
                             <tr>
                                 <td class="memname" rowspan="1" colspan="1">def
-                                    RCE_Channel.write_state_variable </td>
+                                    RCE.write_state_variable </td>
                                 <td rowspan="1" colspan="1">(</td>
                                 <td class="paramtype" rowspan="1" colspan="1"> </td>
                                 <td rowspan="1" colspan="1"><i>name,</i></td>

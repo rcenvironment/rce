@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -92,6 +92,11 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
         }
         nodeIdentifierStartedExecution = wfExeCtx.getNodeIdStartedExecution();
         additionalInformation = wfExeCtx.getAdditionalInformationProvidedAtStart();
+    }
+
+    @Override
+    public int compareTo(WorkflowExecutionInformation other) {
+        return getWorkflowDescription().getName().compareToIgnoreCase(other.getWorkflowDescription().getName());
     }
 
 }

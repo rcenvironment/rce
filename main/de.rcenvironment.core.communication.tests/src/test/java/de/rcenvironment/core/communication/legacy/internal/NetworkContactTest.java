@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,7 @@ import junit.framework.TestCase;
  * @author Doreen Seider
  * @author Robert Mischke (refactoring)
  */
+@SuppressWarnings("deprecation") //This is a test for the deprecated class NetworkContact
 public class NetworkContactTest extends TestCase {
 
     /**

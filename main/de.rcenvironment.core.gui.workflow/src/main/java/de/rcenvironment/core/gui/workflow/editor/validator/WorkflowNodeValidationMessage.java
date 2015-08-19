@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -42,16 +42,24 @@ public class WorkflowNodeValidationMessage implements Serializable {
 
     private final String absoluteMessage;
 
+    private final boolean revalidateOnWorkflowStart;
+
     @Deprecated
     public WorkflowNodeValidationMessage(final String property, final String relativeMessage, final String absoluteMessage) {
         this(Type.ERROR, property, relativeMessage, absoluteMessage);
     }
 
     public WorkflowNodeValidationMessage(Type type, final String property, final String relativeMessage, final String absoluteMessage) {
+        this(type, property, relativeMessage, absoluteMessage, false);
+    }
+
+    public WorkflowNodeValidationMessage(Type type, final String property, final String relativeMessage, final String absoluteMessage,
+        boolean revalidateOnWorkflowStart) {
         this.type = type;
         this.property = property;
         this.relativeMessage = relativeMessage;
         this.absoluteMessage = absoluteMessage;
+        this.revalidateOnWorkflowStart = revalidateOnWorkflowStart;
     }
 
     public Type getType() {
@@ -68,6 +76,10 @@ public class WorkflowNodeValidationMessage implements Serializable {
 
     public String getAbsoluteMessage() {
         return absoluteMessage;
+    }    
+
+    public boolean isRevalidateOnWorkflowStart() {
+        return revalidateOnWorkflowStart;
     }
 
     @Override

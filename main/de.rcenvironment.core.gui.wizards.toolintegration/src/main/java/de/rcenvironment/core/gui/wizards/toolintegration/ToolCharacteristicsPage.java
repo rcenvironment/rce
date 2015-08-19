@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,6 +24,8 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.events.TraverseEvent;
+import org.eclipse.swt.events.TraverseListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -163,6 +165,9 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         descriptionTextArea = new Text(toolPropertiesGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
         descriptionTextArea.addModifyListener(new TextModifyListener(descriptionTextArea));
         descriptionTextArea.setData(KEY_KEYS, ToolIntegrationConstants.KEY_TOOL_DESCRIPTION);
+        descriptionTextArea.addTraverseListener(new DescriptionTraverseListener());        
+        
+        
         GridData descriptionData =
             new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
         descriptionData.heightHint = TOOL_DESCRIPTION_TEXT_HEIGHT;
@@ -238,6 +243,22 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             validate(false);
         }
     }
+    
+    /**
+     * Listener allowing to leave the description field by pressing TAB (instead of inserting a tab into the text).
+     *
+     * @author bode_br
+     */
+    
+    private class DescriptionTraverseListener implements TraverseListener {
+
+        @Override
+        public void keyTraversed(TraverseEvent e) {
+            if (e.detail == SWT.TRAVERSE_TAB_NEXT) {
+                e.doit = true;
+            }
+        }
+    }
 
     private void validate(boolean update) {
         setMessage(null, DialogPage.NONE);
@@ -254,9 +275,11 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             }
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) == null
-            || ((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)).isEmpty()
-            || (!update) && usedToolnames.contains((configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
+            || ((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)).isEmpty()) {
             setMessage(Messages.toolFilenameInvalid, DialogPage.ERROR);
+            setPageComplete(false);
+        } else if ((!update) && usedToolnames.contains((configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
+            setMessage(Messages.toolFilenameUsed, DialogPage.ERROR);
             setPageComplete(false);
         }
 

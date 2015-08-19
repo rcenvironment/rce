@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,6 +29,7 @@ import org.eclipse.swt.widgets.Text;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
@@ -47,10 +48,10 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
 
     private final Set<String> paths;
 
-    public OutputWriterEndpointEditDialog(Shell parentShell, String title,
+    public OutputWriterEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
         ComponentInstanceProperties configuration, EndpointType direction,
         String id, boolean isStatic, EndpointMetaDataDefinition metaData, Map<String, String> metadataValues, Set<String> paths) {
-        super(parentShell, title, configuration, direction, id, isStatic, metaData, metadataValues);
+        super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);
         this.paths = paths;
     }
 

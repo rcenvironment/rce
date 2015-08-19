@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -146,7 +146,7 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
             (WorkflowExecutionControllerCallback) communicationService.getService(
                 WorkflowExecutionControllerCallback.class, searchProperties, compExeCtx.getWorkflowNodeId(), bundleContext);
         ComponentExecutionController componentController =
-            new ComponentExecutionControllerImpl((ComponentExecutionContext) compExeCtx, componentExecutionEventCallback,
+            new ComponentExecutionControllerImpl(compExeCtx, componentExecutionEventCallback,
                 currentTimestampOnWorkflowNode);
 
         Dictionary<String, String> registerProperties = new Hashtable<String, String>();

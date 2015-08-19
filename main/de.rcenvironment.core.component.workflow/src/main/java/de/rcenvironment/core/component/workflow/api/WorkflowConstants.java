@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -30,7 +30,7 @@ public final class WorkflowConstants {
     public static final String NEW_WORKFLOW_NOTIFICATION_ID = "rce.component.workflow.new";
 
     /** Current workflow version number. */
-    public static final int CURRENT_WORKFLOW_VERSION_NUMBER = 3;
+    public static final int CURRENT_WORKFLOW_VERSION_NUMBER = 4;
 
     /** Initial workflow version number. */
     public static final int INITIAL_WORKFLOW_VERSION_NUMBER = 0;

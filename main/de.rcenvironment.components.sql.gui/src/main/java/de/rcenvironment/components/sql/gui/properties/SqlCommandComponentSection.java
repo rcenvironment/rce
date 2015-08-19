@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -120,6 +120,7 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
         initRunSection(toolkit, runContainer);
        
         parent.getParent().addListener(SWT.Resize,  new Listener() {
+            @Override
             public void handleEvent(Event e) {
 
                 if (parent.getParent().getSize().y < MINIMUM_HEIGHT_TEXTFIELDS){
@@ -527,7 +528,7 @@ public class SqlCommandComponentSection extends WorkflowNodePropertySection {
         public void handlePropertyChange(final String propertyName, final String newValue, final String oldValue) {
             super.handlePropertyChange(propertyName, newValue, oldValue);
             if (propertyName.equals(SqlComponentConstants.METADATA_JDBC_PROFILE_PROPERTY)) {
-                final String newJdbcProfile = (String) newValue;
+                final String newJdbcProfile = newValue;
                 for (int index = 0; index < jdbcProfileCombo.getItemCount(); ++index) {
                     final String label = jdbcProfileCombo.getItem(index);
                     if (label.equals(newJdbcProfile) || (newJdbcProfile == null && label.equals(""))) {

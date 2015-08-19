@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,7 +32,7 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 
 /**
- * 
+ * Represents a Base {@link ScrolledComposite} for a complete List of {@link TimlineComponentRows}.
  *
  * @author Hendrik Abbenhaus
  */
@@ -83,7 +83,6 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
 
     /**
      * Sets new Weights.
-     * 
      * @param weights the weights
      */
     public void setWeights(int[] weights) {
@@ -138,7 +137,7 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
 //    }
 
     /**
-     * Adds a @see Class TimeTableComponentRow to the current List.
+     * Adds a {@link TimelineComponentRow} to the current List.
      * @param row contains the row
      */
     public void addComponentRow(TimelineComponentRow row) {
@@ -165,7 +164,7 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
     }
 
     /**
-     * Delete all elements.
+     * Deletes all {@link Label} and {@link TimelineComponentCanvas} elements and clears the oldTextBuffer.
      */
     public void clear() {
         for (Control current : this.left.getChildren()) {
@@ -185,7 +184,7 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
     }
 
     /**
-     * 
+     * Sets a new visible time area and carry this over to all {@link TimelineComponentCanvas} .
      * @param startTime the current startTime
      * @param endTime the current endTime
      */
@@ -199,7 +198,7 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
     }
 
     /**
-     * Sets an Array of @see Class TimeTableComponentRows and only show them.
+     * Clears the view an sets an new {@link Array} of {@link TimelineComponentRows} to show.
      * @param rows the rows
      */
     public void setTimeTableComponentRows(TimelineComponentRow[] rows) {
@@ -238,7 +237,7 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
     }
 
     /**
-     * 
+     * Adds a {@link ResizeListener} to collection.
      * @param a a new listener
      */
     public void addResizeListener(ResizeListener a) {
@@ -246,7 +245,7 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
     }
 
     /**
-     * 
+     * Notifies all connected {@link ResizeListener}.
      */
     public void notifyResizeListener() {
         for (ResizeListener current : resizeListener) {
@@ -255,8 +254,10 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
     }
     
     /**
-     * @param color the color
+     * Setting a new background-color in each area.
+     * @param color the new background-color
      */
+    @Override
     public void setBackground(Color color){
         super.setBackground(color);
         this.left.setBackground(color);
@@ -266,9 +267,8 @@ public class TimelineComponentList extends ScrolledComposite implements ControlL
 }
 
 /**
- * 
+ * Base for notify via a Listener when resized.
  * @author Hendrik Abbenhaus
- *
  */
 interface ResizeListener {
     void resized();

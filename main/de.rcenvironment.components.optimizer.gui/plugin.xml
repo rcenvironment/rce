@@ -26,24 +26,10 @@
          </propertySection>
          
          <propertySection
-               tab="workflow.editor.tab.optimizer.Algorithm"
-               class="de.rcenvironment.components.optimizer.gui.properties.DOEAlgorithmSection"
-               id="workflow.editor.tab.Properties.Section.DOEScript"
-               filter="de.rcenvironment.components.optimizer.gui.properties.DOEComponentFilter"
-               enablesFor="1">
-         </propertySection>
-         <propertySection
                tab="workflow.editor.tab.optimizer.InputsOutputs"
                class="de.rcenvironment.components.optimizer.gui.properties.OptimizerEndpointPropertySection"
                id="workflow.editor.tab.Properties.Section.InputsOutputs"
                filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerCommonComponentFilter"
-               enablesFor="1">
-         </propertySection>
-              <propertySection
-               tab="workflow.editor.tab.optimizer.InputsOutputs"
-               class="de.rcenvironment.components.optimizer.gui.properties.OptimizerEndpointPropertySection"
-               id="workflow.editor.tab.Properties.Section.InputsOutputs"
-               filter="de.rcenvironment.components.optimizer.gui.properties.DOEComponentFilter"
                enablesFor="1">
          </propertySection>
            <propertySection

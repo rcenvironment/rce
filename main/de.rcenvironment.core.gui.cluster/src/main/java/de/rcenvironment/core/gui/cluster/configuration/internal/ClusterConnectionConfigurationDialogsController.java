@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -141,6 +141,7 @@ public class ClusterConnectionConfigurationDialogsController {
     private String openPasswordInputDialog() {
         String password = null;
         InputDialog dialog = new InputDialog(parent.getShell(), Messages.passwordDialogTitle, Messages.passwordDialogMessage, null, null) {
+            @Override
             protected int getInputTextStyle() {
                 return SWT.PASSWORD;
             }

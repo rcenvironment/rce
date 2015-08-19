@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -52,13 +52,13 @@ public interface WorkflowNodeValidatorsRegistry {
     void initialize();
 
     /**
-     * Determines the {@link WorkflowNodeValidator}s for the specified {@link WorkflowNode} and
-     * returns instances thereof.
+     * Determines the {@link WorkflowNodeValidator}s for the specified {@link WorkflowNode} and returns instances thereof.
      * 
      * @param workflowNode the {@link WorkflowNode} to get the {@link WorkflowNodeValidator}s for
+     * @param onWorkflowStart identifies if the workflow is executed
      * @return the {@link WorkflowNodeValidator}s for the specified {@link WorkflowNode}
      */
-    List<WorkflowNodeValidator> getValidatorsForWorkflowNode(WorkflowNode workflowNode);
+    List<WorkflowNodeValidator> getValidatorsForWorkflowNode(WorkflowNode workflowNode, boolean onWorkflowStart);
 
     /**
      * Factory method to create a {@link WorkflowNodeValidatorsRegistry}.

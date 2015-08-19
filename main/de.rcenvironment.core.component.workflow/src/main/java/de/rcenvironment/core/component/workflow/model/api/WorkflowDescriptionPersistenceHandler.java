@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.component.workflow.model.api;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -16,6 +17,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -43,6 +45,7 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel.AlignmentType;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -51,9 +54,14 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Writes and reads {@link WorkflowDescription}s to and from {@link java.io.File}s.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
+ * @author Marc Stammerjohann
  */
 public class WorkflowDescriptionPersistenceHandler {
 
+    /** Field name. */
+    public static final String COORDINATES = "coordinates";
+    
     /** Field name. */
     public static final String COLOR_RGB_TEXT = "colorText";
 
@@ -61,17 +69,29 @@ public class WorkflowDescriptionPersistenceHandler {
     public static final String COLOR_RGB_BACKGROUND = "colorBackground";
 
     /** Field name. */
+    public static final String ALIGNMENT_TYPE = "alignmentType";
+
+    /** Field name. */
     public static final String ALPHA = "alpha";
 
     /** Field name. */
-    public static final String LABEL = "label";
+    public static final String BORDER = "border";
+
+    /** Field name. */
+    public static final String TEXT_SIZE = "textSize";
+
+    /** Field name. */
+    public static final String LABELS = "labels";
 
     /** Field name. */
     public static final String SIZE = "size";
 
     /** Field name. */
     public static final String TEXT = "text";
-
+    
+    /** Field name. */
+    public static final String BENDPOINTS = "bendpoints";
+    
     /** Field name. */
     public static final String INPUT = "input";
 
@@ -125,7 +145,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     /** Field name. */
     public static final String LOCATION = "location";
-    
+
     /** Field name. */
     public static final String ACTIVE = "active";
 
@@ -155,6 +175,12 @@ public class WorkflowDescriptionPersistenceHandler {
 
     /** Field name. */
     public static final String ADDITIONAL_INFORMATION = "additionalInformation";
+    
+    /** Field name. */
+    public static final String BENDPOINT_SEPARATOR = ",";
+
+    /** Field name. */
+    public static final String BENDPOINT_COORDINATE_SEPARATOR = ":";
 
     protected static DistributedComponentKnowledgeService componentKnowledgeService = ServiceUtils
         .createFailingServiceProxy(DistributedComponentKnowledgeService.class);
@@ -222,35 +248,67 @@ public class WorkflowDescriptionPersistenceHandler {
                 writeConnection(g, connection);
             }
             g.writeEndArray(); // 'connections'
+            
+            Map<String, String> connectionBendpointMapping = calculateUniqueBendpointList(wd.getConnections());
+            if (!connectionBendpointMapping.isEmpty()) {
+                ByteArrayOutputStream bendpointsStream = new ByteArrayOutputStream();
+                JsonGenerator bendpointsGenerator = f.createJsonGenerator(bendpointsStream, JsonEncoding.UTF8);
+                bendpointsGenerator.writeStartArray();
+                writeBendpoints(bendpointsGenerator, connectionBendpointMapping);
+                bendpointsGenerator.writeEndArray();
+                bendpointsGenerator.close();
+                g.writeStringField(BENDPOINTS, bendpointsStream.toString());
+            }
         }
         if (wd.getWorkflowLabels().size() > 0) {
-            g.writeArrayFieldStart(LABEL);
-            for (WorkflowLabel label : wd.getWorkflowLabels()) {
-                g.writeStartObject();
-                g.writeStringField(IDENTIFIER, label.getIdentifier());
-                g.writeStringField(TEXT, label.getText());
-                g.writeStringField(LOCATION,
-                    StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getX()), String.valueOf(label.getY()) }));
-                g.writeStringField(SIZE,
-                    StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getSize().width),
-                        String.valueOf(label.getSize().height) }));
-                g.writeStringField(ALPHA, String.valueOf(label.getAlpha()));
-                g.writeStringField(COLOR_RGB_TEXT,
-                    StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorText()[0]),
-                        String.valueOf(label.getColorText()[1]), String.valueOf(label.getColorText()[2]) }));
-                g.writeStringField(COLOR_RGB_BACKGROUND,
-                    StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorBackground()[0]),
-                        String.valueOf(label.getColorBackground()[1]), String.valueOf(label.getColorBackground()[2]) }));
 
-                g.writeEndObject();
+            ByteArrayOutputStream labelsStream = new ByteArrayOutputStream();
+            JsonGenerator labelsGenerator = f.createJsonGenerator(labelsStream, JsonEncoding.UTF8);
+            labelsGenerator.writeStartArray();
+
+            for (WorkflowLabel label : wd.getWorkflowLabels()) {
+                writeLabel(labelsGenerator, label);
             }
-            g.writeEndArray();
+            labelsGenerator.writeEndArray();
+            labelsGenerator.close();
+            g.writeStringField(LABELS, labelsStream.toString());
 
         }
         g.writeEndObject();
         g.close();
 
         return outputStream;
+    }
+
+    /**
+     * 
+     * Writes the given {@link WorkflowLabel} to the {@link JsonGenerator}.
+     * 
+     * @param g {@link JsonGenerator} - write to JSON
+     * @param label The {@link WorkflowLabel} to write
+     * @throws IOException if writing to {@link java.io.File} failed for some reason
+     * @throws JsonGenerationException if writing to {@link JsonGenerator} failed for some reason
+     */
+    public void writeLabel(JsonGenerator g, WorkflowLabel label) throws IOException, JsonGenerationException {
+        g.writeStartObject();
+        g.writeStringField(IDENTIFIER, label.getIdentifier());
+        g.writeStringField(TEXT, label.getText());
+        g.writeStringField(LOCATION,
+            StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getX()), String.valueOf(label.getY()) }));
+        g.writeStringField(SIZE,
+            StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getSize().width),
+                String.valueOf(label.getSize().height) }));
+        g.writeStringField(ALPHA, String.valueOf(label.getAlphaDisplay()));
+        g.writeStringField(COLOR_RGB_TEXT,
+            StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorText()[0]),
+                String.valueOf(label.getColorText()[1]), String.valueOf(label.getColorText()[2]) }));
+        g.writeStringField(COLOR_RGB_BACKGROUND,
+            StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorBackground()[0]),
+                String.valueOf(label.getColorBackground()[1]), String.valueOf(label.getColorBackground()[2]) }));
+        g.writeStringField(ALIGNMENT_TYPE, label.getAlignmentType().name());
+        g.writeStringField(BORDER, String.valueOf(label.hasBorder()));
+        g.writeStringField(TEXT_SIZE, String.valueOf(label.getTextSize()));
+        g.writeEndObject();
     }
 
     /**
@@ -382,7 +440,7 @@ public class WorkflowDescriptionPersistenceHandler {
                 break;
             }
         }
-
+        jp.close();
         return workflowVersion;
     }
 
@@ -423,7 +481,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         jp.nextToken(); // will return JsonToken.START_OBJECT
         jp.nextToken();
-
+        
         // read required field 'identifier'
         if (IDENTIFIER.equals(jp.getCurrentName())) {
             jp.nextToken(); // move to value
@@ -431,6 +489,7 @@ public class WorkflowDescriptionPersistenceHandler {
             wd.setWorkflowVersion(WorkflowConstants.INITIAL_WORKFLOW_VERSION_NUMBER);
             wd.setControllerNode(platformService.getLocalNodeId());
         } else {
+            jp.close();
             throw new ParseException("No identifier found.", jp.getCurrentLocation().getLineNr());
         }
 
@@ -438,7 +497,6 @@ public class WorkflowDescriptionPersistenceHandler {
         while (jp.nextToken() != JsonToken.END_OBJECT) {
             String fieldname = jp.getCurrentName();
             jp.nextToken(); // move to value, or START_OBJECT/START_ARRAY
-
             if (WORKFLOW_VERSION.equals(jp.getCurrentName())) {
                 wd.setWorkflowVersion(Integer.valueOf(jp.getText()));
             } else if (NAME.equals(jp.getCurrentName())) {
@@ -453,14 +511,111 @@ public class WorkflowDescriptionPersistenceHandler {
             } else if (CONNECTIONS.equals(fieldname)) { // contains an array
                 Set<Connection> connections = parseConnections(jp, nodes);
                 wd.addConnections(new ArrayList<Connection>(connections));
-            } else if (LABEL.equals(fieldname)) { // contains an array
-                Set<WorkflowLabel> labels = parseLabel(jp);
-                for (WorkflowLabel label : labels) {
-                    wd.addWorkflowLabel(label);
+            } else if (BENDPOINTS.equals(fieldname)) { // contains an array
+                parseBendpointsEntry(f, jp, nodes, wd);
+            } else if (LABELS.equals(fieldname)) { // contains an text or an array
+                parseLabelsEntry(f, jp, wd);
+            } else {
+                jp.nextToken();
+            }
+        }
+        jp.close();
+        return wd;
+    }
+    
+    // This method supports two versions of parsing bendpoints: as json string and as json array object.
+    // this is due to problems with the workflow parser in version 6.1.0 (adding new json object
+    // does not work properly)
+    private void parseBendpointsEntry(JsonFactory f, JsonParser jp, Map<String, WorkflowNode> nodes, WorkflowDescription wd)
+        throws IOException, ParseException, JsonParseException {
+        if (jp.isExpectedStartArrayToken()) {
+            parseBendpoints(jp, nodes, wd);
+        } else {
+            JsonParser bendpointsParser = f.createJsonParser(new ByteArrayInputStream(jp.getText().getBytes()));
+            bendpointsParser.nextToken();
+            parseBendpoints(bendpointsParser, nodes, wd);
+            bendpointsParser.close();
+        }
+    }
+
+    private void parseBendpoints(JsonParser jp, Map<String, WorkflowNode> nodes, WorkflowDescription wd)
+        throws JsonParseException, NumberFormatException, IOException, ParseException {
+        while (jp.nextToken() != JsonToken.END_ARRAY) {
+            while (jp.nextToken() != JsonToken.END_OBJECT) {
+                
+                WorkflowNode output = null;
+                WorkflowNode input = null;
+                List<Location> bendpoints = new ArrayList<>();
+                String bendpointListString = null;
+                
+                String bendpointField = jp.getCurrentName();
+                jp.nextToken(); // move to value
+                if (SOURCE.equals(bendpointField)) {
+                    output = nodes.get(jp.getText());
+                } else {
+                    throw new ParseException("No source definition.", jp.getCurrentLocation().getLineNr());
+                }
+                jp.nextToken();
+                bendpointField = jp.getCurrentName();
+                jp.nextToken(); // move to value
+                if (TARGET.equals(bendpointField)) {
+                    input = nodes.get(jp.getText());
+                } else {
+                    throw new ParseException("No target definition.", jp.getCurrentLocation().getLineNr());
+                }
+                jp.nextToken();
+                bendpointField = jp.getCurrentName();
+                jp.nextToken(); // move to value
+                if (COORDINATES.equals(bendpointField)) {
+                    bendpointListString = jp.getText();
+                } else {
+                    throw new ParseException("No input definition.", jp.getCurrentLocation().getLineNr());
+                }
+                
+                if (bendpointListString != null) {
+                    for (String bendpointString : bendpointListString.split(BENDPOINT_SEPARATOR)){
+                        Location bendpoint = new Location(Integer.parseInt(bendpointString.split(BENDPOINT_COORDINATE_SEPARATOR)[0])
+                            , Integer.parseInt(bendpointString.split(BENDPOINT_COORDINATE_SEPARATOR)[1]));
+                        bendpoints.add(bendpoint);
+                    }
+                    
+                    for (Connection connection : wd.getConnections()){
+                        if ((connection.getTargetNode().getIdentifier().equals(input.getIdentifier()) 
+                            && connection.getSourceNode().getIdentifier().equals(output.getIdentifier()))){
+                            connection.setBendpoints(bendpoints);
+                        } else if (connection.getTargetNode().getIdentifier().equals(output.getIdentifier()) 
+                            && connection.getSourceNode().getIdentifier().equals(input.getIdentifier())){
+                            List<Location> invertedBendpointsToAdd = new ArrayList<>();
+                            for (Location l : bendpoints){
+                                invertedBendpointsToAdd.add(0, l);
+                            }
+                            connection.setBendpoints(invertedBendpointsToAdd);
+                        }
+                    }
                 }
             }
         }
-        return wd;
+    }
+
+    // This method supports two versions of parsing labels: as json string and as json array object.
+    // this is due to problems with the workflow parser in version 6.1.0 (adding new json object
+    // does not work properly)
+    private void parseLabelsEntry(JsonFactory f, JsonParser jp, WorkflowDescription wd) throws IOException, ParseException,
+        JsonParseException {
+        if (jp.isExpectedStartArrayToken()) {
+            Set<WorkflowLabel> labels = parseLabels(jp);
+            for (WorkflowLabel label : labels) {
+                wd.addWorkflowLabel(label);
+            }
+        } else {
+            JsonParser labelParser = f.createJsonParser(new ByteArrayInputStream(jp.getText().getBytes()));
+            labelParser.nextToken();
+            Set<WorkflowLabel> labels = parseLabels(labelParser);
+            for (WorkflowLabel label : labels) {
+                wd.addWorkflowLabel(label);
+            }
+            labelParser.close();
+        }
     }
 
     private void writeConfiguation(JsonGenerator g, WorkflowNode node) throws IOException {
@@ -560,9 +715,9 @@ public class WorkflowDescriptionPersistenceHandler {
                 jp.nextToken();
                 nodeField = jp.getCurrentName();
                 jp.nextToken();
-                
+
                 boolean active = true;
-                
+
                 if (ACTIVE.equals(nodeField)) {
                     active = Boolean.valueOf(jp.getText());
                     jp.nextToken();
@@ -693,7 +848,7 @@ public class WorkflowDescriptionPersistenceHandler {
                 desc = new EndpointDescription(endpointDescsManager.getDynamicEndpointDefinition(dynamicEndpointId),
                     endpointDescsManager.getManagedEndpointType(), id);
                 desc.setName(name);
-                if (dynamicEndpointId.equals("null")) {
+                if (dynamicEndpointId == null || dynamicEndpointId.equals("null")) {
                     desc.setDynamicEndpointIdentifier(null);
                 } else {
                     desc.setDynamicEndpointIdentifier(dynamicEndpointId);
@@ -856,8 +1011,17 @@ public class WorkflowDescriptionPersistenceHandler {
         return connections;
     }
 
-    private Set<WorkflowLabel> parseLabel(JsonParser jp) throws JsonParseException, IOException, ParseException {
-        Set<WorkflowLabel> labels = new HashSet<WorkflowLabel>();
+    /**
+     * 
+     * Pars {@link JsonParser} to a set of {@link WorkflowLabel}s.
+     * 
+     * @param jp {@link JsonParser} - parse JSON
+     * @return Set of {@link WorkflowLabel}s
+     * @throws IOException if reading from {@link java.io.File} failed for some reason
+     * @throws ParseException if parsing the {@link java.io.File} failed for some reason
+     */
+    public Set<WorkflowLabel> parseLabels(JsonParser jp) throws IOException, ParseException {
+        Set<WorkflowLabel> labels = new LinkedHashSet<WorkflowLabel>();
         while (jp.nextToken() != JsonToken.END_ARRAY) {
             WorkflowLabel label = new WorkflowLabel("");
             while (jp.nextToken() != JsonToken.END_OBJECT) {
@@ -893,10 +1057,82 @@ public class WorkflowDescriptionPersistenceHandler {
                         new int[] { Integer.parseInt(colorString[0]), Integer.parseInt(colorString[1]), Integer.parseInt(colorString[2]) };
                     label.setColorBackground(color);
                 }
+                if (ALIGNMENT_TYPE.equals(name)) {
+                    AlignmentType alignmentType = AlignmentType.valueOf(value);
+                    label.setAlignmentType(alignmentType);
+                }
+                if (BORDER.equals(name)) {
+                    label.setHasBorder(Boolean.valueOf(value));
+                }
+                if (TEXT_SIZE.equals(name)) {
+                    label.setTextSize(Integer.valueOf(value));
+                }
+
             }
             labels.add(label);
         }
         return labels;
+    }
+    
+    /**
+     * 
+     * Writes the given bendpoints to the {@link JsonGenerator}.
+     * 
+     * @param g {@link JsonGenerator} - write to JSON
+     * @param connectionBendpointMapping The mapping between connection and bendpoint to write
+     * @throws IOException if writing to {@link java.io.File} failed for some reason
+     * @throws JsonGenerationException if writing to {@link JsonGenerator} failed for some reason
+     */
+    public void writeBendpoints(JsonGenerator g, Map<String, String> connectionBendpointMapping) 
+        throws JsonGenerationException, IOException{
+        for (String key : connectionBendpointMapping.keySet()) {
+            g.writeStartObject();
+            g.writeStringField(SOURCE, key.split(BENDPOINT_COORDINATE_SEPARATOR)[0]);
+            g.writeStringField(TARGET, key.split(BENDPOINT_COORDINATE_SEPARATOR)[1]);
+            g.writeStringField(COORDINATES, connectionBendpointMapping.get(key));
+            g.writeEndObject();
+        }
+    }
+
+    /**
+     * Creates a map containing the string "source:target" as key and a string representation of the contained bendpoints as value.
+     * 
+     * @param connections The connections to be considered
+     * @return A map with source+target as key and the list of bendpoints as string as value
+     */
+    public Map<String, String> calculateUniqueBendpointList(List<Connection> connections) {
+        Map<String, String> connectionBendpointMapping = new HashMap<>();
+        for (Connection c : connections) {
+            String sourceId = c.getSourceNode().getIdentifier();
+            String targetId = c.getTargetNode().getIdentifier();
+            List<Location> bendpoints = c.getBendpoints();
+            if (!bendpoints.isEmpty()) {
+                String bendpointString = parseListOfBendpointsToString(bendpoints);
+                // note that for sake of simplicity the same separator as for bendpoints is used here
+                String connectionString = sourceId + BENDPOINT_COORDINATE_SEPARATOR + targetId;
+                String inverseConnectionString = targetId + BENDPOINT_COORDINATE_SEPARATOR + sourceId;
+                // if not already existent - add it
+                if (!connectionBendpointMapping.keySet().contains(connectionString)
+                    && !connectionBendpointMapping.keySet().contains(inverseConnectionString)) {
+                    connectionBendpointMapping.put(connectionString, bendpointString);
+                }
+            }
+        }
+        return connectionBendpointMapping;
+    }
+    
+    private String parseListOfBendpointsToString(List<Location> locations) {
+        String assembledBendpointString = "";
+        for (Location location : locations) {
+            assembledBendpointString += location.x;
+            assembledBendpointString += BENDPOINT_COORDINATE_SEPARATOR;
+            assembledBendpointString += location.y;
+            assembledBendpointString += BENDPOINT_SEPARATOR;
+        }
+        // remove last comma
+        assembledBendpointString = assembledBendpointString.substring(0, assembledBendpointString.length() - 1);
+
+        return assembledBendpointString;
     }
 
 }

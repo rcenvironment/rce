@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.commands">
+          <command
+            id="de.rcenvironment.core.gui.configuration.configurationFile"
+            name="configurationFile">
+	      </command>
+	      <command
+	            id="de.rcenvironment.core.gui.configuration.configurationInformation"
+	            name="configurationInformation">
+	      </command>
+   </extension>
+   <extension
+         point="org.eclipse.ui.menus">
+           <menuContribution
+            locationURI="menu:help?before=de.rcenvironment.core.gui.configuration.configurationInformation">
+            <command
+               commandId="de.rcenvironment.core.gui.configuration.configurationFile"
+               icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigFile.png"
+               label="Open Configuration File"
+               style="push">
+            </command>
+	      </menuContribution>
+	      <menuContribution
+	            locationURI="menu:help?before=about">
+	            <command
+	               commandId="de.rcenvironment.core.gui.configuration.configurationInformation"
+	               icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigInformation.gif"
+	               label="Open Configuration Information"
+	               style="push">
+	            </command>
+	      </menuContribution>
+	      <menuContribution
+	            allPopups="false"
+	            locationURI="menu:help?after=de.rcenvironment.core.gui.configuration.configurationInformation">
+	      <separator name="separator" visible="true" />
+	      </menuContribution>
+	      
+	       <menuContribution
+            locationURI="toolbar:org.eclipse.ui.main.toolbar">
+         <toolbar
+               id="de.rcenvironment.core.gui.configuration.toolbar">
+            <separator name="separatorConfig" visible="true" />
+            <command
+               commandId="de.rcenvironment.core.gui.configuration.configurationFile"
+               icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigFile.png"
+               label="Open Configuration File"
+               style="push">
+       		</command>
+       		<command
+               commandId="de.rcenvironment.core.gui.configuration.configurationInformation"
+               icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigInformation.gif"
+               label="Open Configuration Information"
+               style="push">
+       		</command>
+         </toolbar>
+      </menuContribution>
+   </extension>
+   
+   
+   <extension
+         point="org.eclipse.ui.handlers">
+            <handler
+            class="de.rcenvironment.core.gui.configuration.handlers.OpenConfigurationFileHandler"
+            commandId="de.rcenvironment.core.gui.configuration.configurationFile">
+	      </handler>
+	      <handler
+	            class="de.rcenvironment.core.gui.configuration.handlers.OpenConfigurationInformationDialogHandler"
+	            commandId="de.rcenvironment.core.gui.configuration.configurationInformation">
+	      </handler>
+   </extension>
+   
+
+
+   
+</plugin>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -201,7 +201,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
         // try to get the authorization store service
         String protocolFilter = "(" + AuthorizationStore.STORE + "=" + store + ")";
 
-        ServiceReference[] storeReferences = null;
+        ServiceReference<?>[] storeReferences = null;
         try {
             storeReferences = bundleContext.getAllServiceReferences(AuthorizationStore.class.getName(), protocolFilter);
         } catch (InvalidSyntaxException e) {

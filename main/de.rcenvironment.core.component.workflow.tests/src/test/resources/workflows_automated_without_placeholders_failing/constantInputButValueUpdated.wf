@@ -2,7 +2,6 @@
   "identifier" : "1bddadb7-7a08-4405-8403-626a1944e8fe",
   "workflowVersion" : "3",
   "name" : "not required_2014-11-22_22:43:47_09",
-  "platform" : "f5151e6266f649199a22f548d9906e18",
   "nodes" : [ {
     "identifier" : "b73e3aa9-7b94-42ff-a17a-7d6bdf26e5b6",
     "name" : "Constant",

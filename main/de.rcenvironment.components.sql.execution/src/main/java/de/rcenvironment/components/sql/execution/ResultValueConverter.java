@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,6 +27,8 @@ import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
  *
  * @author Christian Weiss
  */
+@SuppressWarnings("deprecation")
+//This is a legacy class which will not be adapted to the new Data Types. Thus, the deprecation warnings are suppressed here.
 /* default */ class ResultValueConverter {
     
     protected ResultValueConverter() {

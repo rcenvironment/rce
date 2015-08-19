@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -105,7 +105,7 @@ public class EncrypterComponent extends DefaultComponent {
                         // read a file to a string using FileUtils
                         textToEncrypt += FileUtils.readFileToString(incFile) + "\n";
                     } catch (IOException e) {
-                        LOG.error(e.getStackTrace());
+                        LOG.error(e);
                     }
                 }
             }
@@ -152,7 +152,7 @@ public class EncrypterComponent extends DefaultComponent {
                 TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(workingDirectory);
             }
         } catch (IOException e) {
-            LOG.error(e.getStackTrace());
+            LOG.error(e);
         }
     }
 

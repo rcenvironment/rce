@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -39,7 +39,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 final class TargetNodeEditingSupport extends EditingSupport {
 
     private final WorkflowExecutionConfigurationHelper helper;
-    
+
     private final int column;
 
     private final ColumnViewer viewer;
@@ -48,10 +48,10 @@ final class TargetNodeEditingSupport extends EditingSupport {
 
     /** Backing {@link NodeIdentifier}s sorted as the are displayed in the combo box. */
     private final Map<String, List<NodeIdentifier>> nodes = new HashMap<String, List<NodeIdentifier>>();
-    
-    private DistributedComponentKnowledge compKnowledge;
-    
-    private Map<String, Map<NodeIdentifier, Integer>> matchingNodeInfo = new HashMap<String, Map<NodeIdentifier, Integer>>();
+
+    private final DistributedComponentKnowledge compKnowledge;
+
+    private final Map<String, Map<NodeIdentifier, Integer>> matchingNodeInfo = new HashMap<String, Map<NodeIdentifier, Integer>>();
 
     public TargetNodeEditingSupport(final WorkflowExecutionConfigurationHelper helper, final NodeIdentifier localNode,
         final ColumnViewer viewer, final int column) {
@@ -60,7 +60,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
         this.column = column;
         this.viewer = viewer;
         this.localNode = localNode;
-        
+
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class).getCurrentComponentKnowledge();
     }
@@ -75,15 +75,15 @@ final class TargetNodeEditingSupport extends EditingSupport {
         if (!(element instanceof WorkflowNode)) {
             return null;
         }
-        ComboBoxCellEditor editor =  new ComboBoxCellEditor(((TableViewer) viewer).getTable(), getValues((WorkflowNode) element)
+        ComboBoxCellEditor editor = new ComboBoxCellEditor(((TableViewer) viewer).getTable(), getValues((WorkflowNode) element)
             .toArray(new String[] {}));
         return editor;
     }
-    
+
     protected boolean isNodeExactMatchRegardingComponentVersion(WorkflowNode node) {
-        return isNodeExactMatchRegardingComponentVersion(node, ((WorkflowNode) node).getComponentDescription().getNode());
+        return isNodeExactMatchRegardingComponentVersion(node, node.getComponentDescription().getNode());
     }
-    
+
     protected boolean isNodeExactMatchRegardingComponentVersion(WorkflowNode wfNode, NodeIdentifier node) {
         if (node == null) {
             node = localNode;
@@ -105,19 +105,19 @@ final class TargetNodeEditingSupport extends EditingSupport {
      */
     @Override
     protected Object getValue(Object element) {
-        
+
         Integer result = null;
 
         if (!(element instanceof WorkflowNode) || column != 1) {
             return result;
         }
-        
+
         NodeIdentifier node = ((WorkflowNode) element).getComponentDescription().getNode();
         if (isNodeExactMatchRegardingComponentVersion((WorkflowNode) element)) {
             if (node.equals(localNode)) {
                 result = 0;
             } else {
-                result = nodes.get(((WorkflowNode) element).getIdentifier()).indexOf(node);                    
+                result = nodes.get(((WorkflowNode) element).getIdentifier()).indexOf(node);
             }
         } else {
             for (NodeIdentifier p : nodes.get(((WorkflowNode) element).getIdentifier())) {
@@ -150,7 +150,9 @@ final class TargetNodeEditingSupport extends EditingSupport {
                         nodes.get(((WorkflowNode) element).getIdentifier()).get(intValue)),
                     nodes.get(((WorkflowNode) element).getIdentifier()).get(intValue));
             }
-            ((WorkflowNode) element).getComponentDescription().setComponentInstallationAndUpdateConfiguration(installation);
+            if (installation != null) {
+                ((WorkflowNode) element).getComponentDescription().setComponentInstallationAndUpdateConfiguration(installation);
+            }
         }
     }
 
@@ -169,16 +171,16 @@ final class TargetNodeEditingSupport extends EditingSupport {
             nodes.get(wfNode.getIdentifier()).clear();
         }
         matchingNodeInfo.put(wfNode.getIdentifier(), helper.getTargetPlatformsForComponent(wfNode.getComponentDescription()));
-        
-        
+
         List<NodeIdentifier> sortedTargetNodes = new ArrayList<NodeIdentifier>(matchingNodeInfo.get(wfNode.getIdentifier()).keySet());
-        
+
         helper.sortNodes(sortedTargetNodes);
-        
+
         List<String> nodeValues = new ArrayList<String>(nodes.size());
         // add the *local* option as the topmost one, if the local node supports the component
         if (sortedTargetNodes.contains(localNode)) {
-            nodeValues.add(enhanceNodeNameWithVersionInformation(wfNode, Messages.localPlatformSelectionTitle, localNode));
+            nodeValues.add(enhanceNodeNameWithVersionInformation(wfNode, localNode.getAssociatedDisplayName() + " "
+                + Messages.localPlatformSelectionTitle, localNode));
             nodes.get(wfNode.getIdentifier()).add(null);
         }
         // add all supporting nodes to the list of choices
@@ -193,10 +195,10 @@ final class TargetNodeEditingSupport extends EditingSupport {
                 nodes.get(wfNode.getIdentifier()).add(n);
             }
         }
-        
+
         return nodeValues;
     }
-    
+
     private String enhanceNodeNameWithVersionInformation(WorkflowNode wfNode, String nodeName, NodeIdentifier node) {
         if (matchingNodeInfo.get(wfNode.getIdentifier()).get(node).equals(ComponentUtils.LOWER_COMPONENT_VERSION)) {
             nodeName = nodeName + " " + Messages.older;

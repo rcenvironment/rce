@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,14 @@
 
 package de.rcenvironment.core.start.gui.internal;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.IWorkbenchWindow;
@@ -17,12 +25,16 @@ import org.eclipse.ui.application.IWorkbenchWindowConfigurer;
 import org.eclipse.ui.application.WorkbenchAdvisor;
 import org.eclipse.ui.application.WorkbenchWindowAdvisor;
 import org.eclipse.ui.ide.IDE;
+import org.eclipse.ui.internal.WorkbenchPlugin;
+import org.eclipse.ui.internal.dialogs.WorkbenchWizardElement;
+import org.eclipse.ui.internal.wizards.AbstractExtensionWizardRegistry;
 import org.eclipse.ui.navigator.resources.ProjectExplorer;
+import org.eclipse.ui.wizards.IWizardCategory;
+import org.eclipse.ui.wizards.IWizardDescriptor;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.gui.utils.incubator.ContextMenuItemRemover;
-import de.rcenvironment.core.start.common.Platform;
-import de.rcenvironment.core.start.common.validation.PlatformValidationManager;
+import de.rcenvironment.core.start.Application;
 
 /**
  * This class advises the creation of the workbench of the {@link Application}.
@@ -30,6 +42,8 @@ import de.rcenvironment.core.start.common.validation.PlatformValidationManager;
  * @author Christian Weiss
  */
 public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
+
+    private static final Log LOGGER = LogFactory.getLog(ApplicationWorkbenchAdvisor.class);
 
     private static ConfigurationService configService;
 
@@ -66,12 +80,6 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
     @Override
     public void preStartup() {
         super.preStartup();
-        // validate the platform and exit if not valid
-        if (!(new PlatformValidationManager()).validate(false)) {
-            Platform.shutdown();
-            // TODO use a shutdown solution that does not cause a meaningless stacktrace - misc_ro, April 2014
-            throw new RuntimeException("RCE startup validation failed");
-        }
         // required to be able to use the Resource view
         IDE.registerAdapters();
     }
@@ -97,5 +105,42 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
 
         // remove unwanted menu entries from project explorer's context menu
         ContextMenuItemRemover.removeUnwantedMenuEntries(view.getCommonViewer().getControl());
+
+        removeUnwantedNewWizards();
+
     }
+
+    private void removeUnwantedNewWizards() {
+
+        final Properties unwanted = new Properties();
+        try {
+            unwanted.load(ApplicationActionBarAdvisor.class.getResourceAsStream("unwanted.properties"));
+        } catch (IOException e) {
+            LOGGER.error("Failed to remove unwanted elements from UI:", e);
+        }
+
+        // remove unwanted action sets
+        final String unwantedNewWizardIdsProperty = unwanted.getProperty("unwantedNewWizards");
+        if (unwantedNewWizardIdsProperty != null && !unwantedNewWizardIdsProperty.trim().isEmpty()) {
+            List<String> unwantedNewWizardIds = Arrays.asList(unwantedNewWizardIdsProperty.split(","));
+            IWizardCategory[] categories = WorkbenchPlugin.getDefault().getNewWizardRegistry().getRootCategory().getCategories();
+            for (IWizardDescriptor wizard : getAllWizards(categories)) {
+                WorkbenchWizardElement wizardElement = (WorkbenchWizardElement) wizard;
+                if (unwantedNewWizardIds.contains(wizardElement.getId())) {
+                    ((AbstractExtensionWizardRegistry) WorkbenchPlugin.getDefault().getNewWizardRegistry()).
+                    removeExtension(wizardElement.getConfigurationElement().getDeclaringExtension(), new Object[] { wizardElement });
+                }
+            }
+        }
+    }
+
+    private IWizardDescriptor[] getAllWizards(IWizardCategory... categories) {
+        List<IWizardDescriptor> results = new ArrayList<IWizardDescriptor>();
+        for (IWizardCategory wizardCategory : categories) {
+            results.addAll(Arrays.asList(wizardCategory.getWizards()));
+            results.addAll(Arrays.asList(getAllWizards(wizardCategory.getCategories())));
+        }
+        return results.toArray(new IWizardDescriptor[0]);
+    }
+
 }

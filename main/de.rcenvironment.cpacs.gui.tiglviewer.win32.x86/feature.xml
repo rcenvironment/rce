@@ -2,16 +2,19 @@
 <feature
       id="de.rcenvironment.cpacs.gui.tiglviewer"
       label="RCE Tiglviewer Bundle"
-      version="6.0.3.qualifier"
+      version="6.0.0.qualifier"
       provider-name="DLR">
 
-   <description url="http://software.dlr.de/p/chameleon">
+   <description url="http://www.rcenvironment.de">
       This is the Chameleon TiglViewer feature.
    </description>
 
-   <copyright url="http://software.dlr.de/p/chameleon">
-      Contribution
-Chameleon is open source (EPL) and every contribution is welcome. The future features listed in the release schedule are just a few of them we can imagine. Please feel free to contact us.
+   <copyright url="http://www.rcenvironment.de">
+      Copyright (C) 2006-2015 DLR, Germany.
+All rights reserved. This program and the accompanying materials
+are made available under the terms of the Eclipse Public License
+v1.0 which accompanies this distribution, and is available at
+http://www.eclipse.org/legal/epl-v10.html
    </copyright>
 
    <license url="http://www.eclipse.org/legal/epl-v10.html">
@@ -104,7 +107,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
    </license>
 
    <url>
-      <discovery label="Chameleon" url="http://software.dlr.de/p/chameleon"/>
+      <discovery label="RCE (Remote Component Environment)" url="http://www.rcenvironment.de"/>
       <discovery label="Eclipse" url="http://www.eclipse.org"/>
    </url>
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,11 @@
 
 package de.rcenvironment.core.component.execution.internal;
 
+import java.lang.reflect.UndeclaredThrowableException;
 import java.util.List;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.api.BatchedConsoleRowsProcessor;
 import de.rcenvironment.core.component.api.SingleConsoleRowsProcessor;
@@ -16,7 +20,8 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
 
 /**
- * Collects single {@link ConsoleRow}s and forwards them as batches to the provided {@link BatchedConsoleRowsProcessor}.
+ * Collects single {@link ConsoleRow}s and forwards them as batches to the provided
+ * {@link BatchedConsoleRowsProcessor}.
  * 
  * @author Robert Mischke
  */
@@ -32,7 +37,7 @@ public class BatchingConsoleRowsForwarderImpl implements SingleConsoleRowsProces
 
     private final BatchAggregator<ConsoleRow> batchAggregator;
 
-//    private final Log log = LogFactory.getLog(getClass());
+    private final Log log = LogFactory.getLog(getClass());
 
     public BatchingConsoleRowsForwarderImpl(final BatchedConsoleRowsProcessor consoleRowsReceiver) {
         BatchAggregator.BatchProcessor<ConsoleRow> batchProcessor = new BatchAggregator.BatchProcessor<ConsoleRow>() {
@@ -42,7 +47,11 @@ public class BatchingConsoleRowsForwarderImpl implements SingleConsoleRowsProces
                 ConsoleRow[] batchArray = batch.toArray(new ConsoleRow[batch.size()]);
                 // TODO can be disabled if too verbose
                 // log.debug("Sending batch of " + batchArray.length + " console rows");
-                consoleRowsReceiver.processConsoleRows(batchArray);
+                try {
+                    consoleRowsReceiver.processConsoleRows(batchArray);
+                } catch (UndeclaredThrowableException e) {
+                    log.error("Could not send console rows to caller.", e);
+                }
             }
 
         };

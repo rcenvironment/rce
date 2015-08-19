@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelException;
@@ -100,7 +102,7 @@ public class ExcelMacroWorkflowNodeValidator extends AbstractWorkflowNodeValidat
             }
         } catch (ExcelException e) {
             // Just catching because ExcelException is not relevant at configuration validation time.
-            final int i = 0;
+            LogFactory.getLog(getClass()).debug("Excel Exception (not relevant at configuration validation time.)");
         }
 
         return messages;

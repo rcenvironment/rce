@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,7 +16,29 @@ package de.rcenvironment.core.datamodel.api;
  */
 public enum EndpointType {
     /** Inputs. */
-    INPUT,
+    INPUT("Input"),
     /** Outputs. */
-    OUTPUT;
+    OUTPUT("Output");
+    
+    /** The title. */
+    private final String title;
+
+    /**
+     * Instantiates a new type.
+     * 
+     * @param title the title
+     */
+    private EndpointType(final String title) {
+        this.title = title;
+    }
+
+    /**
+     * {@inheritDoc}
+     * 
+     * @see java.lang.Enum#toString()
+     */
+    @Override
+    public String toString() {
+        return title;
+    }
 }

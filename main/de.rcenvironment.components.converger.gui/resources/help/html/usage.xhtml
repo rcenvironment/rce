@@ -74,17 +74,16 @@
                     only the current and previous value, but the minimum and maximum from the set of
                     current plus previous k values. So k = 1 would mean only current and previous, k
                     = 2 current and two previous, etc. Finally, you can limit the number of
-                    iterations to run.</span></span></h3>
+                    convergence checks.</span></span></h3>
         <h3><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; font-weight:normal;mso-bidi-font-weight:bold;mso-no-proof:yes"
-                    ><img  alt="converger" height="187"
-                    src="images/image002.jpg"
-                    width="802" /></span><span
+                    ><img  alt="converger" height="220"
+                    src="images/image002.png" /></span><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US;font-weight:normal;mso-bidi-font-weight:bold"
             ></span></h3>
         <h3><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
-                >The next view is for creating the inputs and outputs of the Converger component.
+                >With the second view, you can create the inputs and outputs of the Converger component.
                 Note that you only have to create every variable once because it will create both an
                 input and two outputs endpoints (an additional one for the final converged variable
                 values) with the same type for this variable at the same time. In the "Add" dialog
@@ -92,9 +91,7 @@
             </span></h3>
         <h3><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; font-weight:normal;mso-bidi-font-weight:bold;mso-no-proof:yes">
-            <img alt="Unbenannt"  height="340"
-                    src="images/image004.jpg"
-                    width="725" /></span><span
+            <img alt="Unbenannt"  height="450" src="images/image004.png" /></span><span
                 style="font-size: 12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language:EN-US; font-weight:normal;mso-bidi-font-weight:bold"
             ></span></h3>
         <h3><span
@@ -105,12 +102,11 @@
                 relative combined as well as separated) is reached.</span></h3>
         <h3><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US;font-weight:normal;mso-bidi-font-weight:bold"
-                >If your Converger component is part of a nested loop, you need to check the checkbox in the "Nested Loop" tab. An additional input "Outer loop done" will be created. It tells the Converger component if the outer loop is done (converged, optimized, etc.). Thus, the input must be connected with the outer loop. The outer loop must send a "false" value to the input as long as it is not done and must send a "true" value once it is done. E.g., if the outer loop is controlled by a Converger or Optimizer component, connect their "Outer loop done" output to the Converger's "Outer loop done" input.</span></h3>
+                >If your Converger component is part of a nested loop, you need to check the checkbox in the "Nested Loop" tab. An additional input "Outer loop done" will be created. It tells the Converger component if the outer loop is done (converged, optimized, etc.). Thus, the input must be connected with the outer loop. The outer loop must send a "true" value once it is done. E.g., if the outer loop is controlled by a Converger or Optimizer component, connect their "Outer loop done" output to the Converger's "Outer loop done" input.</span></h3>
         <h3><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;; font-weight:normal;mso-bidi-font-weight:bold;mso-no-proof:yes"
-                    ><img  alt="Unbenannt" height="210"
-                    src="images/image005.png"
-                    width="851" /></span><span
+                    ><img  alt="Unbenannt" height="250"
+                    src="images/image005.png" /></span><span
                 style="font-size:12.0pt;mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US;font-weight:normal;mso-bidi-font-weight:bold"
             ></span></h3>
         <h3><span

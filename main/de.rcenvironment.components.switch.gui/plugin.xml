@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+            
+         <propertySection
+               tab="workflow.editor.tab.switch.Properties"
+               class="de.rcenvironment.components.switchcmp.gui.SwitchEndpointPropertiesSection"
+               id="workflow.editor.tab.Properties.Section.Inputs"
+               filter="de.rcenvironment.components.switchcmp.gui.SwitchComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+         		tab="workflow.editor.tab.switch.Condition"
+         		class="de.rcenvironment.components.switchcmp.gui.SwitchConditionSection"
+         		id="workflow.editor.tab.Properties.Section.Condition"
+         		filter="de.rcenvironment.components.switchcmp.gui.SwitchComponentFilter"
+         		enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+         		tab="workflow.editor.tab.switch.Close"
+         		class="de.rcenvironment.components.switchcmp.gui.CloseOutputsSection"
+         		id="workflow.editor.tab.Properties.Section.CloseOutputs"
+         		filter="de.rcenvironment.components.switchcmp.gui.SwitchComponentFilter"
+         		enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.switchcmp.gui.SwitchComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+  	</propertySections>
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+      
+         <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               id="workflow.editor.tab.switch.Properties">
+         </propertyTab>
+         
+         <propertyTab
+         		label="Condition"
+         		category="default"
+         		id="workflow.editor.tab.switch.Condition"
+         		afterTab="workflow.editor.tab.switch.Properties">
+         </propertyTab>
+         
+         <propertyTab
+         		label="Loop Control"
+         		category="default"
+         		id="workflow.editor.tab.switch.Close"
+         		afterTab="workflow.editor.tab.switch.Condition">
+         </propertyTab>
+         
+         <propertyTab
+               category="history"
+               id="workflow.editor.tab.HistoryData"
+               label="History Data">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+   
+   
+   <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
+      <validator 
+      		class="de.rcenvironment.components.switchcmp.gui.SwitchComponentWorkflowNodeValidator"
+            filter="de.rcenvironment.components.switchcmp.gui.SwitchComponentFilter">
+      </validator>
+   </extension>
+    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.switchcmp.gui.SwitchHistoryDataItemSubtreeBuilder"/>
+   </extension> 
+  
+ </plugin>
+ 

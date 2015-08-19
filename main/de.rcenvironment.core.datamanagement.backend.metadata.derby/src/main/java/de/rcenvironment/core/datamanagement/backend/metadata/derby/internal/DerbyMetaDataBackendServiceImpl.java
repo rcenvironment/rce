@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -130,9 +130,8 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  */
 public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
-    /**
-     * Defines the maximum number of SQL statements that are allowed to execute in parallel (via {@link SafeExecution}).
-     */
+    private static final String FALSE = "FALSE";
+
     private static final String SINGE_QOUTE = "'";
 
     private static final String NOT_EQUAL = " != ";
@@ -168,7 +167,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
     private static final String INITIALIZATION_TIMEOUT_ERROR_MESSAGE =
         "Initialization timeout reached for meta data database.";
 
-    private static final int INITIALIZATION_TIMEOUT = 10;
+    private static final int INITIALIZATION_TIMEOUT = 30;
 
     private static final int MAX_RETRIES = 5;
 
@@ -235,6 +234,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
     protected void activate(BundleContext context) throws IOException {
         File storageRootDir = configService.getConfigurablePath(ConfigurablePathId.PROFILE_DATA_MANAGEMENT);
+        File metaDataDirectory = new File(storageRootDir, METADATA_DB_NAME);
         System.setProperty("derby.stream.error.file", new File(storageRootDir, "derby.log").getAbsolutePath());
         System.setProperty("derby.locks.waitTimeout", "30");
         System.setProperty("derby.locks.deadlockTimeout", "20");
@@ -243,9 +243,9 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         System.setProperty("derby.storage.rowLocking", TRUE);
         System.setProperty("derby.locks.escalationThreshold", "500000");
         // Properties set for debugging
-        System.setProperty("derby.locks.monitor", TRUE);
-        System.setProperty("derby.locks.deadlockTrace", TRUE);
-        File metaDataDirectory = new File(storageRootDir, METADATA_DB_NAME);
+        System.setProperty("derby.language.logQueryPlan", FALSE);
+        System.setProperty("derby.locks.monitor", FALSE);
+        System.setProperty("derby.locks.deadlockTrace", FALSE);
         // note: disabled old configuration loading for 6.0.0 as it is not being used anyway
         // configuration = configService.getConfiguration(context.getBundle().getSymbolicName(), DerbyMetaDataBackendConfiguration.class);
         // TODO using default values until reworked or removed
@@ -313,7 +313,9 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                 LOGGER.warn("Unable to get database connection. Connection pool already shut down.");
             }
         }
-        result.increment();
+        if (result != null) {
+            result.increment();
+        }
         return result;
     }
 
@@ -673,6 +675,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             @Override
             protected Set<WorkflowRunDescription> protectedCall(final Connection connection, final boolean isRetry)
                 throws SQLException {
+                connection.setReadOnly(true);
                 return getWorkflowRunDescriptions(connection, isRetry);
             }
         };
@@ -690,8 +693,8 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             while (rs.next()) {
                 counts.put(rs.getLong(WORKFLOW_RUN_ID), rs.getInt(COUNTER));
             }
+            rs.close();
         }
-        rs.close();
         stmt.close();
         return counts;
     }
@@ -743,6 +746,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected WorkflowRun protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 return getWorkflowRun(workflowRunId, connection, isRetry);
             }
         };
@@ -782,42 +786,36 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             rs.close();
         }
         stmt.close();
-        String sqlComponentRunIds =
-            SELECT + COMPONENT_RUN_ID + FROM + VIEW_WORKFLOWRUN_COMPONENTRUN + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtComponentRunIds = connection.prepareStatement(sqlComponentRunIds);
-        stmtComponentRunIds.setLong(1, workflowRunId);
-        rs = stmtComponentRunIds.executeQuery();
         Map<Long, Set<EndpointData>> endpointData = new HashMap<Long, Set<EndpointData>>();
-        if (rs != null) {
-            while (rs.next()) {
-                endpointData.put(rs.getLong(COMPONENT_RUN_ID), new HashSet<EndpointData>());
-            }
-            rs.close();
-        }
-        stmtComponentRunIds.close();
         String sqlEndpointData =
-            SELECT_ALL + FROM + DB_PREFIX + VIEW_ENDPOINT_DATA + WHERE + COMPONENT_RUN_ID + IN + BRACKET_STRING_PLACEHOLDER;
-        if (endpointData.keySet().size() > 0) {
-            Statement stmtEndpointData = connection.createStatement();
-            ResultSet rsEndpointData = stmtEndpointData.executeQuery(String.format(sqlEndpointData, getIdString(endpointData.keySet())));
-            if (rsEndpointData != null) {
-                while (rsEndpointData.next()) {
-                    String value = rsEndpointData.getString(VALUE);
-                    if (value == null) {
-                        value = rsEndpointData.getString(BIG_VALUE);
-                    }
-                    endpointData.get(rsEndpointData.getLong(COMPONENT_RUN_ID)).add(
-                        new EndpointData(new EndpointInstance(rsEndpointData.getString(NAME), EndpointType
-                            .valueOf(rsEndpointData
-                                .getString("ENDPOINT_TYPE"))),
-                            rsEndpointData.getInt(COUNTER), value));
+            SELECT_ALL + FROM + DB_PREFIX + VIEW_ENDPOINT_DATA
+                + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
+        PreparedStatement stmtEndpointData =
+            connection.prepareStatement(sqlEndpointData);
+        stmtEndpointData.setLong(1, workflowRunId);
+        ResultSet rsEndpointData = stmtEndpointData.executeQuery();
+        if (rsEndpointData != null) {
+            while (rsEndpointData.next()) {
+                String value = rsEndpointData.getString(VALUE);
+                if (value == null) {
+                    value = rsEndpointData.getString(BIG_VALUE);
                 }
-                rsEndpointData.close();
+                Long id = rsEndpointData.getLong(COMPONENT_RUN_ID);
+                if (endpointData.get(id) == null) {
+                    endpointData.put(id, new HashSet<EndpointData>());
+                }
+                endpointData.get(id).add(
+                    new EndpointData(new EndpointInstance(rsEndpointData.getString(NAME), EndpointType
+                        .valueOf(rsEndpointData
+                            .getString("ENDPOINT_TYPE"))),
+                        rsEndpointData.getInt(COUNTER), value));
             }
-            stmtEndpointData.close();
+            rsEndpointData.close();
         }
+        stmtEndpointData.close();
         String sqlComponentRuns = SELECT_ALL + FROM + DB_PREFIX + VIEW_COMPONENT_RUNS + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtComponentRuns = connection.prepareStatement(sqlComponentRuns);
+        PreparedStatement stmtComponentRuns =
+            connection.prepareStatement(sqlComponentRuns, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_READ_ONLY);
         stmtComponentRuns.setLong(1, workflowRunId);
         ResultSet rsComponentRuns = stmtComponentRuns.executeQuery();
         if (rsComponentRuns != null) {
@@ -852,6 +850,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected Collection<ComponentRun> protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 return getComponentRuns(componentInstanceId, connection, isRetry);
             }
         };
@@ -909,13 +908,15 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         for (EndpointInstance ei : endpointInstances) {
             stmt.setLong(1, componentInstanceId);
             stmt.setString(2, ei.getEndpointName());
-            stmt.setString(3, ei.getEndpointType().toString());
+            stmt.setString(3, ei.getEndpointType().name());
             stmt.execute();
             rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
                 result.put(ei.getEndpointName(), rs.getLong(1));
             }
-            rs.close();
+            if (rs != null) {
+                rs.close();
+            }
         }
         stmt.close();
         return result;
@@ -1065,6 +1066,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected WorkflowRunTimline protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 String workflowRunName = getWorkflowRunName(workflowRunId, connection, isRetry);
                 TimelineInterval workflowRunInterval = getWorkflowInterval(workflowRunId, connection, isRetry);
                 List<ComponentRunInterval> componentRunIntervals = getComponentRunIntervals(workflowRunId, connection, isRetry);
@@ -1078,7 +1080,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         throws SQLException {
         String sql =
             SELECT + STARTTIME + COMMA + ENDTIME + COMMA + TYPE + COMMA + COMPONENT_ID + COMMA + COMPONENT_INSTANCE_NAME
-                + FROM + VIEW_COMPONENT_TIMELINE_INTERVALS
+                + FROM + DB_PREFIX + VIEW_COMPONENT_TIMELINE_INTERVALS
                 + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         PreparedStatement stmt = connection.prepareStatement(sql);
         stmt.setLong(1, workflowRunId);
@@ -1117,7 +1119,9 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             }
             ti = new TimelineInterval(TimelineIntervalType.WORKFLOW_RUN, rs.getTimestamp(STARTTIME).getTime(), endtime);
         }
-        rs.close();
+        if (rs != null) {
+            rs.close();
+        }
         stmt.close();
         return ti;
     }
@@ -1144,6 +1148,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected Map<String, String> protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 return getProperties(tableName, relatedId, connection, isRetry);
             }
         };
@@ -1182,55 +1187,59 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
     @Override
     @AllowRemoteAccess
     public Boolean deleteWorkflowRunFiles(final Long workflowRunId) {
-        final SafeExecution<Void> execution = new SafeExecution<Void>() {
+        final SafeExecution<Boolean> execution = new SafeExecution<Boolean>() {
 
             @Override
-            protected Void protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+            protected Boolean protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 if (isWorkflowFinished(workflowRunId, connection, isRetry)) {
                     markDeletion(workflowRunId, FILES_TO_BE_DELETED, connection, isRetry);
                     LOGGER.debug(String.format("Marked workflow run id %d to delete files.", workflowRunId));
-                } else {
-                    LOGGER.error("Workflow files deletion requested, but workflow " + workflowRunId + " is not finished yet");
+                    return true;
                 }
-                return null;
+                LOGGER.warn("Workflow files deletion requested, but workflow " + workflowRunId + " is not finished yet");
+                return false;
             }
         };
-        execution.call();
-        executionQueue.enqueue(new Runnable() {
+        Boolean markedDeletion = execution.call();
+        if (markedDeletion) {
+            executionQueue.enqueue(new Runnable() {
 
-            @Override
-            public void run() {
-                deleteWorkflowRunFilesInternal(workflowRunId);
-            }
-        });
-        return true;
+                @Override
+                public void run() {
+                    deleteWorkflowRunFilesInternal(workflowRunId);
+                }
+            });
+        }
+        return markedDeletion;
     }
 
     @Override
     @AllowRemoteAccess
     public Boolean deleteWorkflowRun(final Long workflowRunId) {
-        final SafeExecution<Void> execution = new SafeExecution<Void>() {
+        final SafeExecution<Boolean> execution = new SafeExecution<Boolean>() {
 
             @Override
-            protected Void protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+            protected Boolean protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 if (isWorkflowFinished(workflowRunId, connection, isRetry)) {
                     markDeletion(workflowRunId, WORKFLOW_RUN_TO_BE_DELETED, connection, isRetry);
                     LOGGER.debug(String.format("Marked workflow run id %d to be deleted.", workflowRunId));
-                } else {
-                    LOGGER.error("Workflow run deletion requested, but workflow " + workflowRunId + " is not finished yet");
+                    return true;
                 }
-                return null;
+                LOGGER.warn("Workflow run deletion requested, but workflow " + workflowRunId + " is not finished yet");
+                return false;
             }
         };
-        execution.call();
-        executionQueue.enqueue(new Runnable() {
+        Boolean markedDeletion = execution.call();
+        if (markedDeletion) {
+            executionQueue.enqueue(new Runnable() {
 
-            @Override
-            public void run() {
-                deleteWorkflowRunInternal(workflowRunId);
-            }
-        });
-        return true;
+                @Override
+                public void run() {
+                    deleteWorkflowRunInternal(workflowRunId);
+                }
+            });
+        }
+        return markedDeletion;
     }
 
     private void deleteWorkflowRunInternal(final Long workflowRunId) {
@@ -1238,6 +1247,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected Map<Long, Set<String>> protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 LOGGER.debug(String.format("Starting to delete workflow run id %d.", workflowRunId));
                 Map<Long, Set<String>> keys = getDataReferenceBinaryKeys(workflowRunId, connection, isRetry);
                 return keys;
@@ -1275,6 +1285,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected Map<Long, Set<String>> protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 LOGGER.debug(String.format("Starting to delete files of workflow run id %d.", workflowRunId));
                 Map<Long, Set<String>> keys = getDataReferenceBinaryKeys(workflowRunId, connection, isRetry);
                 return keys;
@@ -1390,8 +1401,8 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         for (Long id : typedDatumIds) {
             stmtEndpointData.setLong(1, id);
             stmtTypedDatum.setLong(1, id);
-            stmtEndpointData.executeUpdate();
-            stmtTypedDatum.executeUpdate();
+            stmtEndpointData.execute();
+            stmtTypedDatum.execute();
         }
         stmtEndpointData.close();
         stmtTypedDatum.close();
@@ -1422,19 +1433,19 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         PreparedStatement stmtDataRef = connection.prepareStatement(sqlDataRef);
         for (Long id : dataReferenceKeys.keySet()) {
             stmtRelBinaryDataRef.setLong(1, id);
-            stmtRelBinaryDataRef.executeUpdate();
+            stmtRelBinaryDataRef.execute();
             stmtRelCompRunDataRef.setLong(1, id);
-            stmtRelCompRunDataRef.executeUpdate();
+            stmtRelCompRunDataRef.execute();
             stmtRelCompInstanceDataRef.setLong(1, id);
-            stmtRelCompInstanceDataRef.executeUpdate();
+            stmtRelCompInstanceDataRef.execute();
             stmtRelWorkflowRunDataRef.setLong(1, id);
-            stmtRelWorkflowRunDataRef.executeUpdate();
+            stmtRelWorkflowRunDataRef.execute();
             for (String key : dataReferenceKeys.get(id)) {
                 stmtBinaryRef.setString(1, key);
-                stmtBinaryRef.executeUpdate();
+                stmtBinaryRef.execute();
             }
             stmtDataRef.setLong(1, id);
-            stmtDataRef.executeUpdate();
+            stmtDataRef.execute();
         }
         stmtRelBinaryDataRef.close();
         stmtRelCompRunDataRef.close();
@@ -1450,72 +1461,53 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
         String sqlTimelineInt = DELETE_FROM + DB_PREFIX + TABLE_TIMELINE_INTERVAL + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         PreparedStatement stmtTimelineInt = connection.prepareStatement(sqlTimelineInt);
         stmtTimelineInt.setLong(1, workflowRunId);
-        stmtTimelineInt.executeUpdate();
+        stmtTimelineInt.execute();
         stmtTimelineInt.close();
         String sqlCompInstIds =
             SELECT + COMPONENT_INSTANCE_ID + FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtCompInstIds = connection.prepareStatement(sqlCompInstIds);
-        stmtCompInstIds.setLong(1, workflowRunId);
-        ResultSet rs = stmtCompInstIds.executeQuery();
-        Set<Long> compInstIds = new HashSet<Long>();
-        if (rs != null) {
-            while (rs.next()) {
-                compInstIds.add(rs.getLong(COMPONENT_INSTANCE_ID));
-            }
-        }
-        rs.close();
-        stmtCompInstIds.close();
-        if (!compInstIds.isEmpty()) {
-            String compInstIdString = getIdString(compInstIds);
-            String sqlCompRunIds =
-                SELECT + COMPONENT_RUN_ID + FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE + COMPONENT_INSTANCE_ID + IN
-                    + BRACKET_STRING_PLACEHOLDER;
-            Statement stmtCompRunIds = connection.createStatement();
-            ResultSet rsCompRunIds = stmtCompRunIds.executeQuery(String.format(sqlCompRunIds, compInstIdString));
-            Set<Long> compRunIds = new HashSet<Long>();
-            if (rsCompRunIds != null) {
-                while (rsCompRunIds.next()) {
-                    compRunIds.add(rsCompRunIds.getLong(COMPONENT_RUN_ID));
-                }
-            }
-            rsCompRunIds.close();
-            stmtCompRunIds.close();
-            if (!compRunIds.isEmpty()) {
-                String sqlcompRunProp =
-                    DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN_PROPERTIES + WHERE + COMPONENT_RUN_ID + IN + BRACKET_STRING_PLACEHOLDER;
-                Statement stmtCompRunProp = connection.createStatement();
-                stmtCompRunProp.executeUpdate(String.format(sqlcompRunProp, getIdString(compRunIds)));
-                stmtCompRunProp.close();
-            }
-            String sqlcompInstProp =
-                DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE_PROPERTIES + WHERE + COMPONENT_INSTANCE_ID + IN
-                    + BRACKET_STRING_PLACEHOLDER;
-            Statement stmtCompInstProp = connection.createStatement();
-            stmtCompInstProp.executeUpdate(String.format(sqlcompInstProp, compInstIdString));
-            stmtCompInstProp.close();
-            String sqlEndpointInst =
-                DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
-            Statement stmtEndpointInst = connection.createStatement();
-            stmtEndpointInst.executeUpdate(String.format(sqlEndpointInst, compInstIdString));
-            stmtEndpointInst.close();
-            String sqlCompRun =
-                DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
-            Statement stmtCompRun = connection.createStatement();
-            stmtCompRun.executeUpdate(String.format(sqlCompRun, compInstIdString));
-            stmtCompRun.close();
-        }
+        String sqlCompRunIds =
+            SELECT + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + FROM + DB_PREFIX + TABLE_COMPONENT_RUN + COMMA + DB_PREFIX
+                + TABLE_COMPONENT_INSTANCE + WHERE + TABLE_COMPONENT_RUN + DOT + COMPONENT_INSTANCE_ID + EQUAL
+                + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + AND + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID
+                + EQUAL + QMARK;
 
+        String sqlcompRunProp =
+            DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN_PROPERTIES + WHERE + COMPONENT_RUN_ID + IN + BRACKET_STRING_PLACEHOLDER;
+        PreparedStatement stmtCompRunProp =
+            connection.prepareStatement(String.format(sqlcompRunProp, String.format(sqlCompRunIds, sqlCompInstIds)));
+        stmtCompRunProp.setLong(1, workflowRunId);
+        stmtCompRunProp.execute();
+        stmtCompRunProp.close();
+        String sqlcompInstProp =
+            DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE_PROPERTIES + WHERE + COMPONENT_INSTANCE_ID + IN
+                + BRACKET_STRING_PLACEHOLDER;
+        PreparedStatement stmtCompInstProp = connection.prepareStatement(String.format(sqlcompInstProp, sqlCompInstIds));
+        stmtCompInstProp.setLong(1, workflowRunId);
+        stmtCompInstProp.execute();
+        stmtCompInstProp.close();
+        String sqlEndpointInst =
+            DELETE_FROM + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
+        PreparedStatement stmtEndpointInst = connection.prepareStatement(String.format(sqlEndpointInst, sqlCompInstIds));
+        stmtEndpointInst.setLong(1, workflowRunId);
+        stmtEndpointInst.execute();
+        stmtEndpointInst.close();
+        String sqlCompRun =
+            DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_RUN + WHERE + COMPONENT_INSTANCE_ID + IN + BRACKET_STRING_PLACEHOLDER;
+        PreparedStatement stmtCompRun = connection.prepareStatement(String.format(sqlCompRun, sqlCompInstIds));
+        stmtCompRun.setLong(1, workflowRunId);
+        stmtCompRun.execute();
+        stmtCompRun.close();
+        String sqlCompInst = DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
+        PreparedStatement stmtCompInst = connection.prepareStatement(sqlCompInst);
+        stmtCompInst.setLong(1, workflowRunId);
+        stmtCompInst.execute();
+        stmtCompInst.close();
         String sqlWorkflowRunProp =
             DELETE_FROM + DB_PREFIX + TABLE_WORKFLOW_RUN_PROPERTIES + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         PreparedStatement stmtWorkflowRunProp = connection.prepareStatement(sqlWorkflowRunProp);
         stmtWorkflowRunProp.setLong(1, workflowRunId);
-        stmtWorkflowRunProp.executeUpdate();
+        stmtWorkflowRunProp.execute();
         stmtWorkflowRunProp.close();
-        String sqlCompInst = DELETE_FROM + DB_PREFIX + TABLE_COMPONENT_INSTANCE + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
-        PreparedStatement stmtCompInst = connection.prepareStatement(sqlCompInst);
-        stmtCompInst.setLong(1, workflowRunId);
-        stmtCompInst.executeUpdate();
-        stmtCompInst.close();
         String sqlWorkflowRun = DELETE_FROM + DB_PREFIX + TABLE_WORKFLOW_RUN + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         PreparedStatement stmtWorkflowRun = connection.prepareStatement(sqlWorkflowRun);
         stmtWorkflowRun.setLong(1, workflowRunId);
@@ -1698,6 +1690,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected DataReference protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
+                connection.setReadOnly(true);
                 return getDataReference(dataReferenceKey, connection, isRetry);
             }
         };
@@ -1746,6 +1739,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
     private Map<Long, Set<String>> getDataReferenceBinaryKeys(Long workflowRunId, Connection connection, boolean isRetry)
         throws SQLException {
+        // TODO optimize initialization of key map
         String sqlDataRefIds = SELECT + DATA_REFERENCE_ID + FROM + DB_PREFIX + VIEW_WORKFLOWRUN_DATAREFERENCE
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK;
         String sqlBinaryRefs =
@@ -1764,10 +1758,11 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             rs.close();
         }
         stmtDataRefIds.close();
-        Statement stmtBinaryRefs;
+        PreparedStatement stmtBinaryRefs;
         if (keys.keySet().size() > 0) {
-            stmtBinaryRefs = connection.createStatement();
-            rs = stmtBinaryRefs.executeQuery(String.format(sqlBinaryRefs, getIdString(keys.keySet())));
+            stmtBinaryRefs = connection.prepareStatement(String.format(sqlBinaryRefs, sqlDataRefIds));
+            stmtBinaryRefs.setLong(1, workflowRunId);
+            rs = stmtBinaryRefs.executeQuery();
             if (rs != null) {
                 while (rs.next()) {
                     keys.get(rs.getLong(DATA_REFERENCE_ID)).add(rs.getString(BINARY_REFERENCE_KEY).trim());
@@ -1777,19 +1772,6 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             stmtBinaryRefs.close();
         }
         return keys;
-    }
-
-    private String getIdString(Collection<Long> ids) {
-        StringBuilder idString = new StringBuilder();
-        int size = ids.size();
-        int i = 1;
-        for (Long id : ids) {
-            idString.append(id.toString());
-            if (i++ < size) {
-                idString.append(",");
-            }
-        }
-        return idString.toString();
     }
 
     private Collection<EndpointData> getEndpointData(Long componentRunId, EndpointType endpointType) {

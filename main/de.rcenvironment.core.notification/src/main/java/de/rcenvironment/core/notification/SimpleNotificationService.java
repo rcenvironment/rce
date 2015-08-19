@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -76,8 +77,10 @@ public class SimpleNotificationService {
      *        <code>null</code> if local.
      * @return the number of the last notification, which was sent and missed by the new
      *         {@link NotificationSubscriber} sorted by the matching notification identifier.
+     * @throws CommunicationException if the remote subscription fails
      */
-    public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform) {
+    public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+        throws CommunicationException {
         return distrNotificationService.subscribe(notificationId, subscriber, publishPlatform);
     }
 
@@ -105,8 +108,11 @@ public class SimpleNotificationService {
      * @param subscriber The {@link NotificationSubscriber} to remove.
      * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher.
      *        <code>null</code> if local.
+     *        
+     * @throws CommunicationException if the remote subscription cancellation fails  
      */
-    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform) {
+    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+        throws CommunicationException {
         distrNotificationService.unsubscribe(notificationId, subscriber, publishPlatform);
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -168,7 +168,7 @@ public class ExcelServiceOLE extends ExcelServicePOI implements ExcelServiceGUIE
                     try {
                         Thread.sleep(BLOCKING_SLEEP);
                     } catch (InterruptedException e) {
-                        LOGGER.error(e.getStackTrace());
+                        LOGGER.error(e);
                     }
                 }
 

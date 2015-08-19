@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,11 +8,16 @@
 
 package de.rcenvironment.core.gui.datamanagement.browser.spi;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.UUID;
 
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
@@ -21,12 +26,14 @@ import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.gui.datamanagement.browser.Activator;
 
 /**
  * @author Robert Mischke (based on DMObject class by Markus Litz)
  * 
+ *         TODO list additional authors; incomplete
  */
-public class DMBrowserNode {
+public final class DMBrowserNode {
 
     private static final List<DMBrowserNode> IMMUTABLE_NO_CHILDREN_LIST = Collections.unmodifiableList(new ArrayList<DMBrowserNode>(0));
 
@@ -50,6 +57,10 @@ public class DMBrowserNode {
 
     private String dataReferenceId = null;
 
+    private String fileContent = null;
+    
+    private String fileName = null;
+    
     private String fileReferencePath = null;
 
     private String associatedFilename = null;
@@ -66,6 +77,8 @@ public class DMBrowserNode {
     private boolean builtForDeletionPurpose = false;
 
     private Boolean enabled;
+
+    private String cachedPath;
 
     public DMBrowserNode(String title) {
         this.title = title;
@@ -134,6 +147,9 @@ public class DMBrowserNode {
      * @return path of the node
      */
     public String getPath() {
+        if (cachedPath != null) {
+            return cachedPath;
+        }
         final StringBuilder builder = new StringBuilder();
         final DMBrowserNode parentNode = getParent();
         if (parentNode != null) {
@@ -148,7 +164,7 @@ public class DMBrowserNode {
                 builder.append("workflow:");
                 builder.append(workflowID);
                 builder.append("_");
-                builder.append(getNodeIdentifier());
+                builder.append(getNodeIdentifier().getIdString());
                 break;
             case HistoryObject:
             default:
@@ -157,18 +173,19 @@ public class DMBrowserNode {
         } else {
             builder.append(getTitle());
         }
-        return builder.toString();
+        cachedPath = builder.toString();
+        return cachedPath;
     }
 
     public DMBrowserNode getParent() {
         return parent;
     }
 
-    public final DMBrowserNodeType getType() {
+    public DMBrowserNodeType getType() {
         return type;
     }
 
-    public final void setType(DMBrowserNodeType type) {
+    public void setType(DMBrowserNodeType type) {
         this.type = type;
     }
 
@@ -205,13 +222,8 @@ public class DMBrowserNode {
         if (children == IMMUTABLE_NO_CHILDREN_LIST) {
             throw new IllegalStateException("Parent node for addChild was marked as a leaf before");
         }
-        if (children.contains(child)) {
-            return;
-        }
         children.add(child);
-        if (child.getParent() != this) {
-            child.setParent(this);
-        }
+        child.setParent(this); // checks internally if the parent is already set
     }
 
     /**
@@ -229,8 +241,7 @@ public class DMBrowserNode {
      */
     public void removeChild(final DMBrowserNode child) {
         if (children != null) {
-            if (children.contains(child)) {
-                children.remove(child);
+            if (children.remove(child)) {
                 child.setParent(null);
             }
         }
@@ -301,16 +312,19 @@ public class DMBrowserNode {
      */
     @Deprecated
     public void setParent(DMBrowserNode parent) {
+        if (this.parent == parent) {
+            // nothing to do
+            return;
+        }
+
         // remove child node from old parent node
         if (this.parent != null) {
             this.parent.removeChild(this);
         }
+
         // save as current parent node
         this.parent = parent;
-        // add to current parent node as child node
-        if (parent != null && !parent.getChildren().contains(this)) {
-            parent.addChild(this);
-        }
+        this.cachedPath = null; // invalidate path as it involves the parent's path
     }
 
     public String getDataReferenceId() {
@@ -321,8 +335,36 @@ public class DMBrowserNode {
         this.dataReferenceId = dataReferenceId;
     }
 
+    /**
+     * @return path to file which should be opened in editor if {@link DMBrowserNode} is double-clicked. File will be created on-demand
+     *         (lazy init).
+     */
     public String getFileReferencePath() {
+        if (fileReferencePath == null && fileContent != null) {
+            createTempFileForFileContent(fileName, fileContent);
+        }
         return fileReferencePath;
+    }
+    
+    private void createTempFileForFileContent(String filename, String text) {
+        File tempFile = null;
+        try {
+            File tempDir = new File(Activator.getInstance().getBundleSpecificTempDir(), UUID.randomUUID().toString());
+            tempDir.mkdir();
+            File endpointTempDir = new File(tempDir, "endpoints");
+            endpointTempDir.mkdir();
+            tempFile = new File(endpointTempDir, filename);
+            if (!tempFile.exists()) {
+                PrintWriter out = new PrintWriter(tempFile);
+                out.write(text);
+                out.flush();
+                out.close();
+            }
+        } catch (IOException e) {
+            LogFactory.getLog(getClass()).error("Failed to create temporary file for node content", e);
+        }
+        setAssociatedFilename(filename);
+        setFileReferencePath(tempFile.getAbsolutePath());
     }
 
     public void setFileReferencePath(String fileReferencePath) {
@@ -457,6 +499,16 @@ public class DMBrowserNode {
             return disabled;
         }
         return false;
+    }
+
+    /**
+     * Set the text content, which should be opened in read-only editor on demand.
+     * @param fContent text to open in read-only editor
+     * @param fName file name shown in editor
+     */
+    public void setFileContentAndName(String fContent, String fName) {
+        this.fileContent = fContent;
+        this.fileName = fName;
     }
 
 }

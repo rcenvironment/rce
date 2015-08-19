@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map:mappings xmlns:map="http://www.dlr.de/sistec/tiva/tool/mapping">
+<map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping">
 	<map:mapping>
 		<map:source>/cpacs/vehicles/aircraft/model/reference/area</map:source>
 		<map:target>/toolInput/data/var1</map:target>

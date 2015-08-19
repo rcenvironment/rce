@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,8 @@ import de.rcenvironment.core.utils.common.VersionUtils;
  */
 public final class HeadlessRunner extends InstanceRunner {
 
+    private Integer shutdownExitCode = IApplication.EXIT_OK;
+
     /**
      * Runs the headless mode.
      * 
@@ -35,6 +37,7 @@ public final class HeadlessRunner extends InstanceRunner {
      * @throws AuthenticationException : no user
      * @throws InterruptedException : interrupted
      */
+    @Override
     public int run() throws AuthenticationException, InterruptedException {
         if (!(new PlatformValidationManager()).validate(true)) {
             Platform.shutdown();
@@ -73,6 +76,12 @@ public final class HeadlessRunner extends InstanceRunner {
             // "standard" headless mode
             Platform.awaitShutdown();
         }
-        return IApplication.EXIT_OK;
+        return shutdownExitCode;
+    }
+
+    @Override
+    public void triggerRestart() {
+        shutdownExitCode = IApplication.EXIT_RESTART;
+        Platform.shutdown();
     }
 }

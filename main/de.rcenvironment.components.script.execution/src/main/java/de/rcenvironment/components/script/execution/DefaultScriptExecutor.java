@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -84,6 +84,7 @@ public class DefaultScriptExecutor implements ScriptExecutor {
     /**
      * Resets the script component for being used in nested loops.
      */
+    @Override
     public void reset() {
 
     }
@@ -167,7 +168,7 @@ public class DefaultScriptExecutor implements ScriptExecutor {
             // execute script here
             scriptEngine.eval(wrappingScript);
         } catch (ScriptException e) {
-            throw new ComponentException("Could not run script. Maybe the script has errors? \n\n", e);
+            throw new ComponentException("Could not run script. Maybe the script has errors? \n\n: " + e.toString());
         }
 
     }

@@ -16,7 +16,8 @@
                         "*"
                     ],
                     "visibility":"shown",
-                    "defaultValue":"0"
+                    "defaultValue":"0",
+                    "validation": "required"
                 },
                 "ToValue":{
                     "guiName":"To",
@@ -27,7 +28,17 @@
                         "*"
                     ],
                     "visibility":"shown",
-                    "defaultValue":"10"
+                    "defaultValue":"10",
+                    "validation": "required"
+                },
+                
+                "fitStepSizeToBounds":{
+                    "guiName":"Fit step size to bounds",
+                    "guiPosition":"3",
+                    "guiGroup":"Range",
+                    "dataType":"bool",
+                    "visibility":"shown",
+                    "defaultValue":"true"
                 },
                 "StepSize":{
                     "guiName":"Step size",
@@ -38,7 +49,8 @@
                         "*"
                     ],
                     "visibility":"shown",
-                    "defaultValue":"1"
+                    "defaultValue":"1",
+                    "validation": "required"
                 }
             }
         }

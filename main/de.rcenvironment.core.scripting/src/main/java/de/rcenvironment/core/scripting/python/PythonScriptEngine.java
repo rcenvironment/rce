@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,12 +36,14 @@ import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.history.ComponentHistoryDataItemConstants;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
@@ -51,7 +53,6 @@ import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptDataTypeHelper;
-import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.legacy.FileSupport;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
@@ -152,18 +153,10 @@ public class PythonScriptEngine implements ScriptEngine {
             LOGGER.error("Failed to create temporary Python script.");
         }
         executor.setWorkDir(tempDir);
-        final String command;
-        if (context.getAttribute(PythonComponentConstants.PYTHON_OS) == OSFamily.Windows) {
-            command = ESCAPED_DOUBLE_QUOTE + (String) context.getAttribute(PythonComponentConstants.PYTHON_INSTALLATION)
-                + ESCAPED_DOUBLE_QUOTE
+        final String command =
+            ESCAPED_DOUBLE_QUOTE + ((String) context.getAttribute(PythonComponentConstants.PYTHON_INSTALLATION)) + ESCAPED_DOUBLE_QUOTE
                 + " -u "
-                + ESCAPED_DOUBLE_QUOTE + tempDir.getAbsolutePath() + File.separator + RUN_SCRIPT
-                + ESCAPED_DOUBLE_QUOTE;
-        } else { // Linux/Mac Type
-            command = ((String) context.getAttribute(PythonComponentConstants.PYTHON_INSTALLATION)).replaceAll(" ", "\\ ")
-                + " -u "
-                + tempDir.getAbsolutePath().replaceAll(" ", "\\ ") + File.separator + RUN_SCRIPT;
-        }
+                + tempDir.getAbsolutePath() + File.separator + RUN_SCRIPT;
         LOGGER.debug("PythonExecutor executes command: " + command);
         int exitCode = 0;
         try {
@@ -327,8 +320,26 @@ public class PythonScriptEngine implements ScriptEngine {
                 break;
             }
         }
+        List<String> inputsNotConnected = new LinkedList<String>();
+        for (String input : compContext.getInputsNotConnected()) {
+            if (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
+                    InputExecutionContraint.RequiredIfConnected.name())
+                || compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
+                    InputExecutionContraint.NotRequired.name()))) {
+                inputsNotConnected.add(input);
+            }
+        }
+        for (String input : compContext.getInputs()) {
+            if (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
+                && compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
+                    InputExecutionContraint.NotRequired.name()) && !compContext.getInputsWithDatum().contains(input)) {
+                inputsNotConnected.add(input);
+            }
+        }
         try {
             mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonInput.rced"), inputsToWrite);
+            mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonInputReqIfConnected.rced"), inputsNotConnected);
             mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonStateVariables.rces"),
                 context.getAttribute(PythonComponentConstants.STATE_MAP));
             mapper.writeValue(new File(tempDir.getAbsolutePath(), "pythonRunNumber.rcen"),

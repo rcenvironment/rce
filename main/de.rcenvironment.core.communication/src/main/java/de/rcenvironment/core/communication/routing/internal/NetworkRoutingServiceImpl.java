@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -164,6 +164,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
      */
     private class LowLevelNetworkTopologyChangeHandler extends NetworkTopologyChangeListenerAdapter {
 
+        @Override
         public void onNetworkTopologyChanged() {
             NetworkGraphImpl rawNetworkGraph;
             synchronized (topologyMap) {
@@ -228,7 +229,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         // LowLevelNetworkTopologyChangeHandler());
 
         // TODO set here to break up cyclic dependency; refactor? - misc_ro
-        messageChannelService.setForwardingService((MessageRoutingService) this);
+        messageChannelService.setForwardingService(this);
     }
 
     @Override
@@ -254,11 +255,13 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     public List<? extends NetworkGraphLink> getRouteTo(NodeIdentifier destination) {
         return cachedReachableNetworkGraph.getRoutingInformation().getRouteTo(destination);
     }
-
+    
+    @Override
     public synchronized NetworkGraph getRawNetworkGraph() {
         return cachedRawNetworkGraph;
     }
 
+    @Override
     public synchronized NetworkGraph getReachableNetworkGraph() {
         return cachedReachableNetworkGraph;
     }
@@ -408,6 +411,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             // convert to Future containing failure response
             return threadPool.submit(new Callable<NetworkResponse>() {
 
+                @Override
                 @TaskDescription("Create response for routing failure")
                 public NetworkResponse call() throws Exception {
                     if (localNodeId.equals(sender)) {

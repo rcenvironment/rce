@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -72,6 +72,9 @@ public class IntegrationWatcher implements Runnable {
             } catch (InterruptedException e) {
                 LOGGER.error(INTEGRATION_WATCHER, e);
                 return;
+            }
+            if (key == null) {
+                continue;
             }
             for (WatchEvent<?> event : key.pollEvents()) {
                 WatchEvent.Kind<?> kind = event.kind();

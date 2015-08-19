@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -46,6 +46,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  */
 public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
+    private static final int INDENT_KEEP_ON_ERROR_BUTTON = 20;
+
     private static final int TOOL_CONFIG_TABLE_HEIGHT = 100;
 
     private Table toolConfigTable;
@@ -72,7 +74,11 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
     private Button deleteTempDirAlwaysCheckbox;
 
+    private Button deleteTempDirNotOnErrorIterationCheckbox;
+
     private Button publishCheckbox;
+
+    private Button deleteTempDirNotOnErrorOnceCheckbox;
 
     protected ToolConfigurationPage(String pageName, Map<String, Object> configurationMap) {
         super(pageName);
@@ -138,10 +144,46 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             createDeleteTempDirectoryCheckbox(
                 deleteTempDirBehaviorGroup, Messages.deleteOnce,
                 ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE);
+        deleteTempDirOnceCheckbox.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                deleteTempDirNotOnErrorOnceCheckbox.setEnabled(deleteTempDirOnceCheckbox.getSelection());
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
+        deleteTempDirNotOnErrorOnceCheckbox =
+            createDeleteTempDirectoryCheckbox(deleteTempDirBehaviorGroup, Messages.deleteNotOnErrorOnce,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE);
+        GridData keepOnErrorOnceData = new GridData();
+        keepOnErrorOnceData.horizontalIndent = INDENT_KEEP_ON_ERROR_BUTTON;
+        deleteTempDirNotOnErrorOnceCheckbox.setLayoutData(keepOnErrorOnceData);
         deleteTempDirAlwaysCheckbox =
             createDeleteTempDirectoryCheckbox(
                 deleteTempDirBehaviorGroup, Messages.deleteAlways,
                 ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
+        deleteTempDirAlwaysCheckbox.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                deleteTempDirNotOnErrorIterationCheckbox.setEnabled(deleteTempDirAlwaysCheckbox.getSelection());
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
+        deleteTempDirNotOnErrorIterationCheckbox =
+            createDeleteTempDirectoryCheckbox(deleteTempDirBehaviorGroup, Messages.deleteNotOnErrorIteration,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ITERATION);
+        GridData keepOnErrorIterationData = new GridData();
+        keepOnErrorIterationData.horizontalIndent = INDENT_KEEP_ON_ERROR_BUTTON;
+        deleteTempDirNotOnErrorIterationCheckbox.setLayoutData(keepOnErrorIterationData);
         new Label(deleteTempDirBehaviorGroup, SWT.NONE).setText(Messages.deleteToolNote);
         updateCheckBoxes();
         updateButtonActivation();
@@ -208,9 +250,13 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                     }
                     if (deleteTempDirAlwaysCheckbox.getSelection() && !((Button) arg0.getSource()).getSelection()) {
                         deleteTempDirAlwaysCheckbox.setSelection(false);
+                        deleteTempDirNotOnErrorIterationCheckbox.setSelection(false);
+
                     }
                     copyAlwaysButton.setEnabled(((Button) arg0.getSource()).getSelection());
                     deleteTempDirAlwaysCheckbox.setEnabled(((Button) arg0.getSource()).getSelection());
+                    deleteTempDirNotOnErrorIterationCheckbox.setEnabled(((Button) arg0.getSource()).getSelection()
+                        && deleteTempDirAlwaysCheckbox.isEnabled() && deleteTempDirAlwaysCheckbox.getSelection());
                 }
             }
 
@@ -317,12 +363,15 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             deleteTempDirAlwaysCheckbox.setEnabled(true);
         } else {
             copyAlwaysButton.setEnabled(false);
+            copyAlwaysButton.setSelection(false);
             deleteTempDirAlwaysCheckbox.setEnabled(false);
+            iterationDirectoryCheckbox.setSelection(false);
         }
 
         ToolIntegrationContext context = ((ToolIntegrationWizard) getWizard()).getCurrentContext();
         copyNeverButton.setEnabled(true);
         copyOnceButton.setEnabled(true);
+        copyAlwaysButton.setEnabled(iterationDirectoryCheckbox.getSelection());
         if (context.getDisabledIntegrationKeys() != null) {
             for (String key : context.getDisabledIntegrationKeys()) {
                 if (ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_NEVER.equals(key)) {
@@ -350,9 +399,15 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                 copyAlwaysButton.setSelection(false);
             } else if (((String) configurationMap.get(ToolIntegrationConstants.KEY_COPY_TOOL_BEHAVIOUR))
                 .equals(ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_ALWAYS)) {
-                copyAlwaysButton.setSelection(true);
-                copyNeverButton.setSelection(false);
-                copyOnceButton.setSelection(false);
+                if (copyAlwaysButton.isEnabled()) {
+                    copyAlwaysButton.setSelection(true);
+                    copyNeverButton.setSelection(false);
+                    copyOnceButton.setSelection(false);
+                } else {
+                    copyAlwaysButton.setSelection(false);
+                    copyNeverButton.setSelection(false);
+                    copyOnceButton.setSelection(true);
+                }
             }
 
         }
@@ -367,16 +422,36 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER) != null
             && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER)) {
             deleteTempDirNeverCheckbox.setSelection(true);
+        } else {
+            deleteTempDirNeverCheckbox.setSelection(false);
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE) != null
             && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE)) {
             deleteTempDirOnceCheckbox.setSelection(true);
+        } else {
+            deleteTempDirOnceCheckbox.setSelection(false);
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS) != null
             && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS)) {
             deleteTempDirAlwaysCheckbox.setSelection(true);
+        } else {
+            deleteTempDirAlwaysCheckbox.setSelection(false);
         }
-
+        if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ITERATION) != null
+            && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ITERATION)) {
+            deleteTempDirNotOnErrorIterationCheckbox.setSelection(true);
+        }
+        if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE) != null
+            && (Boolean) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE)) {
+            deleteTempDirNotOnErrorOnceCheckbox.setSelection(true);
+        }
+        deleteTempDirNotOnErrorIterationCheckbox.setEnabled(deleteTempDirAlwaysCheckbox.isEnabled()
+            && deleteTempDirAlwaysCheckbox.getSelection());
+        deleteTempDirNotOnErrorOnceCheckbox.setEnabled(deleteTempDirOnceCheckbox.getSelection());
+        deleteTempDirNotOnErrorOnceCheckbox.setSelection(deleteTempDirNotOnErrorOnceCheckbox.getSelection()
+            && deleteTempDirNotOnErrorOnceCheckbox.isEnabled());
+        deleteTempDirNotOnErrorIterationCheckbox.setSelection(deleteTempDirNotOnErrorIterationCheckbox.getSelection()
+            && deleteTempDirNotOnErrorIterationCheckbox.isEnabled() && iterationDirectoryCheckbox.getSelection());
     }
 
     @SuppressWarnings("unchecked")

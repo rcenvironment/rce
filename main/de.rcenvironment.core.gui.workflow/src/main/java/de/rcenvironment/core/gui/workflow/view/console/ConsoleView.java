@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -48,6 +48,8 @@ import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleModelSnapshot;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowFilter;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
+import de.rcenvironment.core.gui.resources.api.FontManager;
+import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart.ComponentStateFigureImpl;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -84,7 +86,7 @@ public class ConsoleView extends ViewPart {
 
     private static final int COLUMN_WIDTH_COMPONENT = 100;
 
-    private static final int COLUMN_WIDTH_WORKFLOW = 100;
+    private static final int COLUMN_WIDTH_WORKFLOW = 400;
 
     private static final int INITIAL_SELECTION = 0;
 
@@ -598,7 +600,7 @@ public class ConsoleView extends ViewPart {
         table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
 
         // set font & color
-        table.setFont(fixedWidthFont);
+        table.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
         table.setForeground(tableComposite.getDisplay().getSystemColor(SWT.COLOR_BLACK));
 
         // create copy context menu
@@ -614,6 +616,7 @@ public class ConsoleView extends ViewPart {
 
         Action scrollLockAction = new Action(Messages.scrollLock, SWT.TOGGLE) {
 
+            @Override
             public void run() {
                 scrollLock = !scrollLock;
             }
@@ -624,6 +627,7 @@ public class ConsoleView extends ViewPart {
         Action deleteAction = new Action(Messages.clear, ImageDescriptor.createFromImage(PlatformUI.getWorkbench()
             .getSharedImages().getImage(ISharedImages.IMG_TOOL_DELETE))) {
 
+            @Override
             public void run() {
                 // for now, "clear" means "wipe the model"
                 consoleModel.clearAll();

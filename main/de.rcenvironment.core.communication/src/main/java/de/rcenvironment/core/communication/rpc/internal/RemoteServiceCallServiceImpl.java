@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,6 +49,7 @@ public final class RemoteServiceCallServiceImpl implements RemoteServiceCallServ
             // create a synthetic CommunicationException for errors that were not thrown by the
             // remote method or the remote service invoker (e.g. routing errors)
             if (!networkResponse.isSuccess()) {
+                // TODO merge and/or extract common RPC formatting
                 String errorMessage =
                     String.format("RPC call for method %s.%s() on %s failed with error code %s (trace: %s)",
                         serviceCallRequest.getService(), serviceCallRequest.getServiceMethod(), serviceCallRequest.getRequestedPlatform(),
@@ -56,6 +57,14 @@ public final class RemoteServiceCallServiceImpl implements RemoteServiceCallServ
                 return new ServiceCallResult(new CommunicationException(errorMessage));
             }
             Serializable deserializedContent = networkResponse.getDeserializedContent();
+            // TODO find out how this can be reached without the response code being != SUCCESS, which is caught above - misc_ro
+            if (deserializedContent == null) {
+                String errorMessage =
+                    String.format("Received null service call result for RPC to method %s#%s() on '%s'; response code is %s",
+                        serviceCallRequest.getService(), serviceCallRequest.getServiceMethod(), serviceCallRequest.getRequestedPlatform(),
+                        networkResponse.getResultCode());
+                return new ServiceCallResult(new CommunicationException(errorMessage));
+            }
             // TODO review: clarify local/remote exception result handling - misc_ro, Sept 2013
             if (deserializedContent instanceof Throwable) {
                 // immediate fix (added in 3.2) to rule out ClassCastExceptions

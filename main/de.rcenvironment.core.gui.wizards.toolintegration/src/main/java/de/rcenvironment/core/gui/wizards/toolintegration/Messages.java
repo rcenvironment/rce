@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -217,6 +217,9 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String toolFilenameInvalid;
+    
+    /** NLS Constant. */
+    public static String toolFilenameUsed;
 
     /** NLS Constant. */
     public static String useCustomTempDir;
@@ -379,6 +382,12 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String limitExecutionInstances;
+
+    /** NLS Constant. */
+    public static String deleteNotOnErrorIteration;
+
+    /** NLS Constant. */
+    public static String deleteNotOnErrorOnce;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

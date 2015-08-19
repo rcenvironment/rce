@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -30,7 +30,7 @@ public class BoundVariable extends TypedValue implements Serializable {
      * @param from Where to copy from
      */
     public BoundVariable(final BoundVariable from) {
-        super((TypedValue) from);
+        super(from);
         this.name = from.name;
     }
     
@@ -73,6 +73,7 @@ public class BoundVariable extends TypedValue implements Serializable {
      * @param stringValue String to set.
      * @return the whole new object instance.
      */
+    @Override
     public BoundVariable setStringValue(final String stringValue) {
         super.setStringValue(stringValue);
         return this;
@@ -84,6 +85,7 @@ public class BoundVariable extends TypedValue implements Serializable {
      * @param intValue Integer to set.
      * @return the whole new object instance.
      */
+    @Override
     public BoundVariable setIntegerValue(final long intValue) {
         super.setIntegerValue(intValue);
         return this;
@@ -95,6 +97,7 @@ public class BoundVariable extends TypedValue implements Serializable {
      * @param realValue Double to set.
      * @return the whole new object instance.
      */
+    @Override
     public BoundVariable setRealValue(final double realValue) {
         super.setRealValue(realValue);
         return this;
@@ -106,6 +109,7 @@ public class BoundVariable extends TypedValue implements Serializable {
      * @param booleanValue Boolean to set.
      * @return the whole new object instance.
      */
+    @Override
     public BoundVariable setLogicValue(final boolean booleanValue) {
         super.setLogicValue(booleanValue);
         return this;

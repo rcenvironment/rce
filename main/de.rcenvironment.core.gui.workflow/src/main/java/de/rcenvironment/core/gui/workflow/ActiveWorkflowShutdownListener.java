@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -240,13 +240,12 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 }
             });
         
-        notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExecutionIdentifier,
-            workflowStateChangeListener, wfNodeId);
-        
-        notificationService.subscribe(String.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
-            wfExecutionIdentifier, wfNodeId.getIdString()), new ConsoleRowSubscriber(wfDisposedLatch), wfNodeId);
-        
         try {
+            notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExecutionIdentifier,
+                workflowStateChangeListener, wfNodeId);
+            
+            notificationService.subscribe(String.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
+                wfExecutionIdentifier, wfNodeId.getIdString()), new ConsoleRowSubscriber(wfDisposedLatch), wfNodeId);
             if (state == null) {
                 state = workflowExecutionService.getWorkflowState(wfExecutionIdentifier, wfNodeId);
             }
@@ -257,8 +256,8 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 workflowExecutionService.dispose(wfExecutionIdentifier, wfNodeId);
             }
         } catch (CommunicationException e) {
-            LOGGER.error(String.format("Failed to cancel/dispose workflow '%s' (%s)",
-                wfInstanceName, wfExecutionIdentifier), e);
+            LOGGER.error(String.format("Failed to cancel/dispose workflow '%s' (%s): %s",
+                wfInstanceName, wfExecutionIdentifier, e.getMessage()));
         }
         try {
             wfDisposedLatch.await();

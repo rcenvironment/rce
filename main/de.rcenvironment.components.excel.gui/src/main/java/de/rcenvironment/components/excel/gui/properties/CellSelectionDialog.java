@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -129,6 +129,7 @@ public class CellSelectionDialog extends Dialog {
         btnCancel.setText("Cancel");
         
         Listener listener = new Listener() {
+            @Override
             public void handleEvent(Event event) {
                 if (event.widget != btnOk) {
                     setAddress(initAddress);  

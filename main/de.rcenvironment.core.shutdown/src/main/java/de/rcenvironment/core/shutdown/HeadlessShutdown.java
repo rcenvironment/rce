@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -127,7 +127,7 @@ public class HeadlessShutdown {
                         try {
                             Thread.sleep(REGULAR_SHUTDOWN_WAIT_TIME_MSEC);
                         } catch (InterruptedException e) {
-                            logger.error(e.getStackTrace());
+                            logger.error(e);
                             writeToLog("Regular shutdown time expired, shutting down hard using System.exit()");
                             System.exit(0);
                         }

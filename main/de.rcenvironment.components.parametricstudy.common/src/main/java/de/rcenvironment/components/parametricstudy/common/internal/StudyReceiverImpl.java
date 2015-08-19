@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,9 +10,12 @@ package de.rcenvironment.components.parametricstudy.common.internal;
 
 import java.util.List;
 
+import org.apache.commons.logging.LogFactory;
+
 import de.rcenvironment.components.parametricstudy.common.Study;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyReceiver;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
@@ -57,8 +60,14 @@ public final class StudyReceiverImpl implements StudyReceiver {
     @Override
     public void initialize() {
         final String notificationId = ParametricStudyUtils.createDataIdentifier(study);
-        Long missedNumber = notificationService.subscribe(
-            notificationId, notificationSubscriber, platform).get(notificationId);
+        Long missedNumber;
+        try {
+            missedNumber = notificationService.subscribe(
+                notificationId, notificationSubscriber, platform).get(notificationId);
+        } catch (CommunicationException e) {
+            LogFactory.getLog(getClass()).error("Failed to subscribe for Parametric Study data source: " + e.getMessage());
+            return; // preserve the "old" RTE behavior for now
+        }
         // process missed notifications
         if (missedNumber > MINUS_ONE) {
             if (missedNumber > StudyPublisher.BUFFER_SIZE - 1) {

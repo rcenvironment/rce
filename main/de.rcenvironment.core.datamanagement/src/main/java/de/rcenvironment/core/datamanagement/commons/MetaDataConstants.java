@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,16 @@ package de.rcenvironment.core.datamanagement.commons;
  * @author Jan Flink
  */
 public final class MetaDataConstants {
+
+    /**
+     * Name of table holding database version information.
+     */
+    public static final String TABLE_DB_VERSION_INFO = "DB_VERSION_INFO";
+
+    /**
+     * Name of table holding database version information.
+     */
+    public static final String DB_VERSION = "DB_VERSION";
 
     /**
      * Name of table holding {@link WorkflowRunDescription}s.

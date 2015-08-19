@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,7 +14,6 @@ import java.util.Random;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.internal.win32.OS;
@@ -67,6 +66,7 @@ public class TIGLViewer extends ViewPart {
      * 
      * @param parent Composite parent
      */
+    @Override
     public void createPartControl(Composite parent) {
         Composite nativeComposite = new Composite(parent, SWT.EMBEDDED);
         String sCommand;

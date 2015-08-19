@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Shutdown
 Bundle-SymbolicName: de.rcenvironment.core.shutdown
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-Activator: de.rcenvironment.core.shutdown.Activator
 Bundle-ActivationPolicy: lazy

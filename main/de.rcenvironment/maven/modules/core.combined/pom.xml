@@ -92,6 +92,7 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.cluster</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.command</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.communication</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.datamanagement</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.help</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.log</module>

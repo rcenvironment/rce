@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,6 +36,7 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
+import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.utils.incubator.XMLHelper;
 import de.rcenvironment.core.utils.incubator.XMLNamespaceContext;
 import de.rcenvironment.core.utils.incubator.XSLTErrorHandler;
@@ -70,8 +71,9 @@ public class XMLMapper {
      * 
      * @param mappingDoc The mapping file as DOM document.
      * @return Returns a list of XMLMappingInformation objects, which contain the mapping rules.
+     * @throws ComponentException Mapping error.
      */
-    public List<XMLMappingInformation> readXMLMapping(final Document mappingDoc) {
+    public List<XMLMappingInformation> readXMLMapping(final Document mappingDoc) throws ComponentException {
         final List<XMLMappingInformation> mappings = new LinkedList<XMLMappingInformation>();
 
         try {
@@ -131,7 +133,11 @@ public class XMLMapper {
                 mappings.add(mapInfo);
             }
         } catch (final XPathExpressionException e) {
-            LOGGER.fatal(e);
+            throw new ComponentException(
+                "XML mapping error. No mapping nodes (/map:mappings/map:mapping) found in the mapping file."
+                    + " Please ensure that your mapping file contains the corresponding nodes and uses the corresponding namespace"
+                    + " (xmlns:map=\"http://www.rcenvironment.de/2015/mapping\").",
+                e.getCause());
         }
         return mappings;
     }
@@ -143,9 +149,10 @@ public class XMLMapper {
      * @param targetDoc The target document.
      * @param mappings A list of mapping rules.
      * @throws XPathExpressionException Thrown if XPath could not be evaluated.
+     * @throws ComponentException Mapping error.
      */
     public void map(final Document sourceDoc, final Document targetDoc, final List<XMLMappingInformation> mappings)
-        throws XPathExpressionException {
+        throws XPathExpressionException, ComponentException {
         // XPath object for querying the source document
         final XPath xpath = XPathFactory.newInstance().newXPath();
         xpath.setNamespaceContext(new XMLNamespaceContext(sourceDoc));

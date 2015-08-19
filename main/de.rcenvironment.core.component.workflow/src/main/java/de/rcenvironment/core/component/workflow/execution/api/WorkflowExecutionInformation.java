@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,7 +19,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
  * 
  * @author Doreen Seider
  */
-public interface WorkflowExecutionInformation extends ExecutionInformation {
+public interface WorkflowExecutionInformation extends ExecutionInformation, Comparable<WorkflowExecutionInformation> {
 
     /**
      * @return time the execution was started

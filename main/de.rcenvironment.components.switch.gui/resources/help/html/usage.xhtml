@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head><title>Switch Component Usage</title></head>
+    <body>
+        <h2><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US">Switch Component Usage</span></h2>
+        <h2><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US">Synopsis</span></h2>
+        <p><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">The Switch component forwards an input value to one of two ouputs.</span></p>
+        <h3><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">Rationale</span></h3>
+        <p><span  style="mso-ansi-language:EN-US">The Switch component allows to direct the data flow within a workflow. It receives input values at one pre-defined input and forwards them to one of two pre-defined outputs. To which one the values are forwarded depends on a condition. The condition is configured by the user within the Switch component. It can be based on the values received at the pre-defined input or on values received at additional inputs.</span></p>
+        <h3><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">Usage</span></h3>
+        <p class="MsoNormal" style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-ansi-language:EN-US">
+            The Switch component has a pre-defined input 'To forward'. Values, which are received at that input are forwarded to one of the two outputs. That input is a so-called 'data input'. The default data type of the data input is float. Change the data type to the one you require to forward. 
+            Next to that input, you can create as many inputs as you like. They are intended to be used within the condition definition and are so-called 'condition inputs'.
+            Note: If you like to direct data of multiple inputs you need to add multiple Switch components to your workflow.
+            </span></p>
+        <p class="MsoNormal" style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span
+                style="mso-no-proof:yes"><img alt="ow1" height="400" src="images/image001.png" /></span></p>
+        <p class="MsoNormal" style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-ansi-language:EN-US">
+        Define your condition within the 'Condition' tab. A condition may contain input names, numbers, relational operators, and parenthesis. You can either insert input names and valid operators from the drop down list on the right-hand side or you can write them by yourself.
+        	Inputs can only be used within conditions if their data types is either integer, float or boolean. The data input automatically appears in the drop down list, if it has one of the data types allowed.</span></p>
+        <p class="MsoNormal" style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt">
+        	<span style="mso-no-proof:yes"><img alt="ow1" height="200" src="images/image002.png" /></span></p>
+    </body>
+</html>

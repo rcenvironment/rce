@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,8 +21,7 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 
 /**
- * For each Component a TimeTableComponentCanvas showing the usage of the component during a workflow.
- * 
+ * Each Component has its own {@link TimelineComponentCanvas} showing the usage of the component during a workflow.
  * @author Hendrik Abbenhaus
  * 
  */
@@ -89,8 +88,7 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
     }
 
     /**
-     * 
-     * 
+     * Sets a new WorkflowEndTime.
      * @param newwfEndTime the new workflow end time
      */
     public void setWorkflowEndTime(Date newwfEndTime) {
@@ -99,8 +97,7 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
     }
 
     /**
-     * 
-     * 
+     * Sets a new visible time area containing start and endTime.
      * @param startTime the current selected startTime
      * @param endTime the current selected endTime
      */
@@ -111,8 +108,7 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
     }
 
     /**
-     * Set a new Content.
-     * 
+     * Sets a new Content.
      * @param newActivities the activities
      */
     public void setActivities(TimelineActivityPart[] newActivities) {
@@ -122,6 +118,7 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
 
     /*
      * (non-Javadoc)
+     * NO OP!
      * 
      * @see org.eclipse.swt.events.MouseListener#mouseDoubleClick(org.eclipse.swt.events.MouseEvent)
      */
@@ -132,6 +129,7 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
 
     /*
      * (non-Javadoc)
+     * NO OP!
      * 
      * @see org.eclipse.swt.events.MouseListener#mouseDown(org.eclipse.swt.events.MouseEvent)
      */
@@ -142,6 +140,7 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
 
     /*
      * (non-Javadoc)
+     * NO OP!
      * 
      * @see org.eclipse.swt.events.MouseListener#mouseUp(org.eclipse.swt.events.MouseEvent)
      */
@@ -151,6 +150,8 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
     }
 
     /**
+     * Refreshes the current tooltipText by getting the correct {@link TimelineActivityPart}.
+     * 
      * {@inheritDoc}
      * 
      * @see org.eclipse.swt.events.MouseMoveListener#mouseMove(org.eclipse.swt.events.MouseEvent)

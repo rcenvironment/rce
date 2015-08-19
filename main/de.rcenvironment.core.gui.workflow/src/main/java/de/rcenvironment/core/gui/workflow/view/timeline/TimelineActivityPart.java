@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,8 +15,8 @@ import java.util.TimeZone;
 import org.apache.commons.lang3.time.DurationFormatUtils;
 
 /**
+ * Represents an object of a elemental activity area.
  * @author Hendrik Abbenhaus
- *
  */
 public class TimelineActivityPart {
     private String componentName = null;
@@ -25,9 +25,8 @@ public class TimelineActivityPart {
     private String comment = "";
     private Date endtime = null;
 
-    /**
-     * 
-     */
+    private String run;
+
     public TimelineActivityPart(String componentName, TimelineActivityType type, Date date, String comment) {
         this.componentName = componentName;
         this.date = date;
@@ -36,7 +35,16 @@ public class TimelineActivityPart {
     }
 
 
-     /**
+    public TimelineActivityPart(String componentName, TimelineActivityType type, Date date, String run, String comment) {
+        this.componentName = componentName;
+        this.date = date;
+        this.type = type;
+        this.run = run;
+        this.comment = comment;
+    }
+
+    /**
+     * Returns the start time as a {@link Date} of this current activity area.
      * @return the time
      */
     public Date getDate() {
@@ -49,20 +57,24 @@ public class TimelineActivityPart {
 
 
     /**
+     * Returns the type as a {@link TimelineActivityType} of this current activity area.
      * @return the type
      */
     public TimelineActivityType getType() {
         return this.type;
     }
     
-    
+    /**
+     * Returns the comment of an activity area.
+     * @return the comment
+     */
     public String getComment(){
         return this.comment;
     }
     
     /**
-     * 
-     * @param newWFEndTime the endtime of workflow
+     * Returns a complete tooltip text of this activity area instance.
+     * @param newWFEndTime the end time of workflow
      * @return a text for a tooltip
      */
     public String getTooltipText(Date newWFEndTime){
@@ -82,6 +94,9 @@ public class TimelineActivityPart {
             text += "End: " + dateFormat.format(currentCalcTime) + "\n";
             text += "Duration: " + getDurationText(currentCalcTime) + "\n";
         }
+        if (run != null) {
+            text += "Run: " + run + "\n";
+        }
         if (this.comment != null && !this.comment.equals("")){
             text += "Comment: " + this.comment;
         }
@@ -90,9 +105,9 @@ public class TimelineActivityPart {
 
 
     /**
-     * 
-     * @param time The endtimes.
-     * @return the duration map
+     * Formatter beautifies input dates to readable Strings.
+     * @param time The input date
+     * @return a readable date string
      */
     public String getDurationText(Date time) {
         if (time ==  null){
@@ -108,6 +123,10 @@ public class TimelineActivityPart {
         return DurationFormatUtils.formatDurationHMS(Math.abs(cal.getTimeInMillis() - t1));
     }
     
+    /**
+     * Sets a new Endtime of this activity area instance.
+     * @param newEndTime the current activity
+     */
     public void setEndtime(Date newEndTime){
         this.endtime = newEndTime;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,12 +11,15 @@ package de.rcenvironment.core.gui.workflow.editor.connections;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
+import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.workflow.ConnectionUtils;
 
 
 /**
@@ -42,7 +45,7 @@ public class ConnectionDialogController {
     private boolean wasDoubleClicked;
     
     public ConnectionDialogController(WorkflowDescription description, WorkflowNode source, WorkflowNode target, boolean wasDoubleClicked) {
-        
+
         this.description = description;
 
         this.sourceWorkflowNode = source;
@@ -92,6 +95,10 @@ public class ConnectionDialogController {
         dialog.getConnectionDialogComposite().setWasDoubleClicked(wasDoubleClicked);
         dialog.getConnectionDialogComposite().applySourceFilter();
         dialog.getConnectionDialogComposite().applyTargetFilter();
+        
+        // start with empty selection
+        dialog.getConnectionDialogComposite().getSourceTreeViewer().setSelection(StructuredSelection.EMPTY);
+        dialog.getConnectionDialogComposite().getTargetTreeViewer().setSelection(StructuredSelection.EMPTY);
     }
 
     // if there are exactly 1 input and 1 output and they match in type, pull connection automatically
@@ -117,7 +124,12 @@ public class ConnectionDialogController {
                             return false;
                         }
                     }
-                    Connection newConnection = new Connection(sourceWorkflowNode, sourceOutput, targetWorkflowNode, targetInput);
+                    
+                    List<Location> bendpoints = 
+                        ConnectionUtils.findAlreadyExistentBendpointsBySourceAndTarget(sourceWorkflowNode, targetWorkflowNode, description);
+                    
+                    Connection newConnection = 
+                        new Connection(sourceWorkflowNode, sourceOutput, targetWorkflowNode, targetInput, bendpoints);
                     if (!description.getConnections().contains(newConnection)) {
                         description.addConnection(newConnection);
                         return true;
@@ -139,7 +151,10 @@ public class ConnectionDialogController {
                                     break;
                                 }
                             }
-                            Connection newConnection = new Connection(sourceWorkflowNode, sourceOutput, targetWorkflowNode, targetInput);
+                            List<Location> bendpoints = ConnectionUtils.findAlreadyExistentBendpointsBySourceAndTarget(sourceWorkflowNode
+                                , targetWorkflowNode, description);
+                            Connection newConnection = 
+                                new Connection(sourceWorkflowNode, sourceOutput, targetWorkflowNode, targetInput, bendpoints);
                             if (!description.getConnections().contains(newConnection) && !alreadyExists) {
                                 connectionsToBeAdded.add(newConnection);
                                 autoConnected = true;
@@ -153,5 +168,8 @@ public class ConnectionDialogController {
         }
         return autoConnected;
     }
+    
+    
+    
 
 }

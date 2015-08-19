@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -55,6 +55,8 @@ import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.view.OpenReadOnlyWorkflowRunEditorAction;
 import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
+import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
+import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProcessor;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
@@ -71,6 +73,14 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  */
 public class WorkflowListView extends ViewPart implements WorkflowStateChangeListener {
 
+    // the maximum number of ConsoleRows to aggregate to a single batch
+    // NOTE: arbitrary value; adjust when useful/necessary
+    private static final int MAX_BATCH_SIZE = 500;
+
+    // the maximum time a ConsoleRow may be delayed by batch aggregation
+    // NOTE: arbitrary value; adjust when useful/necessary
+    private static final long MAX_BATCH_LATENCY_MSEC = 500;
+    
     // guarded by synchronization on itself
     private final List<String> idsOfRemoteWorkflowsSubscribedFor = new ArrayList<String>();
 
@@ -101,11 +111,32 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
     private ServiceRegistryPublisherAccess serviceRegistryPublisherAccess;
     
     private WorkflowExecutionService workflowExecutionService;
+    
+    private Object syncUpdateLock = new Object();
+    
+    private final BatchAggregator< Set<WorkflowExecutionInformation>> batchAggregator;
 
     public WorkflowListView() {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         workflowExecutionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
         serviceRegistryPublisherAccess = ServiceRegistry.createPublisherAccessFor(this);
+        
+        BatchProcessor<Set<WorkflowExecutionInformation>> batchProcessor = new BatchAggregator
+            .BatchProcessor<Set<WorkflowExecutionInformation>>() {
+
+            @Override
+            public void processBatch(final List<Set<WorkflowExecutionInformation>> batch) {
+                Display.getDefault().asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        refresh(batch.get(batch.size() - 1));
+                    }
+                });
+            }
+
+        };
+        batchAggregator = new BatchAggregator<Set<WorkflowExecutionInformation>>(MAX_BATCH_SIZE, MAX_BATCH_LATENCY_MSEC, batchProcessor);
     }
     /**
      * Registers an event listener for network changes as an OSGi service (whiteboard pattern).
@@ -120,15 +151,11 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
             public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
                 Set<NodeIdentifier> removedWfHosts) {
                 updateSubscriptionsForNewlyCreatedWorkflows();
-                final Set<WorkflowExecutionInformation> wis = updateWorkflowInformations();
-                if (!table.isDisposed()) {
-                    Display.getDefault().asyncExec(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            refresh(wis);
-                        }
-                    });                    
+                synchronized (syncUpdateLock) {
+                    final Set<WorkflowExecutionInformation> wis = updateWorkflowInformations();
+                    if (!table.isDisposed()) {
+                        batchAggregator.enqueue(wis);
+                    }                    
                 }
 
             }
@@ -208,6 +235,7 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
 
         table.addMouseListener(new MouseAdapter() {
 
+            @Override
             public void mouseDoubleClick(MouseEvent e) {
                 WorkflowExecutionInformation wi = (WorkflowExecutionInformation) ((IStructuredSelection)
                     viewer.getSelection()).getFirstElement();
@@ -240,7 +268,13 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
                 try {
                     monitor.beginTask(Messages.fetchingWorkflows, 7);
                     // subscribe to all state notifications of the local node
-                    sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + ".*", workflowStateChangeListener, null);
+                    try {
+                        sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + ".*", workflowStateChangeListener, null);
+                    } catch (CommunicationException e) {
+                        LogFactory.getLog(getClass()).error(
+                            "Failed to set up remote subscriptions; the workflow list will not update properly: " + e.getMessage());
+                        // TODO review: anything else that can be done except continuing with broken updates? - misc_ro, April 2015
+                    }
                     monitor.worked(2);
                     // subscribe to get informed about new workflows created to refresh and fetch them
                     updateSubscriptionsForNewlyCreatedWorkflows();
@@ -550,12 +584,10 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
         if (newState != null) {
             WorkflowStateModel.getInstance().setState(workflowIdentifier, newState);
         }
-        final Set<WorkflowExecutionInformation> wis = updateWorkflowInformations();
-        Display.getDefault().asyncExec(new Runnable() {
-
-            public void run() {
-                refresh(wis);
-            }
-        });
+        synchronized (syncUpdateLock) {
+            final Set<WorkflowExecutionInformation> wis = updateWorkflowInformations();
+            batchAggregator.enqueue(wis);            
+        }
     }
+    
 }

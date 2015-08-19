@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,8 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 
- *
+ * Tree node for Component tree.
  * @author Hendrik Abbenhaus
  */
 public class TimelineFilterTreeNode {
@@ -39,8 +38,7 @@ public class TimelineFilterTreeNode {
     }
 
     /**
-     * 
-     * 
+     * Adds a child to the List of children.
      * @param child the child
      */
     public void addChild(TimelineFilterTreeNode child) {
@@ -57,8 +55,8 @@ public class TimelineFilterTreeNode {
     }
 
     /**
-     * 
-     * @return Returns a DisplayName for this Node
+     * Returns a DisplayName for this Node.
+     * @return DisplayName for this Node
      */
     public String getDisplayName() {
         
@@ -74,9 +72,8 @@ public class TimelineFilterTreeNode {
     }
     
     /**
-     * 
-     * 
-     * @return Returns true if row is not empty
+     * Check if this instance has a connected row.
+     * @return Returns false if row is empty else true
      */
     public boolean hasRow(){
         if (row == null){
@@ -86,10 +83,9 @@ public class TimelineFilterTreeNode {
     }
     
     /**
-     * 
-     * 
+     * Checks if there already is a child with equal component id. 
      * @param checkComponentID the componentID to check
-     * @return Returns the Node with same ID or null if there is no child with same ID
+     * @return Returns the Node with same ID or {@value null} if there is no child with same ID
      */
     public TimelineFilterTreeNode hasChildWithComponentID(String checkComponentID){
         for (TimelineFilterTreeNode current : getChildren()){

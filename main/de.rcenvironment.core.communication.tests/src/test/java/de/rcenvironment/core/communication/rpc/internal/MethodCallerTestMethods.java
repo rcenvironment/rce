@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,7 +11,6 @@ package de.rcenvironment.core.communication.rpc.internal;
 import java.io.IOException;
 import java.util.List;
 
-import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
@@ -93,14 +92,6 @@ public interface MethodCallerTestMethods {
      * @param string param2.
      */
     void ambiguous(String string, Object obj1);
-
-    /**
-     * Method that has a communication contact as parameter.
-     * 
-     * @param contact The communication contact.
-     * @return The same contact.
-     */
-    NetworkContact proxyMethod(NetworkContact contact);
 
     /**
      * Test serializing null.

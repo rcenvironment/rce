@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,6 +47,7 @@ import de.rcenvironment.components.parametricstudy.common.Dimension;
 import de.rcenvironment.components.parametricstudy.common.Measure;
 import de.rcenvironment.components.parametricstudy.common.StudyDataset;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
+import de.rcenvironment.core.gui.utils.incubator.StudyDataExportMessageHelper;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
 import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
@@ -56,6 +57,8 @@ import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
  * 
  * @author Christian Weiss
  */
+@SuppressWarnings("deprecation")
+//This is a legacy class which will not be adapted to the new Data Types. Thus, the deprecation warnings are suppressed here.
 public class ChartDataComposite extends Composite implements ISelectionProvider {
 
     private static final int DEFAULT_COLUMN_WIDTH = 100;
@@ -151,7 +154,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                     .isEmpty());
             }
         });
-        
+
         copyToClipboardButton.addSelectionListener(new SelectionAdapter() {
 
             @Override
@@ -159,16 +162,15 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 copyToClipboard();
             }
 
-
         });
-        
+
         table.addKeyListener(new KeyAdapter() {
-            
+
             @Override
             public void keyPressed(KeyEvent e) {
-                if (e.stateMask == SWT.CTRL && e.keyCode == 'c'){
+                if (e.stateMask == SWT.CTRL && e.keyCode == 'c') {
                     copyToClipboard();
-                } else if (e.stateMask == SWT.CTRL && e.keyCode == 'a'){
+                } else if (e.stateMask == SWT.CTRL && e.keyCode == 'a') {
                     table.selectAll();
                 }
             }
@@ -217,7 +219,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 new Transfer[] { textTransfer });
         }
     }
-    
+
     /**
      * Sets the study datastore.
      * 
@@ -245,7 +247,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
      */
     private class MySelectionListener implements SelectionListener {
 
-        private Shell cdc;
+        private final Shell cdc;
 
         public MySelectionListener(ChartDataComposite cd) {
             cdc = cd.getShell();
@@ -258,44 +260,54 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
+            boolean success = true;
             FileDialog fd = new FileDialog(cdc, SWT.SAVE);
             fd.setText("Save");
             fd.setFilterPath(System.getProperty("user.dir"));
             String[] filterExt = { "*.xls" };
             fd.setFilterExtensions(filterExt);
             String selected = fd.open();
-            if (selected != null && studyDatastore != null){
-                if (!selected.substring(selected.lastIndexOf('.') + 1).toLowerCase().equals("xls")) {
-                    selected += ".xls";
-                }
-                File excelFile = new File(selected); // or "e.xls"
-                TypedValue[][] values = new TypedValue[studyDatastore.getDatasetCount() + 1][];
-                
-                Iterator<StudyDataset> it = studyDatastore.getDatasets().iterator();
-                int i = 0;
-                while (it.hasNext()) {
-                    
-                    StudyDataset next = it.next();
-                    
-                    if (i == 0) {
+            if (selected != null) {
+                File excelFile = null;
+                if (studyDatastore != null) {
+                    if (!selected.substring(selected.lastIndexOf('.') + 1).toLowerCase().equals("xls")) {
+                        selected += ".xls";
+                    }
+                    excelFile = new File(selected); // or "e.xls"
+                    TypedValue[][] values = new TypedValue[studyDatastore.getDatasetCount() + 1][];
+
+                    Iterator<StudyDataset> it = studyDatastore.getDatasets().iterator();
+                    int i = 0;
+                    while (it.hasNext()) {
+
+                        StudyDataset next = it.next();
+
+                        if (i == 0) {
+                            values[i] = new TypedValue[next.getValues().size()];
+                            int j = next.getValues().size() - 1;
+                            for (String str : next.getValues().keySet()) {
+                                values[0][j] = new TypedValue(VariableType.String, str);
+                                j--;
+                            }
+                            i = 1;
+                        }
+
                         values[i] = new TypedValue[next.getValues().size()];
                         int j = next.getValues().size() - 1;
-                        for (String str : next.getValues().keySet()) {
-                            values[0][j] = new TypedValue(VariableType.String, str);
+                        for (String key : next.getValues().keySet()) {
+                            values[i][j] = new TypedValue(VariableType.Real, "" + next.getValue(key));
                             j--;
                         }
-                        i = 1;
+                        i++;
                     }
-                    
-                    values[i] = new TypedValue[next.getValues().size()];
-                    int j = next.getValues().size() - 1;
-                    for (String key : next.getValues().keySet()) {
-                        values[i][j] = new TypedValue(VariableType.Real, "" + (Double) next.getValue(key));
-                        j--;
-                    }
-                    i++;
+
+                    success = ExcelFileExporter.exportValuesToExcelFile(excelFile, values);
+                } else {
+                    success = false;
                 }
-                ExcelFileExporter.exportValuesToExcelFile(excelFile, values);
+                
+                StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
+
             }
         }
     }

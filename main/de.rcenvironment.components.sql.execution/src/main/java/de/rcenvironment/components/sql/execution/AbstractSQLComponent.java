@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,6 +37,8 @@ import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
  * @author Markus Kunde
  * @author Christian Weiss
  */
+@SuppressWarnings("deprecation")
+//This is a legacy class which will not be adapted to the new Data Types. Thus, the deprecation warnings are suppressed here.
 public abstract class AbstractSQLComponent extends AbstractComponent {
 
     protected static final String META_OUTPUT_PREFIX = "meta.";
@@ -363,6 +365,7 @@ public abstract class AbstractSQLComponent extends AbstractComponent {
         return result;
     }
     
+    @Override
     protected boolean isSqlInitQueryEnabled() {
         final boolean result = Boolean.valueOf(componentContext.getConfigurationValue(SqlComponentConstants.METADATA_DO_SQL_INIT_PROPERTY));
         return result;

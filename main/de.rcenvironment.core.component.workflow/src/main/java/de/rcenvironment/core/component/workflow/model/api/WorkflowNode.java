@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -55,6 +55,8 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     
     private boolean isEnabled = true;
     
+    private boolean valid = false;
+
     /**
      * Constructor.
      * 
@@ -112,6 +114,14 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     public void setEnabled(boolean newEnabled) {
         this.isEnabled = newEnabled;
         firePropertyChange(PROPERTY_NODE_ATTRIBUTES);
+    }
+
+    public boolean isValid() {
+        return valid;
+    }
+
+    public void setValid(boolean valid) {
+        this.valid = valid;
     }
 
     /**

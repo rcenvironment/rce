@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,7 +37,7 @@ public class ScriptExecutorFactoryRegistryImpl implements ScriptExecutorFactoryR
         if (factory != null && !executorFactories.contains(factory)) {
             executorFactories.add(factory);
         } else {
-            LOGGER.warn("Could not register ScriptExecutorFactory: " + factory.getSupportingScriptLanguage().toString());
+            LOGGER.warn("Could not register ScriptExecutorFactory.");
         }
     }
 
@@ -46,7 +46,7 @@ public class ScriptExecutorFactoryRegistryImpl implements ScriptExecutorFactoryR
         if (factory != null && executorFactories.contains(factory)) {
             executorFactories.remove(factory);
         } else {
-            LOGGER.warn("Could not register ScriptExecutorFactory: " + factory.getSupportingScriptLanguage().toString());
+            LOGGER.warn("Could not register ScriptExecutorFactor.");
         }
     }
 

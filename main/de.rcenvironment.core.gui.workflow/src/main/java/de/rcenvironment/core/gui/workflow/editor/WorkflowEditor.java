@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -132,13 +133,10 @@ import de.rcenvironment.core.gui.workflow.WorkflowNodeLabelConnectionHelper;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeLabelConnectionCreateCommand;
 import de.rcenvironment.core.gui.workflow.editor.handlers.OpenConnectionEditorHandler;
 import de.rcenvironment.core.gui.workflow.editor.handlers.OpenConnectionsViewHandler;
-import de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowNodeCopyHandler;
-import de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowNodeDeleteHandler;
-import de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowNodePasteHandler;
-import de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowPartsCutHandler;
 import de.rcenvironment.core.gui.workflow.parts.ConnectionPart;
 import de.rcenvironment.core.gui.workflow.parts.EditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowPart;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -151,32 +149,32 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Doreen Seider
  * @author Oliver Seebach
  * @author Robert Mischke
+ * @author David Scholz
  */
 public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements ITabbedPropertySheetPageContributor,
     DistributedComponentKnowledgeListener {
 
     /** Property change event. */
     public static final int PROP_FINAL_WORKFLOW_DESCRIPTION_SET = 0x300;
+    
+    /** Property change event. */
+    public static final int PROP_WORKFLOW_VAILDATION_FINISHED = 0x400;
 
     /** Constant. */
     public static final String COMPONENTNAMES_WITH_VERSION = " (%s)";
 
     /** Key for show labels preference. */
     public static final String SHOW_LABELS_PREFERENCE_KEY = "showConnections";
-    
+
     protected static final int DEFAULT_TOLERANCE = 10;
-    
+
     private static final String DRAG_STATE = "DRAG_STATE";
 
     private static final char SELECTION_KEYCODE = 's'; // for ALT + s as shortcut
 
     private static final char CONNECTION_KEYCODE = 'd'; // for ALT + d as shortcut
 
-    private static final char NUMBER_OF_CONNECTIONS_KEYCODE = 'c'; // for ALT + c as shortcut
-
-    private static final char PASTE_KEYCODE = 'v'; // for CTRL + v as shortcut
-
-    private static final char CUT_KEYCODE = 'x'; // for CTRL + x as shortcut
+    private static final char OPEN_CONNECTION_VIEW_KEYCODE = 'c'; // for ALT + c as shortcut
 
     private static final String MENU_LISTENER_MARKER = "MENU_LISTENER_MARKER";
 
@@ -221,6 +219,10 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     private File inputFile = null;
 
     private IFile workspaceFile = null;
+    
+    private int mouseX;
+    
+    private int mouseY;
 
     private final ServiceRegistryPublisherAccess serviceRegistryAccess;
 
@@ -358,7 +360,7 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                     if (structuredSelectionObject instanceof ConnectionPart) {
                         ConnectionPart connectionPart = ((ConnectionPart) structuredSelectionObject);
                         if (viewer.getSelectedEditParts().contains(connectionPart)) {
-                            connectionPart.getConnectionFigure().setForegroundColor(ColorConstants.red);
+                            connectionPart.getConnectionFigure().setForegroundColor(ColorConstants.blue);
                             connectionPart.showLabel();
                         }
                     }
@@ -391,6 +393,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             @Override
             public void mouseDown(MouseEvent ev) {
                 selectConnection(ev);
+                mouseX = ev.x;
+                mouseY = ev.y;
             }
 
             @Override
@@ -423,7 +427,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         getActionRegistry().registerAction(new ToggleSnapToGeometryAction(getGraphicalViewer()));
 
         getViewer().setProperty(SnapToGeometry.PROPERTY_SNAP_ENABLED, true);
-        getViewer().setProperty(SnapToGrid.PROPERTY_GRID_SPACING, new Dimension(5, 5));
+        getViewer().setProperty(SnapToGrid.PROPERTY_GRID_SPACING, new Dimension(WorkflowNodePart.SMALL_WORKFLOW_NODE_WIDTH - 1,
+            WorkflowNodePart.SMALL_WORKFLOW_NODE_WIDTH - 1));
 
         // register activate context for context sensitive key bindings
         IContextService contextService = (IContextService) getSite().getService(IContextService.class);
@@ -693,7 +698,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                     });
                 } catch (RuntimeException e) {
                     // caught and only logged as an error dialog already pops up if an error occur
-                    LogFactory.getLog(getClass()).error("Loading workflow failed", e);
+                    LogFactory.getLog(getClass()).error("Failed to load workflow: "
+                        + LoadingWorkflowDescriptionHelper.getNameOfWorkflowFile(inputFile, workspaceFile), e);
                 } finally {
                     monitor.done();
                 }
@@ -749,6 +755,27 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         }
         // set the dirty state relative to the current command stack position
         getCommandStack().markSaveLocation();
+        validateWorkflow();
+    }
+
+    private void validateWorkflow() {
+        List<?> list = viewer.getRootEditPart().getChildren();
+        for (Object object : list) {
+            if (object instanceof WorkflowPart) {
+                WorkflowPart workflowPart = (WorkflowPart) object;
+                List<?> children = workflowPart.getChildren();
+                for (Object child : children) {
+                    if (child instanceof WorkflowNodePart) {
+                        WorkflowNodePart workflowNodePart = (WorkflowNodePart) child;
+                        WorkflowNode workflowNode = (WorkflowNode) workflowNodePart.getModel();
+                        if (!workflowNode.isValid()) {
+                            workflowNodePart.verifyValid();
+                        }
+                    }
+                }
+            }
+        }
+        firePropertyChange(PROP_WORKFLOW_VAILDATION_FINISHED);
     }
 
     @Override
@@ -757,8 +784,11 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         fd.setText("Save As...");
         String[] filterExt = { "*.wf" };
         fd.setFilterExtensions(filterExt);
-        fd.setFilterPath(System.getProperty("user.dir"));
+        fd.setFilterPath(ResourcesPlugin.getWorkspace().getRoot().getLocation().toString());
         String selected = fd.open();
+        if (selected == null) {
+            return;
+        }
         if (!selected.substring(selected.lastIndexOf('.') + 1).toLowerCase().equals("wf")) {
             selected += ".wf";
         }
@@ -768,8 +798,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             FileWriter fw = new FileWriter(file);
             WorkflowDescriptionPersistenceHandler wdHandler = new WorkflowDescriptionPersistenceHandler();
             byte[] stream = wdHandler.writeWorkflowDescriptionToStream(workflowDescription).toByteArray();
-            for (int i = 0; i < stream.length; i++) {
-                fw.append((char) stream[i]); // progress monitor
+            for (byte element : stream) {
+                fw.append((char) element); // progress monitor
             }
             fw.flush();
             fw.close();
@@ -777,7 +807,9 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         } catch (IOException e) {
             throw new RuntimeException(e);
         } catch (OutOfMemoryError error) {
-            file.deleteOnExit();
+            if (file != null) {
+                file.deleteOnExit();
+            }
             showMemoryExceedingWarningMessage();
             error.printStackTrace();
         }
@@ -806,6 +838,10 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     @Override
     public Object getAdapter(@SuppressWarnings("rawtypes") Class type) {
         if (type == IPropertySheetPage.class) {
+            if (tabbedPropertySheetPage == null || tabbedPropertySheetPage.getControl() == null
+                || tabbedPropertySheetPage.getControl().isDisposed()) {
+                tabbedPropertySheetPage = new TabbedPropertySheetPage(this);
+            }
             return tabbedPropertySheetPage;
         } else if (type == IContextProvider.class) {
             return new WorkflowEditorHelpContextProvider(viewer);
@@ -995,7 +1031,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
 
         // check for every palette entry if contained in existing components -
         // if not : remove
-
         Map<PaletteDrawer, List<PaletteEntry>> componentsToRemove = new HashMap<PaletteDrawer, List<PaletteEntry>>();
 
         for (Object group : paletteRoot.getChildren()) {
@@ -1035,6 +1070,14 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         }
     }
 
+    public int getMouseX() {
+        return mouseX;
+    }
+    
+    public int getMouseY() {
+        return mouseY;
+    }
+    
     // removed as it causes NPE on start up, if connection is not established, when workflow is opened under some circumstances
     // @Override
     // public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
@@ -1200,55 +1243,14 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
 
         @Override
         public void keyPressed(KeyEvent e) {
-            @SuppressWarnings("rawtypes") List selections = viewer.getSelectedEditParts();
-            if (e.keyCode == SWT.DEL) {
-                if (selections.size() > 0) {
-                    WorkflowNodeDeleteHandler deleteHandler = new WorkflowNodeDeleteHandler();
-                    ExecutionEvent event = new ExecutionEvent();
-                    try {
-                        deleteHandler.execute(event);
-                    } catch (ExecutionException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            }
-            if (e.stateMask == SWT.CTRL && e.keyCode == NUMBER_OF_CONNECTIONS_KEYCODE) {
-                if (selections.size() > 0) {
-                    WorkflowNodeCopyHandler copyHandler = new WorkflowNodeCopyHandler();
-                    ExecutionEvent event = new ExecutionEvent();
-                    try {
-                        copyHandler.execute(event);
-                    } catch (ExecutionException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            } else if (e.stateMask == SWT.CTRL && e.keyCode == PASTE_KEYCODE) {
-                WorkflowNodePasteHandler pasteHandler = new WorkflowNodePasteHandler();
-                ExecutionEvent event = new ExecutionEvent();
-                try {
-                    pasteHandler.execute(event);
-                } catch (ExecutionException ex) {
-                    throw new RuntimeException(ex);
-                }
-            } else if (e.stateMask == SWT.CTRL && e.keyCode == CUT_KEYCODE) {
-                if (selections.size() > 0 && selections.get(0) instanceof WorkflowNodePart) {
-                    WorkflowPartsCutHandler cutHandler = new WorkflowPartsCutHandler();
-                    ExecutionEvent event = new ExecutionEvent();
-                    try {
-                        cutHandler.execute(event);
-                    } catch (ExecutionException ex) {
-                        throw new RuntimeException(ex);
-                    }
-                }
-            } else if (e.stateMask == SWT.ALT && e.keyCode == CONNECTION_KEYCODE) {
+            if (e.stateMask == SWT.ALT && e.keyCode == CONNECTION_KEYCODE) {
                 switchToConnectionTool();
             } else if (e.stateMask == SWT.ALT && e.keyCode == SELECTION_KEYCODE) {
                 switchToSelectionTool();
-            } else if (e.stateMask == SWT.ALT && e.keyCode == NUMBER_OF_CONNECTIONS_KEYCODE) {
+            } else if (e.stateMask == SWT.ALT && e.keyCode == OPEN_CONNECTION_VIEW_KEYCODE) {
                 openConnectionEditor();
             }
         }
     }
-
 
 }

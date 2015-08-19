@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -62,6 +62,12 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER = "deleteWorkingDirectoriesNever";
+
+    /** Constant. */
+    public static final String KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ITERATION = "deleteWorkingDirectoriesKeepOnErrorIteration";
+
+    /** Constant. */
+    public static final String KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE = "deleteWorkingDirectoriesKeepOnErrorOnce";
 
     /** Constant. */
     public static final String KEY_LAUNCH_SETTINGS = "launchSettings";
@@ -292,6 +298,9 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_LIMIT_INSTANCES_COUNT = "limitInstallationInstancesNumber";
+
+    /** Constant. */
+    public static final String KEY_KEEP_ON_FAILURE = "keepOnFailure";
 
     private ToolIntegrationConstants() {
 

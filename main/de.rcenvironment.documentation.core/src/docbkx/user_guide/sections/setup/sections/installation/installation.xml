@@ -291,6 +291,17 @@
             templates and other information available via the "Help > Open Configuration
             Information" option. The available configuration settings are described in the
             configuration chapter.</para>
+        <para>
+            <note os="linux">
+                <para> On Ubuntu, the Ubuntu overlay scrollbars can sometimes lead to problems with
+                    the RCE GUI. To avoid these problems, you can start RCE from a terminal with
+                        <code>env LIBOVERLAY_SCROLLBAR=0 ./rce</code>  to disable the overlay
+                    scrollbars for RCE. Alternatively, if you want to enable the overlay scrollbars
+                    permanently for all programs, execute <code>echo "export LIBOVERLAY_SCROLLBAR=0"
+                        > /etc/X11/Xsession.d/80overlayscrollbars</code>  as a superuser and then
+                    restart your computer.</para>
+            </note>
+        </para>
     </sect2>
     <sect2>
         <title>Starting a Non-GUI ("Headless") Instance</title>

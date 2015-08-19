@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -154,10 +154,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     @Override
     public LDAPAuthenticationResult authenticate(String username, String password) {
 
-        LDAPAuthenticationResult result = null;
-
-        if (password == null || password.trim().equals("")) {
-            result = LDAPAuthenticationResult.PASSWORD_INVALID;
+        if (password == null || password.trim().isEmpty() 
+            || username == null || username.trim().isEmpty()) {
+            return LDAPAuthenticationResult.PASSWORD__OR_USERNAME_INVALID;
         }
 
         String baseDn = myConfiguration.getLdapBaseDn();
@@ -167,14 +166,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         try {
             connect(server, baseDn, username + "@" + domain, password);
         } catch (NamingException e) {
-            result = LDAPAuthenticationResult.PASSWORD_OR_USERNAME_INCORRECT;
+            return LDAPAuthenticationResult.PASSWORD_OR_USERNAME_INCORRECT;
         }
 
-        if (result == null) {
-            result = LDAPAuthenticationResult.AUTHENTICATED;
-        }
-
-        return result;
+        return LDAPAuthenticationResult.AUTHENTICATED;
     }
 
     @Override

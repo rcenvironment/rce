@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -13,8 +13,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -142,7 +144,7 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
 
         @Override
         public Collection<ComponentInstallation> getAllInstallations() {
-            List<ComponentInstallation> allInstallations = new ArrayList<ComponentInstallation>(
+            Set<ComponentInstallation> allInstallations = new HashSet<ComponentInstallation>(
                 distributedStateAsList.size() + localStateAsList.size());
             allInstallations.addAll(distributedStateAsList);
             allInstallations.addAll(localStateAsList);

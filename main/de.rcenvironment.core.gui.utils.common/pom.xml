@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.utils.common</artifactId>
 	<name>RCE Core GUI Utils Common Bundle</name>
-	<version>6.0.3.qualifier</version>
+	<version>6.1.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

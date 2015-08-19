@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,7 +37,7 @@ public final class ConvergerComponentConstants {
     public static final String KEY_EPS_A = "epsA";
 
     /** Constant. */
-    public static final String KEY_MAX_ITERATIONS = "maxIterations";
+    public static final String KEY_MAX_CONV_CHECKS = "maxConvChecks";
     
     /** Constant. */
     public static final String KEY_ITERATIONS_TO_CONSIDER = "iterationsToConsider";

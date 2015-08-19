@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,13 +12,13 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Queue;
 import java.util.Set;
@@ -90,13 +90,16 @@ import de.rcenvironment.core.utils.incubator.StateChangeException;
  * Implementation of {@link ComponentExecutionController}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (tweaked error handling)
  */
 public class ComponentExecutionControllerImpl implements ComponentExecutionController {
 
+    private static final int MAX_CALLBACK_FAILURES = 9;
+
     private static final Log LOG = LogFactory.getLog(ComponentExecutionControllerImpl.class);
-    
-    private static final int HEARTBEAT_SEND_INTERVAL_MSEC = 60 * 1000;
-    
+
+    private static final int HEARTBEAT_SEND_INTERVAL_MSEC = 30 * 1000;
+
     private static ComponentExecutionPermitsService componentExecutionPermitService;
 
     private static EndpointDatumSender endpointDatumSender;
@@ -178,16 +181,16 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
     private final AsyncOrderedExecutionQueue executionQueue = new AsyncOrderedExecutionQueue(
         AsyncCallbackExceptionPolicy.LOG_AND_PROCEED, threadPool);
-    
+
     private final CountDownLatch componentTerminatedLatch = new CountDownLatch(1);
 
     private ScheduledFuture<?> heartbeatFuture;
-    
-    private AtomicBoolean workflowControllerReachable = new AtomicBoolean(true);
-    
+
+    private AtomicInteger wfControllerCallbackFailureCount = new AtomicInteger(0);
+
     private ComponentExecutionStorageBridge compDataManagementStorage;
 
-    private int timestampOffsetToWorkfowNode;
+    private int timestampOffsetToWorkfowNode = 0;
 
     private ComponentExecutionContext compExeCtx;
 
@@ -207,7 +210,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
     private ExecutionScheduler executionScheduler;
 
-    private WorkflowExecutionControllerCallback wfExeCtrlCallback;
+    private WorkflowExecutionControllerCallbackDelegator wfExeCtrlCallback;
 
     private boolean isNestedLoopComponent;
 
@@ -215,13 +218,13 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
     private AtomicBoolean intermediateHistoryDataWritten = new AtomicBoolean(false);
 
+    private Map<String, Boolean> closedOutputs = Collections.synchronizedMap(new HashMap<String, Boolean>());
+
     private ComponentExecutionControllerCallback compExeCtrlCallback = new ComponentExecutionControllerCallback() {
 
         private final Object historyDataLock = new Object();
 
         private DefaultComponentHistoryDataItem defaultHistoryDataItem = new DefaultComponentHistoryDataItem();
-
-        private Map<String, Boolean> closedOutputs = Collections.synchronizedMap(new HashMap<String, Boolean>());
 
         @Override
         public synchronized void writeOutput(String outputName, TypedDatum datumToSend) {
@@ -408,25 +411,17 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         }
 
     };
-    
+
     private Runnable heartbeatRunnable = new Runnable() {
+
         @Override
         @TaskDescription("Send heartbeat for component")
         public void run() {
-//            LOG.debug("Sending component heartbeat: " + compExeCtx.getExecutionIdentifier());
-            try {
-                wfExeCtrlCallback.onComponentHeartbeatReceived(compExeCtx.getExecutionIdentifier());    
-                workflowControllerReachable.set(true);
-            } catch (UndeclaredThrowableException e) {
-                workflowControllerReachable.set(false);
-                LOG.error("Failed to send heartbeat to workflow controller: " + e.getCause().toString());               
-            } catch (RuntimeException e) {
-                workflowControllerReachable.set(false);
-                LOG.error("Failed to send heartbeat to workflow controller: " + e.toString());
-            }
+            // LOG.warn("Sending component heartbeat: " + compExeCtx.getExecutionIdentifier());
+            wfExeCtrlCallback.onComponentHeartbeatReceived(compExeCtx.getExecutionIdentifier());
         }
     };
-    
+
     @Deprecated
     public ComponentExecutionControllerImpl() {}
 
@@ -434,15 +429,17 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         WorkflowExecutionControllerCallback componentExecutionEventCallback, long currentTimestampOffWorkflowNode) {
         this.compExeCtx = executionContext;
         this.stateMachine = new ComponentStateMachine();
-        this.wfExeCtrlCallback = componentExecutionEventCallback;
+        this.wfExeCtrlCallback = new WorkflowExecutionControllerCallbackDelegator(componentExecutionEventCallback);
         this.consoleRowsForwarder = new BatchingConsoleRowsForwarder(this.wfExeCtrlCallback);
-        this.timestampOffsetToWorkfowNode = (int) (currentTimestampOffWorkflowNode - System.currentTimeMillis());
+        if (!executionContext.getWorkflowNodeId().equals(executionContext.getComponentDescription().getNode())) {
+            this.timestampOffsetToWorkfowNode = (int) (currentTimestampOffWorkflowNode - System.currentTimeMillis());
+        }
         this.isNestedLoopComponent = Boolean.valueOf(compExeCtx.getComponentDescription()
             .getConfigurationDescription().getConfigurationValue(ComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
         this.compDataManagementStorage = new ComponentExecutionStorageBridge(metaDataService, executionContext,
             timestampOffsetToWorkfowNode);
         this.executionScheduler = new ExecutionScheduler(compExeCtx, endpointDatumsToProcess, stateMachine);
-        
+
         heartbeatFuture = threadPool.scheduleAtFixedRate(heartbeatRunnable, HEARTBEAT_SEND_INTERVAL_MSEC);
     }
 
@@ -475,7 +472,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     public void cancel() {
         stateMachine.postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.CANCEL_REQUESTED));
     }
-    
+
     @Override
     public void cancelSync(long timeoutMsec) throws InterruptedException {
         cancel();
@@ -496,10 +493,10 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     public ComponentState getState() {
         return stateMachine.getState();
     }
-    
+
     @Override
     public boolean isWorkflowControllerReachable() {
-        return workflowControllerReachable.get();
+        return wfControllerCallbackFailureCount.get() < MAX_CALLBACK_FAILURES;
     }
 
     /**
@@ -543,7 +540,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         PAUSE_ATTEMPT_FAILED,
         RESUME_ATTEMPT_FAILED,
         RESTART_ATTEMPT_FAILED,
-        
+
         RUNNING,
         FINISHED,
         TEARED_DOWN
@@ -575,7 +572,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             this(type);
             this.newComponentState = newComponentState;
         }
-        
+
         public ComponentStateMachineEvent(ComponentStateMachineEventType type, ComponentState newComponentState, Throwable t) {
             this(type, t);
             this.newComponentState = newComponentState;
@@ -595,7 +592,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
 
         @Override
         public String toString() {
-            return String.format("%s (#%d))", type.name());
+            return type.name();
         }
 
     }
@@ -605,7 +602,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
      * 
      * @author Doreen Seider
      */
-    protected final class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<ComponentState, ComponentStateMachineEvent> {
+    protected class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<ComponentState, ComponentStateMachineEvent> {
 
         private Component component;
 
@@ -616,7 +613,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         private ComponentStateMachineEvent lastEventBeforePaused;
 
         private boolean pauseWasRequested = false;
-        
+
         public ComponentStateMachine() {
             super(ComponentState.INIT, VALID_COMPONENT_STATE_TRANSITIONS);
         }
@@ -765,7 +762,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             }
             return state;
         }
-        
+
         private void handleExceptionOfComponentStateMachineEvent(ComponentStateMachineEvent event) {
             // only log if component and workflow controller doesn't run on the same node to avoid duplicate log messages/stack
             // traces
@@ -775,11 +772,11 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             }
             exceptionThrown = event.getThrowable();
         }
-        
+
         private ComponentState handleFailure(ComponentState currentState, ComponentStateMachineEvent event) {
 
             handleExceptionOfComponentStateMachineEvent(event);
-            
+
             switch (event.getType()) {
             case SCHEDULING_FAILED:
                 cancelAsync(currentState);
@@ -817,17 +814,18 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
             try {
                 if (newState.equals(ComponentState.FAILED)) {
                     try {
-                        wfExeCtrlCallback.onComponentStateChanged(compExeCtx.getExecutionIdentifier(), oldState, newState, 
+                        wfExeCtrlCallback.onComponentStateChanged(compExeCtx.getExecutionIdentifier(), oldState, newState,
                             executionCount.get(), getExecutionCountsOnResetAsString(), exceptionThrown);
                     } catch (UndeclaredThrowableException e) {
                         if (e.getCause() instanceof CommunicationException && e.getCause().getCause() instanceof SerializationException) {
-                            wfExeCtrlCallback.onComponentStateChanged(compExeCtx.getExecutionIdentifier(), oldState, newState, 
+                            wfExeCtrlCallback.onComponentStateChanged(compExeCtx.getExecutionIdentifier(), oldState, newState,
                                 executionCount.get(), getExecutionCountsOnResetAsString(),
                                 new ComponentExecutionException(exceptionThrown.toString()));
                         }
                     }
                 } else {
-                    wfExeCtrlCallback.onComponentStateChanged(compExeCtx.getExecutionIdentifier(), oldState, newState, executionCount.get(),
+                    wfExeCtrlCallback.onComponentStateChanged(compExeCtx.getExecutionIdentifier(), oldState, newState,
+                        executionCount.get(),
                         getExecutionCountsOnResetAsString());
                 }
                 if (ComponentConstants.FINAL_COMPONENT_STATES.contains(newState)) {
@@ -837,7 +835,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 }
             } catch (UndeclaredThrowableException e) {
                 if (e.getCause() instanceof CommunicationException) {
-                    LOG.error("Failed to report state change to workflow controller: " + e.getCause().toString());                    
+                    LOG.error("Failed to report state change to workflow controller: " + e.getCause().toString());
                 } else {
                     throw e;
                 }
@@ -847,7 +845,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 }
             }
         }
-        
+
         private String getExecutionCountsOnResetAsString() {
             List<String> counts = new ArrayList<>();
             synchronized (executionCountOnResets) {
@@ -1083,7 +1081,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                         switch (schedulingState) {
                         case FINISHED:
                             isIdling = false;
-                            forwardFinish();
+                            forwardFinishToNonClosedOutputs();
                             stateMachine.postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.FINISHED));
                             break;
                         case PROCESS_INPUT_DATA:
@@ -1122,11 +1120,14 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                     }
                 }
             }
-            
-            private void forwardFinish() {
+
+            private void forwardFinishToNonClosedOutputs() {
                 for (EndpointDescription output : compExeCtx.getComponentDescription()
                     .getOutputDescriptionsManager().getEndpointDescriptions()) {
-                    writeDatumToOutput(output.getName(), new InternalTDImpl(InternalTDImpl.InternalTDType.WorkflowFinish));
+                    if (!closedOutputs.containsKey(output.getName()) || !closedOutputs.get(output.getName())) {
+                        writeDatumToOutput(output.getName(), new InternalTDImpl(InternalTDImpl
+                            .InternalTDType.WorkflowFinish));
+                    }
                 }
             }
 
@@ -1303,7 +1304,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 } catch (InterruptedException | ExecutionException e) {
                     LOG.error("Failed to stop execution scheduler", e);
                 }
-                
+
                 Component.FinalComponentState finalStateForComp = null;
                 FinalComponentState finalStateForDm = null;
                 switch (intendedFinalState) {
@@ -1351,7 +1352,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                         ComponentState.FAILED, e));
                     return;
                 }
-                
+
                 stateMachine.postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.TEARED_DOWN, intendedFinalState));
             }
         }
@@ -1396,11 +1397,11 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         return compExeCtx.getComponentDescription().getIdentifier().replace(ComponentConstants.ID_SEPARATOR
             + compExeCtx.getComponentDescription().getVersion(), "");
     }
-    
+
     protected void writeDatumToOutput(String outputName, TypedDatum datumToSend) {
         writeDatumToOutput(outputName, datumToSend, null);
     }
-    
+
     protected void writeDatumToOutput(String outputName, TypedDatum datumToSend, Long outputDmId) {
         if (compExeCtx.getComponentDescription().getOutputDescriptionsManager()
             .getEndpointDescription(outputName).isConnected()) {
@@ -1512,13 +1513,14 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
                 }
             }
         }
-        
+
         private void storeInputs() throws ComponentExecutionException {
-            
+
             for (final Entry<String, EndpointDatum> entry : endpointDatumsForExecution.entrySet()) {
                 if (entry.getValue().getDataManagementId() != null) {
                     compDataManagementStorage.addInput(entry.getKey(), entry.getValue().getDataManagementId());
                     executionQueue.enqueue(new Runnable() {
+
                         @Override
                         public void run() {
                             wfExeCtrlCallback.onInputProcessed(EndpointDatumSerializer.serializeEndpointDatum(entry.getValue()));
@@ -1529,6 +1531,120 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
         }
 
         public abstract void execute() throws ComponentException;
-
     }
+
+    /**
+     * {@link WorkflowExecutionControllerCallback} which delegates the method calls if the workflow execution controller is reachable.
+     * Prevent constantly recurring failures and stack traces.
+     * 
+     * TODO should be improve to reduce boiler-plate code
+     * 
+     * @author Doreen Seider
+     */
+    private class WorkflowExecutionControllerCallbackDelegator implements WorkflowExecutionControllerCallback {
+
+        private final WorkflowExecutionControllerCallback callback;
+
+        public WorkflowExecutionControllerCallbackDelegator(WorkflowExecutionControllerCallback callback) {
+            this.callback = callback;
+        }
+
+        @Override
+        public void processConsoleRows(ConsoleRow[] consoleRows) {
+            if (isWorkflowControllerReachable()) {
+                try {
+                    callback.processConsoleRows(consoleRows);
+                    wfControllerCallbackFailureCount.set(0);
+                } catch (UndeclaredThrowableException e) {
+                    handleWorkflowCallbackFailure(e.getCause());
+                } catch (RuntimeException e) {
+                    handleWorkflowCallbackFailure(e);
+                }
+            }
+        }
+
+        @Override
+        public void onComponentStateChanged(String compExeId, ComponentState oldState, ComponentState newState, Integer count,
+            String countOnResets) {
+            if (isWorkflowControllerReachable()) {
+                try {
+                    callback.onComponentStateChanged(compExeId, oldState, newState, count, countOnResets);
+                    wfControllerCallbackFailureCount.set(0);
+                } catch (UndeclaredThrowableException e) {
+                    handleWorkflowCallbackFailure(e.getCause());
+                } catch (RuntimeException e) {
+                    handleWorkflowCallbackFailure(e);
+                }
+            }
+        }
+
+        @Override
+        public void onComponentStateChanged(String compExeId, ComponentState oldState, ComponentState newState, Integer count,
+            String countOnResets, Throwable th) {
+            if (isWorkflowControllerReachable()) {
+                try {
+                    callback.onComponentStateChanged(compExeId, oldState, newState, count, countOnResets, th);
+                    wfControllerCallbackFailureCount.set(0);
+                } catch (UndeclaredThrowableException e) {
+                    handleWorkflowCallbackFailure(e.getCause());
+                } catch (RuntimeException e) {
+                    handleWorkflowCallbackFailure(e);
+                }
+            }
+        }
+
+        @Override
+        public void onInputProcessed(String serializedEndpointDatum) {
+            if (isWorkflowControllerReachable()) {
+                try {
+                    callback.onInputProcessed(serializedEndpointDatum);
+                    wfControllerCallbackFailureCount.set(0);
+                } catch (UndeclaredThrowableException e) {
+                    handleWorkflowCallbackFailure(e.getCause());
+                } catch (RuntimeException e) {
+                    handleWorkflowCallbackFailure(e);
+                }
+            }
+        }
+
+        @Override
+        public void onComponentHeartbeatReceived(String executionIdentifier) {
+            if (isWorkflowControllerReachable()) {
+                try {
+                    callback.onComponentHeartbeatReceived(executionIdentifier);
+                    wfControllerCallbackFailureCount.set(0);
+                } catch (UndeclaredThrowableException e) {
+                    handleHeartbeatSentFailure(e.getCause());
+                } catch (RuntimeException e) {
+                    handleHeartbeatSentFailure(e);
+                }
+            }
+        }
+
+        private void handleWorkflowCallbackFailure(Throwable e) {
+            int failureCount = wfControllerCallbackFailureCount.incrementAndGet();
+            String message = String.format("Callback from local component '%s' to workflow controller ('%s') failed",
+                compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowExecutionIdentifier());
+            registerCallbackFailureEvent(message, failureCount, e);
+        }
+
+        private void handleHeartbeatSentFailure(Throwable e) {
+            int failureCount = wfControllerCallbackFailureCount.addAndGet(2); // TODO review: keep increased heartbeat weight?
+            String message = String.format("Heartbeat callback from local component '%s' to workflow controller ('%s') failed",
+                compExeCtx.getExecutionIdentifier(), compExeCtx.getWorkflowExecutionIdentifier());
+            registerCallbackFailureEvent(message, failureCount, e);
+        }
+
+        private void registerCallbackFailureEvent(String message, int failureCount, Throwable cause) {
+            if (failureCount >= MAX_CALLBACK_FAILURES) {
+                LOG.error(message + "; maximum number of callback failures (" + MAX_CALLBACK_FAILURES
+                    + ") exceeded, considering the controller unreachable", cause);
+            } else {
+                LOG.warn(message + "; failure count is " + failureCount + " (threshold: " + MAX_CALLBACK_FAILURES
+                    + ")", cause);
+            }
+
+        }
+    }
+
 }

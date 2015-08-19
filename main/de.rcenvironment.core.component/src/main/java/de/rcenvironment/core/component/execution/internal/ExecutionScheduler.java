@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -115,7 +115,6 @@ public class ExecutionScheduler {
         PROCESS_INPUT_DATA,
         PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA,
         FINISHED,
-        FAILED_BECAUSE_INPUTS_LEFT,
         RESET,
         LOOP_RESET;
     }
@@ -374,11 +373,11 @@ public class ExecutionScheduler {
         case NestedLoopReset:
             if (!loopResetRequested.get()) {
                 if (!internalDatum.getHopsToTraverse().peek().getHopExecutionIdentifier().equals(componentExeutionIdentifier)) {
-                    new ComponentExecutionException(logMessagPrefix + "Received reset datum, but component is not the current recipient");
+                    throw new ComponentExecutionException(logMessagPrefix
+                        + "Received reset datum, but component is not the latest recipient");
                 } else if (resetDataIdsForwarded.contains(internalDatum.getIdentifier())) {
                     throw new ComponentExecutionException(logMessagPrefix + String.format(
-                        "Received reset datum forwarded at input '%s' again",
-                        endpointDatum.getInputName()));
+                        "Received reset datum forwarded at input '%s' again", endpointDatum.getInputName()));
                 } else {
                     resetDatumToFoward = endpointDatum;
                     resetDataIdsForwarded.add(internalDatum.getIdentifier());
@@ -403,21 +402,20 @@ public class ExecutionScheduler {
         if (endpointDatum.getValue().getDataType().equals(DataType.NotAValue)) {
             NotAValueTD datum = (NotAValueTD) endpointDatum.getValue();
             if (idsOfIndefiniteDatumsReceived.containsKey(endpointDatum.getInputName())
-                && idsOfIndefiniteDatumsReceived.get(endpointDatum.getInputName())
-                    .contains(datum.getIdentifier())) {
-                if (idsIndefiniteDatumsSent.contains(datum.getIdentifier())) {
-                    new ComponentExecutionException(logMessagPrefix + "Received indefinite datum twice"
-                        + " I.e., no component handled it appropriately within this loop.");
-                }
+                && idsOfIndefiniteDatumsReceived.get(endpointDatum.getInputName()).contains(datum.getIdentifier())) {
+                throw new ComponentExecutionException(logMessagPrefix + "Received 'not a value' datum twice"
+                    + " I.e., no component handled it appropriately within this loop.");
+
+            } else if (idsIndefiniteDatumsSent.contains(datum.getIdentifier())) {
+                throw new ComponentExecutionException(logMessagPrefix + "Received own 'not a value' datum"
+                    + " I.e., no component handled it appropriately within this loop.");
             } else {
                 if (!idsOfIndefiniteDatumsReceived.containsKey(endpointDatum.getInputName())) {
                     idsOfIndefiniteDatumsReceived.put(endpointDatum.getInputName(), new HashSet<String>());
                 }
-                idsOfIndefiniteDatumsReceived.get(endpointDatum.getInputName())
-                    .add(datum.getIdentifier());
+                idsOfIndefiniteDatumsReceived.get(endpointDatum.getInputName()).add(datum.getIdentifier());
             }
         }
-        
         finishedInputs.remove(endpointDatum.getInputName());
         endpointDatums.get(endpointDatum.getInputName()).add(endpointDatum);
     }

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: Chameleon RCE ToolWrapper Component
 Bundle-SymbolicName: de.rcenvironment.components.toolwrapper.execution;singleton:=true
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Import-Package: de.dlr.sc.chameleon.rce.toolwrapper.common,

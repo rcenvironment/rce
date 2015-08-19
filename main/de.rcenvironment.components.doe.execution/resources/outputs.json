@@ -1,0 +1,32 @@
+{
+    "dynamicOutputs":[
+        {
+            "identifier":"default",
+            "dataTypes":[
+                "Float"
+            ],
+            "defaultDataType":"Float",
+            "metaData": {
+                "lower": {
+                    "guiName": "Lower bound",
+                    "guiPosition": "1",
+                    "guiGroup": "Bounds",
+                    "dataType": "float",
+                    "visibility": "shown",
+                    "defaultValue": "-1",
+                    "validation": "required"
+                },
+                "upper": {
+                    "guiName": "Upper bound",
+                    "guiPosition": "2",
+                    "guiGroup": "Bounds",
+                    "dataType": "float",
+                    "visibility": "shown",
+                    "defaultValue": "1",
+                    "validation": "required"
+                    
+                }
+            }
+        }
+    ]
+}

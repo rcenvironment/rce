@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,6 +23,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicEndpointCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
@@ -83,8 +84,7 @@ public class ToolWrapperDirectoryPropertyViewPane extends XPathChooserPropertyVi
             Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
             EndpointEditDialog dialog =
-                new EndpointEditDialog(Display.getDefault().getActiveShell(),
-                    String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.editMessage, endpointType), configuration,
+                new EndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                     endpointType,
                     ChameleonCommonConstants.ID_DIRECTORY_PANE, false, endpoint.getDeclarativeEndpointDescription()
                         .getMetaDataDefinition(), newMetaData);

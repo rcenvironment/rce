@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -115,12 +115,12 @@ public final class CommandLineArguments {
                 args.getNext();
             } else if (option.equals("--showAdvancedTab")) {
                 showAdvancedTab = true;
-            } else if (option.equals("-p")) {
+            } else if (option.equals("-p") || option.equals("--profile")) {
                 // parameter is already handled by LaunchParameters class; ignore here
                 if (args.hasNext()) { // there should be a following token
                     args.getNext(); // yes -> discard
                 } else {
-                    LogFactory.getLog(CommandLineArguments.class).warn("Missing expected parameter after -p option");
+                    LogFactory.getLog(CommandLineArguments.class).warn("Missing expected parameter after -p/--profile option");
                 }
             } else {
                 // TODO improve?

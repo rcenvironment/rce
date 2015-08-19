@@ -2,11 +2,11 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core GUI Utils Incubator Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.utils.incubator;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
-Import-Package: de.rcenvironment.core.utils.incubator,
+Import-Package: org.eclipse.jface.dialogs,
  org.eclipse.swt,
  org.eclipse.swt.events,
  org.eclipse.swt.layout,

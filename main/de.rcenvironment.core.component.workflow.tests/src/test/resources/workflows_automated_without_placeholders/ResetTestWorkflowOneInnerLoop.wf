@@ -2,7 +2,6 @@
   "identifier" : "3e4fb61e-efa9-47c7-b7c7-7daad795580f",
   "workflowVersion" : "3",
   "name" : "ResetTestWorkflow_2014-11-22_22:37:11_02",
-  "platform" : "f5151e6266f649199a22f548d9906e18",
   "nodes" : [ {
     "identifier" : "67370680-8c1f-49c3-9482-7cb8d8304edc",
     "name" : "Inner Loop Optimizer 1",

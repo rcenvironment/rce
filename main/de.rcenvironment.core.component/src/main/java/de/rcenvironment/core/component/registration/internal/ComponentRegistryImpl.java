@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -85,7 +85,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
      */
     private final Map<String, String> compFactoryServiceIdToCompInstIdMapping = new HashMap<String, String>();
 
-    private final List<ServiceReference> unhandledCompControllers = new ArrayList<ServiceReference>();
+    private final List<ServiceReference<?>> unhandledCompControllers = new ArrayList<ServiceReference<?>>();
 
     private PlatformService platformService;
 
@@ -282,9 +282,8 @@ public class ComponentRegistryImpl implements ComponentRegistry {
                 url = reference.getBundle().getResource(iconPath);
             }
             if (url != null) {
-                try {
-                    InputStream stream = url.openStream();
-                    ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                try (InputStream stream = url.openStream();
+                    ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
                     while (true) {
                         int r = stream.read();
                         if (r < 0) {
@@ -367,8 +366,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         try {
             return factory.newInstance(serviceProperties);
         } catch (RuntimeException e) {
-            LOGGER.error("Component could not be loaded because of an error in xml file or components constructor: " + e.getMessage());
-            LOGGER.error(Arrays.toString(e.getStackTrace()));
+            LOGGER.error("Component could not be loaded because of an error in xml file or components constructor", e);
             return null;
         }
     }
@@ -378,7 +376,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         // search for the previously registered service (component)
         String filter = "(" + ComponentConstants.COMP_INSTANCE_ID_KEY + "=" + identifier + ")";
 
-        ServiceReference[] references;
+        ServiceReference<?>[] references;
         try {
             references = osgiComponentCtx.getBundleContext().getAllServiceReferences(Registerable.class.getName(), filter);
 
@@ -562,8 +560,6 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         if (fileUrl == null) {
             throw new IOException("endpoint definition file doesn't exist: " + file);
         }
-        InputStream staticEndpointDescriptionInputStream = fileUrl.openStream();
-        InputStream dynamicEndpointDescriptionInputStream = fileUrl.openStream();
 
         List<InputStream> extendedStaticInputStreams = getInputStreamsForEndpointMetaDataExtensions(reference, componentsBundle, type);
         List<InputStream> extendedDynamicInputStreams = getInputStreamsForEndpointMetaDataExtensions(reference, componentsBundle, type);
@@ -571,7 +567,8 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         EndpointDefinitionsProviderImpl endpointProvider = new EndpointDefinitionsProviderImpl();
 
         Set<EndpointDefinitionImpl> endpointDefinitions;
-        try {
+        try (InputStream staticEndpointDescriptionInputStream = fileUrl.openStream();
+            InputStream dynamicEndpointDescriptionInputStream = fileUrl.openStream()) {
             endpointDefinitions = ComponentUtils.extractStaticEndpointDefinition(staticEndpointDescriptionInputStream,
                 extendedStaticInputStreams, type);
             endpointDefinitions.addAll(ComponentUtils.extractDynamicEndpointDefinition(dynamicEndpointDescriptionInputStream,
@@ -582,9 +579,8 @@ public class ComponentRegistryImpl implements ComponentRegistry {
 
         endpointProvider.setEndpointDefinitions(endpointDefinitions);
 
-        InputStream endpointGroupDefinitionInputStream = fileUrl.openStream();
         Set<EndpointGroupDefinitionImpl> inputGroupDefinitions;
-        try {
+        try (InputStream endpointGroupDefinitionInputStream = fileUrl.openStream()) {
             inputGroupDefinitions = ComponentUtils.extractInputGroupDefinitions(endpointGroupDefinitionInputStream);
         } catch (IOException e) {
             throw new IOException("parsing endpoint group definition file failed: " + file, e);
@@ -605,7 +601,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             manifestHeaderKey = ComponentConstants.MANIFEST_ENTRY_RCE_COMPONENT_EXTENSION_OUTPUT_META_DATA;
         }
         for (Bundle fragment : getFragmentBundlesProvidingPropertyExtensions(componentsBundle)) {
-            @SuppressWarnings("unchecked") Dictionary<String, String> manifestHeaders = fragment.getHeaders();
+            Dictionary<String, String> manifestHeaders = fragment.getHeaders();
             String extensionFile = manifestHeaders.get(manifestHeaderKey);
             if (extensionFile != null) {
                 URL fileUrl = reference.getBundle().getResource(extensionFile);
@@ -629,10 +625,10 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         if (fileUrl == null) {
             throw new IOException("configuration definition file doesn't exist: " + file);
         }
-        InputStream configurationDescriptionInputStream = fileUrl.openStream();
-        InputStream placeholdersDescriptionInputStream = fileUrl.openStream();
-        InputStream activationFilterDescriptionInputStream = fileUrl.openStream();
-        try {
+        
+        try (InputStream configurationDescriptionInputStream = fileUrl.openStream();
+            InputStream placeholdersDescriptionInputStream = fileUrl.openStream();
+            InputStream activationFilterDescriptionInputStream = fileUrl.openStream()) {
             return ComponentUtils.extractConfigurationDescription(configurationDescriptionInputStream, placeholdersDescriptionInputStream,
                 activationFilterDescriptionInputStream);
         } catch (IOException e) {
@@ -646,7 +642,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         Set<ConfigurationExtensionDefinitionImpl> descs = new HashSet<ConfigurationExtensionDefinitionImpl>();
 
         for (Bundle fragment : getFragmentBundlesProvidingPropertyExtensions(componentsBundle)) {
-            @SuppressWarnings("unchecked") Dictionary<String, String> manifestHeaders = fragment.getHeaders();
+            Dictionary<String, String> manifestHeaders = fragment.getHeaders();
             String extConfigFile = manifestHeaders.get(ComponentConstants.MANIFEST_ENTRY_RCE_COMPONENT_EXTENSION_CONFIGURATION);
             if (extConfigFile != null) {
                 descs.add(createConfigurationExtensionDefinition(componentsBundle, extConfigFile));
@@ -663,10 +659,9 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             throw new IOException("configuration extension file doesn't exist: " + file);
         }
 
-        InputStream configurationDescriptionInputStream = fileUrl.openStream();
-        InputStream placeholdersDescriptionInputStream = fileUrl.openStream();
-        InputStream activationFilterDescriptionInputStream = fileUrl.openStream();
-        try {
+        try (InputStream configurationDescriptionInputStream = fileUrl.openStream();
+            InputStream placeholdersDescriptionInputStream = fileUrl.openStream();
+            InputStream activationFilterDescriptionInputStream = fileUrl.openStream();) {
             return ComponentUtils.extractConfigurationExtensionDescription(
                 configurationDescriptionInputStream,
                 placeholdersDescriptionInputStream,

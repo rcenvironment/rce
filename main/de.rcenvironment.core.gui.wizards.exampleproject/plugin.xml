@@ -28,7 +28,9 @@
    
    <extension
    		point="org.eclipse.ui.navigator.navigatorContent">
-		<commonWizard type="new" 
+		<commonWizard 
+			menuGroupId="de.rcenvironment.core.gui.wizards.exampleproject"
+			type="new" 
 			wizardId="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard">
 			<enablement />
  		</commonWizard>   

@@ -19,6 +19,14 @@
             "DefaultValue":"1.E-4",
             "Value":"",
             "Validation":"required"
+        },
+        "solution_accuracy":{
+            "GuiName":"Solution accuracy",
+            "dataType":"Real",
+            "SWTWidget":"Text",
+            "DefaultValue":"1.E-4",
+            "Value":"",
+            "Validation":"required"
         }
         
     }

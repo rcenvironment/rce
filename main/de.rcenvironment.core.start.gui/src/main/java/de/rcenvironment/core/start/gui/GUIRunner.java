@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,10 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.equinox.app.IApplication;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.osgi.service.datalocation.Location;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MessageBox;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.internal.ide.ChooseWorkspaceData;
 import org.eclipse.ui.internal.ide.ChooseWorkspaceDialog;
@@ -33,6 +36,7 @@ import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.start.common.CommandLineArguments;
 import de.rcenvironment.core.start.common.InstanceRunner;
 import de.rcenvironment.core.start.common.validation.PlatformMessage;
+import de.rcenvironment.core.start.common.validation.PlatformValidationManager;
 import de.rcenvironment.core.start.gui.internal.ApplicationWorkbenchAdvisor;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
@@ -63,6 +67,8 @@ public final class GUIRunner extends InstanceRunner {
     private static final String SUFFIX_QUALIFIER = "qualifier";
 
     private static final boolean ALLOW_WORKSPACE_CHOOSER_SUPPRESSION = true;
+
+    private static boolean tryWorkspaceChoosingAgain = false;
 
     /**
      * Starts the RCE GUI.
@@ -113,11 +119,21 @@ public final class GUIRunner extends InstanceRunner {
 
         // start the workbench - returns as soon as the workbench is closed
         try {
-            if (!determineWorkspaceLocation(workspaceLocation)) {
+            // validate the platform and exit if not valid
+            if (!(new PlatformValidationManager()).validate(false)) {
                 return IApplication.EXIT_OK;
             }
+            do {
+                // workspace location chooser
+                if (!determineWorkspaceLocation(workspaceLocation)) {
+                    return IApplication.EXIT_OK;
+                }
+                // If this flag is true, a non-valid workspace was chosen, show the workspace chooser again until a valid workspace is
+                // selected or "cancel" is clicked.
+            } while (tryWorkspaceChoosingAgain);
 
-            // mark the GUI thread as forbidden (or at least, critical) for certain operations - misc_ro
+            // mark the GUI thread as forbidden (or at least, critical) for certain operations -
+            // misc_ro
             ThreadGuard.setForbiddenThread(Thread.currentThread());
             int returnCode = PlatformUI.createAndRunWorkbench(display, new ApplicationWorkbenchAdvisor());
             if (returnCode == PlatformUI.RETURN_RESTART) {
@@ -154,11 +170,26 @@ public final class GUIRunner extends InstanceRunner {
     public void triggerShutdown() {
         Display.getDefault().asyncExec(new Runnable() {
 
+            @Override
             public void run() {
                 if (!PlatformUI.isWorkbenchRunning()) {
                     return;
                 }
                 PlatformUI.getWorkbench().close();
+            }
+        });
+    }
+
+    @Override
+    public void triggerRestart() {
+        Display.getDefault().asyncExec(new Runnable() {
+
+            @Override
+            public void run() {
+                if (!PlatformUI.isWorkbenchRunning()) {
+                    return;
+                }
+                PlatformUI.getWorkbench().restart();
             }
         });
     }
@@ -188,7 +219,8 @@ public final class GUIRunner extends InstanceRunner {
         ChooseWorkspaceDialog wd = new ChooseWorkspaceDialog(null, cwd, !ALLOW_WORKSPACE_CHOOSER_SUPPRESSION, true);
         int cwdReturnCode = 0 - 1;
 
-        // NOTE: review the "last location" storage strategy before re-enabling suppression (if desired in the future)
+        // NOTE: review the "last location" storage strategy before re-enabling suppression (if
+        // desired in the future)
         if (!workspaceSettings.getDontAskAgainSetting() || !ALLOW_WORKSPACE_CHOOSER_SUPPRESSION) {
             cwdReturnCode = wd.open();
             if (cwdReturnCode == Dialog.CANCEL) {
@@ -220,13 +252,22 @@ public final class GUIRunner extends InstanceRunner {
 
         String[] newRecentWorkspacesArray = newRecentWorkspaces.toArray(new String[newRecentWorkspaces.size()]);
 
-        // although these values are not used on the next start, writing them keeps "File > Restart" working - misc_ro
+        // although these values are not used on the next start, writing them keeps "File > Restart"
+        // working - misc_ro
         cwd.setRecentWorkspaces(newRecentWorkspacesArray);
         cwd.writePersistedData();
 
         workspaceSettings.updateLocationHistory(currentWorkspace, StringUtils.escapeAndConcat(newRecentWorkspacesArray));
         URL userWSURL = new URL("file", null, currentWorkspace);
-        workspaceLocation.set(userWSURL, true);
+        try {
+            workspaceLocation.set(userWSURL, true);
+            tryWorkspaceChoosingAgain = false;
+        } catch (IOException e) {
+            displayError(new PlatformMessage(PlatformMessage.Type.ERROR, "", "Workspace folder could not be created or is read-only."));
+            // A non-valid workspace was chosen, show the workspace chooser again.
+            tryWorkspaceChoosingAgain = true;
+            workspaceSettings.setDontAskAgainSetting(false);
+        }
 
         return true;
     }
@@ -235,5 +276,16 @@ public final class GUIRunner extends InstanceRunner {
         final String errorMessageLabel = String.format("%s: %s", error.getType(), error.getMessage());
         final IStatus status = new Status(Status.ERROR, error.getBundleSymbolicName(), errorMessageLabel);
         StatusManager.getManager().handle(status, style);
+        if (style == StatusManager.BLOCK) {
+            displayError(error);
+        }
+    }
+
+    private void displayError(final PlatformMessage error) {
+        Shell shell = new Shell();
+        MessageBox box = new MessageBox(shell, SWT.ICON_ERROR | SWT.OK);
+        box.setText(error.getType().toString());
+        box.setMessage(error.getMessage());
+        box.open();
     }
 }

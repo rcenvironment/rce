@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -92,7 +92,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             for (Object part : getChildren()) {
                 if (part instanceof WorkflowNodePart) {
                     ((WorkflowNodePart) part).refreshConnections();
-                    
+
                     // refresh labels
                     refreshConnectionLabels(part);
                 }
@@ -105,12 +105,12 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
     }
 
     private void refreshConnectionLabels(Object part) {
-        boolean labelsShown =  Activator.getInstance().getPreferenceStore().getBoolean(WorkflowEditor.SHOW_LABELS_PREFERENCE_KEY);
-        List <ConnectionPart> sourceAndTargetConnectionParts = new ArrayList<>();
+        boolean labelsShown = Activator.getInstance().getPreferenceStore().getBoolean(WorkflowEditor.SHOW_LABELS_PREFERENCE_KEY);
+        List<ConnectionPart> sourceAndTargetConnectionParts = new ArrayList<>();
         sourceAndTargetConnectionParts.addAll(((WorkflowNodePart) part).getTargetConnections());
         sourceAndTargetConnectionParts.addAll(((WorkflowNodePart) part).getSourceConnections());
-        for (ConnectionPart connectionPart : sourceAndTargetConnectionParts){
-            if (labelsShown){
+        for (ConnectionPart connectionPart : sourceAndTargetConnectionParts) {
+            if (labelsShown) {
                 connectionPart.showLabel();
             } else {
                 connectionPart.hideLabel();
@@ -176,12 +176,12 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         // Add up channels in both directions to show number of channels on GUI
         for (ConnectionWrapper wrapper : connections) {
             for (Connection c : connectionsInModel) {
-                if ((c.getSourceNode().getIdentifier().equals(wrapper.getSource().getIdentifier()) 
+                if ((c.getSourceNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
                     && c.getTargetNode().getIdentifier().equals(wrapper.getTarget().getIdentifier()))
-                    || c.getTargetNode().getIdentifier().equals(wrapper.getSource().getIdentifier()) 
+                    || c.getTargetNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
                     && c.getSourceNode().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
                     wrapper.incrementNumberOfConnections();
-                } 
+                }
             }
         }
     }
@@ -218,7 +218,21 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         @Override
         protected Command createChangeConstraintCommand(final ChangeBoundsRequest request, final EditPart child, final Object constraint) {
             if (child instanceof WorkflowNodePart && constraint instanceof Rectangle) {
-                return new WorkflowNodeMoveCommand((WorkflowNode) child.getModel(), request, (Rectangle) constraint);
+
+                // Find all connections between the selected nodes
+                List<Connection> relatedConnections = new ArrayList<>();
+                if (getModel() instanceof WorkflowDescription) {
+                    WorkflowDescription workflowDescription = (WorkflowDescription) getModel();
+                    for (Connection connection : workflowDescription.getConnections()) {
+                        if (((connection.getTargetNode().getIdentifier().equals(((WorkflowNode) child.getModel()).getIdentifier()))
+                            || (connection.getSourceNode().getIdentifier().equals(((WorkflowNode) child.getModel()).getIdentifier())))
+                            && checkIfSourceAndTargetAreSelected(connection.getSourceNode(), connection.getTargetNode(), child.getViewer()
+                                .getSelectedEditParts())) {
+                            relatedConnections.add(connection);
+                        }
+                    }
+                }
+                return new WorkflowNodeMoveCommand((WorkflowNode) child.getModel(), request, (Rectangle) constraint, relatedConnections);
             }
             if (child instanceof WorkflowLabelPart && constraint instanceof Rectangle) {
                 return new WorkflowLabelMoveCommand((WorkflowLabel) child.getModel(), request, (Rectangle) constraint);
@@ -238,6 +252,24 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             } else {
                 return super.createChildEditPolicy(child);
             }
+        }
+
+        private boolean checkIfSourceAndTargetAreSelected(WorkflowNode sourceNode, WorkflowNode targetNode, List<?> selectedEditParts) {
+            boolean sourceContained = false;
+            boolean targetContained = false;
+
+            for (Object part : selectedEditParts) {
+                if (part instanceof WorkflowNodePart) {
+                    WorkflowNode selectedNode = (WorkflowNode) ((WorkflowNodePart) part).getModel();
+                    if (sourceNode.getIdentifier().equals(selectedNode.getIdentifier())) {
+                        sourceContained = true;
+                    }
+                    if (targetNode.getIdentifier().equals(selectedNode.getIdentifier())) {
+                        targetContained = true;
+                    }
+                }
+            }
+            return sourceContained && targetContained;
         }
 
         /**
@@ -376,6 +408,9 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
                 x = (targetRect.width - sizeX) / 2;
                 y = (targetRect.height - sizeY) / 2;
 
+                if (image != null) {
+                    image.dispose();
+                }
                 image = new Image(Display.getDefault(), orgImage.getImageData().scaledTo(sizeX, sizeY));
             }
         }

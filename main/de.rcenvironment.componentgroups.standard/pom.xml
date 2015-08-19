@@ -26,8 +26,15 @@
 		<!-- converger component -->
 		<module>${modules-root}/de.rcenvironment.components.converger.common</module>
 		<module>${modules-root}/de.rcenvironment.components.converger.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.converger.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.converger.gui</module>
-
+		
+		<!-- doe component -->
+		<module>${modules-root}/de.rcenvironment.components.doe.common</module>
+		<module>${modules-root}/de.rcenvironment.components.doe.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.doe.execution.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.doe.gui</module>
+		
 		<!-- input provider component -->
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.common</module>
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.execution</module>
@@ -64,6 +71,12 @@
 		<module>${modules-root}/de.rcenvironment.components.script.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.script.gui</module>
 
+		<!-- joiner component -->
+		<module>${modules-root}/de.rcenvironment.components.switch.common</module>
+		<module>${modules-root}/de.rcenvironment.components.switch.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.switch.execution.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.switch.gui</module>
+		
 		<!-- component group feature -->
 		<module>${modules-root}/de.rcenvironment.componentgroups.standard.feature</module>
 	</modules>

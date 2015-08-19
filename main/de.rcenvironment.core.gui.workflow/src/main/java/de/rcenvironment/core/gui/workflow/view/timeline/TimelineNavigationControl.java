@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,6 +26,7 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 
 /**
+ * The complete navigation overview control.
  * @author Hendrik Abbenhaus
  * 
  */
@@ -69,9 +70,6 @@ public class TimelineNavigationControl extends Canvas implements PaintListener, 
     private final int defaultTextHeight = 15;
     
 
-    /**
-     * @param parent
-     */
     public TimelineNavigationControl(Composite parent) {
         super(parent, SWT.SINGLE);
         this.addPaintListener(this);
@@ -172,7 +170,7 @@ public class TimelineNavigationControl extends Canvas implements PaintListener, 
     }
 
     /**
-     * 
+     * Sets a new Workflow time area.
      * @param newWFEndTime the new endtime
      * @param newWFStartTime the new starttime
      */
@@ -183,8 +181,7 @@ public class TimelineNavigationControl extends Canvas implements PaintListener, 
     }
 
     /**
-     * 
-     * 
+     * Sets a new visible time area.
      * @param startVisibleTime The beginning of visibility
      * @param endVisibleTime The end of visibility
      */
@@ -195,7 +192,7 @@ public class TimelineNavigationControl extends Canvas implements PaintListener, 
     }
 
     /**
-     * 
+     * Sets the content.
      * @param rows the rows
      */
     public void setTimeTableComponentRows(TimelineComponentRow[] rows) {
@@ -346,7 +343,7 @@ public class TimelineNavigationControl extends Canvas implements PaintListener, 
     }
 
     /**
-     * 
+     * Add {@link AreaChangedListener} to the List of Listener.
      * @param newListener the new listener
      */
     public void addAreaChangeListener(AreaChangedListener newListener) {
@@ -356,7 +353,7 @@ public class TimelineNavigationControl extends Canvas implements PaintListener, 
 }
 
 /**
- * 
+ * Interface contains area changed events.
  * 
  * @author Hendrik Abbenhaus
  */

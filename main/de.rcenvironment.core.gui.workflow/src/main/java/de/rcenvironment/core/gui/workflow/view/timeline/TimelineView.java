@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,6 +26,10 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
+import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Status;
+import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.Separator;
@@ -45,6 +49,7 @@ import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
+import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Slider;
 import org.eclipse.ui.IActionBars;
 import org.eclipse.ui.PlatformUI;
@@ -60,15 +65,14 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
- * The Complete TimeTable View.
+ * The complete Timeline View.
  * 
  * @author Hendrik Abbenhaus
+ * @author David Scholz
  *
  */
 public class TimelineView extends ViewPart implements AreaChangedListener, ResizeListener, ControlListener, SelectionListener {
@@ -119,6 +123,14 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     private Long workflowDmId;
 
     private NodeIdentifier workflowCtrlNode;
+    
+    private boolean workflowTerminated = false;
+    
+    private Composite parentComposite;
+    
+    private boolean actualContentSet = false;
+
+    private Label refreshLabel;
 
     public TimelineView() {
         metaDataService = ServiceRegistry.createAccessFor(this).getService(DistributedMetaDataService.class);
@@ -126,8 +138,13 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     @Override
     public void createPartControl(Composite parent) {
-        rootComposite = new Composite(parent, SWT.NONE);
-        parent.setBackground(backgroundColorWhite);
+        parentComposite = parent;
+        parentComposite.setBackground(backgroundColorWhite);
+        
+        refreshLabel = new Label(parentComposite, SWT.NONE);
+        refreshLabel.setText("Fetching workflow timeline...");
+        
+        rootComposite = new Composite(new Shell(), SWT.NONE);
         rootComposite.setBackground(backgroundColorWhite);
         GridLayout mainLayout = new GridLayout(1, false);
         mainLayout.marginHeight = 0;
@@ -151,7 +168,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         
         rootComposite.setEnabled(false);
     }
-
+    
     private void initGUI(Composite parent) {
         GridData gridData = new GridData();
         gridData.horizontalAlignment = GridData.FILL;
@@ -284,20 +301,36 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     }
 
     private void updateContent() {
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        refreshAction.setEnabled(false);
+        Job job = new Job("Workflow Timeline") {
 
-            @TaskDescription("Fetch workflow timeline")
             @Override
-            public void run() {
+            protected IStatus run(IProgressMonitor monitor) {
                 try {
+                    monitor.beginTask("Fetching workflow timeline", 2);
+                    monitor.worked(1);
                     WorkflowRunTimline timeline = metaDataService.getWorkflowTimeline(workflowDmId, workflowCtrlNode);
                     final String timelineAsString = getWorkflowRunTimelineAsJsonString(timeline);
+                    monitor.worked(1);
                     Display.getDefault().asyncExec(new Runnable() {
 
                         @Override
                         public void run() {
-                            updateContent(timelineAsString);
-                            rootComposite.setEnabled(true);
+                            if (!parentComposite.isDisposed()) {
+                                updateContent(timelineAsString);
+                                if (!actualContentSet) { // replace placeholder content with actual content
+                                    refreshLabel.setParent(new Shell());
+                                    refreshLabel.dispose();
+                                    rootComposite.setParent(parentComposite);
+                                    rootComposite.getShell().layout(true, true);
+                                    zoomInAction.setEnabled(true);
+                                    zoomOutAction.setEnabled(true);
+                                    filterAction.setEnabled(true);
+                                    actualContentSet = true;
+                                }
+                                rootComposite.setEnabled(true);
+                                refreshAction.setEnabled(!workflowTerminated);                                
+                            }
                         }
                     });
                 } catch (IOException | CommunicationException e) {
@@ -312,9 +345,14 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                                 + "Please refresh the workflow data browser and try again.\n\nSee log for more details.");
                         }
                     });
+                } finally {
+                    monitor.done();
                 }
-            }
-        });
+                return Status.OK_STATUS;
+            };
+        };
+        job.setUser(true);
+        job.schedule();
     }
 
     private String getWorkflowRunTimelineAsJsonString(WorkflowRunTimline timeline) throws IOException {
@@ -326,7 +364,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         rootNode.put("WorkflowStartTime", String.valueOf(timeline.getWorkflowRunInterval().getStartTime()));
         if (timeline.getWorkflowRunInterval().getEndTime() != null) {
             rootNode.put("WorkflowEndTime", String.valueOf(timeline.getWorkflowRunInterval().getEndTime()));
-            refreshAction.setEnabled(false);
+            workflowTerminated = true;
         } else {
             rootNode.put("WorkflowEndTime", String.valueOf(System.currentTimeMillis()));
         }
@@ -456,6 +494,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                     }
                 });
                 List<TimelineActivityPart> currentActivities = new ArrayList<TimelineActivityPart>();
+                int run = 1;
                 for (Object jsonCurrentActivity : jsonActivityList) {
                     Map<String, String> currentActivityMap = (Map<String, String>) jsonCurrentActivity;
 
@@ -474,8 +513,14 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                         comment = currentActivityMap
                             .get(TimelineViewConstants.JSON_COMPONENT_EVENT_INFOTEXT);
                     }
-                    TimelineActivityPart currentActivity = new TimelineActivityPart(currentComponentName,
-                        eventType, currentActivityTime, comment);
+                    TimelineActivityPart currentActivity = null;
+                    if (eventType == TimelineActivityType.COMPONENT_RUN) {
+                        currentActivity = new TimelineActivityPart(currentComponentName,
+                            eventType, currentActivityTime, String.valueOf(run++), comment);
+                    } else {
+                        currentActivity = new TimelineActivityPart(currentComponentName,
+                            eventType, currentActivityTime, comment);
+                    }
 
                     if (currentActivities.size() == 0
                         && !currentActivityTime.equals(wfStartDate)) {
@@ -506,7 +551,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 .size()]);
 
         } catch (IOException e) {
-            e.getStackTrace();
+            LogFactory.getLog(TimelineView.class).error(e);
             return;
         }
         showComponentRows(this.rows);
@@ -561,6 +606,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
         };
         refreshAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.REFRESH_16));
+        refreshAction.setEnabled(false);
 
         zoomInAction = new Action(Messages.zoomin) {
 
@@ -581,7 +627,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         zoomInAction.setImageDescriptor(ImageDescriptor
             .createFromURL(TimelineView.class
                 .getResource("/resources/icons/zoom_in.gif")));
-
+        zoomInAction.setEnabled(false);
+        
         zoomOutAction = new Action(Messages.zoomout) {
 
             @Override
@@ -598,7 +645,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         zoomOutAction.setImageDescriptor(ImageDescriptor
             .createFromURL(TimelineView.class
                 .getResource("/resources/icons/zoom_out.gif")));
-
+        zoomOutAction.setEnabled(false);
+        
         filterAction = new Action("Filter") {
 
             @Override
@@ -626,7 +674,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         filterAction.setImageDescriptor(ImageDescriptor
             .createFromURL(TimelineView.class
                 .getResource("/resources/icons/filter.gif")));
-
+        filterAction.setEnabled(false);
     }
 
     private void contributeToActionBars() {
@@ -643,8 +691,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     }
 
     /**
-     * 
-     * 
+     * Get an component Icon by its component type Id.
      * @param identifier the id
      * @param caller the caller
      * @return the image
@@ -670,8 +717,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     }
 
     /**
-     * 
-     * 
+     * Get a component group Name by an id.
      * @param identifier the id
      * @param caller the caller
      * @return the display name
@@ -696,7 +742,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     }
 
     /**
-     * 
+     * Calculates the current zoom level.
      * @param zoom The current zoomfactor 10000 == 100%
      */
     public void setZoom(int zoom) {
@@ -732,8 +778,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     }
 
     /**
-     * 
-     * 
+     * Converts a Pixel to a Date.
      * @param xPixel Contains the pixel which should be converted to Date
      * @param canvasSizeX Contains the size of the Canvas in the x direction or the possible maximum size of selection
      * @param currentWorkflowStartTime Contains the start time of the current workflow
@@ -742,8 +787,8 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
      */
     public static Date convertPixelToDate(int xPixel, int canvasSizeX,
         Date currentWorkflowStartTime, Date currentWorkflowEndTime) {
-        long value = (long) (((currentWorkflowEndTime.getTime() * xPixel) + (currentWorkflowStartTime
-            .getTime() * (canvasSizeX - xPixel))) / canvasSizeX);
+        long value = ((currentWorkflowEndTime.getTime() * xPixel) + (currentWorkflowStartTime
+            .getTime() * (canvasSizeX - xPixel))) / canvasSizeX;
         Date date = new Date();
         date.setTime(value);
         return date;
@@ -751,7 +796,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     /**
      * 
-     * 
+     * Converts a Date to a pixel.
      * @param date the date
      * @param canvasSizeX the canvas size
      * @param currentWorkflowStartTime the current workflowstarttime
@@ -815,7 +860,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         long selectedTime = selectedEndTime.getTime() - selectedStartTime.getTime();
         long wfTime = wfEndDate.getTime() - wfStartDate.getTime();
         float dividedTime = ((float) selectedTime / wfTime) * percent;
-        currentZoomValue = (int) (Math.round(dividedTime) * percent);
+        currentZoomValue = Math.round(dividedTime) * percent;
         // SWT Slider does not always disable slider if value == maximum value
         this.scrollBar.setEnabled(currentZoomValue < scrollBar.getMaximum());
 

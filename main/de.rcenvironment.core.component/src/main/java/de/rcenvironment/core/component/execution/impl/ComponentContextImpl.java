@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,43 +44,45 @@ public class ComponentContextImpl implements ComponentContext {
 
     private String instanceName;
 
-    private NodeIdentifier node;
-    
-    private String controllersExecutionIdentifier;
-    
-    private String controllersInstanceName;
-    
-    private NodeIdentifier controllersNode;
+    private final NodeIdentifier node;
+
+    private final String controllersExecutionIdentifier;
+
+    private final String controllersInstanceName;
+
+    private final NodeIdentifier controllersNode;
 
     private NodeIdentifier defaultStorageNode;
 
     private File workingDirectory;
 
-    private ConfigurationDescription configurationDescription;
+    private final ConfigurationDescription configurationDescription;
 
-    private Set<String> inputs = new HashSet<>();
+    private final Set<String> inputs = new HashSet<>();
 
-    private Set<String> outputs = new HashSet<>();
-    
-    private Map<String, String> dynInputsIds = new HashMap<>();
+    private final Set<String> inputsNotConnected = new HashSet<>();
 
-    private Map<String, String> dynOutputsIds = new HashMap<>();
-    
-    private Map<String, DataType> outputsDataTypes = new HashMap<>();
-    
-    private Map<String, DataType> inputsDataTypes = new HashMap<>();
+    private final Set<String> outputs = new HashSet<>();
 
-    private Map<String, Map<String, String>> inputsMetaData = new HashMap<>();
+    private final Map<String, String> dynInputsIds = new HashMap<>();
 
-    private Map<String, Map<String, String>> outputsMetaData = new HashMap<>();
-    
-    private String componentIdentifier;
-    
-    private String componentName;
-    
-    private ComponentExecutionControllerCallback controllerCallback;
-    
-    private ServiceRegistryAccess serviceRegistryAccess;
+    private final Map<String, String> dynOutputsIds = new HashMap<>();
+
+    private final Map<String, DataType> outputsDataTypes = new HashMap<>();
+
+    private final Map<String, DataType> inputsDataTypes = new HashMap<>();
+
+    private final Map<String, Map<String, String>> inputsMetaData = new HashMap<>();
+
+    private final Map<String, Map<String, String>> outputsMetaData = new HashMap<>();
+
+    private final String componentIdentifier;
+
+    private final String componentName;
+
+    private final ComponentExecutionControllerCallback controllerCallback;
+
+    private final ServiceRegistryAccess serviceRegistryAccess;
 
     public ComponentContextImpl(ComponentExecutionContext compExeCtx, ComponentExecutionControllerCallback ctrlCallback) {
         executionIdentifier = compExeCtx.getExecutionIdentifier();
@@ -100,11 +102,14 @@ public class ComponentContextImpl implements ComponentContext {
             if (inputExecutionConstraint.equals(EndpointDefinition.InputExecutionContraint.Required.name()) || ep.isConnected()) {
                 inputs.add(ep.getName());
                 dynInputsIds.put(ep.getName(), ep.getDynamicEndpointIdentifier());
-                inputsDataTypes.put(ep.getName(), ep.getDataType());
-                inputsMetaData.put(ep.getName(), ep.getMetaData());
+            } else if (!ep.isConnected()) {
+                inputsNotConnected.add(ep.getName());
             }
+            inputsDataTypes.put(ep.getName(), ep.getDataType());
+            inputsMetaData.put(ep.getName(), ep.getMetaData());
+
         }
-        
+
         for (EndpointDescription ep : compExeCtx.getComponentDescription().getOutputDescriptionsManager().getEndpointDescriptions()) {
             outputs.add(ep.getName());
             dynOutputsIds.put(ep.getName(), ep.getDynamicEndpointIdentifier());
@@ -163,7 +168,7 @@ public class ComponentContextImpl implements ComponentContext {
         return Collections.unmodifiableSet(configurationDescription.getComponentConfigurationDefinition().getReadOnlyConfiguration()
             .getConfigurationKeys());
     }
-    
+
     @Override
     public Set<String> getConfigurationKeys() {
         return Collections.unmodifiableSet(configurationDescription.getConfiguration().keySet());
@@ -172,14 +177,14 @@ public class ComponentContextImpl implements ComponentContext {
     @Override
     public String getConfigurationValue(String key) {
         if (getConfigurationKeys().contains(key)) {
-            return configurationDescription.getConfigurationValue(key);            
+            return configurationDescription.getConfigurationValue(key);
         } else if (getReadOnlyConfigurationKeys().contains(key)) {
             return configurationDescription.getComponentConfigurationDefinition().getReadOnlyConfiguration().getValue(key);
         } else {
             return null;
         }
     }
-    
+
     @Override
     public String getConfigurationMetaDataValue(String configKey, String metaDataKey) {
         return configurationDescription.getComponentConfigurationDefinition().getConfigurationMetaDataDefinition()
@@ -200,22 +205,22 @@ public class ComponentContextImpl implements ComponentContext {
     public boolean isDynamicInput(String inputName) {
         return getDynamicInputIdentifier(inputName) != null;
     }
-    
+
     @Override
     public Set<String> getInputsWithDatum() {
         return Collections.unmodifiableSet(controllerCallback.getInputsWithDatum());
     }
-    
+
     @Override
     public DataType getInputDataType(String inputName) {
         return inputsDataTypes.get(inputName);
     }
-    
+
     @Override
     public Set<String> getInputMetaDataKeys(String inputName) {
         return Collections.unmodifiableSet(inputsMetaData.keySet());
     }
-    
+
     @Override
     public String getInputMetaDataValue(String inputName, String metaDataKey) {
         return inputsMetaData.get(inputName).get(metaDataKey);
@@ -230,7 +235,7 @@ public class ComponentContextImpl implements ComponentContext {
     public Set<String> getOutputs() {
         return Collections.unmodifiableSet(outputs);
     }
-    
+
     @Override
     public DataType getOutputDataType(String outputName) {
         return outputsDataTypes.get(outputName);
@@ -240,7 +245,7 @@ public class ComponentContextImpl implements ComponentContext {
     public Set<String> getOutputMetaDataKeys(String outputName) {
         return Collections.unmodifiableSet(outputsMetaData.keySet());
     }
-    
+
     @Override
     public String getOutputMetaDataValue(String outputName, String metaDataKey) {
         return outputsMetaData.get(outputName).get(metaDataKey);
@@ -250,7 +255,7 @@ public class ComponentContextImpl implements ComponentContext {
     public void writeOutput(String outputName, TypedDatum value) {
         controllerCallback.writeOutput(outputName, value);
     }
-    
+
     @Override
     public void resetOutput(String outputName) {
         controllerCallback.resetOutput(outputName);
@@ -265,7 +270,7 @@ public class ComponentContextImpl implements ComponentContext {
     public void closeAllOutputs() {
         controllerCallback.closeAllOutputs();
     }
-    
+
     @Override
     public boolean isOutputClosed(String outputName) {
         return controllerCallback.isOutputClosed(outputName);
@@ -285,7 +290,7 @@ public class ComponentContextImpl implements ComponentContext {
     public int getExecutionCount() {
         return controllerCallback.getExecutionCount();
     }
-    
+
     @Override
     public NodeIdentifier getWorkflowNodeId() {
         return controllersNode;
@@ -335,9 +340,14 @@ public class ComponentContextImpl implements ComponentContext {
     public String getComponentName() {
         return componentName;
     }
-    
+
     public Long getComponentExecutionDataManagementId() {
         return controllerCallback.getComponentExecutionDataManagementId();
+    }
+
+    @Override
+    public Set<String> getInputsNotConnected() {
+        return inputsNotConnected;
     }
 
 }

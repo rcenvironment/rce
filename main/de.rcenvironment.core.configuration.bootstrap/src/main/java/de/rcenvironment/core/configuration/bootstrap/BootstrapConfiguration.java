@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -139,7 +139,7 @@ public final class BootstrapConfiguration {
 
         // circumvent CheckStyle rule to generate basic output before the log system is initialized
 
-        stdOut.println(String.format("%s %s (use -p <id or path> to override)", introText, finalProfileDirectoryPath));
+        stdOut.println(String.format("%s %s (use -p/--profile <id or path> to override)", introText, finalProfileDirectoryPath));
 
         setLoggingParameters();
 
@@ -230,7 +230,21 @@ public final class BootstrapConfiguration {
 
     private File determineOriginalProfileDir(LaunchParameters launchParams) throws IOException {
 
-        String profilePath = launchParams.getNamedParameter("-p");
+        String profilePathShortOption = launchParams.getNamedParameter("-p");
+        String profilePathLongOption = launchParams.getNamedParameter("--profile");
+
+        String profilePath;
+        if (profilePathShortOption != null) {
+            profilePath = profilePathShortOption;
+            // sanity check: forbid "rce -p path1 --profile path2"
+            if (profilePathLongOption != null) {
+                // TODO use more appropriate exception type?
+                throw new IOException("Invalid combination of command-line parameters: cannot specify -p and --profile at the same time");
+            }
+        } else {
+            profilePath = profilePathLongOption; // can still be null if none of the options is used
+        }
+
         if (profilePath == null) {
             String explicitDefault = System.getProperty(SYSTEM_PROPERTY_DEFAULT_PROFILE_ID_OR_PATH);
             if (explicitDefault != null) {
@@ -284,7 +298,6 @@ public final class BootstrapConfiguration {
      * @return true if the lock was acquired, false if the lock is already held by another JVM application
      * @throws IOException on unusual errors; should not occur on a simple failure to acquire the lock
      */
-    @SuppressWarnings("resource")
     // note: technically, this method produces a resource leak, but this is irrelevant as the lock must be held anyway
     private static boolean attemptToLockProfileDirectory(File profileDir) throws IOException {
         profileDir.mkdirs();

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.transport.utils.common</artifactId>
 	<name>Transport RCE Utilities bundle</name>
-	<version>6.0.3.qualifier</version>
+	<version>6.1.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

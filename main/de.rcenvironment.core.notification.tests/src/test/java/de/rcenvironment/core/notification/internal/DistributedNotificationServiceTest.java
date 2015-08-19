@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -26,6 +26,7 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.notification.Notification;
@@ -158,30 +159,37 @@ public class DistributedNotificationServiceTest {
         }
     }
 
-    /** Test. */
+    /**
+     * Test.
+     * 
+     * @throws CommunicationException on unexpected failure
+     */
     @Test
-    public void testSubscribe() {
+    public void testSubscribe() throws CommunicationException {
         assertNotNull(notificationService.subscribe(NotificationTestConstants.NOTIFICATION_ID,
-                NotificationTestConstants.NOTIFICATION_SUBSCRIBER,
-                NotificationTestConstants.LOCALHOST));
+            NotificationTestConstants.NOTIFICATION_SUBSCRIBER,
+            NotificationTestConstants.LOCALHOST));
     }
 
-    /** Test. */
+    /**
+     * Test.
+     */
     @Test
-    public void testUnsubscribe() {
+    public void testUnsubscribeFailureWithoutSubscription() {
         try {
             notificationService.unsubscribe(NotificationTestConstants.NOTIFICATION_ID,
                 NotificationTestConstants.NOTIFICATION_SUBSCRIBER,
                 NotificationTestConstants.LOCALHOST);
-        } catch (RuntimeException e) {
-            assertEquals("unsubscribed", e.getMessage());
+            fail("Expected exception");
+        } catch (CommunicationException e) {
+            assertEquals("Failed to unsubscribe from remote publisher @\"<unnamed>\" [localhost:1]: unsubscribed", e.getMessage());
         }
     }
 
     /**
      * Test {@link NotificationService}.
      * 
-     * TODO Don't throw exception for test pruposes. - seid_do
+     * TODO Don't throw exception for test purposes. - seid_do
      * 
      * @author Doreen Seider
      */

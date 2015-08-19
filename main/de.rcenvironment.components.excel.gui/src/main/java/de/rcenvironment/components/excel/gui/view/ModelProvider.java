@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,6 +21,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.GarbageDestroyer;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
@@ -66,8 +67,14 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
         if (!isSubscribed) {
             SimpleNotificationService sns = new SimpleNotificationService();
 
-            Map<String, Long> lastMissedNotifications =
-                sns.subscribe(componentIdentifier + ExcelComponentConstants.NOTIFICATION_SUFFIX, this, publishPlatform);
+            Map<String, Long> lastMissedNotifications;
+            try {
+                lastMissedNotifications =
+                    sns.subscribe(componentIdentifier + ExcelComponentConstants.NOTIFICATION_SUFFIX, this, publishPlatform);
+            } catch (CommunicationException e) {
+                LogFactory.getLog(getClass()).error("Failed to subscribe to Excel run platform: " + e.getMessage());
+                return;
+            }
 
             for (String notifId : lastMissedNotifications.keySet()) {
                 Long lastMissedNumber = lastMissedNotifications.get(notifId);

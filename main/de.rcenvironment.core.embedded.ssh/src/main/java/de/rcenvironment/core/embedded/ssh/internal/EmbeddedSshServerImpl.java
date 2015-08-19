@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,6 +33,9 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 public class EmbeddedSshServerImpl {
 
     private static final String HOST_KEY_STORAGE_FILE_NAME = "ssh_host_key.dat";
+
+    // TODO configure/inject setting from RA bundle
+    private static final String REMOTE_ACCESS_PROTOCOL_VERSION = "6.1.0";
 
     private ConfigurationService configurationService;
 
@@ -82,6 +85,8 @@ public class EmbeddedSshServerImpl {
         if (sshServerActive) {
             authenticationManager = new SshAuthenticationManager(sshConfiguration);
             sshd = SshServer.setUpDefaultServer();
+            // TODO also add RCE product version?
+            sshd.getProperties().put(SshServer.SERVER_IDENTIFICATION, "RCE RA/" + REMOTE_ACCESS_PROTOCOL_VERSION);
             sshd.setPasswordAuthenticator(authenticationManager);
             String hostKeyFilePath = new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA),
                 HOST_KEY_STORAGE_FILE_NAME).getAbsolutePath();
@@ -89,6 +94,7 @@ public class EmbeddedSshServerImpl {
             sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyFilePath));
             sshd.setHost(sshConfiguration.getHost());
             sshd.setPort(sshConfiguration.getPort());
+
             // TODO review: why not use a single factory instance for both?
             sshd.setShellFactory(new CustomSshCommandFactory(authenticationManager, scpContextManager, commandExecutionService,
                 sshConfiguration));
@@ -97,9 +103,12 @@ public class EmbeddedSshServerImpl {
                 sshConfiguration));
             try {
                 sshd.start();
-                logger.info("SSH server started on port " + sshConfiguration.getPort());
+                logger.info(String.format("SSH server started on port %s (bound to IP %s)", sshConfiguration.getPort(),
+                    sshConfiguration.getHost()));
             } catch (IOException e) {
-                logger.error("Failed to start embedded SSH server on port " + sshConfiguration.getPort(), e);
+                logger.error(
+                    String.format("Failed to start embedded SSH server on port %s (attempted to bind to IP address %s)",
+                        sshConfiguration.getPort(), sshConfiguration.getHost()), e);
             }
         } else {
             logger.debug("Not running an SSH server as no SSH configuration is present, or the \"enabled\" property is not \"true\"");

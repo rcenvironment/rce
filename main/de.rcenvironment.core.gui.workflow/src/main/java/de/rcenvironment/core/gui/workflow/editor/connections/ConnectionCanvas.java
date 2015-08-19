@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -371,7 +371,7 @@ public class ConnectionCanvas extends FigureCanvas {
          */
         public void setSelected(boolean selected) {
             if (selected) {
-                setForegroundColor(ColorConstants.red);
+                setForegroundColor(ColorConstants.blue);
             } else {
                 setForegroundColor(ColorConstants.black);
             }

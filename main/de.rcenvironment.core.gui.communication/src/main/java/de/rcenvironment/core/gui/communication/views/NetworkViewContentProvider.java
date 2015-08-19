@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -140,7 +140,6 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
             result = createNodesForComponentInstallations(typedParentNode, publishedInstallations);
             break;
         case RAW_NODE_PROPERTIES_FOLDER:
-            NetworkGraphNode networkNode = typedParentNode.getNode();
             List<NetworkGraphNodeWithContext> children = new ArrayList<NetworkGraphNodeWithContext>();
             Map<String, String> propertyValueMap = typedParentNode.getAttachedNodeProperties();
             if (propertyValueMap != null) {

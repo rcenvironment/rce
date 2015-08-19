@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -284,27 +284,13 @@ public class AuthenticationServiceImplTest {
     public void testLdapArgumentForFailure(){
         String uid = "";
         String password = "test";
-        
-        LDAPAuthenticationResult res = authService.authenticate(uid, password);
-        if (res == LDAPAuthenticationResult.AUTHENTICATED){
-            fail();
-        }
-        
+        assertEquals(LDAPAuthenticationResult.PASSWORD__OR_USERNAME_INVALID, authService.authenticate(uid, password));
+
+        uid = "_";
+        password = "";
+        assertEquals(LDAPAuthenticationResult.PASSWORD__OR_USERNAME_INVALID, authService.authenticate(uid, password));
     }
     
-    /**
-     * Tests authentication at LDAP for failure.
-     */
-    @Test
-    public void testLdapAuthenticationForFailure(){
-        String uid = "_";
-        String password = "";
-        
-        LDAPAuthenticationResult res = authService.authenticate(uid, password);
-        if (res == LDAPAuthenticationResult.AUTHENTICATED){
-            fail();
-        }
-    }
     
     /**
      * Tests authentication at LDAP for success.

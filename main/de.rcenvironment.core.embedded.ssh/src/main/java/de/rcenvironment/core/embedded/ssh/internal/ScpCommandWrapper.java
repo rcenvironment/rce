@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,11 +15,11 @@ import java.io.OutputStream;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.sshd.common.file.FileSystemAware;
+import org.apache.sshd.common.file.FileSystemView;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.FileSystemAware;
-import org.apache.sshd.server.FileSystemView;
 import org.apache.sshd.server.command.ScpCommand;
 import org.apache.sshd.server.command.ScpCommandFactory;
 
@@ -104,7 +104,7 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
                 out.close();
             }
         } catch (IOException e) {
-            logger.debug(e.getStackTrace());
+            logger.debug(e);
         }
     }
 
@@ -189,6 +189,8 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
     public void setExitCallback(ExitCallback callbackParam) {
         this.callback = callbackParam;
     }
+    
+    
 
     @Override
     // TODO review: use this for additional security? - misc_ro

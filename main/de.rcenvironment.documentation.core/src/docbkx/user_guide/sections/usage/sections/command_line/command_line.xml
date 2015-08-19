@@ -23,6 +23,14 @@
 					</thead>
 					<tbody>
 						<row>
+							<entry>profile "&lt;profile id or path>"</entry>
+							<entry>RCE</entry>
+							<entry>Sets a custom profile folder to use. If only an id (any valid
+								directory name) is given, the profile directory "&lt;user
+									home>/.rce/<replaceable>id</replaceable>" is used.
+								Alternatively, a full filesystem path can be specified.</entry>
+						</row>
+						<row>
 							<entry>batch "&lt;command string>"</entry>
 							<entry>RCE</entry>
 							<entry>Works like "exec" command but always shuts down RCE after

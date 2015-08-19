@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -39,8 +39,8 @@ import org.eclipse.swt.widgets.Tree;
 import org.eclipse.swt.widgets.TreeItem;
 
 /**
- * Dialog that helps to manage connections.
- *
+ * Dialog that helps to manage filter settings.
+ * 
  * @author Hendrik Abbenhaus
  */
 public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckStateListener {
@@ -181,7 +181,7 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
     }
 
     /**
-     * 
+     * Sets the content of the timeline.
      * @param newrows the rows
      */
     public void setContent(TimelineComponentRow[] newrows) {
@@ -216,6 +216,12 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
         }
     }
     
+    /**
+     * 
+     * @param name
+     * @return Returns {@value false}, if the given component-name is not allowed and 
+     * {@value true} if there is no componentNameFilter or contains the given name. 
+     */
     private boolean isAllowedComponentName(String name){
         if (componentNameFilter == null){
             return true;
@@ -239,17 +245,15 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
     }
 
     /**
-     * 
-     * 
-     * @return Returns an array of filterd Componentnames
+     * Returns an array of filtered Component names.
+     * @return the array of filtered Component names
      */
     public String[] getFilteredNames() {
         return componentNameFilter.toArray(new String[componentNameFilter.size()]);
     }
 
     /**
-     * Update tree.
-     *
+     * Updates the tree.
      * @param node the node
      * @param checkedElements the checked elements
      * @param checked the checked
@@ -271,7 +275,6 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
 
     /**
      * Update ancestors.
-     *
      * @param child the child
      * @param checkedElements the checked elements
      */
@@ -362,8 +365,7 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
     }
 
     /**
-     * 
-     *
+     * Label Provider for Component Tree.
      * @author Hendrik Abbenhaus
      */
     public class TreeLabelProvider extends LabelProvider {
@@ -393,8 +395,7 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
     }
 
     /**
-     * 
-     *
+     * Content Provider for Component Tree.
      * @author Hendrik Abbenhaus
      */
     public class TreeContentProvider implements ITreeContentProvider {
@@ -428,8 +429,7 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
     }
 
     /**
-     * Filter to remove unwanted components in TimeTableFilter dialog.
-     * 
+     * Filter to remove unwanted components in {@link TimelineFilterDialog}.
      * @author Hendrik Abbenhaus
      */
     public class ComponentViewerFilter extends ViewerFilter {

@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.platform.maven-osgi.other.feature"
       label="RCE Platform - Maven-OSGi Bridge Feature - Other Libraries"
-      version="6.0.0.qualifier"
+      version="6.1.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -10,7 +10,7 @@
    </description>
 
    <copyright url="http://www.rcenvironment.de">
-      Copyright (c) 2006-2014 DLR.
+      Copyright (C) 2006-2015 DLR, Germany.
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License
 v1.0 which accompanies this distribution, and is available at

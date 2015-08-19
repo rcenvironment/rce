@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -55,6 +55,7 @@ public class NodePropertyImpl implements NodeProperty {
         return key.getDataKey();
     }
 
+    @Override
     public long getSequenceNo() {
         return sequenceNo;
     }

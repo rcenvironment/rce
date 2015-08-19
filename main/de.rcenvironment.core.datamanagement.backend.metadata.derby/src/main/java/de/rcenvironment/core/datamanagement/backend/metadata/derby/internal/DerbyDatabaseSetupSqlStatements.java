@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,6 +21,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COU
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DATAMANAGEMENT_NODE_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DATA_REFERENCE_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DATA_REFERENCE_KEY;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DB_VERSION;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.ENDPOINT_INSTANCE_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.ENDTIME;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.FINAL_STATE;
@@ -41,6 +42,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TAB
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_COMPONENT_RUN;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_COMPONENT_RUN_PROPERTIES;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_DATA_REFERENCE;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_DB_VERSION_INFO;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_DATA;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_INSTANCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_TIMELINE_INTERVAL;
@@ -68,6 +70,8 @@ import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
  * @author Jan Flink
  */
 public abstract class DerbyDatabaseSetupSqlStatements {
+
+    private static final String AND = " AND ";
 
     private static final String CLOB = " CLOB ";
 
@@ -117,17 +121,17 @@ public abstract class DerbyDatabaseSetupSqlStatements {
 
     private static final String DOT = ".";
 
-    private static final String INNER_JOIN = " INNER JOIN ";
-
-    private static final String ON = " ON ";
-
     private static final String CREATE_VIEW = " CREATE VIEW ";
 
     private static final String AS = " AS ";
 
-    private static final String LEFT_OUTER_JOIN = " LEFT OUTER JOIN ";
-
     private static final String BOOLEAN = " BOOLEAN ";
+
+    protected static String getSqlTableDbVersionInfo() {
+        String sql = CREATE_TABLE + TABLE_DB_VERSION_INFO + "("
+            + DB_VERSION + VARCHAR_255 + NOT_NULL + ")";
+        return sql;
+    }
 
     protected static String getSqlRelationWorkflowRunDataReference() {
         String sql = CREATE_TABLE + REL_WORKFLOWRUN_DATAREFERENCE + "("
@@ -326,31 +330,32 @@ public abstract class DerbyDatabaseSetupSqlStatements {
     }
 
     protected static String getSqlViewEndpointData() {
-        String sql = CREATE_VIEW + VIEW_ENDPOINT_DATA + AS
-            + SELECT + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID + COMMA
-            + TABLE_ENDPOINT_INSTANCE + DOT + NAME + COMMA
-            + TABLE_ENDPOINT_INSTANCE + DOT + TYPE + AS + "ENDPOINT_TYPE" + COMMA
-            + TABLE_ENDPOINT_DATA + DOT + COUNTER + COMMA
-            + TABLE_TYPED_DATUM + DOT + TYPE + AS + "DATUM_TYPE" + COMMA
-            + TABLE_TYPED_DATUM + DOT + VALUE + COMMA
-            + TABLE_TYPED_DATUM + DOT + BIG_VALUE
-            + FROM + TABLE_ENDPOINT_DATA
-            + INNER_JOIN + TABLE_ENDPOINT_INSTANCE + ON + TABLE_ENDPOINT_INSTANCE + DOT + ENDPOINT_INSTANCE_ID + EQUAL
-            + TABLE_ENDPOINT_DATA + DOT + ENDPOINT_INSTANCE_ID
-            + INNER_JOIN + TABLE_TYPED_DATUM + ON + TABLE_TYPED_DATUM + DOT + TYPED_DATUM_ID + EQUAL + TABLE_ENDPOINT_DATA
-            + DOT + TYPED_DATUM_ID;
+        String sql =
+            CREATE_VIEW + VIEW_ENDPOINT_DATA + AS
+                + SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + NAME + COMMA
+                + TABLE_ENDPOINT_INSTANCE + DOT + TYPE + AS + "ENDPOINT_TYPE" + COMMA
+                + TABLE_ENDPOINT_DATA + DOT + COUNTER + COMMA
+                + TABLE_TYPED_DATUM + DOT + TYPE + AS + "DATUM_TYPE" + COMMA
+                + TABLE_TYPED_DATUM + DOT + VALUE + COMMA
+                + TABLE_TYPED_DATUM + DOT + BIG_VALUE
+                + FROM + TABLE_COMPONENT_INSTANCE + COMMA + TABLE_COMPONENT_RUN + COMMA + TABLE_ENDPOINT_DATA
+                + COMMA + TABLE_TYPED_DATUM + COMMA + TABLE_ENDPOINT_INSTANCE
+                + WHERE + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                + COMPONENT_INSTANCE_ID
+                + AND + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT + COMPONENT_RUN_ID
+                + AND + TABLE_ENDPOINT_DATA + DOT + TYPED_DATUM_ID + EQUAL + TABLE_TYPED_DATUM + DOT + TYPED_DATUM_ID
+                + AND + TABLE_ENDPOINT_DATA + DOT + ENDPOINT_INSTANCE_ID + EQUAL + TABLE_ENDPOINT_INSTANCE + DOT + ENDPOINT_INSTANCE_ID;
         return sql;
     }
 
     protected static String getSqlViewWorkflowRunComponentRun() {
         String sql =
             CREATE_VIEW + VIEW_WORKFLOWRUN_COMPONENTRUN + AS
-                + SELECT + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID + COMMA + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + FROM
-                + TABLE_WORKFLOW_RUN + INNER_JOIN
-                + TABLE_COMPONENT_INSTANCE + ON + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + EQUAL
-                + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID + INNER_JOIN
-                + TABLE_COMPONENT_RUN + ON + TABLE_COMPONENT_RUN + DOT + COMPONENT_INSTANCE_ID + EQUAL
-                + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID;
+                + SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + FROM
+                + TABLE_COMPONENT_INSTANCE + COMMA + TABLE_COMPONENT_RUN
+                + WHERE + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL
+                + TABLE_COMPONENT_RUN + DOT + COMPONENT_INSTANCE_ID;
         return sql;
     }
 
@@ -358,7 +363,7 @@ public abstract class DerbyDatabaseSetupSqlStatements {
         String sql =
             String.format(
                 CREATE_VIEW + VIEW_COMPONENT_RUNS + AS
-                    + SELECT + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID + COMMA
+                    + SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA
                     + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_ID + COMMA
                     + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_NAME + COMMA
                     + TABLE_COMPONENT_INSTANCE + DOT + FINAL_STATE + COMMA
@@ -369,16 +374,13 @@ public abstract class DerbyDatabaseSetupSqlStatements {
                     + TABLE_TIMELINE_INTERVAL + DOT + STARTTIME + COMMA
                     + TABLE_TIMELINE_INTERVAL + DOT + ENDTIME + COMMA
                     + TABLE_COMPONENT_RUN + DOT + HISTORY_DATA_ITEM
-                    + FROM + TABLE_WORKFLOW_RUN
-                    + INNER_JOIN + TABLE_COMPONENT_INSTANCE
-                    + ON + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID + EQUAL + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID
-                    + INNER_JOIN + TABLE_COMPONENT_RUN
-                    + ON + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                    + FROM + TABLE_COMPONENT_INSTANCE + COMMA + TABLE_COMPONENT_RUN + COMMA
+                    + TABLE_TIMELINE_INTERVAL
+                    + WHERE + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
                     + COMPONENT_INSTANCE_ID
-                    + LEFT_OUTER_JOIN + TABLE_TIMELINE_INTERVAL
-                    + ON + TABLE_TIMELINE_INTERVAL + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                    + AND + TABLE_TIMELINE_INTERVAL + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
                     + COMPONENT_RUN_ID
-                    + WHERE + TABLE_TIMELINE_INTERVAL + DOT + TYPE + EQUAL + APO + STRING_PLACEHOLDER + APO,
+                    + AND + TABLE_TIMELINE_INTERVAL + DOT + TYPE + EQUAL + APO + STRING_PLACEHOLDER + APO,
                 TimelineIntervalType.COMPONENT_RUN.toString());
         return sql;
     }
@@ -392,32 +394,35 @@ public abstract class DerbyDatabaseSetupSqlStatements {
                 + TABLE_TIMELINE_INTERVAL + DOT + TYPE + COMMA
                 + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_ID + COMMA
                 + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_NAME
-                + FROM + TABLE_WORKFLOW_RUN
-                + INNER_JOIN + TABLE_TIMELINE_INTERVAL
-                + ON + TABLE_TIMELINE_INTERVAL + DOT + WORKFLOW_RUN_ID + EQUAL + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID
-                + LEFT_OUTER_JOIN + TABLE_COMPONENT_RUN
-                + ON + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_TIMELINE_INTERVAL + DOT + COMPONENT_RUN_ID
-                + INNER_JOIN + TABLE_COMPONENT_INSTANCE
-                + ON + TABLE_COMPONENT_RUN + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID;
+                + FROM + TABLE_WORKFLOW_RUN + COMMA + TABLE_TIMELINE_INTERVAL + COMMA + TABLE_COMPONENT_RUN + COMMA
+                + TABLE_COMPONENT_INSTANCE
+                + WHERE + TABLE_TIMELINE_INTERVAL + DOT + WORKFLOW_RUN_ID + EQUAL + TABLE_WORKFLOW_RUN + DOT + WORKFLOW_RUN_ID
+                + AND + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_TIMELINE_INTERVAL + DOT + COMPONENT_RUN_ID
+                + AND + TABLE_COMPONENT_RUN + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID;
         return sql;
     }
 
     protected static String getSqlViewWorkflowRunDataReference() {
         String sql =
             CREATE_VIEW + VIEW_WORKFLOWRUN_DATAREFERENCE + AS
-                + SELECT + WORKFLOW_RUN_ID + COMMA + DATA_REFERENCE_ID
-                + FROM + VIEW_WORKFLOWRUN_COMPONENTRUN + COMMA + REL_COMPONENTRUN_DATAREFERENCE
-                + WHERE + VIEW_WORKFLOWRUN_COMPONENTRUN + DOT + COMPONENT_RUN_ID + EQUAL + REL_COMPONENTRUN_DATAREFERENCE + DOT
-                + COMPONENT_RUN_ID;
+                + SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA + REL_COMPONENTRUN_DATAREFERENCE + DOT
+                + DATA_REFERENCE_ID
+                + FROM + REL_COMPONENTRUN_DATAREFERENCE + COMMA + TABLE_COMPONENT_RUN + COMMA + TABLE_COMPONENT_INSTANCE
+                + WHERE + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + REL_COMPONENTRUN_DATAREFERENCE + DOT
+                + COMPONENT_RUN_ID + AND + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                + COMPONENT_INSTANCE_ID;
         return sql;
     }
 
     protected static String getSqlViewWorkflowRunTypedDatum() {
-        String sql = CREATE_VIEW + VIEW_WORKFLOWRUN_TYPEDDATUM + AS
-            + SELECT + WORKFLOW_RUN_ID + COMMA + TYPED_DATUM_ID
-            + FROM + VIEW_WORKFLOWRUN_COMPONENTRUN + COMMA + TABLE_ENDPOINT_DATA
-            + WHERE + VIEW_WORKFLOWRUN_COMPONENTRUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT
-            + COMPONENT_RUN_ID;
+        String sql =
+            CREATE_VIEW + VIEW_WORKFLOWRUN_TYPEDDATUM + AS
+                + SELECT + TABLE_COMPONENT_INSTANCE + DOT + WORKFLOW_RUN_ID + COMMA + TABLE_ENDPOINT_DATA + DOT + TYPED_DATUM_ID
+                + FROM + TABLE_ENDPOINT_DATA + COMMA + TABLE_COMPONENT_RUN + COMMA + TABLE_COMPONENT_INSTANCE
+                + WHERE + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_ID + EQUAL + TABLE_ENDPOINT_DATA + DOT
+                + COMPONENT_RUN_ID + AND + TABLE_COMPONENT_INSTANCE + DOT + COMPONENT_INSTANCE_ID + EQUAL + TABLE_COMPONENT_RUN + DOT
+                + COMPONENT_INSTANCE_ID;
         return sql;
     }
+
 }

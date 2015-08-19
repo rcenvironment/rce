@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.integration;
 
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -20,6 +19,8 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
+import de.rcenvironment.core.gui.resources.api.FontManager;
+import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
@@ -51,13 +52,13 @@ public class CommandReadOnlySection extends ValidatingWorkflowNodePropertySectio
         commandScriptWindows.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         commandScriptWindows.setEditable(false);
         ((GridData) commandScriptWindows.getLayoutData()).heightHint = MINIMUM_HEIGHT;
-        commandScriptWindows.setFont(JFaceResources.getFont(JFaceResources.TEXT_FONT));
+        commandScriptWindows.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
 
         commandScriptLinux = new Text(scriptComposite, SWT.BORDER | SWT.MULTI | SWT.WRAP);
         commandScriptLinux.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         commandScriptLinux.setEditable(false);
         ((GridData) commandScriptLinux.getLayoutData()).heightHint = MINIMUM_HEIGHT;
-        commandScriptLinux.setFont(JFaceResources.getFont(JFaceResources.TEXT_FONT));
+        commandScriptLinux.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
 
         scriptSection.setClient(scriptComposite);
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -130,6 +130,7 @@ public class ToolIntegrationWizard extends Wizard {
         editConfigurationPage =
             new ChooseConfigurationPage(Messages.chooseConfigPageTitle, integrationContextRegistry.getAllIntegrationContexts(), this,
                 wizardType);
+
         characteristicsPage =
             new ToolCharacteristicsPage(Messages.firstToolIntegrationPageTitle, configurationMap, toolNames, groupNames);
 
@@ -154,6 +155,7 @@ public class ToolIntegrationWizard extends Wizard {
                 addPage(page);
             }
         }
+
     }
 
     private DistributedComponentKnowledge getInitialComponentKnowledge() {
@@ -291,10 +293,10 @@ public class ToolIntegrationWizard extends Wizard {
         if (configMap == null || configMap.isEmpty()) {
             configOK = false;
             if (configOK) {
-                if (configMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS) == null) {
+                if (configMap == null || configMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS) == null) {
                     configOK = false;
                 }
-                if (configMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) == null) {
+                if (configMap == null || configMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) == null) {
                     configOK = false;
                 }
             }
@@ -365,7 +367,7 @@ public class ToolIntegrationWizard extends Wizard {
         }
         setConfigurationMap(configurationMapCopy);
         if (configJson != null) {
-            if (newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null) {
+            if (newPreviousConfiguration != null && newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null) {
                 for (ToolIntegrationContext context : integrationContextRegistry.getAllIntegrationContexts()) {
                     if (newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(context.getContextType())) {
                         integrationContext = context;
@@ -379,7 +381,8 @@ public class ToolIntegrationWizard extends Wizard {
 
         updateAllPages();
         for (Entry<String, List<ToolIntegrationWizardPage>> addPages : additionalPages.entrySet()) {
-            if (addPages.getKey() != newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE)) {
+            if (newPreviousConfiguration != null
+                && addPages.getKey() != newPreviousConfiguration.get(ToolIntegrationConstants.INTEGRATION_TYPE)) {
                 for (ToolIntegrationWizardPage page : addPages.getValue()) {
                     page.setPageComplete(true);
                 }
@@ -476,5 +479,12 @@ public class ToolIntegrationWizard extends Wizard {
             return integrationContextRegistry.getToolIntegrationContext(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID);
         }
         return integrationContext;
+    }
+
+    /**
+     * 
+     */
+    public void open() {
+        editConfigurationPage.updatePage();
     }
 }

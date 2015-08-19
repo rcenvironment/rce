@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,7 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileAttribute;
@@ -85,12 +86,8 @@ public class FileSystemOperationsTest {
     @Test
     public void testInternalLinkDeletion() throws Exception {
 
-        // FIXME current problem: manipulating symlinks requires special permissions on Windows, so this cannot be tested out-of-the-box;
-        // possible solution: check if symlinks can be created, and only skip the test if permissions are missing?
-        if (OSFamily.isWindows()) {
-            log.warn("Test is currently not usable on Windows; skipping");
-            return;
-        }
+        // Manipulating symlinks requires special permissions on Windows, so this cannot be tested out-of-the-box;
+        // Current solution: check if symlinks can be created, else use junctions (for directories) and hard links (for files) instead.
 
         // create internal file link
         File targetFile = createAndVerifyFile(sandboxDir, TEST_FILENAME_1);
@@ -120,12 +117,8 @@ public class FileSystemOperationsTest {
     // @Ignore("WIP; not complete yet")
     public void testExternalLinkTargetSurvival() throws Exception {
 
-        // FIXME current problem: manipulating symlinks requires special permissions on Windows, so this cannot be tested out-of-the-box;
-        // possible solution: check if symlinks can be created, and only skip the test if permissions are missing?
-        if (OSFamily.isWindows()) {
-            log.warn("Test is currently not usable on Windows; skipping");
-            return;
-        }
+        // Manipulating symlinks requires special permissions on Windows, so this cannot be tested out-of-the-box;
+        // Current solution: check if symlinks can be created, else use junctions (for directories) and hard links (for files) instead.
 
         // create link to external file
         File symLinkToFile = new File(sandboxDir, "toExternalFile");
@@ -183,11 +176,24 @@ public class FileSystemOperationsTest {
             // use Java 7 code to symlink on Linux
             Files.createSymbolicLink(linkPath, linkTargetPath, new FileAttribute<?>[0]);
         } else if (OSFamily.isWindows()) {
-            // Windows requires a special permission to create symbolic links, so test with a NTFS Junction instead;
-            // FIXME current problem: unlike symlinks, Junctions are NOT detected by Java 7, so they cannot be handled the same
-            Process process = Runtime.getRuntime().exec(
-                new String[] { "cmd.exe", "/c", "mklink", "/j", linkPath.toString(), linkTargetPath.toString() });
-            assertEquals(0, process.waitFor());
+            // Windows requires a special permission to create symbolic links, so test with a NTFS Junction (for a directory) or a hardlink
+            // (for a file) instead if creating symbolic link is not possible.
+            try {
+                //WARNING: This could not be tested yet due to missing permissions.
+                Files.createSymbolicLink(linkPath, linkTargetPath, new FileAttribute<?>[0]);
+            } catch (FileSystemException e) {
+                log.debug("Symlink could not be created due to missing permissions. Creating junction/hardlink instead.");
+                if (Files.isDirectory(linkTargetPath)) {
+                    Process process = Runtime.getRuntime().exec(
+                        new String[] { "cmd.exe", "/c", "mklink", "/j", linkPath.toString(), linkTargetPath.toString() });
+                    assertEquals(0, process.waitFor());
+                } else {
+                    // Cannot use junctions for simple files, use hard link instead
+                    Process process = Runtime.getRuntime().exec(
+                        new String[] { "cmd.exe", "/c", "mklink", "/h", linkPath.toString(), linkTargetPath.toString() });
+                    assertEquals(0, process.waitFor());
+                }
+            }
         } else {
             throw new IllegalArgumentException(OSFamily.getLocal().toString());
         }

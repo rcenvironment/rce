@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,8 +11,10 @@ package de.rcenvironment.core.configuration.internal;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
@@ -27,8 +29,8 @@ import org.codehaus.jackson.type.TypeReference;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
-import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.configuration.PersistentSettingsService;
 
 /**
  * Implementation of simple key-value store to persist settings of an RCE platform.
@@ -51,6 +53,8 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
     private File storageDirectory;
 
     private Map<String, String> store;
+
+    private Set<String> alreadyBackupedFiles = new HashSet<>();
 
     @Override
     public synchronized void saveStringValue(String key, String value) {
@@ -148,6 +152,7 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
                     + storageDirectory);
             }
         }
+        alreadyBackupedFiles = new HashSet<>();
     }
 
     @Override
@@ -192,8 +197,10 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
         if (f.exists()) {
             try {
                 File backupFile = new File(storageDirectory, filenameOfStore + ".bak");
-                // TODO improve by moving the current file, not copying and then overwriting - misc_ro
-                FileUtils.copyFile(f, backupFile);
+                if (!alreadyBackupedFiles.contains(f.getAbsolutePath())) {
+                    FileUtils.copyFile(f, backupFile);
+                    alreadyBackupedFiles.add(f.getAbsolutePath());
+                }
             } catch (IOException e) {
                 LOGGER.warn("PersistentSettingsService: Could not rename storage file to backup file", e);
             }
@@ -208,5 +215,4 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
             LOGGER.error(ERROR_MSG_SAVE, e);
         }
     }
-
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,6 +33,7 @@ public final class NetworkGraphLinkImpl implements NetworkGraphLink {
         this.target = target;
     }
 
+    @Override
     public String getLinkId() {
         return linkId;
     }

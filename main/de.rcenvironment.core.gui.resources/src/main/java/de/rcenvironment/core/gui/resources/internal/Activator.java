@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,6 +11,7 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
+import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 
 /**
@@ -25,6 +26,7 @@ public class Activator implements BundleActivator {
      * 
      * @param bundleContext (not used)
      */
+    @Override
     public void start(BundleContext bundleContext) {
         synchronized (ImageManager.class) {
             ImageManager instance = ImageManager.getInstance();
@@ -33,6 +35,13 @@ public class Activator implements BundleActivator {
             }
             ImageManager.setInstance(new ImageManagerImpl());
         }
+        synchronized (FontManager.class) {
+            FontManager instance = FontManager.getInstance();
+            if (instance != null) {
+                throw new IllegalStateException("Font manager already present");
+            }
+            FontManager.setInstance(new FontManagerImpl());
+        }
     }
 
     /**
@@ -40,6 +49,7 @@ public class Activator implements BundleActivator {
      * 
      * @param bundleContext (not used)
      */
+    @Override
     public void stop(BundleContext bundleContext) {
         synchronized (ImageManager.class) {
             ImageManager oldInstance = ImageManager.getInstance();
@@ -50,6 +60,16 @@ public class Activator implements BundleActivator {
             }
             ImageManager.setInstance(null);
             ((ImageManagerImpl) oldInstance).dispose();
+        }
+        synchronized (FontManager.class) {
+            FontManager oldInstance = FontManager.getInstance();
+            if (oldInstance == null) {
+                // this can happen if initialization failed, so don't throw another exception
+                LogFactory.getLog(getClass()).warn("No font manager present on shutdown");
+                return;
+            }
+            ImageManager.setInstance(null);
+            ((FontManagerImpl) oldInstance).dispose();
         }
     }
 

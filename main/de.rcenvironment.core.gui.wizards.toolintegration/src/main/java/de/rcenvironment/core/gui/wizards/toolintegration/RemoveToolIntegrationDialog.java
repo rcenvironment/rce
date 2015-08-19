@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -74,7 +74,7 @@ public class RemoveToolIntegrationDialog extends Dialog {
     @Override
     protected void configureShell(Shell shell) {
         super.configureShell(shell);
-        shell.setText("Deactivate Integration");
+        shell.setText("Deactivate Tool");
         shell.setImage(null);
     }
 
@@ -86,7 +86,7 @@ public class RemoveToolIntegrationDialog extends Dialog {
         g.grabExcessHorizontalSpace = true;
         g.horizontalAlignment = GridData.CENTER;
         container.setLayoutData(g);
-        new Label(container, SWT.NONE).setText("Choose Integration to deactivate: ");
+        new Label(container, SWT.NONE).setText("Choose tool configuration to deactivate: ");
         toolList = new List(container, SWT.MULTI | SWT.BORDER);
         GridData toolListData = new GridData(GridData.FILL_BOTH | GridData.GRAB_VERTICAL);
         toolListData.widthHint = LIST_WIDTH;
@@ -111,7 +111,7 @@ public class RemoveToolIntegrationDialog extends Dialog {
             }
         });
         keepOnDiskButton = new Button(container, SWT.CHECK);
-        keepOnDiskButton.setText("Keep configuration on disk");
+        keepOnDiskButton.setText("Keep tool configuration on disk");
         keepOnDiskButton.addSelectionListener(new SelectionListener() {
 
             @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -195,11 +195,11 @@ public class ConfigurationViewer extends TreeViewer {
             } catch (NoSuchMethodException e) {
                 e = null;
             } catch (IllegalArgumentException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             } catch (IllegalAccessException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             } catch (InvocationTargetException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             }
         }
         if (input != null) {
@@ -213,11 +213,11 @@ public class ConfigurationViewer extends TreeViewer {
             } catch (NoSuchMethodException e) {
                 e = null;
             } catch (IllegalArgumentException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             } catch (IllegalAccessException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             } catch (InvocationTargetException e) {
-                LOGGER.error(e.getStackTrace());
+                LOGGER.error(e);
             }
         }
         super.inputChanged(input, oldInput);
@@ -294,7 +294,7 @@ public class ConfigurationViewer extends TreeViewer {
         if (selection instanceof IStructuredSelection) {
             final IStructuredSelection structuredSelection = (IStructuredSelection) selection;
             final Object element = structuredSelection
-                    .getFirstElement();
+                .getFirstElement();
             if (element instanceof ConfigurationViewerContentProvider.Element) {
                 final Object value = ((ConfigurationViewerContentProvider.Element) element).getPropertyDescriptor();
                 if (value != null) {
@@ -332,7 +332,7 @@ public class ConfigurationViewer extends TreeViewer {
             // unable to create the editor
             return;
         }
-        
+
         boolean editable = true;
 
         // only set the value of the editor if a non-null value is set, otherwise
@@ -342,10 +342,10 @@ public class ConfigurationViewer extends TreeViewer {
             final Object editorValue;
             if (cellEditor instanceof TextCellEditor) {
                 /*
-                 * Max length for TextCellEditor is for some reason 5632.
-                 * As this is a heuristic value, the editable length is truncated to a meaningful default.
+                 * Max length for TextCellEditor is for some reason 5632. As this is a heuristic
+                 * value, the editable length is truncated to a meaningful default.
                  */
-                
+
                 final String textValue = value.toString();
                 if (textValue.length() > MAX_EDITABLE_TEXT_LENGTH) {
                     editable = false;
@@ -418,6 +418,7 @@ public class ConfigurationViewer extends TreeViewer {
      * Apply editor value.
      * 
      * {@inheritDoc}
+     * 
      * @see org.eclipse.jface.viewers.ColumnViewer#applyEditorValue()
      */
     @Override
@@ -455,7 +456,7 @@ public class ConfigurationViewer extends TreeViewer {
         //
         if (property instanceof Leaf //
             && oldValue != newValue
-                || (oldValue != null && !oldValue.equals(newValue))) {
+            || (oldValue != null && !oldValue.equals(newValue))) {
             property.setValue(newValue);
             update(property, null);
             update(property.getParent(), null);
@@ -477,7 +478,7 @@ public class ConfigurationViewer extends TreeViewer {
 
             @Override
             public void editorValueChanged(boolean oldValidState,
-                    boolean newValidState) {
+                boolean newValidState) {
                 // Do nothing
             }
 
@@ -508,7 +509,7 @@ public class ConfigurationViewer extends TreeViewer {
      */
     private void entrySelectionChanged() {
         SelectionChangedEvent changeEvent = new SelectionChangedEvent(this,
-                getSelection());
+            getSelection());
         fireSelectionChanged(changeEvent);
     }
 
@@ -681,8 +682,8 @@ public class ConfigurationViewer extends TreeViewer {
         /**
          * State memorizer used to ignore the first with hint.
          * <p>
-         * The first width hint has to be ignored as the <code>ControlListener</code> gets registered too
-         * late to get the first meaningful width hint.
+         * The first width hint has to be ignored as the <code>ControlListener</code> gets
+         * registered too late to get the first meaningful width hint.
          * </p>
          */
         private boolean first = true;
@@ -697,9 +698,7 @@ public class ConfigurationViewer extends TreeViewer {
         @Override
         public Point computeSize(int wHint, int hHint, boolean changed) {
             /*
-             * If a width hint is provided.
-             * >> Ignore, if it is the first one.
-             * >> Store, otherwise.
+             * If a width hint is provided. >> Ignore, if it is the first one. >> Store, otherwise.
              */
             if (wHint != SWT.DEFAULT) {
                 if (!first) {
@@ -716,13 +715,15 @@ public class ConfigurationViewer extends TreeViewer {
             }
             final Point result = super.computeSize(wHint, hHint, changed);
             /*
-             * Store the default (min) width of the tree, if this is the very first call using no width hint.
+             * Store the default (min) width of the tree, if this is the very first call using no
+             * width hint.
              */
             if (first && wHint == SWT.DEFAULT) {
                 this.widthHint = result.x;
             }
-//            System.err.printf("%d :: %d\n", wHint, hHint);
-//            System.err.printf("%s :: %s :: %s\n", getClientArea(), getParent().getClientArea(), result);
+            // System.err.printf("%d :: %d\n", wHint, hHint);
+            // System.err.printf("%s :: %s :: %s\n", getClientArea(), getParent().getClientArea(),
+            // result);
             result.x = 0;
             return result;
         }
@@ -731,14 +732,16 @@ public class ConfigurationViewer extends TreeViewer {
 
     /**
      * {@link PropertyChangeListener} to update the tree upon {@link PropertyChangeEvent}s.
-     *
+     * 
      * @author Christian Weiss
      */
     public class UpdatingPropertyChangeListener implements PropertyChangeListener {
 
         @Override
         public void propertyChange(final PropertyChangeEvent event) {
-            tree.update();
+            if (!tree.isDisposed()) {
+                tree.update();
+            }
         }
 
     }

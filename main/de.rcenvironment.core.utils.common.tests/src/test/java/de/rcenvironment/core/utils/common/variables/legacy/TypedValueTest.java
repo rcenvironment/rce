@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,6 +23,7 @@ import org.junit.Test;
  * 
  * @author Arne Bachmann
  */
+@SuppressWarnings("deprecation") // Keep test for deprecated class TypedValue
 public class TypedValueTest {
 
     /**

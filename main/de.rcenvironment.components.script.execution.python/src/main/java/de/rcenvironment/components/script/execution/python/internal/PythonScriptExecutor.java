@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -101,7 +101,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
             exitCode = (Integer) scriptEngine.eval(wrappingScript);
             componentContext.printConsoleLine(WorkflowLifecyleEventType.TOOL_FINISHED.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
         } catch (ScriptException e) {
-            throw new ComponentException("Could not run Python script. Maybe the script has errors? \n\n", e);
+            throw new ComponentException("Could not run Python script. Maybe the script has errors? \n\n: " + e.toString());
         }
 
         if (exitCode != 0) {

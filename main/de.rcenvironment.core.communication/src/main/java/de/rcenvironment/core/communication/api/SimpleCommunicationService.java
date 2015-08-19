@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -46,10 +46,12 @@ public class SimpleCommunicationService implements PlatformService {
      * @param nodeId a {@link NodeIdentifier} that should be compared to the local RCE {@link NodeIdentifier}.
      * @return True or false.
      */
+    @Override
     public boolean isLocalNode(NodeIdentifier nodeId) {
         return platformService.isLocalNode(nodeId);
     }
 
+    @Override
     public NodeIdentifier getLocalNodeId() {
         return platformService.getLocalNodeId();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.executor.properties;
 
-import org.eclipse.jface.resource.JFaceResources;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
@@ -27,6 +26,8 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.resources.api.FontManager;
+import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
 /**
@@ -132,7 +133,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         final int aKeyCode = 97;
 
         scriptingText = new StyledText(newScriptArea, SWT.MULTI | SWT.V_SCROLL | SWT.BORDER);
-        scriptingText.setFont(JFaceResources.getFont(JFaceResources.TEXT_FONT));
+        scriptingText.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
         scriptingText.addKeyListener(new KeyAdapter() {
 
             @Override

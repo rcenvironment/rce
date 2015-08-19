@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,8 +8,10 @@
 package de.rcenvironment.components.cpacs.vampzeroinitializer.gui;
 
 
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
@@ -40,6 +42,7 @@ public class VampZeroInitializerSection extends ValidatingWorkflowNodePropertySe
         
         final Composite content = new LayoutComposite(parent);
         content.setLayout(new GridLayout(1, true));
+        content.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
 
         final Composite fileChoosingSection = toolkit.createFlatFormComposite(content);
        

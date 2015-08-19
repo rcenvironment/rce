@@ -38,6 +38,14 @@
                     "defaultValue": "true",
                     "dataType": "bool"
                 },
+                "isDiscrete": {
+                    "guiName": "Is discrete variable\n(Note: not all methods\nsupport discrete optimization)",
+                    "guiPosition": "0",
+                    "guiGroup": "Options",
+                    "visibility": "shown",
+                    "defaultValue": "false",
+                    "dataType": "bool"
+                },
                 "lower": {
                     "guiName": "Lower bound",
                     "guiPosition": "1",

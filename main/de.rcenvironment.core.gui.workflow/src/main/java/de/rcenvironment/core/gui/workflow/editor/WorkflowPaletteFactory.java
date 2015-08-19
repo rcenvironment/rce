@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -35,6 +35,7 @@ import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -151,15 +152,13 @@ public class WorkflowPaletteFactory {
             ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/connection24.gif"))); //$NON-NLS-1$
         tool.setLabel(tool.getLabel());
         entries.add(tool);
-
-        // FIXME : Adding workflow label to the palette is commented out because of a bug (not
-        // dirty) in the label. zur_sa
-        // tool = new CombinedTemplateCreationEntry(WorkflowLabel.PALETTE_ENTRY_NAME,
-        // Messages.label, new LabelFactory(), null, null);
-        // tool.setDescription(Messages.labelDescription);
-        // tool.setLargeIcon(ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/label_24.png")));
-        // tool.setSmallIcon(ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/label_16.png")));
-        // entries.add(tool);
+       
+        tool = new CombinedTemplateCreationEntry(WorkflowLabel.PALETTE_ENTRY_NAME,
+            Messages.label, new LabelFactory(), null, null);
+        tool.setDescription(Messages.labelDescription);
+        tool.setLargeIcon(ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/label_24.png")));
+        tool.setSmallIcon(ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/label_16.png")));
+        entries.add(tool);
         toolsGroup.addAll(entries);
         palette.add(toolsGroup);
     }

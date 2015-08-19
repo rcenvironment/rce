@@ -64,8 +64,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "3.2",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "4.0"
     },
     "configuration" : {
       "epsR" : "6.0E-6",

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -93,7 +93,7 @@ public class NetworkConnectionListenerImpl implements IStartup {
             private void showMessageDialogAsync(final String message) {
                 final Display display = Display.getDefault();
                 display.asyncExec(new Runnable() {
-
+                    @Override
                     public void run() {
                         Log log = LogFactory.getLog(getClass());
                         Shell shell = display.getActiveShell();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -65,6 +65,7 @@ public class NodeIdentifierImpl implements NodeIdentifier {
      * 
      * @see java.lang.Object#clone()
      */
+    @Override
     public NodeIdentifierImpl clone() {
         return new NodeIdentifierImpl(idString);
     }

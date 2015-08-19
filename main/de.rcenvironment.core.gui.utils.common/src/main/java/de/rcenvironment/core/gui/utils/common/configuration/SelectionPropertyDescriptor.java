@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -76,6 +76,7 @@ public class SelectionPropertyDescriptor extends PropertyDescriptor {
      * @param parent the parent
      * @return the cell editor
      */
+    @Override
     public CellEditor createPropertyEditor(Composite parent) {
         refresh();
         CellEditor editor = new ComboBoxCellEditor(parent,

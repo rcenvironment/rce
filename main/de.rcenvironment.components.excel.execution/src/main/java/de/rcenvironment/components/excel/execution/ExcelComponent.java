@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -104,7 +104,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                     }
                 } 
             } catch (IOException e) {
-                LOG.error(e.getStackTrace());
+                LOG.error(e);
                 throw new ComponentException("Could not copy origin Excel file to temp directory.");
             }
                

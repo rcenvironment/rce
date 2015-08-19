@@ -1,0 +1,14 @@
+{
+    "dynamicInputs":[
+        {
+            "identifier":"default",
+            "dataTypes":[
+                "Float"
+            ],
+            "defaultDataType":"Float",
+            "metaData":{
+               
+            }
+        }
+    ]
+}

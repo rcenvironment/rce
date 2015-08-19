@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -7,6 +7,8 @@
  */
  
 package de.rcenvironment.core.datamodel.types.internal;
+
+import org.apache.commons.lang3.StringUtils;
 
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
@@ -57,11 +59,7 @@ public class ShortTextTDImpl extends AbstractTypedDatum implements ShortTextTD {
 
     @Override
     public String toLengthLimitedString(int maxLength) {
-        String text = getShortTextValue();
-        if (text.length() > maxLength) {
-            text = text.substring(0, maxLength - 4) + "...";
-        }
-        return text;
+        return StringUtils.abbreviate(getShortTextValue(), maxLength);
     }
 
 }

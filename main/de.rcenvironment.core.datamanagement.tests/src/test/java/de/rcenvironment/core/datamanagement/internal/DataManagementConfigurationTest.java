@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -21,7 +21,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class DataManagementConfigurationTest {
 
-    private String catalogBackend = "de.rcenvironment.core.datamanagement.backend.catalog.derby";
+    private String metaDataBackend = "de.rcenvironment.core.datamanagement.backend.metadata.derby";
 
     private String fileDataBackend = "de.rcenvironment.core.datamanagement.backend.data.efs";
 
@@ -34,12 +34,12 @@ public class DataManagementConfigurationTest {
     public void test() {
 
         TempFileServiceAccess.setupUnitTestEnvironment();
-        assertEquals(catalogBackend, dmConfig.getMetaDataBackend());
+        assertEquals(metaDataBackend, dmConfig.getMetaDataBackend());
         assertEquals(fileDataBackend, dmConfig.getFileDataBackend());
 
         dmConfig.setMetaDataBackend(fileDataBackend);
         assertEquals(fileDataBackend, dmConfig.getMetaDataBackend());
-        dmConfig.setFileDataBackend(catalogBackend);
-        assertEquals(catalogBackend, dmConfig.getFileDataBackend());
+        dmConfig.setFileDataBackend(metaDataBackend);
+        assertEquals(metaDataBackend, dmConfig.getFileDataBackend());
     }
 }

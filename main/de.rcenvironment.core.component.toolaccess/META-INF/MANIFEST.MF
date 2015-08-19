@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.component.toolaccess
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
@@ -22,9 +22,11 @@ Import-Package: de.rcenvironment.core.command.common,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.incubator,
+ org.apache.commons.csv;version="1.1.0",
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1"
 Service-Component: OSGI-INF/*.xml
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
+Export-Package: de.rcenvironment.core.component.toolaccess.api

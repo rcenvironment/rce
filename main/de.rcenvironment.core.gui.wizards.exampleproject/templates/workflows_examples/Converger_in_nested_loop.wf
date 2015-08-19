@@ -6,7 +6,6 @@
     "name" : "Joiner",
     "location" : "343:138",
     "active" : "true",
-    "platform" : "5f35dffea3854839b1edb62118b72a45",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
       "version" : "3.2",
@@ -38,7 +37,6 @@
     "name" : "Tool 2",
     "location" : "418:213",
     "active" : "true",
-    "platform" : "5f35dffea3854839b1edb62118b72a45",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -73,7 +71,6 @@
     "name" : "Tool 1",
     "location" : "324:26",
     "active" : "true",
-    "platform" : "5f35dffea3854839b1edb62118b72a45",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -108,11 +105,10 @@
     "name" : "Outer Converger",
     "location" : "45:26",
     "active" : "true",
-    "platform" : "5f35dffea3854839b1edb62118b72a45",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "3.2",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "4.0"
     },
     "configuration" : {
       "epsA" : "0.001",
@@ -171,11 +167,10 @@
     "name" : "Inner Converger",
     "location" : "324:306",
     "active" : "true",
-    "platform" : "5f35dffea3854839b1edb62118b72a45",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "3.2",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "4.0"
     },
     "configuration" : {
       "epsA" : "0.1",
@@ -242,7 +237,6 @@
     "name" : "Tool 3",
     "location" : "47:306",
     "active" : "true",
-    "platform" : "5f35dffea3854839b1edb62118b72a45",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",

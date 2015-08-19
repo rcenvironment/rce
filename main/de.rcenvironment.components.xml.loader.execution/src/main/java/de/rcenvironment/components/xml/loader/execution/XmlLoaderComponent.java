@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -67,7 +67,7 @@ public class XmlLoaderComponent extends DefaultComponent {
         xmlContent = componentContext.getConfigurationValue(XmlLoaderComponentConstants.XMLCONTENT);
 
         if (xmlContent == null) {
-            String errrorMessage = "No CPACS file configured";
+            String errrorMessage = "No XML file configured";
             componentContext.printConsoleLine(errrorMessage, ConsoleRow.Type.STDERR);
             throw new ComponentException(errrorMessage);
         }
@@ -88,7 +88,7 @@ public class XmlLoaderComponent extends DefaultComponent {
             tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("XMLLoader-*.xml");
             FileUtils.writeStringToFile(tempFile, xmlContent);
 
-            // Dynamic input values to CPACS
+            // Dynamic input values to XML
             Map<String, TypedDatum> variableInputs = new HashMap<>();
             for (String inputName : componentContext.getInputsWithDatum()) {
                 if (componentContext.isDynamicInput(inputName)) {
@@ -101,15 +101,15 @@ public class XmlLoaderComponent extends DefaultComponent {
             }
             varMapper.updateXMLWithInputs(tempFile.getAbsolutePath(), variableInputs, componentContext);
 
-            // Output dynamic values to CPACS
+            // Output dynamic values to XML
             varMapper.updateOutputsFromXML(tempFile.getAbsolutePath(), XmlLoaderComponentConstants.ENDPOINT_NAME_XML, componentContext);
             fileReference =
                 dataManagementService.createFileReferenceTDFromLocalFile(componentContext, tempFile,
                     componentContext.getInstanceName() + ChameleonCommonConstants.XML_APPENDIX_FILENAME);
         } catch (IOException e) {
-            throw new ComponentException("Writing CPACS file to temporary file failed", e);
+            throw new ComponentException("Writing XML file to temporary file failed", e);
         } catch (DataTypeException e) {
-            throw new ComponentException("Adding input values to CPACS file failed", e);
+            throw new ComponentException("Adding input values to XML file failed", e);
         }
 
         componentContext.writeOutput(XmlLoaderComponentConstants.ENDPOINT_NAME_XML, fileReference);

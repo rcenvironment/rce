@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -43,7 +43,6 @@ public class ComponentBundleListener implements BundleListener {
      * 
      * @param bundle The given bundle to check and possibly to start.
      */
-    @SuppressWarnings("unchecked")
     public static void handleBundle(Bundle bundle) {
         Dictionary<String, String> headers = bundle.getHeaders();
         String componentEntry = headers.get(ComponentConstants.MANIFEST_ENTRY_RCE_COMPONENT);

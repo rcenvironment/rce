@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.component.model.api.ComponentDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -33,8 +34,14 @@ import de.rcenvironment.core.gui.workflow.editor.connections.EndpointTreeViewer;
  * {@link LabelProvider} for the contents of the {@link EndpointTreeViewer}.
  * 
  * @author Heinrich Wendel
+ * @author Oliver Seebach
+ * 
  */
 public class EndpointLabelProvider extends LabelProvider {
+
+    private static final int INPUT_REQUIRED_DECORATOR_LOCATION = 1; // 1 = top right
+
+    private static final int INPUT_CONNECTED_DECORATOR_LOCATION = 0; // 0 = top left
 
     private static final int ICON_SIZE = 16;
 
@@ -46,8 +53,11 @@ public class EndpointLabelProvider extends LabelProvider {
 
     private Image outputImage = ImageManager.getInstance().getSharedImage(StandardImages.OUTPUT_16);
 
-    private ImageDescriptor inputDecorationIcon = ImageDescriptor.createFromURL(
+    private ImageDescriptor inputConnectedDecorationIcon = ImageDescriptor.createFromURL(
         EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationArrow.gif"));
+
+    private ImageDescriptor inputRequiredDecorationIcon = ImageDescriptor.createFromURL(
+        EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationAsteriks.gif"));
 
     private Image booleanIcon = ImageDescriptor.createFromURL(
         EndpointLabelProvider.class.getResource("/resources/icons/datatypes/boolean.gif")).createImage();
@@ -83,9 +93,9 @@ public class EndpointLabelProvider extends LabelProvider {
 
     private EndpointType type;
 
-    private DecorationOverlayIcon decorationOverlayIcon;
+    private Map<Image, Image> connectedDecoratorCache = new HashMap<>();
 
-    private Map<Image, Image> decoratorCache = new HashMap<>();
+    private Map<Image, Image> requiredDecoratorCache = new HashMap<>();
 
     public EndpointLabelProvider(EndpointType type) {
         this.type = type;
@@ -149,31 +159,59 @@ public class EndpointLabelProvider extends LabelProvider {
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.DirectoryReference) {
                 image = directoryReferenceIcon;
             }
-            // mark already connected inputs
-            if (type == EndpointType.INPUT & ((EndpointContentProvider.Endpoint) element).getEndpointDescription().isConnected()) {
+            
+            image = checkForDecorators(((EndpointContentProvider.Endpoint) element).getEndpointDescription(), image);
 
-                if (decoratorCache.keySet().contains(image)) {
-                    return decoratorCache.get(image);
-                } else {
-                    ImageDescriptor[] decorations = new ImageDescriptor[5];
-                    /*
-                     * The indices of the array correspond to the values of the 5 overlay constants defined on IDecoration 0 =
-                     * IDecoration.TOP_LEFT 1 = IDecoration.TOP_RIGHT 2 = IDecoration.BOTTOM_LEFT 3 = IDecoration.BOTTOM_RIGHT 4 =
-                     * IDecoration.UNDERLAY
-                     */
-                    decorations[0] = inputDecorationIcon;
-                    decorationOverlayIcon = new DecorationOverlayIcon(image, decorations, new Point(ICON_SIZE, ICON_SIZE));
-                    Image originalImage = image;
-                    image = decorationOverlayIcon.createImage();
-                    decoratorCache.put(originalImage, image);
-                    return image;
-                }
-            }
         }
         if (image == null || image.isDisposed()) {
             log.warn("Image for " + element + " is null or disposed.");
         }
         return image;
+    }
+
+    private Image checkForDecorators(EndpointDescription endpointDescription, Image image) {
+        boolean inputRequired = false;
+        boolean inputConnected = false;
+        
+        if (type == EndpointType.INPUT & endpointDescription.isConnected()) {
+            inputConnected = true;
+        }
+        if (type == EndpointType.INPUT & endpointDescription.isRequired()) {
+            inputRequired = true;
+        }
+        
+        // Required and not connected
+        if (inputRequired && !inputConnected){
+            if (requiredDecoratorCache.keySet().contains(image)) {
+                image = requiredDecoratorCache.get(image);
+            } else {
+                ImageDescriptor[] decorations = new ImageDescriptor[5];
+                decorations[INPUT_REQUIRED_DECORATOR_LOCATION] = inputRequiredDecorationIcon;
+                Image originalImage = image;
+                image = createDecoratedImage(originalImage, decorations);
+                requiredDecoratorCache.put(originalImage, image);
+            }
+        // Connected
+        } else if (inputConnected) {
+            if (connectedDecoratorCache.keySet().contains(image)) {
+                image = connectedDecoratorCache.get(image);
+            } else {
+                ImageDescriptor[] decorations = new ImageDescriptor[5];
+                decorations[INPUT_CONNECTED_DECORATOR_LOCATION] = inputConnectedDecorationIcon;
+                Image originalImage = image;
+                image = createDecoratedImage(originalImage, decorations);
+                connectedDecoratorCache.put(originalImage, image);
+            }
+        }
+        return image;
+    }
+    
+    
+    private Image createDecoratedImage(Image originalImage, ImageDescriptor[] decorations) {
+        DecorationOverlayIcon decorationOverlayIcon =
+            new DecorationOverlayIcon(originalImage, decorations, new Point(ICON_SIZE, ICON_SIZE));
+        Image decoratedImage = decorationOverlayIcon.createImage();
+        return decoratedImage;
     }
 
     @Override
@@ -191,9 +229,15 @@ public class EndpointLabelProvider extends LabelProvider {
         for (Image image : componentImages.values()) {
             image.dispose();
         }
-        for (Image image : decoratorCache.values()) {
+
+        for (Image image : connectedDecoratorCache.values()) {
             image.dispose();
         }
-        decoratorCache.clear();
+        connectedDecoratorCache.clear();
+
+        for (Image image : requiredDecoratorCache.values()) {
+            image.dispose();
+        }
+        requiredDecoratorCache.clear();
     }
 }

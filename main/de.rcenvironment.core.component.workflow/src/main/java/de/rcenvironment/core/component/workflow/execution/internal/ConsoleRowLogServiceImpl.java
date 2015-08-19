@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -41,6 +41,9 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
      */
     private static final int BUFFERED_CHARACTER_COUNT_WARNING_THRESHOLD = 2 * 1024 * 1024; // arbitrary
 
+    // only needs to be defined to enable; no specific value needed
+    private static final String SYSTEM_PROPERTY_FOR_ACTIVATION = "rce.internal.writeCombinedConsoleLogs";
+
     private LinkedBlockingQueue<ConsoleRow> outputQueue;
 
     private Writer fileWriter;
@@ -52,6 +55,10 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
     private volatile Future<?> backgroundTaskFuture;
 
     private ConfigurationService configurationService;
+
+    private File logFile;
+
+    private boolean enabled = false;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -67,6 +74,8 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
         private final int threadPriority;
 
         private final Writer writer;
+
+        private boolean anythingLogged;
 
         private BackgroundLogWriterTask(Writer writer, int threadPriority) {
             this.writer = writer;
@@ -90,6 +99,7 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
         private void runLogging() {
             final Thread currentThread = Thread.currentThread();
             final ConsoleRowFormatter consoleRowFormatter = new ConsoleRowFormatter();
+            anythingLogged = false;
             try {
                 while (!currentThread.isInterrupted()) {
                     ConsoleRow row = outputQueue.take();
@@ -99,6 +109,7 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
                         // TODO add an explicit flush mechanism to ensure rows are on disk after a
                         // given time?
                         writer.append(consoleRowFormatter.toCombinedLogFileFormat(row));
+                        anythingLogged = true;
                     } catch (IOException e) {
                         log.error(e);
                         break;
@@ -109,6 +120,10 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
             }
             try {
                 writer.close();
+                // TODO bad encapsulation; improve when reworking this class
+                if (!anythingLogged) {
+                    logFile.delete();
+                }
             } catch (IOException e) {
                 log.error(e);
             }
@@ -130,17 +145,23 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
      * OSGi-DS lifecycle method. Starts background logging of accumulated log lines.
      */
     public void activate() {
+        enabled = (System.getProperty(SYSTEM_PROPERTY_FOR_ACTIVATION) != null);
+        if (!enabled) {
+            log.debug("Combined workflow console log is disabled");
+            return;
+        }
+
         // TODO improve filename, locking/uniqueness etc.
         String logFileName = String.format("console.combined.%d.log", System.currentTimeMillis());
         File outputDir = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_OUTPUT);
-        File logFile = new File(outputDir, logFileName);
+        logFile = new File(outputDir, logFileName);
         try {
             fileWriter = new BufferedWriter(new FileWriter(logFile));
             // TODO use the thread pool instead?
             backgroundWriterTask = new BackgroundLogWriterTask(fileWriter, Thread.MIN_PRIORITY);
             backgroundTaskFuture =
                 SharedThreadPool.getInstance().submit(backgroundWriterTask, "Common ConsoleRow log " + logFile.getAbsolutePath());
-            log.debug("Logging workflow console output to " + logFileName + " (NOTE: may not capture all output yet)"); // TODO 5.0
+            log.debug("Logging combined workflow console output to " + logFileName + " (NOTE: may not capture all output yet)"); // TODO 5.0
         } catch (IOException e) {
             log.error("Failed to set up background console logging to " + logFileName, e);
         }
@@ -152,6 +173,9 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
      * Note: Closing the log file may happen asynchronously.
      */
     public void deactivate() {
+        if (!enabled) {
+            return;
+        }
         backgroundTaskFuture.cancel(true);
     }
 
@@ -194,6 +218,9 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
      */
     @Override
     public void processConsoleRows(List<ConsoleRow> rows) {
+        if (!enabled) {
+            return;
+        }
         // add total string length to counter
         int charCount = 0;
         for (ConsoleRow row : rows) {

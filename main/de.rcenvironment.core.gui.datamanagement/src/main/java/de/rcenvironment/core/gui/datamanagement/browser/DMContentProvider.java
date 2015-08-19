@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -79,6 +79,8 @@ public class DMContentProvider implements ITreeContentProvider {
     private static final String NOT_TERMINATED_YET = "not terminated yet";
 
     private static final String NOT_YET_AVAILABLE = "Not yet available";
+
+    private static final String UNKNOWN = "(unknown)";
 
     private static final String REMOTE = "remote";
 
@@ -244,9 +246,9 @@ public class DMContentProvider implements ITreeContentProvider {
      * 
      * @param parent the parent {@link DMBrowserNode}
      */
-    public void fetchingChildren(Object parent) {
+    public void fetchChildren(Object parent) {
         try {
-            createChildrenNode((DMBrowserNode) parent);
+            createChildrenForNode((DMBrowserNode) parent);
         } catch (CommunicationException e) {
             for (final DMBrowserNodeContentAvailabilityHandler handler : contentAvailabilityHandlers) {
                 handler.handleContentRetrievalError((DMBrowserNode) parent, e);
@@ -254,7 +256,7 @@ public class DMContentProvider implements ITreeContentProvider {
         }
     }
 
-    private void createChildrenNode(final DMBrowserNode node) throws CommunicationException {
+    private void createChildrenForNode(final DMBrowserNode node) throws CommunicationException {
         switch (node.getType()) {
         case HistoryRoot:
             createChildrenForHistoryRootNode(node);
@@ -454,6 +456,7 @@ public class DMContentProvider implements ITreeContentProvider {
             workflowNode.getMetaData().setValue(METADATA_WORKFLOW_FINAL_STATE, workflowRun.getFinalState().toString());
         }
         setupWorkflowNode(workflowNode);
+        // create run information sub-tree
         DMBrowserNode runInformation = new DMBrowserNode(Messages.runInformationTitle);
         runInformation.setType(DMBrowserNodeType.WorkflowRunInformation);
         FinalWorkflowState finalState = workflowRun.getFinalState();
@@ -479,8 +482,13 @@ public class DMContentProvider implements ITreeContentProvider {
             DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, dateFormat.format(new Date(endtime))),
                 DMBrowserNodeType.InformationText, runInformation);
         } else {
-            DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, NOT_YET_AVAILABLE),
-                DMBrowserNodeType.InformationText, runInformation);
+            if (finalState != null && finalState.equals(FinalWorkflowState.CORRUPTED)) {
+                DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, UNKNOWN),
+                    DMBrowserNodeType.InformationText, runInformation);
+            } else {
+                DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationEndtime, NOT_YET_AVAILABLE),
+                    DMBrowserNodeType.InformationText, runInformation);
+            }
         }
         if (finalState != null) {
             DMBrowserNode.addNewLeafNode(String.format(Messages.runInformationFinalState, finalState.getDisplayName()),
@@ -497,11 +505,11 @@ public class DMContentProvider implements ITreeContentProvider {
                 runInformation);
         }
         workflowNode.addChild(runInformation);
-        // create timeline child
+        // create timeline sub-tree
         final DMBrowserNode timelineDMObject = new DMBrowserNode("Timeline");
         timelineDMObject.setType(DMBrowserNodeType.Timeline);
         workflowNode.addChild(timelineDMObject);
-        // create components child
+        // create components sub-tree
         final DMBrowserNode componentsNode = new DMBrowserNode("Timeline by Component");
         componentsNode.setType(DMBrowserNodeType.Components);
         workflowNode.addChild(componentsNode);
@@ -786,7 +794,7 @@ public class DMContentProvider implements ITreeContentProvider {
                 inProgress.add(node);
             }
             try {
-                createChildrenNode(node);
+                createChildrenForNode(node);
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }

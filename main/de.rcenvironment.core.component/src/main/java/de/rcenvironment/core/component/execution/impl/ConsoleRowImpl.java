@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -117,6 +117,7 @@ public class ConsoleRowImpl implements ConsoleRow {
         this.timestamp = timestamp;
     }
     
+    @Override
     public void setIndex(long index) {
         this.index = index;
     }

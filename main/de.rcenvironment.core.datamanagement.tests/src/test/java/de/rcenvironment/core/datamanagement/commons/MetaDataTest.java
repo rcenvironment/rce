@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -62,7 +62,6 @@ public class MetaDataTest {
         assertFalse(metaData.equals(new Object()));
         assertFalse(metaData.equals(new MetaData(key, false, true)));
         assertFalse(metaData.equals(new MetaData(key, true, true)));
-        assertFalse(metaData.equals(new MetaData(key, false, false)));
         assertFalse(metaData.equals(new MetaData("wuattt", true, false)));
         assertFalse(metaData.equals(null));
     }

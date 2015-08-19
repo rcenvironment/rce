@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,11 +15,7 @@ import org.eclipse.swt.graphics.RGB;
  *
  */
 public final class TimelineViewConstants {
-    /**
-    * Default background color of canvas in timetable.
-    */
-    //public static final int DEFAULT_CANVAS_BACKGROUND_COLOR = SWT.COLOR_GRAY;
-    
+      
     /***/
     public static final RGB CANVAS_COLOR_BACKGROUND_PREVIEW = new RGB(100, 100, 100);
 

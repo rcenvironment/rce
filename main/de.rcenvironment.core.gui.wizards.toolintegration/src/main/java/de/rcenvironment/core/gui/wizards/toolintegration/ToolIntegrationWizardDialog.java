@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -66,13 +66,13 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         }
         saveAsButton = createButton(parent, IDialogConstants.OPEN_ID,
             Messages.saveAsLabel, false);
-        if (!isEdit) {
-            finishButton = createButton(parent, IDialogConstants.FINISH_ID,
-                Messages.integrateLabel, true);
-        } else {
-            finishButton = createButton(parent, IDialogConstants.FINISH_ID,
-                Messages.updateLabel, true);
+        String buttonText = Messages.integrateLabel;
+        if (isEdit) {
+            buttonText = Messages.updateLabel;
         }
+        finishButton = createButton(parent, IDialogConstants.FINISH_ID,
+            buttonText, true);
+
         cancelButton = createButton(parent, IDialogConstants.CANCEL_ID,
             IDialogConstants.CANCEL_LABEL, true);
     }
@@ -172,5 +172,12 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         default:
 
         }
+    }
+
+    @Override
+    public int open() {
+        int returnValue = super.open();
+        ((ToolIntegrationWizard) getWizard()).open();
+        return returnValue;
     }
 }

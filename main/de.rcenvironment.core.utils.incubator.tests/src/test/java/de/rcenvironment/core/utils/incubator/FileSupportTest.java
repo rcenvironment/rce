@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,12 +22,12 @@ import org.junit.Test;
 
 import de.rcenvironment.core.utils.common.legacy.FileSupport;
 
-
 /**
  * Test for {@link FileSupport}.
  *
  * @author Doreen Seider
  */
+@SuppressWarnings("deprecation") //This is a test for the deprecated class FileSupport.
 public class FileSupportTest extends TestCase {
 
     private File directory;

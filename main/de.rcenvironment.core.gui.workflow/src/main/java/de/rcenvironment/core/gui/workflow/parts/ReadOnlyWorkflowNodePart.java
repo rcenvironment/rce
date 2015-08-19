@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,8 +37,10 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.properties.IPropertySource;
 
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
@@ -128,6 +130,7 @@ public class ReadOnlyWorkflowNodePart extends WorkflowNodePart {
     @Override
     protected void createEditPolicies() {}
 
+    @Override
     protected String generateTooltipText() {
         return generateTooltipTextBase((WorkflowNode) getModel());
     }
@@ -245,6 +248,8 @@ public class ReadOnlyWorkflowNodePart extends WorkflowNodePart {
             }
         } catch (NullPointerException e) {
             LOGGER.error("Could not initialize status.", e);
+        } catch (CommunicationException e) {
+            LOGGER.error("Failed to register workflow state change listeners: " + e.getMessage());
         }
     }
     

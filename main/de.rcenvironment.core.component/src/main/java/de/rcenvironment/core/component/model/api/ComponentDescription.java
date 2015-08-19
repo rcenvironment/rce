@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,6 +36,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  * @author Christian Weiss
  * @author Sascha Zur
+ * @author David Scholz
  */
 public class ComponentDescription implements Serializable, Cloneable, Comparable<ComponentDescription> {
 
@@ -106,6 +107,10 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
 
     public String getVersion() {
         return componentInterface.getVersion();
+    }
+    
+    public ComponentSize getSize() {
+        return componentInterface.getSize();
     }
 
     public boolean getIsNodeTransient() {

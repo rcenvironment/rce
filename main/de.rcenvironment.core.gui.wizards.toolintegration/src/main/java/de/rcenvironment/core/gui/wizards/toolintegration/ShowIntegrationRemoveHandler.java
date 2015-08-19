@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -62,25 +62,30 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                             }
                         }
                     }
-                    integrationService.removeTool(selectedTool, context);
-                    integrationService.unpublishTool(context.getRootPathToToolIntegrationDirectory() + File.separator
-                        + context.getNameOfToolIntegrationDirectory() + File.separator + context.getToolDirectoryPrefix() + selectedTool);
-                    integrationService.updatePublishedComponents(context);
-                    File remove =
-                        new File(integrationService.getPathOfComponentID(selectedTool));
-                    try {
-                        if (!dialog.getKeepOnDisk()) {
-                            FileUtils.deleteDirectory(remove);
-                        } else if (remove.exists()) {
-                            ObjectMapper mapper = new ObjectMapper();
-                            @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
-                                mapper.readValue(new File(remove, context.getConfigurationFilename()),
-                                    new HashMap<String, Object>().getClass());
-                            configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, false);
-                            integrationService.writeToolIntegrationFile(configurationMap, context);
+                    if (context != null) {
+                        integrationService.removeTool(selectedTool, context);
+                        integrationService.unpublishTool(context.getRootPathToToolIntegrationDirectory() + File.separator
+                            + context.getNameOfToolIntegrationDirectory() + File.separator + context.getToolDirectoryPrefix()
+                            + selectedTool);
+                        integrationService.updatePublishedComponents(context);
+                        File remove =
+                            new File(integrationService.getPathOfComponentID(selectedTool));
+                        try {
+                            if (!dialog.getKeepOnDisk()) {
+                                FileUtils.deleteDirectory(remove);
+                            } else if (remove.exists()) {
+                                ObjectMapper mapper = new ObjectMapper();
+                                @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
+                                    mapper.readValue(new File(remove, context.getConfigurationFilename()),
+                                        new HashMap<String, Object>().getClass());
+                                configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, false);
+                                integrationService.writeToolIntegrationFile(configurationMap, context);
+                            }
+                        } catch (IOException e) {
+                            LOGGER.error("Toolintegration: ", e);
                         }
-                    } catch (IOException e) {
-                        LOGGER.error("Toolintegration: ", e);
+                    } else {
+                        LOGGER.error("ToolintegrationContext is null.");
                     }
                 }
             }

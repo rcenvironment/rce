@@ -1,5 +1,5 @@
 <contexts>
-	<context id="xmlmerger" title="XML Merger Component Usage">
+	<context id="xmlmerger" title="XML Merger Component Help">
 		<description>The XML Merger Component merges the XML content of two inputs on the basis of user-defined rules.</description>
      	<topic href="resources/help/html/usage.xhtml" label="XML Merger Component Usage"></topic>
 	</context>

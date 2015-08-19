@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -229,7 +229,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     fileInput = FileUtils.readFileToByteArray(file);
                     md5out += DigestUtils.md5Hex(fileInput);
                 } catch (IOException e) {
-                    LOG.error(e.getStackTrace());
+                    LOG.error(e);
                     md5out = "";
                 }
             }

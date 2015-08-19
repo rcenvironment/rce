@@ -16,7 +16,7 @@
 			belongs to exactly one user, and each user can have multiple profiles. The default
 			profile is located within the user's "home" directory (<phrase os="windows"
 				>"C:\users\&lt;user id>\" on Windows</phrase><phrase os="linux">"/home/&lt;user
-					id>/" on Linux</phrase>), in the ".rce/default" sub-folder. You can specify the profile to apply by executing RCE with the -p profile_name<note>
+					id>/" on Linux</phrase>), in the ".rce/default" sub-folder.<note>
 						<para>Note that ".rce" is a hidden directory; you may need to set operating-specific
 							options to see hidden files and directories.</para>
 					</note></para>
@@ -126,10 +126,10 @@
 					</row>
 					<row>
 						<entry>connections</entry>
-						<entry>A list of all connections that the local instance tries to establish
-							on startup. This allows the local instance to act as a client. For each
-							connection a unique identifier (id) must be given.</entry>
-						<entry>{} (an empty list in JSON format)</entry>
+						<entry>A map of all connections that the local instance tries to establish on startup. This
+							allows the local instance to act as a client. For each connection a
+							unique identifier (id) must be given.</entry>
+						<entry>{} (an empty map in JSON format)</entry>
 					</row>
 					<row>
 						<entry>connections/[id]/host</entry>
@@ -149,14 +149,14 @@
 						<entry>true</entry>
 					</row>
 					<row>
-						<entry>connections/[id]/autoRetry InitialDelay</entry>
+						<entry>connections/[id]/autoRetryInitialDelay</entry>
 						<entry>The initial delay, in seconds, to wait after a failed or broken
 							connection before a reconnect attempt is made. This configuration must
 							be present to enable the auto-reconnect feature.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>connections/[id]/autoRetry DelayMultiplier</entry>
+						<entry>connections/[id]/autoRetryDelayMultiplier</entry>
 						<entry>A decimal-point value >= 1 that the delay time is multiplied with
 							after each consecutive connection failure. This provides an "exponential
 							backoff" feature that reduces the frequency of connection attempts over
@@ -165,7 +165,7 @@
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>connections/[id]/autoRetry MaximumDelay</entry>
+						<entry>connections/[id]/autoRetryMaximumDelay</entry>
 						<entry>Defines an upper limit for the delay time, even when applying the
 							multiplier would create a higher value. This can be used to maintain a
 							minimum frequency for retrying the connection. This configuration must
@@ -174,10 +174,10 @@
 					</row>
 					<row>
 						<entry>serverPorts </entry>
-						<entry>A list of all server ports that the local instance registers for other instances to
+						<entry>A map of all server ports that the local instance registers for other instances to
 							connect to. This allows the local instance to act as a server. For each
 							server port a unique identifier (id) must be given.</entry>
-						<entry>{} (an empty list in JSON format)</entry>
+						<entry>{} (an empty map in JSON format)</entry>
 					</row>
 					<row>
 						<entry>serverPorts/[id]/ip</entry>
@@ -266,56 +266,56 @@
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/profiles </entry>
+						<entry>de.rcenvironment.sql/[id]/profiles </entry>
 						<entry>List of profiles which will describe the jdbc connection to a database. All
 							configuration keys following are part of one entry of the collection </entry>
-						<entry>[] (an empty list in JSON format)</entry>
+						<entry>{} (an empty list in JSON format)</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/label </entry>
+						<entry>de.rcenvironment.sql/[id]/label </entry>
 						<entry>A name for a profile. This label will be shown in the configuration view of the SQL
 							component </entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/host </entry>
+						<entry>de.rcenvironment.sql/[id]/host </entry>
 						<entry>A url to the host computer of the database </entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/database </entry>
+						<entry>de.rcenvironment.sql/[id]/database </entry>
 						<entry>The name of the database </entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/user </entry>
+						<entry>de.rcenvironment.sql/[id]/user </entry>
 						<entry>The username for database access </entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/password </entry>
+						<entry>de.rcenvironment.sql/[id]/password </entry>
 						<entry>The password of the user for database access </entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/jdbc </entry>
+						<entry>de.rcenvironment.sql/[id]/jdbc </entry>
 						<entry>List of jdbc configuration parameters. All configuration keys following are part of
 							this list </entry>
 						<entry>{} (an empty list in JSON format)</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/url </entry>
+						<entry>de.rcenvironment.sql/[id]/url </entry>
 						<entry>Connection string of jdbc driver. Per default, it will be assembled with configuration
 							keys above.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/file </entry>
+						<entry>de.rcenvironment.sql/[id]/file </entry>
 						<entry>Absolute or relative (beginning at root-folder of RCE) path to jdbc driver file </entry>
 						<entry>-</entry>
 					</row>
 					<row>
-						<entry>de.rcenvironment.sql/driver </entry>
+						<entry>de.rcenvironment.sql/[id]/driver </entry>
 						<entry>SQL driver classname </entry>
 					</row>
 				</tbody>
@@ -344,15 +344,24 @@
 						<entry>false</entry>
 					</row>
 					<row>
+						<entry>ip <emphasis>(deprecated alias: "host")</emphasis></entry>
+						<entry>The host's ip address to bind to. If you want to make the SSH server
+							accessible from remote, you should set this to the IP of the machine's
+							external network interface. Alternatively, you can set this to "0.0.0.0"
+							to listen on all available IPv4 adresses, if this is appropriate in your
+							network setup.</entry>
+						<entry>127.0.0.1</entry>
+					</row>
+					<row>
 						<entry>port</entry>
 						<entry>Port number to which SSH clients connect to.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
 						<entry>accounts</entry>
-						<entry>List of accounts. For each account a unique identifier (account name) must be
+						<entry>A map of accounts. For each account a unique identifier (account name) must be
 							given.</entry>
-						<entry>{} (an empty list in JSON format)</entry>
+						<entry>{} (an empty map in JSON format)</entry>
 					</row>
 					<row>
 						<entry>[account name]/password</entry>
@@ -371,11 +380,11 @@
 					</row>
 					<row>
 						<entry>roles</entry>
-						<entry>List of roles. For each role a unique identifier (role name) must be given.</entry>
-						<entry/>
+						<entry>A map of roles. For each role a unique identifier (role name) must be given.</entry>
+						<entry>{} (an empty map in JSON format)</entry>
 					</row>
 					<row>
-						<entry>[role name]/allowed CommandPatterns</entry>
+						<entry>[role name]/allowedCommandPatterns</entry>
 						<entry>List of commands the role is allowed to execute. Regular expressions
 							are supported.</entry>
 						<entry>[] (an empty list in JSON format)</entry>

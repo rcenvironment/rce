@@ -5,15 +5,15 @@
   "setToolDirAsWorkingDir" : true,
   "inputs" : [ {
     "endpointFolder" : "Input folder",
-    "endpointFileName" : "CPACSInitial.xml",
+    "endpointFileName" : "CPACS_initial.xml",
     "endpointDataType" : "FileReference",
-    "endpointName" : "CPACSInitial",
+    "endpointName" : "CPACS initial",
     "endpointUsage" : "required"
   } ],
   "integrationType" : "CPACS",
   "hasToolSpecificInput" : true,
-  "cpacsInitialEndpointName" : "CPACSInitial",
-  "cpacsOutgoingEndpointName" : "CPACSout",
+  "cpacsInitialEndpointName" : "CPACS initial",
+  "cpacsOutgoingEndpointName" : "CPACS out",
   "toolInputFileName" : "ToolInput/toolInput.xml",
   "mappingInputFilename" : "mappingInput.xml",
   "toolspecificMappingFilename" : "ToolSpecificMapping.xml",
@@ -27,7 +27,7 @@
     "endpointFolder" : "",
     "endpointFileName" : "",
     "endpointDataType" : "FileReference",
-    "endpointName" : "CPACSout",
+    "endpointName" : "CPACS out",
     "endpointUsage" : "-"
   } ]
 }

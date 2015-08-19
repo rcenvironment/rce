@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -183,7 +183,7 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
 
         if (properties != null && properties.size() > 0) {
             try {
-                ServiceReference[] serviceReferences = bundleContext.getServiceReferences(iface.getName(),
+                ServiceReference<?>[] serviceReferences = bundleContext.getServiceReferences(iface.getName(),
                     ServiceUtils.constructFilter(properties));
                 if (serviceReferences != null) {
                     serviceReference = serviceReferences[0];

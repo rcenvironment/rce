@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -88,7 +88,7 @@ public class XmlLoaderComponentSection extends ValidatingWorkflowNodePropertySec
     }
 
     /**
-     * Open file choosing dialog for Excel file.
+     * Open file choosing dialog for XML file.
      * 
      */
     private void fileChoosing() {

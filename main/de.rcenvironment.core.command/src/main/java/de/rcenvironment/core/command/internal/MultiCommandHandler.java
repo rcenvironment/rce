@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -73,6 +73,7 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
      * @return the result of this multi-command invocation
      */
     @TaskDescription("Text command execution")
+    @Override
     public CommandExecutionResult call() {
         outputReceiver.onStart();
 

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+                      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Design of Experiments Component Usage</title>
+    </head>
+    <body>
+        <div class="WordSection1"><h2><span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US"
+                    >Design of Experiments Component Usage</span></h2><h3><span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Synopsis</span></h3><p><span style="mso-ansi-language:EN-US">With the DOE component
+                    a bounded solution space can be sampled.</span></p><h3><span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Rationale</span></h3>The DOE component sends values (floating-point numbers) to other components. The values are either generated on the base of a design method or are provided by a custom design table. The values can be used to sample a solution within a bounded space. They are independent to each other.<h3><span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    >Usage</span></h3></div>
+        <div>First, outputs must be defined. Each output is of type float and has a lower and an upper bound. The definition of inputs is optional. If inputs are defined, the DOE component maps one set of output values to one set of input values. I.e., output values are sent as soon as input values (corresponding to previously sent output values) are received. Queuing of input values as not allowed.
+            If no inputs are defined, the output values are sent all at once at workflow start.</div>
+        <div><br></br></div>
+        <div>Second, the design method must be selected. You can choose between four methods:</div><div><br></br></div>
+        <div><a href = 'http://en.wikipedia.org/wiki/Factorial_experiment'>Full factorial design</a></div>
+        <div><a href='http://en.wikipedia.org/wiki/Latin_hypercube_sampling'>Latin hypercube design</a></div>
+        <div><a href='http://en.wikipedia.org/wiki/Monte_Carlo_method'>Monte Carlo design</a></div>
+        <div>Custom design</div>
+        <div><br></br></div>
+        <div>The first three methods generate the output values on the base of established design methods (see links above). For two of them,
+            the values are random. You can choose a seed in order to reuse the same values later. The number of samples can be defined with
+            the option "Number of levels"/"Desired runs".</div>
+        <div></div>
+        <div>The last method allows to define a custom design table. The table at the bottom is editable and values can be
+            entered. The table can be saved as a csv file and can be re-loaded later on. It is also possible to define a custom sample range by modifying the "Start at sample #" and "End at sample #" option.</div>
+    </body>
+</html>

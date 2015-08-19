@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -203,9 +203,6 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
         }
         setControl(container);
-        if (pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)) {
-            setPageComplete(false);
-        }
     }
 
     private void createInactivePart(Composite container) {
@@ -525,7 +522,13 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
     }
 
     @Override
-    public void updatePage() {}
+    public void updatePage() {
+        if (pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)
+            && isCurrentPage()
+            && (textChosenConfig.getText() == null || textChosenConfig.getText().isEmpty())) {
+            setPageComplete(false);
+        }
+    }
 }
 
 /**

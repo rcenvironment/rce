@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -69,6 +69,7 @@ public class DriverAdapter implements Driver {
      * @throws SQLFeatureNotSupportedException always thrown to signal that java.util.logging is not
      *         used
      */
+    @Override
     public Logger getParentLogger() throws SQLFeatureNotSupportedException {
         // see java.sql.Driver#getParentLogger()
         throw new SQLFeatureNotSupportedException("Not using java.util.logging");

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,12 +32,14 @@ public class EditScriptWorkflowEditorAction extends WorkflowEditorAction {
      */
     private class EditScriptRunnable extends AbstractEditScriptRunnable {
 
+        @Override
         protected void setScript(String script) {
             commandStack.execute(new EditScriptCommand(script));
         }
 
+        @Override
         protected String getScript() {
-            return (String) workflowNode.getConfigurationDescription()
+            return workflowNode.getConfigurationDescription()
                 .getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT);
         }
 
@@ -60,7 +62,7 @@ public class EditScriptWorkflowEditorAction extends WorkflowEditorAction {
 
         protected EditScriptCommand(String newScript) {
             oldScript =
-                (String) workflowNode.getConfigurationDescription()
+                workflowNode.getConfigurationDescription()
                     .getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT);
             this.newScript = newScript;
         }
@@ -71,11 +73,13 @@ public class EditScriptWorkflowEditorAction extends WorkflowEditorAction {
                 .setConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT, newScript);
         }
 
+        @Override
         public void undo() {
             workflowNode.getConfigurationDescription()
                 .setConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT, oldScript);
         }
 
+        @Override
         public void redo() {
             execute();
         }

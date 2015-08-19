@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -17,7 +17,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.net.URI;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,7 +36,6 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
-import de.rcenvironment.core.datamanagement.DataService;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
@@ -73,8 +71,6 @@ public class DistributedFileDataServiceImplTest {
 
     private UUID referenceID;
 
-    private URI location = URI.create("test");
-
     private DataReference reference;
 
     private DataReference notReachableReference;
@@ -89,7 +85,7 @@ public class DistributedFileDataServiceImplTest {
     private NodeIdentifier mockRemoteNodeId;
 
     public DistributedFileDataServiceImplTest() {
-        mockRemoteNodeId = NodeIdentifierFactory.fromHostAndNumberString("horst:7");
+        mockRemoteNodeId = NodeIdentifierFactory.fromNodeId("horst:7");
     }
 
     /**
@@ -103,7 +99,7 @@ public class DistributedFileDataServiceImplTest {
         EasyMock.expect(certificateMock.isValid()).andReturn(true);
         EasyMock.replay(certificateMock);
 
-        localNodeId = NodeIdentifierFactory.fromHostAndNumberString("horst:1");
+        localNodeId = NodeIdentifierFactory.fromNodeId("horst:1");
         referenceID = UUID.randomUUID();
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
@@ -112,7 +108,7 @@ public class DistributedFileDataServiceImplTest {
         birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
         notReachableReference =
-            new DataReference(referenceID.toString(), NodeIdentifierFactory.fromHostAndNumberString("notreachable:1"), birefs);
+            new DataReference(referenceID.toString(), NodeIdentifierFactory.fromNodeId("notreachable:1"), birefs);
 
         is = new InputStream() {
 
@@ -200,18 +196,6 @@ public class DistributedFileDataServiceImplTest {
     }
 
     /**
-     * Dummy implementation of {@link DataService}.
-     * 
-     * @author Doreen Seider
-     */
-    private class MockDataService implements DataService {
-
-        @Override
-        public void deleteReference(String dataReference) throws AuthorizationException {}
-
-    }
-
-    /**
      * Test implementation of the {@link FileDataService}.
      * 
      * @author Doreen Seider
@@ -281,7 +265,7 @@ public class DistributedFileDataServiceImplTest {
             Set<BinaryReference> birefs = new HashSet<BinaryReference>();
             birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
-            lastMockRemoteDataReference = new DataReference(referenceID.toString(), localNodeId, birefs);
+            lastMockRemoteDataReference = new DataReference(referenceID.toString(), mockRemoteNodeId, birefs);
             return lastMockRemoteDataReference;
         }
     }

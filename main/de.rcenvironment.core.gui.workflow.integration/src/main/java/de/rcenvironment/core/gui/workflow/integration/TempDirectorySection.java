@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,6 +37,8 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
 
     private Button alwaysDeleteTempDirectoryButton;
 
+    private Button onSuccessDeleteTempDirectoryButton;
+
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         final Section scriptSection = PropertyTabGuiHelper.createSingleColumnSectionComposite(parent, getWidgetFactory(),
@@ -61,7 +63,21 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         alwaysDeleteTempDirectoryButton.setText("Delete working directory(ies) after every run");
         alwaysDeleteTempDirectoryButton.addSelectionListener(new DeleteTempDirectorySelectionListener(
             ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS));
+        onSuccessDeleteTempDirectoryButton = new Button(scriptComposite, SWT.CHECK);
+        onSuccessDeleteTempDirectoryButton.setText("Keep working directory(ies) in case of failure.");
+        onSuccessDeleteTempDirectoryButton.addSelectionListener(new SelectionListener() {
 
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                setProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
+
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
         scriptSection.setClient(scriptComposite);
 
     }
@@ -86,13 +102,14 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         onceDeleteTempDirectoryButton.setSelection(false);
         alwaysDeleteTempDirectoryButton.setSelection(false);
         neverDeleteTempDirectoryButton.setSelection(false);
+
         String chosen = getProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
         if (chosen != null) {
             if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE)) {
                 onceDeleteTempDirectoryButton.setSelection(true);
             } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS)) {
                 alwaysDeleteTempDirectoryButton.setSelection(true);
-            } else {
+            } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER)) {
                 neverDeleteTempDirectoryButton.setSelection(true);
             }
         } else {
@@ -104,13 +121,17 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
                 setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
                     ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
                 alwaysDeleteTempDirectoryButton.setSelection(true);
-            } else {
+            } else if (deleteNeverActive) {
                 neverDeleteTempDirectoryButton.setSelection(true);
                 setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
                     ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER);
             }
-        }
 
+        }
+        onSuccessDeleteTempDirectoryButton.setEnabled(isKeepButtonActive());
+        onSuccessDeleteTempDirectoryButton.setSelection(isKeepButtonActive()
+            && Boolean.parseBoolean(getProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE)));
+        setProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
     }
 
     @Override
@@ -140,6 +161,27 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
             setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR, key);
+
+            onSuccessDeleteTempDirectoryButton.setEnabled(isKeepButtonActive());
+            if (!isKeepButtonActive()) {
+                onSuccessDeleteTempDirectoryButton.setSelection(false);
+                setProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + false);
+            }
         }
+    }
+
+    private boolean isKeepButtonActive() {
+        ReadOnlyConfiguration readOnlyconfig = getConfiguration().getConfigurationDescription()
+            .getComponentConfigurationDefinition().getReadOnlyConfiguration();
+        boolean alwaysActiveAndPermitted =
+            alwaysDeleteTempDirectoryButton.getSelection()
+                && Boolean
+                    .parseBoolean(readOnlyconfig
+                        .getValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ITERATION));
+        boolean onceActiveAndPermitted =
+            onceDeleteTempDirectoryButton.getSelection()
+                && Boolean.parseBoolean(readOnlyconfig
+                    .getValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE));
+        return alwaysActiveAndPermitted || onceActiveAndPermitted;
     }
 }

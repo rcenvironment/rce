@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -70,7 +70,6 @@ public class CpacsIntegrationHistoryDataItemSubtreeBuilder extends IntegrationHi
             }
 
             CommonHistoryDataItemSubtreeBuilderUtils.buildCommonHistoryDataItemSubtrees(historyData, parent);
-            super.buildInitialHistoryDataItemSubtree(historyDataItem, parent);
             if (historyData.getCpacsWithVariablesFileReference() != null
                 || historyData.getToolInputWithoutToolspecificFileReference() != null) {
                 intermediateInputsNode =

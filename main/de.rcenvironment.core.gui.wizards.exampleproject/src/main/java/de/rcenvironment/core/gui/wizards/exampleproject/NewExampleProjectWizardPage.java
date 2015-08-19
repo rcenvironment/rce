@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@ package de.rcenvironment.core.gui.wizards.exampleproject;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.jface.dialogs.IDialogPage;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.wizard.WizardPage;
 import org.eclipse.swt.SWT;
@@ -49,6 +50,7 @@ public class NewExampleProjectWizardPage extends WizardPage {
      * @see IDialogPage#createControl(Composite)
      * @param parent : 
      */
+    @Override
     public void createControl(Composite parent) {
         Composite container = new Composite(parent, SWT.NULL);
         GridLayout layout = new GridLayout();
@@ -62,7 +64,7 @@ public class NewExampleProjectWizardPage extends WizardPage {
         GridData gd = new GridData(GridData.FILL_HORIZONTAL);
         textFieldProjectName.setLayoutData(gd);
         textFieldProjectName.addModifyListener(new ModifyListener() {
-
+            @Override
             public void modifyText(ModifyEvent e) {
                 dialogChanged();
             }

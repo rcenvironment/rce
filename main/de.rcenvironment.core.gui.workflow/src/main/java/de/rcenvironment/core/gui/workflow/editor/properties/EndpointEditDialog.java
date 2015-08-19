@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,6 +44,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConsta
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
@@ -111,17 +112,16 @@ public class EndpointEditDialog extends Dialog {
      * Dialog for creating or editing an endpoint.
      * 
      * @param parentShell parent Shell
-     * @param title
+     * @param actionType
      * @param configuration the containing endpoint manager
      */
-    public EndpointEditDialog(Shell parentShell, String title, ComponentInstanceProperties configuration,
+    public EndpointEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
         EndpointType direction, String id, boolean isStatic,
         EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
         super(parentShell);
         setShellStyle(SWT.CLOSE | SWT.TITLE | SWT.BORDER | SWT.RESIZE | SWT.APPLICATION_MODAL);
         this.configuration = configuration;
         type = direction;
-        this.title = title;
         this.id = id;
         this.isStatic = isStatic;
         if (direction == EndpointType.INPUT) {
@@ -129,6 +129,7 @@ public class EndpointEditDialog extends Dialog {
         } else {
             epManager = configuration.getOutputDescriptionsManager();
         }
+        this.title = String.format(Messages.title, actionType, direction);
         this.metaData = metaData;
         this.metadataValues = metadataValues;
         

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -95,7 +95,7 @@ public final class WorkflowDescriptionValidator {
 
         // If the result is invalid, the missing node is returned.
         // Otherwise null is returned.
-        if (!valid){
+        if (!valid && ni != null){
             return ni.getAssociatedDisplayName();
         } else {
             return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -78,6 +78,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     private Map<String, WeakReference<WorkflowExecutionControllerService>> wfExeCtrlServices = new LRUMap<>(CACHE_SIZE);
     
     private Set<WorkflowExecutionInformation> workflowExecutionInformations;
+    
+    private Object wfExeFetchLock = new Object();
     
     private ScheduledFuture<?> heartbeatSendFuture;
     
@@ -192,13 +194,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     @Override
-    public void dispose(String executionId, NodeIdentifier node) {
-        getExecutionControllerService(node).performDispose(executionId);
+    public void dispose(String executionId, NodeIdentifier node) throws CommunicationException {
+        try {
+            getExecutionControllerService(node).performDispose(executionId);
+        } catch (UndeclaredThrowableException e) {
+            handleUndeclaredThrowableException(e);
+        }
     }
     
     @Override
-    public WorkflowState getWorkflowState(String executionId, NodeIdentifier node) {
-        return getExecutionControllerService(node).getWorkflowState(executionId);
+    public WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws CommunicationException {
+        try {
+            return getExecutionControllerService(node).getWorkflowState(executionId);
+        } catch (UndeclaredThrowableException e) {
+            handleUndeclaredThrowableException(e);
+            return WorkflowState.UNKNOWN;
+        }
     }
     
     @Override
@@ -214,47 +225,55 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     @Override
     public Set<WorkflowExecutionInformation> getWorkflowExecutionInformations(boolean forceRefresh) {
-        if (forceRefresh || workflowExecutionInformations == null) {
-            workflowExecutionInformations = new HashSet<>();
+        if (!forceRefresh && workflowExecutionInformations != null) {
+            return new HashSet<>(workflowExecutionInformations);
+        } else {
+            synchronized (wfExeFetchLock) {
+                if (forceRefresh || workflowExecutionInformations == null) {
+                    Set<WorkflowExecutionInformation> tempWfExeInfos = new HashSet<>();
 
-            CallablesGroup<Collection> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Collection.class);
+                    CallablesGroup<Collection> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Collection.class);
 
-            for (NodeIdentifier node : workflowHostService.getWorkflowHostNodesAndSelf()) {
-                final NodeIdentifier finalNode = node;
-                callablesGroup.add(new Callable<Collection>() {
+                    for (NodeIdentifier node : workflowHostService.getWorkflowHostNodesAndSelf()) {
+                        final NodeIdentifier finalNode = node;
+                        callablesGroup.add(new Callable<Collection>() {
 
-                    @Override
-                    @TaskDescription("Distributed query: getWorkflowInformations()")
-                    public Collection call() throws Exception {
-                        WorkflowExecutionControllerService executionControllerService = getExecutionControllerService(finalNode);
-                        try {
-                            return executionControllerService.getWorkflowExecutionInformations();
-                        } catch (UndeclaredThrowableException e) {
-                            try {
-                                handleUndeclaredThrowableException(e);
-                            } catch (CommunicationException e1) {
-                                LOG.error("Failed to query remote workflows on node: " + finalNode, e1);
+                            @Override
+                            @TaskDescription("Distributed query: getWorkflowInformations()")
+                            public Collection call() throws Exception {
+                                WorkflowExecutionControllerService executionControllerService = getExecutionControllerService(finalNode);
+                                try {
+                                    return executionControllerService.getWorkflowExecutionInformations();
+                                } catch (UndeclaredThrowableException e) {
+                                    try {
+                                        handleUndeclaredThrowableException(e);
+                                    } catch (CommunicationException e1) {
+                                        LOG.error("Failed to query remote workflows on node: " + finalNode, e1);
+                                    }
+                                    return null;
+                                }
                             }
-                            return null;
+                        });
+                    }
+                    List<Collection> results = callablesGroup.executeParallel(new AsyncExceptionListener() {
+
+                        @Override
+                        public void onAsyncException(Exception e) {
+                            LOG.warn("Exception during asynchrous execution", e);
+                        }
+                    });
+                    // merge results
+                    for (Collection singleResult : results) {
+                        if (singleResult != null) {
+                            tempWfExeInfos.addAll(singleResult);
                         }
                     }
-                });
-            }
-            List<Collection> results = callablesGroup.executeParallel(new AsyncExceptionListener() {
-
-                @Override
-                public void onAsyncException(Exception e) {
-                    LOG.warn("Exception during asynchrous execution", e);
+                    workflowExecutionInformations = tempWfExeInfos;
                 }
-            });
-            // merge results
-            for (Collection singleResult : results) {
-                if (singleResult != null) {
-                    workflowExecutionInformations.addAll(singleResult);
-                }
+                return new HashSet<>(workflowExecutionInformations);
             }
         }
-        return workflowExecutionInformations;
+        
     }
     
     private WorkflowExecutionControllerService getExecutionControllerService(NodeIdentifier node) {

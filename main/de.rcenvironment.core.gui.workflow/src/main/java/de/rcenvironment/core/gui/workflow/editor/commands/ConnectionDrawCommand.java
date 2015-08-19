@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,6 +11,8 @@ package de.rcenvironment.core.gui.workflow.editor.commands;
 import java.util.List;
 
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.eclipse.gef.commands.Command;
 
 import de.rcenvironment.core.component.workflow.model.api.Connection;
@@ -27,6 +29,7 @@ import de.rcenvironment.core.gui.workflow.editor.connections.ConnectionDialogCon
  */
 public class ConnectionDrawCommand extends Command {
 
+    private final Log logger = LogFactory.getLog(getClass());
     
     private WorkflowNode sourceNode;
     
@@ -77,7 +80,11 @@ public class ConnectionDrawCommand extends Command {
     
     @Override
     public void redo() {
-        currentModel.replaceConnections(modifiedModel.getConnections());
+        if (currentModel != null && modifiedModel != null){
+            currentModel.replaceConnections(modifiedModel.getConnections());
+        } else {
+            logger.warn("Redo of connections did not finish successfully.");
+        }
     }
     
     /**

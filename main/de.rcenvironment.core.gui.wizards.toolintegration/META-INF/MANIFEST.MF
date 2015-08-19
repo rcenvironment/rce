@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Wizards Tool Integration
 Bundle-SymbolicName: de.rcenvironment.core.gui.wizards.toolintegration;singleton:=true
-Bundle-Version: 6.0.3.qualifier
+Bundle-Version: 6.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.api,
@@ -14,7 +14,9 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.gui.resources.api,
  de.rcenvironment.core.gui.utils.common.components,
+ de.rcenvironment.core.gui.utils.common.configuration,
  de.rcenvironment.core.gui.utils.incubator,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.incubator,

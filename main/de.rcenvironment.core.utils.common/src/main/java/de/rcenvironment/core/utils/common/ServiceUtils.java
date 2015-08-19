@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -59,7 +59,7 @@ public final class ServiceUtils {
     public static <T> T createFailingServiceProxy(final Class<T> iface) {
         return (T) Proxy.newProxyInstance(iface.getClassLoader(), new Class<?>[] { iface },
             new InvocationHandler() {
-
+                @Override
                 public Object invoke(Object proxy, Method method, Object[] parameters) throws Throwable {
                     throw new IllegalStateException("Service not available: " + iface.getCanonicalName());
                 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -95,7 +95,8 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     /**
      * Default constructor; should only be used by OSGi-DS and unit tests.
      */
-    public HeadlessWorkflowExecutionServiceImpl() {}
+    public HeadlessWorkflowExecutionServiceImpl() {
+    }
 
     @Override
     public WorkflowDescription parseWorkflowFile(File wfFile, final TextOutputReceiver outputReceiver) throws WorkflowExecutionException {
@@ -116,7 +117,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             controllerNode = platformService.getLocalNodeId();
         }
         if (!workflowHostService.getWorkflowHostNodesAndSelf().contains(controllerNode)) {
-            log.info("Configured controller node is not available: " + controllerNode);
+            log.warn("Configured controller node is not available: " + controllerNode);
             return false;
         }
 
@@ -129,7 +130,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             }
             if (!ComponentUtils.hasComponent(compKnowledge.getAllInstallations(), node.getComponentDescription().getIdentifier(),
                 componentNode)) {
-                log.info(String.format("Component '%s' not installed on configured component node '%s' or node is not available",
+                log.warn(String.format("Component '%s' not installed on configured component node '%s' or node is not available",
                     node.getComponentDescription().getName(), componentNode));
                 return false;
             }
@@ -227,7 +228,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             // replace null (representing localhost) with the actual host name
             if (node.getComponentDescription().getNode() == null) {
                 Collection<ComponentInstallation> installations = compKnowledge.getLocalInstallations();
-                ComponentInstallation installation = ComponentUtils.getComponentInstallationForNode(
+                ComponentInstallation installation = ComponentUtils.getExactMatchingComponentInstallationForNode(
                     node.getComponentDescription().getIdentifier(), installations, localNode);
                 if (installation == null) {
                     throw new WorkflowExecutionException(String.format("Component '%s' not installed on node %s "
@@ -288,18 +289,28 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             });
         
         // add workflow state subscriber; only subscribe for this specific workflow (no wildcard)
-        distributedNotificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID
-            + wfExeCtx.getExecutionIdentifier(), workflowStateChangeListener,
-            wfExeCtx.getNodeId());
+        try {
+            distributedNotificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID
+                + wfExeCtx.getExecutionIdentifier(), workflowStateChangeListener,
+                wfExeCtx.getNodeId());
+        } catch (CommunicationException e1) {
+            log.error("Failed to start workflow (error while subscribing for state changes): " + e1.getMessage());
+            return;
+        }
 
         // add console output subscriber
         ConsoleRowSubscriber consoleRowSubscriber = new ConsoleRowSubscriber(wfHeadlessExeCtx, logDirectory);
         wfHeadlessExeCtx.registerResourceToCloseOnFinish(consoleRowSubscriber);
         
         // subscribe to a console row notification on workflow controller node
-        distributedNotificationService.subscribe(String.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
-            wfExeCtx.getExecutionIdentifier(), wfExeCtx.getNodeId().getIdString()),
-            consoleRowSubscriber, wfExeCtx.getNodeId());
+        try {
+            distributedNotificationService.subscribe(String.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
+                wfExeCtx.getExecutionIdentifier(), wfExeCtx.getNodeId().getIdString()),
+                consoleRowSubscriber, wfExeCtx.getNodeId());
+        } catch (CommunicationException e1) {
+            log.error("Failed to start workflow (error while subscribing for console row output): " + e1.getMessage());
+            return;
+        }
         
         // needed to guarantee this NotificationSubscriber is not removed by GC and thus, can be accessible from remote. get obsolete if
         // following issue is resolved: https://www.sistec.dlr.de/mantis/view.php?id=8659 -- Jan 2015 seid_do
@@ -569,6 +580,43 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
      */
     public void bindPlatformService(PlatformService newInstance) {
         platformService = newInstance;
+    }
+
+    @Override
+    public Set<WorkflowExecutionInformation> getWorkflowExecutionInformations() {
+        return workflowExecutionService.getWorkflowExecutionInformations();
+    }
+    
+    @Override
+    public Set<WorkflowExecutionInformation> getWorkflowExecutionInformations(boolean forceRefresh) {
+        return workflowExecutionService.getWorkflowExecutionInformations(forceRefresh);
+    }
+
+
+    @Override
+    public void cancel(String executionId, NodeIdentifier node) throws CommunicationException {
+        workflowExecutionService.cancel(executionId, node);
+    }
+
+    @Override
+    public void pause(String executionId, NodeIdentifier node) throws CommunicationException {
+        workflowExecutionService.pause(executionId, node);
+    }
+
+    @Override
+    public void resume(String executionId, NodeIdentifier node) throws CommunicationException {
+        workflowExecutionService.resume(executionId, node);
+    }
+
+    @Override
+    public void dispose(String executionId, NodeIdentifier node) throws CommunicationException {
+        workflowExecutionService.dispose(executionId, node);
+
+    }
+
+    @Override
+    public WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws CommunicationException {
+        return workflowExecutionService.getWorkflowState(executionId, node);
     }
 
 

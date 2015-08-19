@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -153,6 +153,27 @@ public final class Messages extends NLS {
     
     /** Constant. */
     public static String selectExcatMatchtingPlatform;
+
+    /** Constant. */
+    public static String validationTitle;
+
+    /** Constant. */
+    public static String validationMessage;
+
+    /** Constant. */
+    public static String proceedButton;
+
+    /** Constant. */
+    public static String cancelButton;
+
+    /** Constant. */
+    public static String errorMessage;
+
+    /** Constant. */
+    public static String workflowWarningMessage;
+
+    /** Constant. */
+    public static String missingPlaceholder;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

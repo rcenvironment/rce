@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -90,7 +90,7 @@ public class ConnectionSetupCommandPlugin implements CommandPlugin {
                     optionalSuffix = " [" + currentChannelId + "]";
                 }
             }
-            context.println(String.format("  (%d) \"%s\" [%s] - %s%s", setup.getId(), setup.getDisplayName(),
+            context.println(String.format("  (%d) '%s' [%s] - %s%s", setup.getId(), setup.getDisplayName(),
                 setup.getNetworkContactPointString(),
                 setup.getState(), optionalSuffix));
         }

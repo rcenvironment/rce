@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -206,7 +206,17 @@ public enum StandardImages implements ImageSource {
     /**
      * Tool input/output folder icon in workflow data browser.
      */
-    TOOL_INPUT_OUTPUT_16(fromLocalBundle("tool_input_output.gif"));
+    TOOL_INPUT_OUTPUT_16(fromLocalBundle("tool_input_output.gif")),
+    
+    /**
+     * Common text node icon in workflow data browser.
+     */
+    COMMON_TEXT_16(fromLocalBundle("common_text_node.gif")),
+    
+    /**
+     * Question mark node icon in workflow data browser.
+     */
+    QUESTION_MARK_16(fromLocalBundle("question_mark.gif"));
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 

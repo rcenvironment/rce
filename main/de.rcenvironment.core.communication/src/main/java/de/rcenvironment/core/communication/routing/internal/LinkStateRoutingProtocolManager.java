@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,9 +34,9 @@ import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkResponseHandler;
-import de.rcenvironment.core.communication.model.impl.NetworkResponseImpl;
 import de.rcenvironment.core.communication.protocol.MessageMetaData;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
+import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.utils.MessageUtils;
@@ -92,7 +92,7 @@ public class LinkStateRoutingProtocolManager {
                 responseBody = protocolManager.handleSingleLinkStateAdvertisement(messageContent, request.accessRawMetaData());
             }
             byte[] responseBodyBytes = MessageUtils.serializeSafeObject(responseBody);
-            return new NetworkResponseImpl(responseBodyBytes, request.getRequestId(), ProtocolConstants.ResultCode.SUCCESS);
+            return NetworkResponseFactory.generateSuccessResponse(request, responseBodyBytes);
         }
     }
 

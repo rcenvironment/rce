@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,6 +15,7 @@ import org.eclipse.jface.viewers.StructuredSelection;
 import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.parts.ConnectionPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowExecutionInformationPart;
@@ -32,6 +33,7 @@ public final class WorkflowLabelProvider extends LabelProvider {
 
     @Override
     public String getText(Object objects) {
+        final int maxLength = 40;
         String value = ""; //$NON-NLS-1$
         if (objects == null || objects.equals(StructuredSelection.EMPTY)) {
             value = Messages.noItemSelected;
@@ -40,18 +42,26 @@ public final class WorkflowLabelProvider extends LabelProvider {
         } else {
             Object object = ((IStructuredSelection) objects).getFirstElement();
             if (object instanceof WorkflowNodePart) {
-                value = ((WorkflowNode) ((WorkflowNodePart) object).getModel()).getName();
+                value = String.format("Component Properties: %s",
+                    StringUtils.abbreviate(((WorkflowNode) ((WorkflowNodePart) object).getModel()).getName(), maxLength));
             } else if (object instanceof WorkflowExecutionInformationPart) {
-                value = ((WorkflowExecutionInformation) ((WorkflowExecutionInformationPart) object).getModel()).getInstanceName();
+                value = String.format("Workflow: %s", StringUtils.abbreviate(((WorkflowExecutionInformation)
+                    ((WorkflowExecutionInformationPart) object).getModel()).getInstanceName(), maxLength));
             } else if (object instanceof WorkflowLabelPart) {
-                value = "Label Properties";
+                String[] labelParts = ((WorkflowLabel) ((WorkflowLabelPart) object).getModel()).getText().split("\n");
+                String labelAbrev = StringUtils.abbreviate(labelParts[0].replaceAll("\\r", ""), maxLength);
+                if (!labelAbrev.endsWith("...") && labelParts.length > 1) {
+                    labelAbrev += "...";
+                }
+                value = String.format("Label Properties: \"%s\"", labelAbrev);
             } else if (object instanceof WorkflowPart || object instanceof ConnectionPart) {
                 try {
-                    String partName =
-                        PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActivePartReference().getPartName();
-                    value = StringUtils.removeEndIgnoreCase(partName, ".wf");
+                    String partName = PlatformUI.getWorkbench().getActiveWorkbenchWindow()
+                        .getActivePage().getActivePartReference().getPartName();
+                    value = String.format("Workflow Properties: %s",
+                        StringUtils.abbreviate(StringUtils.removeEndIgnoreCase(partName, ".wf"), maxLength));
                 } catch (NullPointerException npe){
-                    value = "Connection Editor";
+                    value = "Workflow Properties";
                 }
             }
         }

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.communication.transport.activemq.tests</artifactId>
 	<name>RCE Core Communication - ActiveMQ Transport Tests</name>
-	<version>6.0.3.qualifier</version>
+	<version>6.1.0.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

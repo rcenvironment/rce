@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,7 @@ import java.util.Map;
 import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
@@ -54,8 +55,7 @@ public class XPathChooserPropertyViewPane extends EndpointSelectionPane {
     @Override
     protected void onAddClicked() {
         EndpointEditDialog dialog =
-            new XPathEditDialog(Display.getDefault().getActiveShell(),
-                String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.newMessage, endpointType), configuration,
+            new XPathEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
                 endpointType, endpointIdToManage, false,
                 icon, endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
                     .getMetaDataDefinition(), new HashMap<String, String>());
@@ -70,8 +70,7 @@ public class XPathChooserPropertyViewPane extends EndpointSelectionPane {
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         EndpointEditDialog dialog =
-            new XPathEditDialog(Display.getDefault().getActiveShell(),
-                String.format(de.rcenvironment.core.gui.workflow.editor.properties.Messages.editMessage, endpointType), configuration,
+            new XPathEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                 endpointType, endpointIdToManage, isStaticEndpoint,
                 icon, endpoint.getDeclarativeEndpointDescription()
                     .getMetaDataDefinition(), newMetaData);

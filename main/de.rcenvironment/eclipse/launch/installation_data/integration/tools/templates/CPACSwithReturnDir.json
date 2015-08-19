@@ -1,20 +1,20 @@
 {
   "templateName" : "CPACS Tool with return directory",
-  "postScript" : "${out:ReturnDirectory} = \"${dir:tool}\\\\ReturnDirectory\"",
+  "postScript" : "${out:Return directory} = \"${dir:tool}\\\\ReturnDirectory\"",
   "alwaysRun" : true,
   "groupName" : "CPACS",
   "setToolDirAsWorkingDir" : true,
   "inputs" : [ {
     "endpointFolder" : "Input folder",
-    "endpointFileName" : "CPACSInitial.xml",
+    "endpointFileName" : "CPACS_initial.xml",
     "endpointDataType" : "FileReference",
-    "endpointName" : "CPACSInitial",
+    "endpointName" : "CPACS initial",
     "endpointUsage" : "required"
   } ],
   "integrationType" : "CPACS",
   "hasToolSpecificInput" : true,
-  "cpacsInitialEndpointName" : "CPACSInitial",
-  "cpacsOutgoingEndpointName" : "CPACSOut",
+  "cpacsInitialEndpointName" : "CPACS initial",
+  "cpacsOutgoingEndpointName" : "CPACS out",
   "toolInputFileName" : "ToolInput/toolInput.xml",
   "mappingInputFilename" : "mappingInput.xml",
   "toolspecificMappingFilename" : "ToolSpecificMapping.xml",
@@ -28,11 +28,11 @@
     "endpointFolder" : "",
     "endpointFileName" : "",
     "endpointDataType" : "FileReference",
-    "endpointName" : "CPACSOut",
+    "endpointName" : "CPACS out",
     "endpointUsage" : "-"
   }, {
     "endpointDataType" : "DirectoryReference",
-    "endpointName" : "ReturnDirectory",
+    "endpointName" : "Return directory",
     "endpointUsage" : "-"
   } ]
 }

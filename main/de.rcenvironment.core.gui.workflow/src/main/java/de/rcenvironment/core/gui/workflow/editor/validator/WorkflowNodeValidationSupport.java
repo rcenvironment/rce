@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -58,15 +58,24 @@ public class WorkflowNodeValidationSupport {
     private boolean valid;
 
     /**
-     * Sets the new {@link WorkflowNode} and adjusts the {@link WorkflowNodeValidator}s.
+     * Sets the new {@link WorkflowNode}.
      * 
      * @param workflowNode the new {@link WorkflowNode}
      */
     public synchronized void setWorkflowNode(final WorkflowNode workflowNode) {
+        this.workflowNode = workflowNode;
+    }
+
+    /**
+     * Sets the new {@link WorkflowNode} and adjusts the {@link WorkflowNodeValidator}s.
+     * 
+     * @param node the new {@link WorkflowNode}
+     */
+    public synchronized void setWorkflowNodeAndValidation(final WorkflowNode node) {
         if (this.workflowNode != null) {
             deactivateValidators();
         }
-        this.workflowNode = workflowNode;
+        this.workflowNode = node;
         if (this.workflowNode != null) {
             activateValidators();
         }
@@ -93,7 +102,7 @@ public class WorkflowNodeValidationSupport {
     private synchronized void activateValidators() {
         deactivateValidators();
         final WorkflowNodeValidatorsRegistry registry = WorkflowNodeValidatorsRegistry.Factory.getInstance();
-        List<WorkflowNodeValidator> validatorInstances = registry.getValidatorsForWorkflowNode(workflowNode);
+        List<WorkflowNodeValidator> validatorInstances = registry.getValidatorsForWorkflowNode(workflowNode, false);
         validators.addAll(validatorInstances);
         Iterator<WorkflowNodeValidator> it = validators.iterator();
         
@@ -174,6 +183,20 @@ public class WorkflowNodeValidationSupport {
         for (final WorkflowNodeValidator validator : validators) {
             result.addAll(validator.getMessages());
         }
+        return result;
+    }
+
+    /**
+     * Returns the recent {@link WorkflowValidationMessage}s.
+     * 
+     * @return a collection of {@link WorkflowNodeValidationMessage} informing about the validation results
+     */
+    public Collection<WorkflowNodeValidationMessage> getRecentMessages() {
+        final List<WorkflowNodeValidationMessage> result = new LinkedList<WorkflowNodeValidationMessage>();
+        for (final WorkflowNodeValidator validator : validators) {
+            result.addAll(validator.getMessages());
+        }
+        result.addAll(WorkflowNodeValidatonMessageStore.getInstance().getRecentMessages(result, workflowNode.getIdentifier()));
         return result;
     }
 

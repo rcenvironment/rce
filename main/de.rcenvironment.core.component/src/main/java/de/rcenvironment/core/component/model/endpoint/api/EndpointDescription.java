@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,6 +15,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.datamodel.api.TypedDatumConverter;
@@ -234,6 +236,19 @@ public class EndpointDescription implements Serializable, Cloneable {
     
     public boolean isConnected() {
         return !connectedDataTypes.isEmpty();
+    }
+    
+    /**
+     * @return <code>true</code> if the input execution constraint is 'required'
+     */
+    public boolean isRequired() {
+        String currentConstraint = getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT);
+        if (currentConstraint != null) {
+            if (currentConstraint.equals(InputExecutionContraint.Required.name())){
+                return true;
+            }
+        }
+        return false;
     }
     
     @Override

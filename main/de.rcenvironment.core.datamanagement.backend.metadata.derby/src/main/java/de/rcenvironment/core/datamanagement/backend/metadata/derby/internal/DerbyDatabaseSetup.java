@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,6 +11,7 @@ package de.rcenvironment.core.datamanagement.backend.metadata.derby.internal;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.BINARY_REFERENCE_KEY;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_RUN_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DATA_REFERENCE_KEY;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DB_VERSION;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.REL_COMPONENTINSTANCE_DATAREFERENCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.REL_COMPONENTRUN_DATAREFERENCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.REL_DATAREFERENCE_BINARYREFERENCE;
@@ -21,6 +22,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TAB
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_COMPONENT_RUN;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_COMPONENT_RUN_PROPERTIES;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_DATA_REFERENCE;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_DB_VERSION_INFO;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_DATA;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_INSTANCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_TIMELINE_INTERVAL;
@@ -52,6 +54,8 @@ import de.rcenvironment.core.datamanagement.commons.MetaDataConstants;
  */
 public abstract class DerbyDatabaseSetup {
 
+    private static final String CURRENT_DB_VERSION = "6.1";
+
     private static final int QUERY_EXECUTION_TIMEOUT = 600000;
 
     private static final int MAX_RETRIES = 3;
@@ -68,17 +72,27 @@ public abstract class DerbyDatabaseSetup {
 
     protected static void setupDatabase(final Connection connection) throws SQLException {
         Statement statement = connection.createStatement();
-        if (!tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)) {
-            // set up a fresh databasa
-            LOGGER.debug("Setting up database.");
-            createTables(connection);
-            createIndexes(connection);
-            createViews(connection);
-        } else if (!tableExists(statement, MetaDataConstants.TABLE_COMPONENT_RUN)
+        if (!tableExists(statement, MetaDataConstants.TABLE_DB_VERSION_INFO)) {
+            // if DB version is 0 - table version info does not exist - update to version 6.1
+            if (tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)) {
+                LOGGER.debug("Updating database: v 0 --> v 6.1");
+                createTableDBVersionInfo(connection, CURRENT_DB_VERSION);
+                deleteViews(connection);
+                createViews(connection);
+            } else {
+                // set up a fresh database
+                LOGGER.debug("Setting up database.");
+                createTableDBVersionInfo(connection, CURRENT_DB_VERSION);
+                createTables(connection);
+                createIndexes(connection);
+                createViews(connection);
+            }
+        } else if (!tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)
             || !tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN_PROPERTIES)
             || !tableExists(statement, MetaDataConstants.TABLE_TIMELINE_INTERVAL)
             || !tableExists(statement, MetaDataConstants.TABLE_COMPONENT_INSTANCE)
             || !tableExists(statement, MetaDataConstants.TABLE_COMPONENT_INSTANCE_PROPERTIES)
+            || !tableExists(statement, MetaDataConstants.TABLE_COMPONENT_RUN)
             || !tableExists(statement, MetaDataConstants.TABLE_COMPONENT_RUN_PROPERTIES)
             || !tableExists(statement, MetaDataConstants.TABLE_DATA_REFERENCE)
             || !tableExists(statement, MetaDataConstants.TABLE_BINARY_REFERENCE)
@@ -88,10 +102,110 @@ public abstract class DerbyDatabaseSetup {
             || !tableExists(statement, MetaDataConstants.REL_COMPONENTINSTANCE_DATAREFERENCE)
             || !tableExists(statement, MetaDataConstants.REL_WORKFLOWRUN_DATAREFERENCE)
             || !tableExists(statement, MetaDataConstants.REL_COMPONENTRUN_DATAREFERENCE)
-            || !tableExists(statement, MetaDataConstants.REL_DATAREFERENCE_BINARYREFERENCE)) {
+            || !tableExists(statement, MetaDataConstants.REL_DATAREFERENCE_BINARYREFERENCE)
+            || !viewExists(statement, MetaDataConstants.VIEW_COMPONENT_RUNS)
+            || !viewExists(statement, MetaDataConstants.VIEW_COMPONENT_TIMELINE_INTERVALS)
+            || !viewExists(statement, MetaDataConstants.VIEW_ENDPOINT_DATA)
+            || !viewExists(statement, MetaDataConstants.VIEW_WORKFLOWRUN_COMPONENTRUN)
+            || !viewExists(statement, MetaDataConstants.VIEW_WORKFLOWRUN_DATAREFERENCE)
+            || !viewExists(statement, MetaDataConstants.VIEW_WORKFLOWRUN_TYPEDDATUM)) {
             throw new RuntimeException("Unknown DB state!");
         }
         statement.close();
+        LOGGER.debug(String.format("Database version is %s", getDBVersion(connection)));
+    }
+
+    private static void deleteViews(final Connection connection) {
+        final Runnable task = new SQLRunnable(MAX_RETRIES) {
+
+            @Override
+            protected void sqlRun() throws SQLTransientConnectionException {
+                try {
+                    deleteView(VIEW_COMPONENT_RUNS, connection);
+                    deleteView(VIEW_COMPONENT_TIMELINE_INTERVALS, connection);
+                    deleteView(VIEW_ENDPOINT_DATA, connection);
+                    deleteView(VIEW_WORKFLOWRUN_DATAREFERENCE, connection);
+                    deleteView(VIEW_WORKFLOWRUN_TYPEDDATUM, connection);
+                    deleteView(VIEW_WORKFLOWRUN_COMPONENTRUN, connection);
+                } catch (SQLException e) {
+                    if (e instanceof SQLTransientConnectionException) {
+                        throw (SQLTransientConnectionException) e;
+                    }
+                    throw new RuntimeException("Failed to delete views in data management meta data db.", e);
+                }
+            }
+
+            @Override
+            protected void handleSQLException(SQLException sqlException) {
+                throw new RuntimeException("Failed to delete views.", sqlException);
+            }
+
+        };
+        task.run();
+    }
+
+    private static void deleteView(String viewName, Connection connection) throws SQLException {
+        String sql = "DROP VIEW %s";
+        Statement stmt = connection.createStatement();
+        if (viewExists(stmt, viewName)) {
+            stmt.execute(String.format(sql, viewName));
+            LOGGER.debug(String.format("Deleted view %s", viewName));
+        }
+        stmt.close();
+    }
+
+    private static void createTableDBVersionInfo(final Connection connection, final String dbVersion) {
+        final Runnable task = new SQLRunnable(MAX_RETRIES) {
+
+            @Override
+            protected void sqlRun() throws SQLTransientConnectionException {
+                try {
+                    createTable(TABLE_DB_VERSION_INFO, connection);
+                    setDBVersion(dbVersion, connection);
+                } catch (SQLException e) {
+                    if (e instanceof SQLTransientConnectionException) {
+                        throw (SQLTransientConnectionException) e;
+                    }
+                    throw new RuntimeException("Failed to create table in data management meta data db.", e);
+                }
+            }
+
+            @Override
+            protected void handleSQLException(SQLException sqlException) {
+                throw new RuntimeException("Failed to create version information table.", sqlException);
+            }
+
+        };
+        task.run();
+    }
+
+    private static void setDBVersion(String dbVersion, Connection connection) {
+        try {
+            String sql = "INSERT INTO " + TABLE_DB_VERSION_INFO + " VALUES('%s')";
+            Statement stmt = connection.createStatement();
+            stmt.executeUpdate(String.format(sql, dbVersion));
+            stmt.close();
+            LOGGER.info(String.format("Set database version to %s", dbVersion));
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to set database version.", e);
+        }
+    }
+
+    private static String getDBVersion(Connection connection) {
+        try {
+            String version = "unknown";
+            String sql = SELECT + DB_VERSION + " FROM " + TABLE_DB_VERSION_INFO;
+            Statement stmt = connection.createStatement();
+            ResultSet rs = stmt.executeQuery(String.format(sql));
+            if (rs != null && rs.next()) {
+                version = rs.getString(DB_VERSION);
+                rs.close();
+            }
+            stmt.close();
+            return version;
+        } catch (SQLException e) {
+            throw new RuntimeException("Failed to get database version.", e);
+        }
     }
 
     private static boolean tableExists(Statement statement, String tablename) throws SQLException {
@@ -225,6 +339,9 @@ public abstract class DerbyDatabaseSetup {
 
         if (!tableExists(stmt, tableName)) {
             switch (tableName) {
+            case TABLE_DB_VERSION_INFO:
+                sql = DerbyDatabaseSetupSqlStatements.getSqlTableDbVersionInfo();
+                break;
             case TABLE_WORKFLOW_RUN:
                 sql = DerbyDatabaseSetupSqlStatements.getSqlTableWorkflowRun();
                 break;

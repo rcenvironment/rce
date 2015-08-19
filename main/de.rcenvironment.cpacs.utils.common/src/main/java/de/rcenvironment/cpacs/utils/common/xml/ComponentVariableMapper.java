@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,8 +32,8 @@ import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
 import de.rcenvironment.cpacs.utils.common.components.CpacsChannelFilter;
 
 /**
- * Handles the split and merge logic from chameleon components on rce-endpoints. Todo: Now the endpoint-name is the XPath. As soon as there
- * are metadata for endpoints, use them for xpath saving and handle different data types!
+ * Handles the split and merge logic from cpacs components on rce-endpoints. Todo: Now the endpoint-name is the XPath. As soon as there are
+ * metadata for endpoints, use them for xpath saving and handle different data types!
  * 
  * @author Markus Litz
  * @author Markus Kunde

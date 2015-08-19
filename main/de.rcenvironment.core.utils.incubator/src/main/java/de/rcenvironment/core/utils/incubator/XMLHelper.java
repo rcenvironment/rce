@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -300,8 +300,7 @@ public class XMLHelper {
                     stdin.close();
                 }
             } catch (final IOException e) {
-                int x = 0;
-                x++;
+                LOGGER.debug("Catched IOException");
             }
         }
         return doc;
@@ -324,13 +323,13 @@ public class XMLHelper {
             final StringBuilder currPath = new StringBuilder("");
             final String[] elements = xPathStr.split(XPATH_DELIMITER);
 
-            for (int i = 0; i < elements.length; i++) {
-                if (elements[i].length() == 0) {
+            for (String element : elements) {
+                if (element.length() == 0) {
                     continue;
                 }
 
                 // Test if node exists for the current xpath
-                currPath.append(XPATH_DELIMITER).append(elements[i]);
+                currPath.append(XPATH_DELIMITER).append(element);
                 final Node tempNode = (Node) xpath.evaluate(currPath.toString(), doc, XPathConstants.NODE);
                 if (tempNode != null) {
                     parentNode = tempNode;
@@ -338,7 +337,7 @@ public class XMLHelper {
                 }
 
                 // Node doesn't exists, create it
-                final Element elementNode = createElement(doc, elements[i]);
+                final Element elementNode = createElement(doc, element);
 
                 if (parentNode == null) {
                     doc.appendChild(elementNode);
@@ -807,9 +806,9 @@ public class XMLHelper {
                 String h = xpathStatement.replaceFirst("[" + XMLHelper.XPATH_DELIMITER + "]+", "");
                 String[] e = h.split("[" + XMLHelper.XPATH_DELIMITER + "]+");
                 String path = XMLHelper.XPATH_DELIMITER;
-                for (int i = 0; i < e.length; i++) {
-                    createElementOnPosition(doc, path, e[i], "", EElementManipulation.NOTHING);
-                    path = path + XMLHelper.XPATH_DELIMITER + e[i];
+                for (String element2 : e) {
+                    createElementOnPosition(doc, path, element2, "", EElementManipulation.NOTHING);
+                    path = path + XMLHelper.XPATH_DELIMITER + element2;
 
                 }
             }
@@ -891,7 +890,7 @@ public class XMLHelper {
             trans.setOutputProperty(OutputKeys.METHOD, "xml");
 
             trans.setURIResolver(new URIResolver() {
-
+                @Override
                 public Source resolve(String href, String base) {
                     return new StreamSource(new File(baseURI + File.separator + href));
                 }

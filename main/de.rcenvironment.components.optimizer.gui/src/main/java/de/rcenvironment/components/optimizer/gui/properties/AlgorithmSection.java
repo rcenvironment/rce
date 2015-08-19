@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -186,11 +186,11 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                         mapper.defaultPrettyPrintingWriter().writeValueAsString(allConfiguredDescriptions));
                 }
             } catch (JsonParseException e) {
-                logger.error(e.getStackTrace());
+                logger.error(e);
             } catch (JsonMappingException e) {
-                logger.error(e.getStackTrace());
+                logger.error(e);
             } catch (IOException e) {
-                logger.error(e.getStackTrace());
+                logger.error(e);
             }
         }
 
@@ -230,7 +230,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
             }
 
             refreshShownAlgorithms();
-            if (secondAlgo.isVisible() && selectedAlgorithm.length > 1 && selectedAlgorithm[1] != null) {
+            if (secondAlgo.isVisible() && selectedAlgorithm != null && selectedAlgorithm.length > 1 && selectedAlgorithm[1] != null) {
                 boolean ok = false;
                 for (String str : comboSecondAlgorithmSelection.getItems()) {
                     if (str.equals(selectedAlgorithm[1])) {
@@ -242,7 +242,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                     comboSecondAlgorithmSelection.select(0);
                 }
             }
-            if (thirdAlgo.isVisible() && selectedAlgorithm.length > 2 && selectedAlgorithm[2] != null) {
+            if (thirdAlgo.isVisible() && selectedAlgorithm != null && selectedAlgorithm.length > 2 && selectedAlgorithm[2] != null) {
                 boolean ok = false;
                 for (String str : comboThirdAlgorithmSelection.getItems()) {
                     if (str.equals(selectedAlgorithm[2])) {

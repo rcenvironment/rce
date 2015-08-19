@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.gui.workflow.editor.commands;
 
+import java.util.List;
+
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.editpolicies.ConnectionEditPolicy;
 import org.eclipse.gef.requests.GroupRequest;
@@ -15,6 +17,7 @@ import org.eclipse.gef.requests.GroupRequest;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.workflow.ConnectionUtils;
 import de.rcenvironment.core.gui.workflow.parts.ConnectionWrapper;
 
 /**
@@ -38,7 +41,7 @@ public class ConnectionDeletionPolicy extends ConnectionEditPolicy {
         // set description
         command.setOriginalModel(description);
 
-        // find and set connection
+        // find and set connection(s)
         ConnectionWrapper connectionWrapper = null;
         WorkflowNode sourceNode = null;
         WorkflowNode targetNode = null;
@@ -47,13 +50,9 @@ public class ConnectionDeletionPolicy extends ConnectionEditPolicy {
             sourceNode = connectionWrapper.getSource();
             targetNode = connectionWrapper.getTarget();
         }
-        if (sourceNode != null && targetNode != null && description != null) {
-            for (Connection connection : description.getConnections()) {
-                if ((connection.getSourceNode() == sourceNode && connection.getTargetNode() == targetNode) 
-                    || (connection.getSourceNode() == targetNode && connection.getTargetNode() == sourceNode)) {
-                    command.addConnectionForDeletion(connection);
-                }
-            }
+        List<Connection> connections = ConnectionUtils.getConnectionsBetweenNodes(sourceNode, targetNode, description);
+        for (Connection connection : connections){
+            command.addConnectionForDeletion(connection);
         }
 
         return command;

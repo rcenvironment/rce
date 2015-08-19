@@ -1,5 +1,5 @@
 <contexts>
-	<context id="tiglviewer" title="TiGL Viewer Component Usage">
+	<context id="tiglviewer" title="TiGL Viewer Component Help">
 		<description>The TiGL Viewer component shows CPACS geometries during workflow execution.</description>
      	<topic href="resources/help/html/usage.xhtml" label="TiGL Viewer Component Usage"></topic>
 	</context>

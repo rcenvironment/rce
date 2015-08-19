@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,10 +49,9 @@ import de.rcenvironment.components.optimizer.common.Measure;
 import de.rcenvironment.components.optimizer.common.OptimizerResultSet;
 import de.rcenvironment.components.optimizer.common.ResultStructure;
 import de.rcenvironment.components.optimizer.gui.properties.Messages;
-import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
-import de.rcenvironment.core.datamodel.types.api.FloatTD;
-import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.gui.utils.incubator.StudyDataExportMessageHelper;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
 import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
@@ -62,6 +61,9 @@ import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
  * 
  * @author Sascha Zur
  */
+@SuppressWarnings("deprecation")
+// This is a legacy class which will not be adapted to the new Data Types. Thus, the deprecation
+// warnings are suppressed here.
 public class ChartDataComposite extends Composite implements ISelectionProvider {
 
     private static final int DEFAULT_COLUMN_WIDTH = 100;
@@ -77,8 +79,6 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
 
     /** The study datastore. */
     private OptimizerDatastore resultDatastore;
-
-    private final ComponentExecutionInformation ci;
 
     /** The dataset add listener. */
     private final OptimizerDatastore.OptimizerResultSetAddListener datasetAddListener =
@@ -110,7 +110,6 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
      */
     public ChartDataComposite(final Composite parent, final int style, ComponentExecutionInformation componentExecutionInformation) {
         super(parent, style);
-        this.ci = componentExecutionInformation;
     }
 
     /**
@@ -184,8 +183,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                         for (int index = 0; index < keysCount; index++) {
                             final String key = keys.get(index);
                             final TypedDatum value = o.getValue(key);
-
-                            if (value != null && o.getComponent().equals(ci.getComponentIdentifier())) {
+                            if (value != null && o != null && o.getComponent() != null) {
                                 builder.append(value);
                             }
                             if (index < (keysCount - 1)) {
@@ -232,51 +230,56 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
 
         @Override
         public void widgetSelected(SelectionEvent arg0) {
+            boolean success = true;
             FileDialog fd = new FileDialog(cdc, SWT.SAVE);
             fd.setText("Save");
             fd.setFilterPath(System.getProperty("user.dir"));
             String[] filterExt = { "*.xls" };
             fd.setFilterExtensions(filterExt);
             String selected = fd.open();
-            if (!selected.substring(selected.lastIndexOf('.') + 1).toLowerCase().equals("xls")) {
-                selected += ".xls";
-            }
-            File excelFile = new File(selected); // or "e.xls"
-            TypedValue[][] values = new TypedValue[resultDatastore.getDatasetCount() + 1][];
-
-            Iterator<OptimizerResultSet> it = resultDatastore.getDatasets().iterator();
-            int i = 0;
-            while (it.hasNext()) {
-
-                OptimizerResultSet next = it.next();
-
-                if (i == 0) {
-                    values[i] = new TypedValue[next.getValues().size()];
-                    int j = next.getValues().size() - 1;
-                    for (String str : next.getValues().keySet()) {
-                        values[0][j] = new TypedValue(VariableType.String, str);
-                        j--;
+            if (selected != null) {
+                File excelFile = null;
+                if (resultDatastore != null) {
+                    if (!selected.substring(selected.lastIndexOf('.') + 1).toLowerCase().equals("xls")) {
+                        selected += ".xls";
                     }
-                    i = 1;
+                    excelFile = new File(selected); // or "e.xls"
+                    TypedValue[][] values = new TypedValue[resultDatastore.getDatasetCount() + 1][];
+
+                    Iterator<OptimizerResultSet> it = resultDatastore.getDatasets().iterator();
+                    int i = 0;
+                    while (it.hasNext()) {
+
+                        OptimizerResultSet next = it.next();
+
+                        if (i == 0) {
+                            values[i] = new TypedValue[next.getValues().size()];
+                            int j = next.getValues().size() - 1;
+                            for (String str : next.getValues().keySet()) {
+                                values[0][j] = new TypedValue(VariableType.String, str);
+                                j--;
+                            }
+                            i = 1;
+                        }
+
+                        values[i] = new TypedValue[next.getValues().size()];
+                        int j = next.getValues().size() - 1;
+                        for (String key : next.getValues().keySet()) {
+                            values[i][j] = new TypedValue(VariableType.Real, "" + next.getValue(key));
+                            j--;
+                        }
+                        i++;
+                    }
+
+                    success = ExcelFileExporter.exportValuesToExcelFile(excelFile, values);
+                } else {
+                    success = false;
                 }
 
-                values[i] = new TypedValue[next.getValues().size()];
-                int j = next.getValues().size() - 1;
-                for (String key : next.getValues().keySet()) {
-                    if (next.getValue(key) instanceof FloatTD) {
-                        values[i][j] = new TypedValue(VariableType.Real, "" + ((FloatTD) next.getValue(key)).getFloatValue());
-                    } else if (next.getValue(key) instanceof IntegerTD) {
-                        values[i][j] = new TypedValue(VariableType.Real, "" + ((IntegerTD) next.getValue(key)).getIntValue());
-                    }
+                StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
 
-                    j--;
-                }
-                i++;
             }
-
-            ExcelFileExporter.exportValuesToExcelFile(excelFile, values);
         }
-
     }
 
     /**
@@ -405,6 +408,9 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
     @Override
     public void update() {
         super.update();
+        if (!resultDatastore.getDatasets().isEmpty()) {
+            saveDataButton.setEnabled(true);
+        }
     }
 
     /**

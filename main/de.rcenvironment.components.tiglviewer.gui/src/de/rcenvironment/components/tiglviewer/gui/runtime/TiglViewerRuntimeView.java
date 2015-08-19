@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -55,16 +55,17 @@ public class TiglViewerRuntimeView extends TiglViewerView {
 
             SharedThreadPool.getInstance().execute(new Runnable() {
 
+                @Override
                 @TaskDescription("Starting TiGLViewer")
                 public void run() {
                     Display.getDefault().asyncExec(new Runnable() {
-
+                        @Override
                         public void run() {
                             try {
                                 page.showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
                                     secondId, IWorkbenchPage.VIEW_ACTIVATE);
                             } catch (PartInitException e) {
-                                LOGGER.error(e.getStackTrace());
+                                LOGGER.error(e);
                             }
                         }
                     });
@@ -72,9 +73,8 @@ public class TiglViewerRuntimeView extends TiglViewerView {
             });
         } catch (RuntimeException e) {
             LOGGER.error("TiGLViewer component cannot open TiGLViewer. Maybe no GUI available?");
-        } catch (IOException e1) {
-            // TODO Auto-generated catch block
-            LOGGER.error(e1.getStackTrace());
+        } catch (IOException e) {
+            LOGGER.error(e);
         }
     }
 

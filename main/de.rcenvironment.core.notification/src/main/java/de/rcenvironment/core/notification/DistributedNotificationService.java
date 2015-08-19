@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.SortedSet;
 
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 
 /**
@@ -62,8 +63,11 @@ public interface DistributedNotificationService {
      *        <code>null</code> if local.
      * @return the number of the last notification, which was sent and missed by the new
      *         {@link NotificationSubscriber} sorted by the matching notification identifier.
+     *         
+     * @throws CommunicationException if the remote subscription fails
      */
-    Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publisherPlatform);
+    Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publisherPlatform)
+        throws CommunicationException;
 
     /**
      * Unregisters the specified {@link NotificationSubscriber} so it will no longer receive
@@ -74,8 +78,11 @@ public interface DistributedNotificationService {
      * @param subscriber The {@link NotificationSubscriber} to remove.
      * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher.
      *        <code>null</code> if local.
+     *        
+     * @throws CommunicationException if the remote subscription cancellation fails 
      */
-    void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform);
+    void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+        throws CommunicationException;
 
     /**
      * Returns the {@link NotificationHeader} of all stored {@link Notification}s represented by the

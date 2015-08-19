@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -58,7 +58,7 @@ public final class ComponentUtils {
     public static final int EQUAL_COMPONENT_VERSION = 0;
 
     /** Component version on other node is greater. */
-    public static final int GREATER_COMPONENT_VERSION = -1;
+    public static final int GREATER_COMPONENT_VERSION = 1;
 
     /** Regex expression for all placeholder. */
     public static final String PLACEHOLDER_REGEX = "\\$\\{((\\w*)(\\.))?((\\*)(\\.))?(.*)\\}";
@@ -128,9 +128,14 @@ public final class ComponentUtils {
             if (compInterfaceIdWithoutVersion.equals(compInterfaceIdToCheckWithoutVersion)) {
                 
                 NodeIdentifier node = NodeIdentifierFactory.fromNodeId(compInstallation.getNodeId());
-                
-                int compared = compInterfaceToCheck.getVersion().compareTo(compInterface.getVersion());
-                
+                int compared;
+                try {
+                    Float versionToCheck = Float.valueOf(compInterfaceToCheck.getVersion());
+                    Float version = Float.valueOf(compInterface.getVersion());
+                    compared = versionToCheck.compareTo(version);
+                } catch (NumberFormatException e) {
+                    compared = compInterfaceToCheck.getVersion().compareTo(compInterface.getVersion());
+                }
                 if (compared < 0) {
                     identifiers.put(node, LOWER_COMPONENT_VERSION);
                 } else if (compared > 0) {
@@ -216,10 +221,28 @@ public final class ComponentUtils {
      * @param node the {@link NodeIdentifier} the component must be installed on
      * @return {@link ComponentInstallation} referring to {@link ComponentInstallation} identifier or <code>null</code>
      */
-    public static ComponentInstallation getComponentInstallationForNode(String compInterfaceId,
+    public static ComponentInstallation getExactMatchingComponentInstallationForNode(String compInterfaceId,
         Collection<ComponentInstallation> installations, NodeIdentifier node) {
         for (ComponentInstallation installation : installations) {
             if (installation.getComponentRevision().getComponentInterface().getIdentifier().equals(compInterfaceId)
+                && installation.getNodeId().equals(node.getIdString())) {
+                return installation;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * @param compInterfaceId Identifier of {@link ComponentInterface} to search for
+     * @param installations {@link ComponentInstallation}s to search
+     * @param node the {@link NodeIdentifier} the component must be installed on
+     * @return {@link ComponentInstallation} referring to {@link ComponentInstallation} identifier or <code>null</code>
+     */
+    public static ComponentInstallation getComponentInstallationForNode(String compInterfaceId,
+        Collection<ComponentInstallation> installations, NodeIdentifier node) {
+        for (ComponentInstallation installation : installations) {
+            if (getComponentInterfaceIdentifierWithoutVersion(installation.getComponentRevision().getComponentInterface().getIdentifier())
+                .equals(getComponentInterfaceIdentifierWithoutVersion(compInterfaceId))
                 && installation.getNodeId().equals(node.getIdString())) {
                 return installation;
             }

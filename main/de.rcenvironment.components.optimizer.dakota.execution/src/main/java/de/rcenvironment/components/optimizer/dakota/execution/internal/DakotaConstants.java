@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,6 +49,16 @@ public final class DakotaConstants {
     static final String PLACEHOLDER_CDV_INITIAL_POINT = "%%CDV_INITIAL_POINT%%";
 
     static final String PLACEHOLDER_CONTINUOUS_DESIGN_COUNT = "%%CONTINUOUS_DESIGN_COUNT%%";
+
+    static final String PLACEHOLDER_DDV_NAMES = "%%DDV_NAMES%%";
+
+    static final String PLACEHOLDER_DDV_UPPER_BOUNDS = "%%DDV_UPPER_BOUNDS%%";
+
+    static final String PLACEHOLDER_DDV_LOWER_BOUNDS = "%%DDV_LOWER_BOUNDS%%";
+
+    static final String PLACEHOLDER_DDV_INITIAL_POINT = "%%DDV_INITIAL_POINT%%";
+
+    static final String PLACEHOLDER_DISCRETE_DESIGN_COUNT = "%%DISCRETE_DESIGN_COUNT%%";
 
     static final String PLACEHOLDER_METHOD_3_PROPERTIES = "%%METHOD_3_PROPERTIES%%";
 
@@ -133,6 +143,8 @@ public final class DakotaConstants {
     static final String BEST_PARAMETERS_STRING_FROM_DAKOTA = "<<<<< Best parameters";
 
     static final String BEST_OBJECTIVE_STRING_FROM_DAKOTA = "<<<<< Best objective function";
+
+    static final String META_IS_DISCRETE = "isDiscrete";
 
     private DakotaConstants() {};
 

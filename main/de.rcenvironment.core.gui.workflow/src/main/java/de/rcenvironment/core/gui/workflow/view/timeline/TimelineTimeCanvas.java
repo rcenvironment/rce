@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,7 +17,7 @@ import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 
 /**
- * 
+ * Each {@link TimelineComponentRow} get its own Canvas.
  * @author Hendrik Abbenhaus
  *
  */
@@ -49,8 +49,7 @@ public class TimelineTimeCanvas extends Canvas implements PaintListener {
     }
     
     /**
-     * 
-     * 
+     * Sets visible area.
      * @param startVisibleTime The beginning of visibility
      * @param endVisibleTime The end of visibility
      */

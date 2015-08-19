@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -122,27 +122,30 @@ public final class EditorsHelper {
         
         final IEditorPart editor = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().openEditor(editorInput,
                 editorDescriptor.getId());
-        observeEditedFile(observedFile, editor, new Runnable() {
-            public void run() {
-                if (callbacks != null) {
-                    for (final Runnable action: callbacks) {
-                        action.run();
+        if (editor != null) { // if internal editor
+            observeEditedFile(observedFile, editor, new Runnable() {
+                @Override
+                public void run() {
+                    if (callbacks != null) {
+                        for (final Runnable action: callbacks) {
+                            action.run();
+                        }
                     }
                 }
-            }
-        });
-        // close editor on RCE shutdown as the file-property relation is gone after RCE is started again
-        PlatformUI.getWorkbench().addWorkbenchListener(new IWorkbenchListener() {
-
-            @Override
-            public boolean preShutdown(IWorkbench workbench, boolean arg1) {
-                editor.getSite().getPage().closeEditor(editor, false);
-                return true;
-            }
-
-            @Override
-            public void postShutdown(IWorkbench workbench) {}
-        });
+            });
+            // close editor on RCE shutdown as the file-property relation is gone after RCE is started again
+            PlatformUI.getWorkbench().addWorkbenchListener(new IWorkbenchListener() {
+    
+                @Override
+                public boolean preShutdown(IWorkbench workbench, boolean arg1) {
+                    editor.getSite().getPage().closeEditor(editor, false);
+                    return true;
+                }
+    
+                @Override
+                public void postShutdown(IWorkbench workbench) {}
+            });
+        }
     }
     
     /**

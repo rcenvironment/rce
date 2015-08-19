@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
  * 
  * All rights reserved
  * 
@@ -145,7 +145,7 @@ public abstract class AbstractLogin {
             String reasonForFailing;
             String reasonForFailingEN;
             switch (authenticationResult) {
-            case PASSWORD_INVALID:
+            case PASSWORD__OR_USERNAME_INVALID:
                 reasonForFailing = Messages.passwordInvalid;
                 reasonForFailingEN = LOGIN_FAILED_2_1;
                 break;

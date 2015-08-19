@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
+import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.start.common.validation.PlatformMessage;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
@@ -101,7 +102,12 @@ public abstract class InstanceRunner {
 
             @Override
             public void onFatalError(Exception e) {
-                log.error("Error during " + taskDescription, e);
+                CommandException ce = (CommandException) e;
+                if (ce.getType().equals(CommandException.Type.HELP_REQUESTED)) {
+                    stdout.println(commandExecutionService.getHelpText(false, ce.shouldPrintDeveloperHelp()));
+                } else {
+                    log.error("Error during " + taskDescription, e);
+                }
             }
 
             @Override
@@ -111,4 +117,12 @@ public abstract class InstanceRunner {
         };
         return commandExecutionService.asyncExecMultiCommand(Arrays.asList(execCommandTokens), outputReceiver, taskDescription);
     }
+
+    /**
+     * Restarts RCE.
+     */
+    public void triggerRestart() {
+
+    }
+
 }

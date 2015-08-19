@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 package de.rcenvironment.core.gui.wizards.exampleproject;
 
 import java.io.IOException;
-
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
@@ -30,6 +29,7 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.ui.INewWizard;
 import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchWizard;
 import org.osgi.framework.Bundle;
 
 /**
@@ -65,7 +65,7 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     /**
      * Adding the page to the wizard.
      */
-
+    @Override
     public void addPages() {
         page = new NewExampleProjectWizardPage(selection, this);
         Bundle bundle = Platform.getBundle(getPluginID());
@@ -86,10 +86,11 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
      * operation and run it using wizard as execution context.
      * @return boolean : done
      */
+    @Override
     public boolean performFinish() {
         final String newProjectName = page.getNewProjectName();
         IRunnableWithProgress op = new IRunnableWithProgress() {
-
+            @Override
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
                     doFinish(getTemplateFoldername(), newProjectName, monitor);
@@ -161,6 +162,7 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
      * @param workbench : wb
      * @param newSelection : sel
      */
+    @Override
     public void init(IWorkbench workbench, IStructuredSelection newSelection) {
         this.selection = newSelection;
     }

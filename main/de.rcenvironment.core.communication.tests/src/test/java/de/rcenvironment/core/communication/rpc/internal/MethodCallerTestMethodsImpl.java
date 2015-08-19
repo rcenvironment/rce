@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,7 +11,6 @@ package de.rcenvironment.core.communication.rpc.internal;
 import java.io.IOException;
 import java.util.List;
 
-import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
 /**
@@ -79,11 +78,6 @@ public class MethodCallerTestMethodsImpl implements MethodCallerTestMethods {
     @Override
     public void ambiguous(String string, Object obj1) {
 
-    }
-
-    @Override
-    public NetworkContact proxyMethod(NetworkContact contact) {
-        return contact;
     }
 
     @Override

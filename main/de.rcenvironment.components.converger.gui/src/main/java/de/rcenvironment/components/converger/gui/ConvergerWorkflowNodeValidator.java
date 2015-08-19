@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,72 +37,28 @@ public class ConvergerWorkflowNodeValidator extends AbstractWorkflowNodeValidato
                 Messages.noInput);
             messages.add(noInputMessage);
         }
-        checkPropertyFloat(ConvergerComponentConstants.KEY_EPS_A, messages);
-        checkPropertyFloat(ConvergerComponentConstants.KEY_EPS_R, messages);
-        checkPropertyInteger(ConvergerComponentConstants.KEY_MAX_ITERATIONS, messages);
+        checkIfDefined(ConvergerComponentConstants.KEY_EPS_A, messages);
+        checkIfDefined(ConvergerComponentConstants.KEY_EPS_R, messages);
+        checkIfDefined(ConvergerComponentConstants.KEY_ITERATIONS_TO_CONSIDER, messages);
         return messages;
     }
 
-    private void checkPropertyFloat(String key, List<WorkflowNodeValidationMessage> messages) {
-        String stringValue = (String) getProperty(key);
-        final WorkflowNodeValidationMessage noFloatValueMessage = new WorkflowNodeValidationMessage(
-            WorkflowNodeValidationMessage.Type.ERROR,
-            key,
-            "Property incorrect",
-            Messages.bind(String.format(Messages.propertyIncorrectFloat, getPropertyDisplayName(key)), key));
-        try {
-            double value = Double.parseDouble(stringValue);
-            if (value < 0) {
-                final WorkflowNodeValidationMessage lessZeroMessage = new WorkflowNodeValidationMessage(
-                    WorkflowNodeValidationMessage.Type.ERROR,
-                    key,
-                    "Property smaller zero",
-                    Messages.bind(String.format(Messages.smallerZero, getPropertyDisplayName(key)), key));
-                messages.add(lessZeroMessage);
-            }
-        } catch (NumberFormatException e) {
-            messages.add(noFloatValueMessage);
-        } catch (NullPointerException e) {
-            messages.add(noFloatValueMessage);
+    private void checkIfDefined(String key, List<WorkflowNodeValidationMessage> messages) {
+        String prop = getProperty(key);
+        
+        if (prop == null || prop.isEmpty()) {
+            String text = String.format("'%s' is not defined", getPropertyDisplayName(key));
+            messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, key, text, text));
         }
-
-    }
-
-    private void checkPropertyInteger(String key, List<WorkflowNodeValidationMessage> messages) {
-        String stringValue = (String) getProperty(key);
-        if (stringValue == null || stringValue.isEmpty()) {
-            return;
-        }
-        final WorkflowNodeValidationMessage noIntValueMessage = new WorkflowNodeValidationMessage(
-            WorkflowNodeValidationMessage.Type.ERROR,
-            key,
-            "Property incorrect",
-            Messages.bind(String.format(Messages.propertyIncorrectInt, getPropertyDisplayName(key)), key));
-        try {
-            int value = Integer.parseInt(stringValue);
-            if (value <= 0) {
-                final WorkflowNodeValidationMessage smallerEqualsZeroMessage = new WorkflowNodeValidationMessage(
-                    WorkflowNodeValidationMessage.Type.ERROR,
-                    key,
-                    "Property smaller or equals zero",
-                    Messages.bind(String.format(Messages.smallerEqualsZero, getPropertyDisplayName(key)), key));
-                messages.add(smallerEqualsZeroMessage);
-            }
-        } catch (NumberFormatException e) {
-            messages.add(noIntValueMessage);
-        } catch (NullPointerException e) {
-            messages.add(noIntValueMessage);
-        }
-
     }
     
     private String getPropertyDisplayName(String key) {
         if (key.equals(ConvergerComponentConstants.KEY_EPS_A)) {
-            return "absolute convergence";
+            return "Absolute convergence";
         } else if (key.equals(ConvergerComponentConstants.KEY_EPS_R)) {
-            return "relative convergence";
-        } else if (key.equals(ConvergerComponentConstants.KEY_MAX_ITERATIONS)) {
-            return "maximum iterations";
+            return "Relative convergence";
+        } else if (key.equals(ConvergerComponentConstants.KEY_ITERATIONS_TO_CONSIDER)) {
+            return "Iterations to consider";
         } else {
             return "";
         }

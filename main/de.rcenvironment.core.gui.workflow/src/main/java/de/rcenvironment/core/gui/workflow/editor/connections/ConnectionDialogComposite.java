@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.gui.workflow.editor.connections;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 import org.eclipse.gef.commands.CommandStack;
@@ -45,6 +47,7 @@ import org.eclipse.swt.widgets.TreeItem;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
+import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -344,8 +347,24 @@ public class ConnectionDialogComposite extends Composite {
             }
         }
         if (!inputHasAlreadyConnection) {
+            List<Location> alreadyExistentBendpoints = new ArrayList<>();
+            for (Connection connection : workflowDescription.getConnections()) {
+                if ((connection.getSourceNode().getIdentifier().equals(sourceNode.getIdentifier())
+                    && connection.getTargetNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier()))) {
+                    alreadyExistentBendpoints = connection.getBendpoints();
+                    break;
+                } else if (connection.getSourceNode().getIdentifier().equals(targetEndpoint.getWorkflowNode().getIdentifier())
+                    && connection.getTargetNode().getIdentifier().equals(sourceNode.getIdentifier())){
+                    // invert order
+                    for (Location l : connection.getBendpoints()){
+                        alreadyExistentBendpoints.add(0, l);
+                    }
+                    break;
+                }
+            }
+            
             Connection connection = new Connection(sourceNode, endpointManager.getEndpointDescription(sourceEndpointName),
-                targetEndpoint.getWorkflowNode(), targetEndpoint.getEndpointDescription());
+                targetEndpoint.getWorkflowNode(), targetEndpoint.getEndpointDescription(), alreadyExistentBendpoints);
             ConnectionAddCommand command = new ConnectionAddCommand(workflowDescription, connection);
 
             // in section, execute on editors command stack, otherwise without command stack.
