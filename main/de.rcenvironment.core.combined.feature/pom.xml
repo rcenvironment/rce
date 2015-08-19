@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.core.combined.feature</artifactId>
 	<name>RCE Combined Core Feature</name>
-	<version>6.0.1.qualifier</version>
+	<version>6.0.2.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

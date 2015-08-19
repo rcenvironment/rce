@@ -141,7 +141,8 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
         }
     }
 
-    // TODO this is a workaround --> implement a general mechanism to set default values in common tool integration
+    // TODO this is a workaround --> implement a general mechanism to set default values in common
+    // tool integration
     private void setDefaultConfigurations() {
         if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null
             && configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
@@ -250,7 +251,11 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                configurationMap.put(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT, (toolSpecificInputCheckbox.getSelection()));
+                if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
+                    CpacsToolIntegrationConstants.CPACS_TOOL_INTEGRATION_CONTEXT_TYPE)) {
+                    configurationMap.put(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT,
+                        (toolSpecificInputCheckbox.getSelection()));
+                }
                 enableToolspecific(toolSpecificInputCheckbox.getSelection());
                 updatePageComplete();
             }
@@ -465,10 +470,15 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
             }
 
             if ((Boolean) configurationMap.get(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT) == null) {
-                configurationMap.put(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT, false);
+                if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
+                    CpacsToolIntegrationConstants.CPACS_TOOL_INTEGRATION_CONTEXT_TYPE)) {
+                    configurationMap.put(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT, false);
+                }
             }
-            toolSpecificInputCheckbox.setSelection((Boolean) configurationMap
-                .get(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT));
+            if ((Boolean) configurationMap.get(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT) != null) {
+                toolSpecificInputCheckbox.setSelection((Boolean) configurationMap
+                    .get(CpacsToolIntegrationConstants.KEY_HAS_TOOLSPECIFIC_INPUT));
+            }
             enableToolspecific(toolSpecificInputCheckbox.getSelection());
 
             if ((String) configurationMap.get(CpacsToolIntegrationConstants.KEY_TOOLSPECIFICINPUTDATA_FILENAME) != null) {
@@ -600,7 +610,10 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
 
         @Override
         public void modifyText(ModifyEvent arg0) {
-            configurationMap.put(key, ((Text) arg0.getSource()).getText());
+            if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
+                CpacsToolIntegrationConstants.CPACS_TOOL_INTEGRATION_CONTEXT_TYPE)) {
+                configurationMap.put(key, ((Text) arg0.getSource()).getText());
+            }
             updatePageComplete();
         }
     }

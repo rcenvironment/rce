@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS Component Integration
 Bundle-SymbolicName: de.rcenvironment.cpacs.component.integration;singleton:=true
-Bundle-Version: 6.0.1.qualifier
+Bundle-Version: 6.0.2.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: de.rcenvironment.cpacs.component.integration

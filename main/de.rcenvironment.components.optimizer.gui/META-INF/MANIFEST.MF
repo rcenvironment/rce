@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Name: RCE Optimizer Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.optimizer.gui;singleton:=true
-Bundle-Version: 6.0.1.qualifier
+Bundle-Version: 6.0.2.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.ui.views.properties.tabbed,

@@ -41,7 +41,7 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
 
     protected Button saveAsButton;
 
-    private boolean isEdit;
+    private final boolean isEdit;
 
     public ToolIntegrationWizardDialog(Shell parentShell, IWizard newWizard,
         boolean isEdit) {
@@ -123,33 +123,37 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
         case IDialogConstants.FINISH_ID:
             if (!isEdit) {
                 finishPressed();
-                MessageBox infoDialog = new MessageBox(this.getParentShell(),
-                    SWT.ICON_INFORMATION | SWT.OK);
-                infoDialog.setText("Tool integrated");
-                Map<String, Object> configurationMap = ((ToolIntegrationWizard) getWizard())
-                    .getConfigurationMap();
-                String groupName = (String) configurationMap
-                    .get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
-                if (groupName == null || groupName.isEmpty()) {
-                    groupName = ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
+                if (((ToolIntegrationWizard) getWizard()).isConfigOK()) {
+                    MessageBox infoDialog = new MessageBox(this.getParentShell(),
+                        SWT.ICON_INFORMATION | SWT.OK);
+                    infoDialog.setText("Tool integrated");
+                    Map<String, Object> configurationMap = ((ToolIntegrationWizard) getWizard())
+                        .getConfigurationMap();
+                    String groupName = (String) configurationMap
+                        .get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
+                    if (groupName == null || groupName.isEmpty()) {
+                        groupName = ToolIntegrationConstants.DEFAULT_COMPONENT_GROUP_ID;
+                    }
+                    infoDialog.setMessage(String.format("Tool \"%s\" was successfully integrated to group \"%s\".",
+                        configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), groupName));
+                    infoDialog.open();
                 }
-                infoDialog.setMessage(String.format("Tool \"%s\" was successfully integrated to group \"%s\".",
-                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME), groupName));
-                infoDialog.open();
                 break;
             } else {
                 ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
                 finishPressed();
-                MessageBox infoDialog = new MessageBox(this.getParentShell(),
-                    SWT.ICON_INFORMATION | SWT.OK);
-                infoDialog.setText("Tool updated");
-                infoDialog
-                    .setMessage(String
-                        .format("Tool \"%s\" was successfully updated.",
-                            ((ToolIntegrationWizard) getWizard())
-                                .getConfigurationMap()
-                                .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
-                infoDialog.open();
+                if (((ToolIntegrationWizard) getWizard()).isConfigOK()) {
+                    MessageBox infoDialog = new MessageBox(this.getParentShell(),
+                        SWT.ICON_INFORMATION | SWT.OK);
+                    infoDialog.setText("Tool updated");
+                    infoDialog
+                        .setMessage(String
+                            .format("Tool \"%s\" was successfully updated.",
+                                ((ToolIntegrationWizard) getWizard())
+                                    .getConfigurationMap()
+                                    .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+                    infoDialog.open();
+                }
                 break;
             }
         case IDialogConstants.OPEN_ID:

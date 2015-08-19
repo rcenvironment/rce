@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.cpacs.gui.tiglviewer"
       label="RCE Tiglviewer Bundle"
-      version="6.0.0.qualifier"
+      version="6.0.2.qualifier"
       provider-name="DLR">
 
    <description url="http://software.dlr.de/p/chameleon">

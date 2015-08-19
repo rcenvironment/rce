@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Scripting
 Bundle-SymbolicName: de.rcenvironment.core.scripting;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.0.1.qualifier
+Bundle-Version: 6.0.2.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.internal,

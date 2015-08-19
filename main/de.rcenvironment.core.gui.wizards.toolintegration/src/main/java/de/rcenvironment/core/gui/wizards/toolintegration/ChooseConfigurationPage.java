@@ -215,14 +215,16 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                setPageComplete(false);
-                toolList.setEnabled(true);
-                textChosenConfig.setEnabled(true);
-                toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-                toolList.deselectAll();
-                templateListViewer.getControl().setEnabled(false);
-                templateListViewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
-                templateListViewer.getList().deselectAll();
+                if (loadInactiveConfigurationButton.getSelection()) {
+                    setPageComplete(false);
+                    toolList.setEnabled(true);
+                    textChosenConfig.setEnabled(true);
+                    toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+                    toolList.deselectAll();
+                    templateListViewer.getControl().setEnabled(false);
+                    templateListViewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
+                    templateListViewer.getList().deselectAll();
+                }
             }
 
             @Override
@@ -239,15 +241,17 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                setPageComplete(false);
-                templateListViewer.getControl().setEnabled(true);
-                textChosenConfig.setEnabled(true);
-                templateListViewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
-                templateListViewer.getList().deselectAll();
-                toolList.setEnabled(false);
-                textChosenConfig.setEnabled(false);
-                toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
-                toolList.deselectAll();
+                if (loadTemplateButton.getSelection()) {
+                    setPageComplete(false);
+                    templateListViewer.getControl().setEnabled(true);
+                    textChosenConfig.setEnabled(true);
+                    templateListViewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_LIST_BACKGROUND));
+                    templateListViewer.getList().deselectAll();
+                    toolList.setEnabled(false);
+                    textChosenConfig.setEnabled(false);
+                    toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
+                    toolList.deselectAll();
+                }
             }
 
             @Override
@@ -361,22 +365,24 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                textChosenConfig.setText("");
-                wizard.removeAdditionalPages();
-                Map<String, Object> newConfiguration = new HashMap<String, Object>();
-                newConfiguration.put(ToolIntegrationConstants.INTEGRATION_TYPE,
-                    ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE);
-                wizard.setPreviousConfiguration(newConfiguration, null);
-                ((ToolIntegrationWizard) getWizard()).setIntegrationType(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE,
-                    false);
-                toolList.setEnabled(false);
-                templateListViewer.getControl().setEnabled(false);
-                textChosenConfig.setEnabled(false);
-                toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
-                toolList.deselectAll();
-                templateListViewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
-                templateListViewer.getList().deselectAll();
-                setPageComplete(true);
+                if (newIntegrationButton.getSelection()) {
+                    textChosenConfig.setText("");
+                    Map<String, Object> newConfiguration = new HashMap<String, Object>();
+                    newConfiguration.put(ToolIntegrationConstants.INTEGRATION_TYPE,
+                        ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE);
+                    wizard.setPreviousConfiguration(newConfiguration, null);
+                    wizard.removeAdditionalPages();
+                    toolList.setEnabled(false);
+                    templateListViewer.getControl().setEnabled(false);
+                    textChosenConfig.setEnabled(false);
+                    toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
+                    toolList.deselectAll();
+                    templateListViewer.getControl().setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
+                    templateListViewer.getList().deselectAll();
+                    setPageComplete(true);
+                    wizard.setIntegrationType(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE,
+                        false);
+                }
 
             }
 
@@ -387,13 +393,13 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
         });
         for (final ToolIntegrationContext context : allIntegrationContexts) {
             if (!context.getContextId().equals(ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_UID)) {
-                Button newExtensionIntegrationButton = new Button(container, SWT.RADIO);
+                final Button newExtensionIntegrationButton = new Button(container, SWT.RADIO);
                 newExtensionIntegrationButton.setText(String.format(Messages.newConfigurationButton, context.getContextType()));
                 newExtensionIntegrationButton.addSelectionListener(new SelectionListener() {
 
                     @Override
                     public void widgetSelected(SelectionEvent arg0) {
-                        if (((Button) arg0.getSource()).getSelection()) {
+                        if (newExtensionIntegrationButton.getSelection()) {
                             textChosenConfig.setText("");
                             Map<String, Object> newConfiguration = new HashMap<String, Object>();
                             newConfiguration.put(ToolIntegrationConstants.INTEGRATION_TYPE, context.getContextType());
@@ -409,7 +415,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
                                 Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
                             templateListViewer.getList().deselectAll();
                             setPageComplete(true);
-                            ((ToolIntegrationWizard) getWizard()).setIntegrationType(context.getContextType(), false);
+                            wizard.setIntegrationType(context.getContextType(), false);
                         }
                     }
 
@@ -460,7 +466,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             File toolIntegrationFile = new File(configFolder, context.getNameOfToolIntegrationDirectory());
             if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles().length > 0) {
                 for (File toolFolder : toolIntegrationFile.listFiles()) {
-                    if (toolFolder.isDirectory() && toolFolder.listFiles().length > 0) {
+                    if (toolFolder.isDirectory() && !toolFolder.getName().equals("null") && toolFolder.listFiles().length > 0) {
                         File[] files = toolFolder.listFiles();
                         for (File f : files) {
                             if (f.getName().equals(context.getConfigurationFilename())) {
@@ -473,7 +479,9 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
                                         allConfigs.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
                                             f.getAbsolutePath());
 
-                                    } else if (!type.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)) {
+                                    } else if (!type.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)
+                                        && configurationMap.get(ToolIntegrationConstants.IS_ACTIVE) != null
+                                        && ((Boolean) configurationMap.get(ToolIntegrationConstants.IS_ACTIVE))) {
                                         allConfigs.put((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
                                             f.getAbsolutePath());
                                     }

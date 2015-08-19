@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>de.rcenvironment.transport.branding.workflow</artifactId>
 	<name>Transport RCE Workflow Branding bundle</name>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.2.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 	<parent>
 		<groupId>de.rcenvironment</groupId>

@@ -556,6 +556,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             }
             componentContext.writeOutput(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME,
                 typedDatumFactory.createInteger(iterationCount));
+            componentContext.writeOutput(OptimizerComponentConstants.OPTIMIZER_FINISHED_OUTPUT, typedDatumFactory.createBoolean(false));
             if (optimizer != null) {
                 componentContext.writeOutput(OptimizerComponentConstants.DERIVATIVES_NEEDED,
                     typedDatumFactory.createBoolean(optimizer.getDerivativedNeeded()));

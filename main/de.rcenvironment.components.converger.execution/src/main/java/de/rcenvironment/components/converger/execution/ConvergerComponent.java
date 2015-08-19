@@ -122,6 +122,14 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
                     .get(iterationsValues.get(inputName).size() - 1)));
             }
         }
+        sendConvergedValues();
+    }
+    
+    private void sendConvergedValues() {
+        componentContext.writeOutput(ConvergerComponentConstants.CONVERGED, typedDatumFactory.createBoolean(
+            isConverged[0] | isConverged[1]));
+        componentContext.writeOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, typedDatumFactory.createBoolean(isConverged[0]));
+        componentContext.writeOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, typedDatumFactory.createBoolean(isConverged[1]));
     }
 
     @Override
@@ -167,10 +175,7 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
                     typedDatumFactory.createFloat(iterationsValues.get(key).get(valueCount - 1)));
             }
         }
-        componentContext.writeOutput(ConvergerComponentConstants.CONVERGED, typedDatumFactory.createBoolean(
-            isConverged[0] | isConverged[1]));
-        componentContext.writeOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, typedDatumFactory.createBoolean(isConverged[0]));
-        componentContext.writeOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, typedDatumFactory.createBoolean(isConverged[1]));
+        sendConvergedValues();
     }
 
     @Override

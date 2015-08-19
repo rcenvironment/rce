@@ -542,7 +542,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService {
         if (toolIntegrationFile.exists() && toolIntegrationFile.isDirectory() && toolIntegrationFile.listFiles().length > 0) {
             LOGGER.debug("Reading integration tool directory :" + toolIntegrationFile.getAbsolutePath());
             for (File toolFolder : toolIntegrationFile.listFiles()) {
-                if (toolFolder.isDirectory()) {
+                if (toolFolder.isDirectory() && !toolFolder.getName().equals("null")) {
                     readToolDirectory(toolFolder, context);
                     Path toolPath =
                         FileSystems.getDefault().getPath(toolFolder.getAbsolutePath());

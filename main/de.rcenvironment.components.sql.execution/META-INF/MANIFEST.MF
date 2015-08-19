@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SQL Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.sql.execution;singleton:=true
-Bundle-Version: 6.0.1.qualifier
+Bundle-Version: 6.0.2.qualifier
 Import-Package: de.rcenvironment.components.sql.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,
