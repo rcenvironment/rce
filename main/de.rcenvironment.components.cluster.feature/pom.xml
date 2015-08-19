@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.components.cluster.feature</artifactId>
 	<name>RCE Cluster Component Feature</name>
-	<version>6.0.2.qualifier</version>
+	<version>6.0.3.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Jython
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.jython;singleton:=true
-Bundle-Version: 6.0.2.qualifier
+Bundle-Version: 6.0.3.qualifier
 Import-Package: 
  de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,

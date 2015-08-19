@@ -126,20 +126,25 @@
 											value="${rce.core.version.new}.qualifier">
 											<include name="de.rcenvironment.components.*/pom.xml" />
 											<include name="de.rcenvironment.componentgroups.*/pom.xml" />
+											<include name="de.rcenvironment.cpacs.*/pom.xml" />
+											<include name="de.rcenvironment.transport.*/pom.xml" />
 										</replace>
 										<!-- TODO temporary for 2.5.x: component MANIFEST.MF versions -->
 										<replace dir="${rce.core.rootpath}"
 											token="Bundle-Version: ${rce.core.version.old}.qualifier"
 											value="Bundle-Version: ${rce.core.version.new}.qualifier">
 											<include name="de.rcenvironment.components.*/META-INF/MANIFEST.MF" />
+											<include name="de.rcenvironment.cpacs.*/META-INF/MANIFEST.MF" />
+											<include name="de.rcenvironment.transport.*/META-INF/MANIFEST.MF" />
 										</replace>
 										<!-- TODO temporary for 2.5.x: component feature.xml versions -->
 										<replaceregexp
 											match="(version=&quot;)${rce.core.version.old}(\.qualifier&quot;\s+provider-name=&quot;DLR&quot;)"
 											replace="\1${rce.core.version.new}\2" flags="gs">
 											<fileset dir="${rce.core.rootpath}">
-												<include
-													name="de.rcenvironment.componentgroups.*.feature/feature.xml" />
+												<include name="de.rcenvironment.componentgroups.*.feature/feature.xml" />
+												<include name="de.rcenvironment.cpacs.*.feature/feature.xml" />
+												<include name="de.rcenvironment.transport.*.feature/feature.xml" />
 											</fileset>
 										</replaceregexp>
 										<!-- TODO temporary for 2.5.x: component feature versions in repository 

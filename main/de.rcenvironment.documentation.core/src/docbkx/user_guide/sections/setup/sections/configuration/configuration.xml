@@ -16,7 +16,7 @@
 			belongs to exactly one user, and each user can have multiple profiles. The default
 			profile is located within the user's "home" directory (<phrase os="windows"
 				>"C:\users\&lt;user id>\" on Windows</phrase><phrase os="linux">"/home/&lt;user
-					id>/" on Linux</phrase>), in the ".rce/default" sub-folder.<note>
+					id>/" on Linux</phrase>), in the ".rce/default" sub-folder. You can specify the profile to apply by executing RCE with the -p profile_name<note>
 						<para>Note that ".rce" is a hidden directory; you may need to set operating-specific
 							options to see hidden files and directories.</para>
 					</note></para>

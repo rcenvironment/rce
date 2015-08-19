@@ -20,7 +20,32 @@ instructions.configure=\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dosgi.requiredJavaVersion=1.7);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xms512m);\
-	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx2048m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:MaxPermSize=256m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);
+	
+requires.1.namespace=org.eclipse.equinox.p2.iu
+requires.1.name=de.rcenvironment.products.rce.default.maxheap.2gb
+requires.1.filter=(!(&(osgi.os=win32) (osgi.arch=x86)))
+requires.1.range=[$version$,$version$]
+requires.1.greedy=true
+
+requires.2.namespace=org.eclipse.equinox.p2.iu
+requires.2.name=de.rcenvironment.products.rce.default.maxheap.1gb
+requires.2.filter=(&(osgi.os=win32) (osgi.arch=x86))
+requires.2.range=[$version$,$version$]
+requires.2.greedy=true
+
+units.1.id=de.rcenvironment.products.rce.default.maxheap.2gb
+units.1.version=$version$
+units.1.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.1.provides.1.name=de.rcenvironment.products.rce.default.maxheap.2gb
+units.1.provides.1.version=$version$
+units.1.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx2048m);
+
+units.2.id=de.rcenvironment.products.rce.default.maxheap.1gb
+units.2.version=$version$
+units.2.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.2.provides.1.name=de.rcenvironment.products.rce.default.maxheap.1gb
+units.2.provides.1.version=$version$
+units.2.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx1024m);

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication GUI
 Bundle-SymbolicName: de.rcenvironment.core.gui.communication; singleton:=true
-Bundle-Version: 6.0.2.qualifier
+Bundle-Version: 6.0.3.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
