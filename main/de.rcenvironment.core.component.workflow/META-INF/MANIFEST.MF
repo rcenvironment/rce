@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 6.0.0.qualifier
+Bundle-Version: 6.0.1.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,

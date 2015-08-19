@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.help</artifactId>
 	<name>RCE Core GUI Help Bundle</name>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

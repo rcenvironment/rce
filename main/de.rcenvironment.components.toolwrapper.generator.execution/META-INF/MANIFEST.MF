@@ -1,7 +1,7 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-SymbolicName: de.rcenvironment.components.toolwrapper.generator.execution;singleton:=true
-Bundle-Version: 6.0.0.qualifier
+Bundle-Version: 6.0.1.qualifier
 Bundle-ClassPath: .
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.toolwrapper.common</artifactId>
 	<name>Chameleon RCE ToolWrapper Component Common Data</name>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.utils.testing</artifactId>
 	<name>RCE Core Utils Testing Bundle</name>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

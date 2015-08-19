@@ -324,8 +324,8 @@
                 APT repository. While installing a daemon from the .zip file distribution can be
                 made to work, it creates unnecessary complications regarding installation paths and
                 file permissions. As registering a daemon requires root privileges anyway, there
-                should be no reason to use the .zip file anyway; if you have a compelling use case
-                for this, please contact the RCE team.</para>
+                should be no reason to use the .zip file; if you have a compelling use case for
+                this, please contact the RCE team.</para>
             <para os="linux">Once RCE is properly installed, registering it as a daemon is very
                 simple. A command named <code>rce-daemon</code> is provided to control the whole
                 daemon life cycle. The only manual step you need to perform before is creating a

@@ -4,7 +4,7 @@
 
 	<groupId>de.rcenvironment.cpacs.gui.wizards.toolintegration</groupId>
 	<artifactId>de.rcenvironment.cpacs.gui.wizards.toolintegration</artifactId>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 	<name>RCE CPACS Tool Integration Wizards Bundle</name>
 

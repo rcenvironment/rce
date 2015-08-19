@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.communication.transport.activemq</artifactId>
 	<name>RCE Core Communication - ActiveMQ Transport</name>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

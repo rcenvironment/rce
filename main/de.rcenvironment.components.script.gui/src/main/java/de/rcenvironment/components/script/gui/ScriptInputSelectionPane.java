@@ -27,7 +27,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
 
 /**
- * An adapted {@link EndpointSelectionPane} for the the inputs of the Script component, which need an extra checkbox below the table.
+ * An adapted {@link EndpointSelectionPane} for the the inputs of the Script component, which need
+ * an extra checkbox below the table.
  * 
  * @author Doreen Seider
  */
@@ -52,7 +53,7 @@ public class ScriptInputSelectionPane extends EndpointSelectionPane {
         noteComposite.setLayout(new GridLayout(2, false));
         orGroupCheckbox = new Button(noteComposite, SWT.CHECK);
         orGroupCheckbox.addSelectionListener(new SelectionListener() {
-            
+
             @Override
             public void widgetSelected(SelectionEvent event) {
                 if (orGroupCheckbox.getSelection()) {
@@ -60,15 +61,15 @@ public class ScriptInputSelectionPane extends EndpointSelectionPane {
                 } else {
                     endpointIdToManage = ScriptComponentConstants.GROUP_NAME_AND;
                 }
-                
+
                 WorkflowNodeCommand command = new SwitchDynamicInputsCommand(endpointIdToManage, ScriptInputSelectionPane.this);
                 execute(command);
             }
-            
+
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {
                 widgetSelected(event);
-                
+
             }
         });
         Label noteLabel = new Label(noteComposite, SWT.READ_ONLY);
@@ -80,7 +81,7 @@ public class ScriptInputSelectionPane extends EndpointSelectionPane {
 
         return control;
     }
-    
+
     @Override
     public void setConfiguration(ComponentInstanceProperties configuration) {
         if (configuration != null) {
@@ -88,12 +89,14 @@ public class ScriptInputSelectionPane extends EndpointSelectionPane {
             setupOrGroupCheckbox();
         }
     }
-    
+
     private void setupOrGroupCheckbox() {
         orGroupCheckbox.setSelection(endpointIdToManage.equals(ScriptComponentConstants.GROUP_NAME_OR)
             || (!getConfiguration().getInputDescriptionsManager().getEndpointDescriptions().isEmpty()
-                && getConfiguration().getInputDescriptionsManager().getEndpointDescriptions().iterator()
+            && getConfiguration().getInputDescriptionsManager().getEndpointDescriptions().iterator()
                 .next().getDynamicEndpointIdentifier().equals(ScriptComponentConstants.GROUP_NAME_OR)));
+        if (orGroupCheckbox.getSelection()) {
+            endpointIdToManage = ScriptComponentConstants.GROUP_NAME_OR;
+        }
     }
-
 }

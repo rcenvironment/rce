@@ -49,7 +49,7 @@
             "inputExecutionConstraintOptions":[
                 "None"
             ],
-            "defaultInputExecutionConstraint":"NotRequired"
+            "defaultInputExecutionConstraint":"None"
         }
     ],
     "inputGroups":[

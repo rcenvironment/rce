@@ -101,7 +101,7 @@ public class PythonScriptEngine implements ScriptEngine {
     private File stdoutLogFile;
 
     private File stderrLogFile;
-    
+
     private String stderrAsString;
 
     private Map<String, Object> stateOutput;
@@ -194,7 +194,7 @@ public class PythonScriptEngine implements ScriptEngine {
             }
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stdoutLogFile);
         }
-        
+
         stderrWatcher.waitForTermination();
         stderrAsString = FileUtils.readFileToString(stderrLogFile);
         if (historyDataItem != null && !stderrAsString.isEmpty()) {
@@ -241,7 +241,7 @@ public class PythonScriptEngine implements ScriptEngine {
     private void writeInputForPython() {
         ComponentContext compContext = (ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT);
         Map<String, Object> inputsToWrite = new HashMap<String, Object>();
-        for (String inputName : compContext.getInputs()) {
+        for (String inputName : compContext.getInputsWithDatum()) {
             switch (compContext.getInputDataType(inputName)) {
             case FileReference:
                 String path = "";

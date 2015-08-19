@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.start.gui</artifactId>
 	<name>RCE Core Start GUI Bundle</name>
-	<version>6.0.0.qualifier</version>
+	<version>6.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

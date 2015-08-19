@@ -497,6 +497,9 @@ public class ExecutionScheduler {
     }
     
     private boolean isExecutableWithAndCondition(Set<String> inputsOrGroupIds) {
+        if (inputsOrGroupIds.isEmpty()) {
+            return false;
+        }
         for (String identifier : inputsOrGroupIds) {
             if (endpointGroupDefinitions.containsKey(identifier)) {
                 if (!checkGroupForExecutable(identifier)) {
@@ -519,7 +522,8 @@ public class ExecutionScheduler {
                 if (checkGroupForExecutable(identifier)) {
                     return true;
                 }
-            } else if (!endpointDatums.get(identifier).isEmpty()) {
+            } else if (!endpointDatums.get(identifier).isEmpty()
+                && (!constantInputs.contains(identifier) || !constantInputsProcessed.contains(identifier))) {
                 inputsWithValue.add(identifier);
                 return true;
             }
