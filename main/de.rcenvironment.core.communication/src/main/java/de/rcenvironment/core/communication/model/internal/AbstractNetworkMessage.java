@@ -55,7 +55,13 @@ public class AbstractNetworkMessage implements NetworkMessage {
         return contentBytes;
     }
 
+    /**
+     * @param contentBytes the bytes to set as payload
+     */
     public void setContentBytes(byte[] contentBytes) {
+        if (PayloadTestFuzzer.ENABLED) {
+            PayloadTestFuzzer.apply(contentBytes);
+        }
         this.contentBytes = contentBytes;
     }
 
@@ -76,7 +82,7 @@ public class AbstractNetworkMessage implements NetworkMessage {
      * @throws SerializationException on serialization failure
      */
     public void setContent(Serializable messageBody) throws SerializationException {
-        this.contentBytes = MessageUtils.serializeObject(messageBody);
+        setContentBytes(MessageUtils.serializeObject(messageBody));
     }
 
     @Override

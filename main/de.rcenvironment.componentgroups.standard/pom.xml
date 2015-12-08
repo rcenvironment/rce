@@ -29,11 +29,22 @@
 		<module>${modules-root}/de.rcenvironment.components.converger.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.converger.gui</module>
 		
+		<!-- database component -->
+		<module>${modules-root}/de.rcenvironment.components.database.common</module>
+		<module>${modules-root}/de.rcenvironment.components.database.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.database.gui</module>
+		
 		<!-- doe component -->
 		<module>${modules-root}/de.rcenvironment.components.doe.common</module>
 		<module>${modules-root}/de.rcenvironment.components.doe.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.doe.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.doe.gui</module>
+		
+		<!-- evaluation memory component -->
+		<module>${modules-root}/de.rcenvironment.components.evaluationmemory.common</module>
+		<module>${modules-root}/de.rcenvironment.components.evaluationmemory.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.evaluationmemory.execution.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.evaluationmemory.gui</module>
 		
 		<!-- input provider component -->
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.common</module>
@@ -53,7 +64,10 @@
 		<!-- optimizer dakota fragment -->
 		<module>${modules-root}/de.rcenvironment.components.optimizer.dakota.common</module>
 		<module>${modules-root}/de.rcenvironment.components.optimizer.dakota.execution</module>
-
+		
+		<!-- optimizer generic fragment -->
+		<module>${modules-root}/de.rcenvironment.components.optimizer.generic.execution</module>
+		
 		<!-- outputwriter component -->
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.common</module>
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.execution</module>
@@ -82,6 +96,17 @@
 		<module>${modules-root}/de.rcenvironment.components.switch.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.switch.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.switch.gui</module>
+		
+		<!-- xml loader component -->
+		<module>${projects-root}/de.rcenvironment.components.xml.loader.common</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.loader.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.loader.gui</module>
+		
+		<!-- xml joiner component -->
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.common</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution.tests</module>
+		<module>${projects-root}/de.rcenvironment.components.xml.merger.gui</module>
 		
 		<!-- component group feature -->
 		<module>${modules-root}/de.rcenvironment.componentgroups.standard.feature</module>

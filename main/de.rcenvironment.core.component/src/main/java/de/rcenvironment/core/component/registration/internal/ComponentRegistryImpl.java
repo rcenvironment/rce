@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,6 +40,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.internal.ComponentBundleConfiguration;
 import de.rcenvironment.core.component.model.api.ComponentColor;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
@@ -59,6 +59,7 @@ import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
 import de.rcenvironment.core.component.registration.api.ComponentRegistry;
 import de.rcenvironment.core.component.registration.api.Registerable;
+import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -139,19 +140,24 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             unhandledCompControllers.clear();
         }
 
-        Runnable r = new Runnable() {
+        if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
+            Runnable r = new Runnable() {
 
-            @Override
-            public void run() {
-                // start all future Bundles providing a Component
-                osgiComponentCtx.getBundleContext().addBundleListener(new ComponentBundleListener());
-                // start all current Bundles providing a Component
-                for (Bundle b : osgiComponentCtx.getBundleContext().getBundles()) {
-                    ComponentBundleListener.handleBundle(b);
+                @Override
+                @TaskDescription("Start all bundles providing RCE components")
+                public void run() {
+                    // start all future Bundles providing a Component
+                    osgiComponentCtx.getBundleContext().addBundleListener(new ComponentBundleListener());
+                    // start all current Bundles providing a Component
+                    for (Bundle b : osgiComponentCtx.getBundleContext().getBundles()) {
+                        ComponentBundleListener.handleBundle(b);
+                    }
                 }
-            }
-        };
-        Executors.newFixedThreadPool(1).execute(r);
+            };
+            SharedThreadPool.getInstance().execute(r);
+        } else {
+            LOGGER.debug("Not triggering start of remaining component bundles as component loading is disabled");
+        }
 
         // start publishing of components after short delay to avoid frequent updates during initial
         // component registration phase
@@ -189,6 +195,13 @@ public class ComponentRegistryImpl implements ComponentRegistry {
      * component registration stuff is done here.
      */
     protected synchronized void addComponent(ServiceReference<?> factoryReference) {
+        
+        if (CommandLineArguments.isDoNotStartComponentsRequested()) {
+            LOGGER.warn("Received a component registration call although components should be disabled: "
+                + factoryReference.getBundle().getSymbolicName());
+            return;
+        }
+
         // if this bundle is not activated yet, store the component controller and handle it after
         // activation within the activate method
         synchronized (unhandledCompControllers) {
@@ -208,37 +221,38 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         ComponentInstance compInstance = createOsgiComponentInstance(factory, compIdentifier);
 
         if (compInstance != null) {
-
-            ServiceReference<?> componentReference = getComponentReference(compIdentifier);
-
-            if (componentReference != null) {
-
-                ComponentRevisionImpl componentRevision = createComponentRevision(componentReference);
-
-                if (componentRevision != null) {
-
-                    ComponentInstallation componentInstallation = createComponentInstallation(componentRevision);
-                    compFactoryServiceIdToCompInstIdMapping.put(factoryReference.getProperty(Constants.SERVICE_ID).toString(),
-                        componentInstallation.getInstallationId());
-                    addComponent(componentInstallation);
-                    return;
-                }
-            }
-
             try {
-                compInstance.dispose();
-            } catch (NullPointerException e) {
-                // OSGi complains if no unbind method was declared in ServiceComponent for a service
-                // reference. As we
-                // cannot be sure, each component developer is aware of that, a possible NPE is
-                // caught here
-                e = null;
+                ServiceReference<?> componentReference = getComponentReference(compIdentifier);
+
+                if (componentReference != null) {
+
+                    ComponentRevisionImpl componentRevision = createComponentRevision(componentReference);
+
+                    if (componentRevision != null) {
+
+                        ComponentInstallation componentInstallation = createComponentInstallation(componentRevision);
+                        compFactoryServiceIdToCompInstIdMapping.put(factoryReference.getProperty(Constants.SERVICE_ID).toString(),
+                            componentInstallation.getInstallationId());
+                        addComponent(componentInstallation);
+                        return;
+                    }
+                }
+
+            } finally {
+                try {
+                    compInstance.dispose();
+                } catch (NullPointerException e) {
+                    // OSGi complains if no unbind method was declared in ServiceComponent for a service reference. As we cannot be sure,
+                    // each
+                    // component developer is aware of that, a possible NPE is caught here
+                    LOGGER.debug("NPE, most likely cause: unbind method  was not declared: " + e.toString());
+                }
             }
 
         }
 
-        LOGGER.error("registering component failed - bundle: " + factoryReference.getBundle().toString());
-
+        LOGGER.error(StringUtils.format("Failed to register a component, try restarting RCE (affected bundle: %s)",
+            factoryReference.getBundle().toString()));
     }
 
     protected synchronized void removeComponent(ServiceReference<?> factoryReference) {
@@ -294,7 +308,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
                     }
                     return bos.toByteArray();
                 } catch (IOException e) {
-                    LOGGER.warn("Cannot read icon: " + iconPath);
+                    LOGGER.warn("Failed to read icon: " + iconPath);
                     return null;
                 }
             } else {
@@ -323,7 +337,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             publishedInstallations.remove(compInstallationId);
             publishComponents();
         }
-        LOGGER.debug("Removed Component: " + compInstallationId);
+        LOGGER.debug("Removed component: " + compInstallationId);
     }
 
     @Override
@@ -348,13 +362,14 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         try {
             componentClass = Class.forName(className);
         } catch (ClassNotFoundException e) {
-            LOGGER.error("could not load component class: " + className, e);
+            LOGGER.error("Failed to load component class: " + className, e);
             return null;
         }
 
         componentInterface.setLocalExecutionOnly(componentClass.getAnnotation(LocalExecutionOnly.class) != null);
         componentInterface.setPerformLazyDisposal(componentClass.getAnnotation(LazyDisposal.class) != null);
-        componentInterface.setIsDeprecated(componentClass.getAnnotation(Deprecated.class) != null);
+        componentInterface.setIsDeprecated(componentClass.getAnnotation(
+            de.rcenvironment.core.component.model.api.Deprecated.class) != null);
 
         return componentInterface;
     }
@@ -367,7 +382,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         try {
             return factory.newInstance(serviceProperties);
         } catch (RuntimeException e) {
-            LOGGER.error("Component could not be loaded because of an error in xml file or components constructor", e);
+            LOGGER.error("Failed to load component because of an error in the OSGi DS file or an error in the component's constructor", e);
             return null;
         }
     }
@@ -381,11 +396,15 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         try {
             references = osgiComponentCtx.getBundleContext().getAllServiceReferences(Registerable.class.getName(), filter);
 
-            if (references == null || references.length != 1) {
+            if (references == null || references.length == 0) {
                 LOGGER.error(StringUtils.format(
-                    "No component found which provides the service '%s' and which has the temporary identifier '%s'",
+                    "No component found that provides the service '%s' and that has the temporary identifier '%s'",
                     Registerable.class.getName(), identifier));
                 return null;
+            } else if (references.length > 1) {
+                LOGGER.warn(StringUtils.format(
+                    "More than one component found that provides the service '%s' and that has the temporary identifier '%s',"
+                    + " first one is taken", Registerable.class.getName(), identifier));                
             }
 
         } catch (InvalidSyntaxException e) {
@@ -454,14 +473,14 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         componentInterface.setSize(getComponentSize(componentReference));
         componentInterface.setColor(getComponentColor(componentReference));
         componentInterface.setShape(getComponentShape(componentReference));
-        componentInterface.setCanHandleIndefiniteInputDataTypes(getCanHandleIndefiniteInputDataTypes(componentReference));
-        componentInterface.setIsResetSink(getIsResetSink(componentReference));
+        componentInterface.setCanHandleNotAValueDataTypes(getCanHandleNotAValueDataTypes(componentReference));
+        componentInterface.setIsLoopDriver(getIsResetSink(componentReference));
 
         try {
             componentInterface.setInputDefinitionsProvider(createEndpointDefinitionsProvider(ComponentConstants.INPUTS_DEF_KEY,
                 componentReference, componentReference.getBundle(), EndpointType.INPUT));
         } catch (IOException e) {
-            LOGGER.error("parsing input definition failed", e);
+            LOGGER.error("Failed to parse input definition", e);
             return null;
         }
 
@@ -469,7 +488,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             componentInterface.setOutputDefinitionsProvider(createEndpointDefinitionsProvider(ComponentConstants.OUTPUTS_DEF_KEY,
                 componentReference, componentReference.getBundle(), EndpointType.OUTPUT));
         } catch (IOException e) {
-            LOGGER.error("parsing output definition failed", e);
+            LOGGER.error("Failed to parse output definition", e);
             return null;
         }
 
@@ -477,7 +496,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             componentInterface.setConfigurationDefinition(createConfigurationDefinition(ComponentConstants.CONFIGURATION_DEF_KEY,
                 componentReference));
         } catch (IOException e) {
-            LOGGER.error("parsing configuration definition failed", e);
+            LOGGER.error("Failed to parse configuration definition", e);
             return null;
         }
 
@@ -485,7 +504,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             componentInterface.setConfigurationExtensionDefinitions(
                 createConfigurationExtensionDefinitions(componentReference.getBundle()));
         } catch (IOException e) {
-            LOGGER.error("parsing configuration extension definition failed", e);
+            LOGGER.error("Failed to parse extension definition", e);
             return null;
         }
 
@@ -504,7 +523,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             try {
                 return ComponentColor.valueOf(color.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOGGER.error(StringUtils.format("Color declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
+                LOGGER.error(StringUtils.format("Color declared under '%s' is invalid: %s. Valid ones are: %s. Default will be used: %s",
                     ComponentConstants.COMPONENT_COLOR_KEY, color, Arrays.toString(ComponentColor.values()),
                     ComponentConstants.COMPONENT_COLOR_STANDARD));
             }
@@ -512,13 +531,13 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         return ComponentConstants.COMPONENT_COLOR_STANDARD;
     }
 
-    private boolean getCanHandleIndefiniteInputDataTypes(ServiceReference<?> componentReference) {
+    private boolean getCanHandleNotAValueDataTypes(ServiceReference<?> componentReference) {
         return Boolean.valueOf((String) componentReference.getProperty(ComponentConstants
-            .COMPONENT_CAN_HANDLE_INDEFINITE_INPUT_DATA_TYPES));
+            .COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES));
     }
 
     private boolean getIsResetSink(ServiceReference<?> componentReference) {
-        return Boolean.valueOf((String) componentReference.getProperty(ComponentConstants
+        return Boolean.valueOf((String) componentReference.getProperty(LoopComponentConstants
             .COMPONENT_IS_RESET_SINK));
     }
 
@@ -528,7 +547,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             try {
                 return ComponentSize.valueOf(size.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOGGER.error(StringUtils.format("Size declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
+                LOGGER.error(StringUtils.format("Size declared under '%s' is not valid: %s. Valid ones are: %s. Default will be used: %s",
                     ComponentConstants.COMPONENT_SIZE_KEY, size, Arrays.toString(ComponentSize.values()),
                     ComponentConstants.COMPONENT_SIZE_STANDARD));
             }
@@ -542,7 +561,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             try {
                 return ComponentShape.valueOf(shape.toUpperCase());
             } catch (IllegalArgumentException e) {
-                LOGGER.error(StringUtils.format("Shape declared under %s is not valid: %s. Valid ones are: %s. Default will be used: %s",
+                LOGGER.error(StringUtils.format("Shape declared under '%s' is not valid: %s. Valid ones are: %s. Default will be used: %s",
                     ComponentConstants.COMPONENT_SHAPE_KEY, shape, Arrays.toString(ComponentShape.values()),
                     ComponentConstants.COMPONENT_SHAPE_STANDARD));
             }
@@ -559,7 +578,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         }
         URL fileUrl = reference.getBundle().getResource(file);
         if (fileUrl == null) {
-            throw new IOException("endpoint definition file doesn't exist: " + file);
+            throw new IOException("Endpoint definition file doesn't exist: " + file);
         }
 
         List<InputStream> extendedStaticInputStreams = getInputStreamsForEndpointMetaDataExtensions(reference, componentsBundle, type);
@@ -575,19 +594,22 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             endpointDefinitions.addAll(ComponentUtils.extractDynamicEndpointDefinition(dynamicEndpointDescriptionInputStream,
                 extendedDynamicInputStreams, type));
         } catch (IOException e) {
-            throw new IOException("parsing endpoint definition file failed: " + file, e);
+            throw new IOException("Failed to parse endpoint definition file: " + file, e);
         }
 
         endpointProvider.setEndpointDefinitions(endpointDefinitions);
 
         Set<EndpointGroupDefinitionImpl> inputGroupDefinitions;
-        try (InputStream endpointGroupDefinitionInputStream = fileUrl.openStream()) {
-            inputGroupDefinitions = ComponentUtils.extractInputGroupDefinitions(endpointGroupDefinitionInputStream);
+        try (InputStream endpointGroupDefinitionInputStream = fileUrl.openStream();
+            InputStream staticEndpointGroupDefinitionInputStream = fileUrl.openStream();
+            InputStream dynamicEndpointGroupDefinitionInputStream = fileUrl.openStream()) {
+            inputGroupDefinitions = ComponentUtils.extractStaticInputGroupDefinitions(staticEndpointGroupDefinitionInputStream);
+            inputGroupDefinitions.addAll(ComponentUtils.extractDynamicInputGroupDefinitions(dynamicEndpointGroupDefinitionInputStream));
         } catch (IOException e) {
-            throw new IOException("parsing endpoint group definition file failed: " + file, e);
+            throw new IOException("Failed to parse endpoint group definition file: " + file, e);
         }
 
-        endpointProvider.setEndpointGroups(inputGroupDefinitions);
+        endpointProvider.setEndpointGroupDefinitions(inputGroupDefinitions);
         return endpointProvider;
     }
 
@@ -607,7 +629,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             if (extensionFile != null) {
                 URL fileUrl = reference.getBundle().getResource(extensionFile);
                 if (fileUrl == null) {
-                    throw new IOException("endpoint definition file doesn't exist: " + extensionFile);
+                    throw new IOException("Endpoint definition file doesn't exist: " + extensionFile);
                 }
                 inputStreams.add(fileUrl.openStream());
             }
@@ -624,16 +646,16 @@ public class ComponentRegistryImpl implements ComponentRegistry {
         }
         URL fileUrl = reference.getBundle().getResource(file);
         if (fileUrl == null) {
-            throw new IOException("configuration definition file doesn't exist: " + file);
+            throw new IOException("Configuration definition file doesn't exist: " + file);
         }
-        
+
         try (InputStream configurationDescriptionInputStream = fileUrl.openStream();
             InputStream placeholdersDescriptionInputStream = fileUrl.openStream();
             InputStream activationFilterDescriptionInputStream = fileUrl.openStream()) {
             return ComponentUtils.extractConfigurationDescription(configurationDescriptionInputStream, placeholdersDescriptionInputStream,
                 activationFilterDescriptionInputStream);
         } catch (IOException e) {
-            throw new IOException("parsing configuration definition file failed: " + file, e);
+            throw new IOException("Failed to parse configuration definition", e);
         }
     }
 
@@ -657,7 +679,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
 
         URL fileUrl = bundle.getResource(file);
         if (fileUrl == null) {
-            throw new IOException("configuration extension file doesn't exist: " + file);
+            throw new IOException("Configuration extension file doesn't exist: " + file);
         }
 
         try (InputStream configurationDescriptionInputStream = fileUrl.openStream();
@@ -668,7 +690,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
                 placeholdersDescriptionInputStream,
                 activationFilterDescriptionInputStream);
         } catch (IOException e) {
-            throw new IOException("parsing configuration extension definition file failed: " + file, e);
+            throw new IOException("Failed to parse configuration extension definition file: " + file, e);
         }
     }
 

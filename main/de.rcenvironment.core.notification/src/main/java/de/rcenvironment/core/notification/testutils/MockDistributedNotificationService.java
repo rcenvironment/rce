@@ -11,13 +11,11 @@ package de.rcenvironment.core.notification.testutils;
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
-import de.rcenvironment.core.notification.NotificationHeader;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 
 /**
@@ -49,17 +47,7 @@ public class MockDistributedNotificationService implements DistributedNotificati
     public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform) {}
 
     @Override
-    public Map<String, SortedSet<NotificationHeader>> getNotificationHeaders(String notificationId, NodeIdentifier publishPlatform) {
-        return null;
-    }
-
-    @Override
     public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) {
-        return null;
-    }
-
-    @Override
-    public Notification getNotification(NotificationHeader header) {
         return null;
     }
 

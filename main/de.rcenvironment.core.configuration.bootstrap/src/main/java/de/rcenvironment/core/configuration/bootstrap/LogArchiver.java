@@ -13,6 +13,7 @@ import java.io.FileFilter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.file.Files;
+import java.util.regex.Pattern;
 
 /**
  * Keeps archival copies of log files. This was introduced as the configuration abilities of Log4J (like RollingFileAppender) to not cover
@@ -22,9 +23,11 @@ import java.nio.file.Files;
  */
 public final class LogArchiver {
 
-    private static final String LOG_FILE_SUFFIX = ".log";
+    private static final Pattern CURRENT_LOG_FILE_PATTERN = Pattern.compile("^(\\w+)\\.(log(\\.\\d+)?)$");
 
-    private static final String ARCHIVE_FILE_SUFFIX = ".previous.log";
+    private static final Pattern ARCHIVED_LOG_FILE_PATTERN = Pattern.compile("^(\\w+)\\.(previous\\.log(\\.\\d+)?)$");
+
+    private static final String CURRENT_TO_ARCHIVED_LOG_FILE_REPLACEMENT = "$1.previous.$2";
 
     private LogArchiver() {}
 
@@ -45,8 +48,8 @@ public final class LogArchiver {
         File[] oldArchiveFiles = directory.listFiles(new FileFilter() {
 
             @Override
-            public boolean accept(File pathname) {
-                return pathname.getName().endsWith(ARCHIVE_FILE_SUFFIX);
+            public boolean accept(File file) {
+                return file.isFile() && ARCHIVED_LOG_FILE_PATTERN.matcher(file.getName()).matches();
             }
         });
         for (File oldFile : oldArchiveFiles) {
@@ -66,13 +69,15 @@ public final class LogArchiver {
         File[] lastRunsLogs = directory.listFiles(new FileFilter() {
 
             @Override
-            public boolean accept(File pathname) {
-                return pathname.getName().endsWith(LOG_FILE_SUFFIX);
+            public boolean accept(File file) {
+                return file.isFile() && CURRENT_LOG_FILE_PATTERN.matcher(file.getName()).matches();
             }
         });
 
         for (File logFile : lastRunsLogs) {
-            File archiveFile = new File(logFile.getParentFile(), logFile.getName().replace(LOG_FILE_SUFFIX, ARCHIVE_FILE_SUFFIX));
+            final String oldName = logFile.getName();
+            final String newName = CURRENT_LOG_FILE_PATTERN.matcher(oldName).replaceFirst(CURRENT_TO_ARCHIVED_LOG_FILE_REPLACEMENT);
+            final File archiveFile = new File(logFile.getParentFile(), newName);
             try {
                 Files.move(logFile.toPath(), archiveFile.toPath());
             } catch (IOException e) {

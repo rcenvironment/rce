@@ -25,6 +25,11 @@ public class VariableNameVerifyListener implements Listener {
     public static final int NO_LEADING_NUMBERS = 1;
 
     /**
+     * Option if input should not have underscores.
+     */
+    public static final int NO_UNDERSCORE = 2;
+
+    /**
      * Option for no restriction.
      */
     public static final int NONE = 0;
@@ -58,6 +63,12 @@ public class VariableNameVerifyListener implements Listener {
 
             if ((function & NO_LEADING_NUMBERS) > 0) {
                 if (text.getCaretPosition() == 0 && Character.isDigit(string.charAt(0))) {
+                    arg0.doit = false;
+                    return;
+                }
+            }
+            if ((function & NO_UNDERSCORE) > 0) {
+                if (c == '_') {
                     arg0.doit = false;
                     return;
                 }

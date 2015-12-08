@@ -13,7 +13,6 @@ import java.util.Set;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
-import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
@@ -180,14 +179,16 @@ public interface ComponentContext extends ExecutionContext {
     File getWorkingDirectory();
 
     /**
-     * Prints given line to the workflow console. As type {@link ConsoleRow.Type.STDOUT} and
-     * {@link ConsoleRow.Type.STDERR} are allowed-
-     * 
-     * @param line line to print
-     * @param consoleLineType type of the console line. Must be one of
-     *        {@link ConsoleRow.Type.STDOUT} or {@link ConsoleRow.Type.STDERR} are allowed-
+     * Must be called if an external program was started by the workflow component. Needed to have external program execution properly
+     * represented in the workflow timeline.
      */
-    void printConsoleLine(String line, Type consoleLineType);
+    void announceExternalProgramStart();
+
+    /**
+     * Must be called if an external program terminated. Needed to have external program execution properly represented in the workflow
+     * timeline.
+     */
+    void announceExternalProgramTermination();
 
     /**
      * @param <T> the service class to acquire
@@ -255,4 +256,9 @@ public interface ComponentContext extends ExecutionContext {
      * @return all not required and not connected inputs
      */
     Set<String> getInputsNotConnected();
+    
+    /**
+     * @return a {@link ComponentLog} instance used to log tool and component messages
+     */
+    ComponentLog getLog();
 }

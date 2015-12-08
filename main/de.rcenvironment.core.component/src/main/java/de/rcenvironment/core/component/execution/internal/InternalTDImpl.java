@@ -36,6 +36,8 @@ public class InternalTDImpl implements InternalTD {
     
     private static final String SERIALIZE_KEY_HOPS = "h";
     
+    private static final String SERIALIZE_KEY_PAYLOAD = "p";
+    
     /**
      * Type of possible purposes an {@link InternalTDImpl} can have.
      * 
@@ -47,14 +49,19 @@ public class InternalTDImpl implements InternalTD {
         WorkflowFinish,
         
         /** Used to reset nested loops. */
-        NestedLoopReset;
+        NestedLoopReset,
+        
+        /** Used to announce failure to loop driver. */
+        FailureInLoop;
     }
     
     private final String identifier;
     
     private final InternalTDType type;
     
-    private Queue<WorkflowGraphHop> resetCycleHops = null;
+    private Queue<WorkflowGraphHop> hopsToTraverse = null;
+    
+    private String payload = null;
     
     public InternalTDImpl(InternalTDType type) {
         this(type, UUID.randomUUID().toString());
@@ -65,13 +72,23 @@ public class InternalTDImpl implements InternalTD {
         this.type = type;
     }
     
-    public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> resetCycleHops) {
-        this(type, UUID.randomUUID().toString(), resetCycleHops);
+    public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> hopsToTraverse) {
+        this(type, UUID.randomUUID().toString(), hopsToTraverse);
     }
     
-    public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> resetCycleHops) {
+    public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> hopsToTraverse) {
         this(type, identifier);
-        this.resetCycleHops = resetCycleHops;
+        this.hopsToTraverse = hopsToTraverse;
+    }
+    
+    public InternalTDImpl(InternalTDType type, Queue<WorkflowGraphHop> hopsToTraverse, String payload) {
+        this(type, UUID.randomUUID().toString(), hopsToTraverse, payload);
+    }
+    
+    public InternalTDImpl(InternalTDType type, String identifier, Queue<WorkflowGraphHop> hopsToTraverse, String payload) {
+        this(type, identifier);
+        this.hopsToTraverse = hopsToTraverse;
+        this.payload = payload;
     }
 
     @Override
@@ -88,7 +105,11 @@ public class InternalTDImpl implements InternalTD {
     }
     
     public Queue<WorkflowGraphHop> getHopsToTraverse() {
-        return resetCycleHops;
+        return hopsToTraverse;
+    }
+    
+    public String getPayload() {
+        return payload;
     }
     
     @Override
@@ -105,8 +126,8 @@ public class InternalTDImpl implements InternalTD {
         rootNode.put(SERIALIZE_KEY_TYPE, getType().name());
         rootNode.put(SERIALIZE_KEY_IDENTIFIER, getIdentifier());
         ArrayNode hopsArrayNode = mapper.createArrayNode();
-        Queue<WorkflowGraphHop> graphHops = getHopsToTraverse();
-        if (graphHops != null) {
+        Queue<WorkflowGraphHop> hops = getHopsToTraverse();
+        if (hops != null) {
             for (WorkflowGraphHop hop : getHopsToTraverse()) {
                 ArrayNode hopArrayNode = mapper.createArrayNode();
                 hopArrayNode.add(hop.getHopExecutionIdentifier());
@@ -116,6 +137,10 @@ public class InternalTDImpl implements InternalTD {
                 hopsArrayNode.add(hopArrayNode);
             }
             rootNode.put(SERIALIZE_KEY_HOPS, hopsArrayNode);
+        }
+        String pyld = getPayload();
+        if (pyld != null) {
+            rootNode.put(SERIALIZE_KEY_PAYLOAD, pyld);
         }
         return rootNode.toString();
     }
@@ -136,18 +161,22 @@ public class InternalTDImpl implements InternalTD {
         }
         InternalTDType type = InternalTDImpl.InternalTDType.valueOf(rootNode.get(SERIALIZE_KEY_TYPE).getTextValue());
         String identifier = rootNode.get(SERIALIZE_KEY_IDENTIFIER).getTextValue();
-        Queue<WorkflowGraphHop> graphHops = null;
-        ArrayNode hopsArrayNode = (ArrayNode) rootNode.get(SERIALIZE_KEY_HOPS);
-        if (hopsArrayNode != null) {
-            graphHops = new LinkedList<>();
+        Queue<WorkflowGraphHop> hops = null;
+        if (rootNode.has(SERIALIZE_KEY_HOPS)) {
+            ArrayNode hopsArrayNode = (ArrayNode) rootNode.get(SERIALIZE_KEY_HOPS);
+            hops = new LinkedList<>();
             Iterator<JsonNode> hopsElements = hopsArrayNode.getElements();
             while (hopsElements.hasNext()) {
                 ArrayNode hopArrayNode = (ArrayNode) hopsElements.next();
-                graphHops.add(new WorkflowGraphHop(hopArrayNode.get(0).asText(), hopArrayNode.get(1).asText(),
+                hops.add(new WorkflowGraphHop(hopArrayNode.get(0).asText(), hopArrayNode.get(1).asText(),
                     hopArrayNode.get(2).asText(), hopArrayNode.get(3).asText()));
             }
         }
-        return new InternalTDImpl(type, identifier, graphHops);
+        String pyld = null;
+        if (rootNode.has(SERIALIZE_KEY_PAYLOAD)) {
+            pyld = rootNode.get(SERIALIZE_KEY_PAYLOAD).getTextValue();
+        }
+        return new InternalTDImpl(type, identifier, hops, pyld);
     }
 
 }

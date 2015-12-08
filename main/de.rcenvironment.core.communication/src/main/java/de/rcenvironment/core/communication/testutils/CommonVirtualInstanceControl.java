@@ -9,7 +9,7 @@
 package de.rcenvironment.core.communication.testutils;
 
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
+import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 
@@ -85,11 +85,11 @@ public interface CommonVirtualInstanceControl {
     void addNetworkConnectionListener(MessageChannelLifecycleListener listener);
 
     /**
-     * Registers a {@link RawMessageChannelTrafficListener}.
+     * Registers a {@link MessageChannelTrafficListener}.
      * 
      * @param listener the new listener
      */
-    void addNetworkTrafficListener(RawMessageChannelTrafficListener listener);
+    void addNetworkTrafficListener(MessageChannelTrafficListener listener);
 
     /**
      * Registers the given network contact point as an initial peer for all nodes. Initial peers are

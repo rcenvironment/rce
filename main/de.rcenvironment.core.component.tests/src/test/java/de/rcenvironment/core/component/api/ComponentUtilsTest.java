@@ -192,5 +192,42 @@ public class ComponentUtilsTest {
         cd = ComponentUtils.createPlaceholderComponentInstallation("de.rcenvironment.comp", "1.0", null, "node-id");
         assertEquals("N/A", cd.getComponentRevision().getComponentInterface().getDisplayName());
     }
+    
+    /** Tests if a message is correctly created for difference kind of exception chains. */
+    @Test
+    public void testCreateErrorLogMessage() {
+        String unexpectedMessage = "Unexpected error: ";
+        String causeMessage = "; cause: ";
+        
+        // exception without message and without cause 
+        assertEquals(unexpectedMessage + RuntimeException.class.getSimpleName(),
+            ComponentUtils.createErrorLogMessage(new RuntimeException()));
+        // exception without message, but with cause that has no message as well
+        assertEquals(unexpectedMessage + RuntimeException.class.getSimpleName() 
+            + causeMessage + unexpectedMessage + RuntimeException.class.getSimpleName(),
+            ComponentUtils.createErrorLogMessage(new RuntimeException(new RuntimeException())));
+        // exception with message, but without cause
+        assertEquals("error message 1",
+            ComponentUtils.createErrorLogMessage(new RuntimeException("error message 1")));
+        // exception without message, but with cause that has message
+        assertEquals(unexpectedMessage + RuntimeException.class.getSimpleName() 
+            + causeMessage + "error message 2",
+            ComponentUtils.createErrorLogMessage(new RuntimeException(new RuntimeException("error message 2"))));
+        // exception without message, but with cause that has no message
+        assertEquals("error message 3" + causeMessage + unexpectedMessage + RuntimeException.class.getSimpleName(),
+            ComponentUtils.createErrorLogMessage(new RuntimeException("error message 3", new RuntimeException())));
+        // exception with message and with cause that has message
+        assertEquals("error message 4" + causeMessage + "error message 5",
+            ComponentUtils.createErrorLogMessage(new RuntimeException("error message 4", new RuntimeException("error message 5"))));
+        // exception with message and with cause that has message and cause
+        assertEquals("error message 6" + causeMessage + "error message 7" + causeMessage 
+            + unexpectedMessage + RuntimeException.class.getSimpleName(),
+            ComponentUtils.createErrorLogMessage(new RuntimeException("error message 6",
+                new RuntimeException("error message 7", new RuntimeException()))));
+        // exception with message and with cause that has message and cause that has message
+        assertEquals("error message 8" + causeMessage + "error message 9" + causeMessage + "error message 10",
+            ComponentUtils.createErrorLogMessage(new RuntimeException("error message 8",
+                new RuntimeException("error message 9", new RuntimeException("error message 10")))));
+    }
 
 }

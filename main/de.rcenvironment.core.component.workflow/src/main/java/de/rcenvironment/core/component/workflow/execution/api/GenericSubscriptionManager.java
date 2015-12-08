@@ -14,6 +14,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,6 +52,8 @@ public class GenericSubscriptionManager {
     private final Set<String> subscribed = new HashSet<String>();
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
+
+    private final Log log = LogFactory.getLog(getClass());
 
     /**
      * Default constructor.
@@ -126,9 +129,24 @@ public class GenericSubscriptionManager {
         callablesGroup.executeParallel(new AsyncExceptionListener() {
 
             @Override
-            public void onAsyncException(Exception e) {
-                LogFactory.getLog(getClass()).error(
-                    "Asynchronous exception during parallel console/input model notification subscriptions", e);
+            public void onAsyncException(Exception e1) {
+                // unwrap ExecutionExceptions
+                Throwable e;
+                if (e1.getClass() == ExecutionException.class && e1.getCause() != null) {
+                    e = e1.getCause();
+                } else {
+                    e = e1;
+                }
+
+                if (e.getCause() == null) {
+                    // log a compressed message; this includes the case of RemoteOperationExceptions, which (by design) never have a "cause"
+                    log.warn(
+                        "Asynchronous exception during parallel console/input model notification subscriptions: " + e.toString());
+                } else {
+                    // on unexpected errors, log the full stacktrace
+                    log.error(
+                        "Asynchronous exception during parallel console/input model notification subscriptions", e);
+                }
             }
         });
     }
@@ -140,7 +158,6 @@ public class GenericSubscriptionManager {
             Long lastMissedNumber = lastMissedNumbers.get(notifId);
             if (lastMissedNumber != NotificationService.NO_MISSED) {
                 eventProcessor.setNumberOfLastMissingNotification(notifId, node.getIdString(), lastMissedNumber);
-                Log log = LogFactory.getLog(getClass());
                 if (verboseLogging) {
                     log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, node));
                 }

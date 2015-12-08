@@ -26,12 +26,12 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.datamanagement.DataManagementService;
-import de.rcenvironment.core.datamanagement.DistributedDataReferenceService;
-import de.rcenvironment.core.datamanagement.DistributedFileDataService;
+import de.rcenvironment.core.datamanagement.DataReferenceService;
+import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -41,6 +41,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * Default implementation of {@link DataManagementService}.
  * 
  * @author Robert Mischke
+ * @author Doreen Seider
  */
 public class DataManagementServiceImpl implements DataManagementService {
 
@@ -50,63 +51,52 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     private static final String REFERENCE_NOT_FOUND_MESSAGE = "No such data entry (id='%s').";
 
-    private DistributedFileDataService fileDataService;
+    private FileDataService fileDataService;
 
-    private DistributedDataReferenceService dataReferenceService;
+    private DataReferenceService dataReferenceService;
 
     @Override
-    public String createReferenceFromLocalFile(User user, File file, MetaDataSet additionalMetaData,
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException {
-        return createReferenceFromStream(user, new FileInputStream(file), additionalMetaData, nodeId);
+    public String createReferenceFromLocalFile(File file, MetaDataSet additionalMetaData,
+        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        return createReferenceFromStream(new FileInputStream(file), additionalMetaData, nodeId);
     }
 
-    private String createReferenceFromStream(User user, InputStream inputStream, MetaDataSet additionalMetaData,
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException {
+    private String createReferenceFromStream(InputStream inputStream, MetaDataSet additionalMetaData,
+        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (additionalMetaData == null) {
             additionalMetaData = new MetaDataSet();
         }
 
         try {
-            DataReference dataRef = fileDataService.newReferenceFromStream(user, inputStream, additionalMetaData, nodeId);
+            DataReference dataRef = fileDataService.newReferenceFromStream(inputStream, additionalMetaData, nodeId);
             return dataRef.getDataReferenceKey().toString();
         } finally {
+            // FIXME: replace with try-with-resources statement after release 7.0.0
             IOUtils.closeQuietly(inputStream);
         }
     }
 
     @Override
-    public String createReferenceFromLocalDirectory(User user, File dir, MetaDataSet additionalMetaData, NodeIdentifier nodeId)
-        throws IOException, AuthorizationException, InterruptedException {
+    public String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, NodeIdentifier nodeId)
+        throws IOException, AuthorizationException, InterruptedException, CommunicationException {
 
         File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
         createTarGz(dir, archive);
 
-        String reference = createReferenceFromStream(user, new FileInputStream(archive), additionalMetaData, nodeId);
-        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
-        return reference;
+        try (FileInputStream fileInputStream = new FileInputStream(archive)) {
+            String reference = createReferenceFromStream(fileInputStream, additionalMetaData, nodeId);
+            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
+            return reference;
+        }
     }
 
     private void createTarGz(File dir, File archive) throws IOException {
 
-        FileOutputStream fileOutStream = new FileOutputStream(archive);
-        BufferedOutputStream bufferedOutStream = new BufferedOutputStream(fileOutStream);
-        GzipCompressorOutputStream gzipOutStream;
-        try {
-            gzipOutStream = new GzipCompressorOutputStream(bufferedOutStream);
-        } catch (IOException e) {
-            bufferedOutStream.close();
-            fileOutStream.close();
-            throw e;
-        }
-        TarArchiveOutputStream tarOutStream = new TarArchiveOutputStream(gzipOutStream);
-        try {
+        try (FileOutputStream fileOutStream = new FileOutputStream(archive);
+            BufferedOutputStream bufferedOutStream = new BufferedOutputStream(fileOutStream);
+            GzipCompressorOutputStream gzipOutStream = new GzipCompressorOutputStream(bufferedOutStream);
+            TarArchiveOutputStream tarOutStream = new TarArchiveOutputStream(gzipOutStream)) {
             addFileToTarGz(tarOutStream, dir.getAbsolutePath(), "");
-        } finally {
-            tarOutStream.finish();
-            tarOutStream.close();
-            gzipOutStream.close();
-            bufferedOutStream.close();
-            fileOutStream.close();
         }
     }
 
@@ -114,13 +104,13 @@ public class DataManagementServiceImpl implements DataManagementService {
         File file = new File(path);
         String entryName = base + file.getName();
         TarArchiveEntry tarEntry = new TarArchiveEntry(file, entryName);
-        tOutStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_POSIX);
+        tOutStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
         tOutStream.putArchiveEntry(tarEntry);
 
         if (file.isFile()) {
-            InputStream inputStream = new FileInputStream(file);
-            IOUtils.copy(inputStream, tOutStream);
-            inputStream.close();
+            try (InputStream inputStream = new FileInputStream(file))  {
+                IOUtils.copy(inputStream, tOutStream);
+            }
             tOutStream.closeArchiveEntry();
         } else {
             tOutStream.closeArchiveEntry();
@@ -134,25 +124,25 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public String createReferenceFromString(User user, String object, MetaDataSet additionalMetaData, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException {
+    public String createReferenceFromString(String object, MetaDataSet additionalMetaData, // CheckStyle
+        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (additionalMetaData == null) {
             additionalMetaData = new MetaDataSet();
         }
 
         InputStream inputStream = IOUtils.toInputStream(object);
         try {
-            DataReference dataRef = fileDataService. // break line here for Checkstyle
-                newReferenceFromStream(user, inputStream, additionalMetaData, nodeId);
+            DataReference dataRef = fileDataService.newReferenceFromStream(inputStream, additionalMetaData, nodeId);
             return dataRef.getDataReferenceKey().toString();
         } finally {
+            // FIXME: replace with try-with-resources statement after release 7.0.0
             IOUtils.closeQuietly(inputStream);
         }
     }
 
     @Override
-    public void copyReferenceToLocalFile(User user, String reference, File targetFile, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, AuthorizationException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
+        NodeIdentifier nodeId) throws IOException, CommunicationException {
 
         DataReference dataRef;
         if (nodeId == null) {
@@ -163,17 +153,18 @@ public class DataManagementServiceImpl implements DataManagementService {
         if (dataRef == null) {
             throw new FileNotFoundException(StringUtils.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
         }
-        InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(user, dataRef);
+        InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(dataRef);
         try {
             FileUtils.copyInputStreamToFile(dataMgmtStream, targetFile);
         } finally {
+            // FIXME: replace with try-with-resources statement after release 7.0.0
             IOUtils.closeQuietly(dataMgmtStream);
         }
     }
 
     @Override
-    public void copyReferenceToLocalFile(User user, String reference, File targetFile, // CheckStyle
-        Collection<NodeIdentifier> platforms) throws IOException, AuthorizationException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
+        Collection<NodeIdentifier> platforms) throws IOException, AuthorizationException, CommunicationException {
 
         DataReference dataRef;
         if ((platforms == null) || (platforms.size() == 0)) {
@@ -184,19 +175,21 @@ public class DataManagementServiceImpl implements DataManagementService {
         if (dataRef == null) {
             throw new FileNotFoundException(StringUtils.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
         }
-        InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(user, dataRef);
+        InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(dataRef);
         try {
             FileUtils.copyInputStreamToFile(dataMgmtStream, targetFile);
         } finally {
+            // FIXME: replace with try-with-resources statement after release 7.0.0
             IOUtils.closeQuietly(dataMgmtStream);
         }
     }
 
     @Override
-    public void copyReferenceToLocalDirectory(User user, String reference, File targetDir, NodeIdentifier node) throws IOException {
+    public void copyReferenceToLocalDirectory(String reference, File targetDir, NodeIdentifier node) throws IOException,
+        CommunicationException {
 
         File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
-        copyReferenceToLocalFile(user, reference, archive, node);
+        copyReferenceToLocalFile(reference, archive, node);
         createDirectoryFromTarGz(archive, targetDir);
         TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
     }
@@ -205,24 +198,11 @@ public class DataManagementServiceImpl implements DataManagementService {
 
         targetDir.mkdirs();
 
-        FileInputStream fileInStream = new FileInputStream(archive);
-        BufferedInputStream bufferedInStream = new BufferedInputStream(fileInStream);
-        GzipCompressorInputStream gzipInStream;
-        try {
-            gzipInStream = new GzipCompressorInputStream(bufferedInStream);
-        } catch (IOException e) {
-            bufferedInStream.close();
-            fileInStream.close();
-            throw e;
-        }
-        TarArchiveInputStream tarInStream = new TarArchiveInputStream(gzipInStream);
-        try {
+        try (FileInputStream fileInStream = new FileInputStream(archive);
+            BufferedInputStream bufferedInStream = new BufferedInputStream(fileInStream);
+            GzipCompressorInputStream gzipInStream = new GzipCompressorInputStream(bufferedInStream);
+            TarArchiveInputStream tarInStream = new TarArchiveInputStream(gzipInStream)) {
             createFileOrDirForTarEntry(tarInStream, targetDir);
-        } finally {
-            tarInStream.close();
-            gzipInStream.close();
-            bufferedInStream.close();
-            fileInStream.close();
         }
     }
 
@@ -238,20 +218,20 @@ public class DataManagementServiceImpl implements DataManagementService {
         } else {
             destPath.createNewFile();
             byte[] btoRead = new byte[BUFFER];
-            BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(destPath));
-            int len = 0;
-            final int minusOne = -1;
-            while ((len = tarInStream.read(btoRead)) != minusOne) {
-                bout.write(btoRead, 0, len);
+            try (BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(destPath))) {
+                int len = 0;
+                final int minusOne = -1;
+                while ((len = tarInStream.read(btoRead)) != minusOne) {
+                    bout.write(btoRead, 0, len);
+                }
             }
-            bout.close();
         }
         createFileOrDirForTarEntry(tarInStream, targetDir);
     }
 
     @Override
-    public String retrieveStringFromReference(User user, String reference, NodeIdentifier nodeId) throws IOException,
-        AuthorizationException {
+    public String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException,
+        AuthorizationException, CommunicationException {
         // TODO extract reference to stream resolution into separate method?
         DataReference dataRef;
         if (nodeId == null) {
@@ -262,10 +242,11 @@ public class DataManagementServiceImpl implements DataManagementService {
         if (dataRef == null) {
             throw new FileNotFoundException(StringUtils.format(REFERENCE_NOT_FOUND_MESSAGE, reference));
         }
-        InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(user, dataRef);
+        InputStream dataMgmtStream = fileDataService.getStreamFromDataReference(dataRef);
         try {
             return IOUtils.toString(dataMgmtStream);
         } finally {
+            // FIXME: replace with try-with-resources statement after release 7.0.0
             IOUtils.closeQuietly(dataMgmtStream);
         }
     }
@@ -275,7 +256,7 @@ public class DataManagementServiceImpl implements DataManagementService {
      * 
      * @param fileDataService The fileDataService to set.
      */
-    protected void bindFileDataService(DistributedFileDataService newValue) {
+    protected void bindFileDataService(FileDataService newValue) {
         this.fileDataService = newValue;
     }
 
@@ -284,7 +265,7 @@ public class DataManagementServiceImpl implements DataManagementService {
      * 
      * @param dataReferenceService The dataReferenceService to set.
      */
-    protected void bindDataReferenceService(DistributedDataReferenceService newValue) {
+    protected void bindDataReferenceService(DataReferenceService newValue) {
         this.dataReferenceService = newValue;
     }
 

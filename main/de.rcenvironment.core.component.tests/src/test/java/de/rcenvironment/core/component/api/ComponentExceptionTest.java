@@ -57,7 +57,7 @@ public class ComponentExceptionTest extends TestCase {
      */
     public final void testConstructorsForSuccess() {
         componentException = new ComponentException(EXCEPTION_MESSAGE);
-        componentException = new ComponentException(myCause);
+        componentException = new ComponentException(EXCEPTION_MESSAGE, myCause);
     }
 
     /**

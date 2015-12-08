@@ -1,0 +1,52 @@
+{
+    "configuration": [
+        {
+            "key": "authUser",
+            "defaultValue": "${authuser}"
+        },
+        {
+            "key": "authPhrase",
+            "defaultValue": "${*.authphrase}"
+        },
+        {
+            "key": "databaseName"
+        },
+        {
+            "key": "databaseHost"
+        },
+        {
+            "key": "databasePort"
+        },
+        {
+            "key": "databaseScheme"
+        },
+        {
+            "key": "databaseConnector",
+            "defaultValue": "MySQL"
+        },
+        {
+            "key": "databaseStatements"
+        },
+        {
+            "key": "databaseExecutionType",
+            "defaultValue": "Sequentially"
+        }
+    ],
+    "placeholders": [
+        {
+            "key": "authuser",
+            "guiName": "Username",
+            "guiPosition": "1",
+            "dataType": "text"
+            
+        },
+        {
+            "key": "authphrase",
+            "guiName": "Password",
+            "guiPosition": "2",
+            "decode": "true",
+            "dataType": "text"
+            
+        }
+    ]
+}

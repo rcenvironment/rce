@@ -10,10 +10,10 @@
    	/>
    	
    	<reference 
-   		bind="bindConfigurationAdmin" 
+   		bind="bindInstanceValidationService" 
    		cardinality="1..1" 
-   		interface="org.osgi.service.cm.ConfigurationAdmin" 
-   		name="Configuration Admin" 
+   		interface="de.rcenvironment.core.start.common.validation.api.InstanceValidationService" 
+   		name="Instance Validation Service" 
    		policy="static"
    	/>
 </scr:component>

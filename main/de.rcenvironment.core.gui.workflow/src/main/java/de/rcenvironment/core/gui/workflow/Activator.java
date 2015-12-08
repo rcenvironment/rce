@@ -21,9 +21,6 @@ import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.authentication.AuthenticationException;
-import de.rcenvironment.core.authentication.Session;
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
@@ -115,20 +112,6 @@ public class Activator extends AbstractUIPlugin {
     
     public static Activator getInstance() {
         return instance;
-    }
-
-    /**
-     * Returns the currently logged in user.
-     * 
-     * @return logged in user
-     * @exception IllegalStateException if no user is logged in
-     */
-    public User getUser() throws IllegalStateException {
-        try {
-            return Session.getInstance().getUser();
-        } catch (AuthenticationException e) {
-            throw new IllegalStateException("no user is logged in", e);
-        }
     }
 
     @Override
@@ -239,7 +222,7 @@ public class Activator extends AbstractUIPlugin {
         reg.put(WorkflowState.CANCELING.name(), desc);
         reg.put(WorkflowState.CANCELING_AFTER_FAILED.name(), desc);
         reg.put(ComponentState.CANCELLING.name(), desc);
-        reg.put(ComponentState.CANCELLING_AFTER_INPUT_FAILURE.name(), desc);
+        reg.put(ComponentState.CANCELLING_AFTER_FAILURE.name(), desc);
         
         // canceled
         path = new Path("resources/icons/states/cancel_enabled.gif");

@@ -18,7 +18,7 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
  * 
  * @author Doreen Seider
  */
-public interface EndpointDefinition {
+public interface EndpointDefinition extends EndpointGroupDefinition {
 
     /**
      * Attributes an input can have.
@@ -92,16 +92,6 @@ public interface EndpointDefinition {
     }
     
     /**
-     * @return endpoint name or <code>null</code> if it is a dynamic endpoint
-     */
-    String getName();
-
-    /**
-     * @return endpoint identifier or <code>null</code> if it is a static endpoint
-     */
-    String getIdentifier();
-
-    /**
      * @return <code>true</code> if it is a static endpoint, <code>false</code> otherwise
      */
     boolean isStatic();
@@ -161,9 +151,4 @@ public interface EndpointDefinition {
      */
     List<InitialDynamicEndpointDefinition> getInitialDynamicEndpointDefinitions();
     
-    /**
-     * @return name of the {@link EndpointGroupDefinitionImpl} the endpoint belongs to or <code>null</code> if it belongs to none
-     */
-    String getGroupName();
-
 }

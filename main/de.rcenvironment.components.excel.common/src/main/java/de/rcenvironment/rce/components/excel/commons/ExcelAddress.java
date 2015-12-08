@@ -27,8 +27,7 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelException;
-import de.rcenvironment.components.excel.common.GarbageDestroyer;
-
+import de.rcenvironment.components.excel.common.ExcelUtils;
 
 /**
  * Excel address representation.
@@ -57,7 +56,6 @@ public class ExcelAddress implements Serializable {
 
     private String userDefinedNameForAddress;
 
-    
     /**
      * Copy Constructor.
      * 
@@ -74,7 +72,7 @@ public class ExcelAddress implements Serializable {
         beginningColumnNumber = addr.beginningColumnNumber;
         userDefinedNameForAddress = addr.userDefinedNameForAddress;
     }
-    
+
     /**
      * Constructor for Excel cell address. Address will be validated with concrete Excel file.
      * 
@@ -98,7 +96,7 @@ public class ExcelAddress implements Serializable {
 
                 worksheetName = name.getSheetName();
                 worksheetName = cutBeginningAndEndingApostrophe(worksheetName);
-                
+
                 AreaReference ar = new AreaReference(fullAddress);
 
                 firstCell = StringUtils.split(ar.getFirstCell().formatAsString(), ExcelComponentConstants.DIVIDER_TABLECELLADDRESS)[1];
@@ -126,7 +124,7 @@ public class ExcelAddress implements Serializable {
                     throw new ExcelException("Could not determine if Excel file is old-style (Excel 97-2007) "
                         + "or new-style (Excel 2007+) based.");
                 }
-                
+
                 // Short validation
                 String[] splitAddress = rawAddress.split("!");
                 String lastAddressToken = splitAddress[splitAddress.length - 1];
@@ -153,7 +151,7 @@ public class ExcelAddress implements Serializable {
 
                 worksheetName = StringUtils.split(rawAddressWithoutAbsoluteFlag, ExcelComponentConstants.DIVIDER_TABLECELLADDRESS)[0];
                 worksheetName = cutBeginningAndEndingApostrophe(worksheetName);
-                
+
                 firstCell = getAddressPart(rawAddressWithoutAbsoluteFlag, true, isNewXlFile);
 
                 lastCell = getAddressPart(rawAddressWithoutAbsoluteFlag, false, isNewXlFile);
@@ -166,13 +164,13 @@ public class ExcelAddress implements Serializable {
 
                 beginningColumnNumber = getNumberOfColumnChar(getColumnCharsOfCell(firstCell));
 
-                fullAddress = worksheetName + ExcelComponentConstants.DIVIDER_TABLECELLADDRESS + firstCell 
+                fullAddress = worksheetName + ExcelComponentConstants.DIVIDER_TABLECELLADDRESS + firstCell
                     + ExcelComponentConstants.DIVIDER_CELLADDRESS + lastCell;
 
                 // Test if full address
                 AreaReference ar = new AreaReference(fullAddress);
                 fullAddress = ar.formatAsString();
-                
+
                 Sheet sheet = wb.getSheet(worksheetName);
                 if (sheet == null) {
                     throw new ExcelException("Cannot discover sheet in Excel file.");
@@ -186,7 +184,7 @@ public class ExcelAddress implements Serializable {
             throw new ExcelException("Excel file has an invalid format.", e);
         } catch (IllegalArgumentException e) {
             throw new ExcelException("File is no Excel file.", e);
-        }  catch (IOException e) {
+        } catch (IOException e) {
             throw new ExcelException("Excel file is not found or cannot be opened.", e);
         } finally {
             if (inp != null) {
@@ -196,17 +194,17 @@ public class ExcelAddress implements Serializable {
                     throw new ExcelException("Cannot close access to Excel file.", e);
                 }
             }
-            
-            //Not nice, but workbook-object will not released.
-            new Thread(new GarbageDestroyer()).start();
+
+            // Not nice, but workbook-object will not released.
+            ExcelUtils.destroyGarbage();
         }
     }
-    
+
     private static String cutBeginningAndEndingApostrophe(final String rawString) {
         String resultString;
         resultString = StringUtils.removeStart(rawString, "'");
         resultString = StringUtils.removeEnd(resultString, "'");
-        
+
         return resultString;
     }
 
@@ -238,8 +236,7 @@ public class ExcelAddress implements Serializable {
     }
 
     /**
-     * Returns the upper left cell reference of a cell-area. In case there is only one cell its cell
-     * reference will be returned.
+     * Returns the upper left cell reference of a cell-area. In case there is only one cell its cell reference will be returned.
      * 
      * @return upper left cell reference.
      */
@@ -248,8 +245,7 @@ public class ExcelAddress implements Serializable {
     }
 
     /**
-     * Returns the lower right cell reference of a cell-area. In case there is only one cell its
-     * cell reference will be returned.
+     * Returns the lower right cell reference of a cell-area. In case there is only one cell its cell reference will be returned.
      * 
      * @return lower right cell reference.
      */
@@ -292,7 +288,7 @@ public class ExcelAddress implements Serializable {
     public int getBeginningColumnNumber() {
         return beginningColumnNumber;
     }
-    
+
     /**
      * Tests if user defined name is valid regarding regex.
      * 
@@ -305,40 +301,39 @@ public class ExcelAddress implements Serializable {
         }
         return false;
     }
-    
+
     /**
-     * Resizes the Excel address for a range. 
-     * Starting point is first cell of Excel address.
+     * Resizes the Excel address for a range. Starting point is first cell of Excel address.
      * 
      * @param excelFile Excel file
-     * @param originAddr the address which will be used as a basis 
+     * @param originAddr the address which will be used as a basis
      * @param rows the offset-number of rows the address should have
      * @param columns the offset-number of columns the address should have
      * @return the new ExcelAddress
      */
-    public static ExcelAddress getExcelAddressForTableRange(final File excelFile, final ExcelAddress originAddr, 
+    public static ExcelAddress getExcelAddressForTableRange(final File excelFile, final ExcelAddress originAddr,
         final int rows, final int columns) {
         ExcelAddress address = new ExcelAddress(originAddr);
-        
-        if (rows > 0 && columns > 0) {            
+
+        if (rows > 0 && columns > 0) {
             address.lastCell = "";
-            
+
             String columnName = getNextColumnName(getColumnCharsOfCell(address.firstCell), columns - 1);
             address.lastCell = columnName.concat(String.valueOf(Integer.valueOf(getRowNumberOfCell(address.firstCell)) + rows - 1));
-            
+
             if (!originAddr.getFirstCell().equalsIgnoreCase(originAddr.getLastCell())) {
                 address.fullAddress = StringUtils.removeEnd(address.fullAddress, originAddr.getLastCell());
             }
-            
+
             if (!address.fullAddress.endsWith(ExcelComponentConstants.DIVIDER_CELLADDRESS)) {
                 address.fullAddress = address.fullAddress.concat(ExcelComponentConstants.DIVIDER_CELLADDRESS);
             }
-            
+
             address.fullAddress = address.fullAddress.concat(address.lastCell);
             address.userDefinedNameForAddress = null;
             address.numberOfColumns = columns;
             address.numberOfRows = rows;
-            
+
             address = new ExcelAddress(excelFile, address.getFullAddress());
         }
         return address;

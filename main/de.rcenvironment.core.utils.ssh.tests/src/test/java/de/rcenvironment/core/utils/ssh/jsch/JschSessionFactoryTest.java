@@ -47,7 +47,7 @@ public class JschSessionFactoryTest {
     @SuppressWarnings("serial")
     @Before
     public void setUp() throws IOException {
-        port = Utils.getRandomPortNumber();
+        port = SshTestUtils.getRandomPortNumber();
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
@@ -78,7 +78,7 @@ public class JschSessionFactoryTest {
      * @throws SshParameterException on error
      * @throws JSchException on error
      **/
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testSetupSession() throws JSchException, SshParameterException {
         // TODO test with key files
         

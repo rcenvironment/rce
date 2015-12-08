@@ -43,7 +43,10 @@ public final class ParametricStudyComponentConstants {
     public static final String DYNAMIC_INPUT_IDENTIFIER = "parameters";
 
     /** Output name. */
-    public static final String OUTPUT_NAME = "Design Variable";
+    public static final String OUTPUT_NAME_DV = "Design variable";
+
+    /** Output name. */
+    public static final String OUTPUT_NAME_DONE = "Done";
 
     /** Constant. */
     public static final String OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS = "fitStepSizeToBounds";

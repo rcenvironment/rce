@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.communication.testutils;
 
-import java.util.Map;
 import java.util.Set;
 
 import org.osgi.framework.BundleContext;
@@ -35,14 +34,13 @@ public class CommunicationServiceDefaultStub implements CommunicationService {
     }
 
     @Override
-    public Object getService(Class<?> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-        throws IllegalStateException {
+    public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
         return null;
     }
 
     @Override
-    public Object getService(Class<?> iface, Map<String, String> properties, NodeIdentifier nodeId,
-        BundleContext bundleContext) throws IllegalStateException {
+    public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
+        throws IllegalStateException {
         return null;
     }
 

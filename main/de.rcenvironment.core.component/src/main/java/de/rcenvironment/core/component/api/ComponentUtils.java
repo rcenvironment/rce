@@ -42,6 +42,7 @@ import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -115,25 +116,34 @@ public final class ComponentUtils {
      */
     public static Map<NodeIdentifier, Integer> getNodesForComponent(Collection<ComponentInstallation> compInstallations,
         ComponentDescription compDesc) {
-        
+
         ComponentInterface compInterface = compDesc.getComponentInstallation().getComponentRevision().getComponentInterface();
-        String compInterfaceIdWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(compInterface.getIdentifier());
-        
+        String temp = getComponentInterfaceIdentifierWithoutVersion(compInterface.getIdentifier());
+
+        String compInterfaceIdWithoutVersion;
+
+        if (temp.contains(MISSING_COMPONENT_PREFIX)) {
+            compInterfaceIdWithoutVersion = temp.replace(MISSING_COMPONENT_PREFIX, "");
+        } else {
+            compInterfaceIdWithoutVersion = temp;
+        }
+
         Map<NodeIdentifier, Integer> identifiers = new HashMap<NodeIdentifier, Integer>();
         for (ComponentInstallation compInstallation : compInstallations) {
-            
+
             ComponentInterface compInterfaceToCheck = compInstallation.getComponentRevision().getComponentInterface();
             String compInterfaceIdToCheckWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(
                 compInterfaceToCheck.getIdentifier());
-            
+
             if (compInterfaceIdWithoutVersion.equals(compInterfaceIdToCheckWithoutVersion)) {
-                
+
                 NodeIdentifier node = NodeIdentifierFactory.fromNodeId(compInstallation.getNodeId());
                 int compared;
                 try {
                     Float versionToCheck = Float.valueOf(compInterfaceToCheck.getVersion());
                     Float version = Float.valueOf(compInterface.getVersion());
                     compared = versionToCheck.compareTo(version);
+
                 } catch (NumberFormatException e) {
                     compared = compInterfaceToCheck.getVersion().compareTo(compInterface.getVersion());
                 }
@@ -159,6 +169,7 @@ public final class ComponentUtils {
      */
     public static boolean hasComponent(Collection<ComponentInstallation> installations, String componentId, NodeIdentifier node) {
         for (ComponentInstallation installation : installations) {
+
             if (installation.getComponentRevision().getComponentInterface().getIdentifier().equals(componentId)
                 && installation.getNodeId().equals(node.getIdString())) {
                 return true;
@@ -186,11 +197,11 @@ public final class ComponentUtils {
 
             boolean contained = false;
             Iterator<ComponentInstallation> iterator = filteredInstallations.iterator();
-            
+
             while (iterator.hasNext()) {
                 String filteredCompInterfaceId = iterator.next().getComponentRevision().getComponentInterface().getIdentifier();
                 String filteredCompInterfaceIdWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(filteredCompInterfaceId);
-                
+
                 if (compInterfaceIdWithoutVersion.equals(filteredCompInterfaceIdWithoutVersion)) {
                     if (compInstallation.getNodeId().equals(localNode.getIdString())) {
                         iterator.remove();
@@ -207,7 +218,7 @@ public final class ComponentUtils {
 
         return filteredInstallations;
     }
-    
+
     /**
      * @param compInterfaceId component interface identifier
      * @return component interface identifier without version.
@@ -232,7 +243,7 @@ public final class ComponentUtils {
         }
         return null;
     }
-    
+
     /**
      * @param compInterfaceId Identifier of {@link ComponentInterface} to search for
      * @param installations {@link ComponentInstallation}s to search
@@ -253,7 +264,7 @@ public final class ComponentUtils {
 
     /**
      * @param componentInterfaceId component interface id to match
-     * @param componentInstallations  {@link ComponentInstallation}s to consider
+     * @param componentInstallations {@link ComponentInstallation}s to consider
      * @return {@link ComponentInstallation}, which matches the given component interface id first
      */
     public static ComponentInstallation getComponentInstallation(String componentInterfaceId,
@@ -267,7 +278,7 @@ public final class ComponentUtils {
         }
         return null;
     }
-    
+
     /**
      * Returns a placeholder {@link ComponentDescription} used if actual component of .wf file is not available.
      * 
@@ -426,11 +437,31 @@ public final class ComponentUtils {
      * @return list of {@link EndpointDefinition}s
      * @throws IOException if something went wrong
      */
-    public static Set<EndpointGroupDefinitionImpl> extractInputGroupDefinitions(InputStream jsonInputStream) throws IOException {
-        
+    public static Set<EndpointGroupDefinitionImpl> extractDynamicInputGroupDefinitions(InputStream jsonInputStream) throws IOException {
+        return extractInputGroupDefinitions(jsonInputStream, EndpointDefinitionConstants.JSON_KEY_DYNAMIC_INPUT_GROUPS);
+    }
+
+    /**
+     * @param jsonInputStream raw description in json
+     * @return list of {@link EndpointDefinition}s
+     * @throws IOException if something went wrong
+     */
+    public static Set<EndpointGroupDefinitionImpl> extractStaticInputGroupDefinitions(InputStream jsonInputStream)
+        throws IOException {
+        return extractInputGroupDefinitions(jsonInputStream, EndpointDefinitionConstants.JSON_KEY_STATIC_INPUT_GROUPS);
+    }
+
+    /**
+     * @param jsonInputStream raw description in json
+     * @return list of {@link EndpointDefinition}s
+     * @throws IOException if something went wrong
+     */
+    private static Set<EndpointGroupDefinitionImpl> extractInputGroupDefinitions(InputStream jsonInputStream, String key)
+        throws IOException {
+
         Set<EndpointGroupDefinitionImpl> endpointGroups = new HashSet<EndpointGroupDefinitionImpl>();
-        
-        for (Object definition : extractDefinitionAsList(jsonInputStream, EndpointDefinitionConstants.JSON_KEY_INPUT_GROUPS)) {
+
+        for (Object definition : extractDefinitionAsList(jsonInputStream, key)) {
             try {
                 EndpointGroupDefinitionImpl endpointGroup = new EndpointGroupDefinitionImpl();
                 endpointGroup.setRawEndpointGroupDefinition((Map<String, Object>) definition);
@@ -439,10 +470,10 @@ public final class ComponentUtils {
                 throw new IOException(e);
             }
         }
-        
+
         return endpointGroups;
     }
-    
+
     /**
      * @param jsonInputStream raw description in json
      * @param extendedJsonInputStream raw definition of meta data extension in json
@@ -575,6 +606,56 @@ public final class ComponentUtils {
         extConfigDef.setActivationFilter(extractDefinitionAsMap(activationFilterJson,
             ConfigurationDefinitionConstants.JSON_KEY_ACTIVATION_FILTER));
         return extConfigDef;
+    }
+    
+    /**
+     * Creates log message for an exception and its cause if it exists.
+     * 
+     * @param t throwable to consider
+     * @return formatted log message considering given throwable
+     */
+    public static String createErrorLogMessage(Throwable t) {
+        return addCauseToExceptionErrorLogMessage(t, "");
+    }
+    
+    /**
+     * Creates log message for an exception and its cause if it exists.
+     * 
+     * @param errorMessage error message to consider
+     * @param errorId unique id that serves a reference to the full-stack trace in the log file - it must be generated by the
+     *        {@link LogUtils} class
+     * @return formatted log message considering given error message and error id
+     */
+    public static String createErrorLogMessage(String errorMessage, String errorId) {
+        return StringUtils.format("%s (%s)", errorMessage, errorId);
+    }
+    
+    /**
+     * Creates log message for an exception and its cause if it exists.
+     * 
+     * @param t throwable to consider
+     * @param errorId unique id that serves a reference to the full-stack trace in the log file - it must be generated by the
+     *        {@link LogUtils} class
+     * @return formatted log message considering given throwable and error id
+     */
+    public static String createErrorLogMessage(Throwable t, String errorId) {
+        return StringUtils.format("%s (%s)", addCauseToExceptionErrorLogMessage(t, ""), errorId);
+    }
+    
+    private static String addCauseToExceptionErrorLogMessage(Throwable cause, String errorMessage) {
+        if (!errorMessage.isEmpty()) {
+            errorMessage = errorMessage + "; cause: ";
+        }
+        if (cause.getMessage() == null || cause.getMessage().isEmpty() 
+            || (cause.getCause() != null && cause.getMessage().startsWith(cause.getCause().getClass().getCanonicalName()))) {
+            errorMessage = errorMessage + "Unexpected error: " + cause.getClass().getSimpleName();
+        } else {
+            errorMessage = errorMessage + cause.getMessage();
+        }
+        if (cause.getCause() != null) {
+            errorMessage = addCauseToExceptionErrorLogMessage(cause.getCause(), errorMessage);
+        }
+        return errorMessage;
     }
 
     /**

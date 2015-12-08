@@ -10,10 +10,10 @@ package de.rcenvironment.components.cpacs.vampzeroinitializer.execution;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.cpacs.vampzeroinitializer.common.VampZeroInitializerComponentConstants;
@@ -27,9 +27,8 @@ import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.cpacs.utils.common.components.ChameleonCommonConstants;
-import de.rcenvironment.cpacs.utils.common.components.CpacsChannelFilter;
 
 /**
  * The "source" function based on aicraft predesign parameters.
@@ -40,106 +39,105 @@ import de.rcenvironment.cpacs.utils.common.components.CpacsChannelFilter;
  */
 public class VampZeroInitializerComponent extends DefaultComponent {
 
-    private static final Log LOG = LogFactory.getLog(VampZeroInitializerComponent.class);
-    
     private ComponentContext componentContext;
-    
+
     private ComponentDataManagementService dataManagementService;
 
     /** XML Content from the configuration map (created by the view). */
-    private String xmlContent;
+    private String vampZeroInputs;
 
     private XmlComponentHistoryDataItem historyDataItem = null;
-    
+
     private EndpointXMLService endpointXmlUtils;
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
     }
-    
+
     @Override
     public boolean treatStartAsComponentRun() {
         return componentContext.getInputs().isEmpty();
     }
-    
+
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
         endpointXmlUtils = componentContext.getService(EndpointXMLService.class);
-        
-        final String vampZeroInputs = componentContext.getConfigurationValue(VampZeroInitializerComponentConstants.XMLCONTENT);
 
-        if ((vampZeroInputs != null) && !vampZeroInputs.isEmpty()) { // allow non-initialized run of component (if in workflow
-                                                                     // but not connected)
-            xmlContent = vampZeroInputs;
-        } else {
-            LOG.warn("No output defined in component.");
+        vampZeroInputs = componentContext.getConfigurationValue(VampZeroInitializerComponentConstants.XMLCONTENT);
+
+        if (vampZeroInputs == null || vampZeroInputs.isEmpty()) {
+            throw new ComponentException("No initial CPACS for VAMPzero given. Did you forget to click the 'Create CPACS' button?");
         }
-        
+
         if (treatStartAsComponentRun()) {
             processInputs();
         }
     }
-    
+
     @Override
     public void processInputs() throws ComponentException {
-        if (xmlContent == null || xmlContent.isEmpty()) {
-            return;
-        }
         initializeNewHistoryDataItem();
-        File tempFile = null;
-        String cpacs = "";
+        File tempFile;
         try {
             tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("VAMPZeroInitializer-*.xml");
-            FileUtils.writeStringToFile(tempFile, xmlContent);
-            cpacs = dataManagementService.createTaggedReferenceFromLocalFile(componentContext, tempFile,
-                    ChameleonCommonConstants.CHAMELEON_CPACS_FILENAME);
+            FileUtils.writeStringToFile(tempFile, vampZeroInputs);
         } catch (IOException e) {
-            LOG.error(e);
+            throw new ComponentException("Failed to write initial CPACS into a temporary file "
+                + "(that is required for VAMPzero Initializer)", e);
         }
-        if (tempFile != null) {
-            // Dynamic input values
-            Map<String, TypedDatum> variableInputs = CpacsChannelFilter.getVariableInputs(componentContext);
-            if (historyDataItem != null && !variableInputs.isEmpty()) {
-                historyDataItem.setPlainXMLFileReference(cpacs);
+
+        Map<String, TypedDatum> variableInputs = new HashMap<>();
+        for (String inputName : componentContext.getInputsWithDatum()) {
+            if (componentContext.isDynamicInput(inputName)) {
+                variableInputs.put(inputName, componentContext.readInput(inputName));
             }
+        }
+
+        if (historyDataItem != null && !variableInputs.isEmpty()) {
             try {
-                endpointXmlUtils.updateXMLWithInputs(tempFile, variableInputs, componentContext);
-            } catch (DataTypeException e1) {
-                throw new ComponentException(e1.getMessage(), e1);
-            }
-            // Cpacs with dynamic input values in history object
-            final FileReferenceTD fileReference;
-            try {
-                fileReference = dataManagementService.createFileReferenceTDFromLocalFile(componentContext, tempFile,
-                    ChameleonCommonConstants.CHAMELEON_CPACS_FILENAME);
-                // Write Output
-                componentContext.writeOutput(ChameleonCommonConstants.CHAMELEON_CPACS_NAME, fileReference);
+                String plainVampZeroInputsFileRef = dataManagementService.createTaggedReferenceFromLocalFile(componentContext, tempFile,
+                    VampZeroInitializerComponentConstants.CPACS_FILENAME);
+                historyDataItem.setPlainXMLFileReference(plainVampZeroInputsFileRef);
+                storeHistoryDataItem();
             } catch (IOException e) {
-                LOG.debug(e);
+                String errorMessage = "Failed to store plain, initial CPACS file into the data management"
+                    + "; it will not be available in the workflow data browser";
+                String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(
+                    LogFactory.getLog(VampZeroInitializerComponent.class), errorMessage, e);
+                componentContext.getLog().componentError(errorMessage, e, errorId);
             }
-            try {
-                endpointXmlUtils.updateOutputsFromXML(tempFile, componentContext);
-            } catch (DataTypeException e1) {
-                throw new ComponentException(e1.getMessage(), e1);
-            }
-            storeHistoryDataItem();
+        }
+
+        try {
+            endpointXmlUtils.updateXMLWithInputs(tempFile, variableInputs, componentContext);
+        } catch (DataTypeException e) {
+            throw new ComponentException("Failed to add dynamic input values to the initial CPACS", e);
+        }
+
+        FileReferenceTD fileReference;
+        try {
+            fileReference = dataManagementService.createFileReferenceTDFromLocalFile(componentContext, tempFile,
+                VampZeroInitializerComponentConstants.CPACS_FILENAME);
+        } catch (IOException e) {
+            throw new ComponentException("Failed to store initial CPACS file in the data management - "
+                + "if it is not stored in the data management, it can not be sent as output value", e);
+        }
+
+        componentContext.writeOutput(VampZeroInitializerComponentConstants.OUTPUT_NAME_CPACS, fileReference);
+        try {
+            endpointXmlUtils.updateOutputsFromXML(tempFile, componentContext);
+        } catch (DataTypeException e) {
+            throw new ComponentException("Failed to extract dynamic output values from the initial CPACS", e);
         }
     }
 
     @Override
-    public void tearDown(FinalComponentState state) {
-        switch (state) {
-        case FAILED:
-            storeHistoryDataItem();
-            break;
-        default:
-            break;
-        }
-        super.tearDown(state);
+    public void completeStartOrProcessInputsAfterFailure() throws ComponentException {
+        storeHistoryDataItem();
     }
-    
+
     private void initializeNewHistoryDataItem() {
         if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             historyDataItem = new XmlComponentHistoryDataItem(VampZeroInitializerComponentConstants.COMPONENT_ID);

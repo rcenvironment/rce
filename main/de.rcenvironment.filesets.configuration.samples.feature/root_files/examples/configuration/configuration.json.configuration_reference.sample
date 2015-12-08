@@ -4,7 +4,12 @@
 		"instanceName" : "Reference example started by \"${systemUser}\" on ${hostName}",
 		"isWorkflowHost" : true,
 		"isRelay" : true,
-		"tempDirectory" : "/tmp/custom-temp-directory/${systemUser}"
+		"tempDirectory" : "/tmp/custom-temp-directory/${systemUser}",
+		"enableDeprecatedInputTab" : false
+	},
+	"backgroundMonitoring": {
+		"enabledIds": "basic_system_data",
+		"intervalSeconds": 15
 	},
 	"network" : {
 		"requestTimeoutMsec": 40000,
@@ -31,6 +36,16 @@
 				"127.0.0.1",
 				"127.0.0.2"
 			]
+		}
+	},
+	"sshRemoteAccess" : {
+		"sshConnections" : {
+			"exampleSSHConnection" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo"
+			}
 		}
 	},
 	"publishing" : {
@@ -79,7 +94,7 @@
 	},
 	"sshServer" : {
 		"enabled" : true,
-		"ip" : "127.0.0.1",
+		"host" : "127.0.0.1",
 		"port" : 31005,
 		"accounts" : {
 			"admin" : {

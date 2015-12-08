@@ -26,21 +26,21 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetupListene
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
 import de.rcenvironment.core.communication.connection.api.DisconnectReason;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 
 /**
  * Default {@link ConnectionSetupService} implementation.
  * 
  * @author Robert Mischke
  */
-public class ConnectionSetupServiceImpl implements ConnectionSetupService, ListenerProvider {
+public class ConnectionSetupServiceImpl implements ConnectionSetupService, AdditionalServicesProvider {
 
     private MessageChannelService messageChannelService;
 
@@ -56,9 +56,9 @@ public class ConnectionSetupServiceImpl implements ConnectionSetupService, Liste
     private final Log log = LogFactory.getLog(getClass());
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        List<ListenerDeclaration> result = new ArrayList<ListenerDeclaration>();
-        result.add(new ListenerDeclaration(MessageChannelLifecycleListener.class, new MessageChannelLifecycleListenerAdapter() {
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        List<AdditionalServiceDeclaration> result = new ArrayList<AdditionalServiceDeclaration>();
+        result.add(new AdditionalServiceDeclaration(MessageChannelLifecycleListener.class, new MessageChannelLifecycleListenerAdapter() {
 
             @Override
             public void onOutgoingChannelTerminated(MessageChannel connection) {
@@ -125,8 +125,8 @@ public class ConnectionSetupServiceImpl implements ConnectionSetupService, Liste
 
                 @Override
                 public void performCallback(ConnectionSetupListener listener) {
-                    listener.onCreated(newSetup);
                     listener.onCollectionChanged(snapshotOfCollection);
+                    listener.onCreated(newSetup);
                 }
             });
         }

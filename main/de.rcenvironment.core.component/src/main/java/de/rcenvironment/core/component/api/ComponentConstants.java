@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.api;
 import java.util.ArrayList;
 import java.util.List;
 
+import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.model.api.ComponentColor;
 import de.rcenvironment.core.component.model.api.ComponentShape;
@@ -84,12 +85,7 @@ public final class ComponentConstants {
     /**
      * Key for component's indefinite data type behevior.
      */
-    public static final String COMPONENT_CAN_HANDLE_INDEFINITE_INPUT_DATA_TYPES = "rce.component.canHandleIndefiniteInputDataTypes";
-
-    /**
-     * Key for component's reset behevior.
-     */
-    public static final String COMPONENT_IS_RESET_SINK = "rce.component.isResetSink";
+    public static final String COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES = "rce.component.canHandleNotAValueDataTypes";
 
     /**
      * Key for component's color.
@@ -219,9 +215,6 @@ public final class ComponentConstants {
     public static final String INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT = "inputExecutionConstraint_4aae3eea";
 
     /** Constant. */
-    public static final String INPUT_METADATA_KEY_INIT_VALUE = "initValue_dca67e34";
-
-    /** Constant. */
     public static final String KEY_NAME = "name";
 
     /** Constant. */
@@ -232,18 +225,12 @@ public final class ComponentConstants {
 
     /** Constant for ID separation. */
     public static final String ID_SEPARATOR = "/";
-
+    
     /** Constant. */
-    public static final String ENDPOINT_NAME_OUTERLOOP_DONE = "Outer loop done";
-
-    /** Constant. */
-    public static final String CONFIG_KEY_IS_NESTED_LOOP = "isNestedLoop_5e0ed1cd";
+    public static final String CONFIG_KEY_ENABLE_INPUT_TAB = "enableDeprecatedInputTab";
 
     /** Constant. */
     public static final String CONFIG_KEY_STORE_DATA_ITEM = "storeComponentHistoryData";
-
-    /** Constant. */
-    public static final String OUPUT_ID_OUTERLOOP_DONE = "outerLoopDone";
 
     /** Constant. */
     public static final ComponentColor COMPONENT_COLOR_STANDARD = ComponentColor.YELLOW;

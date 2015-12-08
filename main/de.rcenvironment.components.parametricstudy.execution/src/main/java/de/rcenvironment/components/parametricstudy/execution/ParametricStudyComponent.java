@@ -11,8 +11,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.logging.LogFactory;
-
 import de.rcenvironment.components.parametricstudy.common.Dimension;
 import de.rcenvironment.components.parametricstudy.common.Measure;
 import de.rcenvironment.components.parametricstudy.common.ParametricStudyComponentConstants;
@@ -21,14 +19,12 @@ import de.rcenvironment.components.parametricstudy.common.StudyDataset;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
 import de.rcenvironment.core.component.api.ComponentException;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ThreadHandler;
 import de.rcenvironment.core.component.model.api.LazyDisposal;
-import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
-import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
-import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -40,11 +36,11 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  */
 @LazyDisposal
-public class ParametricStudyComponent extends DefaultComponent {
+public class ParametricStudyComponent extends AbstractNestedLoopComponent {
+
+    private static final int MINUS_ONE = -1;
 
     private static ParametricStudyService parametricStudyService;
-
-    private static TypedDatumFactory typedDatumFactory;
 
     private StudyPublisher study;
 
@@ -58,18 +54,22 @@ public class ParametricStudyComponent extends DefaultComponent {
 
     private long steps;
 
-    private ComponentContext componentContext;
-
     private boolean fitStepSizeToBounds = true;
 
-    private int currentStep;
+    private int currentStep = 1;
+    
+    private int stepCount = 1;
+    
+    private boolean isDone;
 
     private static StudyStructure createStructure(final ComponentContext compExeCtx) {
         final StudyStructure structure = new StudyStructure();
         // outputs are dimensions
         for (String outputName : compExeCtx.getOutputs()) {
-            final Dimension dimension = new Dimension(outputName, true);
-            structure.addDimension(dimension);
+            if (outputName.equals(ParametricStudyComponentConstants.OUTPUT_NAME_DV)) {
+                final Dimension dimension = new Dimension(outputName, true);
+                structure.addDimension(dimension);
+            }
         }
         // inputs are measures
         for (String inputName : compExeCtx.getInputs()) {
@@ -80,141 +80,143 @@ public class ParametricStudyComponent extends DefaultComponent {
     }
 
     private double calculateInitialDesignVariable() {
+        if (fitStepSizeToBounds) {
+            return calculateInitialDesignVariableFittingStepSizeToBounds();
+        } else {
+            return calculateInitialDesignVariableNotFittingStepSizeToBounds();
+        }
+    }
+    
+    private double calculateInitialDesignVariableFittingStepSizeToBounds() {
         designVariable = from;
         return designVariable;
     }
 
-    private double geLastDesignVariable() {
-        return designVariable;
-    }
-
-    private double calculateDesignVariable(int step) {
+    private double calculateDesignVariableFittingStepSizeToBounds(int step) {
         designVariable = from + (to - from) * (step - 1.0) / (steps - 1.0);
         return designVariable;
     }
-
-    @Override
-    public void setComponentContext(ComponentContext componentContext) {
-        this.componentContext = componentContext;
+    
+    private double getLastDesignVariableFittingStepSizeToBounds() {
+        return designVariable;
+    }
+    
+    private double calculateInitialDesignVariableNotFittingStepSizeToBounds() {
+        return from;
+    }
+    
+    private double calculateDesignVariableNotFittingStepSizeToBounds() {
+        return from + currentStep * stepSize;
+    }
+    
+    private double getLastDesignVariableNotFittingStepSizeToBounds() {
+        return from + (currentStep - 1) * stepSize;
     }
 
     @Override
     public boolean treatStartAsComponentRun() {
-        return !componentContext.getOutputs().isEmpty();
+        return !hasForwardingStartInputs();
     }
 
     @Override
-    public void start() throws ComponentException {
-        typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
+    public void startNestedComponentSpecific() throws ComponentException {
+
         parametricStudyService = componentContext.getService(ParametricStudyService.class);
+        
+        from = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
+            ParametricStudyComponentConstants.OUTPUT_METATDATA_FROMVALUE));
+        to = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
+            ParametricStudyComponentConstants.OUTPUT_METATDATA_TOVALUE));
+        
+        stepSize = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
+            ParametricStudyComponentConstants.OUTPUT_METATDATA_STEPSIZE));
+        
+        if (stepSize <= 0) {
+            throw new ComponentException(StringUtils.format("Invalid step size: %d; must be >= 0", stepSize));
+        }
+        
+        if (from > to) {
+            stepSize = stepSize * MINUS_ONE;
+        }
+        
+        study = parametricStudyService.createPublisher(
+            componentContext.getExecutionIdentifier(),
+            componentContext.getInstanceName(),
+            createStructure(componentContext));
 
-        if (treatStartAsComponentRun()) {
-            from = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME,
-                ParametricStudyComponentConstants.OUTPUT_METATDATA_FROMVALUE));
-            to = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME,
-                ParametricStudyComponentConstants.OUTPUT_METATDATA_TOVALUE));
-            stepSize = Double.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME,
-                ParametricStudyComponentConstants.OUTPUT_METATDATA_STEPSIZE));
+        steps = ((Double) Math.floor((to - from) / stepSize)).longValue() + 1; // including first AND last
 
-            study = parametricStudyService.createPublisher(
-                componentContext.getExecutionIdentifier(),
-                componentContext.getInstanceName(),
-                createStructure(componentContext));
+        componentLog.componentInfo(StringUtils.format("Sampling from %s to %s with step size %s -> %d value(s)",
+            from, to, stepSize, steps));
 
-            steps = ((Double) Math.floor((to - from) / stepSize)).longValue() + 1; // including
-                                                                                   // first AND last
-            if (steps < 0) {
-                throw new ComponentException("Required number of steps exceeds range of the 'long' data type.");
-            }
-            if (componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME,
-                ParametricStudyComponentConstants.OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS) != null) {
-                fitStepSizeToBounds =
-                    Boolean.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME,
-                        ParametricStudyComponentConstants.OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS));
-            }
-            if (fitStepSizeToBounds) {
-                componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
-                    typedDatumFactory.createFloat(calculateInitialDesignVariable()));
-            } else {
-                componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
-                    typedDatumFactory.createFloat(from));
-            }
+        if (componentContext.getInputs().isEmpty()) {
+            componentLog.componentInfo("No input(s) defined -> writing all value at once");
+        }
+
+        if (componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
+            ParametricStudyComponentConstants.OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS) != null) {
+            fitStepSizeToBounds =
+                Boolean.valueOf(componentContext.getOutputMetaDataValue(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
+                    ParametricStudyComponentConstants.OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS));
+        }
+        if (!hasForwardingStartInputs()) {
+            sendDesignVariableToOutput(calculateInitialDesignVariable());
             study.add(new StudyDataset(new HashMap<String, Serializable>()));
-            currentStep = 1;
             if (componentContext.getInputs().isEmpty()) {
                 if (fitStepSizeToBounds) {
                     for (int step = 2; step <= steps; step++) {
-                        componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
-                            typedDatumFactory.createFloat(calculateDesignVariable(step)));
-                        if (step % 10 == 0 && Thread.interrupted()) {
-                            LogFactory.getLog(getClass()).debug(StringUtils.format("Component '%s' was interupted",
-                                componentContext.getInstanceName()));
-                            return;
-
-                        }
+                        sendDesignVariableToOutput(calculateDesignVariableFittingStepSizeToBounds(step));
                     }
                 } else {
-                    while (from + currentStep * stepSize <= to) {
-                        componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
-                            typedDatumFactory.createFloat(from + currentStep * stepSize));
-                        if (currentStep % 10 == 0 && Thread.interrupted()) {
-                            LogFactory.getLog(getClass()).debug(StringUtils.format("Component '%s' was interupted",
-                                componentContext.getInstanceName()));
-                            return;
-                        }
+                    while (calculateDesignVariableNotFittingStepSizeToBounds() <= to) {
+                        sendDesignVariableToOutput(calculateDesignVariableNotFittingStepSizeToBounds());
                         currentStep++;
                     }
                 }
+                setComponentDone(true);
+            } else {
+                setComponentDone(false);
             }
         }
     }
-
-    @Override
-    public void onStartInterrupted(ThreadHandler executingThreadHandler) {
-        executingThreadHandler.interrupt();
+    
+    private void sendDesignVariableToOutput(double value) {
+        writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME_DV,
+            typedDatumFactory.createFloat(value));
+        componentLog.componentInfo(StringUtils.format("Wrote to output '%s': %s",
+            ParametricStudyComponentConstants.OUTPUT_NAME_DV, value));
+        stepCount++;
     }
 
     @Override
-    public void processInputs() throws ComponentException {
-        if (componentContext.isOutputClosed(ParametricStudyComponentConstants.OUTPUT_NAME)) {
-            throw new ComponentException(StringUtils.format("Too many parameters received. "
-                + "Expect exactly one parameter per input per design variable sent. "
-                + "%s design variable sent and %s received", steps, steps + 1));
+    public void processInputsNestedComponentSpecific() throws ComponentException {
+        if (componentContext.isOutputClosed(ParametricStudyComponentConstants.OUTPUT_NAME_DV)) {
+            throw new ComponentException(StringUtils.format("Too many values received. "
+                + "Expect exactly one value per input per design variable sent. "
+                + "%s design variables(s) sent and %s value(s) received", steps, steps + 1));
         }
         // send input parameters to study service for monitoring purposes
         final Map<String, Serializable> values = new HashMap<String, Serializable>();
         // input parameters are response to previous iteration
         if (fitStepSizeToBounds) {
-            values.put(ParametricStudyComponentConstants.OUTPUT_NAME, geLastDesignVariable());
+            values.put(ParametricStudyComponentConstants.OUTPUT_NAME_DV, getLastDesignVariableFittingStepSizeToBounds());
         } else {
-            values.put(ParametricStudyComponentConstants.OUTPUT_NAME, from + (currentStep - 1) * stepSize);
+            values.put(ParametricStudyComponentConstants.OUTPUT_NAME_DV, getLastDesignVariableNotFittingStepSizeToBounds());
         }
-        for (String inputName : componentContext.getInputs()) {
-            TypedDatum input = componentContext.readInput(inputName);
-            if (input.getDataType().equals(DataType.NotAValue)) {
-                values.put(inputName, Double.NaN);
-            } else {
-                values.put(inputName, ((FloatTD) input).getFloatValue());
+        for (String inputName : componentContext.getInputsWithDatum()) {
+            if (componentContext.isDynamicInput(inputName)
+                && !componentContext.getDynamicInputIdentifier(inputName).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
+                TypedDatum input = componentContext.readInput(inputName);
+                if (input.getDataType().equals(DataType.NotAValue)) {
+                    values.put(inputName, Double.NaN);
+                } else {
+                    values.put(inputName, ((FloatTD) input).getFloatValue());
+                }
             }
         }
         study.add(new StudyDataset(values));
-        if (fitStepSizeToBounds) {
-            if (componentContext.getExecutionCount() <= steps) {
-                componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
-                    typedDatumFactory.createFloat(calculateDesignVariable(componentContext.getExecutionCount())));
-            } else {
-                componentContext.closeOutput(ParametricStudyComponentConstants.OUTPUT_NAME);
-            }
-        } else {
-            if (from + currentStep * stepSize <= to) {
-                componentContext.writeOutput(ParametricStudyComponentConstants.OUTPUT_NAME,
-                    typedDatumFactory.createFloat(from + currentStep * stepSize));
-            } else {
-                componentContext.closeOutput(ParametricStudyComponentConstants.OUTPUT_NAME);
-            }
-            currentStep++;
-        }
-
+        
+        setComponentDone(allDesignVariablesSent());
     }
 
     @Override
@@ -222,6 +224,51 @@ public class ParametricStudyComponent extends DefaultComponent {
         if (study != null) {
             study.clearStudy();
         }
+    }
+
+    @Override
+    protected boolean isDoneNestedComponentSpecific() {
+        return isDone;
+    }
+
+    @Override
+    protected void resetNestedComponentSpecific() {
+        currentStep = 1;
+        stepCount = 1;
+        setComponentDone(false);
+    }
+
+    @Override
+    protected void finishLoopNestedComponentSpecific() {}
+
+    @Override
+    protected void sendFinalValues() throws ComponentException {}
+
+    @Override
+    protected void sendValuesNestedComponentSpecific() {
+        if (fitStepSizeToBounds) {
+            sendDesignVariableToOutput(calculateDesignVariableFittingStepSizeToBounds(stepCount));
+        } else {
+            sendDesignVariableToOutput(calculateDesignVariableNotFittingStepSizeToBounds());
+            currentStep++;
+        }
+    }
+    
+    private boolean allDesignVariablesSent() {
+        if (fitStepSizeToBounds) {
+            if (stepCount <= steps) {
+                return false;
+            }
+        } else {
+            if (calculateDesignVariableNotFittingStepSizeToBounds() <= to) {
+                return false;
+            }
+        }
+        return true;
+    }
+    
+    private void setComponentDone(boolean done) {
+        isDone = done;
     }
 
 }

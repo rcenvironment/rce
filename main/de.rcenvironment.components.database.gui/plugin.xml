@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertySection
+               tab="workflow.editor.tab.database.inputoutput"
+               class="de.rcenvironment.components.database.gui.DatabaseInputOutputSection"
+               id="workflow.editor.tab.Properties.Section.Properties"
+               filter="de.rcenvironment.components.database.gui.DatabaseComponentFilter"
+               enablesFor="1">
+         </propertySection>
+                  <propertySection
+               tab="workflow.editor.tab.database.connection"
+               class="de.rcenvironment.components.database.gui.DatabaseConnectionSection"
+               id="workflow.editor.tab.Properties.Section.Properties"
+               filter="de.rcenvironment.components.database.gui.DatabaseComponentFilter"
+               enablesFor="1">
+         </propertySection>
+                  <propertySection
+               tab="workflow.editor.tab.database.statement"
+               class="de.rcenvironment.components.database.gui.DatabaseStatementSection"
+               id="workflow.editor.tab.Properties.Section.Properties"
+               filter="de.rcenvironment.components.database.gui.DatabaseComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.components.database.gui.DatabaseComponentFilter"
+		       id="workflow.editor.tab.HistoryData.Section"
+		       tab="workflow.editor.tab.HistoryData">
+         </propertySection>
+         
+  	</propertySections>
+  </extension>
+  
+   <!-- Register Property Sections -->
+   <extension
+         point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs
+            contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               id="workflow.editor.tab.database.inputoutput">
+         </propertyTab>
+         <propertyTab
+               label="Database"
+               category="default"
+               id="workflow.editor.tab.database.connection">
+         </propertyTab>
+         <propertyTab
+               label="Statement"
+               category="default"
+               id="workflow.editor.tab.database.statement">
+         </propertyTab>
+      </propertyTabs>
+   </extension>
+   
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+      <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
+      <validator 
+      		class="de.rcenvironment.components.database.gui.DatabaseComponentWorkflowNodeValidator"
+            filter="de.rcenvironment.components.database.gui.DatabaseComponentFilter">
+      </validator>
+   </extension>
+   <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
+      <builder class="de.rcenvironment.components.database.gui.DatabaseHistoryDataItemSubtreeBuilder"/>
+   </extension>
+   
+</plugin>

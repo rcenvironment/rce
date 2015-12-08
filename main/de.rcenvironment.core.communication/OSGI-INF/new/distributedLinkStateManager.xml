@@ -4,7 +4,7 @@
 	<implementation
 		class="de.rcenvironment.core.communication.routing.internal.v2.DistributedLinkStateManager" />
 	<service>
-		<provide interface="de.rcenvironment.core.utils.incubator.ListenerProvider" />
+		<provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider" />
 	</service>
 
 	<reference

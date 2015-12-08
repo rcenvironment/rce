@@ -3,10 +3,11 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Workflow
 Bundle-SymbolicName: de.rcenvironment.core.component.workflow
 Bundle-Vendor: DLR
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Export-Package: de.rcenvironment.core.component.workflow.api,
  de.rcenvironment.core.component.workflow.command.api,
  de.rcenvironment.core.component.workflow.execution.api,
+ de.rcenvironment.core.component.workflow.execution.headless.api,
  de.rcenvironment.core.component.workflow.execution.impl,
  de.rcenvironment.core.component.workflow.execution.spi,
  de.rcenvironment.core.component.workflow.model.api,
@@ -34,11 +35,14 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.component.update.api,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamanagement,
+ de.rcenvironment.core.datamanagement.backend,
  de.rcenvironment.core.datamanagement.commons,
  de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.notification,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
+ de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.incubator,
@@ -52,12 +56,12 @@ Import-Package: de.rcenvironment.core.authentication,
  org.codehaus.jackson.node;version="1.9.13",
  org.codehaus.jackson.type;version="1.9.13",
  org.codehaus.jackson.util;version="1.9.13",
+ org.eclipse.core.resources,
  org.eclipse.core.runtime;version="3.4.0",
- org.eclipse.draw2d,
- org.eclipse.draw2d.geometry,
  org.eclipse.equinox.security.storage;version="1.0.0",
  org.osgi.framework,
+ org.osgi.service.component;version="1.1.0",
  org.osgi.service.prefs;version="1.1.1"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Service-Component: OSGI-INF/*.xml
-DynamicImport-Package: *
+DynamicImport-Package: de.rcenvironment.*

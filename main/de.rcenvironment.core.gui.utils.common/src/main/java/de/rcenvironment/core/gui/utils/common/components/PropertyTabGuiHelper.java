@@ -55,8 +55,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Helper class to create unified-looking GUIs for everything connected with loading/saving of user
- * data.
+ * Helper class to create unified-looking GUIs for everything connected with loading/saving of user data.
  * 
  * @author Arne Bachmann
  * @author Jan Flink
@@ -107,11 +106,9 @@ public final class PropertyTabGuiHelper {
     private PropertyTabGuiHelper() {}
 
     /**
-     * Create handsome buttons. Provide {@link LinkedHashMap}s for correct button and action order
-     * (left-right and top-down)
+     * Create handsome buttons. Provide {@link LinkedHashMap}s for correct button and action order (left-right and top-down)
      * 
-     * @param parent The composite to insert the buttons into. They will be layed out in a
-     *        sub-container
+     * @param parent The composite to insert the buttons into. They will be layed out in a sub-container
      * @param factory Factory for the buttons
      * @param buttonActionMap A map of button name -> map of action name -> action
      * @return The created composite (sometimes needed in outer class), using formlayout
@@ -202,8 +199,7 @@ public final class PropertyTabGuiHelper {
      * @param parent The tabbedpropertysheets parent
      * @param factory The widgetfactory
      * @param title The title of the section
-     * @return The section to put a composite in, don't forget to set a section client = inner
-     *         composite
+     * @return The section to put a composite in, don't forget to set a section client = inner composite
      */
     public static Section createSingleColumnSectionComposite(final Composite parent,
         final TabbedPropertySheetWidgetFactory factory, final String title) {
@@ -280,7 +276,15 @@ public final class PropertyTabGuiHelper {
                 }
                 return result;
             }
+
+            @Override
+            protected void updateButtonsEnableState(IStatus status) {
+                getOkButton().setEnabled(status.isOK());
+            }
+
         };
+
+        selectionDialog.setStatusLineAboveButtons(false);
 
         if (filter == SelectionType.FILE) {
             selectionDialog.setValidator(fileValidator);
@@ -349,8 +353,7 @@ public final class PropertyTabGuiHelper {
     }
 
     /**
-     * Return the path expression to refer to the active editor's project, relative to the current
-     * workbench root.
+     * Return the path expression to refer to the active editor's project, relative to the current workbench root.
      * 
      * @return The name of the project or null if not found
      */
@@ -388,6 +391,5 @@ public final class PropertyTabGuiHelper {
         }
         return null;
     }
-
 
 }

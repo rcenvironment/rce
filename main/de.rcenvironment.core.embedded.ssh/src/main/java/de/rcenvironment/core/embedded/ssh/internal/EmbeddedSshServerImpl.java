@@ -123,7 +123,8 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
                         sshConfiguration.getPort(), sshConfiguration.getHost()), e);
             }
         } else {
-            logger.debug("Not running an SSH server as no SSH configuration is present, or the \"enabled\" property is not \"true\"");
+            logger.debug("Not running an SSH server as there is either no SSH configuration at all, "
+                + "or the \"enabled\" property is not \"true\", or the configuration data (including account settings) has errors");
         }
     }
 

@@ -9,6 +9,7 @@
 package de.rcenvironment.core.configuration;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
@@ -18,6 +19,8 @@ import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
  * 
  * @author Heinrich Wendel
  * @author Robert Mischke
+ * @author Sascha Zur
+ * @author Doreen Seider
  */
 public interface ConfigurationService {
 
@@ -184,6 +187,11 @@ public interface ConfigurationService {
          * The current instance's existing locations for reading integration data from.
          */
         READABLE_INTEGRATION_DIRS,
+        
+        /**
+         * The current instance's existing locations for reading JDBC driver jars from.
+         */
+        JDBC_DRIVER_DIRS,
     }
 
     /**
@@ -218,6 +226,25 @@ public interface ConfigurationService {
      * @return the defined {@link ConfigurationSegment}, or null if there is no configuration data at the given path
      */
     ConfigurationSegment getConfigurationSegment(String relativePath);
+
+    /**
+     * Retrieves, and if it does not exist yet, creates the object node at the given configuration path. The returned
+     * {@link WritableConfigurationSegment} can then be used to add, edit, or remove properties or elements.
+     * 
+     * @param relativePath a path that defines the sub-tree to fetch, with hierarchy levels separated by slashes (example:
+     *        "network/ipFilter"); an empty string fetches the whole configuration
+     * @return the {@link WritableConfigurationSegment}
+     * @throws ConfigurationException if there was an error fetching or creating the object node
+     */
+    WritableConfigurationSegment getOrCreateWritableConfigurationSegment(String relativePath) throws ConfigurationException;
+
+    /**
+     * Writes all changes made since the last {@link #reloadConfiguration()} call to the configuration file.
+     * 
+     * @throws ConfigurationException on configuration data errors
+     * @throws IOException on file I/O errors (e.g. a read-only configuration file)
+     */
+    void writeConfigurationChanges() throws ConfigurationException, IOException;
 
     /**
      * Temporary method for 6.0.0 to force reloading, until configuration writing and file watching (for external changes) is implemented.
@@ -256,6 +283,35 @@ public interface ConfigurationService {
     boolean getIsWorkflowHost();
 
     /**
+     * Returns the configured location coordinates, which must be latitude and longitude values.
+     * 
+     * @return 2 dim array of [lat, long]
+     */
+    double[] getLocationCoordinates();
+
+    /**
+     * Returns the name of the location the instance is at.
+     * 
+     * @return name, e.g. the institute or city.
+     */
+    String getLocationName();
+
+    /**
+     * Returns contact information for this instance.
+     * 
+     * @return contact
+     */
+    String getInstanceContact();
+
+    /**
+     * 
+     * Returns some addition information of this instance.
+     * 
+     * @return information text.
+     */
+    String getInstanceAdditionalInformation();
+
+    /**
      * Determines whether this node acts as a "relay", which means that when other nodes connect to this node, they are connected to a
      * single logical network through this node; in other words, their logical networks are connected to one, larger network.
      * 
@@ -269,7 +325,7 @@ public interface ConfigurationService {
      * @return the directory
      */
     File getProfileDirectory();
-
+    
     /**
      * Returns the location of the current profile's main configuration file, for example for presenting it to the user (e.g. for manual
      * editing), or exporting it.
@@ -279,12 +335,27 @@ public interface ConfigurationService {
     File getProfileConfigurationFile();
 
     /**
-     * Determines if the configured "instance data" directory was successfully locked; if this is the case, it is reserved for exclusive
-     * usage by this current instance.
+     * Determines if the configured "instance data" directory was used.
      * 
-     * @return true if the configured "instance data" was successfully locked
+     * @return <code>true</code> if {@link #isIntendedProfileDirectorySuccessfullyLocked()} and
+     *         {@link #hasIntendedProfileDirectoryValidVersion()} return <code>true</code>
      */
     boolean isUsingIntendedProfileDirectory();
+    
+    /**
+     * Determines whether the version of the configured "instance data" directory is valid, i.e., it is <= the current one.
+     * 
+     * @return <code>true</code> if the configured "instance data" has a version number <= the current one
+     */
+    boolean hasIntendedProfileDirectoryValidVersion();
+    
+    /**
+    * Determines if the configured "instance data" directory was successfully locked; if this is the case, it is reserved for exclusive
+    * usage by this current instance.
+    * 
+    * @return <code>true</code> if the configured "instance data" was successfully locked
+    */
+    boolean isIntendedProfileDirectorySuccessfullyLocked();
 
     /**
      * Returns the directory that was original configured to be used as the profile directory.
@@ -340,16 +411,12 @@ public interface ConfigurationService {
      * @return true if the default configuration file is used.
      */
     boolean isUsingDefaultConfigurationValues();
-    
-    
+
     /**
      * Returns the installation directory.
      * 
      * @return the installation directory
      */
     File getInstallationDir();
-    
-    
-    
 
 }

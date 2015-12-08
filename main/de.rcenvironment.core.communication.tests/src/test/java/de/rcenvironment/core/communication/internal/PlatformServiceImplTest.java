@@ -9,6 +9,7 @@
 package de.rcenvironment.core.communication.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
@@ -81,17 +82,29 @@ public class PlatformServiceImplTest {
      * Test {@link ConfigurationService} implementation.
      * 
      * @author Doreen Seider
+     * @author Brigitte Boden (added SSH config segment)
      */
     private class DummyConfigurationService extends MockConfigurationService.ThrowExceptionByDefault {
 
         @Override
         public ConfigurationSegment getConfigurationSegment(String relativePath) {
-            assertEquals("network", relativePath);
-            try {
-                return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
-                    "/config-tests/example1.json"));
-            } catch (IOException e) {
-                throw new AssertionError("Error loading configuration", e);
+            if ("network".equals(relativePath)) {
+                try {
+                    return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
+                        "/config-tests/example1.json"));
+                } catch (IOException e) {
+                    throw new AssertionError("Error loading configuration", e);
+                }
+            } else if ("sshRemoteAccess".equals(relativePath)) {
+                try {
+                    return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
+                        "/config-tests/exampleSsh.json"));
+                } catch (IOException e) {
+                    throw new AssertionError("Error loading configuration", e);
+                }
+            } else {
+                fail("relativePath must be \"network\" or \"ssh\"");
+                return null;
             }
         }
 
@@ -99,7 +112,7 @@ public class PlatformServiceImplTest {
         public boolean getIsWorkflowHost() {
             return false;
         }
-        
+
         @Override
         public boolean getIsRelay() {
             return false;
@@ -110,5 +123,24 @@ public class PlatformServiceImplTest {
             return "";
         }
 
+        @Override
+        public double[] getLocationCoordinates() {
+            return new double[] { 0.0, 0.0 };
+        }
+
+        @Override
+        public String getLocationName() {
+            return "";
+        }
+
+        @Override
+        public String getInstanceContact() {
+            return "";
+        }
+
+        @Override
+        public String getInstanceAdditionalInformation() {
+            return "";
+        }
     }
 }

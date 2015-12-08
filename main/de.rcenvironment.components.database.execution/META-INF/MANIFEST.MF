@@ -1,0 +1,27 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Database Component Execution
+Bundle-SymbolicName: de.rcenvironment.components.database.execution
+Bundle-Version: 7.0.0.qualifier
+Bundle-Vendor: DLR
+Bundle-ClassPath: .
+Import-Package: de.rcenvironment.components.database.common,
+ de.rcenvironment.components.database.common.jdbc,
+ de.rcenvironment.components.sql.common,
+ de.rcenvironment.components.sql.execution,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.execution.api,
+ de.rcenvironment.core.component.model.api,
+ de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.variables.legacy,
+ org.apache.commons.logging;version="1.1.1"
+Export-Package: de.rcenvironment.components.database.execution
+Service-Component: OSGI-INF/*.xml
+RCE-Component: true
+Require-Bundle: de.rcenvironment.platform.maven.other

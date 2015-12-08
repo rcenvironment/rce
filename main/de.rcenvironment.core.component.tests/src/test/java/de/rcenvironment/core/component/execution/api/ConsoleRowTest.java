@@ -41,7 +41,7 @@ public class ConsoleRowTest {
     
     private final String secondMessageLine = "2. console message line";
 
-    private final ConsoleRow.Type type = ConsoleRow.Type.STDOUT;
+    private final ConsoleRow.Type type = ConsoleRow.Type.TOOL_OUT;
 
     /** Test. */
     @Test

@@ -1,7 +1,0 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"
-	activate="activate" immediate="true" name="Chameleon ToolWrapper Generator">
-	<implementation class="de.dlr.sc.chameleon.rce.toolwrapper.generator.ToolWrapperGenerator" />
-	<reference bind="bindConfigurationService" cardinality="1..1"
-		interface="de.rcenvironment.core.configuration.ConfigurationService"
-		name="Configuration Service" policy="dynamic" unbind="unbindConfigurationService" />
-</scr:component>

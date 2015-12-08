@@ -10,11 +10,11 @@ package de.rcenvironment.core.communication.testutils;
 
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 
 /**
  * Service interface for methods that are usually required by the receiving end of a network
@@ -23,7 +23,7 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
  * 
  * @author Robert Mischke
  */
-public class DefaultRawMessageChannelEndpointHandler implements RawMessageChannelEndpointHandler {
+public class DefaultRawMessageChannelEndpointHandler implements MessageChannelEndpointHandler {
 
     @Override
     public InitialNodeInformation exchangeNodeInformation(InitialNodeInformation nodeInformation) {

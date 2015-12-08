@@ -8,8 +8,8 @@
 
 package de.rcenvironment.core.component.execution.api;
 
-import de.rcenvironment.core.component.execution.internal.EndpointDatumProcessor;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Component-specific {@link ExecutionController}.
@@ -29,11 +29,19 @@ public interface ComponentExecutionController extends ExecutionController {
     ComponentState getState();
     
     /**
-     * Calls if an {@link EndpointDatum} was received from a local {@link EndpointDatumProcessor}.
+     * Calls if an {@link EndpointDatum} was received from a local {@link RemotableEndpointDatumDispatcher}.
      * 
      * @param endpointDatum {@link EndpointDatum} received
      */
     void onEndpointDatumReceived(EndpointDatum endpointDatum);
+    
+    /**
+     * Called if asynchronous sending of an {@link EndpointDatum} failed.
+     * 
+     * @param endpointDatum affected {@link EndpointDatum}
+     * @param e {@link RemoteOperationException} thrown
+     */
+    void onSendingEndointDatumFailed(EndpointDatum endpointDatum, RemoteOperationException e);
     
     /**
      * Cancels the component.

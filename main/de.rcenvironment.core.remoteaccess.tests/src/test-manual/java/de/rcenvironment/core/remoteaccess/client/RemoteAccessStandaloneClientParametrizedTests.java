@@ -43,13 +43,21 @@ import de.rcenvironment.core.utils.testing.TestParametersProvider;
  */
 public class RemoteAccessStandaloneClientParametrizedTests {
 
+    private static final String TEST_TOOL_1_VERSION = "1.0";
+
+    private static final String TEST_TOOL_1_ID = "testTool";
+
+    private static final String TEST_TOOL_2_VERSION = "1 .,_-+()";
+
+    private static final String TEST_TOOL_2_ID = "tool .,_-+() valid name test";
+
     private static final String DEFAULT_TESTFILE_CONTENT = "testContent";
 
     private static final String DEFAULT_TEST_FILENAME = "test.txt";
 
     private static final String TOOL_LIST_COLUMN_SEPARATOR = " / ";
 
-    private static final String EXPECTED_PROTOCOL_VERSION = "6.2.0";
+    private static final String EXPECTED_PROTOCOL_VERSION = "7.0.0-pre1";
 
     private static final String PW_TEST_USER_ACCOUNT = "pwtest";
 
@@ -114,10 +122,6 @@ public class RemoteAccessStandaloneClientParametrizedTests {
 
     private String testPort;
 
-    private String testToolId;
-
-    private String testToolVersion;
-
     private final Log log = LogFactory.getLog(getClass());
 
     private File inputDir;
@@ -152,12 +156,9 @@ public class RemoteAccessStandaloneClientParametrizedTests {
         // read test parameters
         testParameters = new ParameterizedTestUtils().readDefaultPropertiesFile(getClass());
         standaloneDirectory = testParameters.getExistingDir("remoteaccess.standalone.location");
-        // TODO hardcoded for now
-        testIP = "127.0.0.1";
-        testHostName = "localhost";
-        testPort = "31055";
-        testToolId = "testTool";
-        testToolVersion = "1.0";
+        testIP = testParameters.getNonEmptyString("testserver.ip");
+        testHostName = testParameters.getNonEmptyString("testserver.hostname");
+        testPort = testParameters.getNonEmptyString("testserver.port");
 
         // validate
         Assert.assertTrue("Invalid path", standaloneDirectory.isDirectory());
@@ -416,13 +417,16 @@ public class RemoteAccessStandaloneClientParametrizedTests {
      * @throws Exception on unhandled test exceptions
      */
     @Test
-    public void listToolsAndExpectSingleTestTool() throws Exception {
+    public void listToolsAndFindExpectedTestTools() throws Exception {
         String command = buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, OPERATION_ID_LIST_TOOLS });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
-            parseAndValidateExecutionResult(result, 0, 1, 0);
+            parseAndValidateExecutionResult(result, 0, 2, 0);
             assertTrue(filteredStdout.get(0).startsWith(
-                testToolId + TOOL_LIST_COLUMN_SEPARATOR + testToolVersion + TOOL_LIST_COLUMN_SEPARATOR
+                TEST_TOOL_1_ID + TOOL_LIST_COLUMN_SEPARATOR + TEST_TOOL_1_VERSION + TOOL_LIST_COLUMN_SEPARATOR
+                    + TEST_SERVER_NODE_ID + TOOL_LIST_COLUMN_SEPARATOR));
+            assertTrue(filteredStdout.get(1).startsWith(
+                TEST_TOOL_2_ID + TOOL_LIST_COLUMN_SEPARATOR + TEST_TOOL_2_VERSION + TOOL_LIST_COLUMN_SEPARATOR
                     + TEST_SERVER_NODE_ID + TOOL_LIST_COLUMN_SEPARATOR));
         } catch (AssertionError e) {
             logFullOutputOnTestFailureAndRethrow(filteredStdout, filteredStderr, e);
@@ -438,12 +442,64 @@ public class RemoteAccessStandaloneClientParametrizedTests {
     public void testRunToolCommandWithValidDirectoriesAndNoNodeId() throws Exception {
         setupTempInputDir();
         setupTempOutputDir();
+        String cmdParameters = "123 - 546";
+        generateInputFile(DEFAULT_TEST_FILENAME, DEFAULT_TESTFILE_CONTENT);
+        String command =
+            buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
+                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, TEST_TOOL_1_ID, TEST_TOOL_1_VERSION,
+                DOUBLE_QUOTE + cmdParameters + DOUBLE_QUOTE });
+        ExecutionResult result = executorUtils.executeAndWait(command);
+        try {
+            final int expectedStdoutLines = 15;
+            parseAndValidateExecutionResult(result, 0, expectedStdoutLines, 0);
+            validateOutputFile("params.txt", DOUBLE_QUOTE + cmdParameters + DOUBLE_QUOTE, true);
+        } catch (AssertionError e) {
+            logFullOutputOnTestFailureAndRethrow(filteredStdout, filteredStderr, e);
+        }
+    }
+
+    /**
+     * Tests a remote tool execution that is valid except for an unsafe character in the parameter string.
+     * 
+     * @throws Exception on unhandled test exceptions
+     */
+    @Test
+    public void testValidRunToolCommandWithInsecureParameterString() throws Exception {
+        setupTempInputDir();
+        setupTempOutputDir();
+        // TODO once this test has a better parameterization setup, add more test cases for this
+        String cmdParameters = "123 - 546`x";
+        generateInputFile(DEFAULT_TEST_FILENAME, DEFAULT_TESTFILE_CONTENT);
+        String command =
+            buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
+                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, TEST_TOOL_1_ID, TEST_TOOL_1_VERSION,
+                DOUBLE_QUOTE + cmdParameters + DOUBLE_QUOTE });
+        ExecutionResult result = executorUtils.executeAndWait(command);
+        try {
+            final int expectedStdoutLines = 5; // side effect of no pre-validation in client, so execution is attempted
+            parseAndValidateExecutionResult(result, 1, expectedStdoutLines, 1);
+            // check for correct error message
+            assertTrue(filteredStderr.get(0).contains("forbidden character"));
+        } catch (AssertionError e) {
+            logFullOutputOnTestFailureAndRethrow(filteredStdout, filteredStderr, e);
+        }
+    }
+
+    /**
+     * Tests with the second test tool (which contains all allowed characters in its id and version).
+     * 
+     * @throws Exception on unhandled test exceptions
+     */
+    @Test
+    public void testRunToolCommandWithTool2AndValidDirectoriesAndNoNodeId() throws Exception {
+        setupTempInputDir();
+        setupTempOutputDir();
         String cmdParameters = "123 546";
         generateInputFile(DEFAULT_TEST_FILENAME, DEFAULT_TESTFILE_CONTENT);
         String command =
             buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
-                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, testToolId, testToolVersion,
-                DOUBLE_QUOTE + cmdParameters + DOUBLE_QUOTE });
+                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, DOUBLE_QUOTE + TEST_TOOL_2_ID + DOUBLE_QUOTE,
+                DOUBLE_QUOTE + TEST_TOOL_2_VERSION + DOUBLE_QUOTE, DOUBLE_QUOTE + cmdParameters + DOUBLE_QUOTE });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
             final int expectedStdoutLines = 15;
@@ -465,8 +521,8 @@ public class RemoteAccessStandaloneClientParametrizedTests {
         setupTempOutputDir();
         String command =
             buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
-                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, TOOL_NODE_ID_PARAMETER, TEST_SERVER_NODE_ID, testToolId,
-                testToolVersion, QUOTED_EMPTY_STRING });
+                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, TOOL_NODE_ID_PARAMETER, TEST_SERVER_NODE_ID, TEST_TOOL_1_ID,
+                TEST_TOOL_1_VERSION, QUOTED_EMPTY_STRING });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
             final int expectedStdoutLines = 15;
@@ -489,15 +545,15 @@ public class RemoteAccessStandaloneClientParametrizedTests {
         String command =
             buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
                 OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, TOOL_NODE_ID_PARAMETER, wrongNodeId,
-                testToolId, testToolVersion, QUOTED_EMPTY_STRING });
+                TEST_TOOL_1_ID, TEST_TOOL_1_VERSION, QUOTED_EMPTY_STRING });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
             final int expectedStdoutLines = 5;
             parseAndValidateExecutionResult(result, 1, expectedStdoutLines, 1);
             String errorMessage = filteredStderr.get(0);
             assertTrue(errorMessage.contains("No matching tool"));
-            assertTrue("Error message should contain the tool id", errorMessage.contains(testToolId));
-            assertTrue("Error message should contain the tool version", errorMessage.contains(testToolVersion));
+            assertTrue("Error message should contain the tool id", errorMessage.contains(TEST_TOOL_1_ID));
+            assertTrue("Error message should contain the tool version", errorMessage.contains(TEST_TOOL_1_VERSION));
             assertTrue("Error message should contain the wrong node id",
                 errorMessage.contains("running on a node with id '" + wrongNodeId + "'"));
         } catch (AssertionError e) {
@@ -514,8 +570,8 @@ public class RemoteAccessStandaloneClientParametrizedTests {
     public void testRunToolCommandWithMissingInputDirectory() throws Exception {
         assertNoDefaultInputOutputDirectoriesExist();
         String command =
-            buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, OPERATION_ID_RUN_TOOL, testToolId,
-                testToolVersion, QUOTED_EMPTY_STRING });
+            buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, OPERATION_ID_RUN_TOOL, TEST_TOOL_1_ID,
+                TEST_TOOL_1_VERSION, QUOTED_EMPTY_STRING });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
             parseAndValidateExecutionResult(result, 1, 0, 1);
@@ -538,7 +594,7 @@ public class RemoteAccessStandaloneClientParametrizedTests {
         setupTempInputDir();
         String command =
             buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
-                OPERATION_ID_RUN_TOOL, testToolId, testToolVersion, QUOTED_EMPTY_STRING });
+                OPERATION_ID_RUN_TOOL, TEST_TOOL_1_ID, TEST_TOOL_1_VERSION, QUOTED_EMPTY_STRING });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
             parseAndValidateExecutionResult(result, 1, 0, 1);
@@ -561,7 +617,7 @@ public class RemoteAccessStandaloneClientParametrizedTests {
         String toolParameters = "test parameters";
         String command =
             buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, QUOTED_EMPTY_STRING,
-                OUTPUT_DIR_PARAMETER, QUOTED_EMPTY_STRING, OPERATION_ID_RUN_TOOL, testToolId, testToolVersion, DOUBLE_QUOTE
+                OUTPUT_DIR_PARAMETER, QUOTED_EMPTY_STRING, OPERATION_ID_RUN_TOOL, TEST_TOOL_1_ID, TEST_TOOL_1_VERSION, DOUBLE_QUOTE
                     + toolParameters + DOUBLE_QUOTE });
         ExecutionResult result = executorUtils.executeAndWait(command);
         try {
@@ -580,7 +636,7 @@ public class RemoteAccessStandaloneClientParametrizedTests {
     @Test
     public void testRunToolCommandWithInvalidToolId() throws Exception {
         String bogusToolId = "bogusId";
-        String bogusToolVersion = "1.0"; // intentionally one of an existing tool
+        String bogusToolVersion = TEST_TOOL_1_VERSION; // intentionally one of an existing tool
         setupTempInputDir();
         setupTempOutputDir();
         String command =
@@ -593,6 +649,33 @@ public class RemoteAccessStandaloneClientParametrizedTests {
             String errorMessage = filteredStderr.get(0);
             assertTrue("Error message should contain the invalid tool's id", errorMessage.contains(bogusToolId));
             assertTrue("Error message should contain the invalid tool's version", errorMessage.contains(bogusToolVersion));
+        } catch (AssertionError e) {
+            logFullOutputOnTestFailureAndRethrow(filteredStdout, filteredStderr, e);
+        }
+    }
+
+    /**
+     * Tests validation of the tool id with an invalid character.
+     * 
+     * @throws Exception on unhandled test exceptions
+     */
+    @Test
+    public void testRunToolCommandWithInvalidCharacterInToolId() throws Exception {
+        String bogusToolId = "bogus#Id";
+        String bogusToolVersion = TEST_TOOL_1_VERSION; // intentionally one of an existing tool
+        setupTempInputDir();
+        setupTempOutputDir();
+        String command =
+            buildCommand(new String[] { HOST_PARAMETER, testIP, PORT_PARAMETER, testPort, INPUT_DIR_PARAMETER, inputDirPath,
+                OUTPUT_DIR_PARAMETER, outputDirPath, OPERATION_ID_RUN_TOOL, bogusToolId, bogusToolVersion,
+                DOUBLE_QUOTE + "xyz 2 #%§" + DOUBLE_QUOTE });
+        ExecutionResult result = executorUtils.executeAndWait(command);
+        try {
+            final int expectedStderrSize = 1;
+            parseAndValidateExecutionResult(result, 1, 0, expectedStderrSize);
+            String errorMessage = filteredStderr.get(0);
+            assertTrue("Error message should contain 'tool id'", errorMessage.contains("tool id"));
+            assertTrue("Error message should describe the error", errorMessage.contains("invalid character at position 6"));
         } catch (AssertionError e) {
             logFullOutputOnTestFailureAndRethrow(filteredStdout, filteredStderr, e);
         }

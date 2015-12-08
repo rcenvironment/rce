@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Imput Provider Component Execution
-Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution
+Bundle-Version: 7.0.0.qualifier
 Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.common,
@@ -32,4 +32,3 @@ Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy

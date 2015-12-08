@@ -87,13 +87,13 @@ public final class SshTestUtils {
      */
     public static List<SshAccountImpl> getValidUsers() {
         List<SshAccountImpl> users = new ArrayList<SshAccountImpl>();
-        users.add(new SshAccountImpl("admin", "adminadmin", null, NOT_RESTRICTED_ROLE));
-        users.add(new SshAccountImpl("developer", "developerdeveloper", null, NOT_RESTRICTED_ROLE));
-        users.add(new SshAccountImpl("user", "useruser", null, RESTRICTED_ROLE));
+        users.add(new SshAccountImpl("admin", "adminadmin", null, null, NOT_RESTRICTED_ROLE));
+        users.add(new SshAccountImpl("developer", "developerdeveloper", null, null, NOT_RESTRICTED_ROLE));
+        users.add(new SshAccountImpl("user", "useruser", null, null, RESTRICTED_ROLE));
         // Testing some special characters and numbers
-        users.add(new SshAccountImpl("_1€üöä()!.:,;_-<>[]{}", "_2$1()!.:,;_€üöä-<>[]{}", null, RESTRICTED_ROLE));
-        users.add(new SshAccountImpl("publicKeyTester", "", "1267576523765125612", RESTRICTED_ROLE));
-        users.add(new SshAccountImpl("default", "default", null, RESTRICTED_ROLE));
+        users.add(new SshAccountImpl("_1€üöä()!.:,;_-<>[]{}", "_2$1()!.:,;_€üöä-<>[]{}", null, null, RESTRICTED_ROLE));
+        users.add(new SshAccountImpl("publicKeyTester", "", null, "1267576523765125612", RESTRICTED_ROLE));
+        users.add(new SshAccountImpl("default", "default", null, null, RESTRICTED_ROLE));
         return users;
     }
 

@@ -21,6 +21,8 @@ import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CTabFolder;
 import org.eclipse.swt.custom.CTabItem;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -68,6 +70,12 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
     /** Key for in-/output from configuration map. */
     public static final String CONSTRAINT = ToolIntegrationConstants.KEY_INPUT_EXECUTION_CONSTRAINT;
 
+    /** Key for in-/output from configuration map. */
+    public static final String DEFAULT_HANDLING = ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING;
+
+    /** Key for in-/output from configuration map. */
+    public static final String DEFAULT_CONSTRAINT = ToolIntegrationConstants.KEY_DEFAULT_INPUT_EXECUTION_CONSTRAINT;
+
     /** Key for the input keyword. */
     public static final String INPUTS = ToolIntegrationConstants.KEY_ENDPOINT_INPUTS;
 
@@ -80,6 +88,8 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
     private Table inputTable;
 
     private Table outputTable;
+
+    private Table activTable;
 
     protected InOutputConfigurationPage(String pageName,
         Map<String, Object> configurationMap) {
@@ -102,6 +112,10 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
         outputTable = createTabItem(Messages.outputs, OUTPUTS, tabFolder);
         updateTable(INPUTS);
         updateTable(OUTPUTS);
+
+        fillContextMenu(inputTable);
+        fillContextMenu(outputTable);
+
         tabFolder.setSelection(0);
         setControl(tabFolder);
         setPageComplete(true);
@@ -150,11 +164,17 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
             col4 = new TableColumn(table, SWT.NONE);
             col4.setText(Messages.inputExecutionConstraint);
+
+            table.setData(INPUTS);
             /**
              * Commented out because of bug with renaming file / dir
              */
             // col5 = new TableColumn(table, SWT.NONE);
             // col5.setText(Messages.filename);
+        } else {
+
+            table.setData("output");
+
         }
 
         // layout data for the columns
@@ -197,16 +217,34 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
             buttonEdit, buttonRemove));
         table.addMouseListener(new MouseAdapter() {
 
-            @SuppressWarnings("unchecked")
             @Override
             public void mouseDoubleClick(MouseEvent e) {
 
                 TableItem[] selection = table.getSelection();
-                String title = type.substring(0, 1).toUpperCase()
-                    + type.substring(1, type.length() - 1);
 
-                btnSelectionListener.editInputOutput(selection, title, type);
+                editInputOutput(selection, type);
 
+            }
+
+            @Override
+            public void mouseDown(MouseEvent e) {
+
+                activTable = table;
+            }
+        });
+
+        table.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+                if (e.keyCode == SWT.DEL) {
+
+                    TableItem[] selection = table.getSelection();
+
+                    removeInputOutput(selection, type);
+
+                }
             }
         });
 
@@ -229,8 +267,7 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
             table = outputTable;
         }
         table.removeAll();
-        List<Map<String, String>> staticEndpoints = (List<Map<String, String>>) configurationMap
-            .get(type);
+        List<Map<String, String>> staticEndpoints = (List<Map<String, String>>) configurationMap.get(type);
         fillCells(staticEndpoints, table, type);
     }
 
@@ -363,6 +400,7 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
             this.table = table;
             this.editButton = editButton;
             this.removeButton = removeButton;
+
         }
 
         @Override
@@ -385,14 +423,15 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
         private final Button button;
 
-        private final Table table;
+        private final Table selectionTable;
 
         private final String type;
 
         public ButtonSelectionListener(Button button, Table table, String name) {
             this.button = button;
-            this.table = table;
+            this.selectionTable = table;
             type = name;
+
         }
 
         @Override
@@ -401,84 +440,28 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void widgetSelected(SelectionEvent arg0) {
-            TableItem[] selection = table.getSelection();
-            String title = type.substring(0, 1).toUpperCase()
-                + type.substring(1, type.length() - 1);
+
+            TableItem[] selection = selectionTable.getSelection();
 
             if (button.getText().equals(Messages.add)) {
-                WizardEndpointEditDialog weed = new WizardEndpointEditDialog(
-                    null, Messages.add + " " + title, type,
-                    getAllEndpointNames(type));
-                int exit = weed.open();
-                if (exit == Dialog.OK) {
-                    if (((List<Map<String, String>>) configurationMap.get(type)) == null) {
-                        configurationMap.put(type,
-                            new LinkedList<Map<String, String>>());
-                    }
-                    ((List<Map<String, String>>) configurationMap.get(type))
-                        .add(weed.getConfig());
-                    updateTable(type);
-                    ((ToolIntegrationWizard) getWizard()).updateAllPages();
-                }
+
+                // addInputOutput(selection, title, type);
+                addInputOutput(type);
+
             } else if (button.getText().equals(Messages.edit)) {
 
-                editInputOutput(selection, title, type);
+                editInputOutput(selection, type);
 
             } else if (button.getText().equals(Messages.remove)) {
-                if (selection != null && selection.length > 0) {
-                    List<Map<String, String>> endpointList = (List<Map<String, String>>) configurationMap
-                        .get(type);
-                    Map<String, String> endpointToRemove = null;
-                    for (Map<String, String> endpoint : endpointList) {
-                        if (endpoint.get(NAME) != null
-                            && endpoint.get(NAME).equals(
-                                selection[0].getText())) {
-                            endpointToRemove = endpoint;
-                        }
-                    }
-                    endpointList.remove(endpointToRemove);
-                    updateTable(type);
-                    ((ToolIntegrationWizard) getWizard()).updateAllPages();
-                }
+
+                removeInputOutput(selection, type);
+
             }
 
         }
 
-        @SuppressWarnings("unchecked")
-        public void editInputOutput(TableItem[] selection, String title,
-            String typ) {
-
-            if (selection != null && selection.length > 0) {
-                List<Map<String, String>> endpointList = (List<Map<String, String>>) configurationMap
-                    .get(typ);
-                Map<String, String> oldConfig = null;
-                Map<String, String> oldConfigCopy = new HashMap<String, String>();
-                for (Map<String, String> endpoint : endpointList) {
-                    if (endpoint.get(NAME) != null
-                        && endpoint.get(NAME)
-                            .equals(selection[0].getText())) {
-                        oldConfigCopy.putAll(endpoint);
-                        oldConfig = endpoint;
-                    }
-                }
-                WizardEndpointEditDialog weed = new WizardEndpointEditDialog(
-                    null, Messages.edit + " " + title, typ, oldConfigCopy,
-                    getAllEndpointNames(typ));
-                int exit = weed.open();
-                if (exit == Dialog.OK) {
-                    ((List<Map<String, String>>) configurationMap.get(typ))
-                        .remove(oldConfig);
-                    ((List<Map<String, String>>) configurationMap.get(typ))
-                        .add(weed.getConfig());
-                    updateTable(typ);
-                    ((ToolIntegrationWizard) getWizard()).updateAllPages();
-                }
-            }
-
-        }
     }
 
     /**
@@ -506,6 +489,120 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
             .displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_inputOutput");
     }
 
+    @SuppressWarnings("unchecked")
+    private void addInputOutput(String type) {
+
+        String title = type.substring(0, 1).toUpperCase()
+            + type.substring(1, type.length() - 1);
+
+        WizardEndpointEditDialog weed = new WizardEndpointEditDialog(
+            null, Messages.add + " " + title, type,
+            getAllEndpointNames(type));
+        int exit = weed.open();
+        if (exit == Dialog.OK) {
+            if (((List<Map<String, String>>) configurationMap.get(type)) == null) {
+                configurationMap.put(type, new LinkedList<Map<String, String>>());
+            }
+            ((List<Map<String, String>>) configurationMap.get(type)).add(weed.getConfig());
+            updateTable(type);
+            ((ToolIntegrationWizard) getWizard()).updateAllPages();
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void editInputOutput(TableItem[] selection,
+        String type) {
+
+        String title = type.substring(0, 1).toUpperCase()
+            + type.substring(1, type.length() - 1);
+
+        if (selection != null && selection.length > 0) {
+            List<Map<String, String>> endpointList = (List<Map<String, String>>) configurationMap.get(type);
+            Map<String, String> oldConfig = null;
+            Map<String, String> oldConfigCopy = new HashMap<String, String>();
+            for (Map<String, String> endpoint : endpointList) {
+                if (endpoint.get(NAME) != null && endpoint.get(NAME).equals(selection[0].getText())) {
+                    oldConfigCopy.putAll(endpoint);
+                    oldConfig = endpoint;
+                }
+            }
+            WizardEndpointEditDialog weed = new WizardEndpointEditDialog(
+                null, Messages.edit + " " + title, type, oldConfigCopy,
+                getAllEndpointNames(type));
+            int exit = weed.open();
+            if (exit == Dialog.OK) {
+                ((List<Map<String, String>>) configurationMap.get(type)).remove(oldConfig);
+                ((List<Map<String, String>>) configurationMap.get(type)).add(weed.getConfig());
+                updateTable(type);
+                ((ToolIntegrationWizard) getWizard()).updateAllPages();
+            }
+        }
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void removeInputOutput(TableItem[] selection,
+        String type) {
+
+        if (selection != null && selection.length > 0) {
+            List<Map<String, String>> endpointList = (List<Map<String, String>>) configurationMap.get(type);
+            Map<String, String> endpointToRemove = null;
+            for (Map<String, String> endpoint : endpointList) {
+                if (endpoint.get(NAME) != null
+                    && endpoint.get(NAME).equals(
+                        selection[0].getText())) {
+                    endpointToRemove = endpoint;
+                }
+            }
+            endpointList.remove(endpointToRemove);
+            updateTable(type);
+            ((ToolIntegrationWizard) getWizard()).updateAllPages();
+        }
+
+    }
+
     @Override
     public void updatePage() {}
+
+    @Override
+    protected void onAddClicked() {
+
+        if (activTable.getData().equals(INPUTS)) {
+            addInputOutput(INPUTS);
+        } else {
+            addInputOutput(OUTPUTS);
+        }
+
+    }
+
+    @Override
+    protected void onEditClicked() {
+
+        TableItem[] selection = activTable.getSelection();
+
+        if (activTable.getData().equals(INPUTS)) {
+
+            editInputOutput(selection, INPUTS);
+        } else {
+
+            editInputOutput(selection, OUTPUTS);
+        }
+
+    }
+
+    @Override
+    protected void onRemoveClicked() {
+
+        TableItem[] selection = activTable.getSelection();
+
+        if (activTable.getData().equals(INPUTS)) {
+
+            removeInputOutput(selection, INPUTS);
+        } else {
+
+            removeInputOutput(selection, OUTPUTS);
+        }
+
+    }
+
 }

@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.datamanagement.backend;
 
-import de.rcenvironment.core.datamanagement.MetaDataService;
+import de.rcenvironment.core.datamanagement.RemotableMetaDataService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.ComponentInstance;
 import de.rcenvironment.core.datamanagement.commons.ComponentRun;
@@ -20,7 +20,7 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
  * 
  * @author Jan Flink
  */
-public interface MetaDataBackendService extends MetaDataService {
+public interface MetaDataBackendService extends RemotableMetaDataService {
 
     /**
      * Key for a service property.
@@ -77,5 +77,19 @@ public interface MetaDataBackendService extends MetaDataService {
      * @param binaryReference The {@link BinaryReference} to add.
      */
     void addBinaryReference(Long dataReferenceId, BinaryReference binaryReference);
+    
+    /**
+     * Checks if the meta data backend service was started successfully.
+     * 
+     * @return true, iff meta data backend service was started successfully.
+     */
+    boolean isMetaDataBackendOk();
+    
+    /**
+     * Gets error message if the meta data backend service was not started successfully.
+     * 
+     * @return error message if the meta data backend service was not started successfully, and null, else.
+     */
+    String getMetaDataBackendStartErrorMessage();
 
 }

@@ -139,7 +139,7 @@ public class ParameterCompositeWrapper {
                 }
             }
         }, TableWrapData.FILL);
-        revertButton.setImage(factory.revertImage);
+        revertButton.setImage(factory.undoImage);
         ((TableWrapData) revertButton.getLayoutData()).grabHorizontal = true;
 
         final Runnable applyAction = new Runnable() {

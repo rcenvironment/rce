@@ -2,12 +2,11 @@
 # contains fill-ins for the about dialog (plugin.properties) of all distributions
 
 # Release name
-1=Kapalua Butterfly
+1=Blue Cobra
 
 # Copyright information
-4=\u00A92010-2015 DLR, Germany. All rights reserved.\n\u00A92006-2010 DLR, Fraunhofer SCAI, Germany. All rights reserved.\n
+3=\u00A92010-2015 DLR, Germany. All rights reserved.\n\u00A92006-2010 DLR, Fraunhofer SCAI, Germany. All rights reserved.\n
 
 # dynamic content via system properties, set in GUIRunner.java
-0=$aboutText.version$
-2=$aboutText.buildId$
-3=$aboutText.buildHint$
+0=$rce.version$
+2=$rce.buildId$

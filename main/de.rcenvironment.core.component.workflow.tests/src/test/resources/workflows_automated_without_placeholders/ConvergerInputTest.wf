@@ -1,0 +1,937 @@
+{
+  "identifier" : "d6cf2542-2bc0-46e2-ad1a-cd8df94ace0e",
+  "workflowVersion" : "4",
+  "name" : "Converger_onlyMeta_2015-10-29_10:57:05_09",
+  "nodes" : [ {
+    "identifier" : "87ffd706-56b9-44a2-9c74-5b7cb1265373",
+    "name" : "Script6",
+    "location" : "1048:150",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print RCE.read_input(\"fin\")",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "93d6fe7c-e564-4509-ab9a-fb45b587c179",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "33aa7091-4c6a-4f26-9fcb-159f5818930d",
+      "name" : "fin",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "name" : "ConvergerOnlyMeta",
+    "location" : "243:279",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "4.1",
+      "name" : "Converger"
+    },
+    "configuration" : {
+      "epsA" : "0.1",
+      "epsR" : "0.1",
+      "iterationsToConsider" : "1"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "ca2f7ad2-39a4-4654-846f-6ca8eadf5f89",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "1",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true"
+      }
+    }, {
+      "identifier" : "dcab31f9-7455-4a0e-927b-890496a60181",
+      "name" : "y",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "1",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "60404443-e0cc-4939-bfe3-b09ec4b602dc",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "0351c8a5-1e13-4eda-b82b-3c2f1bcc325d",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "b1c1c68d-52ac-49af-8b86-bb8aeced0692",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "8050548c-63c5-481f-aa96-01637b6d1d35",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "2ad82117-8692-4c81-bf4c-1329a9dcb090",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "80bb4724-dac2-4818-b634-d528d2744dfb",
+      "name" : "x_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "4af01c53-7093-4711-a136-83a23f08c93b",
+      "name" : "y",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "b3006ddc-f7f3-4ad3-ae91-7cfe116e3094",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "1",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true"
+      }
+    }, {
+      "identifier" : "36e5a577-6968-4b39-9b11-7b47b3c75391",
+      "name" : "y_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "1d72bb2b-fdfd-4d53-bb6a-912c5fffea82",
+    "name" : "Copy of Input Provider",
+    "location" : "908:282",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "f0c36eb5-1e93-4c14-902a-696c4f9f4c97",
+      "name" : "start",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "42"
+      }
+    } ]
+  }, {
+    "identifier" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "name" : "Converger",
+    "location" : "650:270",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "4.1",
+      "name" : "Converger"
+    },
+    "configuration" : {
+      "epsR" : "0.1",
+      "epsA" : "0.1",
+      "iterationsToConsider" : "1"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "b5da2c68-dc78-497a-aa90-0e7926383fef",
+      "name" : "x_start",
+      "epIdentifier" : "valueToConverge",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "828c5968-b753-4989-a802-06ef506e122f",
+      "name" : "y_start",
+      "epIdentifier" : "valueToConverge",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "daa07e8f-46ba-4bbb-9cae-ce37c01a9b32",
+      "name" : "y",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "a6d47066-3a61-406b-bfd0-c2308c12606a",
+      "name" : "fw_start",
+      "epIdentifier" : "toForward",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "571dca07-1655-4a1a-880b-2ed95319a04a",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "405f3f0f-2ede-4298-8b79-8db2700cd609",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "ab53c522-6114-4043-9b39-09218aeab1fe",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "2ea0fcae-993d-4919-9fb1-fbb5ed0b1e7d",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "2c101ffc-fb93-48ca-844b-c6e92aef21e7",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "d7f87faf-b618-4317-8bc7-330b47d9dda0",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "66c83bc3-de13-4410-bfbb-be7adabee80a",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "7257dca6-e322-41bf-a49a-bebd1c3b27e8",
+      "name" : "y_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "07bf984e-38af-4cef-adde-6d7ce212d0e6",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "e4e4d0db-fdc5-426a-9609-8e68290d3789",
+      "name" : "y",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "3baea096-ceb0-47a6-abef-5d0eb98bad13",
+      "name" : "x_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "13d5c6cb-8134-44eb-bfda-b959d64b9dbd",
+      "name" : "fw_converged",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "83f46ca7-f017-48ca-849a-70c88a8fc768",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "3028c6a6-ff3a-4875-b47a-e49582b29099",
+    "name" : "Script4",
+    "location" : "650:150",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print RCE.read_input(\"fin\")",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f5a70b59-f5ab-4787-94a3-a016d8ad13a2",
+      "name" : "fin",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "b0201cd9-4e6b-427a-8d29-e5a0ed504ae9",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "61b630ae-67f4-42e1-a567-94bb55057600",
+    "name" : "Input Provider",
+    "location" : "510:289",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "30c0b3d1-3237-455f-b58c-e0badd3df6c2",
+      "name" : "start",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "42"
+      }
+    } ]
+  }, {
+    "identifier" : "0f04413f-d31d-4d55-ae51-43091cf2e5f9",
+    "name" : "Script3",
+    "location" : "787:270",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output(\"y\", RCE.read_input(\"x\")/10)\r\nRCE.write_output(\"fw\", RCE.read_input(\"fw\")/10)\r\n",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "3db2be93-9736-404e-bf43-10d736cba210",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "5ca04f60-145a-472c-bb73-626a420b3f72",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "07422c52-7541-42f2-b46a-b59fe4df09c8",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "11443fc2-28b4-4789-8cb0-eb25cc14726e",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "6468470e-e374-440a-b00a-e69fb76ee1d0",
+    "name" : "Script1",
+    "location" : "365:279",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output(\"y\", RCE.read_input(\"x\")/10)\r\nRCE.write_output(\"fw\", RCE.read_input(\"fw\")/10)\r\n",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c8995a15-9614-4a9e-b08d-439aea3c5619",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "3c12b402-fe32-4267-ab60-e78bbd0d56c2",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "ac1b1894-a1fc-4061-b78e-43ac68be40f5",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "c5b76954-a1fd-49af-9f05-51db2bc81290",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "8eee2e9f-ab7c-49f6-b162-83ee5689460b",
+    "name" : "Script2",
+    "location" : "243:160",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print RCE.read_input(\"fin\")",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "e360ba3e-11ac-4bac-94d3-b6656be1094c",
+      "name" : "fin",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "a33d975a-9cbd-401d-bdbd-78638f7e7cbc",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "name" : "Converger (1)",
+    "location" : "1048:263",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "4.1",
+      "name" : "Converger"
+    },
+    "configuration" : {
+      "epsR" : "0.1",
+      "epsA" : "0.1",
+      "iterationsToConsider" : "1"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "39b2f59c-4afe-4f43-b5d2-da7796b7143c",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "ffd3ebe1-5271-4b99-98e4-0c3ceb2e3789",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "2d081c0c-c35a-47e0-8a3b-365fb4dd957a",
+      "name" : "y",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "1",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true"
+      }
+    }, {
+      "identifier" : "5d592f5e-dda8-469a-b60b-d6112a71d5d5",
+      "name" : "x_start",
+      "epIdentifier" : "valueToConverge",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "b3694ab5-0cb0-4206-b949-f3305b5ebf4f",
+      "name" : "fw_start",
+      "epIdentifier" : "toForward",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "ec503aec-21e5-41bf-9960-a54d21d4ba7d",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "6e8fbeed-9dab-4817-b674-fa52b9ef63c4",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "063ea169-fcc8-4bdc-89fa-1420a8665157",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "e0c8b670-67b0-4161-984c-f06c84e0fbef",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "f1eefa36-0ab4-4fc0-aa90-26c2a5fd870d",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "5ffbf273-013c-406e-b6b6-82fca82f4b00",
+      "name" : "y_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "a70a9b77-8e9f-4186-9558-c7650461e095",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "a9a27dc6-0c68-4643-abdb-fa8eed1f45c5",
+      "name" : "x_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "308a7d7d-215d-4ae4-b915-483339bf2392",
+      "name" : "fw_converged",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "e9a48473-ec6e-4239-9056-17982742d2a0",
+      "name" : "y",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "e5eb9a3a-c7cd-4aeb-9374-ccf536091f7e",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "d68e8651-2684-4d17-969f-9065033ff506",
+    "name" : "Script5",
+    "location" : "1162:263",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output(\"y\", RCE.read_input(\"x\")/10)\r\nRCE.write_output(\"fw\", RCE.read_input(\"fw\")/10)\r\n",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "adf31425-8220-4d39-8a9a-ab6cfdae2f09",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "ceb3bd8d-98eb-4026-9ec3-97d260c7687f",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "9d0a8d3e-c9cf-4e28-a220-59dbb080a498",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "0267f45e-08c2-486d-9343-2eec4549d5f8",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "d68e8651-2684-4d17-969f-9065033ff506",
+    "output" : "0267f45e-08c2-486d-9343-2eec4549d5f8",
+    "target" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "input" : "39b2f59c-4afe-4f43-b5d2-da7796b7143c"
+  }, {
+    "source" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "output" : "3baea096-ceb0-47a6-abef-5d0eb98bad13",
+    "target" : "3028c6a6-ff3a-4875-b47a-e49582b29099",
+    "input" : "f5a70b59-f5ab-4787-94a3-a016d8ad13a2"
+  }, {
+    "source" : "0f04413f-d31d-4d55-ae51-43091cf2e5f9",
+    "output" : "11443fc2-28b4-4789-8cb0-eb25cc14726e",
+    "target" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "input" : "405f3f0f-2ede-4298-8b79-8db2700cd609"
+  }, {
+    "source" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "output" : "13d5c6cb-8134-44eb-bfda-b959d64b9dbd",
+    "target" : "3028c6a6-ff3a-4875-b47a-e49582b29099",
+    "input" : "b0201cd9-4e6b-427a-8d29-e5a0ed504ae9"
+  }, {
+    "source" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "output" : "a70a9b77-8e9f-4186-9558-c7650461e095",
+    "target" : "d68e8651-2684-4d17-969f-9065033ff506",
+    "input" : "adf31425-8220-4d39-8a9a-ab6cfdae2f09"
+  }, {
+    "source" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "output" : "4af01c53-7093-4711-a136-83a23f08c93b",
+    "target" : "6468470e-e374-440a-b00a-e69fb76ee1d0",
+    "input" : "3c12b402-fe32-4267-ab60-e78bbd0d56c2"
+  }, {
+    "source" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "output" : "a9a27dc6-0c68-4643-abdb-fa8eed1f45c5",
+    "target" : "87ffd706-56b9-44a2-9c74-5b7cb1265373",
+    "input" : "33aa7091-4c6a-4f26-9fcb-159f5818930d"
+  }, {
+    "source" : "61b630ae-67f4-42e1-a567-94bb55057600",
+    "output" : "30c0b3d1-3237-455f-b58c-e0badd3df6c2",
+    "target" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "input" : "b5da2c68-dc78-497a-aa90-0e7926383fef"
+  }, {
+    "source" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "output" : "b3006ddc-f7f3-4ad3-ae91-7cfe116e3094",
+    "target" : "6468470e-e374-440a-b00a-e69fb76ee1d0",
+    "input" : "c8995a15-9614-4a9e-b08d-439aea3c5619"
+  }, {
+    "source" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "output" : "308a7d7d-215d-4ae4-b915-483339bf2392",
+    "target" : "87ffd706-56b9-44a2-9c74-5b7cb1265373",
+    "input" : "93d6fe7c-e564-4509-ab9a-fb45b587c179"
+  }, {
+    "source" : "6468470e-e374-440a-b00a-e69fb76ee1d0",
+    "output" : "ac1b1894-a1fc-4061-b78e-43ac68be40f5",
+    "target" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "input" : "dcab31f9-7455-4a0e-927b-890496a60181"
+  }, {
+    "source" : "61b630ae-67f4-42e1-a567-94bb55057600",
+    "output" : "30c0b3d1-3237-455f-b58c-e0badd3df6c2",
+    "target" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "input" : "828c5968-b753-4989-a802-06ef506e122f"
+  }, {
+    "source" : "1d72bb2b-fdfd-4d53-bb6a-912c5fffea82",
+    "output" : "f0c36eb5-1e93-4c14-902a-696c4f9f4c97",
+    "target" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "input" : "b3694ab5-0cb0-4206-b949-f3305b5ebf4f"
+  }, {
+    "source" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "output" : "83f46ca7-f017-48ca-849a-70c88a8fc768",
+    "target" : "0f04413f-d31d-4d55-ae51-43091cf2e5f9",
+    "input" : "5ca04f60-145a-472c-bb73-626a420b3f72"
+  }, {
+    "source" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "output" : "36e5a577-6968-4b39-9b11-7b47b3c75391",
+    "target" : "8eee2e9f-ab7c-49f6-b162-83ee5689460b",
+    "input" : "a33d975a-9cbd-401d-bdbd-78638f7e7cbc"
+  }, {
+    "source" : "1d72bb2b-fdfd-4d53-bb6a-912c5fffea82",
+    "output" : "f0c36eb5-1e93-4c14-902a-696c4f9f4c97",
+    "target" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "input" : "5d592f5e-dda8-469a-b60b-d6112a71d5d5"
+  }, {
+    "source" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "output" : "80bb4724-dac2-4818-b634-d528d2744dfb",
+    "target" : "8eee2e9f-ab7c-49f6-b162-83ee5689460b",
+    "input" : "e360ba3e-11ac-4bac-94d3-b6656be1094c"
+  }, {
+    "source" : "0f04413f-d31d-4d55-ae51-43091cf2e5f9",
+    "output" : "07422c52-7541-42f2-b46a-b59fe4df09c8",
+    "target" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "input" : "daa07e8f-46ba-4bbb-9cae-ce37c01a9b32"
+  }, {
+    "source" : "61b630ae-67f4-42e1-a567-94bb55057600",
+    "output" : "30c0b3d1-3237-455f-b58c-e0badd3df6c2",
+    "target" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "input" : "a6d47066-3a61-406b-bfd0-c2308c12606a"
+  }, {
+    "source" : "6468470e-e374-440a-b00a-e69fb76ee1d0",
+    "output" : "c5b76954-a1fd-49af-9f05-51db2bc81290",
+    "target" : "de7ba14e-6e57-4b9d-9d3e-68e53302f30e",
+    "input" : "ca2f7ad2-39a4-4654-846f-6ca8eadf5f89"
+  }, {
+    "source" : "d68e8651-2684-4d17-969f-9065033ff506",
+    "output" : "9d0a8d3e-c9cf-4e28-a220-59dbb080a498",
+    "target" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "input" : "ffd3ebe1-5271-4b99-98e4-0c3ceb2e3789"
+  }, {
+    "source" : "d68e8651-2684-4d17-969f-9065033ff506",
+    "output" : "9d0a8d3e-c9cf-4e28-a220-59dbb080a498",
+    "target" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "input" : "2d081c0c-c35a-47e0-8a3b-365fb4dd957a"
+  }, {
+    "source" : "8a1bdeaf-5118-4869-8303-ad0d9d01698d",
+    "output" : "e5eb9a3a-c7cd-4aeb-9374-ccf536091f7e",
+    "target" : "d68e8651-2684-4d17-969f-9065033ff506",
+    "input" : "ceb3bd8d-98eb-4026-9ec3-97d260c7687f"
+  }, {
+    "source" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "output" : "07bf984e-38af-4cef-adde-6d7ce212d0e6",
+    "target" : "0f04413f-d31d-4d55-ae51-43091cf2e5f9",
+    "input" : "3db2be93-9736-404e-bf43-10d736cba210"
+  }, {
+    "source" : "0f04413f-d31d-4d55-ae51-43091cf2e5f9",
+    "output" : "07422c52-7541-42f2-b46a-b59fe4df09c8",
+    "target" : "01c373ed-14d6-4763-8677-c9c597c95d72",
+    "input" : "571dca07-1655-4a1a-880b-2ed95319a04a"
+  } ]
+}

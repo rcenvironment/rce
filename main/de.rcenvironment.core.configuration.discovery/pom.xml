@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.configuration.discovery</artifactId>
 	<name>RCE Core Configuration Discovery Bundle</name>
-	<version>6.3.0.qualifier</version>
+	<version>7.0.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

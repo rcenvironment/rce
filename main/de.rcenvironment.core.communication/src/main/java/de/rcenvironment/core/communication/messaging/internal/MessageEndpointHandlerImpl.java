@@ -15,7 +15,6 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
@@ -23,10 +22,10 @@ import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandlerMap;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
-import de.rcenvironment.core.communication.model.impl.NetworkResponseImpl;
+import de.rcenvironment.core.communication.model.internal.PayloadTestFuzzer;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
-import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
+import de.rcenvironment.core.utils.common.LogUtils;
 
 /**
  * The default {@link MessageEndpointHandler} implementation used in RCE instances.
@@ -50,22 +49,24 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
         }
 
         // actually *handle* the message outside the synchronized block
-        NetworkResponse response = null;
         if (handler != null) {
-            // trigger deserialization here to catch errors early and in a defined place - misc_ro
             try {
-                request.getDeserializedContent();
-            } catch (SerializationException e) {
-                log.warn("Error deserializing request body", e);
-                return NetworkResponseFactory.generateResponseForExceptionAtDestination(request, e);
-            }
+                // trigger deserialization here to catch errors early and in a defined place - misc_ro
+                try {
+                    request.getDeserializedContent();
+                } catch (SerializationException e) {
+                    throw new InternalMessagingException("Error deserializing request body", e);
+                }
 
-            try {
-                // FIXME restore or remove "previous hop" parameter
-                NodeIdentifier prevHopId = null;
-                response = handler.handleRequest(request, prevHopId);
-            } catch (RuntimeException | SerializationException | CommunicationException e) {
-                response = logAndWrapException(request, e);
+                try {
+                    // FIXME restore or remove "previous hop" parameter
+                    NodeIdentifier prevHopId = null;
+                    return handler.handleRequest(request, prevHopId);
+                } catch (RuntimeException e) {
+                    throw new InternalMessagingException("Uncaught RuntimeException while handling remote request", e);
+                }
+            } catch (InternalMessagingException e) {
+                return logAndWrapLowLevelException(request, e);
             }
         } else {
             Serializable loggableContent;
@@ -75,14 +76,12 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
                 // used for logging only
                 loggableContent = "Failed to deserialize content: " + e;
             }
-            log.warn("No request handler matched for message type '" + request.getMessageType()
-                + "', generating failure response; string representation of request: "
-                + NetworkFormatter.message(loggableContent, request.accessRawMetaData()));
+            String errorId =
+                LogUtils.logErrorAndAssignUniqueMarker(log, "No request handler matched for message type '" + request.getMessageType()
+                    + "'; string representation of request: " + NetworkFormatter.message(loggableContent, request.accessRawMetaData()));
 
-            response = new NetworkResponseImpl(null, request.getRequestId(), ProtocolConstants.ResultCode.NO_MATCHING_HANDLER);
+            return NetworkResponseFactory.generateResponseForInternalErrorAtRecipient(request, errorId);
         }
-
-        return response;
     }
 
     @Override
@@ -99,10 +98,21 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
         }
     }
 
-    private NetworkResponse logAndWrapException(NetworkRequest request, Throwable e) {
-        NetworkResponse response;
-        log.warn("Returning an exception response for an incoming request:", e);
-        response = NetworkResponseFactory.generateResponseForExceptionAtDestination(request, e);
+    private NetworkResponse logAndWrapLowLevelException(NetworkRequest request, InternalMessagingException e) {
+        @SuppressWarnings("unused")// suppress Eclipse warning when the ENABLED constant is false - misc_ro
+        boolean compressStacktrace =
+            PayloadTestFuzzer.ENABLED && e.getCause() != null && e.getCause().getClass() == SerializationException.class;
+        final String errorId;
+        if (compressStacktrace) {
+            errorId = LogUtils.logErrorAndAssignUniqueMarker(log, e.toString());
+        } else {
+            if (e.getCause() != null) {
+                errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(log, e.getMessage(), e.getCause());
+            } else {
+                errorId = LogUtils.logErrorAndAssignUniqueMarker(log, e.getMessage());
+            }
+        }
+        NetworkResponse response = NetworkResponseFactory.generateResponseForInternalErrorAtRecipient(request, errorId);
         return response;
     }
 }

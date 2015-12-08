@@ -10,7 +10,6 @@ package de.rcenvironment.core.component.datamanagement.api;
 
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.codehaus.jackson.JsonNode;
@@ -33,8 +32,6 @@ public abstract class CommonComponentHistoryDataItem extends DefaultComponentHis
     
     protected static final String FORMAT_VERSION = "f_v";
     
-    protected static final String LOG_FILES = "logs";
-    
     protected static final String EXIT_CODE = "exit";
 
     private static final long serialVersionUID = 3747244536714110690L;
@@ -53,7 +50,6 @@ public abstract class CommonComponentHistoryDataItem extends DefaultComponentHis
         ObjectMapper mapper = new ObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         rootNode.put(FORMAT_VERSION, getFormatVersion());
-        rootNode.put(LOG_FILES, getLogsAsJsonObjectNode(logs, mapper));
         if (exitCode != null) {
             rootNode.put(EXIT_CODE, exitCode);            
         }
@@ -75,30 +71,7 @@ public abstract class CommonComponentHistoryDataItem extends DefaultComponentHis
     protected static void initializeCommonHistoryDataFromString(CommonComponentHistoryDataItem historyDataItem,
         String historyData, TypedDatumSerializer serializer) throws IOException {
         DefaultComponentHistoryDataItem.initializeDefaultHistoryDataFromString(historyDataItem, historyData, serializer);
-        historyDataItem.logs = CommonComponentHistoryDataItem.getLogsFromString(historyData);
         historyDataItem.exitCode = CommonComponentHistoryDataItem.getExitCodeFromString(historyData);
-    }
-    
-    protected static Map<String, String> getLogsFromString(String logRefsString)
-        throws IOException {
-        
-        Map<String, String> logRefsMap = new HashMap<>();
-        
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            JsonNode tree = mapper.readTree(logRefsString);
-            if (tree.get(LOG_FILES) != null) {
-                ObjectNode logsObjectNode = (ObjectNode) tree.get(LOG_FILES);
-                Iterator<String> logFileNamesIterator = logsObjectNode.getFieldNames();
-                while (logFileNamesIterator.hasNext()) {
-                    String fileName = logFileNamesIterator.next();
-                    logRefsMap.put(fileName, logsObjectNode.get(fileName).getTextValue());
-                }
-            }
-            return logRefsMap;
-        } catch (JsonProcessingException e) {
-            throw new IOException(e);
-        }
     }
     
     protected static Integer getExitCodeFromString(String exitCodeString) throws IOException {
@@ -112,18 +85,6 @@ public abstract class CommonComponentHistoryDataItem extends DefaultComponentHis
             throw new IOException(e);
         }
         return null;
-    }
-    
-    public Map<String, String> getLogs() {
-        return logs;
-    }
-
-    /**
-     * @param fileName file name of log file
-     * @param logFileReferenceId DM file reference of the log file
-     */
-    public void addLog(String fileName, String logFileReferenceId) {
-        logs.put(fileName, logFileReferenceId);
     }
     
     public void setExitCode(int exitCode) {

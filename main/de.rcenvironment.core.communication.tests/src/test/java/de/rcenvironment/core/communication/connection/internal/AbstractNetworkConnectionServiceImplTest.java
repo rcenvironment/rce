@@ -16,10 +16,10 @@ import org.junit.Before;
 
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
  * Base class for {@link MessageChannelServiceImpl} unit tests providing common tests that can be

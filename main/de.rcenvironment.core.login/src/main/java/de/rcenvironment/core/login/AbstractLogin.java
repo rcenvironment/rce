@@ -21,7 +21,7 @@ import de.rcenvironment.core.authentication.User.Type;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.login.internal.Messages;
 import de.rcenvironment.core.login.internal.ServiceHandler;
-import de.rcenvironment.core.notification.NotificationService;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 
 /**
  * Class handling the login process.
@@ -61,7 +61,7 @@ public abstract class AbstractLogin {
 
     protected AuthenticationService authenticationService;
 
-    protected NotificationService notificationService;
+    protected DistributedNotificationService notificationService;
 
     protected ConfigurationService configurationService;
 

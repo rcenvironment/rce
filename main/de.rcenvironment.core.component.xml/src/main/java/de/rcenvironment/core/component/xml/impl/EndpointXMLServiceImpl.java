@@ -12,8 +12,6 @@ import java.io.File;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Document;
 
 import de.rcenvironment.core.component.api.ComponentException;
@@ -29,8 +27,9 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.incubator.xml.XMLException;
-import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
+import de.rcenvironment.core.utils.common.xml.XMLException;
+import de.rcenvironment.core.utils.common.xml.XMLMapperConstants;
+import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
 
 /**
  * Default implementation of the EndpointXMLService.
@@ -38,14 +37,6 @@ import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
  * @author Brigitte Boden
  */
 public class EndpointXMLServiceImpl implements EndpointXMLService {
-
-    private static final String XML_FILE = "XML file ";
-
-    private static final String DOT = ".";
-
-    private static final String IN_FILE = " in file ";
-
-    private final Log log = LogFactory.getLog(getClass());
 
     private XMLSupportService xmlSupport;
 
@@ -66,40 +57,35 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
             return;
         }
 
-        if (xmlFile == null) {
-            throw new ComponentException("XML file does not exist.");
-        }
-        
         if (!xmlFile.exists()) {
-            throw new ComponentException(XML_FILE + xmlFile.getAbsolutePath() + " does not exist.");
+            throw new ComponentException(xmlFile.getAbsolutePath() + " does not exist");
         }
-
-        Document doc;
-        try {
-            doc = xmlSupport.readXMLFromFile(xmlFile);
-        } catch (XMLException e) {
-            throw new ComponentException(XML_FILE + xmlFile.getAbsolutePath() + " could not be read.", e);
-        }
-        for (final Entry<String, TypedDatum> entry : dynamicInputs.entrySet()) {
-            final String xpath = componentContext.getInputMetaDataValue(entry.getKey(), XMLComponentConstants.CONFIG_KEY_XPATH);
-            final TypedDatum value = entry.getValue();
-            log.debug("Dynamic input " + entry.getKey() + ": Trying to replace xpath " + xpath + IN_FILE + xmlFile.getAbsolutePath()
-                + " with new value " + value.toString());
-
-            // Convert value to String;
-            String valueAsString = getValueAsString(value);
-
+        synchronized (XMLMapperConstants.GLOBAL_MAPPING_LOCK) {
+            Document doc;
             try {
-                xmlSupport.replaceNodeText(doc, xpath, valueAsString);
-                log.debug("Successfully replaced node text for dynamic input " + entry.getKey());
+                doc = xmlSupport.readXMLFromFile(xmlFile);
             } catch (XMLException e) {
-                throw new ComponentException("Error while processing dynamic input " + entry.getKey() + DOT, e);
+                throw new ComponentException("Failed to read " + xmlFile.getAbsolutePath(), e);
             }
-        }
-        try {
-            xmlSupport.writeXMLtoFile(doc, xmlFile);
-        } catch (XMLException e) {
-            throw new ComponentException("Error while writing XML to file.", e);
+            for (final Entry<String, TypedDatum> entry : dynamicInputs.entrySet()) {
+                final String xpath = componentContext.getInputMetaDataValue(entry.getKey(), XMLComponentConstants.CONFIG_KEY_XPATH);
+                final TypedDatum value = entry.getValue();
+    
+                String valueAsString = getValueAsString(value);
+                try {
+                    xmlSupport.replaceNodeText(doc, xpath, valueAsString);
+                    componentContext.getLog().componentInfo(StringUtils.format("Replaced value for '%s' with input value of '%s': %s",
+                        xpath, entry.getKey(), value.toString()));
+                } catch (XMLException e) {
+                    throw new ComponentException(StringUtils.format("Failed to replace value for '%s' with value of input '%s': %s",
+                        xpath, entry.getKey(), value.toString()), e);
+                }
+            }
+            try {
+                xmlSupport.writeXMLtoFile(doc, xmlFile);
+            } catch (XMLException e) {
+                throw new ComponentException("Failed to write XML content to file: " + xmlFile.getAbsolutePath(), e);
+            }
         }
     }
 
@@ -114,8 +100,8 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
         case Integer:
             return String.valueOf(((IntegerTD) value).getIntValue());
         default:
-            throw new DataTypeException("Can not convert value (type: " + value.getDataType().getDisplayName()
-                + ") to textual representation for insertion into XML.");
+            throw new DataTypeException("Can not convert value of type '" + value.getDataType().getDisplayName()
+                + "' to textual representation for insertion into XML");
         }
     }
 
@@ -123,53 +109,47 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
     public void updateOutputsFromXML(File xmlFile, ComponentContext componentContext) throws DataTypeException,
         ComponentException {
 
-        if (xmlFile == null) {
-            throw new ComponentException("XML file does not exist.");
-        }
-        
         if (!xmlFile.exists()) {
-            throw new ComponentException(XML_FILE + xmlFile.getAbsolutePath() + " does not exist.");
+            throw new ComponentException(xmlFile.getAbsolutePath() + " does not exist");
         }
-
-        Document doc = null;
-
-        for (String outputName : componentContext.getOutputs()) {
-            if (componentContext.isDynamicOutput(outputName)) {
-
-                //If the XML file has not been read, read it now.
-                if (doc == null) {
-                    try {
-                        doc = xmlSupport.readXMLFromFile(xmlFile);
-                    } catch (XMLException e) {
-                        throw new ComponentException(XML_FILE + xmlFile.getAbsolutePath() + " could not be read.", e);
+        synchronized (XMLMapperConstants.GLOBAL_MAPPING_LOCK) {
+            Document doc = null;
+    
+            for (String outputName : componentContext.getOutputs()) {
+                if (componentContext.isDynamicOutput(outputName)) {
+    
+                    //If the XML file has not been read, read it now.
+                    if (doc == null) {
+                        try {
+                            doc = xmlSupport.readXMLFromFile(xmlFile);
+                        } catch (XMLException e) {
+                            throw new ComponentException("Failed to read " + xmlFile.getAbsolutePath(), e);
+                        }
                     }
+                    final String xpath = componentContext.getOutputMetaDataValue(outputName, XMLComponentConstants.CONFIG_KEY_XPATH);
+    
+                    String valueAsString;
+                    final String message = StringUtils.format("Failed to extract value for output '%s' that points to '%s'",
+                        outputName, xpath);
+                    try {
+                        valueAsString = xmlSupport.getElementText(doc, xpath);
+                    } catch (XMLException e) {
+                        throw new ComponentException(message, e);
+                    }
+                    componentContext.getLog().componentInfo(
+                        StringUtils.format("Extracted '%s' for XPath '%s' that will be sent to output '%s'",
+                            valueAsString, xpath, outputName));
+                    TypedDatum value = getValueAsTypedValue(outputName, valueAsString, componentContext);
+                    componentContext.writeOutput(outputName, value);
                 }
-                final String xpath = componentContext.getOutputMetaDataValue(outputName, XMLComponentConstants.CONFIG_KEY_XPATH);
-
-                log.debug("Trying to evaluate xpath " + xpath + IN_FILE + xmlFile.getAbsolutePath() + " for output " + outputName);
-                String valueAsString;
-                final String message =
-                    StringUtils.format(
-                        "The value of XPath '%s' of output '%s' is not evaluable. Maybe XPath points to a node which does not exist.",
-                        xpath, outputName);
-                try {
-                    valueAsString = xmlSupport.getElementText(doc, xpath);
-                } catch (XMLException e) {
-                    throw new ComponentException(message);
-                }
-                if (valueAsString == null) {
-                    throw new ComponentException(message);
-                }
-                log.debug("Retreived raw value " + valueAsString + " for xpath " + xpath + IN_FILE + xmlFile.getAbsolutePath()
-                    + " for output " + outputName + ", trying to convert to typed datum.");
-                TypedDatum value = getValueAsTypedValue(outputName, valueAsString, componentContext);
-                componentContext.writeOutput(outputName, value);
             }
         }
     }
 
     private TypedDatum getValueAsTypedValue(String outputName, String rawValue, ComponentContext componentContext)
         throws DataTypeException {
+        String errorMessage = "Can not convert value '%s' to '%s' that is the required data type of output"
+            + " '%s' this value should be sent to";
         TypedDatumFactory typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
         TypedDatum value;
         try {
@@ -187,12 +167,12 @@ public class EndpointXMLServiceImpl implements EndpointXMLService {
                 value = typedDatumFactory.createInteger(Long.valueOf(rawValue));
                 break;
             default:
-                throw new DataTypeException("Can not convert value \"" + rawValue + "\" to "
-                    + componentContext.getOutputDataType(outputName).getDisplayName() + " for dynamic output \"" + outputName + "\"" + DOT);
+                throw new DataTypeException(StringUtils.format(errorMessage,
+                    rawValue, componentContext.getOutputDataType(outputName).getDisplayName(), outputName));
             }
         } catch (NumberFormatException e) {
-            throw new DataTypeException("Can not convert value \"" + rawValue + "\" to "
-                + componentContext.getOutputDataType(outputName).getDisplayName() + " for dynamic output \"" + outputName + "\"" + DOT);
+            throw new DataTypeException(StringUtils.format(errorMessage,
+                rawValue, componentContext.getOutputDataType(outputName).getDisplayName(), outputName));
         }
         return value;
     }

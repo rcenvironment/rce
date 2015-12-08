@@ -8,10 +8,6 @@
 
 package de.rcenvironment.core.communication.rpc.api;
 
-import java.io.Serializable;
-import java.util.List;
-
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.spi.CallbackObject;
 
@@ -20,14 +16,13 @@ import de.rcenvironment.core.communication.spi.CallbackObject;
  * 
  * @author Doreen Seider
  */
-public interface CallbackService {
+public interface CallbackService extends RemotableCallbackService {
 
     /**
      * Adds an object so that call backs on this object can be invoked.
      * 
      * @param callBackObject The object to invoke call backs on.
-     * @param nodeId The {@link NodeIdentifier} of the remote platform doing the
-     *        call backs.
+     * @param nodeId The {@link NodeIdentifier} of the remote platform doing the call backs.
      * @return the object's identifier used for callback() and setTimeToLive().
      */
     String addCallbackObject(Object callBackObject, NodeIdentifier nodeId);
@@ -49,33 +44,12 @@ public interface CallbackService {
     String getCallbackObjectIdentifier(Object callbackObject);
 
     /**
-     * Sets the time to live for a bunch of objects represented by its identifier.
-     * 
-     * @param objectIdentifier The object's identifier to set the TTL for.
-     * @param ttl The TTL to set.
-     */
-    void setTTL(String objectIdentifier, Long ttl);
-
-    /**
-     * Invokes the method given by its name on the {@link Object} given by its identifier with the
-     * given parameter.
-     * 
-     * @param objectIdentifier Identifier of the object to call.
-     * @param methodName Name of the method to call.
-     * @param parameters Parameter of the method to call.
-     * @return The return object of the method call.
-     * @throws CommunicationException if calling back the object failed.
-     */
-    Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters) throws CommunicationException;
-
-    /**
-     * Creates a proxy for an object, which needs to be called back. It delegates each method call
-     * to callBack() of the {@link CallbackService}.
+     * Creates a proxy for an object, which needs to be called back. It delegates each method call to callBack() of the
+     * {@link CallbackService}.
      * 
      * @param callbackObject The object to create a callback proxy for.
      * @param objectIdentifier The object's identifier.
-     * @param proxyHome The {@link NodeIdentifier} of the remote platform where the proxy will
-     *        be located then.
+     * @param proxyHome The {@link NodeIdentifier} of the remote platform where the proxy will be located then.
      * @return The created proxy object.
      */
     Object createCallbackProxy(CallbackObject callbackObject, final String objectIdentifier, NodeIdentifier proxyHome);

@@ -18,8 +18,13 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.JsonNodeFactory;
+import org.codehaus.jackson.node.ObjectNode;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
+import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 
 /**
  * Default {@link WritableConfigurationSegment} implementation.
@@ -53,6 +58,29 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     }
 
     @Override
+    public WritableConfigurationSegment getOrCreateWritableSubSegment(String relativePath) throws ConfigurationException {
+        JsonNode treeLocation = createPath(relativePath); // create missing elements
+        return new WritableConfigurationSegmentImpl(treeLocation, rootSegment);
+    }
+
+    @Override
+    public WritableConfigurationSegment createElement(String id) throws ConfigurationException {
+        // at the moment, this is the same, so just delegate
+        // FIXME 7.0.0: check for an existing element for this id, and fail if there is one
+        return getOrCreateWritableSubSegment(id);
+    }
+
+    @Override
+    public boolean deleteElement(String id) throws ConfigurationException {
+        if (!(segmentRootNode instanceof ObjectNode)) {
+            throw new ConfigurationException("Consistency error: segment node for deleteElement() is not an object node, but "
+                + segmentRootNode.getClass());
+        }
+        JsonNode removed = ((ObjectNode) segmentRootNode).remove(id);
+        return (removed != null);
+    }
+
+    @Override
     public boolean isPresentInCurrentConfiguration() {
         return segmentRootNode != null;
     }
@@ -70,6 +98,12 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         } else {
             return defaultValue;
         }
+    }
+
+    @Override
+    public void setString(String name, String value) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        ((ObjectNode) segmentRootNode).put(name, value);
     }
 
     @Override
@@ -133,6 +167,22 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     }
 
     @Override
+    public void setBoolean(String key, boolean value) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        ((ObjectNode) segmentRootNode).put(key, value);
+    }
+
+    @Override
+    public void setStringArray(String key, String[] value) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        final ArrayNode newArrayNode = JsonNodeFactory.instance.arrayNode();
+        for (String element : value) {
+            newArrayNode.add(element);
+        }
+        ((ObjectNode) segmentRootNode).put(key, newArrayNode);
+    }
+
+    @Override
     public Map<String, ConfigurationSegment> listElements(String relativePath) {
         Map<String, ConfigurationSegment> resultMap = new HashMap<>();
         JsonNode treeLocation = navigatePath(relativePath);
@@ -191,6 +241,34 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
             }
         }
         return treeLocation;
+    }
+
+    private JsonNode createPath(String relativePath) throws ConfigurationException {
+        if (segmentRootNode == null) {
+            throw new ConfigurationException("Tried to create a new configuration segment from a non-existing one");
+        }
+        JsonNode treeLocation = segmentRootNode;
+        for (String pathSegment : relativePath.split("/")) {
+            final JsonNode oldTreeLocation = treeLocation;
+            treeLocation = oldTreeLocation.get(pathSegment);
+            // log.debug(StringUtils.format("Traversing JSON tree by path segment '%s': %s -> %s", pathSegment, oldTreeLocation,
+            // treeLocation));
+            if (treeLocation == null) {
+                final ObjectNode newObjectNode = JsonNodeFactory.instance.objectNode();
+                ((ObjectNode) oldTreeLocation).put(pathSegment, newObjectNode);
+                treeLocation = newObjectNode;
+            }
+        }
+        return treeLocation;
+    }
+
+    private void validateNodeExistsAndIsAnObjectNode() throws ConfigurationException {
+        if (!isPresentInCurrentConfiguration()) {
+            throw new ConfigurationException("The parent segment must exist before new fields can be added");
+        }
+        if (!segmentRootNode.isObject()) {
+            throw new ConfigurationException("The parent segment does not point to a valid configuration (JSON) node");
+        }
     }
 
     private <T> T useDefaultValueIfNull(T value, T defaultValue) {

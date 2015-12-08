@@ -75,6 +75,9 @@ public abstract class ComponentDefaultStub {
             return false;
         }
 
+        @Override
+        public void completeStartOrProcessInputsAfterFailure() throws ComponentException {}
+
 
     }
 }

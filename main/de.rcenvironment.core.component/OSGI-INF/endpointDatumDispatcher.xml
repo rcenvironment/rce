@@ -1,0 +1,37 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="true" name="Endpoint Datum Dispatcher">
+
+	<implementation class="de.rcenvironment.core.component.execution.internal.EndpointDatumDispatcherImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.internal.EndpointDatumDispatcher"/>
+		<provide interface="de.rcenvironment.core.component.execution.api.RemotableEndpointDatumDispatcher"/>
+	</service>
+	
+	<reference name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Local Execution Controller Utils Service"
+		interface="de.rcenvironment.core.component.execution.api.LocalExecutionControllerUtilsService"
+		cardinality="1..1"
+		bind="bindLocalExecutionControllerUtilsService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Platform Service"
+		interface="de.rcenvironment.core.communication.api.PlatformService"
+		cardinality="1..1"
+		bind="bindPlatformService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Endpoint Datum Serializer"
+		interface="de.rcenvironment.core.component.execution.api.EndpointDatumSerializer"
+		cardinality="1..1"
+		bind="bindEndpointDatumSerializer"
+		policy="dynamic"
+	/>
+	
+</scr:component>

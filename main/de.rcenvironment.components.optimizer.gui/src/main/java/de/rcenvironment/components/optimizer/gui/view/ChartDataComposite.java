@@ -46,11 +46,11 @@ import org.eclipse.swt.widgets.TableColumn;
 
 import de.rcenvironment.components.optimizer.common.Dimension;
 import de.rcenvironment.components.optimizer.common.Measure;
+import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerResultSet;
 import de.rcenvironment.components.optimizer.common.ResultStructure;
 import de.rcenvironment.components.optimizer.gui.properties.Messages;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
-import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.gui.utils.incubator.StudyDataExportMessageHelper;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
@@ -182,8 +182,8 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                         final OptimizerResultSet o = iterator.next();
                         for (int index = 0; index < keysCount; index++) {
                             final String key = keys.get(index);
-                            final TypedDatum value = o.getValue(key);
-                            if (value != null && o != null && o.getComponent() != null) {
+                            if (o != null && o.getComponent() != null) {
+                                final double value = o.getValue(key);
                                 builder.append(value);
                             }
                             if (index < (keysCount - 1)) {
@@ -207,19 +207,19 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
         saveDataButton = new Button(this, SWT.PUSH);
         saveDataButton.setText(Messages.excelExport);
         saveDataButton.setEnabled(false);
-        saveDataButton.addSelectionListener(new MySelectionListener(this));
+        saveDataButton.addSelectionListener(new ExportDataListener(this));
     }
 
     /**
      * 
      * 
-     * @author zur_sa
+     * @author Sascha Zur
      */
-    private class MySelectionListener implements SelectionListener {
+    private class ExportDataListener implements SelectionListener {
 
         private final Shell cdc;
 
-        public MySelectionListener(ChartDataComposite cd) {
+        public ExportDataListener(ChartDataComposite cd) {
             cdc = cd.getShell();
         }
 
@@ -247,6 +247,8 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                     TypedValue[][] values = new TypedValue[resultDatastore.getDatasetCount() + 1][];
 
                     Iterator<OptimizerResultSet> it = resultDatastore.getDatasets().iterator();
+                    List<Dimension> dimensions = getSortedDimensions(resultDatastore.getStructure());
+                    List<Measure> measures = getSortedMeasures(resultDatastore.getStructure());
                     int i = 0;
                     while (it.hasNext()) {
 
@@ -254,19 +256,24 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
 
                         if (i == 0) {
                             values[i] = new TypedValue[next.getValues().size()];
-                            int j = next.getValues().size() - 1;
-                            for (String str : next.getValues().keySet()) {
-                                values[0][j] = new TypedValue(VariableType.String, str);
-                                j--;
+                            values[i][0] = new TypedValue(VariableType.String, OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME);
+                            for (int j = 0; j < dimensions.size(); j++) {
+                                values[0][j + 1] = new TypedValue(VariableType.String, dimensions.get(j).getName());
                             }
-                            i = 1;
+                            for (int j = dimensions.size() + 1; j < measures.size() + dimensions.size() + 1; j++) {
+                                values[0][j] = new TypedValue(VariableType.String, measures.get(j - dimensions.size() - 1).getName());
+                            }
+                            i++;
                         }
 
                         values[i] = new TypedValue[next.getValues().size()];
-                        int j = next.getValues().size() - 1;
-                        for (String key : next.getValues().keySet()) {
-                            values[i][j] = new TypedValue(VariableType.Real, "" + next.getValue(key));
-                            j--;
+                        values[i][0] =
+                            new TypedValue(next.getValue(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME));
+                        for (int j = 0; j < dimensions.size(); j++) {
+                            values[i][j + 1] = new TypedValue(next.getValue("Output: " + dimensions.get(j).getName()));
+                        }
+                        for (int j = dimensions.size() + 1; j < measures.size() + dimensions.size() + 1; j++) {
+                            values[i][j] = new TypedValue(next.getValue(measures.get(j - dimensions.size() - 1).getName()));
                         }
                         i++;
                     }
@@ -275,9 +282,9 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 } else {
                     success = false;
                 }
-
-                StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
-
+                if (excelFile != null) {
+                    StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
+                }
             }
         }
     }
@@ -318,14 +325,18 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             /** The key to use to lookup the values in a dataset (which is a map-like structure). */
             private final String key;
 
+            private boolean isMeasure;
+
             /**
              * Instantiates a new {@link ValueLabelProvider} providing labels for the values with
              * the given key.
              * 
              * @param key
+             * @param isMeasure
              */
-            public ValueLabelProvider(final String key) {
+            public ValueLabelProvider(final String key, boolean isMeasure) {
                 this.key = key;
+                this.isMeasure = isMeasure;
             }
 
             /**
@@ -338,18 +349,58 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 if (!(element instanceof OptimizerResultSet)) {
                     return null;
                 }
-                final TypedDatum value = ((OptimizerResultSet) element)
-                    .getValue(key);
-                String result;
-                if (value == null) {
-                    result = "";
-                } else {
-                    result = value.toString();
+                String keyToLookup = key;
+                if (isMeasure) {
+                    keyToLookup = "Output: " + keyToLookup;
                 }
+                final double value = ((OptimizerResultSet) element).getValue(keyToLookup);
+                String result;
+                result = String.valueOf(value);
                 return result;
             }
 
         }
+        List<Dimension> list = getSortedDimensions(structure);
+        final TableViewerColumn itColumn = new TableViewerColumn(tableViewer,
+            SWT.NONE);
+        itColumn.getColumn().setText(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME);
+        itColumn.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
+        itColumn.getColumn().setMoveable(true);
+        itColumn.setLabelProvider(new ValueLabelProvider(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME, false));
+
+        for (final Dimension dimension : list) {
+            final TableViewerColumn column = new TableViewerColumn(tableViewer,
+                SWT.NONE);
+            column.getColumn().setText(dimension.getName());
+            column.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
+            column.getColumn().setMoveable(true);
+            column.setLabelProvider(new ValueLabelProvider(dimension.getName(), true));
+        }
+        List<Measure> measureList = getSortedMeasures(structure);
+        for (final Measure measure : measureList) {
+            final TableViewerColumn column = new TableViewerColumn(tableViewer,
+                SWT.NONE);
+            column.getColumn().setText(measure.getName());
+            column.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
+            column.getColumn().setMoveable(true);
+            column.setLabelProvider(new ValueLabelProvider(measure.getName(), false));
+        }
+    }
+
+    private List<Measure> getSortedMeasures(final ResultStructure structure) {
+        Collection<Measure> measureCollection = structure.getMeasures();
+        List<Measure> measureList = new ArrayList<Measure>(measureCollection);
+        Collections.sort(measureList, new Comparator<Measure>() {
+
+            @Override
+            public int compare(Measure o1, Measure o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        return measureList;
+    }
+
+    private List<Dimension> getSortedDimensions(final ResultStructure structure) {
         Collection<Dimension> collection = structure.getDimensions();
         List<Dimension> list = new ArrayList<Dimension>(collection);
         Collections.sort(list, new Comparator<Dimension>() {
@@ -361,43 +412,12 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
         });
         Dimension iteration = null;
         for (final Dimension dimension : list) {
-            if (dimension.getName().equals("Iteration")) {
+            if (dimension.getName().equals(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME)) {
                 iteration = dimension;
             }
         }
         list.remove(iteration);
-        final TableViewerColumn itColumn = new TableViewerColumn(tableViewer,
-            SWT.NONE);
-        itColumn.getColumn().setText(iteration.getName());
-        itColumn.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
-        itColumn.getColumn().setMoveable(true);
-        itColumn.setLabelProvider(new ValueLabelProvider(iteration.getName()));
-
-        for (final Dimension dimension : list) {
-            final TableViewerColumn column = new TableViewerColumn(tableViewer,
-                SWT.NONE);
-            column.getColumn().setText(dimension.getName());
-            column.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
-            column.getColumn().setMoveable(true);
-            column.setLabelProvider(new ValueLabelProvider(dimension.getName()));
-        }
-        Collection<Measure> measureCollection = structure.getMeasures();
-        List<Measure> measureList = new ArrayList<Measure>(measureCollection);
-        Collections.sort(measureList, new Comparator<Measure>() {
-
-            @Override
-            public int compare(Measure o1, Measure o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-        for (final Measure measure : measureList) {
-            final TableViewerColumn column = new TableViewerColumn(tableViewer,
-                SWT.NONE);
-            column.getColumn().setText(measure.getName());
-            column.getColumn().setWidth(DEFAULT_COLUMN_WIDTH);
-            column.getColumn().setMoveable(true);
-            column.setLabelProvider(new ValueLabelProvider(measure.getName()));
-        }
+        return list;
     }
 
     /**

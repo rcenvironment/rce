@@ -28,17 +28,16 @@ public class ClusterWorkflowNodeValidator extends SshExecutorWorkflowNodeValidat
     @Override
     protected Collection<WorkflowNodeValidationMessage> validate() {
         
-        List<WorkflowNodeValidationMessage> messages = new ArrayList<WorkflowNodeValidationMessage>();
+        List<WorkflowNodeValidationMessage> messages = new ArrayList<>();
 
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_HOST);
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_PORT);
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_SANDBOXROOT);
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_HOST));
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_PORT));
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_SANDBOXROOT));
         if (!Boolean.valueOf(getProperty(ClusterComponentConstants.KEY_IS_SCRIPT_PROVIDED_WITHIN_INPUT_DIR))) {
-            messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_SCRIPT);            
+            messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_SCRIPT));
         }
         
         return messages;
     }
-    
     
 }

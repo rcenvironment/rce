@@ -171,14 +171,14 @@ public final class FileSystemOperations {
             log.error(StringUtils.format("Uncaught exception while trying to delete directory %s", absoluteDirectory.toString()), e);
         }
         if (!directory.exists()) {
-            log.debug(String
+            log.debug(StringUtils
                 .format(
                     "Successfully deleted %s (which consisted of %d files, %d symbolic links, %d directories, %d junctions and"
                         + " %d files/directories of unknown type.)",
                     absoluteDirectory.toString(), stats.filesDeleted, stats.symlinksDeleted, stats.directoriesDeleted,
                     stats.junctionsDeleted, stats.unknownDeleted));
         } else {
-            log.warn(String
+            log.warn(StringUtils
                 .format(
                     "Failed to fully delete directory %s (deleted %d files, %d symbolic links, %d directories %d junctions and"
                         + " %d files/directories of unknown type; encountered %d errors)",

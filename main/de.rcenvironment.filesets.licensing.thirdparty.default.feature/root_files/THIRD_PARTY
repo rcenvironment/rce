@@ -13,8 +13,9 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Abdera Extensions - JSON (org.apache.abdera:abdera-extensions-json:1.1 - http://abdera.apache.org/abdera-extensions-json)
 	Abdera Extensions - Main (org.apache.abdera:abdera-extensions-main:1.1 - http://abdera.apache.org/abdera-extensions-main)
 	Abdera Parser (org.apache.abdera:abdera-parser:1.1 - http://abdera.apache.org/abdera-parser)
-	ActiveMQ :: Core (org.apache.activemq:activemq-core:5.7.0 - http://activemq.apache.org/activemq-core)
-	ActiveMQ Protocol Buffers Implementation and Compiler (org.apache.activemq.protobuf:activemq-protobuf:1.1 - http://activemq.apache.org/activemq-protobuf)
+    ActiveMQ :: Broker (org.apache.activemq:activemq-broker:5.12.1 - http://activemq.apache.org/activemq-broker)
+    ActiveMQ :: Client (org.apache.activemq:activemq-client:5.12.1 - http://activemq.apache.org/activemq-client)
+    ActiveMQ :: Openwire Legacy Support (org.apache.activemq:activemq-openwire-legacy:5.12.1 - http://activemq.apache.org/activemq-openwire-legacy)
 	Annotation 1.0 (org.apache.geronimo.specs:geronimo-annotation_1.0_spec:1.1.1 - http://geronimo.apache.org/specs/geronimo-annotation_1.0_spec)
 	ant-jsch (org.apache.ant:ant-jsch:1.7.0 - http://ant.apache.org/ant-jsch/)
 	ant-launcher (org.apache.ant:ant-launcher:1.7.0 - http://ant.apache.org/ant-launcher/)
@@ -42,20 +43,18 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Commons Lang (commons-lang:commons-lang:2.5 - http://commons.apache.org/lang/)
 	Commons Lang (org.apache.commons:commons-lang3:3.1 - http://commons.apache.org/lang/)
 	Commons Logging (commons-logging:commons-logging:1.1.1 - http://commons.apache.org/logging)
-	Commons Net (commons-net:commons-net:3.1 - http://commons.apache.org/net)
 	Commons Pool (commons-pool:commons-pool:1.5.4 - http://commons.apache.org/pool/)
 	Data Mapper for Jackson (org.codehaus.jackson:jackson-mapper-asl:1.9.13 - http://jackson.codehaus.org)
 	EasyMock (org.easymock:easymock:3.1 - http://www.easymock.org)
 	EasyMock class extension (org.easymock:easymockclassextension:3.1 - http://www.easymock.org)
+    hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.11 - http://hawtbuf.fusesource.org/hawtbuf)
 	imgscalr - A Java Image Scaling Library (org.imgscalr:imgscalr-lib:4.2 - http://www.thebuzzmedia.com/software/imgscalr-java-image-scaling-library/)
 	I18N Libraries (org.apache.abdera:abdera-i18n:1.1 - http://abdera.apache.org)
     J2EE Management 1.1 (org.apache.geronimo.specs:geronimo-j2ee-management_1.1_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-j2ee-management_1.1_spec)
-    JASYPT: Java Simplified Encryption (org.jasypt:jasypt:1.9.0 - http://www.jasypt.org)
     JGlobus Core 2.0.4 (org.jglobus:JGlobus-Core:2.0.4 - http://dev.globus.org/wiki/CoG_jglobus)
     Jackson (org.codehaus.jackson:jackson-core-asl:1.9.13 - http://jackson.codehaus.org)
     larvalabs collections (net.sourceforge.collections:collections-generic:4.01 - http://collections.sourceforge.net)
 	JavaMail 1.4 (org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.6 - http://geronimo.apache.org/maven/specs/geronimo-javamail_1.4_spec/1.6)
-	Jasypt (org.jasypt:jasypt:1.9.0 - http://www.jasypt.org/)
 	jdom (jdom:jdom:1.0 - no url defined)
 	Jettison (org.codehaus.jettison:jettison:1.2 - no url defined)
 	Jetty Server (org.mortbay.jetty:jetty:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/modules/jetty)
@@ -111,6 +110,9 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
  Common Public License (CPL)
 	WSDL4J (wsdl4j:wsdl4j:1.6.2 - http://sf.net/projects/wsdl4j)
 
+ Custom License: Damien Miller
+    jBCrypt (0.4 - http://www.mindrot.org/projects/jBCrypt/)
+	
  Eclipse Public License - v 1.0
 	Eclipse Draw2d, Version 3.7.2.v20110927-2020-4617w3122212803131
 	Eclipse Equinox Executable, Version 3.5.1.v20111216-1653-7P7NFUIFIbaUcU77s0KQWHw5HZTZ
@@ -133,6 +135,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
  GNU Lesser General Public License (LGPL), Version 2.1
     Colt, Packages hep.aida.* (colt:colt:1.0.3 - http://acs.lbl.gov/software/colt/)
 	JACOB (com.jacob:jacob:1.17 - http://sourceforge.net/projects/jacob-project/)
+	Lanterna (com.googlecode.lanterna:lanterna:2.1.9 - http://code.google.com/p/lanterna/)
 	xom (xom:xom:1.0 - http://www.xom.nu)
 	
  ICU license
@@ -145,7 +148,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
     jython (org.python:jython-standalone:2.5.1 - http://www.jython.org/)
 
  MIT License
-    SLF4J API Module (org.slf4j:slf4j-api:1.6.6 - http://www.slf4j.org)
+    SLF4J API Module (org.slf4j:slf4j-api:1.7.10 - http://www.slf4j.org)
  
  Mozilla Public License
     Saxon (saxon:net.sf.saxon:8.8 - http://saxon.sf.net)

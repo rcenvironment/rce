@@ -30,6 +30,31 @@ public enum StandardImages implements ImageSource {
     RCE_LOGO_24(fromLocalBundle("logo24.png")),
 
     /**
+     * 13x13 UNCHECK logo.
+     */
+    CHECK_UNCHECKED(fromLocalBundle("checkbox_u.png")),
+
+    /**
+     * 13x13 CHECK logo.
+     */
+    CHECK_CHECKED(fromLocalBundle("checkbox_c.png")),
+    
+    /**
+     * 13x13 CHECK_DISABLED logo.
+     */
+    CHECK_DISABLED(fromLocalBundle("checkbox_d.png")),
+
+    /**
+     * 16x16 TABLE logo.
+     */
+    TABLE(fromLocalBundle("table.png")),
+
+    /**
+     * 16x16 TREE logo.
+     */
+    TREE(fromLocalBundle("treeview.png")),
+
+    /**
      * 32x32 RCE logo.
      */
     RCE_LOGO_32(fromLocalBundle("logo32.png")),
@@ -53,6 +78,11 @@ public enum StandardImages implements ImageSource {
      * Workflow icon.
      */
     WORKFLOW_DISABLED_16(fromLocalBundle("workflow16_disabled.gif")),
+
+    /**
+     * 16x16 "debug" icon.
+     */
+    DEBUG_16(fromLocalBundle("debug.gif")),
 
     /**
      * 16x16 "information" icon.
@@ -110,9 +140,19 @@ public enum StandardImages implements ImageSource {
     DATATYPE_VECTOR_16(fromLocalBundle("datatype_vector16.gif")),
 
     /**
+     * Datatype Matrix icon.
+     */
+    DATATYPE_MATRIX_16(fromLocalBundle("datatype_matrix16.gif")),
+
+    /**
      * Datatype Smalltable icon.
      */
     DATATYPE_SMALLTABLE_16(fromLocalBundle("datatype_smallTable16.gif")),
+
+    /**
+     * Datatype DateTime icon.
+     */
+    DATATYPE_DATETIME_16(fromLocalBundle("datatype_datetime16.gif")),
 
     /**
      * Datatype Indefinite icon.
@@ -213,7 +253,7 @@ public enum StandardImages implements ImageSource {
      * Common text node icon in workflow data browser.
      */
     COMMON_TEXT_16(fromLocalBundle("common_text_node.gif")),
-    
+
     /**
      * Icon for TIGLViewer.
      */
@@ -238,21 +278,136 @@ public enum StandardImages implements ImageSource {
      * Show number of channels per connection icon in toolbar.
      */
     SHOW_CONNECTION_NUMBERS(fromLocalBundle("connectNumbers.gif")),
-    
+
     /**
      * Workflow state: finished.
      */
     FINISHED(fromLocalBundle("finished.gif")),
-    
+
     /**
      * Workflow state: cancelled.
      */
     CANCELLED(fromLocalBundle("cancel_enabled.gif")),
-    
+
     /**
      * Workflow state: failed.
      */
-    FAILED(fromLocalBundle("failed.gif"));
+    FAILED(fromLocalBundle("failed.gif")),
+
+    /**
+     * Workflow state: corrupted.
+     */
+    CORRUPTED(fromLocalBundle("corrupted.gif")),
+
+    /**
+     * Undo icon.
+     */
+    UNDO(fromEclipseShared(ISharedImages.IMG_TOOL_UNDO)),
+
+    /**
+     * Save icon.
+     */
+    SAVE(fromEclipseShared(ISharedImages.IMG_ETOOL_SAVE_EDIT)),
+
+    /**
+     * OK icon.
+     */
+    TICK(fromLocalBundle("ok.png")),
+
+    /**
+     * VAMPZERO C icon.
+     */
+    VAMPZERO_C(fromLocalBundle("VampZero/c16.png")),
+
+    /**
+     * VAMPZERO D icon.
+     */
+    VAMPZERO_D(fromLocalBundle("VampZero/d16.png")),
+
+    /**
+     * VAMPZERO P icon.
+     */
+    VAMPZERO_P(fromLocalBundle("VampZero/p16.png")),
+
+    /**
+     * VAMPZERO ROOT icon.
+     */
+    VAMPZERO_ROOT(fromLocalBundle("VampZero/root16.png")),
+
+    /**
+     * Excel icon (small).
+     */
+    EXCEL_SMALL(fromLocalBundle("Excel/excel_16.png")),
+
+    /**
+     * Excel icon (large).
+     */
+    EXCEL_LARGE(fromLocalBundle("Excel/excel_64.png")),
+
+    /**
+     * Scroll lock disabled icon.
+     */
+    SCROLLOCK_DISABLED(fromLocalBundle("scrollLock_disabled.gif")),
+
+    /**
+     * Scroll lock enabled icon.
+     */
+    SCROLLOCK_ENABLED(fromLocalBundle("scrollLock_enabled.gif")),
+
+    /**
+     * Local component icon.
+     */
+    LOCAL(fromLocalBundle("local.gif")),
+
+    /**
+     * Deprecated component icon.
+     */
+    DEPRECATED(fromLocalBundle("deprecated.png")),
+
+    /**
+     * f(x) icon.
+     */
+    FUNCTION(fromLocalBundle("function12.png")),
+
+    /**
+     * Attribute icon.
+     */
+    ATTRIBUTE(fromLocalBundle("XPathChooser/attribute.gif")),
+
+    /**
+     * Attribute icon.
+     */
+    ELEMENT(fromLocalBundle("XPathChooser/element.gif")),
+
+    /**
+     * Attribute icon.
+     */
+    ELEMENTS(fromLocalBundle("XPathChooser/elements.gif")),
+
+    /**
+     * Attribute icon.
+     */
+    TREE_SMALL(fromLocalBundle("XPathChooser/tree16.png")),
+
+    /**
+     * Attribute icon.
+     */
+    TREE_LARGE(fromLocalBundle("XPathChooser/tree64.png")),
+
+    /**
+     * Attribute icon.
+     */
+    FILE_SMALL(fromLocalBundle("XPathChooser/value12.png")),
+    
+    /**
+     * Remove icon (red cross).
+     */
+    REMOVE_16(fromLocalBundle("remove.gif")),
+    
+    /**
+     * Icon for SQL statements (e.g. in a folder).
+     */
+    SQL_STATEMENTS(fromLocalBundle("SQL/sqlStatements_16.gif"));
 
     private static final String IMAGE_PATH_PREFIX = "/resources/images/";
 

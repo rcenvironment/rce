@@ -255,7 +255,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
         EndpointEditDialog dialog =
             new VariablesEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                 endpointType, endpointIdToManage, isStaticEndpoint,
-                icon, endpoint.getDeclarativeEndpointDescription()
+                icon, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(), newMetaData, xlFile);
 
         super.onEditClicked(name, dialog, newMetaData);

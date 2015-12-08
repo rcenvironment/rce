@@ -38,7 +38,6 @@ import org.codehaus.jackson.map.ObjectMapper;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
-import de.rcenvironment.core.component.datamanagement.history.ComponentHistoryDataItemConstants;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
@@ -96,14 +95,6 @@ public class PythonScriptEngine implements ScriptEngine {
 
     private TextStreamWatcher stderrWatcher;
 
-    private CommonComponentHistoryDataItem historyDataItem;
-
-    private File stdoutLogFile;
-
-    private File stderrLogFile;
-
-    private String stderrAsString;
-
     private Map<String, Object> stateOutput;
 
     private List<String> notAValueOutputsList = new LinkedList<String>();
@@ -119,7 +110,6 @@ public class PythonScriptEngine implements ScriptEngine {
         } catch (IOException e) {
             LOGGER.error("Failed to create executor for python.");
         }
-        historyDataItem = dataItem;
     }
 
     @Override
@@ -175,59 +165,18 @@ public class PythonScriptEngine implements ScriptEngine {
     }
 
     private void waitForConsoleOutputAndAddThemToHistoryDataItem() throws IOException {
-        ComponentContext componentContext = (ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT);
-
         stdoutWatcher.waitForTermination();
-        if (historyDataItem != null) {
-            if (!FileUtils.readFileToString(stdoutLogFile).isEmpty()) {
-                String stdoutFileRef = componentDatamanagementService.createTaggedReferenceFromLocalFile(componentContext,
-                    stdoutLogFile, stdoutLogFile.getName());
-                historyDataItem.addLog(stdoutLogFile.getName(), stdoutFileRef);
-            }
-            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stdoutLogFile);
-        }
-
         stderrWatcher.waitForTermination();
-        stderrAsString = FileUtils.readFileToString(stderrLogFile);
-        if (historyDataItem != null && !stderrAsString.isEmpty()) {
-            String stderrFileRef = componentDatamanagementService.createTaggedReferenceFromLocalFile(componentContext,
-                stderrLogFile, stderrLogFile.getName());
-            historyDataItem.addLog(stderrLogFile.getName(), stderrFileRef);
-        }
-        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stderrLogFile);
     }
 
     private void prepareOutputForRun() {
 
-        initializeLogFileForHistoryDataItem();
         stdoutWatcher =
-            ConsoleRowUtils.logToWorkflowConsole((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT),
-                executor.getStdout(), ConsoleRow.Type.STDOUT, stdoutLogFile, false);
+            ConsoleRowUtils.logToWorkflowConsole(((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT))
+                .getLog(), executor.getStdout(), ConsoleRow.Type.TOOL_OUT, null, false);
         stderrWatcher =
-            ConsoleRowUtils.logToWorkflowConsole((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT),
-                executor.getStderr(), ConsoleRow.Type.STDERR, stderrLogFile, false);
-    }
-
-    public String getStderrAsString() {
-        return stderrAsString;
-    }
-
-    private void initializeLogFileForHistoryDataItem() {
-        if (historyDataItem != null) {
-            try {
-                stdoutLogFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(
-                    ComponentHistoryDataItemConstants.STDOUT_LOGFILE_NAME);
-            } catch (IOException e) {
-                LOGGER.error("Creating temp file for console output failed. No log file add to component history data", e);
-            }
-        }
-        // always write stderr in file to provide it on error in exception
-        try {
-            stderrLogFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(
-                ComponentHistoryDataItemConstants.STDERR_LOGFILE_NAME);
-        } catch (IOException e) {
-            LOGGER.error("Creating temp file for console error output failed. No log file add to component history data", e);
-        }
+            ConsoleRowUtils.logToWorkflowConsole(((ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT))
+                .getLog(), executor.getStderr(), ConsoleRow.Type.TOOL_ERROR, null, false);
     }
 
     private void writeInputForPython() {
@@ -410,13 +359,16 @@ public class PythonScriptEngine implements ScriptEngine {
         writer.write(script);
         writer.close();
         File wrapperMain = new File(tempDir, RUN_SCRIPT);
-        InputStream wrapperScriptInputMain = PythonScriptEngine.class.getResourceAsStream(RESOURCES + RUN_SCRIPT);
-        FileUtils.copyInputStreamToFile(wrapperScriptInputMain, wrapperMain);
-        File wrapperBridge = new File(tempDir, PYTHON_BRIDGE);
-        InputStream wrapperScriptInputBridge = PythonScriptEngine.class.getResourceAsStream(RESOURCES + PYTHON_BRIDGE);
-        FileUtils.copyInputStreamToFile(wrapperScriptInputBridge, wrapperBridge);
-        InputStream simpleJsonFiles = PythonScriptEngine.class.getResourceAsStream(RESOURCES + SIMPLEJSON);
-        FileSupport.unzip(simpleJsonFiles, tempDir);
+        try (InputStream wrapperScriptInputMain = PythonScriptEngine.class.getResourceAsStream(RESOURCES + RUN_SCRIPT)) {
+            FileUtils.copyInputStreamToFile(wrapperScriptInputMain, wrapperMain);
+            File wrapperBridge = new File(tempDir, PYTHON_BRIDGE);
+            try (InputStream wrapperScriptInputBridge = PythonScriptEngine.class.getResourceAsStream(RESOURCES + PYTHON_BRIDGE)) {
+                FileUtils.copyInputStreamToFile(wrapperScriptInputBridge, wrapperBridge);
+                try (InputStream simpleJsonFiles = PythonScriptEngine.class.getResourceAsStream(RESOURCES + SIMPLEJSON)) {
+                    FileSupport.unzip(simpleJsonFiles, tempDir);
+                }
+            }
+        }
     }
 
     @Override

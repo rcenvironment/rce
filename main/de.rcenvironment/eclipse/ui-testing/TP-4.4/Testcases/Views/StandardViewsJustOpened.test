@@ -1,0 +1,55 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _7RlJ4GaBEeWE-JfpwaFXMg
+Element-Name: StandardViewsJustOpened
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _OBb_cGtdEeW6Pd5E4Whelw
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 10/5/15 2:33 PM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+with [get-view Network | get-tree] {
+    get-item Instances | click
+    get-item Connections | click
+}
+get-tab-folder -index 2 | get-tab-item "Workflow Data Browser" | click
+get-view "Workflow Data Browser" | get-tree | get-menu "Refresh all" | click
+get-tab-folder -index 2 | get-tab-item Log | click
+get-view Log | get-table | get-menu "Clear log" | click
+with [get-tab-folder -index 2] {
+    get-tab-item Properties | click
+    get-tab-item "Workflow List" | click
+    get-tab-item "Workflow Console" | click
+}
+get-view "Workflow Console" | get-button "Clear console" | click
+get-tab-folder -index 2 | get-tab-item "Workflow Timeline" | click
+get-button "Create workflow (Ctrl+Shift+N)" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text 123
+    get-button Finish | click
+}
+with [get-editor "123.wf"] {
+    with [get-diagram -index 1] {
+        mouse-move 427 337 button1 -height 625 -width 1203
+        mouse-press 427 337 button1 -height 625 -width 1203
+        mouse-release 427 337 button1 524288 -height 625 -width 1203
+        mouse-hover 427 337 -height 625 -width 1203
+        mouse-move 367 300 button3 -height 625 -width 1203
+        mouse-press 367 300 button3 -height 625 -width 1203
+        mouse-release 367 300 button3 2097152 -height 625 -width 1203
+        get-menu "Open Connection Editor" | click
+        mouse-hover 189 233 -height 625 -width 1203
+        mouse-move 189 233 button1 -height 625 -width 1203
+        mouse-press 189 233 button1 -height 625 -width 1203
+        mouse-release 189 233 button1 524288 -height 625 -width 1203
+        key-type F1
+    }
+    get-palette | get-palette-entry "Draw Connection (ALT+D)" | mouse-move 120 19 -height 33 -width 125
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

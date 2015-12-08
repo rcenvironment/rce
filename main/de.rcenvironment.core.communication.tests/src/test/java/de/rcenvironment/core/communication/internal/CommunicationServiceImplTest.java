@@ -35,7 +35,7 @@ import de.rcenvironment.core.communication.management.CommunicationManagementSer
 import de.rcenvironment.core.communication.model.internal.NetworkGraphImpl;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.routing.internal.LinkStateRoutingProtocolManager;
-import de.rcenvironment.core.communication.rpc.ServiceProxyFactory;
+import de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.utils.common.ServiceUtils;
@@ -99,7 +99,6 @@ public class CommunicationServiceImplTest {
         EasyMock.replay(contextMock);
 
         communicationService.activate();
-
     }
 
     /** Test. */
@@ -125,13 +124,13 @@ public class CommunicationServiceImplTest {
         service = communicationService.getService(iface, null, contextMock);
         assertEquals(serviceInstance, service);
 
-        service = communicationService.getService(iface, serviceProperties, pi1, contextMock);
+        service = communicationService.getService(iface, pi1, contextMock);
         assertEquals(serviceInstance, service);
 
-        service = communicationService.getService(iface, serviceProperties, pi2, contextMock);
+        service = communicationService.getService(iface, pi2, contextMock);
         assertEquals(serviceInstance, service);
 
-        service = communicationService.getService(iface, serviceProperties, null, contextMock);
+        service = communicationService.getService(iface, null, contextMock);
         assertEquals(serviceInstance, service);
 
     }
@@ -150,7 +149,7 @@ public class CommunicationServiceImplTest {
         }
         EasyMock.replay(contextMock);
 
-        Object service = communicationService.getService(iface, serviceProperties, pi1, contextMock);
+        Object service = communicationService.getService(iface, pi1, contextMock);
         assertEquals(serviceInstance, service);
 
     }
@@ -168,7 +167,7 @@ public class CommunicationServiceImplTest {
         }
         EasyMock.replay(contextMock);
 
-        Object service = communicationService.getService(iface, serviceProperties, pi1, contextMock);
+        Object service = communicationService.getService(iface, pi1, contextMock);
         assertEquals(serviceInstance, service);
 
     }
@@ -212,6 +211,7 @@ public class CommunicationServiceImplTest {
         private <T> T createNullService(final Class<T> clazz) {
             return (T) Proxy.newProxyInstance(clazz.getClassLoader(), new Class<?>[] { clazz },
                 new InvocationHandler() {
+
                     @Override
                     public Object invoke(Object proxy, Method method, Object[] parameters) throws Throwable {
                         throw new UndeclaredThrowableException(new RuntimeException("Service not available"));
@@ -220,8 +220,7 @@ public class CommunicationServiceImplTest {
         }
 
         @Override
-        public Object createServiceProxy(NodeIdentifier nodeId, Class<?> serviceIface, Class<?>[] ifaces,
-            Map<String, String> servicePropertiesString) {
+        public Object createServiceProxy(NodeIdentifier nodeId, Class<?> serviceIface, Class<?>[] ifaces) {
             Object service = null;
             if (nodeId.equals(pi1) && serviceIface == PlatformService.class) {
                 service = new DummyPlatformServiceLocal();
@@ -241,11 +240,6 @@ public class CommunicationServiceImplTest {
             return service;
         }
 
-        @Override
-        public Object createServiceProxy(NodeIdentifier nodeId, Class<?> serviceIface, Class<?>[] ifaces,
-            String servicePropertiesMap) {
-            return null;
-        }
     }
 
     /**

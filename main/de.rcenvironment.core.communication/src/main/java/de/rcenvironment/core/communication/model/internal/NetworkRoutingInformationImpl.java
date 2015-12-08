@@ -73,15 +73,15 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
 
     @Override
     public synchronized NetworkGraphLink getNextLinkTowards(NodeIdentifier targetNodeId) throws NoRouteToNodeException {
-        StatsCounter.count("Routing", "Route requests");
-        
+        StatsCounter.count("Network topology/routing", "Route requests");
+
         if (targetNodeId.equals(localNodeId)) {
             throw new NoRouteToNodeException("Cannot route to Local node", localNodeId);
         }
 
         if (routingTable == null) {
-            StatsCounter.count("Routing", "Routing table calculations");
-            
+            StatsCounter.count("Network topology/routing", "Routing table calculations");
+
             // initialize basic structures
             routingTable = new HashMap<NodeIdentifier, NetworkGraphLink>();
             incomingEdgesById = new HashMap<NodeIdentifier, NetworkGraphLink>();

@@ -28,6 +28,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Group;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
@@ -55,13 +56,20 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
     public static final int PROPERTY_COMBO = 2;
 
     /** Constant. */
+    public static final int ADD_PROPERTY_COMBO = 3;
+
+    /** Constant. */
     public static final int DIRECTORY_COMBO = 4;
 
     private static final int TEXTFIELD_HEIGHT = 270;
 
     private static final int TEXTFIELD_WIDTH = 300;
 
-    private static final int NUMBER_OF_TABS = 3;
+    private static final int NUMBER_OF_TABS = 4;
+
+    // To avoid dependency cycles this key exists also in the file CpacsToolIntegrationConstants.java,
+    // see KEY_MOCK_TOOL_OUTPUT_FILENAME
+    private static final String CPACS_MOCK_TOOL_OUTPUT_FILENAME = "imitationToolOutputFilename";
 
     protected Map<String, Object> configurationMap;
 
@@ -89,6 +97,18 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
     private Label executionPathLabel;
 
+    private Button mockModeCheckBox;
+
+    private CTabFolder tabFolder;
+
+    private Composite mockScriptTabComposite;
+
+    private Composite mockScriptTabButtonComposite;
+
+    private Text mockToolOutputFilenameText;
+
+    private Label mockToolOutputFilenameLabel;
+
     protected ScriptConfigurationPage(String pageName, Map<String, Object> configurationMap) {
         super(pageName);
         setTitle(pageName);
@@ -104,15 +124,80 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
     @Override
     public void createControl(Composite parent) {
-        CTabFolder tabFolder = new CTabFolder(parent, SWT.BORDER);
-        createScriptTabItem(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX, Messages.commandScriptMessage, tabFolder, 0);
-        createScriptTabItem(ToolIntegrationConstants.KEY_PRE_SCRIPT, Messages.preScript, tabFolder, 1);
-        createScriptTabItem(ToolIntegrationConstants.KEY_POST_SCRIPT, Messages.postScript, tabFolder, 2);
+        Composite container = new Composite(parent, SWT.NONE);
+        container.setLayout(new GridLayout(1, false));
+        tabFolder = new CTabFolder(container, SWT.BORDER);
+        GridData layoutData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL
+            | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+        tabFolder.setLayoutData(layoutData);
+        createScriptTabItem(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX, Messages.commandScriptMessage, 0);
+        createScriptTabItem(ToolIntegrationConstants.KEY_PRE_SCRIPT, Messages.preScript, 1);
+        createScriptTabItem(ToolIntegrationConstants.KEY_POST_SCRIPT, Messages.postScript, 2);
+        createScriptTabItem(ToolIntegrationConstants.KEY_MOCK_SCRIPT, "Tool run imitation script", 3);
 
         tabFolder.setSelection(0);
 
-        setControl(tabFolder);
+        createMockModeGroup(container);
+
+        setControl(container);
         updatePageComplete();
+    }
+
+    private void createMockModeGroup(Composite container) {
+        GridData layoutData;
+        Group mockGroup = new Group(container, SWT.NONE);
+        mockGroup.setText("Tool run imitation mode");
+        mockGroup.setLayout(new GridLayout(2, false));
+        layoutData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL
+            | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+        mockGroup.setLayoutData(layoutData);
+        mockModeCheckBox = new Button(mockGroup, SWT.CHECK);
+        layoutData = new GridData();
+        layoutData.horizontalSpan = 2;
+        mockModeCheckBox.setLayoutData(layoutData);
+        mockModeCheckBox.setText("Support tool run imitation");
+        mockModeCheckBox.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                setMockScriptTabEnabled(mockModeCheckBox.getSelection());
+                if (mockToolOutputFilenameText != null) {
+                    mockToolOutputFilenameText.setEnabled(mockModeCheckBox.getSelection());
+                }
+                configurationMap.put(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED, mockModeCheckBox.getSelection());
+                updatePageComplete();
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent event) {
+                widgetSelected(event);
+            }
+        });
+
+        // FIXME: CPACS-specific stuff must not be handled here; temporary workaround as wizard will
+        // be replaced by an editor soon
+        mockToolOutputFilenameLabel = new Label(mockGroup, SWT.NONE);
+        mockToolOutputFilenameLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false, 1, 1));
+        mockToolOutputFilenameLabel.setText("Dummy tool output filename:");
+
+        mockToolOutputFilenameText = new Text(mockGroup, SWT.BORDER);
+        mockToolOutputFilenameText.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 1, 1));
+        mockToolOutputFilenameText.addModifyListener(new TextAreaModifyListener(CPACS_MOCK_TOOL_OUTPUT_FILENAME));
+
+        mockToolOutputFilenameLabel.setVisible(false);
+        mockToolOutputFilenameText.setVisible(false);
+    }
+
+    private void setChildrenEnabled(Composite parent, boolean enabled) {
+        for (Control control : parent.getChildren()) {
+            control.setEnabled(enabled);
+        }
+    }
+
+    private void setMockScriptTabEnabled(boolean enabled) {
+        tabFolder.getTabList()[3].setEnabled(enabled);
+        setChildrenEnabled(mockScriptTabComposite, enabled);
+        setChildrenEnabled(mockScriptTabButtonComposite, enabled);
     }
 
     /**
@@ -146,7 +231,19 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             }
             setComboEnabled(propertiesCombos[i]);
             directoryCombos[i].select(0);
+            boolean mockModeSupported = configurationMap.containsKey(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED)
+                && (boolean) configurationMap.get(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED);
+            setMockScriptTabEnabled(mockModeSupported);
+            mockModeCheckBox.setSelection(mockModeSupported);
+            if (mockToolOutputFilenameText != null) {
+                mockToolOutputFilenameText.setEnabled(mockModeSupported);
+            }
         }
+
+        boolean isCPACSType = ((ToolIntegrationWizard) getWizard()).getCurrentContext().getContextType().equalsIgnoreCase("CPACS");
+
+        mockToolOutputFilenameLabel.setVisible(isCPACSType);
+        mockToolOutputFilenameText.setVisible(isCPACSType);
         updateButtons();
         updatePageComplete();
     }
@@ -197,6 +294,11 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         } else {
             textFields[2].setText("");
         }
+        if ((String) configurationMap.get(ToolIntegrationConstants.KEY_MOCK_SCRIPT) != null) {
+            textFields[3].setText((String) configurationMap.get(ToolIntegrationConstants.KEY_MOCK_SCRIPT));
+        } else {
+            textFields[3].setText("");
+        }
 
         if (configurationMap.get(ToolIntegrationConstants.DONT_CRASH_ON_NON_ZERO_EXIT_CODES) != null) {
             noErrorOnOtherExitCodeButton.setSelection((Boolean) configurationMap
@@ -221,6 +323,14 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                 executionPathLabel.setEnabled(false);
             }
         }
+
+        if (mockToolOutputFilenameText != null) {
+            if ((String) configurationMap.get(CPACS_MOCK_TOOL_OUTPUT_FILENAME) != null) {
+                mockToolOutputFilenameText.setText((String) configurationMap.get(CPACS_MOCK_TOOL_OUTPUT_FILENAME));
+            } else {
+                mockToolOutputFilenameText.setText("");
+            }
+        }
     }
 
     private void updatePageComplete() {
@@ -237,8 +347,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             boolean linuxScriptNotEmpty = ((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX)) != null
                 && !((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX)).isEmpty();
             if ((winEnabled && winScriptNotEmpty) || (linuxEnabled && linuxScriptNotEmpty)) {
-                setMessage(null, DialogPage.NONE);
-                setPageComplete(true);
+                validateIsMockScriptConfiguration();
             } else {
                 setMessage(Messages.toolExecutionCommandNeeded, DialogPage.ERROR);
                 setPageComplete(false);
@@ -246,7 +355,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
     }
 
-    private Text createScriptTabItem(String propertyKey, String name, CTabFolder tabFolder, int buttonIndex) {
+    private Text createScriptTabItem(String propertyKey, String name, int buttonIndex) {
         CTabItem item = new CTabItem(tabFolder, SWT.NONE);
         item.setText(name);
         Composite client = new Composite(tabFolder, SWT.NONE);
@@ -344,7 +453,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                 }
             });
             executionPathLabel = new Label(executionPropertiesGroup, SWT.NONE);
-            executionPathLabel.setText("Execute (command(s), pre/post script) from");
+            executionPathLabel.setText("Execute (command(s), pre execution/post exectuion/tool run imitation script) from");
             setWorkingDirAsCwdButton = new Button(executionPropertiesGroup, SWT.RADIO);
             setWorkingDirAsCwdButton.setSelection(true);
             setWorkingDirAsCwdButton.setText("Working directory");
@@ -378,12 +487,31 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             });
         }
 
-        for (int i = 0; i < textFields.length; i++) {
-            if (textFields[i] != null) {
-                textFields[i].setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
+        for (Text textField : textFields) {
+            if (textField != null) {
+                textField.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
             }
         }
+
+        if (buttonIndex == 3) {
+            mockScriptTabComposite = client;
+        }
+
         return scriptArea;
+    }
+
+    private void validateIsMockScriptConfiguration() {
+        if (mockModeCheckBox.getSelection() && textFields[3].getText().isEmpty() && !mockToolOutputFilenameText.isVisible()) {
+            setMessage("Tool run imitation mode is supported but no tool run imitation script is configured.", DialogPage.ERROR);
+            setPageComplete(false);
+        } else if (mockModeCheckBox.getSelection() && mockToolOutputFilenameText.isVisible()
+            && mockToolOutputFilenameText.getText().isEmpty()) {
+            setMessage("Tool run imitation mode is supported but no dummy tool output filename is configured.", DialogPage.ERROR);
+            setPageComplete(false);
+        } else {
+            setMessage(null, DialogPage.NONE);
+            setPageComplete(true);
+        }
     }
 
     private void createInsertFields(int buttonIndex, Composite client, final Text scriptAreaWin, final Text scriptArea) {
@@ -478,13 +606,16 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         if (buttonIndex > 0) {
             new Label(buttonComposite, SWT.NONE).setText("");
             new Label(buttonComposite, SWT.NONE).setText("");
-            Button insertCopyCommand = new
-                Button(buttonComposite, SWT.PUSH);
+            Button insertCopyCommand = new Button(buttonComposite, SWT.PUSH);
             GridData copyData = new GridData();
             copyData.horizontalSpan = 2;
             insertCopyCommand.setLayoutData(copyData);
             insertCopyCommand.setText("Insert copy of file/dir");
             insertCopyCommand.addSelectionListener(new CopyInputListener(scriptArea));
+        }
+
+        if (buttonIndex == 3) {
+            mockScriptTabButtonComposite = buttonComposite;
         }
 
     }
@@ -651,16 +782,21 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                         + ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[combo.getSelectionIndex()]
                         + ToolIntegrationConstants.PLACEHOLDER_SUFFIX + QUOTE);
                 }
-                if (comboType == 3 && insertText != null && !insertText.isEmpty()) {
-                    currentText.insert(ToolIntegrationConstants.PLACEHOLDER_PREFIX
-                        + ToolIntegrationConstants.PLACEHOLDER_ADDITIONAL_PROPERTIES_PREFIX
-                        + ToolIntegrationConstants.PLACEHOLDER_SEPARATOR
-                        + "exitCode"
-                        + ToolIntegrationConstants.PLACEHOLDER_SUFFIX);
+
+                if (comboType == ADD_PROPERTY_COMBO && insertText != null && !insertText.isEmpty()) {
+                    currentText.insert(createAddPropertyPlaceHolder(ToolIntegrationConstants.PLACEHOLDER_EXIT_CODE));
                 }
                 currentText.setFocus();
             }
         }
+    }
+
+    private String createAddPropertyPlaceHolder(String addPropPlaceholder) {
+        return ToolIntegrationConstants.PLACEHOLDER_PREFIX
+            + ToolIntegrationConstants.PLACEHOLDER_ADDITIONAL_PROPERTIES_PREFIX
+            + ToolIntegrationConstants.PLACEHOLDER_SEPARATOR
+            + addPropPlaceholder
+            + ToolIntegrationConstants.PLACEHOLDER_SUFFIX;
     }
 
     /**

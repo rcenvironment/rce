@@ -21,7 +21,7 @@
     />
     <reference bind="bindDataService"
 		cardinality="1..1"
-		interface="de.rcenvironment.core.datamanagement.DataService"
+		interface="de.rcenvironment.core.datamanagement.FileDataService"
 		name="Data Service"
 		policy="dynamic"
 	/>

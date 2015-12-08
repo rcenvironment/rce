@@ -9,10 +9,12 @@
 package de.rcenvironment.core.component.integration;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Map;
 import java.util.Set;
 
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Service for registering new user integrated tools and read the already integrated from the
@@ -60,8 +62,9 @@ public interface ToolIntegrationService {
      * @param configurationMap : information about the component
      * @param integrationInformation about the tool e.g. the component id prefix and all location
      *        information
+     * @throws IOException if writing tool fails
      */
-    void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext integrationInformation);
+    void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext integrationInformation) throws IOException;
 
     /**
      * Writes a new description of a component to the folder that was selected.
@@ -70,9 +73,10 @@ public interface ToolIntegrationService {
      * @param configurationMap : information about the component
      * @param integrationInformation about the tool e.g. the component id prefix and all location
      *        information
+     * @throws IOException if writing tool fails
      */
     void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
-        ToolIntegrationContext integrationInformation);
+        ToolIntegrationContext integrationInformation) throws IOException;
 
     /**
      * Returns the read in configuration of toolId, which has all information about the tool and for
@@ -165,4 +169,36 @@ public interface ToolIntegrationService {
      * @param toolPath to remove
      */
     void unpublishTool(String toolPath);
+
+    /**
+     * @param identifier with component id and version
+     * 
+     * @return documentation of the tool as zipped byte array
+     * 
+     * @exception RemoteOperationException if the remote operation fails.
+     */
+    byte[] getToolDocumentation(String identifier) throws RemoteOperationException;
+
+    /**
+     * (De-)activate all filewatcher.
+     * 
+     * @param value true, if they should be active, else false.
+     */
+    void setFileWatcherActive(boolean value);
+
+    /**
+     * Unregister a complete tool directory.
+     * 
+     * @param previousToolName to unregister
+     * @param integrationContext of the tool
+     */
+    void unregisterIntegration(String previousToolName, ToolIntegrationContext integrationContext);
+
+    /**
+     * Register a complete tool directory.
+     * 
+     * @param toolName to unregister
+     * @param integrationContext of the tool
+     */
+    void registerRecursive(String toolName, ToolIntegrationContext integrationContext);
 }

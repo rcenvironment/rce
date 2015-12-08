@@ -20,7 +20,7 @@
 			<!-- Note: Orbit R20120119162704 provides JSch, but only V0.1.41 - misc_ro -->
 			<groupId>com.jcraft</groupId>
 			<artifactId>jsch</artifactId>
-			<version>0.1.45</version>
+			<version>0.1.53</version>
 		</dependency>
 		<dependency>
 			<!-- used by SSH bundle for SCP operations -->
@@ -49,6 +49,14 @@
 			<groupId>org.jodd</groupId>
 			<artifactId>jodd-mail</artifactId> <!-- note: switched from "jodd" to "jodd-mail" for 6.x -->
 			<version>3.6.2</version> <!-- last upgraded on 2014-11-07 - misc_ro -->
+		</dependency>
+		<dependency>
+			<!-- Toolkit for building text-mode UIs -->
+			<!-- License: LGPL v3 (https://github.com/mabe02/lanterna/blob/master/License.txt) 
+				- misc_ro, Oct 2015 -->
+			<groupId>com.googlecode.lanterna</groupId>
+			<artifactId>lanterna</artifactId>
+			<version>2.1.9</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -122,5 +130,5 @@
 		</dependency>
 	</dependencies>
 
-	<version>6.1.0.qualifier</version>
+	<version>7.0.0.qualifier</version>
 </project>

@@ -25,6 +25,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.management.BenchmarkService;
 import de.rcenvironment.core.communication.management.BenchmarkSetup;
+import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
@@ -34,7 +35,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * 
  * @author Robert Mischke
  */
-public class BenchmarkServiceImpl implements BenchmarkService {
+public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkService {
 
     private CommunicationService commService;
 

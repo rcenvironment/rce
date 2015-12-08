@@ -32,7 +32,7 @@ import org.apache.poi.ss.usermodel.WorkbookFactory;
 
 import de.rcenvironment.components.excel.common.ExcelException;
 import de.rcenvironment.components.excel.common.ExcelService;
-import de.rcenvironment.components.excel.common.GarbageDestroyer;
+import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
@@ -101,30 +101,20 @@ public class ExcelServicePOI implements ExcelService {
      * @throws ExcelException thrown if not a real Excel file
      */
     protected void initialTest(final File xlFile) throws ExcelException {        
-        BufferedInputStream bis = null;
-        try {
-            bis = new BufferedInputStream(new FileInputStream(xlFile));
+        try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(xlFile))) {
             boolean isXlsx = POIXMLDocument.hasOOXMLHeader(bis);            
             bis.reset();
             boolean isXls = POIFSFileSystem.hasPOIFSHeader(bis);
             
             if (!isXlsx && !isXls) {
-                throw new ExcelException("Excel file is maybe no Excel file?");
+                throw new ExcelException("Given file seems to be no Excel file");
             }
         } catch (FileNotFoundException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
         } catch (IllegalArgumentException e) {
-            throw new ExcelException("Excel file is maybe no Excel file?", e);
+            throw new ExcelException("Given file seems to be no Excel file", e);
         } catch (IOException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
-        } finally {
-            if (bis != null) {
-                try {
-                    bis.close();
-                } catch (IOException e) {
-                    LOGGER.error(e);
-                }
-            }
         }
     }
     
@@ -222,7 +212,6 @@ public class ExcelServicePOI implements ExcelService {
                             LOGGER.debug("File not found. (Method: setValueOfCells). Iteration: " + i + ". Retrying.");
                             if (i == (BLOCKING_ITERATIONMAX - 1)) {
                                 // Last iteration was not successful
-                                LOGGER.error(EXCMSG_CANNOT_SAVE_FILE_WITH_RESULT_DATA);
                                 throw new ExcelException(EXCMSG_CANNOT_SAVE_FILE_WITH_RESULT_DATA, e);
                             }
                         } catch (IOException e) {
@@ -239,7 +228,7 @@ public class ExcelServicePOI implements ExcelService {
                         try {
                             inp.close();
                         } catch (IOException e) {
-                            LOGGER.debug("Apache Poi: Closing of input stream does not work. (Method: setValueOfCells)");
+                            LOGGER.error("Failed to close output stream", e);
                         }
                     }
                     if (fileOut != null) {
@@ -247,12 +236,12 @@ public class ExcelServicePOI implements ExcelService {
                             fileOut.flush();
                             fileOut.close();
                         } catch (IOException e) {
-                            LOGGER.debug("Apache Poi: Closing of output stream does not work. (Method: setValueOfCells)");
+                            LOGGER.error("Failed to flush or close output stream", e);
                         }
                     }
                     
                     //Not nice, but workbook-object will not released.
-                    new Thread(new GarbageDestroyer()).start();
+                    ExcelUtils.destroyGarbage();
                 }
 
                 //Recalculate formulas 
@@ -405,12 +394,12 @@ public class ExcelServicePOI implements ExcelService {
                     try {
                         inp.close();
                     } catch (IOException e) {
-                        LOGGER.debug("Apache Poi: Closing of input stream does not work. (Method: getValueOfCells)");
+                        LOGGER.error("Failed to close input stream", e);
                     }
                 }
                 
                 //Not nice, but workbook-object will not released.
-                new Thread(new GarbageDestroyer()).start();
+                ExcelUtils.destroyGarbage();
             }
         }
         return retValues;
@@ -449,7 +438,7 @@ public class ExcelServicePOI implements ExcelService {
             }
             
             //Not nice, but workbook-object will not released.
-            new Thread(new GarbageDestroyer()).start();
+            ExcelUtils.destroyGarbage();
         }
 
         return names;
@@ -489,7 +478,7 @@ public class ExcelServicePOI implements ExcelService {
                 }
             }
         } catch (NotImplementedException e) {
-            throw new ExcelException("Formula will be tried to evaluate which is not known in Apache POI.", e);
+            throw new ExcelException("Tried to evaluate unknow formula", e);
         } catch (FileNotFoundException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
         } catch (InvalidFormatException e) {
@@ -506,7 +495,7 @@ public class ExcelServicePOI implements ExcelService {
             }
           
             //Not nice, but workbook-object will not released.
-            new Thread(new GarbageDestroyer()).start();
+            ExcelUtils.destroyGarbage();
         }
     }
 

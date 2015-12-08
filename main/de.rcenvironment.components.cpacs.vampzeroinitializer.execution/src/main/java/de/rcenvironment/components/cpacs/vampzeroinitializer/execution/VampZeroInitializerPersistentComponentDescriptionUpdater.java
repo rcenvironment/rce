@@ -16,7 +16,6 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
-import de.rcenvironment.cpacs.utils.common.components.PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -85,11 +84,12 @@ public class VampZeroInitializerPersistentComponentDescriptionUpdater implements
 
         
         // StaticOutput CPACS=FileReference, Static Input CPACS=FileReference
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticOutputCPACS(description);
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticOutput(description,
+            VampZeroInitializerComponentConstants.OUTPUT_NAME_CPACS);
 
         
         // Sets all dynamic incoming channels usage to "optional."
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.updateDynamicInputsOptional(description);
+        description = PersistentComponentDescriptionUpdaterUtils.updateDynamicInputsOptional(description);
 
         description.setComponentVersion(currentVersion);
         

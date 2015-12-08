@@ -40,6 +40,11 @@ public class OsgiServiceRegistryAccess implements ServiceRegistryPublisherAccess
     public <T> T getService(Class<T> clazz) {
         synchronized (serviceReferences) {
             ServiceReference<?> serviceReference = bundleContext.getServiceReference(clazz.getName());
+            if (serviceReference == null) {
+                throw new IllegalStateException("Found no registered service for class " + clazz.getName());
+            }
+            // FIXME review @7.0.0: this looks like a memory leak after the change to a "stateless" read access API;
+            // distinguish between static/dynamic services regarding disposal and caching? - misc_ro
             serviceReferences.add(serviceReference);
             return (T) bundleContext.getService(serviceReference);
         }

@@ -8,11 +8,12 @@
 
 package de.rcenvironment.core.communication.testutils;
 
+import org.apache.commons.logging.LogFactory;
+
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
 import de.rcenvironment.core.communication.connection.impl.ConnectionSetupServiceImpl;
@@ -20,7 +21,9 @@ import de.rcenvironment.core.communication.connection.internal.MessageChannelSer
 import de.rcenvironment.core.communication.internal.CommunicationServiceImpl;
 import de.rcenvironment.core.communication.internal.PlatformServiceImpl;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
+import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
+import de.rcenvironment.core.communication.management.internal.BenchmarkServiceImpl;
 import de.rcenvironment.core.communication.management.internal.CommunicationManagementServiceImpl;
 import de.rcenvironment.core.communication.management.internal.WorkflowHostServiceImpl;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
@@ -31,19 +34,19 @@ import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.routing.internal.NetworkRoutingServiceImpl;
 import de.rcenvironment.core.communication.routing.internal.v2.DistributedLinkStateManager;
 import de.rcenvironment.core.communication.routing.internal.v2.LinkStateKnowledgeChangeListener;
-import de.rcenvironment.core.communication.rpc.RemoteServiceCallService;
-import de.rcenvironment.core.communication.rpc.ServiceCallHandler;
-import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
-import de.rcenvironment.core.communication.rpc.ServiceCallResult;
-import de.rcenvironment.core.communication.rpc.ServiceProxyFactory;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
+import de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService;
 import de.rcenvironment.core.communication.rpc.internal.CallbackProxyServiceImpl;
-import de.rcenvironment.core.communication.rpc.internal.RemoteServiceCallServiceImpl;
+import de.rcenvironment.core.communication.rpc.internal.RemoteServiceCallSenderServiceImpl;
+import de.rcenvironment.core.communication.rpc.internal.ServiceCallHandlerServiceImpl;
 import de.rcenvironment.core.communication.rpc.internal.ServiceProxyFactoryImpl;
+import de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver;
+import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
+import de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
-import de.rcenvironment.core.utils.incubator.MockListenerRegistrationService;
+import de.rcenvironment.core.utils.common.service.MockAdditionalServicesRegistrationService;
 
 /**
  * A factory for {@link VirtualCommunicationBundle} instances intended for integration tests.
@@ -65,7 +68,7 @@ public final class VirtualCommunicationBundleFactory {
 
         private NodePropertiesServiceImpl nodePropertiesService;
 
-        private MockListenerRegistrationService listenerRegistrationService;
+        private MockAdditionalServicesRegistrationService listenerRegistrationService;
 
         private final VirtualServiceRegistry serviceRegistry;
 
@@ -79,7 +82,7 @@ public final class VirtualCommunicationBundleFactory {
 
             serviceRegistry = new VirtualServiceRegistry();
 
-            listenerRegistrationService = new MockListenerRegistrationService();
+            listenerRegistrationService = new MockAdditionalServicesRegistrationService();
 
             serviceRegistry.registerProvidedService(nodeConfigurationService, NodeConfigurationService.class);
 
@@ -88,7 +91,7 @@ public final class VirtualCommunicationBundleFactory {
 
             ConnectionSetupServiceImpl connectionSetupService = new ConnectionSetupServiceImpl();
             serviceRegistry.registerManagedService(connectionSetupService, false, ConnectionSetupService.class);
-            listenerRegistrationService.registerListenerProvider(connectionSetupService);
+            listenerRegistrationService.registerAdditionalServicesProvider(connectionSetupService);
 
             nodePropertiesService = new NodePropertiesServiceImpl();
             serviceRegistry.registerManagedService(nodePropertiesService, NodePropertiesService.class);
@@ -96,10 +99,7 @@ public final class VirtualCommunicationBundleFactory {
             routingService = new NetworkRoutingServiceImpl();
             // bind for both implemented interface
             serviceRegistry.registerManagedService(routingService, NetworkRoutingService.class, MessageRoutingService.class);
-            listenerRegistrationService.registerListenerProvider(routingService);
-
-            // register provided ServiceCallHandler stub service
-            serviceRegistry.registerProvidedService(new ServiceCallHandlerStub(), ServiceCallHandler.class);
+            listenerRegistrationService.registerAdditionalServicesProvider(routingService);
 
             // keep reference to prevent automatic network startup before activation
             communicationManagementService = new CommunicationManagementServiceImpl();
@@ -107,9 +107,9 @@ public final class VirtualCommunicationBundleFactory {
 
             serviceRegistry.registerManagedService(new PlatformServiceImpl(), PlatformService.class);
 
-            serviceRegistry.registerManagedService(new RemoteServiceCallServiceImpl(), false, RemoteServiceCallService.class);
+            serviceRegistry.registerManagedService(new RemoteServiceCallSenderServiceImpl(), false, RemoteServiceCallSenderService.class);
 
-            // register stubs; replace when RPC should be made testable
+            // register stubs; replace when RPC callbacks should be made testable
             serviceRegistry.registerProvidedService(new CallbackServiceDefaultStub(), CallbackService.class);
             serviceRegistry.registerProvidedService(new CallbackProxyServiceImpl(), CallbackProxyService.class);
 
@@ -119,11 +119,19 @@ public final class VirtualCommunicationBundleFactory {
 
             CommunicationServiceImpl communicationService = new CommunicationServiceImpl();
             serviceRegistry.registerManagedService(communicationService, CommunicationService.class);
-            listenerRegistrationService.registerListenerProvider(communicationService);
+            listenerRegistrationService.registerAdditionalServicesProvider(communicationService);
 
             distributedLinkStateManager = new DistributedLinkStateManager();
             serviceRegistry.registerManagedService(distributedLinkStateManager, true, DistributedLinkStateManager.class);
-            listenerRegistrationService.registerListenerProvider(distributedLinkStateManager);
+            listenerRegistrationService.registerAdditionalServicesProvider(distributedLinkStateManager);
+
+            // register a virtual LocalServiceResolver stub
+            serviceRegistry.registerProvidedService(new LocalServiceResolverStub(), LocalServiceResolver.class);
+            // register the standard RPC handler (which uses the resolver stub)
+            serviceRegistry.registerManagedService(new ServiceCallHandlerServiceImpl(), false, RemoteServiceCallHandlerService.class);
+
+            // add a simple remote service for RPC testing
+            serviceRegistry.registerProvidedService(new BenchmarkServiceImpl(), RemoteBenchmarkService.class);
         }
 
         @Override
@@ -173,19 +181,36 @@ public final class VirtualCommunicationBundleFactory {
             return implementation;
         }
 
-    }
-
-    /**
-     * {@link ServiceCallHandler} stub that throws an exception on incoming RPC requests.
-     * 
-     * @author Robert Mischke
-     */
-    private static final class ServiceCallHandlerStub implements ServiceCallHandler {
-
         @Override
-        public ServiceCallResult handle(ServiceCallRequest serviceCallRequest) throws CommunicationException {
-            throw new UnsupportedOperationException("Virtual communication bundles do not support RPC (yet?)");
+        public <T> void injectService(Class<T> clazz, T implementation) {
+            // note: services are not implicitly activated
+            serviceRegistry.registerProvidedService(implementation, clazz);
         }
+
+        /**
+         * A {@link LocalServiceResolver} implementation that accesses this instance's {@link VirtualServiceRegistry}.
+         * 
+         * @author Robert Mischke
+         */
+        private final class LocalServiceResolverStub implements LocalServiceResolver {
+
+            @Override
+            public Object getLocalService(String serviceName) {
+                try {
+                    Object impl = serviceRegistry.getService(Class.forName(serviceName));
+                    if (impl == null) {
+                        LogFactory.getLog(getClass()).error("No such service available: " + serviceName);
+                        return null;
+                    }
+                    return impl;
+                } catch (ClassNotFoundException e) {
+                    LogFactory.getLog(getClass()).error("Failed to resolve service class " + serviceName, e);
+                    return null;
+                }
+            }
+
+        }
+
     }
 
     private VirtualCommunicationBundleFactory() {}

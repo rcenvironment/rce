@@ -19,9 +19,11 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UIKeyboardInteractive;
 import com.jcraft.jsch.UserInfo;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
- * A factory for configuration-based creation of JSch {@link Session}s. Supported authentication
- * methods are password and SSH keyfile (with an optional passphrase).
+ * A factory for configuration-based creation of JSch {@link Session}s. Supported authentication methods are password and SSH keyfile (with
+ * an optional passphrase).
  * 
  * @author Robert Mischke
  */
@@ -36,10 +38,8 @@ public final class JschSessionFactory {
     /**
      * Simple adapter from com.jcraft.jsch.Logger to Apache Commons Logging.
      * 
-     * All messages are currently sent to ACL at the "info" level; this could be improved by
-     * actually mapping the log levels.
-     * 
      * @author Robert Mischke
+     * @author Brigitte Boden
      */
     private static final class ACLDelegate implements Logger {
 
@@ -55,8 +55,15 @@ public final class JschSessionFactory {
         @Override
         public void log(int level, String arg1) {
             if (level >= minLevel) {
-                // TODO improve by mapping log levels?
-                apacheCommonsLogger.info("JSch connection log: " + level + ": " + arg1);
+                final String logMessage = "JSch connection log: " + level + ": " + arg1;
+                if (level == 0 || level == 1) {
+                    // Debug and info messages are both logged as debug, as the "info" output is quite verbose.
+                    apacheCommonsLogger.debug(logMessage);
+                } else if (level == 2) {
+                    apacheCommonsLogger.warn(logMessage);
+                } else {
+                    apacheCommonsLogger.error(logMessage);
+                }
             }
         }
 
@@ -121,7 +128,7 @@ public final class JschSessionFactory {
         @Override
         public String[] promptKeyboardInteractive(String arg0, String arg1, String arg2, String[] arg3, boolean[] arg4) {
             if (log.isDebugEnabled()) {
-                log.debug(String
+                log.debug(StringUtils
                     .format("Simulating keyboard-interactive login; display parameters: %s, %s, %s, %d", arg0, arg1, arg2, arg3.length));
             }
             return new String[] { pw };
@@ -132,11 +139,10 @@ public final class JschSessionFactory {
      * @param host the target host to connect to
      * @param port the port number
      * @param user the login username
-     * @param keyfileLocation the path of the local keyfile (optional); if null or empty, password
-     *        auth is used. For convenience, "~" is automatically resolved to ${user.home}. (NB:
-     *        This is one of the reasons why a String is used instead of a {@link File}.)
-     * @param authPhrase the authentication phrase; if a keyfile is set, this is taken as the
-     *        keyfile passphase; otherwise, it is used as the login password
+     * @param keyfileLocation the path of the local keyfile (optional); if null or empty, password auth is used. For convenience, "~" is
+     *        automatically resolved to ${user.home}. (NB: This is one of the reasons why a String is used instead of a {@link File}.)
+     * @param authPhrase the authentication phrase; if a keyfile is set, this is taken as the keyfile passphase; otherwise, it is used as
+     *        the login password
      * @param connectionLogger the JSch-internal logger instance to use
      * @return the initialized JSch session on success
      * @throws SshParameterException on invalid parameters

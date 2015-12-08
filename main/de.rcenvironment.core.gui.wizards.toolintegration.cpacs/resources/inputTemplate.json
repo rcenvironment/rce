@@ -1,0 +1,35 @@
+{
+	"dynamicInputs": [
+		{
+			"endpointIdentifier": "default",
+			"endpointDataTypes": [
+				"Boolean",
+				"ShortText",
+				"Integer",
+				"Float"
+			],
+			"endpointDefaultDataType": "Float",
+			"inputinputHandlingOptions":[
+                "Single",
+                "Constant"
+            ],
+            "defaultInputHandling":"Single",
+            "inputinputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+			"endpointMetaData": {
+				"variable.xpath": {
+					"guiName": "XPath",
+					"guiPosition": "0",
+					"guiGroup": "XML values",
+					"visibility" : "shown",
+					"defaultValue" : "",
+					"validation" : "required",
+					"persistent" : "true"
+				}
+			}
+		}
+	]
+}

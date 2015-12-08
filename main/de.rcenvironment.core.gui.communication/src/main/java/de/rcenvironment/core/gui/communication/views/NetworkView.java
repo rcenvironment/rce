@@ -9,20 +9,26 @@ package de.rcenvironment.core.gui.communication.views;
 
 import java.awt.Toolkit;
 import java.awt.datatransfer.StringSelection;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jface.action.Action;
+import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
-import org.eclipse.jface.window.Window;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
@@ -34,8 +40,6 @@ import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
-import org.eclipse.swt.widgets.MessageBox;
-import org.eclipse.swt.widgets.TreeItem;
 import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
@@ -47,7 +51,6 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetupListene
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupListenerAdapter;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
-import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListener;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListenerAdapter;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
@@ -55,11 +58,21 @@ import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.gui.communication.views.contributors.ConnectionSetupsListContributor;
+import de.rcenvironment.core.gui.communication.views.contributors.InstanceComponentsInfoContributor;
+import de.rcenvironment.core.gui.communication.views.contributors.MonitoringDataContributor;
+import de.rcenvironment.core.gui.communication.views.contributors.SshConnectionSetupsListContributor;
+import de.rcenvironment.core.gui.communication.views.internal.AnchorPoints;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext.Context;
 import de.rcenvironment.core.gui.communication.views.model.NetworkViewModel;
+import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
+import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionNode;
+import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataPollingManager;
+import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -69,9 +82,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Sascha Zur
  * @author Robert Mischke
  * @author Oliver Seebach
- * @param <E>
+ * @author David Scholz
  */
-public class NetworkView<E> extends ViewPart {
+public class NetworkView extends ViewPart {
 
     /**
      * The ID of the view as specified by the extension.
@@ -80,6 +93,9 @@ public class NetworkView<E> extends ViewPart {
 
     private static final ImageDescriptor ADD =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/newConnection.png"));
+
+    private static final ImageDescriptor ADDSSH =
+        ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/newSshConnection.png"));
 
     private static final ImageDescriptor EDIT =
         ImageDescriptor.createFromURL(NetworkView.class.getResource("/resources/icons/edit16.gif"));
@@ -106,15 +122,17 @@ public class NetworkView<E> extends ViewPart {
 
     private Action addNetworkConnectionAction;
 
-    private Action copyRawNodePropertiesToClipBoard;
+    private Action addSSHConnectionAction;
 
-    private Action editNetworkConnectionAction;
+    private Action copyToClipBoardAction;
 
-    private Action deleteNetworkConnectionAction;
+    private Action editAction;
 
-    private Action startNetworkConnectionAction;
+    private Action deleteAction;
 
-    private Action stopNetworkConnectionAction;
+    private Action startAction;
+
+    private Action stopAction;
 
     private NetworkViewContentProvider contentProvider;
 
@@ -124,9 +142,15 @@ public class NetworkView<E> extends ViewPart {
 
     private final ServiceRegistryPublisherAccess serviceRegistryAccess;
 
-    private ConnectionSetupService connectionSetupService;
-
     private NetworkViewModel model;
+
+    private SystemMonitoringDataPollingManager manager = new SystemMonitoringDataPollingManager();
+
+    private ConnectionSetupsListContributor networkConnectionsContributor;
+
+    private SshConnectionSetupsListContributor sshConnectionsContributor;
+
+    private List<NetworkViewContributor> allContributors;
 
     public NetworkView() {
         serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
@@ -138,13 +162,10 @@ public class NetworkView<E> extends ViewPart {
 
         labelProvider = new NetworkViewLabelProvider();
         labelProvider.setNodeIdsVisible(false);
-        contentProvider = new NetworkViewContentProvider();
+        contentProvider = initializeContentProvider();
         contentProvider.setRawPropertiesVisible(false);
 
-        connectionSetupService = serviceRegistryAccess.getService(ConnectionSetupService.class);
-
         createActions();
-
     }
 
     /** A {@link KeyListener} to react on pressedkey's. */
@@ -154,10 +175,10 @@ public class NetworkView<E> extends ViewPart {
         public void keyPressed(KeyEvent event) {
             if (event.stateMask == SWT.CTRL) {
                 if (event.keyCode == 'c') {
-                    copyRawNodePropertiesToClipBoard.run();
+                    copyToClipBoardAction.run();
                 }
             } else if (event.keyCode == SWT.DEL) {
-                deleteNetworkConnectionAction.run();
+                deleteAction.run();
             }
         }
     }
@@ -171,7 +192,7 @@ public class NetworkView<E> extends ViewPart {
             public void run() {
                 labelProvider.setNodeIdsVisible(this.isChecked());
                 // refresh all labels
-                viewer.refresh(NetworkViewContentProvider.NETWORK_ROOT_NODE, true);
+                viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, true);
             }
         };
         // add "show raw node properties" option
@@ -182,11 +203,11 @@ public class NetworkView<E> extends ViewPart {
             public void run() {
                 rawPropertiesVisible = this.isChecked();
                 contentProvider.setRawPropertiesVisible(rawPropertiesVisible);
-                viewer.refresh(NetworkViewContentProvider.NETWORK_ROOT_NODE, false);
+                viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
             }
         };
         // copies the selected raw node properties to the clipboard
-        copyRawNodePropertiesToClipBoard = new Action("Copy" + TAB + "Ctrl+C", COPY) {
+        copyToClipBoardAction = new Action("Copy to Clipboard" + TAB + "Ctrl+C", COPY) {
 
             @Override
             public void run() {
@@ -217,98 +238,53 @@ public class NetworkView<E> extends ViewPart {
 
             @Override
             public void run() {
-                AddNetworkConnectionDialog dialog = new AddNetworkConnectionDialog(viewer.getTree().getShell());
+                networkConnectionsContributor.showAddConnectionDialog();
+            }
+        };
 
-                if (dialog.open() == Window.OK) {
-                    String connectionName = dialog.getConnectionName();
-                    boolean connectImmediately = dialog.getConnectImmediately();
-                    NetworkContactPoint ncp = dialog.getParsedNetworkContactPoint();
-                    if (ncp != null) {
-                        if (connectionName.isEmpty()) {
-                            connectionName = ncp.getHost() + ":" + ncp.getPort();
-                        }
-                        ConnectionSetup cs = connectionSetupService.createConnectionSetup(ncp, connectionName, true);
-                        if (connectImmediately) {
-                            cs.signalStartIntent();
-                        }
-                    }
-                }
+        // add "add network connection" option
+        addSSHConnectionAction = new Action("Add SSH Remote Access Connection...", ADDSSH) {
+
+            @Override
+            public void run() {
+                sshConnectionsContributor.showAddConnectionDialog();
             }
         };
 
         // add "edit network connection" option
-        editNetworkConnectionAction = new Action("Edit Network Connection...", EDIT) {
+        editAction = new Action("Edit Network Connection...", EDIT) {
 
             @Override
             public void run() {
-                ConnectionSetup setup = getSelectedSetup();
-                if (setup != null) {
-                    String connectionName = setup.getDisplayName();
-                    String networkContactString = setup.getNetworkContactPointString();
-                    EditNetworkConnectionDialog dialog =
-                        new EditNetworkConnectionDialog(viewer.getTree().getShell(), connectionName, networkContactString);
-                    if (dialog.open() == Window.OK) {
-                        String newConnectionName = dialog.getConnectionName();
-                        boolean newConnectImmediately = dialog.getConnectImmediately();
-                        NetworkContactPoint ncp = dialog.getParsedNetworkContactPoint();
-
-                        connectionSetupService.disposeConnectionSetup(setup);
-
-                        if (ncp != null) {
-                            ConnectionSetup newNetworkConnection = connectionSetupService.createConnectionSetup(
-                                ncp, newConnectionName, true);
-                            if (newConnectImmediately) {
-                                newNetworkConnection.signalStartIntent();
-                            }
-                        }
-                    }
-                }
+                executeStandardUserNodeAction(StandardUserNodeActionType.EDIT);
             }
         };
 
         // add "delete network connection" option
-        deleteNetworkConnectionAction = new Action("Delete Network Connection..." + TAB + "Delete", DELETE) {
+        deleteAction = new Action("Delete Network Connection..." + TAB + "Delete", DELETE) {
 
             @Override
             public void run() {
-                ConnectionSetup setup = getSelectedSetup();
-
-                if (setup != null) {
-                    String connectionName = setup.getDisplayName();
-                    String networkContactString = setup.getNetworkContactPointString();
-
-                    MessageBox dialog = new MessageBox(viewer.getTree().getShell(), SWT.ICON_QUESTION | SWT.OK | SWT.CANCEL);
-                    dialog.setText("Delete Connection");
-                    dialog.setMessage("Do you really want to delete connection \"" + connectionName
-                        + "\" to contact point \"" + networkContactString + "\" ?");
-                    if (dialog.open() == SWT.OK) {
-                        connectionSetupService.disposeConnectionSetup(setup);
-                    }
-                }
+                executeStandardUserNodeAction(StandardUserNodeActionType.DELETE);
             }
         };
-        deleteNetworkConnectionAction.setAccelerator(SWT.DEL);
+        deleteAction.setAccelerator(SWT.DEL);
+
         // add "start network connection" option
-        startNetworkConnectionAction = new Action("Start/Connect", START) {
+        startAction = new Action("Start/Connect", START) {
 
             @Override
             public void run() {
-                ConnectionSetup setup = getSelectedSetup();
-                if (setup != null) {
-                    setup.signalStartIntent();
-                }
+                executeStandardUserNodeAction(StandardUserNodeActionType.START);
             }
         };
 
         // add "stop network connection" option
-        stopNetworkConnectionAction = new Action("Stop/Disconnect", STOP) {
+        stopAction = new Action("Stop/Disconnect", STOP) {
 
             @Override
             public void run() {
-                ConnectionSetup setup = getSelectedSetup();
-                if (setup != null) {
-                    setup.signalStopIntent();
-                }
+                executeStandardUserNodeAction(StandardUserNodeActionType.STOP);
             }
         };
     }
@@ -326,33 +302,40 @@ public class NetworkView<E> extends ViewPart {
         NetworkGraph initialGraph = serviceRegistryAccess.getService(NetworkRoutingService.class).getReachableNetworkGraph();
         Collection<ConnectionSetup> initialConnectionSetups =
             serviceRegistryAccess.getService(ConnectionSetupService.class).getAllConnectionSetups();
-        model = new NetworkViewModel(initialGraph, null, initialConnectionSetups, new HashMap<NodeIdentifier, Map<String, String>>());
+        model =
+            new NetworkViewModel(initialGraph, null, initialConnectionSetups, new HashMap<NodeIdentifier, Map<String, String>>(),
+                new ConcurrentHashMap<NodeIdentifier, SystemMonitoringDataSnapshot>());
+
+        for (NetworkViewContributor contributor : allContributors) {
+            contributor.setCurrentModel(model);
+            contributor.setTreeViewer(viewer);
+        }
 
         viewer.setInput(model);
-        viewer.expandToLevel(2);
+        viewer.expandToLevel(3);
         viewer.getControl().addKeyListener(new NetworkViewKeyListener());
         // Update context menu on open
         viewer.getTree().addMenuDetectListener(new MenuDetectListener() {
 
             @Override
             public void menuDetected(MenuDetectEvent event) {
-                enablePossibleActionsForSelection(getSelectedSetup());
+                updatePossibleActionsForSelection(getSelectedTreeNode());
             }
         });
-        
+
         viewer.getTree().addMouseListener(new MouseListener() {
-            
+
             @Override
             public void mouseUp(MouseEvent event) {}
-            
+
             @Override
             public void mouseDown(MouseEvent event) {}
-            
+
             @Override
             public void mouseDoubleClick(MouseEvent event) {
-                if (editNetworkConnectionAction.isEnabled()) {
-                    editNetworkConnectionAction.run();
-                    
+                if (editAction.isEnabled()) {
+                    editAction.run();
+
                 }
             }
         });
@@ -366,7 +349,11 @@ public class NetworkView<E> extends ViewPart {
 
     @Override
     public void dispose() {
+        manager.cancelAllPollingTasks();
         serviceRegistryAccess.dispose();
+        for (NetworkViewContributor contributor : allContributors) {
+            contributor.dispose();
+        }
         super.dispose();
     }
 
@@ -378,6 +365,54 @@ public class NetworkView<E> extends ViewPart {
         viewer.getControl().setFocus();
     }
 
+    private NetworkViewContentProvider initializeContentProvider() {
+
+        allContributors = defineContributors();
+        List<NetworkViewContributor> rootContributors = new ArrayList<>();
+        List<NetworkViewContributor> instanceDataContributors = new ArrayList<>();
+
+        for (NetworkViewContributor contributor : allContributors) {
+            if (contributor.getRootElementsPriority() != 0) {
+                rootContributors.add(contributor);
+            }
+            if (contributor.getInstanceDataElementsPriority() != 0) {
+                instanceDataContributors.add(contributor);
+            }
+        }
+        Collections.sort(rootContributors, new Comparator<NetworkViewContributor>() {
+
+            @Override
+            public int compare(NetworkViewContributor o1, NetworkViewContributor o2) {
+                return Integer.compare(o1.getRootElementsPriority(), o2.getRootElementsPriority());
+            }
+        });
+        Collections.sort(instanceDataContributors, new Comparator<NetworkViewContributor>() {
+
+            @Override
+            public int compare(NetworkViewContributor o1, NetworkViewContributor o2) {
+                return Integer.compare(o1.getInstanceDataElementsPriority(), o2.getInstanceDataElementsPriority());
+            }
+        });
+
+        return new NetworkViewContentProvider(rootContributors, instanceDataContributors);
+    }
+
+    private List<NetworkViewContributor> defineContributors() {
+        // add contributors here; their ordering does not matter as long as the priority values are unique
+        List<NetworkViewContributor> result = new ArrayList<>();
+
+        // note: saving contributors in a field is usually not required, but we don't go for a full-blown plugin structure here - misc_ro
+        networkConnectionsContributor = new ConnectionSetupsListContributor();
+        sshConnectionsContributor = new SshConnectionSetupsListContributor();
+
+        result.add(networkConnectionsContributor);
+        result.add(new MonitoringDataContributor());
+        result.add(new InstanceComponentsInfoContributor());
+        result.add(sshConnectionsContributor);
+
+        return result;
+    }
+
     private void registerSelectionListeners() {
 
         disableAllActions();
@@ -387,21 +422,14 @@ public class NetworkView<E> extends ViewPart {
             @Override
             public void selectionChanged(SelectionChangedEvent event) {
 
-                ConnectionSetup setup = getSelectedSetup();
-                if (setup != null) {
-                    enablePossibleActionsForSelection(setup);
+                Object node = getSelectedTreeNode();
+                if (node != null) {
+                    updatePossibleActionsForSelection(node);
                 } else {
                     disableAllActions();
                 }
             }
         });
-    }
-
-    private void disableAllActions() {
-        editNetworkConnectionAction.setEnabled(false);
-        deleteNetworkConnectionAction.setEnabled(false);
-        startNetworkConnectionAction.setEnabled(false);
-        stopNetworkConnectionAction.setEnabled(false);
     }
 
     /**
@@ -424,7 +452,7 @@ public class NetworkView<E> extends ViewPart {
                             return;
                         }
                         // update the tree, but no need to update existing labels
-                        viewer.refresh(NetworkViewContentProvider.NETWORK_ROOT_NODE, false);
+                        viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE, false);
                     }
                 });
             }
@@ -444,7 +472,7 @@ public class NetworkView<E> extends ViewPart {
                         if (viewer.getControl().isDisposed()) {
                             return;
                         }
-                        viewer.refresh(NetworkViewContentProvider.NETWORK_ROOT_NODE);
+                        viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
                     }
                 });
             }
@@ -461,11 +489,12 @@ public class NetworkView<E> extends ViewPart {
                         if (viewer.getControl().isDisposed()) {
                             return;
                         }
-                        viewer.refresh(NetworkViewContentProvider.NETWORK_ROOT_NODE);
+                        viewer.refresh(AnchorPoints.INSTANCES_PARENT_NODE);
                     }
                 });
             }
         });
+        // TODO move this listener into the contributor for better separation
         serviceRegistryAccess.registerService(ConnectionSetupListener.class, new ConnectionSetupListenerAdapter() {
 
             @Override
@@ -479,18 +508,8 @@ public class NetworkView<E> extends ViewPart {
                             return;
                         }
                         // no need to update all labels
-                        viewer.refresh(NetworkViewContentProvider.CONNECTIONS_ROOT_NODE, false);
-                        for (TreeItem it : viewer.getTree().getItems()) {
-                            if (it.getText().equals("Connections")) {
-                                it.setExpanded(true);
-                                viewer.refresh();
-                                if (it.getItemCount() > 0) {
-                                    viewer.getTree().setSelection(it.getItem(0));
-                                    viewer.setSelection(viewer.getSelection());
-                                }
-                            }
-                        }
-
+                        viewer.refresh(networkConnectionsContributor.getFullRefreshRootElement(), false);
+                        viewer.setExpandedState(networkConnectionsContributor.getRootElementToExpand(), true);
                     }
                 });
             }
@@ -506,85 +525,111 @@ public class NetworkView<E> extends ViewPart {
                             return;
                         }
                         // only update this specific label
-                        enablePossibleActionsForSelection(setup);
-                        viewer.update(setup, null);
+                        Object node = networkConnectionsContributor.getTreeNodeForSetup(setup);
+                        if (node != null) {
+                            updatePossibleActionsForSelection(node);
+                            viewer.update(node, null);
+                        }
                     }
                 });
             }
         });
     }
 
-    private void enablePossibleActionsForSelection(ConnectionSetup setup) {
+    private Object getSelectedTreeNode() {
+        ISelection rawSelection = viewer.getSelection();
+        if (rawSelection != null && rawSelection instanceof TreeSelection) {
+            TreeSelection selection = ((TreeSelection) rawSelection);
+            return selection.getFirstElement();
+        }
+        return null;
+    }
 
-        if (setup != null) {
-            ConnectionSetupState state = setup.getState();
-            startNetworkConnectionAction.setEnabled(state.isReasonableToAllowStart());
-            stopNetworkConnectionAction.setEnabled(state.isReasonableToAllowStop());
-            boolean isDisconnected = state == ConnectionSetupState.DISCONNECTED;
-            editNetworkConnectionAction.setEnabled(isDisconnected);
-            deleteNetworkConnectionAction.setEnabled(isDisconnected);
+    private void updatePossibleActionsForSelection(Object node) {
 
+        if (node == null) {
+            disableAllActions();
+            return;
+        }
+
+        if (node instanceof StandardUserNodeActionNode) {
+            StandardUserNodeActionNode typedNode = (StandardUserNodeActionNode) node;
+            startAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.START));
+            stopAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.STOP));
+            editAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.EDIT));
+            deleteAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.DELETE));
+            copyToClipBoardAction.setEnabled(typedNode.isActionApplicable(StandardUserNodeActionType.COPY_TO_CLIPBOARD));
+        } else if (node instanceof NetworkGraphNodeWithContext) {
+            // TODO special handling; migrate
+            disableAllActions();
+            NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) node;
+            if (typedNode.getContext() == Context.RAW_NODE_PROPERTY || typedNode.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
+                copyToClipBoardAction.setEnabled(true);
+            }
         } else {
             disableAllActions();
         }
+    }
 
-        copyRawNodePropertiesToClipBoard.setEnabled(false);
-        IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
+    private void disableAllActions() {
+        editAction.setEnabled(false);
+        deleteAction.setEnabled(false);
+        startAction.setEnabled(false);
+        stopAction.setEnabled(false);
+        copyToClipBoardAction.setEnabled(false);
+    }
 
-        if (selection.getFirstElement() instanceof NetworkGraphNodeWithContext) {
-            NetworkGraphNodeWithContext selectionObj = (NetworkGraphNodeWithContext) selection.getFirstElement();
-            if (selectionObj.getContext() == Context.RAW_NODE_PROPERTY || selectionObj.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
-                copyRawNodePropertiesToClipBoard.setEnabled(true);
+    private void executeStandardUserNodeAction(StandardUserNodeActionType actionType) {
+        Object node = getSelectedTreeNode();
+        if (node instanceof StandardUserNodeActionNode) {
+            StandardUserNodeActionNode typedNode = (StandardUserNodeActionNode) node;
+            if (typedNode.isActionApplicable(actionType)) {
+                // execute
+                typedNode.performAction(actionType);
+            } else {
+                // the action was enabled when it shouldn't be anymore, so update all action states - misc_ro
+                updatePossibleActionsForSelection(typedNode);
             }
         }
-
     }
 
     private void addToolbarActions() {
 
         // add toolbar actions (right top of view)
-        getViewSite().getActionBars().getToolBarManager().add(addNetworkConnectionAction);
-        getViewSite().getActionBars().getToolBarManager().add(startNetworkConnectionAction);
-        getViewSite().getActionBars().getToolBarManager().add(stopNetworkConnectionAction);
-        getViewSite().getActionBars().getToolBarManager().add(editNetworkConnectionAction);
-        getViewSite().getActionBars().getToolBarManager().add(deleteNetworkConnectionAction);
+        final IToolBarManager toolBarManager = getViewSite().getActionBars().getToolBarManager();
+        toolBarManager.add(addNetworkConnectionAction);
+        toolBarManager.add(addSSHConnectionAction);
+        toolBarManager.add(new Separator());
+        toolBarManager.add(startAction);
+        toolBarManager.add(stopAction);
+        toolBarManager.add(editAction);
+        toolBarManager.add(deleteAction);
     }
 
     private void hookContextMenu() {
 
         // submenu
-        MenuManager subMenuManager = new MenuManager("Advanced");
+        final MenuManager subMenuManager = new MenuManager("Advanced");
         subMenuManager.add(toggleNodeIdsVisibleAction);
         subMenuManager.add(toggleRawNodePropertiesVisibleAction);
 
-        MenuManager menuManager = new MenuManager();
+        final MenuManager menuManager = new MenuManager();
         menuManager.add(addNetworkConnectionAction);
+        menuManager.add(addSSHConnectionAction);
         menuManager.add(new Separator());
-        menuManager.add(startNetworkConnectionAction);
-        menuManager.add(stopNetworkConnectionAction);
-        menuManager.add(editNetworkConnectionAction);
-        menuManager.add(deleteNetworkConnectionAction);
+        menuManager.add(startAction);
+        menuManager.add(stopAction);
+        menuManager.add(editAction);
+        menuManager.add(deleteAction);
         menuManager.add(new Separator());
-        menuManager.add(copyRawNodePropertiesToClipBoard);
+        menuManager.add(copyToClipBoardAction);
         menuManager.add(new Separator());
-        menuManager.add(subMenuManager);
+        menuManager.add(subMenuManager); // "Advanced"
         menuManager.updateAll(true);
-        Menu menu = menuManager.createContextMenu(viewer.getTree());
+        final Menu menu = menuManager.createContextMenu(viewer.getTree());
         viewer.getTree().setMenu(menu);
         getSite().registerContextMenu(menuManager, viewer);
         getSite().setSelectionProvider(viewer);
     }
 
-    private ConnectionSetup getSelectedSetup() {
-        ConnectionSetup setup = null;
-        if (viewer.getSelection() != null) {
-            if (viewer.getSelection() instanceof TreeSelection) {
-                TreeSelection selection = ((TreeSelection) viewer.getSelection());
-                if (selection.getFirstElement() instanceof ConnectionSetup) {
-                    setup = (ConnectionSetup) selection.getFirstElement();
-                }
-            }
-        }
-        return setup;
-    }
 }

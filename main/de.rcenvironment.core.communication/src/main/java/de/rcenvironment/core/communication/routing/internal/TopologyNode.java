@@ -63,10 +63,12 @@ public final class TopologyNode implements Comparable<TopologyNode>, Cloneable, 
         this.displayName = displayName;
     }
 
+    @Deprecated
     public boolean getIsWorkflowHost() {
         return isWorkflowHost;
     }
 
+    @Deprecated
     public void setIsWorkflowHost(boolean isWorkflowHost) {
         this.isWorkflowHost = isWorkflowHost;
     }

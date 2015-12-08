@@ -39,14 +39,5 @@ public abstract class DefaultNotificationSubscriber implements NotificationSubsc
         }
     }
 
-    @Override
-    @AllowRemoteAccess
-    @Deprecated
-    public final void receiveNotification(Notification notification) {
-        LogFactory.getLog(getClass()).warn("Deprecated single-notification method variant called");
-        // TODO review: should be decoupled from caller via thread pool to improve performance - misc_ro
-        processNotification(notification);
-    }
-
     protected abstract void processNotification(Notification notification);
 }

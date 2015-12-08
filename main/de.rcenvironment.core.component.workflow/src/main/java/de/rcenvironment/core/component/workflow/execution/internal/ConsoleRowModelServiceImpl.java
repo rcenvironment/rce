@@ -208,7 +208,12 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
     }
 
     private boolean accept(ConsoleRow row) {
-        return row.getComponentName() != null && !row.getComponentName().isEmpty();
+        if (row.getType().equals(ConsoleRow.Type.WORKFLOW_ERROR)) {
+            return row.getWorkflowName() != null && !row.getWorkflowName().isEmpty();
+        } else {
+            return row.getWorkflowName() != null && !row.getWorkflowName().isEmpty()
+                && row.getComponentName() != null && !row.getComponentName().isEmpty();
+        }
     }
 
     /**

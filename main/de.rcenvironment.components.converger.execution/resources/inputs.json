@@ -1,37 +1,37 @@
 {
-    "dynamicInputs":[
+    "dynamicInputs": [
         {
-            "identifier":"valueToConverge",
-            "group":"valuesToConverge",
-            "dataTypes":[
-                "Float"
+            "identifier": "valueToConverge",
+            "group": "valuesToConverge",
+            "dataTypes": [
+                "Float", 
+                "Integer"
             ],
-            "defaultDataType":"Float",
-            "inputHandlingOptions":[
+            "defaultDataType": "Float",
+            "inputHandlingOptions": [
                 "Single"
             ],
-            "defaultInputHandling":"Single",
-            "inputExecutionConstraintOptions":[
-                "Required",
-                "RequiredIfConnected"
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
             ],
-            "defaultInputExecutionConstraint":"Required",
-            "metaData":{
-                "hasStartValue":{
-                    "guiName":"Has start value",
-                    "guiPosition":"0",
-                    "visibility":"shown",
-                    "defaultValue":"false",
-                    "dataType":"bool"
+            "defaultInputExecutionConstraint": "Required",
+            "metaData": {
+                "hasStartValue": {
+                    "guiName": "Has start value",
+                    "guiPosition": "0",
+                    "visibility": "shown",
+                    "defaultValue": "false",
+                    "dataType": "bool"
                 },
-                "startValue":{
-                    "guiName":"Start value",
-                    "guiPosition":"1",
-                    "visibility":"shown",
-                    "dataType":"float",
-                    "validation":"required",
-                    "guiActivationFilter":{
-                        "hasStartValue":[
+                "startValue": {
+                    "guiName": "Start value",
+                    "guiPosition": "1",
+                    "visibility": "shown",
+                    "dataType": "float",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "hasStartValue": [
                             "true"
                         ]
                     }
@@ -39,23 +39,51 @@
             }
         },
         {
-            "identifier":"outerLoopDone",
-            "group":"innerLoop",
-            "dataTypes":[
-                "Boolean"
+            "identifier": "toForward",
+            "group": "valuesToConverge",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
             ],
-            "readOnly":"true",
-            "defaultDataType":"Boolean"
-        }
-    ],
-    "inputGroups":[
-        {
-            "identifier":"valuesToConverge",
-            "type":"And",
-            "group":"innerLoop"
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required"
         },
         {
-            "identifier":"innerLoop",
+            "identifier": "outerLoopDone",
+            "group": "innerLoop",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "readOnly": "true",
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicInputGroups": [
+        {
+            "name": "valuesToConverge",
+            "type": "And",
+            "group": "innerLoop"
+        },
+        {
+            "name": "startValues",
+            "type": "And",
+            "group": "innerLoop"
+        },
+        {
+            "name": "innerLoop",
             "type": "Or"
         }
     ]

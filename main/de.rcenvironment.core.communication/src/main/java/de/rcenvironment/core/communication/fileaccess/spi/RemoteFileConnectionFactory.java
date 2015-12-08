@@ -11,7 +11,6 @@ package de.rcenvironment.core.communication.fileaccess.spi;
 import java.io.IOException;
 import java.net.URI;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 
 /**
@@ -33,10 +32,9 @@ public interface RemoteFileConnectionFactory {
      * 
      * Creates {@link RemoteFileConnection} implementations.
      * 
-     * @param cert The user's certificate.
      * @param uri The URI pointing to the remote file to access.
      * @return the {@link RemoteFileConnection} object.
      * @throws IOException if the file could not be accessed remotely.
      */
-    RemoteFileConnection createRemoteFileConnection(User cert, URI uri) throws IOException;
+    RemoteFileConnection createRemoteFileConnection(URI uri) throws IOException;
 }

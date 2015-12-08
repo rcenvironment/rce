@@ -1,0 +1,3 @@
+This file exists to maintain an empty directory in source control systems that
+only track files (e.g. Git). These otherwise empty directories should be reviewed 
+periodically to see if they are still useful, and removed if they are not.

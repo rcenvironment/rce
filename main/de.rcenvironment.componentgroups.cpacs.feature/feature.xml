@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.componentgroups.cpacs.feature"
       label="RCE CPACS Components Feature"
-      version="6.3.0.qualifier"
+      version="7.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -112,98 +112,22 @@ This Agreement is governed by the laws of the State of New York and the intellec
    </url>
 
    <plugin
-         id="de.rcenvironment.components.toolwrapper.common"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.toolwrapper.gui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.cpacs.utils.common"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.toolwrapper.execution"
+         id="de.rcenvironment.core.component.integration.cpacs"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
 
    <plugin
-         id="de.rcenvironment.cpacs.component.integration"
+         id="de.rcenvironment.core.gui.wizards.toolintegration.cpacs"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
 
    <plugin
-         id="de.rcenvironment.cpacs.gui.wizards.toolintegration"
+         id="de.rcenvironment.core.gui.workflow.integration.cpacs"
          download-size="0"
          install-size="0"
          version="0.0.0"/>
-
-   <plugin
-         id="de.rcenvironment.cpacs.gui.workflow.integration"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"/>
-
-   <plugin
-         id="de.rcenvironment.components.toolwrapper.generator.execution"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.xml.merger.common"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.xml.merger.execution"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.xml.merger.gui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.xml.loader.common"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.xml.loader.execution"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.xml.loader.gui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
 
    <plugin
          id="de.rcenvironment.components.cpacs.writer.common"
@@ -221,13 +145,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <plugin
          id="de.rcenvironment.components.cpacs.writer.gui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.cpacs.gui.xpathchooser"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -255,7 +172,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          unpack="false"/>
 
    <plugin
-         id="de.rcenvironment.cpacs.gui.wizards.exampleproject"
+         id="de.rcenvironment.core.gui.wizards.exampleproject.cpacs"
          download-size="0"
          install-size="0"
          version="0.0.0"

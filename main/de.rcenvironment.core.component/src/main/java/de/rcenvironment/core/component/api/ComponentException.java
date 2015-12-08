@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.component.api;
 
+import de.rcenvironment.core.component.execution.api.Component;
+
 
 /**
  * This exception will be thrown if an error within a {@link Component} occurred.
@@ -28,15 +30,6 @@ public class ComponentException extends Exception {
      */
     public ComponentException(String string) {
         super(string);
-    }
-
-    /**
-     * Creates an instance of this exception.
-     * 
-     * @param cause The cause for this exception.
-     */
-    public ComponentException(Throwable cause) {
-        super(cause);
     }
 
     /**

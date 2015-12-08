@@ -241,6 +241,7 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
             inputTreeViewer.refresh();
             inputTreeViewer.expandAll();
             inputTreeViewer.getControl().setRedraw(true);
+            setInputQueueButton(inputTreeViewer.getTree());
             inputTreeViewer.getControl().redraw();
         }
     }

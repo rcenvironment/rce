@@ -417,14 +417,14 @@ public class WizardInsertCopyCommandDialog extends Dialog {
             String name = selection.substring(selection.indexOf(":") + 2);
             String insertString = "${%s:%s}";
             if (selection.startsWith(INPUT_PREFIX)) {
-                insertString = String.format(insertString, "in", name);
+                insertString = StringUtils.format(insertString, "in", name);
             } else if (selection.startsWith(DIRECTORY_PREFIX)) {
                 int i = 0;
                 while (!name.equals(ToolIntegrationConstants.DIRECTORIES_PLACEHOLDERS_DISPLAYNAMES[i])) {
                     i++;
                 }
                 if (i < ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER.length) {
-                    insertString = String.format(insertString, "dir", ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[i]);
+                    insertString = StringUtils.format(insertString, "dir", ToolIntegrationConstants.DIRECTORIES_PLACEHOLDER[i]);
                 }
             }
             return insertString;

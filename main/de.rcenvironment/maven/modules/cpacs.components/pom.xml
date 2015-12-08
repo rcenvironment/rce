@@ -21,25 +21,14 @@
 		<module>${projects-root}/de.rcenvironment.components.cpacs.writer.common</module>
 		<module>${projects-root}/de.rcenvironment.components.cpacs.writer.execution</module>
 		<module>${projects-root}/de.rcenvironment.components.cpacs.writer.gui</module>
-		<module>${projects-root}/de.rcenvironment.components.toolwrapper.common</module>
-		<module>${projects-root}/de.rcenvironment.components.toolwrapper.execution</module>
-		<module>${projects-root}/de.rcenvironment.components.toolwrapper.generator.execution</module>
-		<module>${projects-root}/de.rcenvironment.components.toolwrapper.gui</module>
 		<module>${projects-root}/de.rcenvironment.components.tiglviewer.execution</module>
 		<module>${projects-root}/de.rcenvironment.components.tiglviewer.gui</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.loader.common</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.loader.execution</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.loader.gui</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.merger.common</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.merger.execution.tests</module>
-		<module>${projects-root}/de.rcenvironment.components.xml.merger.gui</module>
 
 		<!-- TODO clean up layering/dependencies -->
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer.feature</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer.win32.x86</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.tiglviewer.win32.x86_64</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.tiglviewer</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.tiglviewer.feature</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.tiglviewer.win32.x86</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.tiglviewer.win32.x86_64</module>
 	</modules>
 
 </project>

@@ -15,7 +15,7 @@
 	<reference name="Platform Service"
 		interface="de.rcenvironment.core.communication.api.PlatformService"
 		bind="bindPlatformService"
-		unbund="unbindPlatformService"
+		unbind="unbindPlatformService"
 		cardinality="1..1"
 		policy="dynamic"
 	/>

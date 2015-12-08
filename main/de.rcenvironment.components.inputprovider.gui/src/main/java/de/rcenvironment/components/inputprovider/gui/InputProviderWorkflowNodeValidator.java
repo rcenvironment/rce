@@ -23,10 +23,10 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
-import de.rcenvironment.core.component.toolaccess.api.RemoteAccessConstants;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.remoteaccess.common.RemoteAccessConstants;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**

@@ -88,10 +88,16 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String inputHandlingColon;
+    
+    /** NLS Constant. */
+    public static String defaultInputHandlingColon;
 
     /** NLS Constant. */
     public static String inputExecutionConstraintColon;
 
+    /** NLS Constant. */
+    public static String defaultInputExecutionConstraintColon;
+    
     /** NLS Constant. */
     public static String folder;
 

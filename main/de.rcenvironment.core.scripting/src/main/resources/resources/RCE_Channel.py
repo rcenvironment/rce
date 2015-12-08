@@ -79,10 +79,10 @@ def read_input(name, defaultValue = None):
     elif name in RCE_CHANNEL_REQ_IF_CONNECTED and not (defaultValue is None):
         return defaultValue
     else:
-        if RCE_CHANNEL_INPUT.has_key(name):
+        if name in RCE_CHANNEL_INPUT.keys():
             return RCE_CHANNEL_INPUT[name]
         else:
-            raise ValueError("Input " + str(name) + " not defined or has no value.")
+            raise ValueError("Input '" + str(name) + "' is not defined or it has no value")
             return None
     
 def close_output(name):
@@ -90,7 +90,7 @@ def close_output(name):
     Closes the RCE channel of the given output
     """
     if not (name in RCE_CHANNEL_OUTPUT_NAMES):
-        raise NameError('Output ' + name + ' does not exist.')
+        raise NameError("Output '" + name + "' is not defined")
     if not name in RCE_CHANNEL_CLOSE:
         RCE_CHANNEL_CLOSE.append(name)
 
@@ -99,7 +99,7 @@ def write_output(name, value):
     Sets the given value to the output name which will be read from RCE
     """
     if not (name in RCE_CHANNEL_OUTPUT_NAMES):
-        raise ValueError('Output ' + name + ' not defined.')
+        raise ValueError("Output '" + name + "' is not defined")
     if not name in RCE_CHANNEL_OUTPUT:
         RCE_CHANNEL_OUTPUT[name] = []
     RCE_CHANNEL_OUTPUT[name].append(value)
@@ -109,7 +109,7 @@ def write_not_a_value_output(name):
     Sets the given output to indefinite data type
     """
     if not (name in RCE_CHANNEL_OUTPUT_NAMES):
-        raise NameError('Output ' + name + ' does not exist.')
+        raise NameError("Output '" + name + "' is not defined")
     if not name in RCE_INDEFINITE_OUTPUTS:
         RCE_INDEFINITE_OUTPUTS.append(name)
 
@@ -117,8 +117,12 @@ def getallinputs():
     """
     Gets the dictionary with all inputs from RCE
     """
-    return dict(RCE_CHANNEL_INPUT).keys() + RCE_CHANNEL_REQ_IF_CONNECTED
-
+    joined = []
+    for item in dict(RCE_CHANNEL_INPUT).keys():
+        joined.append(item)
+    for item in RCE_CHANNEL_REQ_IF_CONNECTED:
+        joined.append(item)
+    return joined
 def get_input_names_with_datum():
     return dict(RCE_CHANNEL_INPUT).keys()
 
@@ -139,22 +143,25 @@ def read_state_variable(name):
     Reads the given state variables value, if it exists, else an error is raised
     """
     if not str(name) in RCE_STATE_VARIABLES:
-        raise ValueError("No value for " + str(name) + " defined!")
+        raise ValueError("No state variable stored for '" + str(name) + "'")
     else :
         return RCE_STATE_VARIABLES[name]
     
-def read_state_variable(name, defaultValue = 0):
+def read_state_variable(name, defaultValue = None):
     """ 
     Reads the given state variables value, if it exists, else a default value is returned and stored in the dict
     """
     if str(name) in RCE_STATE_VARIABLES:
        return RCE_STATE_VARIABLES[name]
     else:
-        RCE_STATE_VARIABLES[name] = defaultValue
-        return defaultValue 
+       if (defaultValue is None):
+         return defaultValue
+       else:
+         RCE_STATE_VARIABLES[name] = defaultValue    
+         return defaultValue
     
 def read_state_variable_default(name, defaultValue):
-    print "The method 'read_state_variable_default' is deprecated. Please use 'read_state_variable(name, defaultValue)."
+    print("The method 'read_state_variable_default' is deprecated. Please use 'read_state_variable(name, defaultValue).")
     return read_state_variable(name, defaultValue)
     
 def get_state_dict():

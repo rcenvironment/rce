@@ -1,7 +1,7 @@
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Service Proxy Factory">
 	<implementation class="de.rcenvironment.core.communication.rpc.internal.ServiceProxyFactoryImpl" />
  	<service>
-    	<provide interface="de.rcenvironment.core.communication.rpc.ServiceProxyFactory"/>
+    	<provide interface="de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory"/>
 	</service>
 	<reference bind="bindPlatformService"
  		cardinality="1..1"
@@ -13,7 +13,6 @@
 		bind="bindCallbackProxyService"
  		cardinality="1..1"
  		interface="de.rcenvironment.core.communication.rpc.api.CallbackProxyService"
- 		
  		policy="dynamic"
  	/>
 	<reference
@@ -25,7 +24,7 @@
  	/>
 	<reference
  		name="Remote Service Call Service"
- 		interface="de.rcenvironment.core.communication.rpc.RemoteServiceCallService"
+ 		interface="de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService"
  		cardinality="1..1"
  		bind="bindRemoteServiceCallService"
  		policy="dynamic"

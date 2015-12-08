@@ -25,6 +25,8 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CCombo;
+import org.eclipse.swt.custom.CTabFolder;
+import org.eclipse.swt.custom.CTabItem;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.FocusEvent;
 import org.eclipse.swt.events.FocusListener;
@@ -139,7 +141,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
 
     protected Composite getComposite() {
         return composite;
-    } 
+    }
 
     private void setWorkflowNodeBase(final WorkflowNode workflowNode) {
         tearDownModelBindingBase();
@@ -243,7 +245,16 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     protected void initializeController(final Controller controller2, final Composite parent) {
         for (final Control control : parent.getChildren()) {
             final String property = (String) control.getData(CONTROL_PROPERTY_KEY);
-            if (control instanceof Composite) {
+            if (control instanceof CTabFolder) {
+                CTabFolder tabFolder = (CTabFolder) control;
+                for (CTabItem item : tabFolder.getItems()) {
+                    if (item.getControl() != null) {
+                        if (item.getControl() instanceof Composite) {
+                            initializeController(controller2, (Composite) item.getControl());
+                        }
+                    }
+                }
+            } else if (control instanceof Composite) {
                 initializeController(controller2, (Composite) control);
             }
             final boolean activeControl = control instanceof Button;
@@ -342,7 +353,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     /**
      * Returns the readable configuration.
      * 
-     * @return {@link ReadableComponentInstanceConfiguration}
+     * @return {@link ComponentInstanceProperties}
      */
     public ComponentInstanceProperties getConfiguration() {
         if (getCommandStack() == null || node == null) {
@@ -484,7 +495,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
             super(command);
             this.command = command;
         }
-        
+
         @Override
         public String getLabel() {
             return command.getLabel();
@@ -769,7 +780,8 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
          * 
          * Functionality:
          * <ul>
-         * <li>Pressing the ENTER key in a non-SWT.MULTI {@link Text} control forces a traversal.</li>
+         * <li>Pressing the ENTER key in a non-SWT.MULTI {@link Text} control forces a traversal.
+         * </li>
          * </ul>
          * 
          * @see org.eclipse.swt.events.KeyListener#keyPressed(org.eclipse.swt.events.KeyEvent)

@@ -69,7 +69,7 @@ public class EditDynamicEndpointCommand extends WorkflowNodeCommand {
             manager = getProperties().getOutputDescriptionsManager();
         }
         if (executable) {
-            if (manager.getEndpointDescription(oldDesc.getName()).getDeclarativeEndpointDescription().isStatic()) {
+            if (manager.getEndpointDescription(oldDesc.getName()).getEndpointDefinition().isStatic()) {
                 manager.editStaticEndpointDescription(oldDesc.getName(), newDesc.getDataType(), newDesc.getMetaData());
             } else {
                 manager.editDynamicEndpointDescription(oldDesc.getName(), newDesc.getName(), newDesc.getDataType(),
@@ -98,11 +98,11 @@ public class EditDynamicEndpointCommand extends WorkflowNodeCommand {
             manager = getProperties().getOutputDescriptionsManager();
         }
         if (undoable) {
-            if (manager.getEndpointDescription(newDesc.getName()).getDeclarativeEndpointDescription().isStatic()) {
+            if (manager.getEndpointDescription(newDesc.getName()).getEndpointDefinition().isStatic()) {
                 manager.editStaticEndpointDescription(newDesc.getName(), oldDesc.getDataType(), oldDesc.getMetaData());
             } else {
                 manager.editDynamicEndpointDescription(newDesc.getName(), oldDesc.getName(), oldDesc.getDataType(),
-                    oldDesc.getMetaData(), oldDesc.getGroupName());
+                    oldDesc.getMetaData(), oldDesc.getDynamicEndpointIdentifier());
             }
             executable = true;
             undoable = false;

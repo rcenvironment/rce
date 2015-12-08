@@ -23,7 +23,6 @@ import org.eclipse.draw2d.FreeformLayout;
 import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.MarginBorder;
-import org.eclipse.draw2d.ShortestPathConnectionRouter;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.CompoundSnapToHelper;
 import org.eclipse.gef.EditPart;
@@ -195,7 +194,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         // Create the static router for the connection layer
         ConnectionLayer connLayer = (ConnectionLayer) getLayer(LayerConstants.CONNECTION_LAYER);
         connLayer.setAntialias(SWT.ON);
-        connLayer.setConnectionRouter(new ShortestPathConnectionRouter(f));
+        connLayer.setConnectionRouter(new CustomShortestPathConnectionRouter(f));
 
         return f;
     }
@@ -318,7 +317,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
 
             @Override
             public Border getBorder() {
-                RoundedLineBorder border = new RoundedLineBorder(getBounds().y, getBounds().height);
+                RoundedLineBorder border = new RoundedLineBorder();
                 border.setWidth(BORDERWIDTH);
                 return border;
             }

@@ -33,6 +33,7 @@ public interface EndpointXMLService {
      * @param componentContext The component context
      * @throws DataTypeException thrown when data cannot cast to nodetext
      * @throws ComponentException thrown if xpath refers to no node
+     * throws {@link NullPointerException} if xmlFile or componentContext is <code>null</code>
      */
     void updateXMLWithInputs(final File xmlFile, final Map<String, TypedDatum> dynamicInputs,
         final ComponentContext componentContext) throws DataTypeException, ComponentException;
@@ -45,6 +46,7 @@ public interface EndpointXMLService {
      * @param componentContext The componentContext from which the endpoints are read.
      * @throws DataTypeException thrown when nodetext cannot cast to output type
      * @throws ComponentException if xpath is not evaluable
+     * throws {@link NullPointerException} if xmlFile or componentContext is <code>null</code>
      */
     void updateOutputsFromXML(final File xmlFile, 
         final ComponentContext componentContext) throws DataTypeException, ComponentException; 

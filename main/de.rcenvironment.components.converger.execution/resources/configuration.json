@@ -14,6 +14,10 @@
         {
             "key":"iterationsToConsider",
             "defaultValue":"1"
+        },
+        {
+            "key": "loopRerunAndFail_5e0ed1cd",
+            "defaultValue": "1"
         }
     ]
 }

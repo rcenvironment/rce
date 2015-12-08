@@ -5,15 +5,20 @@
     <body>
         <h2><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US">Output Writer Component Usage</span></h2>
         <h2><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US">Synopsis</span></h2>
-        <p><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">The Output Writer saves files or directories to the local file system.</span><span  style="mso-ansi-language:EN-US">
-                
-            </span></p>
+        <p><span style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                >The Output Writer stores outputs from other components on the local file
+                system.</span><span style="mso-ansi-language:EN-US"> </span></p>
         <h3><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">Rationale</span></h3>
-        <p><span  style="mso-ansi-language:EN-US">The Output Writer receives inputs from
-                other workflow components and saves them in a pre-configured folder.</span></p>
+        <p><span style="mso-ansi-language:EN-US"> The Output Writer receives inputs from other
+                workflow components and saves them in a pre-configured folder. The inputs can either
+                be files or directories, which are written directly to the local file system, or
+                inputs of simple data types (Boolean, Float, Integer, Short Text), which are written
+                into text files of a user-defined format.  </span></p>
         <h3><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US">Usage</span></h3>
-        <p class="MsoNormal" style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-ansi-language:EN-US">Files and directories to save
-                must send to the Output Writer via inputs. If you add a new input, you must define
+        <p class="MsoNormal"
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> Output to save must be send to the Output
+                Writer via inputs. If you add a new input of type file or directory, you must define
                 the desired target name and path (of the file or directory). Both of them can be
                 created using placeholders.:</span></p>
         <p class="MsoNormal" style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-ansi-language:EN-US">
@@ -23,14 +28,18 @@
             style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
                 ><span style="mso-ansi-language:EN-US"><span style="mso-tab-count:1">              
                     </span><span style="mso-spacerun:yes"> </span></span><span
-                style="mso-no-proof:yes"><img alt="ow1" height="422" src="images/image001.png"
-                    width="395" /></span><span style="mso-ansi-language:EN-US"> </span></p>
+                style="mso-no-proof:yes"><img src="images/image001.png" alt="image001.png"
+                 /></span><span style="mso-ansi-language:EN-US"> </span></p>
         <p class="MsoNormal" style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-ansi-language:EN-US">
                 
             </span></p>
-        <p class="MsoNormal" style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><b style="mso-bidi-font-weight:normal"><span  style="mso-ansi-language: EN-US">Target name: </span></b><span  style="mso-ansi-language:EN-US">The name the file will be given on the local file
-                system. You can insert different placeholders by clicking the “Insert” button. The
-                provided placeholders are:</span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US"
+                    >Target file/directory: </span></b><span style="mso-ansi-language:EN-US">The
+                name the file will be given on the local file system. You can insert different
+                placeholders by clicking the “Insert” button. The provided placeholders
+            are:</span></p>
         <p class="MsoListParagraphCxSpFirst" style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"><span style="mso-list:Ignore">-<span style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span  style="mso-ansi-language:EN-US">[Component name]: Name of the Output
                 Writer component in the workflow.</span></p>
         <p class="MsoListParagraphCxSpMiddle" style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"><span  style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"><span style="mso-list:Ignore">-<span style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span  style="mso-ansi-language:EN-US">[Input name]: Name of the input you
@@ -65,5 +74,172 @@
                 Defining a static folder might cause problems, if you execute the workflow on
                 another RCE node (e.g. the defined hard drive doesn’t exist on the other
                     machine).</span></p>
+        <p><span style="mso-ansi-language:EN-US"> For inputs of simple data types, you only have to
+                specify the type of the input in the “add input” dialog. If you are using such
+                inputs, you also have to specify targets in the table below the “Inputs” table. A
+                target receives the values of one or more simple data inputs and writes them into a
+                text file of user-specified format. Several targets can be specified in one Output
+                Writer. However, each input can only be written into one target. </span></p>
+        <p><span style="mso-ansi-language:EN-US">
+                <b>Note: </b>The Output Writer only writes output into a target file when values for
+                ALL of the selected inputs have arrived. I.e. it is expected that for each iteration
+                exactly one value for each of the inputs arrives. </span></p>
+        <p><span style="mso-ansi-language:EN-US">   In the “Add target” dialog you have to specify
+                the following:  </span></p>
+        <p class="MsoNormal"
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"><span style="mso-tab-count:1">              
+                    </span><span style="mso-spacerun:yes"> </span></span><span
+                style="mso-no-proof:yes"><img src="images/image002.PNG" alt="image002.PNG"
+                 /></span><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US"
+                    >Target file: </span></b><span style="mso-ansi-language:EN-US">The name the file
+                will be given on the local file system. You can insert different placeholders by
+                clicking the “Insert” button. The provided placeholders are:</span></p>
+        <p class="MsoListParagraphCxSpFirst"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Component name]: Name of the Output Writer
+                component in the workflow.</span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Timestamp at workflow start]: Date and time at
+                workflow start.</span></p>
+        <p class="MsoListParagraphCxSpLast"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Workflow name]: Name of the workflow.</span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US"
+                    >Target folder: </span></b>The folder where the file should be stored. It is
+            relative to the [root] folder (see below). Currently, only one sub folder below the
+            [root] folder is supported. You can either select a folder, which was already used for
+            other inputs or you can “create” a new one just by defining a new folder name within in
+            the text box. Again, the folder name can contain placeholders.</p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US">
+                    Inputs involved: </span></b>Here you can select which inputs should be written
+            into the target file. Only inputs of simple data types are shown here. Inputs that are
+            already selected for another target are not selectable.</p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US"> File
+                    header : </span></b><span style="mso-ansi-language:EN-US">Here you can define
+                the header of the output file, which will be written once at the beginning of the
+                target file (only if “Append” is selected in the “file handling” dropdown). You can
+                insert different placeholders by clicking the “Insert” button. The provided
+                placeholders are:  </span></p>
+        <p class="MsoListParagraphCxSpFirst"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Timestamp]: Date and time at file
+            creation.</span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Linebreak]: A linebreak.</span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US">   
+                    Value(s) format : </span></b><span style="mso-ansi-language:EN-US">Here you can
+                define the format of the input values for one iteration. You can insert different
+                placeholders by clicking the “Insert” button. The provided placeholders are:
+            </span></p>
+        <p class="MsoListParagraphCxSpFirst"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Timestamp]: Date and time when the inputs were
+                received .</span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[Linebreak]: A linebreak. (Linebreaks will not be
+                inserted automatically between iterations). </span></p>
+        <p class="MsoListParagraphCxSpLast"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">[<i style="mso-bidi-font-style:normal">xy</i>]:  The
+                received of a selected input <i style="mso-bidi-font-style:normal">xy</i>
+            .</span></p>
+        <p class="MsoListParagraphCxSpLast"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span style="mso-ansi-language:EN-US"> </span></p>
+        <p class="MsoNormal"
+            style="margin-left:35.4pt;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><b style="mso-bidi-font-weight:normal"><span style="mso-ansi-language: EN-US">   
+                    File handling:  </span></b><span style="mso-ansi-language:EN-US">Here you can
+                select one of the following options:    </span></p>
+        <p class="MsoListParagraphCxSpFirst"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">Append: The standard option where the inputs of all
+                iterations are written to the same file. </span></p>
+        <p class="MsoListParagraphCxSpMiddle"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">Auto-Rename: For each iteration, a new file will be
+                created for each iteration. </span></p>
+        <p class="MsoListParagraphCxSpLast"
+            style="margin-left:99.15pt;mso-add-space: auto;text-indent:-18.0pt;mso-list:l0 level1 lfo1;tab-stops:45.8pt 91.6pt 137.4pt 183.2pt 229.0pt 274.8pt 320.6pt 366.4pt 412.2pt 458.0pt 503.8pt 549.6pt 595.4pt 641.2pt 687.0pt 732.8pt"
+                ><span
+                style="mso-fareast-font-family:&#34;Times New Roman&#34;;mso-ansi-language: EN-US"
+                    ><span style="mso-list:Ignore">-<span
+                        style="font:7.0pt &#34;Times New Roman&#34;">     </span></span></span><span
+                style="mso-ansi-language:EN-US">Override: Like Auto-Rename, but the file from the
+                previous iteration will be overwritten, so you have one file that only contains the
+                inputs from the last iteration. </span></p>
     </body>
 </html>

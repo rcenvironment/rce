@@ -23,6 +23,7 @@ import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 
 /**
  * Utils class for the workflow tests.
@@ -76,16 +77,13 @@ public final class WorkflowTestUtils {
      * @return dummy wf description
      */
     public static WorkflowDescription createWorkflowDescription() {
-        InputStream is = WorkflowDescription.class.getResourceAsStream("/workflows_unit_test/DummyUnitTest.wf");
         WorkflowDescription wd = null;
         DummyWorkflowDescriptionPersistenceHandler dwph = new DummyWorkflowDescriptionPersistenceHandler();
         dwph.bindDistributedComponentKnowledgeService(null);
         dwph.bindPlatformService(null);
-        try {
-            wd = dwph.readWorkflowDescriptionFromStream(is, null);
-        } catch (IOException e) {
-            Assert.fail();
-        } catch (ParseException e) {
+        try (InputStream is = WorkflowDescription.class.getResourceAsStream("/workflows_unit_test/DummyUnitTest.wf")) {
+            wd = dwph.readWorkflowDescriptionFromStream(is);
+        } catch (IOException | ParseException | WorkflowFileException e) {
             Assert.fail();
         }
         return wd;

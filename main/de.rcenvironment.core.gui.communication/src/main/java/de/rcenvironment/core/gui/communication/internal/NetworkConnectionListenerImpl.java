@@ -45,6 +45,8 @@ public class NetworkConnectionListenerImpl implements IStartup {
 
     private final ServiceRegistryPublisherAccess serviceRegistryAccess;
 
+    private boolean warningOpen = false;
+
     public NetworkConnectionListenerImpl() {
         serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
     }
@@ -92,31 +94,39 @@ public class NetworkConnectionListenerImpl implements IStartup {
             }
 
             private void showMessageDialogAsync(final String message) {
-                final Display display = Display.getDefault();
-                display.asyncExec(new Runnable() {
-                    @Override
-                    public void run() {
-                        Log log = LogFactory.getLog(getClass());
-                        Shell shell = display.getActiveShell();
-                        if (shell == null) {
-                            log.debug("No active shell to open message dialog; using fallback");
-                            for (Shell testShell : display.getShells()) {
-                                if (testShell.isVisible()) {
-                                    shell = testShell;
-                                    break;
+
+                if (!warningOpen) {
+                    final Display display = Display.getDefault();
+                    display.asyncExec(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            Log log = LogFactory.getLog(getClass());
+                            Shell shell = display.getActiveShell();
+                            if (shell == null) {
+                                log.debug("No active shell to open message dialog; using fallback");
+                                for (Shell testShell : display.getShells()) {
+                                    if (testShell.isVisible()) {
+                                        shell = testShell;
+                                        break;
+                                    }
+                                }
+                                if (shell == null) {
+                                    log.error("Failed to open message dialog; message text: " + message);
+                                    return;
                                 }
                             }
-                            if (shell == null) {
-                                log.error("Failed to open message dialog; message text: " + message);
-                                return;
+                            warningOpen = true;
+                            MessageBox warning = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK);
+                            warning.setMessage(message);
+                            warning.setText(DIALOG_TITLE);
+                            int id = warning.open();
+                            if (id == SWT.OK || id == SWT.CLOSE) {
+                                warningOpen = false;
                             }
                         }
-                        MessageBox warning = new MessageBox(shell, SWT.ICON_WARNING | SWT.OK);
-                        warning.setMessage(message);
-                        warning.setText(DIALOG_TITLE);
-                        warning.open();
-                    }
-                });
+                    });
+                }
             }
         });
     }

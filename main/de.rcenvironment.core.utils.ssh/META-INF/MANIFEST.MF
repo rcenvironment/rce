@@ -2,14 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils SSH Bundle
 Bundle-SymbolicName: de.rcenvironment.core.utils.ssh;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.utils.ssh.jsch,
  de.rcenvironment.core.utils.ssh.jsch.executor,
  de.rcenvironment.core.utils.ssh.jsch.executor.context
-Import-Package: com.jcraft.jsch;version="0.1.45",
+Import-Package: com.jcraft.jsch;version="0.1.53",
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.validation,
  de.rcenvironment.core.utils.executor,

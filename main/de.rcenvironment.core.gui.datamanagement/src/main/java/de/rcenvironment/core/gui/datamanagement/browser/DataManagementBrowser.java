@@ -15,10 +15,10 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
+import java.text.MessageFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.compare.CompareConfiguration;
@@ -81,14 +82,13 @@ import org.eclipse.ui.part.DrillDownAdapter;
 import org.eclipse.ui.part.ViewPart;
 
 import de.rcenvironment.core.authentication.AuthenticationException;
-import de.rcenvironment.core.authentication.Session;
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataManagementService;
-import de.rcenvironment.core.datamanagement.DistributedFileDataService;
+import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
@@ -128,15 +128,17 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
     private static final MetaData META_DATA_WORKFLOW_FINAL_STATE = new MetaData(MetaDataKeys.WORKFLOW_FINAL_STATE, true, true);
 
-    private static final MetaData METADATA_WORKFLOW_HAS_DATAREFERENCES = new MetaData(
-        MetaDataKeys.WORKFLOW_HAS_DATAREFERENCES, true, true);
+    private static final MetaData METADATA_WORKFLOW_FILES_DELETED = new MetaData(
+        MetaDataKeys.WORKFLOW_FILES_DELETED, true, true);
 
     private static final MetaData METADATA_WORKFLOW_IS_MARKED_FOR_DELETION = new MetaData(
         MetaDataKeys.WORKFLOW_MARKED_FOR_DELETION, true, true);
 
     protected final Log log = LogFactory.getLog(getClass());
 
-    private final Set<DMBrowserNode> expandedElements = new HashSet<DMBrowserNode>();
+    protected DMTreeSorter treeSorter;
+
+    private Object[] expandedNodes = null;
 
     private TreeViewer viewer;
 
@@ -164,18 +166,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
     private CollapseAllNodesAction collapseAllNodesAction;
 
-    private User user;
-
     /**
      * FileDataService for storing/loading resources to the data management.
      */
-    private DistributedFileDataService fileDataService;
+    private FileDataService fileDataService;
 
     private IAction sortDescendingName;
 
     private IAction sortTimestampAsc;
-
-    private int sortOrderType;
 
     private Action compareAction;
 
@@ -186,6 +184,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private Action sortTimestampDesc;
 
     private ServiceRegistryAccess serviceRegistryAccess;
+
 
     /**
      * An {@link Action} to export data management entries to local files.
@@ -349,7 +348,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
             private static final String DOT = ".";
 
-            public ExportJob(String title) {
+            ExportJob(String title) {
                 super(title);
             }
 
@@ -467,7 +466,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 final File directory, NodeIdentifier rceNodeIdentifier) {
                 try {
                     DataManagementWorkbenchUtils.getInstance().saveReferenceToFile(dataReferenceId, fileReferencePath,
-                        new File(directory, filename).getAbsolutePath(), user, rceNodeIdentifier);
+                        new File(directory, filename).getAbsolutePath(), rceNodeIdentifier);
                 } catch (NullPointerException e) {
                     log.error("");
                     // FIXME: log and warn
@@ -488,6 +487,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class OpenInTiglAction extends SelectionProviderAction {
 
+        private final String[] supportedFileExtensions = new String[] { "xml", "brep", "step", "stp", "iges", "igs", "stl", "mesh" };
+        
         private OpenInTiglAction(ISelectionProvider provider, String text) {
             super(provider, text);
         }
@@ -498,8 +499,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             if (obj instanceof DMBrowserNode) {
                 DMBrowserNode node = (DMBrowserNode) obj;
 
-                if (node.isEnabled() && node.getType() == DMBrowserNodeType.DMFileResource)
-                {
+                if (node.isEnabled() && node.getType() == DMBrowserNodeType.DMFileResource
+                    && Arrays.asList(supportedFileExtensions)
+                        .contains(FilenameUtils.getExtension(node.getAssociatedFilename()))) {
                     setEnabled(true);
                     return;
                 }
@@ -526,17 +528,11 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                         associatedFilename = "default";
                     }
 
-                    Exception exception;
-                    try {
-                        // try to open in Viewer
-                        DataManagementWorkbenchUtils.getInstance().tryOpenDataReferenceInReadonlyEditor(dataReferenceId, fileReferencePath,
-                            associatedFilename, Session.getInstance().getUser(), node.getNodeWithTypeWorkflow().getNodeIdentifier(), true);
-                        // ok -> return
-                        return;
-                    } catch (AuthenticationException e) {
-                        exception = e;
-                    }
-                    showMessage("Failed to open entry in TiGL Viewer: " + exception.toString());
+                    // try to open in Viewer
+                    DataManagementWorkbenchUtils.getInstance().tryOpenDataReferenceInReadonlyEditor(dataReferenceId, fileReferencePath,
+                        associatedFilename, node.getNodeWithTypeWorkflow().getNodeIdentifier(), true);
+                    // ok -> return
+                    return;
                 }
             }
         }
@@ -588,7 +584,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                             selectedNode.getMetaData() != null
                                 && selectedNode.getMetaData().getValue(META_DATA_WORKFLOW_FINAL_STATE) != null;
                         boolean hasDataReferences =
-                            Boolean.valueOf(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_HAS_DATAREFERENCES));
+                            !Boolean.valueOf(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_FILES_DELETED));
                         boolean isMarkedForDeletion =
                             Boolean.valueOf(selectedNode.getMetaData().getValue(METADATA_WORKFLOW_IS_MARKED_FOR_DELETION));
                         if (hasfinalState && !isMarkedForDeletion && (hasDataReferences || !isFileAction)) {
@@ -638,16 +634,26 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                             }
                         } else {
                             deleteFiles(browserNodeToDelete);
+                            setEnabled(false);
+                            display.syncExec(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    refresh(browserNodeToDelete);
+                                }
+                            });
                         }
                     }
-                    // update the tree
-                    display.syncExec(new Runnable() {
+                    if (!isFileAction) {
+                        // update the tree
+                        display.syncExec(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            refresh();
-                        }
-                    });
+                            @Override
+                            public void run() {
+                                refresh();
+                            }
+                        });
+                    }
                     // return OK as status
                     return Status.OK_STATUS;
                 }
@@ -742,17 +748,11 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                         associatedFilename = "default";
                     }
 
-                    Exception exception;
-                    try {
-                        // try to open in editor
-                        DataManagementWorkbenchUtils.getInstance().tryOpenDataReferenceInReadonlyEditor(dataReferenceId, fileReferencePath,
-                            associatedFilename, Session.getInstance().getUser(), node.getNodeWithTypeWorkflow().getNodeIdentifier(), false);
-                        // ok -> return
-                        return;
-                    } catch (AuthenticationException e) {
-                        exception = e;
-                    }
-                    showMessage("Failed to open entry in editor: " + exception.toString());
+                    // try to open in editor
+                    DataManagementWorkbenchUtils.getInstance().tryOpenDataReferenceInReadonlyEditor(dataReferenceId, fileReferencePath,
+                        associatedFilename, node.getNodeWithTypeWorkflow().getNodeIdentifier(), false);
+                    // ok -> return
+                    return;
                 }
             }
         }
@@ -900,13 +900,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      */
     private final class CollapseAllNodesAction extends Action {
 
-        public CollapseAllNodesAction(String text) {
+        CollapseAllNodesAction(String text) {
             super(text);
         }
 
         @Override
         public void run() {
             viewer.collapseAll();
+            expandedNodes = new Object[]{};
         }
 
     }
@@ -919,13 +920,12 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         private final List<DMBrowserNode> selectedNodes = new LinkedList<DMBrowserNode>();
 
-        private int sorting;
+        private final int sortingType;
 
-        private Comparator<DMBrowserNode> comparator;
-
-        private CustomSortAction(ISelectionProvider provider, String text, int sorting) {
+        private CustomSortAction(ISelectionProvider provider, String text, int sortingType) {
             super(provider, text);
-            this.sorting = sorting;
+            this.sortingType = sortingType;
+            setChecked(treeSorter.getSortingType() == sortingType);
         }
 
         @Override
@@ -937,7 +937,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             Object obj = selection.getFirstElement();
             if (obj instanceof DMBrowserNode) {
                 DMBrowserNode node = (DMBrowserNode) obj;
-                enabled = isSortable(node);
+                enabled = treeSorter.isSortable(node, sortingType);
                 if (enabled) {
                     @SuppressWarnings("unchecked") final Iterator<DMBrowserNode> iter = selection.iterator();
                     while (iter.hasNext()) {
@@ -948,69 +948,54 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 }
             }
             setEnabled(enabled);
-        }
-
-        private boolean isSortable(DMBrowserNode node) {
-            boolean sortable = false;
-            if (node.getType() == DMBrowserNodeType.Workflow) {
-                sortable = true;
-            } else if (node.getType() == DMBrowserNodeType.Timeline || node.getType() == DMBrowserNodeType.Component) {
-                if (sorting == DMTreeSorter.SORT_BY_TIMESTAMP || sorting == DMTreeSorter.SORT_BY_TIMESTAMP_DESC) {
-                    sortable = true;
-                }
-            } else if (node.getType() == DMBrowserNodeType.Components) {
-                if (sorting == DMTreeSorter.SORT_BY_NAME_ASC || sorting == DMTreeSorter.SORT_BY_NAME_DESC) {
-                    sortable = true;
-                }
-            }
-            return sortable;
+            setChecked((selectedNodes.isEmpty() || selectedNodes.iterator().next().getType() == DMBrowserNodeType.Workflow)
+                && treeSorter.getSortingType() == sortingType);
         }
 
         @Override
         public void run() {
-            sortOrderType = sorting;
-            boolean[] enabled = checkSortingAndComparator();
-            sortTimestampAsc.setChecked(enabled[0]);
-            sortAscendingName.setChecked(enabled[1]);
-            sortDescendingName.setChecked(enabled[2]);
-            sortTimestampDesc.setChecked(enabled[3]);
             if (selectedNodes.isEmpty() || selectedNodes.iterator().next().getType() == DMBrowserNodeType.Workflow) {
-                viewer.setSorter(new DMTreeSorter(sortOrderType));
+                treeSorter.setSortingType(sortingType);
+                treeSorter.enableSorting(true);
                 viewer.refresh();
+                setSortActionsChecked();
             } else {
                 for (DMBrowserNode node : selectedNodes) {
                     if (node.areChildrenKnown()) {
-                        node.sortChildren(comparator);
-                        DMTreeSorter.stopSorting();
+                        treeSorter.enableSorting(false);
+                        setComparator(node);
+                        setChecked(false);
                         viewer.refresh(node);
                     }
                 }
             }
         }
 
-        private boolean[] checkSortingAndComparator() {
-            boolean[] enabled = { false, false, false, false };
-            switch (sortOrderType) {
+        private void setSortActionsChecked() {
+            sortAscendingName.setChecked(treeSorter.getSortingType() == DMTreeSorter.SORT_BY_NAME_ASC);
+            sortDescendingName.setChecked(treeSorter.getSortingType() == DMTreeSorter.SORT_BY_NAME_DESC);
+            sortTimestampAsc.setChecked(treeSorter.getSortingType() == DMTreeSorter.SORT_BY_TIMESTAMP);
+            sortTimestampDesc.setChecked(treeSorter.getSortingType() == DMTreeSorter.SORT_BY_TIMESTAMP_DESC);
+
+        }
+
+        private void setComparator(DMBrowserNode node) {
+            switch (sortingType) {
             case DMTreeSorter.SORT_BY_TIMESTAMP:
-                enabled[0] = true;
-                comparator = DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP;
+                node.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP);
                 break;
             case DMTreeSorter.SORT_BY_NAME_ASC:
-                enabled[1] = true;
-                comparator = DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE;
+                node.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE);
                 break;
             case DMTreeSorter.SORT_BY_NAME_DESC:
-                enabled[2] = true;
-                comparator = DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE_DESC;
+                node.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE_DESC);
                 break;
             case DMTreeSorter.SORT_BY_TIMESTAMP_DESC:
-                enabled[3] = true;
-                comparator = DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP_DESC;
+                node.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP_DESC);
                 break;
             default:
                 break;
             }
-            return enabled;
         }
     }
 
@@ -1071,38 +1056,36 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 if (dataReferenceId == null || dataReferenceId2 == null) {
                     return;
                 } else {
-                    Exception exception;
 
                     try {
                         final File left = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(associatedFilename);
                         final File right = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(associatedFilename2);
-                        try {
-                            DataManagementService dataManagementService =
-                                DataManagementWorkbenchUtils.getInstance().getDataManagementService();
-                            dataManagementService.copyReferenceToLocalFile(
-                                Session.getInstance().getUser(), dataReferenceId, left,
-                                node.getNodeWithTypeWorkflow().getNodeIdentifier());
-                            dataManagementService.copyReferenceToLocalFile(
-                                Session.getInstance().getUser(), dataReferenceId2, right,
-                                node.getNodeWithTypeWorkflow().getNodeIdentifier());
-                        } catch (AuthorizationException e) {
-                            exception = e;
-                        } catch (AuthenticationException e) {
-                            exception = e;
-                        }
+                        DataManagementService dataManagementService =
+                            DataManagementWorkbenchUtils.getInstance().getDataManagementService();
+                        dataManagementService.copyReferenceToLocalFile(
+                            dataReferenceId, left,
+                            node.getNodeWithTypeWorkflow().getNodeIdentifier());
+                        dataManagementService.copyReferenceToLocalFile(
+                            dataReferenceId2, right,
+                            node.getNodeWithTypeWorkflow().getNodeIdentifier());
 
                         final CompareConfiguration cc = new CompareConfiguration();
                         cc.setLeftLabel(left.getName());
                         cc.setRightLabel(right.getName());
                         CompareUI.openCompareEditor(new FileCompareInput(cc, left, right));
                     } catch (IOException e) {
-                        exception = e;
+                        throw new RuntimeException(e.getCause());
+                    } catch (CommunicationException e) {
+                        throw new RuntimeException(MessageFormat.format(
+                            "Failed to copy data reference from remote node @{0} to local file: ",
+                            node.getNodeWithTypeWorkflow().getNodeIdentifier())
+                            + e.getMessage(), e);
+
                     }
                 }
             }
 
         }
-
     }
 
     /** A {@link KeyListener} to react on pressedkey's. */
@@ -1152,9 +1135,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      * The constructor.
      */
     public DataManagementBrowser() {
-        sortOrderType = 0;
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
     }
+
 
     /**
      * Registers an event listener for network changes as an OSGi service (whiteboard pattern).
@@ -1169,32 +1152,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         contentProvider.clear(toRefresh);
 
         if (viewer.getExpandedState(toRefresh)) {
-            expandedElements.clear();
-            for (final Object nodeObject : viewer.getExpandedElements()) {
-                if (nodeObject instanceof DMBrowserNode) {
-                    final DMBrowserNode bn = (DMBrowserNode) nodeObject;
-                    if (bn.getNodeWithTypeWorkflow().equals(node.getNodeWithTypeWorkflow())) {
-                        expandedElements.add(bn);
-                    }
-                }
-            }
-    
-            // remove all expanded Elements a parent of which is not expanded
-            // (hidden expanded elements)
-            final List<DMBrowserNode> hiddenExpandedElements = new LinkedList<DMBrowserNode>();
-            for (final DMBrowserNode bn : expandedElements) {
-                DMBrowserNode parent = bn.getParent();
-                while (parent != null && parent.getParent() != null) {
-                    if (!expandedElements.contains(parent)) {
-                        hiddenExpandedElements.add(bn);
-                    }
-                    parent = parent.getParent();
-                }
-            }
-            for (final DMBrowserNode bn : hiddenExpandedElements) {
-                expandedElements.remove(bn);
-            }
-            // refresh node in viewer
+            expandedNodes = viewer.getVisibleExpandedElements();
             viewer.refresh(toRefresh);
         } else {
             // Called in order to update the workflow node's title (update "not terminated yet") even if node is not expanded.
@@ -1233,7 +1191,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         }
         ColumnViewerToolTipSupport.enableFor(viewer);
         viewer.setLabelProvider(new DMLabelProvider());
-        // viewer.setSorter(new NameSorter());
+        treeSorter = new DMTreeSorter(DMTreeSorter.SORT_BY_TIMESTAMP_DESC);
+        viewer.setSorter(treeSorter);
 
         getSite().setSelectionProvider(viewer);
 
@@ -1249,15 +1208,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     }
 
     private void initialize() {
-        user = null;
-        try {
-            user = de.rcenvironment.core.authentication.Session
-                .getInstance().getUser();
-            fileDataService = serviceRegistryAccess.getService(DistributedFileDataService.class);
-        } catch (AuthenticationException e) {
-            throw new RuntimeException(e);
-        }
-        sortOrderType = DMTreeSorter.SORT_BY_TIMESTAMP_DESC;
+        fileDataService = serviceRegistryAccess.getService(FileDataService.class);
         refresh();
     }
 
@@ -1305,7 +1256,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         manager.add(new Separator());
         manager.add(openInEditorAction);
         if (OS.isFamilyWindows()) {
-            manager.add(openTiglAction);            
+            manager.add(openTiglAction);
         }
         manager.add(refreshNodeAction);
         manager.add(actionRefreshAll);
@@ -1412,7 +1363,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         contentProvider.clear();
         // disable the widget
         viewer.getTree().setEnabled(false);
-        viewer.setSorter(new DMTreeSorter(sortOrderType));
         // disable the action
         // FIXME: ensure re-enabling upon errors
         actionRefreshAll.setEnabled(false);
@@ -1424,35 +1374,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             rootNode.clearChildren();
         }
 
-        expandedElements.clear();
-        for (final Object nodeObject : viewer.getExpandedElements()) {
-            if (nodeObject instanceof DMBrowserNode) {
-                final DMBrowserNode node = (DMBrowserNode) nodeObject;
-                expandedElements.add(node);
-            }
-        }
-
-        // remove all expanded Elements a parent of which is not expanded
-        // (hidden expanded elements)
-        final List<DMBrowserNode> hiddenExpandedElements = new LinkedList<DMBrowserNode>();
-        for (final DMBrowserNode node : expandedElements) {
-            DMBrowserNode parent = node.getParent();
-            while (parent != null && parent.getParent() != null) {
-                if (!expandedElements.contains(parent)) {
-                    hiddenExpandedElements.add(node);
-                }
-                parent = parent.getParent();
-            }
-        }
-        for (final DMBrowserNode node : hiddenExpandedElements) {
-            expandedElements.remove(node);
-        }
-        if (sortOrderType == DMTreeSorter.SORT_BY_TIMESTAMP_DESC) {
-            sortTimestampAsc.setChecked(false);
-            sortDescendingName.setChecked(false);
-            sortAscendingName.setChecked(false);
-            sortTimestampDesc.setChecked(true);
-        }
+        expandedNodes = viewer.getVisibleExpandedElements();
         viewer.refresh();
     }
 
@@ -1489,11 +1411,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 doubleClickAction.run();
             }
         });
-    }
-
-    private void showMessage(String message) {
-        MessageDialog.openInformation(viewer.getControl().getShell(),
-            "Data Management Browser", message);
     }
 
     /**
@@ -1570,9 +1487,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     }
                 }
 
-                for (final DMBrowserNode child : node.getChildren()) {
-                    if (expandedElements.contains(child)) {
-                        viewer.expandToLevel(child, TreeViewer.ALL_LEVELS);
+                for (final Object expNode : expandedNodes) {
+                    if (node.getChildren().contains(expNode)) {
+                        viewer.expandToLevel(expNode, 1);
                     }
                 }
                 if (node.getChildren().isEmpty()) {
@@ -1619,13 +1536,13 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
      * 
      * @author Sascha Zur
      */
-    class FileCompareInput extends CompareEditorInput {
+    private class FileCompareInput extends CompareEditorInput {
 
         private File left;
 
         private File right;
 
-        public FileCompareInput(CompareConfiguration cc, File left, File right) {
+        FileCompareInput(CompareConfiguration cc, File left, File right) {
             super(cc);
             this.left = left;
             this.right = right;

@@ -16,17 +16,18 @@ import java.util.List;
 import java.util.Map;
 
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
-import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdateService;
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
 /**
- * Implementation of {@link PersistentComponentDescriptionUpdateService}.
+ * Implementation of {@link RemotablePersistentComponentDescriptionUpdateService}.
  * 
  * @author Doreen Seider
  */
-public class PersistentComponentDescriptionUpdateServiceImpl implements PersistentComponentDescriptionUpdateService {
+public class PersistentComponentDescriptionUpdateServiceImpl implements RemotablePersistentComponentDescriptionUpdateService {
 
     private Map<String, PersistentComponentDescriptionUpdater> updaters = Collections
         .synchronizedMap(new HashMap<String, PersistentComponentDescriptionUpdater>());
@@ -40,7 +41,8 @@ public class PersistentComponentDescriptionUpdateServiceImpl implements Persiste
     
     @AllowRemoteAccess
     @Override
-    public int getFormatVersionsAffectedByUpdate(List<PersistentComponentDescription> descriptions, Boolean silent) {
+    public int getFormatVersionsAffectedByUpdate(List<PersistentComponentDescription> descriptions, Boolean silent) 
+        throws RemoteOperationException {
         int updateAvailable = PersistentDescriptionFormatVersion.NONE;
 
         if (descriptions != null) {
@@ -86,7 +88,7 @@ public class PersistentComponentDescriptionUpdateServiceImpl implements Persiste
     @AllowRemoteAccess
     @Override
     public List<PersistentComponentDescription> performComponentDescriptionUpdates(Integer formatVersion,
-        List<PersistentComponentDescription> descriptions, Boolean silent) throws IOException {
+        List<PersistentComponentDescription> descriptions, Boolean silent) throws IOException, RemoteOperationException {
 
         List<PersistentComponentDescription> updatedDescriptions = new ArrayList<PersistentComponentDescription>();
 

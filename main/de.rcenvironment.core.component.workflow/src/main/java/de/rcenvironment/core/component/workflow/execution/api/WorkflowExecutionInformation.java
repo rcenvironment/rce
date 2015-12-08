@@ -47,4 +47,18 @@ public interface WorkflowExecutionInformation extends ExecutionInformation, Comp
      */
     String getAdditionalInformationProvidedAtStart();
     
+    /**
+     * Gets current workflow state. The {@link WorkflowState} might be out-dated at the time this method is called. It is snapshot at the
+     * time, the {@link WorkflowExecutionInformation} instance was requested.
+     * 
+     * @return {@link WorkflowState} (might be out-dated)
+     */
+    WorkflowState getWorkflowState();
+    
+    /**
+     * @return identifier the workflow is stored under in the data management, <code>null</code> if no data management entry exists for the
+     *         workflow (yet)
+     */
+    Long getWorkflowDataManagementId();
+    
 }

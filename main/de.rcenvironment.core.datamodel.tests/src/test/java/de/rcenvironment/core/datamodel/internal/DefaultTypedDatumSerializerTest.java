@@ -191,17 +191,18 @@ public class DefaultTypedDatumSerializerTest {
         SmallTableTD smallTable = factory.createSmallTable(matrix.toArray());
         assertEquals(getSmallTableString(tableEntries), serializer.serialize(smallTable));
 
-        TypedDatum[][] tableEntries2 = { { boolFalse, integer, floatData }, { dateTime, shortText, vector }, { matrix, matrix, matrix } };
+        TypedDatum[][] tableEntries2 =
+        { { boolFalse, integer, floatData }, { dateTime, shortText, integer }, { floatData, floatData, floatData } };
         smallTable = factory.createSmallTable(3, 3);
         smallTable.setTypedDatumForCell(boolFalse, 0, 0);
         smallTable.setTypedDatumForCell(integer, 0, 1);
         smallTable.setTypedDatumForCell(floatData, 0, 2);
         smallTable.setTypedDatumForCell(dateTime, 1, 0);
         smallTable.setTypedDatumForCell(shortText, 1, 1);
-        smallTable.setTypedDatumForCell(vector, 1, 2);
-        smallTable.setTypedDatumForCell(matrix, 2, 0);
-        smallTable.setTypedDatumForCell(matrix, 2, 1);
-        smallTable.setTypedDatumForCell(matrix, 2, 2);
+        smallTable.setTypedDatumForCell(integer, 1, 2);
+        smallTable.setTypedDatumForCell(floatData, 2, 0);
+        smallTable.setTypedDatumForCell(floatData, 2, 1);
+        smallTable.setTypedDatumForCell(floatData, 2, 2);
         assertEquals(getSmallTableString(tableEntries2), serializer.serialize(smallTable));
 
         // Serialization of EmptyTD
@@ -287,17 +288,18 @@ public class DefaultTypedDatumSerializerTest {
         SmallTableTD smallTable = factory.createSmallTable(matrix.toArray());
         assertEquals(smallTable, serializer.deserialize(getSmallTableString(tableEntries)));
 
-        TypedDatum[][] tableEntries2 = { { boolFalse, integer, floatData }, { dateTime, shortText, vector }, { matrix, matrix, matrix } };
+        TypedDatum[][] tableEntries2 =
+        { { boolFalse, integer, floatData }, { dateTime, shortText, integer }, { floatData, floatData, floatData } };
         smallTable = factory.createSmallTable(3, 3);
         smallTable.setTypedDatumForCell(boolFalse, 0, 0);
         smallTable.setTypedDatumForCell(integer, 0, 1);
         smallTable.setTypedDatumForCell(floatData, 0, 2);
         smallTable.setTypedDatumForCell(dateTime, 1, 0);
         smallTable.setTypedDatumForCell(shortText, 1, 1);
-        smallTable.setTypedDatumForCell(vector, 1, 2);
-        smallTable.setTypedDatumForCell(matrix, 2, 0);
-        smallTable.setTypedDatumForCell(matrix, 2, 1);
-        smallTable.setTypedDatumForCell(matrix, 2, 2);
+        smallTable.setTypedDatumForCell(integer, 1, 2);
+        smallTable.setTypedDatumForCell(floatData, 2, 0);
+        smallTable.setTypedDatumForCell(floatData, 2, 1);
+        smallTable.setTypedDatumForCell(floatData, 2, 2);
         assertEquals(smallTable,
             serializer.deserialize(getSmallTableString(tableEntries2)));
 
@@ -322,7 +324,7 @@ public class DefaultTypedDatumSerializerTest {
         assertEquals(fileReference.getFileReference(), deserializedFileReference.getFileReference());
         assertEquals(fileReference.getFileSizeInBytes(), deserializedFileReference.getFileSizeInBytes());
         assertEquals(fileReference.getLastModified(), deserializedFileReference.getLastModified());
-        
+
         // Deserialization of DirectoryReferenceTD
         DirectoryReferenceTD dirRef = factory.createDirectoryReference("reference", "dirname");
         dirRef.setDirectorySize(SIZE_1024);
@@ -398,6 +400,5 @@ public class DefaultTypedDatumSerializerTest {
         }
         return StringUtils.format(JSON_STRING_DIMENSION_ARRAY, DataType.SmallTable.getShortName(), rows, cols, value);
     }
-    
-    
+
 }

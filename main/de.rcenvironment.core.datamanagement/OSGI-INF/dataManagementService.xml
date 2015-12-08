@@ -5,14 +5,14 @@
 	</service>
 	<reference bind="bindFileDataService"
  		cardinality="1..1"
- 		interface="de.rcenvironment.core.datamanagement.DistributedFileDataService"
- 		name="Distributed Data Service"
+ 		interface="de.rcenvironment.core.datamanagement.FileDataService"
+ 		name="Data Service"
  		policy="dynamic"
  	/>
  	<reference bind="bindDataReferenceService"
  		cardinality="1..1"
- 		interface="de.rcenvironment.core.datamanagement.DistributedDataReferenceService"
- 		name="Distributed DataReference Service"
+ 		interface="de.rcenvironment.core.datamanagement.DataReferenceService"
+ 		name="Data Reference Service"
  		policy="dynamic"
  	/>
 </scr:component>

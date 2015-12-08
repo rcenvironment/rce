@@ -32,6 +32,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class ToolIntegrationWizardDialog extends WizardDialog {
 
+    private static final Object LOCK_OBJECT = new Object();
+
     protected Button backButton;
 
     protected Button nextButton;
@@ -141,19 +143,21 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
                 }
                 break;
             } else {
-                ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
-                finishPressed();
-                if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
-                    MessageBox infoDialog = new MessageBox(this.getParentShell(),
-                        SWT.ICON_INFORMATION | SWT.OK);
-                    infoDialog.setText("Tool updated");
-                    infoDialog
-                        .setMessage(String
-                            .format("Tool \"%s\" was successfully updated.",
-                                ((ToolIntegrationWizard) getWizard())
-                                    .getConfigurationMap()
-                                    .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
-                    infoDialog.open();
+                synchronized (LOCK_OBJECT) {
+                    ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
+                    finishPressed();
+                    if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
+                        MessageBox infoDialog = new MessageBox(this.getParentShell(),
+                            SWT.ICON_INFORMATION | SWT.OK);
+                        infoDialog.setText("Tool updated");
+                        infoDialog
+                            .setMessage(StringUtils
+                                .format("Tool \"%s\" was successfully updated.",
+                                    ((ToolIntegrationWizard) getWizard())
+                                        .getConfigurationMap()
+                                        .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+                        infoDialog.open();
+                    }
                 }
                 break;
             }

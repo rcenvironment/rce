@@ -24,18 +24,18 @@ import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListen
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
 
 /**
  * Manager class that creates and publishes the local link state, and keeps track of the link states announced by other nodes in the
@@ -47,7 +47,7 @@ import de.rcenvironment.core.utils.incubator.ListenerProvider;
  * 
  * @author Robert Mischke
  */
-public class DistributedLinkStateManager implements ListenerProvider {
+public class DistributedLinkStateManager implements AdditionalServicesProvider {
 
     private static final String LSA_PROPERTY_KEY = "lsa";
 
@@ -94,9 +94,9 @@ public class DistributedLinkStateManager implements ListenerProvider {
     }
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        Collection<ListenerDeclaration> result = new ArrayList<ListenerDeclaration>();
-        result.add(new ListenerDeclaration(RawNodePropertiesChangeListener.class, new RawNodePropertiesChangeListener() {
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        Collection<AdditionalServiceDeclaration> result = new ArrayList<AdditionalServiceDeclaration>();
+        result.add(new AdditionalServiceDeclaration(RawNodePropertiesChangeListener.class, new RawNodePropertiesChangeListener() {
 
             @Override
             public void onRawNodePropertiesAddedOrModified(Collection<? extends NodeProperty> newProperties) {
@@ -104,7 +104,7 @@ public class DistributedLinkStateManager implements ListenerProvider {
                 updateOnNodePropertiesAddedOrModified(newProperties);
             }
         }));
-        result.add(new ListenerDeclaration(MessageChannelLifecycleListener.class, new MessageChannelLifecycleListenerAdapter() {
+        result.add(new AdditionalServiceDeclaration(MessageChannelLifecycleListener.class, new MessageChannelLifecycleListenerAdapter() {
 
             @Override
             public void onOutgoingChannelTerminated(MessageChannel connection) {

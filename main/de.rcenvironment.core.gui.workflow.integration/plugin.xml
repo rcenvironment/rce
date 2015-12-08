@@ -35,6 +35,13 @@
 		       tab="workflow.editor.tab.HistoryData">
          </propertySection>
          <propertySection
+		       class="de.rcenvironment.core.gui.workflow.integration.ToolMockModeSection"
+		       enablesFor="1"
+		       filter="de.rcenvironment.core.gui.workflow.integration.DefaultToolIntegratorComponentFilter"
+		       id="workflow.editor.tab.Properties.Section.deactivation"
+		       tab="workflow.editor.tab.integrated.deactivation">
+         </propertySection>
+         <propertySection
                class="de.rcenvironment.core.gui.workflow.integration.ToolInformationSection"
                enablesFor="1"
                filter="de.rcenvironment.core.gui.workflow.integration.DefaultToolIntegratorComponentFilter"
@@ -90,8 +97,14 @@
          <propertyTab
                category="default"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
+               label="Workflow Data"
                afterTab="workflow.editor.tab.integrated.InputsOutputs">
+         </propertyTab>
+         <propertyTab
+               category="default"
+               id="workflow.editor.tab.integrated.deactivation"
+               label="Imitation Mode"
+               afterTab="workflow.editor.tab.HistoryData">
          </propertyTab>
          <propertyTab
                category="default"
@@ -234,5 +247,21 @@
     <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
       <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment.integration" />
+   </extension>
+      <extension
+         point="de.rcenvironment.core.gui.workflow.editorActions">
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.GetDocumentationWorkflowEditorAction"
+            component="de.rcenvironment.integration.*"
+            default="true"
+            id="de.rcenvironment.integration.getDocumentation"
+            label="Open Documentation">
+      </action>
+   </extension>
+   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
+      <validator 
+      		class="de.rcenvironment.core.gui.workflow.editor.validator.DefaultWorkflowNodeValidator"
+            filter="de.rcenvironment.core.gui.workflow.integration.DefaultToolIntegratorComponentFilter">
+      </validator>
    </extension>
 </plugin>

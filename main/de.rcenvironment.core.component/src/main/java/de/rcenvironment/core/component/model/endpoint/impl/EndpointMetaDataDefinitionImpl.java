@@ -40,7 +40,7 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
     private static final int MINUS_ONE = -1;
 
     private static final String KEY_POSSIBLEVALUES = "possibleValues";
-    
+
     private static final String KEY_GUINAMESOFPOSSIBLEVALUES = "guiNamesOfPossibleValues";
 
     private static final String KEY_VALIDATION = "validation";
@@ -51,11 +51,13 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
 
     private static final String KEY_ENDPOINT_DATATYPES = "endpointDataTypes";
 
+    private static final String KEY_PERSISTENT = "persistent";
+
     // <meta data key, <meta data prop key, meta data prop value>>
     private Map<String, Map<String, Object>> rawMetaData;
-    
+
     private Map<String, Map<String, Object>> rawMetaDataExtension;
-    
+
     private Map<String, Map<String, Object>> combinedRawMetaData;
 
     private Map<String, List<DataType>> endpointDataTypes = new HashMap<String, List<DataType>>();
@@ -103,7 +105,7 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
     public List<String> getPossibleValues(String key) {
         return (List<String>) combinedRawMetaData.get(key).get(KEY_POSSIBLEVALUES);
     }
-    
+
     @SuppressWarnings("unchecked")
     @JsonIgnore
     @Override
@@ -157,7 +159,7 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
         }
         return Visibility.userConfigurable;
     }
-    
+
     @JsonIgnore
     @Override
     @SuppressWarnings("unchecked")
@@ -182,7 +184,7 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
             }
         }
     }
-    
+
     /**
      * @param metaDataExtension raw meta data extension definition
      */
@@ -200,9 +202,17 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
     public Map<String, Map<String, Object>> getRawMetaData() {
         return rawMetaData;
     }
-    
+
     public Map<String, Map<String, Object>> getRawMetaDataExtension() {
         return rawMetaDataExtension;
     }
 
+    @JsonIgnore
+    @Override
+    public boolean isPersistent(String key) {
+        if (combinedRawMetaData.get(key) != null && combinedRawMetaData.get(key).containsKey(KEY_PERSISTENT)) {
+            return Boolean.parseBoolean((String) combinedRawMetaData.get(key).get(KEY_PERSISTENT));
+        } 
+        return false;
+    }
 }

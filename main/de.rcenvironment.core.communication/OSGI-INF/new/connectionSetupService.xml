@@ -4,7 +4,7 @@
 	<implementation class="de.rcenvironment.core.communication.connection.impl.ConnectionSetupServiceImpl" />
 	<service>
 		<provide interface="de.rcenvironment.core.communication.connection.api.ConnectionSetupService" />
-		<provide interface="de.rcenvironment.core.utils.incubator.ListenerProvider" />
+		<provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider" />
 	</service>
 
 	<reference bind="addConnectionSetupListener" cardinality="0..n"

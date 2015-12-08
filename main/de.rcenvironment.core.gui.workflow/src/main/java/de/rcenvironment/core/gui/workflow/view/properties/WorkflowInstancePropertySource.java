@@ -17,38 +17,43 @@ import org.eclipse.ui.views.properties.IPropertyDescriptor;
 import org.eclipse.ui.views.properties.IPropertySource;
 import org.eclipse.ui.views.properties.TextPropertyDescriptor;
 
-import de.rcenvironment.core.communication.api.SimpleCommunicationService;
+import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.view.Messages;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Class that maps information about a running component onto the IPropertySource interface.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (minor change)
  */
 public class WorkflowInstancePropertySource implements IPropertySource {
 
     protected static final String PROP_KEY_WORKKLOWPLATFORM = "de.rcenvironment.wfCtrlNodeId";
 
     protected static final String PROP_KEY_STARTTIME = "de.rcenvironment.wfStart";
-    
+
     protected static final String PROP_KEY_NAME = "de.rcenvironment.wfName";
-    
+
     protected static final String PROP_KEY_WORKFLOWNODES_COUNT = "de.rcenvironment.wfNodeCnt";
-    
+
     protected static final String PROP_KEY_CONNECTIONS_COUNT = "de.rcenvironment.cnCnt";
-    
+
     protected static final String PROP_KEY_COMPONENT_TYPES = "de.rcenvironment.wfNodeTypes";
-    
+
     protected static final String PROP_KEY_INVOLVED_INSTANCES = "de.rcenvironment.involvedInstances";
 
     protected WorkflowExecutionInformation wfExeInfo;
 
+    private final PlatformService platformService;
+
     public WorkflowInstancePropertySource(WorkflowExecutionInformation wfExeInfo) {
         this.wfExeInfo = wfExeInfo;
+        this.platformService = ServiceRegistry.createAccessFor(this).getService(PlatformService.class);
     }
-    
+
     @Override
     public Object getEditableValue() {
         return this;
@@ -75,7 +80,7 @@ public class WorkflowInstancePropertySource implements IPropertySource {
         if (key.equals(PROP_KEY_NAME)) {
             value = wfExeInfo.getInstanceName();
         } else if (key.equals(PROP_KEY_WORKKLOWPLATFORM)) {
-            if (wfExeInfo.getNodeId() == null || new SimpleCommunicationService().isLocalNode(wfExeInfo.getNodeId())) {
+            if (wfExeInfo.getNodeId() == null || platformService.isLocalNode(wfExeInfo.getNodeId())) {
                 value = Messages.local;
             } else {
                 value = wfExeInfo.getNodeId().getAssociatedDisplayName();
@@ -98,7 +103,7 @@ public class WorkflowInstancePropertySource implements IPropertySource {
     public boolean isPropertySet(Object key) {
         return true;
     }
-    
+
     private int getComponentTypesCount() {
         int count = 0;
         Set<String> componentIdentifiers = new HashSet<>();
@@ -110,7 +115,7 @@ public class WorkflowInstancePropertySource implements IPropertySource {
         }
         return count;
     }
-    
+
     private int getInstancesCount() {
         int count = 0;
         Set<String> nodeIdentifiers = new HashSet<>();
@@ -127,11 +132,9 @@ public class WorkflowInstancePropertySource implements IPropertySource {
     }
 
     @Override
-    public void resetPropertyValue(Object arg0) {
-    }
+    public void resetPropertyValue(Object arg0) {}
 
     @Override
-    public void setPropertyValue(Object arg0, Object arg1) {
-    }
+    public void setPropertyValue(Object arg0, Object arg1) {}
 
 }

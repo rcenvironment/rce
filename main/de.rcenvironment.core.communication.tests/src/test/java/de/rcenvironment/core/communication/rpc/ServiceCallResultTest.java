@@ -8,36 +8,45 @@
 
 package de.rcenvironment.core.communication.rpc;
 
+import java.io.IOException;
+
 import junit.framework.TestCase;
 
 /**
  * Unit test for <code>ServiceCallResult</code>.
  * 
- * @author Thijs Metsch
- * @author Heinrich Wendel
- * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class ServiceCallResultTest extends TestCase {
 
+    private static final String DUMMY_RETURN_VALUE = "dummy";
+
+    private static final String EXCEPTION_TEXT = "exceptionText";
+
+    private static final Exception DUMMY_EXCEPTION = new IOException(EXCEPTION_TEXT);
+
     /**
-     * Test method for sanity.
-     * 
+     * Basic behavior test.
      */
-    public void testException() {
-        Exception exception1 = new Exception();
-        ServiceCallResult communicationResult = new ServiceCallResult(exception1);
-        Exception exception2 = (Exception) communicationResult.getThrowable();
-        assertEquals(exception1, exception2);
+    public void testReturnValue() {
+        ServiceCallResult result = ServiceCallResultFactory.wrapReturnValue(DUMMY_RETURN_VALUE);
+        assertTrue(result.isSuccess());
+        assertEquals(DUMMY_RETURN_VALUE, result.getReturnValue());
+        assertEquals(null, result.getMethodExceptionType());
+        assertEquals(null, result.getMethodExceptionMessage());
+        assertEquals(null, result.getRemoteOperationExceptionMessage());
     }
 
     /**
-     * Test method for sanity.
+     * Basic behavior test.
      */
-    public void testReturnValue() {
-        String returnValue1 = "hallo";
-        ServiceCallResult communicationResult = new ServiceCallResult(returnValue1);
-        String returnValue2 = (String) communicationResult.getReturnValue();
-        assertEquals(returnValue1, returnValue2);
+    public void testMethodException() {
+        ServiceCallResult result = ServiceCallResultFactory.wrapMethodException(DUMMY_EXCEPTION);
+        assertFalse(result.isSuccess());
+        assertEquals(null, result.getReturnValue());
+        assertEquals("java.io.IOException", result.getMethodExceptionType());
+        assertEquals(EXCEPTION_TEXT, result.getMethodExceptionMessage());
+        assertEquals(null, result.getRemoteOperationExceptionMessage());
     }
 
 }

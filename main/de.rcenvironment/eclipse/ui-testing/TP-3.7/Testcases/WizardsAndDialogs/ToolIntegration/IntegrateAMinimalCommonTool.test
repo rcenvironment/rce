@@ -1,0 +1,66 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _DysjgCPgEeWMU9qdIQ2Zdw,_cunb8CVIEeW4j8UBl4j8TA
+Element-Name: IntegrateAMinimalCommonTool
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _7WT44GaBEeWE-JfpwaFXMg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 11/5/15 3:29 PM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+get-button "Integrate Tool" | click
+with [get-window "Integrate a Tool as a Workflow Component"] {
+    get-button "Next >" | click
+    get-group "Tool characteristics" | get-editbox -after [get-label "Name*:"] | set-text dummy
+    with [get-button "Next >"] {
+        click
+        click
+        click
+    }
+    get-button Add | click
+    with [get-window "Add Launch Setting"] {
+        get-editbox -after [get-label "Tool directory*:"] | set-text dummy
+        get-editbox -after [get-label "Version*:"] | set-text dummy
+        get-editbox -after [get-label "Working directory*:"] | set-text dummy
+        get-button OK | click
+    }
+    get-group "Clean up choices for working directory(ies) in workflow configuration*" 
+        | get-button "Delete working directory(ies) when workflow is finished" | check
+    get-button "Next >" | click
+    get-button "Command(s) for Windows" | check
+    get-editbox | set-text dummy
+}
+set-dialog-result MessageBox 32
+get-window "Integrate a Tool as a Workflow Component" | get-button "Save and activate" | click
+get-button "Create workflow (M1+M2+N)" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text dummy
+    get-button Finish | click
+}
+with [get-editor "dummy.wf"] {
+    with [get-palette | get-palette-entry "dummy (dummy)"] {
+        mouse-move 43 19 button1 -height 23 -width 125
+        mouse-press 43 19 button1 -height 23 -width 125
+        get-figure 0 | drag-start 43 19
+    }
+    with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+        drag-enter 1200 641 -detail move
+        drag-over 339 297 -detail copy
+        drag-exit
+        drag-accept 339 297 -detail copy
+    }
+    get-palette | drag-set-data
+    get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 339 297 -detail copy
+    get-palette | drag-end -detail move
+}
+with [get-editor "dummy.wf" | get-diagram -index 1 | get-edit-part -className WorkflowPart | get-edit-part -text dummy] {
+    get-property text | equals dummy | verify-true
+    get-property className | equals "de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart" | verify-true
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

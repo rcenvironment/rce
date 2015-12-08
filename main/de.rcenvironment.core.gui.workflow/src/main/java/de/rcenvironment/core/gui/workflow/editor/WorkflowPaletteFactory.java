@@ -11,6 +11,7 @@ package de.rcenvironment.core.gui.workflow.editor;
 import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -97,6 +98,12 @@ public class WorkflowPaletteFactory {
             }
             groupedComponents.get(componentInterface.getGroupName()).add(component);
         }
+        for (Map.Entry<String, List<PaletteEntry>> map : groupedComponents.entrySet()) {
+
+            List<PaletteEntry> list = map.getValue();
+            Collections.sort(list, new PaletteComperator());
+
+        }
         List<String> specialGroups = new ArrayList<String>();
         List<String> standardGroups = new ArrayList<String>();
 
@@ -153,7 +160,7 @@ public class WorkflowPaletteFactory {
             ImageDescriptor.createFromURL(WorkflowPaletteFactory.class.getResource("/resources/icons/connection24.gif"))); //$NON-NLS-1$
         tool.setLabel(tool.getLabel());
         entries.add(tool);
-       
+
         tool = new CombinedTemplateCreationEntry(WorkflowLabel.PALETTE_ENTRY_NAME,
             Messages.label, new LabelFactory(), null, null);
         tool.setDescription(Messages.labelDescription);
@@ -162,6 +169,20 @@ public class WorkflowPaletteFactory {
         entries.add(tool);
         toolsGroup.addAll(entries);
         palette.add(toolsGroup);
+    }
+    
+    /**
+     * Sorting help for entries.
+     * @author guer_go
+     *
+     */
+    private class PaletteComperator implements Comparator<PaletteEntry> {
+
+        @Override
+        public int compare(PaletteEntry pal1, PaletteEntry pal2) {
+            return pal1.getLabel().compareToIgnoreCase(pal2.getLabel());
+        }
+
     }
 
 }

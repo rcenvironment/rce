@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.communication.configuration.internal;
 
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertEquals;
 
 import java.io.IOException;
@@ -44,17 +45,29 @@ public class NodeConfigurationServiceImplTest {
      * 
      * @author Doreen Seider
      * @author Robert Mischke
+     * @author Brigitte Boden (added SSH config segment)
      */
     private class DummyConfigurationService extends MockConfigurationService.ThrowExceptionByDefault {
 
         @Override
         public ConfigurationSegment getConfigurationSegment(String relativePath) {
-            assertEquals("network", relativePath);
-            try {
-                return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
-                    "/config-tests/example1.json"));
-            } catch (IOException e) {
-                throw new AssertionError("Error loading configuration", e);
+            if ("network".equals(relativePath)) {
+                try {
+                    return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
+                        "/config-tests/example1.json"));
+                } catch (IOException e) {
+                    throw new AssertionError("Error loading configuration", e);
+                }
+            } else if ("sshRemoteAccess".equals(relativePath)) {
+                try {
+                    return ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream(
+                        "/config-tests/exampleSsh.json"));
+                } catch (IOException e) {
+                    throw new AssertionError("Error loading configuration", e);
+                }
+            } else {
+                fail("relativePath must be \"network\" or \"ssh\"");
+                return null;
             }
         }
 
@@ -73,6 +86,25 @@ public class NodeConfigurationServiceImplTest {
             return "";
         }
 
+        @Override
+        public double[] getLocationCoordinates() {
+            return new double[] { 0.0, 0.0 };
+        }
+
+        @Override
+        public String getLocationName() {
+            return "";
+        }
+
+        @Override
+        public String getInstanceContact() {
+            return "";
+        }
+
+        @Override
+        public String getInstanceAdditionalInformation() {
+            return "";
+        }
     }
 
     /**

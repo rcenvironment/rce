@@ -118,8 +118,7 @@
          <propertyTab
                label="%inputs"
                category="default"
-               id="workflow.editor.run.tab.Inputs"
-               >
+               id="workflow.editor.run.tab.Inputs">
          </propertyTab>
          <propertyTab
                label="%general"
@@ -173,14 +172,14 @@
                tab="workflow.editor.run.tab.Inputs"
                class="de.rcenvironment.core.gui.workflow.view.properties.InputSection"
                id="workflow.editor.run.tab.Inputs.Section"
-               filter="de.rcenvironment.core.gui.workflow.editor.properties.WorkflowSelectedFilter"
+               filter="de.rcenvironment.core.gui.workflow.view.properties.InputSectionForWorkflowFilter"
                enablesFor="1">
          </propertySection>
          <propertySection
                tab="workflow.editor.run.tab.ComponentInputs"
                class="de.rcenvironment.core.gui.workflow.view.properties.ComponentInputSection"
                id="workflow.editor.run.tab.ComponentInputs.Section"
-               filter="de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeSelectedFilter"
+               filter="de.rcenvironment.core.gui.workflow.view.properties.InputSectionForWorkflowNodeFilter"
                enablesFor="1">
          </propertySection>
          <propertySection

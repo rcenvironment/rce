@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.shutdown.HeadlessShutdown;
 import de.rcenvironment.core.utils.common.OSFamily;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
@@ -61,10 +62,10 @@ public class InstanceOperationsImpl {
             final LocalApacheCommandLineExecutor executor = new LocalApacheCommandLineExecutor(installationDir);
             if (OSFamily.isWindows()) {
                 // note: using "-p" because "--profile" was not available in 6.0.x
-                executor.start(String.format("rce --headless -nosplash -p \"%s\"", profileDir.getAbsolutePath()));
+                executor.start(StringUtils.format("rce --headless -nosplash -p \"%s\"", profileDir.getAbsolutePath()));
             } else {
                 // note: using "-p" because "--profile" was not available in 6.0.x
-                executor.start(String.format("./rce --headless -nosplash -p \"%s\"", profileDir.getAbsolutePath()));
+                executor.start(StringUtils.format("./rce --headless -nosplash -p \"%s\"", profileDir.getAbsolutePath()));
             }
             TextStreamWatcher outWatcher = new TextStreamWatcher(executor.getStdout(), new AbstractTextOutputReceiver() {
 

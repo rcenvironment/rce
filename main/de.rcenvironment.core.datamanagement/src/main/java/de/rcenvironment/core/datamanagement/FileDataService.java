@@ -11,90 +11,65 @@ package de.rcenvironment.core.datamanagement;
 import java.io.IOException;
 import java.io.InputStream;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
+import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
+import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Interface for the RCE user data system for file support.
+ * Service that provides easy access to all file data by calling remote {@link RemotableFileDataService}s in the distributed system.
  * 
- * @author Sandra Schroedter
- * @author Juergen Klein
- * 
+ * @author Doreen Seider
  */
-public interface FileDataService extends DataService {
+
+public interface FileDataService {
 
     /**
-     * Returns the InputStream of the given revision of dataReference.
+     * Returns the {@link InputStream} of the given revision of the given {@link DataReference}.
      * 
-     * @param proxyCertificate The {@link User} of the user.
-     * @param dataReference DataReference which contains the needed revision.
-     * @param calledFromRemote <code>true</code> if this method is called from remote node, otherwise <code>false</code>
-     * @return InputStream of the given revision
-     * @throws AuthorizationException If the user or the extension has no read permission.
+     * @param dataReference {@link DataReference} which contains the needed revision.
+     * @return {@link InputStream} of the given revision.
+     * @throws AuthorizationException If the user has no read permission.
+     * @throws CommunicationException in case of communication error
      */
-    InputStream getStreamFromDataReference(User proxyCertificate, DataReference dataReference, Boolean calledFromRemote)
-        throws AuthorizationException;
+    InputStream getStreamFromDataReference(DataReference dataReference)
+        throws AuthorizationException, CommunicationException;
 
     /**
-     * Creates a new DataReference from the given inputStream on the Platform targetDataManagement. The new dataReference will contain the
-     * given MetaData and reserved MetaData, that the DataInterface adds automatically.
+     * Creates a new {@link DataReference} from the given {@link InputStream} on the platform represented by the given
+     * {@link NodeIdentifier}. The new {@link DataReference} will contain the given {@link MetaData} and reserved {@link MetaData} which
+     * will be set automatically.
      * 
-     * @param proxyCertificate The {@link User} of the user.
      * @param inputStream InputStream that shall be saved.
      * @param metaDataSet MetaDataSet that shall be saved.
+     * @param platform {@link NodeIdentifier} of the platform to store the reference. If <code>null</code> the new reference will be created
+     *        on the local platform.
      * @return DataReference for the given InputStream and MetaData.
      * @throws AuthorizationException If the user or the extension has no create permission.
+     * @throws IOException on upload failure
+     * @throws InterruptedException on thread interruption
+     * @throws CommunicationException in case of communication error
      */
-    DataReference newReferenceFromStream(User proxyCertificate, InputStream inputStream, MetaDataSet metaDataSet)
-        throws AuthorizationException;
+    DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet,
+        NodeIdentifier platform) throws AuthorizationException, IOException, InterruptedException, CommunicationException;
 
     /**
-     * Initializes an id/handle that subsequent {@link #appendToUpload(User, String, byte[])} calls can use to upload data. The normal use
-     * case is that this method is called via RPC from the uploader's node.
+     * Deletes a whole local or remote {@link DataReference} with all {@link Revision}s.
      * 
-     * @param user user data for authorization
-     * @return the generated upload id
-     * @throws IOException if the upload could not be set up (for example, no disk space left at receiver)
+     * @param dataReference DataReference that shall be deleted.
+     * @throws CommunicationException on communication error
      */
-    String initializeUpload(User user) throws IOException;
+    void deleteReference(DataReference dataReference) throws CommunicationException;
 
     /**
-     * Appends a chunk of data to a virtual file identified by an upload id.The normal use case is that this method is called once or more
-     * via RPC from the uploader's node.
+     * Deletes a whole local {@link DataReference} with all {@link Revision}s.
      * 
-     * @param user user data for authorization
-     * @param id the assigned upload id
-     * @param data the byte array to append
-     * @return the total number of bytes written so far
-     * 
-     * @throws IOException on I/O errors on the receiver's side
+     * @param binaryReferenceKey Key of the binary reference that shall be deleted.
+     * @throws RemoteOperationException standard remote operation exception
      */
-    long appendToUpload(User user, String id, byte[] data) throws IOException;
+    void deleteReference(String binaryReferenceKey) throws RemoteOperationException;
 
-    /**
-     * Signals that all data has been written via {@link #appendToUpload(User, String, byte[])} and initiates the asynchronous conversion
-     * into a {@link DataReference} with the given {@link MetaDataSet} attached. This conversion is performed asynchronously to avoid RPC
-     * timeouts on large uploads. Use {@link #pollUploadForDataReference(User, String)} to fetch the generated {@link DataReference}.
-     * 
-     * @param user user data for authorization
-     * @param id the assigned upload id
-     * @param metaDataSet the data management metadata to append to the {@link DataReference}; the behaviour is the same as
-     *        {@link #newReferenceFromStream(User, InputStream, MetaDataSet)}
-     * @throws IOException on I/O errors on the receiver's side
-     */
-    void finishUpload(User user, String id, MetaDataSet metaDataSet) throws IOException;
-
-    /**
-     * Attempt to fetch the generated {@link DataReference} for a given upload id. If the reference is not available yet, null is returned.
-     * 
-     * TODO add {@link IOException} to signal a permanent conversion failure? - misc_ro
-     * 
-     * @param user user data for authorization
-     * @param id the assigned upload id
-     * @return the generated {@link DataReference}, or null if it is not available yet
-     * @throws IOException on asynchronous I/O errors on the receiver's side
-     */
-    DataReference pollUploadForDataReference(User user, String id) throws IOException;
 }

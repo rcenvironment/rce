@@ -47,7 +47,6 @@ import org.eclipse.gef.editparts.AbstractGraphicalEditPart;
 import org.eclipse.gef.editpolicies.GraphicalNodeEditPolicy;
 import org.eclipse.gef.requests.CreateConnectionRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
@@ -74,7 +73,6 @@ import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidatio
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationSupport;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateEvent;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateListener;
-import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart.ComponentStateFigureImpl;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -108,17 +106,13 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private static final int MAX_LABEL_WIDTH = 73;
 
-    private static final Image ERROR_IMAGE = ImageDescriptor.createFromURL(
-        ComponentStateFigureImpl.class.getResource("/resources/icons/error.gif")).createImage();
+    private static final Image ERROR_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.ERROR_16);
 
-    private static final Image WARNING_IMAGE = ImageDescriptor.createFromURL(
-        ComponentStateFigureImpl.class.getResource("/resources/icons/warning.gif")).createImage();
+    private static final Image WARNING_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16);
 
-    private static final Image LOCAL_IMAGE = ImageDescriptor.createFromURL(
-        ComponentStateFigureImpl.class.getResource("/resources/icons/local.gif")).createImage();
+    private static final Image LOCAL_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.LOCAL);
 
-    private static final Image DEPRECATED_IMAGE = ImageDescriptor.createFromURL(
-        ComponentStateFigureImpl.class.getResource("/resources/icons/deprecated.png")).createImage();
+    private static final Image DEPRECATED_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.DEPRECATED);
 
     private final WorkflowNodeValidationSupport validationSupport = new WorkflowNodeValidationSupport();
 

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Component
 Bundle-SymbolicName: de.rcenvironment.core.component;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Export-Package: de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
@@ -40,7 +40,9 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.notification,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
+ de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
+ de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.common.variables.legacy,
  de.rcenvironment.core.utils.incubator,
@@ -59,4 +61,4 @@ Import-Package: de.rcenvironment.core.authentication,
  org.osgi.service.packageadmin;version="1.2.0"
 Service-Component: OSGI-INF/*.xml
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
-DynamicImport-Package: *
+DynamicImport-Package: de.rcenvironment.*

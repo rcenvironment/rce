@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.channel;
 
 import java.util.Set;
 
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
  * Callback interface for connection-related events. The events of this interface are meant to be produced by the <b>connection</b> layer,

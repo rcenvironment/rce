@@ -16,7 +16,6 @@ import de.rcenvironment.components.inputprovider.common.InputProviderComponentCo
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -86,48 +85,47 @@ public class InputProviderComponent extends DefaultComponent {
                 datum = getTypedDatumForDirectory(value, outputName);
                 break;
             default:
-                throw new ComponentException("Given data type is not supported: " + type);
+                throw new ComponentException("Internal error: Given data type is not supported: " + type);
             }
             componentContext.writeOutput(outputName, datum);
-            componentContext.printConsoleLine("Wrote to output '" + outputName + "': " + value, ConsoleRow.Type.COMPONENT_OUTPUT);
+            componentContext.getLog().componentInfo("Wrote to output '" + outputName + "': " + value);
         }
     }
 
     private TypedDatum getTypedDatumForFile(String value, String outputName) throws ComponentException {
         File file = createFileObject(value);
         if (file == null) {
-            throw new ComponentException(StringUtils.format("%s: No file name given for output '%s'",
+            throw new ComponentException(StringUtils.format("Internal error: No file given for output '%s'",
                 componentContext.getInstanceName(), outputName));
         } else if (!file.exists()) {
-            throw new ComponentException(StringUtils.format("%s: File doesn't exist on node %s: %s",
-                componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), file.getAbsolutePath()));
+            throw new ComponentException(StringUtils.format("Given path doesn't refer to a file on node %s: %s",
+                componentContext.getNodeId().getAssociatedDisplayName(), file.getAbsolutePath()));
         }
         try {
             return dataManagementService.createFileReferenceTDFromLocalFile(componentContext, file, file.getName());
-        } catch (IOException ex) {
-            throw new ComponentException(StringUtils.format("%s: Writing file to data management failed",
-                componentContext.getInstanceName()), ex);
+        } catch (IOException e) {
+            throw new ComponentException("Failed to store file into the data management - "
+                + "if it is not stored in the data management, it can not be sent as output value: " + file.getAbsolutePath(), e);
         }
     }
 
     private TypedDatum getTypedDatumForDirectory(String value, String outputName) throws ComponentException {
         File dir = createFileObject(value);
         if (dir == null) {
-            throw new ComponentException(StringUtils.format("%s: No directory name given for output '%s'",
-                componentContext.getInstanceName(), outputName));
+            throw new ComponentException(StringUtils.format("No directory given for output '%s'", outputName));
         } else if (!dir.exists()) {
-            throw new ComponentException(StringUtils.format("%s: Directory doesn't exist on node %s: %s",
-                componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
+            throw new ComponentException(StringUtils.format("Directory doesn't exist on node %s: %s",
+                componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
         }
         if (!dir.isDirectory()) {
-            throw new ComponentException(StringUtils.format("%s: Given path doesn't refer to a directory on node %s: %s",
-                componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
+            throw new ComponentException(StringUtils.format("Given path doesn't refer to a directory on node %s: %s",
+                componentContext.getNodeId().getAssociatedDisplayName(), dir.getAbsolutePath()));
         }
         try {
             return dataManagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, dir, dir.getName());
-        } catch (IOException ex) {
-            throw new ComponentException(StringUtils.format("%s: Writing directory to data management failed",
-                componentContext.getInstanceName()), ex);
+        } catch (IOException e) {
+            throw new ComponentException("Failed to store directory into the data management - "
+                + "if it is not stored in the data management, it can not be sent as output value: " + dir.getAbsolutePath(), e);
         }
     }
 
@@ -138,8 +136,7 @@ public class InputProviderComponent extends DefaultComponent {
         // if front and backslashes are mixed -> exception
         if (value.contains(FRONTSLASH) && value.contains(BACKSLASH)) {
             throw new ComponentException(StringUtils.format(
-                "%s: Given path to file or directory could not be resolved, as it contains front and backslash as well. %s",
-                componentContext.getInstanceName(), value));
+                "Given path to file or directory could not be resolved, as it contains front and backslash as well: %s", value));
         }
         // determine separator
         String usedSeparator = "";
@@ -149,8 +146,8 @@ public class InputProviderComponent extends DefaultComponent {
             usedSeparator = BACKSLASH;
         } else {
             // if neither front nor backslash exists -> exception
-            throw new ComponentException(StringUtils.format("%s: Given path to file or directory does not exist on node %s: %s",
-                componentContext.getInstanceName(), componentContext.getNodeId().getAssociatedDisplayName(), value));
+            throw new ComponentException(StringUtils.format("Given path to file or directory does not exist on node %s: %s",
+                componentContext.getNodeId().getAssociatedDisplayName(), value));
         }
         File file = new File(value);
         if (!file.isAbsolute()) {

@@ -20,7 +20,6 @@ import de.rcenvironment.components.examples.encrypter.common.EncrypterComponentC
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -141,7 +140,7 @@ public class EncrypterComponent extends DefaultComponent {
             LOG.error("Could not write encrypted file: ", e);
             throw new ComponentException("Output could not be written!");
         }
-        componentContext.printConsoleLine(encryptedText, ConsoleRow.Type.STDOUT);
+        componentContext.getLog().componentInfo(encryptedText);
     }
 
     @Override

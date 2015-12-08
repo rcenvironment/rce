@@ -16,6 +16,9 @@
 	</parent>
 
 	<properties>
+		<tycho.version>0.18.0</tycho.version>
+		<tycho-version>0.18.0</tycho-version>
+
 		<!-- default Eclipse repository; can be overridden to use another mirror, 
 			or in case it is not available anymore -->
 		<rce.maven.eclipseRepositoryUrl>
@@ -43,46 +46,6 @@
 			<url>https://repo.sc.dlr.de/nexus/content/repositories/rce-public-6.x</url>
 			<snapshots>
 				<updatePolicy>always</updatePolicy>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>p2-eclipse</id>
-			<layout>p2</layout>
-			<url>${rce.maven.eclipseRepositoryUrl}</url>
-			<snapshots>
-				<!-- prevent Maven from using this repository for snapshot parent POMs 
-					(which produces a warning as the layout is not recognized) -->
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>p2-eclipse-orbit</id>
-			<layout>p2</layout>
-			<url>${rce.maven.eclipseOrbitRepositoryUrl}</url>
-			<snapshots>
-				<!-- prevent Maven from using this repository for snapshot parent POMs 
-					(which produces a warning as the layout is not recognized) -->
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>p2-eclipse-nebula</id>
-			<layout>p2</layout>
-			<url>${rce.maven.eclipseNebulaRepositoryUrl}</url>
-			<snapshots>
-				<!-- prevent Maven from using this repository for snapshot parent POMs 
-					(which produces a warning as the layout is not recognized) -->
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
-		<repository>
-			<id>p2-ajdt</id>
-			<layout>p2</layout>
-			<url>http://download.eclipse.org/tools/ajdt/42/update/</url>
-			<snapshots>
-				<!-- prevent Maven from using this repository for snapshot parent POMs 
-					(which produces a warning as the layout is not recognized) -->
-				<enabled>false</enabled>
 			</snapshots>
 		</repository>
 	</repositories>

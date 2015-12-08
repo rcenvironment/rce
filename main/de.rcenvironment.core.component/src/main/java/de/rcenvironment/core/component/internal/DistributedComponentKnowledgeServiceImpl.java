@@ -39,16 +39,16 @@ import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
 
 /**
  * Default {@link DistributedComponentKnowledgeService} implementation.
  * 
  * @author Robert Mischke
  */
-public class DistributedComponentKnowledgeServiceImpl implements DistributedComponentKnowledgeService, ListenerProvider {
+public class DistributedComponentKnowledgeServiceImpl implements DistributedComponentKnowledgeService, AdditionalServicesProvider {
 
     // private static final String LIST_OF_INSTALLATIONS_PROPERTY = "componentInstallations";
 
@@ -171,25 +171,26 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
             @Override
             public void onDistributedComponentKnowledgeChanged(DistributedComponentKnowledge newState) {
                 if (verboseLogging) {
-                    log.debug("Component knowledge updated: " + newState);                    
+                    log.debug("Component knowledge updated: " + newState);
                 }
             }
         });
     }
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        Collection<ListenerDeclaration> listenerDeclarations = new ArrayList<ListenerDeclaration>();
-        listenerDeclarations.add(new ListenerDeclaration(NodePropertiesChangeListener.class, new NodePropertiesChangeListenerAdapter() {
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        Collection<AdditionalServiceDeclaration> listenerDeclarations = new ArrayList<AdditionalServiceDeclaration>();
+        listenerDeclarations.add(new AdditionalServiceDeclaration(NodePropertiesChangeListener.class,
+            new NodePropertiesChangeListenerAdapter() {
 
-            @Override
-            public void onReachableNodePropertiesChanged(Collection<? extends NodeProperty> addedProperties,
-                Collection<? extends NodeProperty> updatedProperties, Collection<? extends NodeProperty> removedProperties) {
-                // forward to outer class
-                updateOnReachableNodePropertiesChanged(addedProperties, updatedProperties, removedProperties);
-            }
+                @Override
+                public void onReachableNodePropertiesChanged(Collection<? extends NodeProperty> addedProperties,
+                    Collection<? extends NodeProperty> updatedProperties, Collection<? extends NodeProperty> removedProperties) {
+                    // forward to outer class
+                    updateOnReachableNodePropertiesChanged(addedProperties, updatedProperties, removedProperties);
+                }
 
-        }));
+            }));
         return listenerDeclarations;
     }
 
@@ -238,7 +239,9 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
             // delta.put(LIST_OF_INSTALLATIONS_PROPERTY,
             // StringUtils.escapeAndConcat(uniqueIds.toArray(new String[uniqueIds.size()])));
 
-            nodePropertiesService.addOrUpdateLocalNodeProperties(delta);
+            if (!delta.isEmpty()){
+                nodePropertiesService.addOrUpdateLocalNodeProperties(delta);
+            }
         }
     }
 

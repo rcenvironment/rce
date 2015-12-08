@@ -19,7 +19,7 @@ import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.authentication.AuthenticationService;
 import de.rcenvironment.core.authentication.AuthenticationService.X509AuthenticationResult;
 import de.rcenvironment.core.configuration.ConfigurationService;
-import de.rcenvironment.core.notification.NotificationService;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 
 /**
  * 
@@ -138,9 +138,9 @@ public final class LoginMockFactory {
      * 
      * @return the created settings mock object.
      */
-    public NotificationService getNotificationServiceMock() {
+    public DistributedNotificationService getNotificationServiceMock() {
 
-        NotificationService notification = EasyMock.createNiceMock(NotificationService.class);
+        DistributedNotificationService notification = EasyMock.createNiceMock(DistributedNotificationService.class);
         EasyMock.replay(notification);
 
         return notification;

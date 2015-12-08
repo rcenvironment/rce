@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.gui.feature"
       label="RCE Core GUI Feature"
-      version="6.3.0.qualifier"
+      version="7.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -125,37 +125,44 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <import plugin="de.rcenvironment.core.component"/>
       <import plugin="de.rcenvironment.core.component.workflow"/>
       <import plugin="de.rcenvironment.core.configuration"/>
+      <import plugin="de.rcenvironment.core.utils.common"/>
       <import plugin="de.rcenvironment.core.utils.incubator"/>
       <import plugin="org.ops4j.pax.logging.pax-logging-api"/>
       <import plugin="de.rcenvironment.platform.maven.other"/>
       <import plugin="org.eclipse.ui"/>
       <import plugin="de.rcenvironment.core.communication"/>
-      <import plugin="de.rcenvironment.core.gui.utils.incubator"/>
+      <import plugin="org.eclipse.help"/>
+      <import plugin="org.eclipse.gef"/>
       <import plugin="org.eclipse.jface"/>
       <import plugin="org.eclipse.ui.workbench" version="3.5.2" match="greaterOrEqual"/>
       <import plugin="de.rcenvironment.core.authentication"/>
       <import plugin="de.rcenvironment.core.authorization"/>
       <import plugin="de.rcenvironment.core.component.datamanagement"/>
       <import plugin="de.rcenvironment.core.datamanagement"/>
-      <import plugin="de.rcenvironment.core.notification"/>
-      <import plugin="de.rcenvironment.core.utils.common"/>
       <import plugin="org.apache.commons.io"/>
       <import plugin="org.eclipse.compare"/>
       <import plugin="de.rcenvironment.core.log"/>
-      <import plugin="org.eclipse.osgi.services"/>
+      <import plugin="org.eclipse.osgi"/>
       <import plugin="de.rcenvironment.core.login"/>
       <import plugin="de.rcenvironment.platform.maven.auth"/>
       <import plugin="org.eclipse.swt"/>
       <import plugin="de.rcenvironment.core.utils.scripting"/>
       <import plugin="de.rcenvironment.core.component.integration"/>
-      <import plugin="org.eclipse.osgi"/>
       <import plugin="org.eclipse.ui.forms"/>
       <import plugin="org.eclipse.core.commands"/>
-      <import plugin="org.eclipse.help"/>
-      <import plugin="org.eclipse.gef"/>
-      <import plugin="de.rcenvironment.core.component.executor"/>
+      <import plugin="de.rcenvironment.core.notification"/>
       <import plugin="de.rcenvironment.core.start.common"/>
+      <import plugin="de.rcenvironment.core.component.executor"/>
       <import plugin="org.eclipse.ui.ide" version="3.6.2" match="greaterOrEqual"/>
+      <import plugin="de.rcenvironment.core.datamodel"/>
+      <import plugin="de.rcenvironment.core.monitoring"/>
+      <import plugin="de.rcenvironment.core.command"/>
+      <import plugin="de.rcenvironment.core.utils.cluster"/>
+      <import plugin="org.eclipse.equinox.security"/>
+      <import plugin="org.eclipse.ui.navigator.resources"/>
+      <import plugin="de.rcenvironment.core.configuration.bootstrap"/>
+      <import plugin="de.rcenvironment.core.start"/>
+      <import plugin="org.eclipse.ui.navigator"/>
    </requires>
 
    <plugin
@@ -178,6 +185,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
    <plugin
          id="de.rcenvironment.core.gui.datamanagement"
          download-size="0"
@@ -267,6 +275,41 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <plugin
          id="de.rcenvironment.core.gui.help"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.cluster"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.utils.incubator"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.xpathchooser"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.start.gui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.gui.remoteaccess"
          download-size="0"
          install-size="0"
          version="0.0.0"

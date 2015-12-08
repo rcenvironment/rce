@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Embedded SSH Server
 Bundle-SymbolicName: de.rcenvironment.core.embedded.ssh
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.embedded.ssh.api
@@ -24,5 +24,6 @@ Import-Package: de.rcenvironment.core.authentication,
  org.apache.sshd.server.auth;version="0.14.0",
  org.apache.sshd.server.command;version="0.14.0",
  org.apache.sshd.server.keyprovider;version="0.14.0",
- org.apache.sshd.server.session;version="0.14.0"
+ org.apache.sshd.server.session;version="0.14.0",
+ org.mindrot.jbcrypt;version="0.4.0"
 Service-Component: OSGI-INF/*.xml

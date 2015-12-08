@@ -11,7 +11,6 @@ package de.rcenvironment.core.datamanagement.internal;
 import java.net.URI;
 import java.util.UUID;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
@@ -25,9 +24,7 @@ public class DistributedMetaDataServiceImplTest {
 
     private final URI location = URI.create("test");
 
-    private DistributedMetaDataServiceImpl metaDataService;
-
-    private User certificateMock;
+    private MetaDataServiceImpl metaDataService;
 
     private NodeIdentifier pi;
 

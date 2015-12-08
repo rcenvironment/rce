@@ -154,20 +154,19 @@ public class SwitchConditionSection extends ValidatingWorkflowNodePropertySectio
             @Override
             public void handleEvent(Event arg0) {
 
-                String s = null;
-
                 if (arg0.widget.equals(insertOpButton)) {
-                    s = opCombo.getText() + " ";
-                    conditionTextfield.insert(s);
+                    final String s = opCombo.getText() + " ";
+                    apply(s);
                 } else if (arg0.widget.equals(insertChannelButton)) {
-                    s = channelCombo.getText() + " ";
-                    conditionTextfield.insert(s);
+                    final String s = channelCombo.getText() + " ";
+                    apply(s);
                 }
+            }
 
-                if (arg0.widget.equals(insertOpButton) || arg0.widget.equals(insertChannelButton)) {
-                    conditionTextfield.setFocus();
-                    conditionTextfield.setCaretOffset(conditionTextfield.getCaretOffset() + s.length());
-                }
+            private void apply(String s) {
+                conditionTextfield.insert(s);
+                conditionTextfield.setFocus();
+                conditionTextfield.setCaretOffset(conditionTextfield.getCaretOffset() + s.length());
             }
         };
     }

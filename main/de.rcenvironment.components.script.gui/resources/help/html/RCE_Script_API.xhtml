@@ -193,7 +193,7 @@
                     </table>
                 </div>
                 <div class="memdoc">
-                    <pre class="fragment" xml:space="preserve">Gets the value for the given input name
+                    <pre class="fragment" xml:space="preserve">Gets the value for the given input name or an error, if the input is not there (e.g. not required and it got no value)
 </pre>
                 </div>
             </div>
@@ -238,7 +238,7 @@
                     </table>
                 </div>
                 <div class="memdoc">
-                    <pre class="fragment" xml:space="preserve">Reads the given state variables value, if it exists, else an error is raised
+                    <pre class="fragment" xml:space="preserve">Reads the given state variables value, if it exists, else None is returned
 </pre>
                 </div>
             </div>
@@ -262,7 +262,7 @@
                     </table>
                 </div>
                 <div class="memdoc">
-                    <pre class="fragment" xml:space="preserve">Reads the given state variables value, if it exists, else a default value is returned and stored in the dictionary
+                    <pre class="fragment" xml:space="preserve">Reads the given state variables value, if it exists, else a the default value is returned and stored in the dictionary
 </pre>
                 </div>
             </div>

@@ -17,13 +17,13 @@ import java.util.List;
 
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.communication.spi.CallbackObject;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases for {@link CallbackUtils}.
@@ -132,7 +132,7 @@ public class CallbackUtilsTest {
 
         @Override
         public Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters)
-            throws CommunicationException {
+            throws RemoteOperationException {
             return null;
         }
 

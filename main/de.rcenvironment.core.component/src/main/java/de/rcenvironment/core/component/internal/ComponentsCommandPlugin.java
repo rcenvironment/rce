@@ -80,8 +80,7 @@ public class ComponentsCommandPlugin implements CommandPlugin {
         }
 
         for (String nodeId : components.keySet()) {
-            String nodeName = NodeIdentifierFactory.fromNodeId(nodeId).getAssociatedDisplayName();
-            context.println(StringUtils.format("Components available on '%s' [%s]:", nodeName, nodeId));
+            context.println(StringUtils.format("Components available on %s:", NodeIdentifierFactory.fromNodeId(nodeId)));
             for (String component : components.get(nodeId)) {
                 context.println("  " + component);
             }

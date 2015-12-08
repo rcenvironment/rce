@@ -16,6 +16,7 @@ import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.model.api.LazyDisposal;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.TypedDatumConverter;
@@ -46,11 +47,14 @@ public abstract class ExcelRCEComponent extends DefaultComponent {
     
     protected ComponentContext componentContext;
     
+    protected ComponentLog componentLog;
+    
     protected abstract void executingOneStep() throws ComponentException;
     
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
+        this.componentLog = componentContext.getLog();
     }
     
     @Override

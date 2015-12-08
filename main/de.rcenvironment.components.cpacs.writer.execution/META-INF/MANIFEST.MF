@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE CPACS Writer Component Execution
-Bundle-SymbolicName: de.rcenvironment.components.cpacs.writer.execution;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.cpacs.writer.execution
+Bundle-Version: 7.0.0.qualifier
 Import-Package: de.rcenvironment.components.cpacs.writer.common;version="6.0.0",
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.common,
@@ -24,7 +24,7 @@ Import-Package: de.rcenvironment.components.cpacs.writer.common;version="6.0.0",
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.notification,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.cpacs.utils.common.components,
+ org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
  org.codehaus.jackson;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",
@@ -33,4 +33,3 @@ Service-Component: OSGI-INF/*.xml
 Export-Package: de.rcenvironment.components.cpacs.writer.execution;version="6.0.0"
 RCE-Component: true
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy

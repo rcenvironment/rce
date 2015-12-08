@@ -84,7 +84,7 @@ public final class EndpointHelper {
             }
         }
         for (EndpointDescription e : descriptions) {
-            if (!filter || e.getDeclarativeEndpointDescription().getIdentifier().equals(id)) {
+            if (!filter || e.getEndpointDefinition().getIdentifier().equals(id)) {
                 result.add(e.getName());
             }
         }
@@ -108,7 +108,7 @@ public final class EndpointHelper {
 
             for (EndpointDescription currentDescription : staticDescriptions) {
                 EndpointMetaDataDefinition metaDataDefinition =
-                    currentDescription.getDeclarativeEndpointDescription().getMetaDataDefinition();
+                    currentDescription.getEndpointDefinition().getMetaDataDefinition();
                 for (String metaDatumKey : metaDataDefinition
                     .getMetaDataKeys()) {
                     if (metaDataDefinition.getVisibility(metaDatumKey)

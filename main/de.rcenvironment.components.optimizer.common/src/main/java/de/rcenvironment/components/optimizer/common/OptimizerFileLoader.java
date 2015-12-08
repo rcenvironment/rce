@@ -70,34 +70,38 @@ public final class OptimizerFileLoader {
                 final URL elementURL2 = (URL) templateDirs.nextElement();
                 final String rawPath2 = elementURL2.getPath();
                 if (!rawPath2.contains("/.svn/") && elementURL2.getFile().contains("algorithms")) {
-                    InputStream algorithmsInputStream = OptimizerFileLoader.class.getResourceAsStream(elementURL2.getFile());
-                    Map<String, String> loadedMethods = mapper.readValue(algorithmsInputStream, new HashMap<String, String>().getClass());
-
-                    if (loadedMethods != null) {
-                        for (String methods : loadedMethods.keySet()) {
-                            loadedMethods.put(methods, rawPath + loadedMethods.get(methods));
+                    try (InputStream algorithmsInputStream = OptimizerFileLoader.class.getResourceAsStream(elementURL2.getFile())) {
+                        Map<String, String> loadedMethods = mapper.readValue(algorithmsInputStream,
+                            new HashMap<String, String>().getClass());
+    
+                        if (loadedMethods != null) {
+                            for (String methods : loadedMethods.keySet()) {
+                                loadedMethods.put(methods, rawPath + loadedMethods.get(methods));
+                            }
+                            methodNamesToFileLinking.putAll(loadedMethods);
                         }
-                        methodNamesToFileLinking.putAll(loadedMethods);
                     }
                 }
             }
         }
         Map<String, MethodDescription> methodDescriptions = new HashMap<String, MethodDescription>();
         for (Entry<String, String> methodKey : methodNamesToFileLinking.entrySet()) {
-            InputStream newDescriptionInputStream = OptimizerFileLoader.class.getResourceAsStream(
-                methodNamesToFileLinking.get(methodKey.getKey()) + ".json");
-            if (newDescriptionInputStream != null) {
-                MethodDescription newDescription = mapper.readValue(newDescriptionInputStream,
-                    MethodDescription.class);
-                if (newDescription != null) {
-                    String fullpath = methodNamesToFileLinking.get(methodKey.getKey());
-                    String neededPath = fullpath.substring(0, fullpath.lastIndexOf("/"));
-                    InputStream newCommonInputStream =
-                        OptimizerFileLoader.class.getResourceAsStream(neededPath + "/defaults.json");
-                    newDescription.setCommonSettings(mapper.readValue(newCommonInputStream,
-                        new HashMap<String, Map<String, String>>().getClass()));
+            try (InputStream newDescriptionInputStream = OptimizerFileLoader.class.getResourceAsStream(
+                methodNamesToFileLinking.get(methodKey.getKey()) + ".json")) {
+                if (newDescriptionInputStream != null) {
+                    MethodDescription newDescription = mapper.readValue(newDescriptionInputStream,
+                        MethodDescription.class);
+                    if (newDescription != null) {
+                        String fullpath = methodNamesToFileLinking.get(methodKey.getKey());
+                        String neededPath = fullpath.substring(0, fullpath.lastIndexOf("/"));
+                        try (InputStream newCommonInputStream =
+                                OptimizerFileLoader.class.getResourceAsStream(neededPath + "/defaults.json")) {
+                            newDescription.setCommonSettings(mapper.readValue(newCommonInputStream,
+                                new HashMap<String, Map<String, String>>().getClass()));
+                        }
+                    }
+                    methodDescriptions.put(methodKey.getKey(), newDescription);
                 }
-                methodDescriptions.put(methodKey.getKey(), newDescription);
             }
         }
 
@@ -108,23 +112,16 @@ public final class OptimizerFileLoader {
         List<File> genericOptimizerFolder = new LinkedList<File>();
         methodNamesToFileLinking = new HashMap<String, String>();
         if (configFolder.exists() && configFolder.isDirectory()) {
-            for (File f : configFolder.listFiles()) {
-                boolean sourceFolder = false;
-                boolean guiFolder = false;
-                for (File f2 : f.listFiles()) {
-                    if (f2.getName().equals(OptimizerComponentConstants.GENERIC_GUI_CONFIG)) {
-                        if (new File(f2, "algorithms.json").exists() && new File(f2, "defaults.json").exists()) {
-                            guiFolder = true;
+            if (configFolder != null) {
+                File[] configFiles = configFolder.listFiles();
+                if (configFiles != null) {
+                    for (File integrationFolder : configFiles) {
+                        boolean sourceFolder = false;
+                        boolean guiFolder = false;
+                        if (integrationFolder != null) {
+                            readIntegrationFiles(genericOptimizerFolder, integrationFolder, sourceFolder, guiFolder);
                         }
                     }
-                    if (f2.getName().equals("source")) {
-                        if (new File(f2, "Evaluate.py").exists() && new File(f2, "Generic_Optimizer.py").exists()) {
-                            sourceFolder = true;
-                        }
-                    }
-                }
-                if (sourceFolder && guiFolder) {
-                    genericOptimizerFolder.add(f);
                 }
             }
         }
@@ -134,9 +131,11 @@ public final class OptimizerFileLoader {
             if (guiConfigFolder.exists()) {
                 File[] guiConfigContent = guiConfigFolder.listFiles();
                 File algorithmsFile = null;
-                for (File f : guiConfigContent) {
-                    if (f.getName().equals("algorithms.json")) {
-                        algorithmsFile = f;
+                if (guiConfigContent != null) {
+                    for (File f : guiConfigContent) {
+                        if (f.getName().equals(OptimizerComponentConstants.GENERIC_ALGORITHMS_FILE)) {
+                            algorithmsFile = f;
+                        }
                     }
                 }
                 Map<String, String> loadedMethods = null;
@@ -153,10 +152,7 @@ public final class OptimizerFileLoader {
                             MethodDescription newDescription = mapper.readValue(newMethod,
                                 MethodDescription.class);
                             if (newDescription != null && newDescription.getOptimizerPackage() != null) {
-                                File newCommonGenericInputFile =
-                                    new File(guiConfigFolder + File.separator + "/defaults.json");
-                                newDescription.setCommonSettings(mapper.readValue(newCommonGenericInputFile,
-                                    new HashMap<String, Map<String, String>>().getClass()));
+                                newDescription.setCommonSettings(new HashMap<String, Map<String, String>>());
                             }
                             if (newDescription != null) {
                                 String foldername = optimizerFolder.getName();
@@ -172,12 +168,46 @@ public final class OptimizerFileLoader {
         return methodDescriptions;
     }
 
+    private static void readIntegrationFiles(List<File> genericOptimizerFolder, File integrationFolder, boolean sourceFolder,
+        boolean guiFolder) {
+        File[] integrationFiles = integrationFolder.listFiles();
+        if (integrationFiles != null) {
+            for (File sourceOrGuiFolder : integrationFiles) {
+                if (sourceOrGuiFolder.getName().equals(OptimizerComponentConstants.GENERIC_GUI_CONFIG)
+                    && new File(sourceOrGuiFolder, OptimizerComponentConstants.GENERIC_ALGORITHMS_FILE).exists()) {
+                    guiFolder = true;
+                }
+                if (sourceOrGuiFolder.getName().equals(OptimizerComponentConstants.GENERIC_SOURCE)
+                    && new File(sourceOrGuiFolder, OptimizerComponentConstants.GENERIC_MAIN_FILE).exists()) {
+                    sourceFolder = true;
+                }
+            }
+            if (sourceFolder && guiFolder) {
+                genericOptimizerFolder.add(integrationFolder);
+            }
+        }
+    }
+
     protected void bindConfigurationService(final ConfigurationService configServiceIn) {
         configService = configServiceIn;
     }
 
     protected void unbindConfigurationService(final OptimizerResultService oldParametricStudyService) {
         configService = null;
+    }
+
+    /**
+     * load method if it is not available in the current optimizer config.
+     * 
+     * @param key method to load
+     * @return the method
+     * @throws JsonParseException from reading the files
+     * @throws JsonMappingException from reading the files
+     * @throws IOException from reading the files
+     */
+    public static MethodDescription loadMethod(String key) throws JsonParseException, JsonMappingException, IOException {
+        Map<String, MethodDescription> all = getAllMethodDescriptions("/optimizer");
+        return all.get(key);
     }
 
 }

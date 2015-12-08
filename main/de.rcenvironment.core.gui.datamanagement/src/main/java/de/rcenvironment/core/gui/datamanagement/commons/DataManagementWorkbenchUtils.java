@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
+import java.text.MessageFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,13 +20,14 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
@@ -38,6 +40,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
  * TODO review authors list; may be incomplete
  * 
  * @author Robert Mischke
+ * @author Doreen Seider
  */
 public final class DataManagementWorkbenchUtils {
 
@@ -66,16 +69,21 @@ public final class DataManagementWorkbenchUtils {
      * @param dataReferenceId the data management reference
      * @param fileReferencePath the reference to the temp file
      * @param filename the filename for the given data
-     * @param user the proxy certificate to resolve the reference
      * @throws AuthorizationException :
      * @throws IOException Exception
      * @param rceNodeIdentifier {@link NodeIdentifier} of the RCE node, which store the file to open
      */
     public void saveReferenceToFile(final String dataReferenceId, final String fileReferencePath,
-        final String filename, final User user, final NodeIdentifier rceNodeIdentifier) throws AuthorizationException, IOException {
+        final String filename, final NodeIdentifier rceNodeIdentifier) throws AuthorizationException, IOException {
         final File file = new File(filename);
         if (dataReferenceId != null && fileReferencePath == null) {
-            dataManagementService.copyReferenceToLocalFile(user, dataReferenceId, file, rceNodeIdentifier);
+            try {
+                dataManagementService.copyReferenceToLocalFile(dataReferenceId, file, rceNodeIdentifier);
+            } catch (CommunicationException e) {
+                throw new RuntimeException(MessageFormat.format("Failed to copy data reference from remote node @{0} to local file: ",
+                    rceNodeIdentifier)
+                    + e.getMessage(), e);
+            }
         } else if (dataReferenceId == null && fileReferencePath != null) {
             File tempFile = new File(fileReferencePath);
             Files.copy(tempFile.toPath(), file.toPath(), StandardCopyOption.COPY_ATTRIBUTES);
@@ -92,13 +100,12 @@ public final class DataManagementWorkbenchUtils {
      * @param dataReferenceId the data management reference
      * @param fileReferencePath the reference to the temp file
      * @param filename the filename to use for the given data
-     * @param user the proxy certificate to resolve the reference
      * @param rceNodeIdentifier {@link NodeIdentifier} of the RCE node, which store the file to open
      * @param inTiglViewer true if CPACS File should be opened in TiGL Viewer
      */
     public void tryOpenDataReferenceInReadonlyEditor(final String dataReferenceId, final String fileReferencePath,
         final String filename,
-        final User user, final NodeIdentifier rceNodeIdentifier, final boolean inTiglViewer) {
+        final NodeIdentifier rceNodeIdentifier, final boolean inTiglViewer) {
 
         if (dataReferenceId != null && fileReferencePath == null) {
             // open = copy to local temporary file + open in editor
@@ -119,7 +126,7 @@ public final class DataManagementWorkbenchUtils {
                         tempFile = new File(tempDir, filename);
                         if (!(tempDir.exists() && tempDir.list().length == 1 && tempDir.list()[0].equals(filename))) {
                             // copy data reference content to local temporary file
-                            dataManagementService.copyReferenceToLocalFile(user, dataReferenceId, tempFile,
+                            dataManagementService.copyReferenceToLocalFile(dataReferenceId, tempFile,
                                 rceNodeIdentifier);
                         }
 
@@ -133,6 +140,11 @@ public final class DataManagementWorkbenchUtils {
                         log.error("Failed to copy datamanagement reference to local file.", e);
                     } catch (IOException e) {
                         log.error("Failed to copy datamanagement reference to local file.", e);
+                    } catch (CommunicationException e) {
+                        throw new RuntimeException(MessageFormat.format(
+                            "Failed to copy data reference from remote node @{0} to local file: ",
+                            rceNodeIdentifier)
+                            + e.getMessage(), e);
                     }
                     return Status.OK_STATUS;
                 }
@@ -147,8 +159,8 @@ public final class DataManagementWorkbenchUtils {
 
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
-                    
-                    if (inTiglViewer){
+
+                    if (inTiglViewer) {
                         openInTigl(new File(fileReferencePath));
 
                     } else {
@@ -162,9 +174,13 @@ public final class DataManagementWorkbenchUtils {
             openJob.setUser(true);
             openJob.schedule();
         } else if (dataReferenceId != null && fileReferencePath != null) {
-            log.debug("When opening in editor both data reference ID and file reference path are set. Only one of these should be set.");
+            MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Open in Editor", 
+                "Failed to open data in editor. Refresh the workflow entry and try again.");
+            log.error("When opening in editor both data reference ID and file reference path are set. Only one of these should be set.");
         } else if (dataReferenceId == null && fileReferencePath == null) {
-            log.debug("When opening in editor neither data reference ID nor file reference path are set. One of these should be set.");
+            MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Open in Editor", 
+                "Failed to open data in editor. Refresh the workflow entry and try again.");
+            log.warn("When opening in editor neither data reference ID nor file reference path are set. One of these should be set.");
         }
     }
 
@@ -202,13 +218,13 @@ public final class DataManagementWorkbenchUtils {
                         secondId = secondId.replaceAll(":", "&#38");
 
                         PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-                            .showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
+                            .showView("de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer",
                                 secondId, IWorkbenchPage.VIEW_ACTIVATE);
 
                     } catch (IOException e) {
                         log.error(e);
                     }
-                   
+
                 } catch (final PartInitException e) {
                     log.error(e);
                     log.error("Failed to open datamanagement reference copied to local file in the TiGL.", e);

@@ -100,6 +100,9 @@ public final class ToolIntegrationConstants {
     public static final String KEY_POST_SCRIPT = "postScript";
 
     /** Constant. */
+    public static final String KEY_MOCK_SCRIPT = "imitationScript";
+
+    /** Constant. */
     public static final String KEY_ENDPOINT_OUTPUTS = "outputs";
 
     /** Constant. */
@@ -175,6 +178,12 @@ public final class ToolIntegrationConstants {
     public static final String KEY_PROPERTY_CONFIG_FILENAME = "propertyConfigFilename";
 
     /** Constant. */
+    public static final String KEY_MOCK_MODE_SUPPORTED = "imitationModeSupported";
+
+    /** Constant. */
+    public static final String KEY_IS_MOCK_MODE = "isImitationMode";
+
+    /** Constant. */
     public static final String DEFAULT_CONFIG_FILE_SUFFIX = ".conf";
 
     /** Constant. */
@@ -198,6 +207,9 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String[] DIRECTORIES_PLACEHOLDER = new String[] { "config", "working", "input", "tool", "output" };
+
+    /** Constant. */
+    public static final String PLACEHOLDER_EXIT_CODE = "exitCode";
 
     /** Constant. */
     public static final String KEY_COMMAND_SCRIPT_WINDOWS_ENABLED = "enableCommandScriptWindows";
@@ -301,6 +313,18 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_KEEP_ON_FAILURE = "keepOnFailure";
+
+    /** Constant. */
+    public static final String KEY_DOC_FILE_PATH = "documentationFilePath";
+
+    /** Constant. */
+    public static final String DOCS_DIR_NAME = "docs";
+
+    /** Constant. */
+    public static final String DOCUMENTATION_CACHED_SUFFIX = "(C)";
+
+    /** Constant. */
+    public static final String[] VALID_DOCUMENTATION_EXTENSIONS = new String[] { "pdf", "PDF", "txt", "TXT" };
 
     private ToolIntegrationConstants() {
 

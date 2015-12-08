@@ -22,12 +22,16 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
- * Base class for JUnit tests related to {@link NetworkTransportProvider} behavior. This includes
- * low-level tests as well as higher-level {@link VirtualInstance} tests.
+ * Base class for JUnit tests related to {@link NetworkTransportProvider} behavior. This includes low-level tests as well as higher-level
+ * {@link VirtualInstance} tests.
  * 
  * @author Robert Mischke
  */
 public abstract class AbstractTransportBasedTest {
+
+    protected static final int DEFAULT_SAFEGUARD_TEST_TIMEOUT = 60000;
+
+    protected static final int DEFAULT_NODE_REACHABILITY_TIMEOUT = 2000;
 
     private static final double NANOS_PER_SEC = 1e9;
 

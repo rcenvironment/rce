@@ -17,6 +17,7 @@ import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Component to join n inputs to 1.
@@ -46,7 +47,9 @@ public class JoinerComponent extends DefaultComponent {
                     indefiniteTDsSent.add(((NotAValueTD) datum).getIdentifier());
                 }
             }
-            componentContext.writeOutput(JoinerComponentConstants.OUTPUT_NAME, componentContext.readInput(inputName));
+            TypedDatum inputValue = componentContext.readInput(inputName);
+            componentContext.writeOutput(JoinerComponentConstants.OUTPUT_NAME, inputValue);
+            componentContext.getLog().componentInfo(StringUtils.format("Forwarded (joined) from input '%s': %s", inputName, inputValue));
         }
     }
 

@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
@@ -69,6 +70,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEConstants;
 import de.rcenvironment.components.doe.common.DOEUtils;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
@@ -116,12 +118,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
     private Table table;
 
     private Composite tableComposite;
-
-    private Button rerun;
-
-    private Button skip;
-
-    private Button abort;
 
     private Label runLabel;
 
@@ -204,28 +200,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         GridData spinnerData = new GridData();
         runSpinner.setLayoutData(spinnerData);
 
-        Composite selectionComp = new Composite(algorithmComposite, SWT.NONE);
-
         GridLayout failedrunLayout = new GridLayout(3, false);
         failedrunLayout.marginWidth = 0;
-        selectionComp.setLayout(failedrunLayout);
-        Label failedrunLabel = new Label(selectionComp, SWT.NONE);
-        failedrunLabel.setText(Messages.failedRunBehaviorLabel);
-        GridData failedRunData = new GridData();
-        failedRunData.horizontalSpan = 3;
-        failedrunLabel.setLayoutData(failedRunData);
-        GridData behaviourData = new GridData();
-        behaviourData.horizontalSpan = 3;
-        selectionComp.setLayoutData(behaviourData);
-        rerun = new Button(selectionComp, SWT.RADIO);
-        rerun.setText(DOEConstants.KEY_BEHAVIOUR_RERUN);
-        rerun.addSelectionListener(new BehaviourSelectionListener());
-        skip = new Button(selectionComp, SWT.RADIO);
-        skip.setText(DOEConstants.KEY_BEHAVIOUR_SKIP);
-        skip.addSelectionListener(new BehaviourSelectionListener());
-        abort = new Button(selectionComp, SWT.RADIO);
-        abort.setText(DOEConstants.KEY_BEHAVIOUR_ABORT);
-        abort.addSelectionListener(new BehaviourSelectionListener());
         tableComposite = new Composite(mainComposite, SWT.NONE);
         tableComposite.setLayout(failedrunLayout);
         tableComposite.setBackground(Display.getCurrent().getSystemColor(1));
@@ -506,26 +482,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         super.aboutToBeShown();
         fillTableHeader();
         algorithmSelection.setText(getProperty(DOEConstants.KEY_METHOD));
-        String rerunBehaviour = getProperty(DOEConstants.KEY_FAILED_RUN_BEHAVIOUR);
-        switch (rerunBehaviour) {
-        case DOEConstants.KEY_BEHAVIOUR_RERUN:
-            rerun.setSelection(true);
-            skip.setSelection(false);
-            abort.setSelection(false);
-            break;
-        case DOEConstants.KEY_BEHAVIOUR_SKIP:
-            rerun.setSelection(false);
-            skip.setSelection(true);
-            abort.setSelection(false);
-            break;
-        case DOEConstants.KEY_BEHAVIOUR_ABORT:
-            rerun.setSelection(false);
-            skip.setSelection(false);
-            abort.setSelection(true);
-            break;
-        default:
-            break;
-        }
         fillTable();
         updateActivation();
         if (startSample.getText() != null && !startSample.getText().isEmpty() && getProperty(DOEConstants.KEY_START_SAMPLE) != null
@@ -782,24 +738,6 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
      * 
      * @author Sascha Zur
      */
-    private class BehaviourSelectionListener implements SelectionListener {
-
-        @Override
-        public void widgetDefaultSelected(SelectionEvent arg0) {
-            widgetSelected(arg0);
-        }
-
-        @Override
-        public void widgetSelected(SelectionEvent arg0) {
-            setProperty(DOEConstants.KEY_FAILED_RUN_BEHAVIOUR, ((Button) arg0.getSource()).getText());
-        }
-
-    }
-
-    /**
-     * 
-     * @author Sascha Zur
-     */
     private class AlgorithmSelectionListener implements SelectionListener {
 
         @Override
@@ -936,17 +874,19 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         }
 
     }
+
     @Override
     protected Set<EndpointDescription> getOutputs() {
         Set<EndpointDescription> outputs = new HashSet<>(super.getOutputs());
-        EndpointDescription toRemove = null;
-        for (EndpointDescription e : outputs){
-            if (e.getName().equals(DOEConstants.OUTPUT_FINISHED_NAME)){
-                toRemove = e;
+
+        Iterator<EndpointDescription> outputsIterator = outputs.iterator();
+        while (outputsIterator.hasNext()) {
+            EndpointDescription next = outputsIterator.next();
+            if (LoopComponentConstants.ENDPOINT_ID_TO_FORWARD.equals(next.getDynamicEndpointIdentifier())
+                || LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE.equals(next.getName())
+                || LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE.equals(next.getName())) {
+                outputsIterator.remove();
             }
-        }
-        if (toRemove != null){
-            outputs.remove(toRemove);
         }
         return outputs;
     }

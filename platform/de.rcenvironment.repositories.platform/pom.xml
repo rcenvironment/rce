@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.repositories.rce.platform.master</artifactId>
 	<name>RCE Platform Master Project</name>
-	<version>6.1.0.qualifier</version>
+	<version>7.0.0.qualifier</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -14,6 +14,7 @@
 		<relativePath>../de.rcenvironment.platform/maven/parent/common</relativePath>
 	</parent>
 
+		
 	<build>
 		<!-- set output directory to a sub-folder of /target so /target is not 
 			erased in the "clean" phase of the master project - R. Mischke, April 2013 -->
@@ -61,8 +62,10 @@
 		<!-- combine local and external features into single 'platform' feature -->
 		<module>../de.rcenvironment.platform.combined.feature</module>
 		<!-- embedded third-party artifacts -->
+		<!-- note: replaced by a p2 mirror of the project's external repository; delete this after testing
 		<module>../de.rcenvironment.thirdparty.nu.psnet.quickimage</module>
 		<module>../de.rcenvironment.thirdparty.nu.psnet.quickimage.feature</module>
+		-->
 	</modules>
 
 </project>

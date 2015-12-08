@@ -9,6 +9,8 @@
 package de.rcenvironment.core.datamanagement.commons;
 
 import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.rcenvironment.core.datamodel.api.EndpointType;
 
@@ -25,9 +27,16 @@ public class EndpointInstance implements Serializable {
 
     private final EndpointType endpointType;
 
+    private final Map<String, String> metaData;
+
     public EndpointInstance(String endpointName, EndpointType endpointType) {
+        this(endpointName, endpointType, new HashMap<String, String>());
+    }
+
+    public EndpointInstance(String endpointName, EndpointType endpointType, Map<String, String> metaData) {
         this.endpointName = endpointName;
         this.endpointType = endpointType;
+        this.metaData = metaData;
     }
 
     public String getEndpointName() {
@@ -37,4 +46,9 @@ public class EndpointInstance implements Serializable {
     public EndpointType getEndpointType() {
         return endpointType;
     }
+    
+    public Map<String, String> getMetaData() {
+        return metaData;
+    }
+    
 }

@@ -27,7 +27,6 @@ import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowData;
@@ -78,9 +77,9 @@ public class ConsoleView extends ViewPart {
 
     private static final boolean STDOUT_PRESELECTED = true;
 
-    private static final boolean META_INFO_PRESELECTED = true;
+    private static final boolean COMP_LOG_PRESELECTED = true;
 
-    private static final int COLUMN_WIDTH_TYPE = 40;
+    private static final int COLUMN_WIDTH_TYPE = 70;
 
     private static final int COLUMN_WIDTH_TIME = 150;
 
@@ -117,8 +116,6 @@ public class ConsoleView extends ViewPart {
     private ConsoleColumnSorter consoleColumnSorter;
 
     private Text searchTextField;
-
-    private Font fixedWidthFont;
 
     private int lastKnownSequenceId = ConsoleRowModelService.INITIAL_SEQUENCE_ID;
 
@@ -266,9 +263,6 @@ public class ConsoleView extends ViewPart {
         parent.setLayout(new GridLayout(1, false));
 
         display = parent.getShell().getDisplay();
-
-        // TODO check font size etc. in Windows
-        fixedWidthFont = new Font(parent.getDisplay(), "Courier", 10, SWT.NORMAL);
 
         // filter = level selection, platform selection, and search text field
         Composite filterComposite = new Composite(parent, SWT.NONE);
@@ -429,8 +423,6 @@ public class ConsoleView extends ViewPart {
     public void dispose() {
         // shut down the query timer
         modelQueryTimer.cancel();
-        // dispose the font as it was created locally
-        fixedWidthFont.dispose();
         super.dispose();
         if (serviceRegistryAccess != null) {
             serviceRegistryAccess.dispose();
@@ -478,8 +470,8 @@ public class ConsoleView extends ViewPart {
 
         // meta info checkbox
         checkboxMetaInfo = new Button(filterComposite, SWT.CHECK);
-        checkboxMetaInfo.setText(Messages.metaInfo);
-        checkboxMetaInfo.setSelection(META_INFO_PRESELECTED);
+        checkboxMetaInfo.setText(Messages.compLog);
+        checkboxMetaInfo.setSelection(COMP_LOG_PRESELECTED);
 
         // stdout checkbox
         checkboxStdout = new Button(filterComposite, SWT.CHECK);

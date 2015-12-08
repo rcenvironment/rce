@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.channel;
 
 import java.util.Set;
 
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
  * Default/empty {@link MessageChannelLifecycleListener} implementation.

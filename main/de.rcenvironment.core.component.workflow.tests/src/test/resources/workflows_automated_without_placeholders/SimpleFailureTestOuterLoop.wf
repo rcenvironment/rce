@@ -1,0 +1,1305 @@
+{
+  "identifier" : "94107216-b324-4a22-ab65-a178743117d8",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "e7ae2498-7b4f-4dcd-943e-1a12826097e8",
+    "name" : "Add",
+    "location" : "437:179",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "script" : "print 'Design variable: ' + str( RCE.read_input(\"design_variable\"))\r\nRCE.write_output(\"result\", RCE.read_input(\"design_variable\") * 2)\r\nRCE.write_output(\"fw\", RCE.read_input(\"fw\"))",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "4cb51d08-defe-4c8f-9c35-8db58353707e",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "ae3af4ae-0c21-4f8d-80fc-1e5700568e72",
+      "name" : "design_variable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "c45fb33e-e01e-46d6-bbc4-34ebc11f8410",
+      "name" : "result",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "11317806-5db2-4125-9028-eea023750922",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "1987e9dd-b331-4a99-8c0b-da9c02063d99",
+    "name" : "Add2",
+    "location" : "437:414",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "script" : "print 'Design variable: ' + str( RCE.read_input(\"design_variable\"))\r\nRCE.write_output(\"result\", RCE.read_input(\"design_variable\") * 2)\r\nRCE.write_output(\"fw\", RCE.read_input(\"fw\"))",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "03c41454-90e0-441b-92a5-f2d0f6869b7f",
+      "name" : "design_variable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "e8727ba6-b73b-49af-954e-039747ca3ee5",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "46233b52-eb2c-4cf3-9b10-4328fc8fd72e",
+      "name" : "result",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "55308125-e9f0-4ed8-b43d-65c0d265ee2f",
+      "name" : "fw",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "name" : "Converger Inner",
+    "location" : "821:414",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "4.1",
+      "name" : "Converger"
+    },
+    "configuration" : {
+      "epsR" : "0.1",
+      "epsA" : "0.1",
+      "iterationsToConsider" : "1",
+      "isNestedLoop_5e0ed1cd" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "e241899b-aafc-4357-8c3a-e50080a9dbae",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "5fa24398-df05-498e-9b58-915e2039cd50",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "ec8a1c89-9435-4580-b35b-603ba2a0eaf6",
+      "name" : "fw_start",
+      "epIdentifier" : "toForward",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "20928bda-1e84-40ed-bfbc-e70687e1f0a5",
+      "name" : "x_start",
+      "epIdentifier" : "valueToConverge",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "-",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "hasStartValue" : "false"
+      }
+    }, {
+      "identifier" : "fe6c905b-7656-44c1-96ba-da75c1a8944b",
+      "name" : "Outer loop done",
+      "epIdentifier" : "outerLoopDone",
+      "group" : "innerLoop",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "dfcf0640-95b8-4e9f-bd02-1bccbdac9572",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "68699037-faf6-4cd7-b9be-d5c8d248732d",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "4e7853a0-39a8-465d-9560-eb54dc5ec7fb",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "cc6258e9-a674-488b-9d97-cbc572216798",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "29f4d672-02ba-464e-9eba-a84984a6eca8",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "2e324128-765f-4b44-8fc7-897e1ba3ec8d",
+      "name" : "x_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "b019f68b-0022-40be-b97b-a6821eb6401e",
+      "name" : "fw_converged",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "4a5e4da8-2e85-4e37-94ce-a5f9f2f931fa",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "29814856-eb4a-4aae-9b92-ea87c081fae4",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "9fc09f79-6fd2-4bc6-96f3-1c291b71e68c",
+    "name" : "Converger Outer",
+    "location" : "690:302",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.converger",
+      "version" : "4.1",
+      "name" : "Converger"
+    },
+    "configuration" : {
+      "epsR" : "0.1",
+      "epsA" : "0.1",
+      "iterationsToConsider" : "1"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "eaa18b6d-7e03-4cd3-be75-d1b1cc4be8b4",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : "valuesToConverge",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "10",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "38f35c66-a577-4acc-8080-8ba91761dfd0",
+      "name" : "Converged relative",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "ee466f4d-406f-4fc1-910f-bb7883ab68bb",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "64bc316f-449e-4cc1-991d-63138c7b99cf",
+      "name" : "Converged",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "86cb4b2c-2397-4beb-8915-29a35545ac68",
+      "name" : "Converged absolute",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "6af5050c-c0ca-4ee9-acdd-5faa98cb19de",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "c74b6781-ab80-47e1-8dca-ac3c4a7231b8",
+      "name" : "x_converged",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "e9316164-d259-403e-8600-b191866bfaf3",
+      "name" : "x",
+      "epIdentifier" : "valueToConverge",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "startValue" : "10",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true"
+      }
+    } ]
+  }, {
+    "identifier" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "name" : "Design of Experiments Inner",
+    "location" : "274:414",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.doe.v2",
+      "version" : "3.3",
+      "name" : "Design of Experiments"
+    },
+    "configuration" : {
+      "endSample" : "0",
+      "behaviourFailedRun" : "Skip sample and continue",
+      "runNumber" : "2",
+      "isFaultTolerantLoop_5e0ed1cd" : "true",
+      "startSample" : "0",
+      "method" : "Full factorial design",
+      "seedNumber" : "0",
+      "table" : "",
+      "isNestedLoop_5e0ed1cd" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "eb1f8153-e282-4bb5-a826-94e06c580395",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "3b4c0775-6ae9-4375-8814-6fca19508e20",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "75893b7d-23cd-4c41-837a-cc566edbbac5",
+      "name" : "fw_start",
+      "epIdentifier" : "toForward",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "0f9363a3-1345-4b20-8347-edc7db4d7663",
+      "name" : "Outer loop done",
+      "epIdentifier" : "outerLoopDone",
+      "group" : "innerLoop",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "88c8822d-3ac7-403d-a693-e2331df806fb",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "c45fbd93-2abf-4ad1-8126-769954f2dcc4",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "819cdeb8-480d-41bc-8673-a790c5c272fd",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "upper" : "1",
+        "lower" : "-1",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "31941340-598d-423c-898e-f42819e8c310",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "f5dddb22-28e6-4a69-bd2c-1147d8d7a90f",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "upper" : "1",
+        "lower" : "-1",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "dbb83aef-d8aa-423b-b3ef-4079bce15e92",
+    "name" : "Design of Experiments Outer",
+    "location" : "97:302",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.doe.v2",
+      "version" : "3.3",
+      "name" : "Design of Experiments"
+    },
+    "configuration" : {
+      "endSample" : "0",
+      "behaviourFailedRun" : "Skip sample and continue",
+      "runNumber" : "2",
+      "isFaultTolerantLoop_5e0ed1cd" : "true",
+      "startSample" : "0",
+      "method" : "Full factorial design",
+      "loopFaultTolerance_5e0ed1cd" : "Discard",
+      "seedNumber" : "0",
+      "table" : ""
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "cf02d1e8-2e11-4088-ac58-889c5b8f5a93",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "default",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "6921f183-75dd-4b01-88d6-4c4824e53769",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "7a6b610b-ad1a-48c9-8595-9c51d2fc2fa9",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "269ead16-2cea-4613-9369-777c5a3a4bd7",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "upper" : "1",
+        "lower" : "-1",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "1a74df1f-8a1e-424b-8723-7c1a3ea7059c",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "upper" : "1",
+        "lower" : "-1",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "49026e8a-310c-458e-8055-d697b97f853b",
+    "name" : "Nothing",
+    "location" : "97:179",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output('f', 1.0)1",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "72bb89c5-bb91-4966-aad8-dbe312cf0d4e",
+      "name" : "d",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "35d00d55-eb11-4bb6-b610-e3b0a0997d8d",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "ae8f1ebb-2374-497a-907b-b0da70610753",
+    "name" : "Nothing2",
+    "location" : "97:414",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output('f', 1.0)1",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "74fac1af-0b91-441f-bf2d-e69430334112",
+      "name" : "d",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "b99fc183-7409-4e82-9368-5b15ecab2797",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "ee801afd-c25d-46f9-8bf3-5a9b28b15962",
+    "name" : "Nothing3",
+    "location" : "690:179",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output('f', 1.0)1",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "3a923672-ebdb-4bde-b526-c7998f0ca1c7",
+      "name" : "d",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "f1dbb829-00f5-4aa0-bf24-6fec777e5ada",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "007f2ddf-d95d-4573-b046-ee77bd692b32",
+    "name" : "Nothing4",
+    "location" : "690:414",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output('f', 1.0)",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "8e711e56-c6a2-4cca-a431-08742ce66827",
+      "name" : "d",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "e01fb3c7-c83f-4c75-b9ef-e0897d2fc62a",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "1b143f50-6e0b-4889-8339-547be355e5a3",
+    "name" : "Optimizer Inner",
+    "location" : "821:179",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.optimizer",
+      "version" : "7.0",
+      "name" : "Optimizer"
+    },
+    "configuration" : {
+      "genericPythonPath" : "${genericPythonPath}",
+      "preCalcFilePath" : "${preCalcFilePath}",
+      "CustomDakotaPath" : "false",
+      "optimizerPackageCode" : "dakota",
+      "storeComponentHistoryData" : "false",
+      "usePrecalculation" : "false",
+      "isNestedLoop_5e0ed1cd" : "true",
+      "methodConfigurations" : "{\r\n  \"Pyranha Conjugate Gradient Based Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Conjugate Gradient Based Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient\" : {\r\n        \"GuiName\" : \"Gradient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"Adjoint,Finite Differences,Central Finite Differences\",\r\n        \"DefaultValue\" : \"Adjoint\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"signgrad\" : {\r\n        \"GuiName\" : \"Sign of gradient\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"positive,negative\",\r\n        \"DefaultValue\" : \"positive\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"dobj1\" : {\r\n        \"GuiName\" : \"Expected improvement at first step (in %)\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxstepls\" : {\r\n        \"GuiName\" : \"Maximum allowed step size during line search\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"minstepls\" : {\r\n        \"GuiName\" : \"Minimum allowed step size during line search\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"DefaultValue\" : \"2\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Surrogate-Based Local\" : {\r\n    \"methodName\" : \"Dakota Surrogate-Based Local\",\r\n    \"methodCode\" : \"surrogate_based_local\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"2\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"approx_method_pointer\" : {\r\n        \"doNotShow\" : \"true\",\r\n        \"dataType\" : \"String\",\r\n        \"DefaultValue\" : \"method2\",\r\n        \"Value\" : \"\"\r\n      },\r\n      \"dace_list\" : {\r\n        \"doNotShow\" : \"true\",\r\n        \"doNotWrite\" : \"true\",\r\n        \"dataType\" : \"String\",\r\n        \"DefaultValue\" : \"Dakota Latin Hypercube Sampling\",\r\n        \"Value\" : \"\"\r\n      },\r\n      \"approx_method_list\" : {\r\n        \"doNotShow\" : \"true\",\r\n        \"doNotWrite\" : \"true\",\r\n        \"dataType\" : \"String\",\r\n        \"DefaultValue\" : \"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations),Dakota Quasi-Newton method\",\r\n        \"Value\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : {\r\n      \"gradients\" : {\r\n        \"GuiName\" : \"Use gradients\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"no_gradients,numerical_gradients\",\r\n        \"DefaultValue\" : \"no_gradients\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"interval_type\" : {\r\n        \"GuiName\" : \"Gradient interval type\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"forward,central\",\r\n        \"DefaultValue\" : \"forward\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fd_gradient_step_size\" : {\r\n        \"GuiName\" : \"Gradient stepsize\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"hessians\" : {\r\n        \"GuiName\" : \"Use hessians\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"no_hessians\",\r\n        \"DefaultValue\" : \"no_hessians\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      }\r\n    },\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha LHS DOE method [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha LHS DOE method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of sampling points\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota HOPSPACK Asynch Pattern Search\" : {\r\n    \"methodName\" : \"Dakota HOPSPACK Asynch Pattern Search\",\r\n    \"methodCode\" : \"asynch_pattern_search\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"initial_delta\" : {\r\n        \"GuiName\" : \"Initial offset value\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"threshold_delta\" : {\r\n        \"GuiName\" : \"Threshold for offset values\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.01\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"contraction_factor\" : {\r\n        \"GuiName\" : \"Pattern contraction factor\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"solution_target\" : {\r\n        \"GuiName\" : \"Solution target\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"optional\"\r\n      },\r\n      \"synchronization\" : {\r\n        \"GuiName\" : \"Evaluation synchronization\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"blocking,nonblocking\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"nonblocking\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"merit_function\" : {\r\n        \"GuiName\" : \"Merit function\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"merit_max,merit_max_smooth,merit1,merit1_smooth,merit2,merit2_smooth,merit2_squared\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"merit2_squared\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_penalty\" : {\r\n        \"GuiName\" : \"Constraint penalty\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"smoothing_factor\" : {\r\n        \"GuiName\" : \"Smoothing factor\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Evolutionary Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Evolutionary Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of generations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"popsize\" : {\r\n        \"GuiName\" : \"Size of population\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"strategy\" : {\r\n        \"GuiName\" : \"Strategy (2. is modified Version)\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Choices\" : \"1,2\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"rndini\" : {\r\n        \"GuiName\" : \"Random generator initiatior\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"pc\" : {\r\n        \"GuiName\" : \"Probability of crossover\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.7\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"f\" : {\r\n        \"GuiName\" : \"Scaling factor\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Pyranha Steepest Descent Gradient Based Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Steepest Descent Gradient Based Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient\" : {\r\n        \"GuiName\" : \"Gradient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"Adjoint,Finite Differences,Central Finite Differences\",\r\n        \"DefaultValue\" : \"Adjoint\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"signgrad\" : {\r\n        \"GuiName\" : \"Sign of gradient\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"positive,negative\",\r\n        \"DefaultValue\" : \"positive\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"dobj1\" : {\r\n        \"GuiName\" : \"Expected improvement at first step (in %)\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxstepls\" : {\r\n        \"GuiName\" : \"Maximum allowed step size during line search\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"minstepls\" : {\r\n        \"GuiName\" : \"Minimum allowed step size during line search\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Coliny Evolutionary Algorithm\" : {\r\n    \"methodName\" : \"Dakota Coliny Evolutionary Algorithm\",\r\n    \"methodCode\" : \"coliny_ea\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"population_size\" : {\r\n        \"GuiName\" : \"Number of population members\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"initialization_type\" : {\r\n        \"GuiName\" : \"Initialization type\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"simple_random,unique_random\",\r\n        \"DefaultValue\" : \"unique_random\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fitness_type\" : {\r\n        \"GuiName\" : \"Fitness type\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"linear_rank,merit_function\",\r\n        \"DefaultValue\" : \"linear_rank\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"replacement_type\" : {\r\n        \"GuiName\" : \"Replacement type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"random,chc,elitist\",\r\n        \"DefaultValue\" : \"elitist\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoLinebreak\" : \"true\"\r\n      },\r\n      \"replacement_type_value\" : {\r\n        \"GuiName\" : \"Replacement size\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoKeyword\" : \"true\"\r\n      },\r\n      \"new_solutions_generated\" : {\r\n        \"GuiName\" : \"New solutions generated\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_type\" : {\r\n        \"GuiName\" : \"Crossover type\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"two_point,blend,uniform\",\r\n        \"DefaultValue\" : \"two_point\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_rate\" : {\r\n        \"GuiName\" : \"Crossover rate\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.8\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_type\" : {\r\n        \"GuiName\" : \"Mutation type\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"replace_uniform,offset_normal,offset_cauchy,offset_uniform\",\r\n        \"DefaultValue\" : \"offset_normal\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_scale\" : {\r\n        \"GuiName\" : \"Mutation scale\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_range\" : {\r\n        \"GuiName\" : \"Mutation range\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_rate\" : {\r\n        \"GuiName\" : \"Mutation rate\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"non_adaptive\" : {\r\n        \"GuiName\" : \"Non-adaptive mutation flag\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"solution_accuracy\" : {\r\n        \"GuiName\" : \"Solution accuracy\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)\" : {\r\n    \"methodName\" : \"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)\",\r\n    \"methodCode\" : \"coliny_cobyla\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"initial_delta\" : {\r\n        \"GuiName\" : \"Initial trust region\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      },\r\n      \"threshold_delta\" : {\r\n        \"GuiName\" : \"Minimal trust region (stopping criterion)\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      },\r\n      \"solution_accuracy\" : {\r\n        \"GuiName\" : \"Solution accuracy\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota Quasi-Newton method\" : {\r\n    \"methodName\" : \"Dakota Quasi-Newton method\",\r\n    \"methodCode\" : \"optpp_q_newton\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"search_method\" : {\r\n        \"GuiName\" : \"Search method\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"value_based_line_search,gradient_based_line_search,trust_region,tr_pds\",\r\n        \"DefaultValue\" : \"trust_region\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"IsGroup\" : \"true\"\r\n      },\r\n      \"max_step\" : {\r\n        \"GuiName\" : \"Maximum step size\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient_tolerance\" : {\r\n        \"GuiName\" : \"Gradient tolerance\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"merit_function\" : {\r\n        \"GuiName\" : \"Merit function\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"el_bakry,argaez_tapia,van_shanno\",\r\n        \"DefaultValue\" : \"argaez_tapia\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"steplength_to_boundary\" : {\r\n        \"GuiName\" : \"Steplengh to boundary\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.99995\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"centering_parameter\" : {\r\n        \"GuiName\" : \"Centering parameter\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"0.1\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : {\r\n      \"gradients\" : {\r\n        \"GuiName\" : \"Use gradients\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"numerical_gradients,analytic_gradients\",\r\n        \"DefaultValue\" : \"numerical_gradients\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"interval_type\" : {\r\n        \"GuiName\" : \"Gradient interval type\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"forward,central\",\r\n        \"DefaultValue\" : \"forward\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fd_gradient_step_size\" : {\r\n        \"GuiName\" : \"Gradient stepsize\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"hessians\" : {\r\n        \"GuiName\" : \"Use hessians\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"no_hessians,numerical_hessians\",\r\n        \"DefaultValue\" : \"no_hessians\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"interval_type_hessian\" : {\r\n        \"GuiName\" : \"Hessian interval type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"forward,central\",\r\n        \"DefaultValue\" : \"forward\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"fd_hessian_step_size\" : {\r\n        \"GuiName\" : \"Hessian stepsize\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      }\r\n    },\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota NOMAD (Mesh Adaptive Direct Search Algorithm)\" : {\r\n    \"methodName\" : \"Dakota NOMAD (Mesh Adaptive Direct Search Algorithm)\",\r\n    \"methodCode\" : \"mesh_adaptive_search\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"function_precision\" : {\r\n        \"GuiName\" : \"Maximum precision of responses\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Seed\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"variable_neighborhood_search\" : {\r\n        \"GuiName\" : \"Neighborhood search\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"A Test Method [example's method]\" : {\r\n    \"methodName\" : \"A Test Method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"initial_delta\" : {\r\n        \"GuiName\" : \"Initial trust region\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      },\r\n      \"threshold_delta\" : {\r\n        \"GuiName\" : \"Minimal trust region (stopping criterion)\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"example\"\r\n    }\r\n  },\r\n  \"Dakota Latin Hypercube Sampling\" : {\r\n    \"methodName\" : \"Dakota Latin Hypercube Sampling\",\r\n    \"methodCode\" : \"dace lhs\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Seed\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fixed_seed\" : {\r\n        \"GuiName\" : \"Fixed seed flag\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"false\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"samples\" : {\r\n        \"GuiName\" : \"Number of samples\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"symbols\" : {\r\n        \"GuiName\" : \"Number of symbols\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"main_effects\" : {\r\n        \"GuiName\" : \"Main effects\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"quality_metrics\" : {\r\n        \"GuiName\" : \"Quality metrics\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"variance_based_decomp\" : {\r\n        \"GuiName\" : \"Varianve based decomposition\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Variable Metric Method [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Variable Metric Method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient\" : {\r\n        \"GuiName\" : \"Gradient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"Adjoint,Finite Differences,Central Finite Differences\",\r\n        \"DefaultValue\" : \"Adjoint\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"signgrad\" : {\r\n        \"GuiName\" : \"Sign of gradient\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"positive,negative\",\r\n        \"DefaultValue\" : \"positive\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"dobj1\" : {\r\n        \"GuiName\" : \"Expected improvement at first step (in %)\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxstepls\" : {\r\n        \"GuiName\" : \"Maximum allowed step size during line search\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"minstepls\" : {\r\n        \"GuiName\" : \"Minimum allowed step size during line search\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"update\" : {\r\n        \"GuiName\" : \"Update of the Hessian\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"BFGS,DFP,JDLEE\",\r\n        \"DefaultValue\" : \"BFGS\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Efficient Global Optimization\" : {\r\n    \"methodName\" : \"Dakota Efficient Global Optimization\",\r\n    \"methodCode\" : \"efficient_global\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gaussian_process\" : {\r\n        \"GuiName\" : \"Gaussian Process surrogate model\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"surfpack,dakota\",\r\n        \"DefaultValue\" : \"surfpack\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota Multi Objective Genetic Algorithm\" : {\r\n    \"methodName\" : \"Dakota Multi Objectiv Genetic Algorithm\",\r\n    \"methodCode\" : \"moga\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"fitness_type\" : {\r\n        \"GuiName\" : \"Fitness type\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"layer_rank,domination_count\",\r\n        \"DefaultValue\" : \"domination_count\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"population_size\" : {\r\n        \"GuiName\" : \"Number of population members\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"initialization_type\" : {\r\n        \"GuiName\" : \"Initialization type\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"simple_random,unique_random\",\r\n        \"DefaultValue\" : \"unique_random\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_type\" : {\r\n        \"GuiName\" : \"Mutation type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"replace_uniform,bit_random,offset_normal,offset_cauchy,offset_uniform\",\r\n        \"DefaultValue\" : \"replace_uniform\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_rate\" : {\r\n        \"GuiName\" : \"Mutation rate\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.08\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"replacement_type\" : {\r\n        \"GuiName\" : \"Replacement type\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"roulette_wheel,unique_roulette_wheel,elitist\",\r\n        \"DefaultValue\" : \"elitist\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_type\" : {\r\n        \"GuiName\" : \"Crossover type\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"multi_point_binary,multi_point_parameterized_binary,multi_point_real\",\r\n        \"DefaultValue\" : \"multi_point_real\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoLinebreak\" : \"true\"\r\n      },\r\n      \"crossover_type_value\" : {\r\n        \"GuiName\" : \"Crossover type value\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoKeyword\" : \"true\"\r\n      },\r\n      \"crossover_rate\" : {\r\n        \"GuiName\" : \"Crossover rate\",\r\n        \"GuiOrder\" : \"10\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"0.8\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Subplex Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Subplex Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"20\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"norm\" : {\r\n        \"GuiName\" : \"Normalized variables\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kr\" : {\r\n        \"GuiName\" : \"Reflection\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ke\" : {\r\n        \"GuiName\" : \"Extension\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"2\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kc\" : {\r\n        \"GuiName\" : \"Contractions\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ks\" : {\r\n        \"GuiName\" : \"Shrinkage\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kt\" : {\r\n        \"GuiName\" : \"Reduction coefficient\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.25\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"omega\" : {\r\n        \"GuiName\" : \"Step reduction coefficient for next subplex search\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"nsmin\" : {\r\n        \"GuiName\" : \"Minimum subspace dimension\",\r\n        \"GuiOrder\" : \"10\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"nsmax\" : {\r\n        \"GuiName\" : \"Maximum subspace dimension\",\r\n        \"GuiOrder\" : \"11\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"6\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"scale\" : {\r\n        \"GuiName\" : \"Initial simplex size (in % of range)\",\r\n        \"GuiOrder\" : \"12\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0,<1\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"13\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Single Objective Genetic Algorithm\" : {\r\n    \"methodName\" : \"Dakota Single Objectiv Genetic Algorithm\",\r\n    \"methodCode\" : \"soga\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"fitness_type\" : {\r\n        \"GuiName\" : \"Fitness type\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"merit_function\",\r\n        \"DefaultValue\" : \"merit_function\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"population_size\" : {\r\n        \"GuiName\" : \"Number of population members\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"initialization_type\" : {\r\n        \"GuiName\" : \"Initialization type\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"simple_random,unique_random\",\r\n        \"DefaultValue\" : \"unique_random\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_type\" : {\r\n        \"GuiName\" : \"Mutation type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"bit_random,replace_uniform,bit_random,offset_normal,offset_cauchy,offset_uniform\",\r\n        \"DefaultValue\" : \"replace_uniform\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_rate\" : {\r\n        \"GuiName\" : \"Mutation rate\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.08\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"replacement_type\" : {\r\n        \"GuiName\" : \"Replacement type\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"favor_feasible,roulette_wheel,unique_roulette_wheel,elitist\",\r\n        \"DefaultValue\" : \"elitist\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_type\" : {\r\n        \"GuiName\" : \"Crossover type\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"multi_point_binary,multi_point_parameterized_binary,multi_point_real\",\r\n        \"DefaultValue\" : \"multi_point_real\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoLinebreak\" : \"true\"\r\n      },\r\n      \"crossover_type_value\" : {\r\n        \"GuiName\" : \"Crossover type value\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoKeyword\" : \"true\"\r\n      },\r\n      \"crossover_rate\" : {\r\n        \"GuiName\" : \"Crossover rate\",\r\n        \"GuiOrder\" : \"10\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.8\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Simplex Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Simplex Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"kt\" : {\r\n        \"GuiName\" : \"Reduction coefficient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.25\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"norm\" : {\r\n        \"GuiName\" : \"Normalize variables\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"0,1\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kr\" : {\r\n        \"GuiName\" : \"Reflection\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ke\" : {\r\n        \"GuiName\" : \"Extension\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"2\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kc\" : {\r\n        \"GuiName\" : \"Contractions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ks\" : {\r\n        \"GuiName\" : \"Shrinkage\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Pyranha DOE Scanner method [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Scanner DOE method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"stepsize\" : {\r\n        \"GuiName\" : \"Stepsize\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"step,cycle\",\r\n        \"DefaultValue\" : \"step\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Maxcycle in each direction\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  }\r\n}",
+      "dakotaExecPath" : "${dakotaExecPath}",
+      "algorithm" : "Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "440e405a-bff2-4885-8249-00c5723106aa",
+      "name" : "x - start value",
+      "epIdentifier" : "startvalues",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "usage" : "initial"
+      }
+    }, {
+      "identifier" : "7a504c9e-aaf8-40c5-9bed-5323272e1b23",
+      "name" : "f",
+      "epIdentifier" : "Objective",
+      "group" : "valuesToOptimize",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "weight" : "1",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "vectorSize" : "-",
+        "hasGradient" : "false",
+        "goal" : "Minimize"
+      }
+    }, {
+      "identifier" : "1bd983c4-ce5c-4a23-bb0b-c59804788cbe",
+      "name" : "Outer loop done",
+      "epIdentifier" : "outerLoopDone",
+      "group" : "innerLoop",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "usage" : "optional"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "d22263fd-4129-44a6-9c77-92914ad3c991",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "e9183ae4-3b6a-4325-a15b-414f5d85b5b7",
+      "name" : "Gradient request",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "d7e4e630-9f05-4224-b826-f84291f7ee32",
+      "name" : "Iteration",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Integer",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "5616d9c4-4a8f-44d4-a7dc-94e6ad996c48",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "eb52a252-acec-4f02-ae3d-dc66b3b15740",
+      "name" : "x",
+      "epIdentifier" : "Design",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "-",
+        "upper" : "1",
+        "lower" : "-1",
+        "isDiscrete" : "false",
+        "hasSingleBounds" : "true",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "false",
+        "vectorSize" : "-"
+      }
+    }, {
+      "identifier" : "86e8ab8d-715c-41a0-afb4-64e4764e5c0c",
+      "name" : "x_optimal",
+      "epIdentifier" : "optima",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "-",
+        "upper" : "1",
+        "lower" : "-1",
+        "isDiscrete" : "false",
+        "hasSingleBounds" : "true",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "hasStartValue" : "false",
+        "vectorSize" : "-"
+      }
+    } ]
+  }, {
+    "identifier" : "3f899375-d062-49a7-930c-ab01a4995602",
+    "name" : "Optimizer Outer",
+    "location" : "690:73",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.optimizer",
+      "version" : "7.0",
+      "name" : "Optimizer"
+    },
+    "configuration" : {
+      "genericPythonPath" : "${genericPythonPath}",
+      "preCalcFilePath" : "${preCalcFilePath}",
+      "CustomDakotaPath" : "false",
+      "optimizerPackageCode" : "dakota",
+      "isFaultTolerantLoop_5e0ed1cd" : "true",
+      "storeComponentHistoryData" : "false",
+      "usePrecalculation" : "false",
+      "loopFaultTolerance_5e0ed1cd" : "Discard",
+      "methodConfigurations" : "{\r\n  \"Pyranha Conjugate Gradient Based Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Conjugate Gradient Based Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient\" : {\r\n        \"GuiName\" : \"Gradient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"Adjoint,Finite Differences,Central Finite Differences\",\r\n        \"DefaultValue\" : \"Adjoint\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"signgrad\" : {\r\n        \"GuiName\" : \"Sign of gradient\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"positive,negative\",\r\n        \"DefaultValue\" : \"positive\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"dobj1\" : {\r\n        \"GuiName\" : \"Expected improvement at first step (in %)\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxstepls\" : {\r\n        \"GuiName\" : \"Maximum allowed step size during line search\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"minstepls\" : {\r\n        \"GuiName\" : \"Minimum allowed step size during line search\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"DefaultValue\" : \"2\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Surrogate-Based Local\" : {\r\n    \"methodName\" : \"Dakota Surrogate-Based Local\",\r\n    \"methodCode\" : \"surrogate_based_local\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"2\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"approx_method_pointer\" : {\r\n        \"doNotShow\" : \"true\",\r\n        \"dataType\" : \"String\",\r\n        \"DefaultValue\" : \"method2\",\r\n        \"Value\" : \"\"\r\n      },\r\n      \"dace_list\" : {\r\n        \"doNotShow\" : \"true\",\r\n        \"doNotWrite\" : \"true\",\r\n        \"dataType\" : \"String\",\r\n        \"DefaultValue\" : \"Dakota Latin Hypercube Sampling\",\r\n        \"Value\" : \"\"\r\n      },\r\n      \"approx_method_list\" : {\r\n        \"doNotShow\" : \"true\",\r\n        \"doNotWrite\" : \"true\",\r\n        \"dataType\" : \"String\",\r\n        \"DefaultValue\" : \"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations),Dakota Quasi-Newton method\",\r\n        \"Value\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : {\r\n      \"gradients\" : {\r\n        \"GuiName\" : \"Use gradients\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"no_gradients,numerical_gradients\",\r\n        \"DefaultValue\" : \"no_gradients\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"interval_type\" : {\r\n        \"GuiName\" : \"Gradient interval type\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"forward,central\",\r\n        \"DefaultValue\" : \"forward\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fd_gradient_step_size\" : {\r\n        \"GuiName\" : \"Gradient stepsize\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"hessians\" : {\r\n        \"GuiName\" : \"Use hessians\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"no_hessians\",\r\n        \"DefaultValue\" : \"no_hessians\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      }\r\n    },\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha LHS DOE method [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha LHS DOE method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of sampling points\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota HOPSPACK Asynch Pattern Search\" : {\r\n    \"methodName\" : \"Dakota HOPSPACK Asynch Pattern Search\",\r\n    \"methodCode\" : \"asynch_pattern_search\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"initial_delta\" : {\r\n        \"GuiName\" : \"Initial offset value\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"threshold_delta\" : {\r\n        \"GuiName\" : \"Threshold for offset values\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.01\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"contraction_factor\" : {\r\n        \"GuiName\" : \"Pattern contraction factor\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"solution_target\" : {\r\n        \"GuiName\" : \"Solution target\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"optional\"\r\n      },\r\n      \"synchronization\" : {\r\n        \"GuiName\" : \"Evaluation synchronization\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"blocking,nonblocking\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"nonblocking\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"merit_function\" : {\r\n        \"GuiName\" : \"Merit function\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"merit_max,merit_max_smooth,merit1,merit1_smooth,merit2,merit2_smooth,merit2_squared\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"merit2_squared\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_penalty\" : {\r\n        \"GuiName\" : \"Constraint penalty\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"smoothing_factor\" : {\r\n        \"GuiName\" : \"Smoothing factor\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Evolutionary Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Evolutionary Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of generations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"popsize\" : {\r\n        \"GuiName\" : \"Size of population\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"strategy\" : {\r\n        \"GuiName\" : \"Strategy (2. is modified Version)\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Choices\" : \"1,2\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"rndini\" : {\r\n        \"GuiName\" : \"Random generator initiatior\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"pc\" : {\r\n        \"GuiName\" : \"Probability of crossover\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.7\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"f\" : {\r\n        \"GuiName\" : \"Scaling factor\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Pyranha Steepest Descent Gradient Based Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Steepest Descent Gradient Based Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient\" : {\r\n        \"GuiName\" : \"Gradient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"Adjoint,Finite Differences,Central Finite Differences\",\r\n        \"DefaultValue\" : \"Adjoint\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"signgrad\" : {\r\n        \"GuiName\" : \"Sign of gradient\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"positive,negative\",\r\n        \"DefaultValue\" : \"positive\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"dobj1\" : {\r\n        \"GuiName\" : \"Expected improvement at first step (in %)\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxstepls\" : {\r\n        \"GuiName\" : \"Maximum allowed step size during line search\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"minstepls\" : {\r\n        \"GuiName\" : \"Minimum allowed step size during line search\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Coliny Evolutionary Algorithm\" : {\r\n    \"methodName\" : \"Dakota Coliny Evolutionary Algorithm\",\r\n    \"methodCode\" : \"coliny_ea\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"population_size\" : {\r\n        \"GuiName\" : \"Number of population members\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"initialization_type\" : {\r\n        \"GuiName\" : \"Initialization type\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"simple_random,unique_random\",\r\n        \"DefaultValue\" : \"unique_random\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fitness_type\" : {\r\n        \"GuiName\" : \"Fitness type\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"linear_rank,merit_function\",\r\n        \"DefaultValue\" : \"linear_rank\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"replacement_type\" : {\r\n        \"GuiName\" : \"Replacement type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"random,chc,elitist\",\r\n        \"DefaultValue\" : \"elitist\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoLinebreak\" : \"true\"\r\n      },\r\n      \"replacement_type_value\" : {\r\n        \"GuiName\" : \"Replacement size\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoKeyword\" : \"true\"\r\n      },\r\n      \"new_solutions_generated\" : {\r\n        \"GuiName\" : \"New solutions generated\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_type\" : {\r\n        \"GuiName\" : \"Crossover type\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"two_point,blend,uniform\",\r\n        \"DefaultValue\" : \"two_point\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_rate\" : {\r\n        \"GuiName\" : \"Crossover rate\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.8\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_type\" : {\r\n        \"GuiName\" : \"Mutation type\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"replace_uniform,offset_normal,offset_cauchy,offset_uniform\",\r\n        \"DefaultValue\" : \"offset_normal\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_scale\" : {\r\n        \"GuiName\" : \"Mutation scale\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_range\" : {\r\n        \"GuiName\" : \"Mutation range\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_rate\" : {\r\n        \"GuiName\" : \"Mutation rate\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"non_adaptive\" : {\r\n        \"GuiName\" : \"Non-adaptive mutation flag\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"solution_accuracy\" : {\r\n        \"GuiName\" : \"Solution accuracy\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)\" : {\r\n    \"methodName\" : \"Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)\",\r\n    \"methodCode\" : \"coliny_cobyla\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"initial_delta\" : {\r\n        \"GuiName\" : \"Initial trust region\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      },\r\n      \"threshold_delta\" : {\r\n        \"GuiName\" : \"Minimal trust region (stopping criterion)\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      },\r\n      \"solution_accuracy\" : {\r\n        \"GuiName\" : \"Solution accuracy\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota Quasi-Newton method\" : {\r\n    \"methodName\" : \"Dakota Quasi-Newton method\",\r\n    \"methodCode\" : \"optpp_q_newton\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"search_method\" : {\r\n        \"GuiName\" : \"Search method\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"value_based_line_search,gradient_based_line_search,trust_region,tr_pds\",\r\n        \"DefaultValue\" : \"trust_region\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"IsGroup\" : \"true\"\r\n      },\r\n      \"max_step\" : {\r\n        \"GuiName\" : \"Maximum step size\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient_tolerance\" : {\r\n        \"GuiName\" : \"Gradient tolerance\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"merit_function\" : {\r\n        \"GuiName\" : \"Merit function\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"el_bakry,argaez_tapia,van_shanno\",\r\n        \"DefaultValue\" : \"argaez_tapia\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"steplength_to_boundary\" : {\r\n        \"GuiName\" : \"Steplengh to boundary\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.99995\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"centering_parameter\" : {\r\n        \"GuiName\" : \"Centering parameter\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"0.1\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : {\r\n      \"gradients\" : {\r\n        \"GuiName\" : \"Use gradients\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"numerical_gradients,analytic_gradients\",\r\n        \"DefaultValue\" : \"numerical_gradients\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"interval_type\" : {\r\n        \"GuiName\" : \"Gradient interval type\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"forward,central\",\r\n        \"DefaultValue\" : \"forward\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fd_gradient_step_size\" : {\r\n        \"GuiName\" : \"Gradient stepsize\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"hessians\" : {\r\n        \"GuiName\" : \"Use hessians\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"no_hessians,numerical_hessians\",\r\n        \"DefaultValue\" : \"no_hessians\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"interval_type_hessian\" : {\r\n        \"GuiName\" : \"Hessian interval type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"forward,central\",\r\n        \"DefaultValue\" : \"forward\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"noKeyword\" : \"true\"\r\n      },\r\n      \"fd_hessian_step_size\" : {\r\n        \"GuiName\" : \"Hessian stepsize\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      }\r\n    },\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota NOMAD (Mesh Adaptive Direct Search Algorithm)\" : {\r\n    \"methodName\" : \"Dakota NOMAD (Mesh Adaptive Direct Search Algorithm)\",\r\n    \"methodCode\" : \"mesh_adaptive_search\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"function_precision\" : {\r\n        \"GuiName\" : \"Maximum precision of responses\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Seed\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"variable_neighborhood_search\" : {\r\n        \"GuiName\" : \"Neighborhood search\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"A Test Method [example's method]\" : {\r\n    \"methodName\" : \"A Test Method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"initial_delta\" : {\r\n        \"GuiName\" : \"Initial trust region\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      },\r\n      \"threshold_delta\" : {\r\n        \"GuiName\" : \"Minimal trust region (stopping criterion)\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"required\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"example\"\r\n    }\r\n  },\r\n  \"Dakota Latin Hypercube Sampling\" : {\r\n    \"methodName\" : \"Dakota Latin Hypercube Sampling\",\r\n    \"methodCode\" : \"dace lhs\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Seed\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"fixed_seed\" : {\r\n        \"GuiName\" : \"Fixed seed flag\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"false\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"samples\" : {\r\n        \"GuiName\" : \"Number of samples\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"10\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"symbols\" : {\r\n        \"GuiName\" : \"Number of symbols\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"main_effects\" : {\r\n        \"GuiName\" : \"Main effects\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"quality_metrics\" : {\r\n        \"GuiName\" : \"Quality metrics\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"variance_based_decomp\" : {\r\n        \"GuiName\" : \"Varianve based decomposition\",\r\n        \"dataType\" : \"bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Variable Metric Method [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Variable Metric Method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gradient\" : {\r\n        \"GuiName\" : \"Gradient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"Adjoint,Finite Differences,Central Finite Differences\",\r\n        \"DefaultValue\" : \"Adjoint\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"signgrad\" : {\r\n        \"GuiName\" : \"Sign of gradient\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"positive,negative\",\r\n        \"DefaultValue\" : \"positive\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"dobj1\" : {\r\n        \"GuiName\" : \"Expected improvement at first step (in %)\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxstepls\" : {\r\n        \"GuiName\" : \"Maximum allowed step size during line search\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"minstepls\" : {\r\n        \"GuiName\" : \"Minimum allowed step size during line search\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"update\" : {\r\n        \"GuiName\" : \"Update of the Hessian\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"BFGS,DFP,JDLEE\",\r\n        \"DefaultValue\" : \"BFGS\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Efficient Global Optimization\" : {\r\n    \"methodName\" : \"Dakota Efficient Global Optimization\",\r\n    \"methodCode\" : \"efficient_global\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"gaussian_process\" : {\r\n        \"GuiName\" : \"Gaussian Process surrogate model\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"surfpack,dakota\",\r\n        \"DefaultValue\" : \"surfpack\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Dakota Multi Objective Genetic Algorithm\" : {\r\n    \"methodName\" : \"Dakota Multi Objectiv Genetic Algorithm\",\r\n    \"methodCode\" : \"moga\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"fitness_type\" : {\r\n        \"GuiName\" : \"Fitness type\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"layer_rank,domination_count\",\r\n        \"DefaultValue\" : \"domination_count\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"population_size\" : {\r\n        \"GuiName\" : \"Number of population members\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"initialization_type\" : {\r\n        \"GuiName\" : \"Initialization type\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"simple_random,unique_random\",\r\n        \"DefaultValue\" : \"unique_random\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_type\" : {\r\n        \"GuiName\" : \"Mutation type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"replace_uniform,bit_random,offset_normal,offset_cauchy,offset_uniform\",\r\n        \"DefaultValue\" : \"replace_uniform\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_rate\" : {\r\n        \"GuiName\" : \"Mutation rate\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.08\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"replacement_type\" : {\r\n        \"GuiName\" : \"Replacement type\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"roulette_wheel,unique_roulette_wheel,elitist\",\r\n        \"DefaultValue\" : \"elitist\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_type\" : {\r\n        \"GuiName\" : \"Crossover type\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"multi_point_binary,multi_point_parameterized_binary,multi_point_real\",\r\n        \"DefaultValue\" : \"multi_point_real\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoLinebreak\" : \"true\"\r\n      },\r\n      \"crossover_type_value\" : {\r\n        \"GuiName\" : \"Crossover type value\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoKeyword\" : \"true\"\r\n      },\r\n      \"crossover_rate\" : {\r\n        \"GuiName\" : \"Crossover rate\",\r\n        \"GuiOrder\" : \"10\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"0.8\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Subplex Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Subplex Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"20\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"norm\" : {\r\n        \"GuiName\" : \"Normalized variables\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kr\" : {\r\n        \"GuiName\" : \"Reflection\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ke\" : {\r\n        \"GuiName\" : \"Extension\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"2\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kc\" : {\r\n        \"GuiName\" : \"Contractions\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ks\" : {\r\n        \"GuiName\" : \"Shrinkage\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kt\" : {\r\n        \"GuiName\" : \"Reduction coefficient\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.25\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"omega\" : {\r\n        \"GuiName\" : \"Step reduction coefficient for next subplex search\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"nsmin\" : {\r\n        \"GuiName\" : \"Minimum subspace dimension\",\r\n        \"GuiOrder\" : \"10\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"nsmax\" : {\r\n        \"GuiName\" : \"Maximum subspace dimension\",\r\n        \"GuiOrder\" : \"11\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"6\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"scale\" : {\r\n        \"GuiName\" : \"Initial simplex size (in % of range)\",\r\n        \"GuiOrder\" : \"12\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0,<1\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"13\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Dakota Single Objective Genetic Algorithm\" : {\r\n    \"methodName\" : \"Dakota Single Objectiv Genetic Algorithm\",\r\n    \"methodCode\" : \"soga\",\r\n    \"optimizerPackage\" : \"dakota\",\r\n    \"followingMethods\" : \"0\",\r\n    \"commonSettings\" : {\r\n      \"convergence_tolerance\" : {\r\n        \"GuiName\" : \"Convergence tolerance\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_iterations\" : {\r\n        \"GuiName\" : \"Maximum iterations\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"100\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"speculative\" : {\r\n        \"GuiName\" : \"Speculative gradients and Hessians\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"constraint_tolerance\" : {\r\n        \"GuiName\" : \"Constraint tolerance\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1E-4\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"max_function_evaluations\" : {\r\n        \"GuiName\" : \"Maximum function evaluations\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1000\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"output\" : {\r\n        \"GuiName\" : \"Output verbosity\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"debug,quiet,normal,silent,verbose\",\r\n        \"Value\" : \"\",\r\n        \"DefaultValue\" : \"normal\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"final_solutions\" : {\r\n        \"GuiName\" : \"Final solutions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"scaling\" : {\r\n        \"GuiName\" : \"Scaling flag\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Bool\",\r\n        \"SWTWidget\" : \"Check\",\r\n        \"DefaultValue\" : \"false\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"specificSettings\" : {\r\n      \"fitness_type\" : {\r\n        \"GuiName\" : \"Fitness type\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"merit_function\",\r\n        \"DefaultValue\" : \"merit_function\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"seed\" : {\r\n        \"GuiName\" : \"Random seed\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"population_size\" : {\r\n        \"GuiName\" : \"Number of population members\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"initialization_type\" : {\r\n        \"GuiName\" : \"Initialization type\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"simple_random,unique_random\",\r\n        \"DefaultValue\" : \"unique_random\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_type\" : {\r\n        \"GuiName\" : \"Mutation type\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"bit_random,replace_uniform,bit_random,offset_normal,offset_cauchy,offset_uniform\",\r\n        \"DefaultValue\" : \"replace_uniform\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"mutation_rate\" : {\r\n        \"GuiName\" : \"Mutation rate\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.08\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"replacement_type\" : {\r\n        \"GuiName\" : \"Replacement type\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"favor_feasible,roulette_wheel,unique_roulette_wheel,elitist\",\r\n        \"DefaultValue\" : \"elitist\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"crossover_type\" : {\r\n        \"GuiName\" : \"Crossover type\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"None\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"multi_point_binary,multi_point_parameterized_binary,multi_point_real\",\r\n        \"DefaultValue\" : \"multi_point_real\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoLinebreak\" : \"true\"\r\n      },\r\n      \"crossover_type_value\" : {\r\n        \"GuiName\" : \"Crossover type value\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"Int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"50\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\",\r\n        \"NoKeyword\" : \"true\"\r\n      },\r\n      \"crossover_rate\" : {\r\n        \"GuiName\" : \"Crossover rate\",\r\n        \"GuiOrder\" : \"10\",\r\n        \"dataType\" : \"Real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.8\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : null\r\n  },\r\n  \"Pyranha Simplex Strategy [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Simplex Strategy\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Number of cycles\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"200\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">0\"\r\n      },\r\n      \"tolerance\" : {\r\n        \"GuiName\" : \"Stopping criteria tolerance\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1.0e-9\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \">=0\"\r\n      },\r\n      \"kt\" : {\r\n        \"GuiName\" : \"Reduction coefficient\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.25\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"norm\" : {\r\n        \"GuiName\" : \"Normalize variables\",\r\n        \"GuiOrder\" : \"4\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"0,1\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kr\" : {\r\n        \"GuiName\" : \"Reflection\",\r\n        \"GuiOrder\" : \"5\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ke\" : {\r\n        \"GuiName\" : \"Extension\",\r\n        \"GuiOrder\" : \"6\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"2\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"kc\" : {\r\n        \"GuiName\" : \"Contractions\",\r\n        \"GuiOrder\" : \"7\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"ks\" : {\r\n        \"GuiName\" : \"Shrinkage\",\r\n        \"GuiOrder\" : \"8\",\r\n        \"dataType\" : \"real\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"0.5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"9\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"1\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  },\r\n  \"Pyranha DOE Scanner method [Pyranha's method]\" : {\r\n    \"methodName\" : \"Pyranha Scanner DOE method\",\r\n    \"methodCode\" : null,\r\n    \"optimizerPackage\" : \"generic\",\r\n    \"followingMethods\" : null,\r\n    \"commonSettings\" : { },\r\n    \"specificSettings\" : {\r\n      \"stepsize\" : {\r\n        \"GuiName\" : \"Stepsize\",\r\n        \"GuiOrder\" : \"1\",\r\n        \"dataType\" : \"String\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"step,cycle\",\r\n        \"DefaultValue\" : \"step\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"monitor\" : {\r\n        \"GuiName\" : \"Output level\",\r\n        \"GuiOrder\" : \"3\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Combo\",\r\n        \"Choices\" : \"1,2,3\",\r\n        \"DefaultValue\" : \"3\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      },\r\n      \"maxcycle\" : {\r\n        \"GuiName\" : \"Maxcycle in each direction\",\r\n        \"GuiOrder\" : \"2\",\r\n        \"dataType\" : \"int\",\r\n        \"SWTWidget\" : \"Text\",\r\n        \"DefaultValue\" : \"5\",\r\n        \"Value\" : \"\",\r\n        \"Validation\" : \"\"\r\n      }\r\n    },\r\n    \"responsesSettings\" : null,\r\n    \"configMap\" : {\r\n      \"genericFolder\" : \"Pyranha\"\r\n    }\r\n  }\r\n}",
+      "dakotaExecPath" : "${dakotaExecPath}",
+      "algorithm" : "Dakota Coliny Evolutionary Algorithm"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "b7de0b4d-3b34-44d4-9850-720323c855b0",
+      "name" : "f",
+      "epIdentifier" : "Objective",
+      "group" : "valuesToOptimize",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "weight" : "1",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "vectorSize" : "-",
+        "hasGradient" : "false",
+        "goal" : "Minimize"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "4c1b672f-2b13-4b57-a013-97ff21b256d9",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "55a6a041-5309-497e-96fe-8db3525b7005",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "61be4f11-d256-446e-a7e8-0195d30b6b7b",
+      "name" : "Gradient request",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "7d753135-f73e-46f7-8039-792961cd54b8",
+      "name" : "Iteration",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Integer",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "5fe6b7ba-8310-4a76-b90b-f1d0a57a935f",
+      "name" : "x_optimal",
+      "epIdentifier" : "optima",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "0",
+        "upper" : "1",
+        "lower" : "-1",
+        "isDiscrete" : "false",
+        "hasSingleBounds" : "true",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
+        "hasStartValue" : "true",
+        "vectorSize" : "-"
+      }
+    }, {
+      "identifier" : "74b7bc2d-3a35-47e8-8605-e0324acd2355",
+      "name" : "x",
+      "epIdentifier" : "Design",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "0",
+        "upper" : "1",
+        "lower" : "-1",
+        "isDiscrete" : "false",
+        "hasSingleBounds" : "true",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "hasStartValue" : "true",
+        "vectorSize" : "-"
+      }
+    } ]
+  }, {
+    "identifier" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "name" : "Parametric Study Inner",
+    "location" : "258:179",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "3.2",
+      "name" : "Parametric Study"
+    },
+    "configuration" : {
+      "isFaultTolerantLoop_5e0ed1cd" : "true",
+      "isNestedLoop_5e0ed1cd" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c43066ba-728e-4cb4-b8fa-a3f6ab37fc2a",
+      "name" : "fw_start",
+      "epIdentifier" : "toForward",
+      "group" : "startValues",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "3eab81e2-064d-41b5-bc79-a7003e4cceff",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "identifier" : "7328dba1-9ffb-4fef-ae64-a40d71708686",
+      "name" : "Outer loop done",
+      "epIdentifier" : "outerLoopDone",
+      "group" : "orGroup",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "6bb567ee-3503-47ee-8f05-b69b473f27e5",
+      "name" : "x",
+      "epIdentifier" : "parameters",
+      "group" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "a26e5321-a671-41fd-bb2e-9519539fdf8a",
+      "name" : "Design variable",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "FromValue" : "0",
+        "StepSize" : "1",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "ToValue" : "10",
+        "fitStepSizeToBounds" : "true"
+      }
+    }, {
+      "identifier" : "3a8a8347-7aad-4e0d-a532-b49fdc336ea8",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "9cc3254b-d6ae-499f-a45e-fc95648e3e3b",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "051f24aa-e3ea-4895-b221-03b616947564",
+      "name" : "fw",
+      "epIdentifier" : "toForward",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ]
+  }, {
+    "identifier" : "53325c50-54e1-47aa-858f-cf2414b6de4e",
+    "name" : "Parametric Study Outer",
+    "location" : "97:60",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.parametricstudy",
+      "version" : "3.2",
+      "name" : "Parametric Study"
+    },
+    "configuration" : {
+      "isFaultTolerantLoop_5e0ed1cd" : "true",
+      "loopFaultTolerance_5e0ed1cd" : "Discard"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "219127bb-a31a-4b53-9162-563ed3a8c9c9",
+      "name" : "x",
+      "epIdentifier" : "parameters",
+      "group" : "parameters",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "776de38d-ac24-4b25-98f8-5a7298561611",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    }, {
+      "identifier" : "ff9e1165-1a60-4be8-91b2-e5e398d863f5",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "07838a6d-3eac-4f99-95e8-c859cde6afc5",
+      "name" : "Design variable",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "FromValue" : "0",
+        "StepSize" : "1",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "ToValue" : "10",
+        "fitStepSizeToBounds" : "true"
+      }
+    } ]
+  }, {
+    "identifier" : "9cc54503-3de1-45ee-8f2f-4e5fb0b700c4",
+    "name" : "Random",
+    "location" : "938:179",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "RCE.write_output(\"x\", 1)",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "15f97b7d-b33d-43c0-b90a-2aea41a57826",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "bd08828e-8d64-4a0f-89da-140f3791ff15",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "b09226ce-d729-41f6-a06a-2cf65d3529ee",
+    "name" : "Random2",
+    "location" : "938:414",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "import  random\r\nRCE.write_output(\"x\", RCE.read_input(\"x\")/10.0)",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d2e60493-9571-4bda-b974-2beffa460289",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "80aa9cea-aef9-4726-969c-3513ac1626a7",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "9fc09f79-6fd2-4bc6-96f3-1c291b71e68c",
+    "output" : "6af5050c-c0ca-4ee9-acdd-5faa98cb19de",
+    "target" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "input" : "fe6c905b-7656-44c1-96ba-da75c1a8944b"
+  }, {
+    "source" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "output" : "31941340-598d-423c-898e-f42819e8c310",
+    "target" : "1987e9dd-b331-4a99-8c0b-da9c02063d99",
+    "input" : "e8727ba6-b73b-49af-954e-039747ca3ee5"
+  }, {
+    "source" : "9fc09f79-6fd2-4bc6-96f3-1c291b71e68c",
+    "output" : "e9316164-d259-403e-8600-b191866bfaf3",
+    "target" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "input" : "ec8a1c89-9435-4580-b35b-603ba2a0eaf6"
+  }, {
+    "source" : "9fc09f79-6fd2-4bc6-96f3-1c291b71e68c",
+    "output" : "e9316164-d259-403e-8600-b191866bfaf3",
+    "target" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "input" : "20928bda-1e84-40ed-bfbc-e70687e1f0a5"
+  }, {
+    "source" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "output" : "29814856-eb4a-4aae-9b92-ea87c081fae4",
+    "target" : "b09226ce-d729-41f6-a06a-2cf65d3529ee",
+    "input" : "d2e60493-9571-4bda-b974-2beffa460289"
+  }, {
+    "source" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "output" : "3a8a8347-7aad-4e0d-a532-b49fdc336ea8",
+    "target" : "49026e8a-310c-458e-8055-d697b97f853b",
+    "input" : "72bb89c5-bb91-4966-aad8-dbe312cf0d4e"
+  }, {
+    "source" : "3f899375-d062-49a7-930c-ab01a4995602",
+    "output" : "74b7bc2d-3a35-47e8-8605-e0324acd2355",
+    "target" : "1b143f50-6e0b-4889-8339-547be355e5a3",
+    "input" : "440e405a-bff2-4885-8249-00c5723106aa"
+  }, {
+    "source" : "53325c50-54e1-47aa-858f-cf2414b6de4e",
+    "output" : "07838a6d-3eac-4f99-95e8-c859cde6afc5",
+    "target" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "input" : "c43066ba-728e-4cb4-b8fa-a3f6ab37fc2a"
+  }, {
+    "source" : "3f899375-d062-49a7-930c-ab01a4995602",
+    "output" : "55a6a041-5309-497e-96fe-8db3525b7005",
+    "target" : "1b143f50-6e0b-4889-8339-547be355e5a3",
+    "input" : "1bd983c4-ce5c-4a23-bb0b-c59804788cbe"
+  }, {
+    "source" : "dbb83aef-d8aa-423b-b3ef-4079bce15e92",
+    "output" : "6921f183-75dd-4b01-88d6-4c4824e53769",
+    "target" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "input" : "0f9363a3-1345-4b20-8347-edc7db4d7663"
+  }, {
+    "source" : "1987e9dd-b331-4a99-8c0b-da9c02063d99",
+    "output" : "46233b52-eb2c-4cf3-9b10-4328fc8fd72e",
+    "target" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "input" : "3b4c0775-6ae9-4375-8814-6fca19508e20"
+  }, {
+    "source" : "e7ae2498-7b4f-4dcd-943e-1a12826097e8",
+    "output" : "11317806-5db2-4125-9028-eea023750922",
+    "target" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "input" : "3eab81e2-064d-41b5-bc79-a7003e4cceff"
+  }, {
+    "source" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "output" : "cc6258e9-a674-488b-9d97-cbc572216798",
+    "target" : "007f2ddf-d95d-4573-b046-ee77bd692b32",
+    "input" : "8e711e56-c6a2-4cca-a431-08742ce66827"
+  }, {
+    "source" : "b09226ce-d729-41f6-a06a-2cf65d3529ee",
+    "output" : "80aa9cea-aef9-4726-969c-3513ac1626a7",
+    "target" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "input" : "5fa24398-df05-498e-9b58-915e2039cd50"
+  }, {
+    "source" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "output" : "a26e5321-a671-41fd-bb2e-9519539fdf8a",
+    "target" : "e7ae2498-7b4f-4dcd-943e-1a12826097e8",
+    "input" : "ae3af4ae-0c21-4f8d-80fc-1e5700568e72"
+  }, {
+    "source" : "1987e9dd-b331-4a99-8c0b-da9c02063d99",
+    "output" : "55308125-e9f0-4ed8-b43d-65c0d265ee2f",
+    "target" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "input" : "eb1f8153-e282-4bb5-a826-94e06c580395"
+  }, {
+    "source" : "dbb83aef-d8aa-423b-b3ef-4079bce15e92",
+    "output" : "269ead16-2cea-4613-9369-777c5a3a4bd7",
+    "target" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "input" : "75893b7d-23cd-4c41-837a-cc566edbbac5"
+  }, {
+    "source" : "1b143f50-6e0b-4889-8339-547be355e5a3",
+    "output" : "eb52a252-acec-4f02-ae3d-dc66b3b15740",
+    "target" : "9cc54503-3de1-45ee-8f2f-4e5fb0b700c4",
+    "input" : "15f97b7d-b33d-43c0-b90a-2aea41a57826"
+  }, {
+    "source" : "ee801afd-c25d-46f9-8bf3-5a9b28b15962",
+    "output" : "f1dbb829-00f5-4aa0-bf24-6fec777e5ada",
+    "target" : "3f899375-d062-49a7-930c-ab01a4995602",
+    "input" : "b7de0b4d-3b34-44d4-9850-720323c855b0"
+  }, {
+    "source" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "output" : "c45fbd93-2abf-4ad1-8126-769954f2dcc4",
+    "target" : "ae8f1ebb-2374-497a-907b-b0da70610753",
+    "input" : "74fac1af-0b91-441f-bf2d-e69430334112"
+  }, {
+    "source" : "e7ae2498-7b4f-4dcd-943e-1a12826097e8",
+    "output" : "c45fb33e-e01e-46d6-bbc4-34ebc11f8410",
+    "target" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "input" : "6bb567ee-3503-47ee-8f05-b69b473f27e5"
+  }, {
+    "source" : "9cc54503-3de1-45ee-8f2f-4e5fb0b700c4",
+    "output" : "bd08828e-8d64-4a0f-89da-140f3791ff15",
+    "target" : "1b143f50-6e0b-4889-8339-547be355e5a3",
+    "input" : "7a504c9e-aaf8-40c5-9bed-5323272e1b23"
+  }, {
+    "source" : "53325c50-54e1-47aa-858f-cf2414b6de4e",
+    "output" : "776de38d-ac24-4b25-98f8-5a7298561611",
+    "target" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "input" : "7328dba1-9ffb-4fef-ae64-a40d71708686"
+  }, {
+    "source" : "21985627-a6dd-4c8e-91df-ed5dcc898b3c",
+    "output" : "819cdeb8-480d-41bc-8673-a790c5c272fd",
+    "target" : "1987e9dd-b331-4a99-8c0b-da9c02063d99",
+    "input" : "03c41454-90e0-441b-92a5-f2d0f6869b7f"
+  }, {
+    "source" : "ae8f1ebb-2374-497a-907b-b0da70610753",
+    "output" : "b99fc183-7409-4e82-9368-5b15ecab2797",
+    "target" : "dbb83aef-d8aa-423b-b3ef-4079bce15e92",
+    "input" : "cf02d1e8-2e11-4088-ac58-889c5b8f5a93"
+  }, {
+    "source" : "4aea1c03-2958-45b5-91b1-5b34053609e6",
+    "output" : "051f24aa-e3ea-4895-b221-03b616947564",
+    "target" : "e7ae2498-7b4f-4dcd-943e-1a12826097e8",
+    "input" : "4cb51d08-defe-4c8f-9c35-8db58353707e"
+  }, {
+    "source" : "49026e8a-310c-458e-8055-d697b97f853b",
+    "output" : "35d00d55-eb11-4bb6-b610-e3b0a0997d8d",
+    "target" : "53325c50-54e1-47aa-858f-cf2414b6de4e",
+    "input" : "219127bb-a31a-4b53-9162-563ed3a8c9c9"
+  }, {
+    "source" : "007f2ddf-d95d-4573-b046-ee77bd692b32",
+    "output" : "e01fb3c7-c83f-4c75-b9ef-e0897d2fc62a",
+    "target" : "9fc09f79-6fd2-4bc6-96f3-1c291b71e68c",
+    "input" : "eaa18b6d-7e03-4cd3-be75-d1b1cc4be8b4"
+  }, {
+    "source" : "1b143f50-6e0b-4889-8339-547be355e5a3",
+    "output" : "d22263fd-4129-44a6-9c77-92914ad3c991",
+    "target" : "ee801afd-c25d-46f9-8bf3-5a9b28b15962",
+    "input" : "3a923672-ebdb-4bde-b526-c7998f0ca1c7"
+  }, {
+    "source" : "b09226ce-d729-41f6-a06a-2cf65d3529ee",
+    "output" : "80aa9cea-aef9-4726-969c-3513ac1626a7",
+    "target" : "9b79a988-2ea6-42ba-a548-bcadb212e908",
+    "input" : "e241899b-aafc-4357-8c3a-e50080a9dbae"
+  } ]
+}

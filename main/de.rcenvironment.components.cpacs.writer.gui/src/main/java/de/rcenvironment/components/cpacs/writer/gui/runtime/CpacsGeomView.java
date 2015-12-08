@@ -61,12 +61,12 @@ public class CpacsGeomView extends AbstractCpacsRuntimeView implements Observer 
                 secondId = tempFile.getCanonicalPath();
                 secondId = secondId.replaceAll(":", "&#38");
                 PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
-                    .showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
+                    .showView("de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer",
                         secondId, IWorkbenchPage.VIEW_ACTIVATE);
             } catch (IOException e) {
                 LOGGER.error(e);
             }
-           
+
         } catch (final PartInitException e) {
             LOGGER.error(e);
             MessageDialog.openWarning(form.getShell(), "Could not open editor", e.getMessage());

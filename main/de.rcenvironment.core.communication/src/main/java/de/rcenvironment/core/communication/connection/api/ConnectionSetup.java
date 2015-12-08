@@ -8,8 +8,10 @@
 
 package de.rcenvironment.core.communication.connection.api;
 
+import java.util.concurrent.TimeoutException;
+
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
  * Represents a connection setup, ie a configured network destination that a logical message channel can be established to.
@@ -44,6 +46,16 @@ public interface ConnectionSetup {
      * Signals that an active connection is not desired (anymore); may trigger an asynchronous disconnect.
      */
     void signalStopIntent();
+
+    /**
+     * Utility method for integration tests that waits until the connection has reached the given state, or the timeout has elapsed.
+     * 
+     * @param targetState the state to wait for
+     * @param timeoutMsec the maximum time to wait
+     * @throws TimeoutException if the wait time is exceeded
+     * @throws InterruptedException on thread interruption
+     */
+    void awaitState(ConnectionSetupState targetState, int timeoutMsec) throws TimeoutException, InterruptedException;
 
     /**
      * @return the display name specified on creation

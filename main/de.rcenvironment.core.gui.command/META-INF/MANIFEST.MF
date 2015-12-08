@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Command
 Bundle-SymbolicName: de.rcenvironment.core.gui.command;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
@@ -20,4 +20,5 @@ Import-Package: de.rcenvironment.core.command.api,
 Export-Package: de.rcenvironment.core.gui.command
 Require-Bundle: org.eclipse.jface,
  org.eclipse.core.runtime,
- org.eclipse.ui.workbench
+ org.eclipse.ui.workbench,
+ org.apache.commons.io

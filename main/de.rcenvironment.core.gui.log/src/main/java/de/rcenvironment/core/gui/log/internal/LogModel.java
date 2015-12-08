@@ -10,6 +10,7 @@ package de.rcenvironment.core.gui.log.internal;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -24,8 +25,9 @@ import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.osgi.service.log.LogEntry;
+import org.osgi.service.log.LogService;
 
-import de.rcenvironment.core.communication.api.SimpleCommunicationService;
+import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.gui.log.LogListener;
@@ -35,11 +37,11 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
- * Provides central local access to the whole logging data (log entries, remote platforms) to
- * display.
+ * Provides central local access to the whole logging data (log entries, remote platforms) to display.
  * 
  * @author Doreen Seider
  * @author Enrico Tappert
+ * @author Robert Mischke
  */
 public final class LogModel {
 
@@ -49,16 +51,26 @@ public final class LogModel {
 
     private final List<Listener> listeners = new LinkedList<Listener>();
 
-    private Set<NodeIdentifier> platforms;
+    private Set<NodeIdentifier> currentWorkflowHostsAndSelf;
 
-    private NodeIdentifier currentNodeId;
+    private NodeIdentifier selectedLogSource;
 
     private Map<NodeIdentifier, Map<Integer, SortedSet<SerializableLogEntry>>> allLogEntries;
 
+    private final WorkflowHostService workflowHostService;
+
+    private final PlatformService platformService;
+
+    private final DistributedLogReaderService logReaderService;
+
     private LogModel() {
-        allLogEntries = new ConcurrentHashMap<NodeIdentifier, Map<Integer, SortedSet<SerializableLogEntry>>>();
         ServiceRegistryAccess registryAccess = ServiceRegistry.createAccessFor(this);
-        platforms = registryAccess.getService(WorkflowHostService.class).getWorkflowHostNodesAndSelf();
+        workflowHostService = registryAccess.getService(WorkflowHostService.class);
+        platformService = registryAccess.getService(PlatformService.class);
+        logReaderService = registryAccess.getService(DistributedLogReaderService.class);
+
+        allLogEntries = new ConcurrentHashMap<NodeIdentifier, Map<Integer, SortedSet<SerializableLogEntry>>>();
+        currentWorkflowHostsAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
     }
 
     /**
@@ -75,7 +87,7 @@ public final class LogModel {
 
     /**
      * Returns a list of {@link LogEntry} for the specified {@link NodeIdentifier} set by
-     * {@link LogModel#setCurrentPlatform(String)}.
+     * {@link LogModel#setSelectedLogSource(String)}.
      * 
      * @return {@link SortedSet} of {@link LogEntry}.
      */
@@ -84,15 +96,17 @@ public final class LogModel {
         SortedSet<SerializableLogEntry> entries = new TreeSet<SerializableLogEntry>();
 
         synchronized (allLogEntries) {
-            if (currentNodeId != null && !allLogEntries.containsKey(currentNodeId)) {
-                allLogEntries.put(currentNodeId, new HashMap<Integer, SortedSet<SerializableLogEntry>>());
-                subscribeForNewLogEntriesAndRetrieveOldOnes(currentNodeId);
+            if (selectedLogSource != null && !allLogEntries.containsKey(selectedLogSource)) {
+                allLogEntries.put(selectedLogSource, new HashMap<Integer, SortedSet<SerializableLogEntry>>());
+                subscribeForNewLogEntriesAndRetrieveOldOnes(selectedLogSource);
             } else {
-                for (Integer level : allLogEntries.get(currentNodeId).keySet()) {
-                    Map<Integer, SortedSet<SerializableLogEntry>> platformEntries = allLogEntries.get(currentNodeId);
-                    SortedSet<SerializableLogEntry> levelEntries = platformEntries.get(level);
-                    synchronized (levelEntries) {
-                        entries.addAll(levelEntries);
+                for (Integer level : allLogEntries.get(selectedLogSource).keySet()) {
+                    if (level != LogService.LOG_DEBUG) {
+                        Map<Integer, SortedSet<SerializableLogEntry>> platformEntries = allLogEntries.get(selectedLogSource);
+                        SortedSet<SerializableLogEntry> levelEntries = platformEntries.get(level);
+                        synchronized (levelEntries) {
+                            entries.addAll(levelEntries);
+                        }
                     }
                 }
             }
@@ -109,12 +123,12 @@ public final class LogModel {
         NodeIdentifier nodeId = logEntry.getPlatformIdentifer();
 
         synchronized (allLogEntries) {
-            
+
             if (!allLogEntries.get(nodeId).containsKey(logEntry.getLevel())) {
                 allLogEntries.get(nodeId).put(logEntry.getLevel(),
                     Collections.synchronizedSortedSet(new TreeSet<SerializableLogEntry>()));
             }
-    
+
             SortedSet<SerializableLogEntry> logEntries = allLogEntries.get(nodeId).get(logEntry.getLevel());
             while (logEntries.size() >= LOG_POOL_SIZE) {
                 final SerializableLogEntry logEntryToRemove = logEntries.first();
@@ -126,35 +140,26 @@ public final class LogModel {
             if (logEntries.add(logEntry)) {
                 for (final Listener listener : listeners) {
                     listener.handleLogEntryAdded(logEntry);
-                }            
+                }
             }
         }
-        
+
     }
 
     /**
      * Lets identify the current platform for which logging messages has to be shown.
      * 
-     * @param platform The current platform identifier to set.
+     * @param nodeId The current platform identifier to set.
      */
-    public void setCurrentPlatform(String platform) {
-        currentNodeId = null;
-        for (NodeIdentifier nodeId : platforms) {
-            // search relevant platform
-
-            // TODO searching by dynamically-generated string is brittle; rework
-            if (nodeId.getAssociatedDisplayName().equals(platform)) {
-                currentNodeId = nodeId;
-                break;
-            }
-        }
+    public synchronized void setSelectedLogSource(NodeIdentifier nodeId) {
+        selectedLogSource = nodeId;
     }
 
     /**
      * @return current platform.
      */
-    public String getCurrentPlatform() {
-        return currentNodeId.toString();
+    public synchronized NodeIdentifier getCurrentLogSource() {
+        return selectedLogSource;
     }
 
     /**
@@ -162,39 +167,44 @@ public final class LogModel {
      * 
      * @return Array of platform identifiers.
      */
-    public String[] getNodeIdsOfLogSources() {
-        ServiceRegistryAccess registryAccess = ServiceRegistry.createAccessFor(this);
-        platforms = registryAccess.getService(WorkflowHostService.class).getWorkflowHostNodesAndSelf();
-        platforms.toArray();
-        List<String> platformsAsStringList = new ArrayList<String>();
+    public synchronized List<NodeIdentifier> updateListOfLogSources() {
+        currentWorkflowHostsAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
+        
+        List<NodeIdentifier> logSources = new ArrayList<>();
 
-        String localPlatform = null;
-        for (NodeIdentifier pi : platforms) {
-            if (new SimpleCommunicationService().isLocalNode(pi)) {
-                localPlatform = pi.getAssociatedDisplayName();
+        NodeIdentifier localNodeId = null;
+        for (NodeIdentifier nodeId : currentWorkflowHostsAndSelf) {
+            if (platformService.isLocalNode(nodeId)) {
+                localNodeId = nodeId;
             } else {
-                platformsAsStringList.add(pi.getAssociatedDisplayName());
+                logSources.add(nodeId);
             }
         }
 
-        Collections.sort(platformsAsStringList);
+        Collections.sort(logSources, new Comparator<NodeIdentifier>() {
 
-        if (localPlatform != null) {
-            platformsAsStringList.add(0, localPlatform);
+            @Override
+            public int compare(NodeIdentifier o1, NodeIdentifier o2) {
+                return o1.getAssociatedDisplayName().compareTo(o2.getAssociatedDisplayName());
+            }
+        });
+
+        if (localNodeId != null) {
+            logSources.add(0, localNodeId);
         }
 
-        return platformsAsStringList.toArray(new String[platformsAsStringList.size()]);
+        return logSources;
     }
 
     /** Removes log entries. **/
     public void clear() {
         synchronized (allLogEntries) {
-            if (currentNodeId == null) {
+            if (selectedLogSource == null) {
                 for (NodeIdentifier pi : allLogEntries.keySet()) {
                     allLogEntries.get(pi).clear();
                 }
             } else {
-                allLogEntries.get(currentNodeId).clear();
+                allLogEntries.get(selectedLogSource).clear();
             }
         }
     }
@@ -209,10 +219,8 @@ public final class LogModel {
                     monitor.beginTask(Messages.fetchingLogs, 7);
                     monitor.worked(1);
                     // set the listener to recognize new message in future
-                    LogListener logListener = new LogListener(currentNodeId);
-                    ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-                    DistributedLogReaderService logReaderService = serviceRegistryAccess.getService(DistributedLogReaderService.class);
-                    logReaderService.addLogListener(logListener, currentNodeId);
+                    LogListener logListener = new LogListener(selectedLogSource);
+                    logReaderService.addLogListener(logListener, selectedLogSource);
                     monitor.worked(1);
                     List<SerializableLogEntry> retrievedLogEntries = logReaderService.getLog(node);
                     monitor.worked(2);

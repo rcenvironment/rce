@@ -15,13 +15,12 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.messaging.direct.api.DirectMessagingSender;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
-import de.rcenvironment.core.communication.model.NetworkResponseHandler;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
@@ -32,7 +31,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * 
  * @author Robert Mischke
  */
-public interface MessageChannelService {
+public interface MessageChannelService extends DirectMessagingSender {
 
     /**
      * Initiates an asynchronous connection attempt. On success, the new channel is returned, but is not registered internally, so it has no
@@ -82,35 +81,6 @@ public interface MessageChannelService {
      * Closes all established (logical) {@link MessageChannel}s. Usually called on shutdown.
      */
     void closeAllOutgoingChannels();
-
-    /**
-     * Sends the given request into the given connection. The response is returned via the provided {@link NetworkResponseHandler}.
-     * 
-     * @param request the {@link NetworkRequest} to send
-     * @param channel the {@link MessageChannel} to send into
-     * @param responseHandler the response handler
-     */
-    void sendRequest(NetworkRequest request, MessageChannel channel, NetworkResponseHandler responseHandler);
-
-    /**
-     * Sends the given request into the {@link MessageChannel} identified by the given id. The response is returned via the provided
-     * {@link NetworkResponseHandler}.
-     * 
-     * @param request the {@link NetworkRequest} to send
-     * @param channelId the id of the {@link MessageChannel} to send into
-     * @param responseHandler the response handler
-     */
-    void sendRequest(NetworkRequest request, String channelId, NetworkResponseHandler responseHandler);
-
-    /**
-     * Convenience method that sends a request containing the given payload and metadata into the given connection, and returns a
-     * {@link Future} for the received response.
-     * 
-     * @param request the {@link NetworkRequest} to send
-     * @param connection the connection to send to
-     * @return a {@link Future} providing the associated {@link NetworkResponse}
-     */
-    Future<NetworkResponse> sendRequest(NetworkRequest request, MessageChannel connection);
 
     /**
      * Adds a new request handler to the processing chain. The handlers are invoked in the order they were added, and the first non-null
@@ -188,11 +158,11 @@ public interface MessageChannelService {
     void addNetworkTransportProvider(NetworkTransportProvider provider);
 
     /**
-     * Adds a {@link RawMessageChannelTrafficListener}.
+     * Adds a {@link MessageChannelTrafficListener}.
      * 
      * @param listener the new listener
      */
-    void addTrafficListener(RawMessageChannelTrafficListener listener);
+    void addTrafficListener(MessageChannelTrafficListener listener);
 
     /**
      * Loads the IP filter configuration file, and applies its settings to all current and future {@link ServerContactPoint}s.

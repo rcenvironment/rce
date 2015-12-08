@@ -188,7 +188,16 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
             return;
         }
         // TODO parse for parallel sections
-        executeSingleCommand(tokens);
+
+        try {
+            executeSingleCommand(tokens);
+        } catch (CommandException e) {
+            if (e.getType().equals(CommandException.Type.HELP_REQUESTED)) {
+                outputReceiver.onFatalError(e);
+            } else {
+                throw e;
+            }
+        }
     }
 
     private void executeSingleCommand(List<String> tokens) throws CommandException {

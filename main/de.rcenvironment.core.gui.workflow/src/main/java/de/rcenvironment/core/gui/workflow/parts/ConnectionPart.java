@@ -14,12 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.draw2d.AbsoluteBendpoint;
-import org.eclipse.draw2d.ConnectionEndpointLocator;
+import org.eclipse.draw2d.ConnectionLocator;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.Polyline;
 import org.eclipse.draw2d.PolylineConnection;
 import org.eclipse.draw2d.PolylineDecoration;
+import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
@@ -62,11 +63,13 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
 
         // skip self connections
         if (!wrapper.getSource().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
-            UpdatingConnectionEndpointLocator relationshipLocator = new UpdatingConnectionEndpointLocator(connection, true);
+            ConnectionLocator connectionLocator = new ConnectionLocator(connection, ConnectionLocator.MIDDLE);
+            connectionLocator.setRelativePosition(PositionConstants.NSEW);
+            connectionLocator.setGap(5);
             relationshipLabel = new Label(String.valueOf(((ConnectionWrapper) getModel()).getNumberOfConnections()));
             // hide label per default
             relationshipLabel.setVisible(false);
-            connection.add(relationshipLabel, relationshipLocator);
+            connection.add(relationshipLabel, connectionLocator);
         }
         return connection;
     }
@@ -146,28 +149,6 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
         }
     }
 
-    /**
-     * ConnectionEndpointLocator that updates the label's location.
-     * 
-     * @author Oliver Seebach
-     */
-    class UpdatingConnectionEndpointLocator extends ConnectionEndpointLocator {
-
-        private PolylineConnection connection = null;
-
-        public UpdatingConnectionEndpointLocator(PolylineConnection c, boolean isEnd) {
-            super(c, isEnd);
-            this.connection = c;
-        }
-
-        @Override
-        public void relocate(IFigure figure) {
-            // place label in the middle between start and end point
-            double distance = Math.abs(connection.getEnd().getDistance(connection.getStart()));
-            this.setUDistance((int) (distance / 2));
-            super.relocate(figure);
-        }
-    }
 
     @Override
     public void propertyChange(PropertyChangeEvent evt) {

@@ -37,7 +37,6 @@ import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.properties.IPropertySource;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.execution.api.Component;
@@ -58,6 +57,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Read-only EditPart representing a WorkflowNode.
@@ -247,8 +247,9 @@ public class ReadOnlyWorkflowNodePart extends WorkflowNodePart {
                 handleExecutionCountNotification(iterationCountNotifs.get(iterationCountNotifs.size() - 1));
             }
         } catch (NullPointerException e) {
+            // TODO review: can this still occur after 7.0.0 error handling changes?
             LOGGER.error("Could not initialize status.", e);
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             LOGGER.error("Failed to register workflow state change listeners: " + e.getMessage());
         }
     }

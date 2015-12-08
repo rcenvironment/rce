@@ -1,0 +1,7 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Local Execution Controller Utils Service">
+	<implementation class="de.rcenvironment.core.component.execution.internal.LocalExecutionControllerUtilsServiceImpl"/>
+	<service>
+		<provide interface="de.rcenvironment.core.component.execution.api.LocalExecutionControllerUtilsService"/>
+	</service>
+	
+</scr:component>

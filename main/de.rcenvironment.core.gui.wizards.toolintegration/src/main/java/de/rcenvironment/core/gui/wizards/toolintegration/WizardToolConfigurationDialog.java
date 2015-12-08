@@ -19,6 +19,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -66,11 +67,9 @@ public class WizardToolConfigurationDialog extends Dialog {
 
     private Button defaultTempDirButton;
 
-    private Button customTempDirButton;
-
     private final List<Map<String, String>> allConfigs;
 
-    private Label tempLabel;
+//    private Label tempLabel;
 
     private Map<String, String> oldConfig;
 
@@ -120,6 +119,13 @@ public class WizardToolConfigurationDialog extends Dialog {
         }
         setShellStyle(SWT.RESIZE | SWT.MAX | SWT.APPLICATION_MODAL);
     }
+    
+    @Override
+    protected Point getInitialSize() {
+        final int width = 600;
+        final int height = 300;
+        return new Point(width, height);
+    }
 
     @Override
     protected void configureShell(Shell shell) {
@@ -148,6 +154,31 @@ public class WizardToolConfigurationDialog extends Dialog {
         if (config.get(ToolIntegrationConstants.KEY_VERSION) != null) {
             versionText.setText(config.get(ToolIntegrationConstants.KEY_VERSION));
         }
+        String rwd = config.get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY);
+
+        if (rwd == null) {
+            defaultTempDirButton.setSelection(false);
+            rootWorkingDirText.setEnabled(true);
+            chooseRootDirPathButton.setEnabled(true);
+        } else {
+            if (rwd.isEmpty()) {
+                defaultTempDirButton.setSelection(true);
+                rootWorkingDirText.setEnabled(false);
+                chooseRootDirPathButton.setEnabled(false);
+            } else {
+                defaultTempDirButton.setSelection(false);
+                rootWorkingDirText.setEnabled(true);
+                rootWorkingDirText.setText(config.get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY));
+                chooseRootDirPathButton.setEnabled(true);
+            }
+        }
+        for (String key : context.getDisabledIntegrationKeys()) {
+            if (ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY.equals(key)) {
+                rootWorkingDirText.setEnabled(false);
+                defaultTempDirButton.setEnabled(false);
+                chooseRootDirPathButton.setEnabled(false);
+            }
+        }
         if (config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) != null) {
             if (Boolean.parseBoolean(config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES))) {
                 limitInstancesButton.setSelection(true);
@@ -161,33 +192,6 @@ public class WizardToolConfigurationDialog extends Dialog {
         } else {
             limitInstancesButton.setSelection(false);
             limitInstancesText.setText("");
-        }
-        String rwd = config.get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY);
-
-        if (rwd != null) {
-            if (rwd.isEmpty()) {
-                customTempDirButton.setSelection(false);
-                defaultTempDirButton.setSelection(true);
-                rootWorkingDirText.setEnabled(false);
-            } else {
-                customTempDirButton.setSelection(true);
-                defaultTempDirButton.setSelection(false);
-                rootWorkingDirText.setEnabled(true);
-                rootWorkingDirText.setText(config.get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY));
-            }
-        } else {
-            customTempDirButton.setSelection(false);
-            defaultTempDirButton.setSelection(true);
-            rootWorkingDirText.setEnabled(false);
-        }
-        defaultTempDirButton.setEnabled(true);
-        customTempDirButton.setEnabled(true);
-        for (String key : context.getDisabledIntegrationKeys()) {
-            if (ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY.equals(key)) {
-                rootWorkingDirText.setEnabled(false);
-                defaultTempDirButton.setEnabled(false);
-                customTempDirButton.setEnabled(false);
-            }
         }
     }
 
@@ -206,11 +210,11 @@ public class WizardToolConfigurationDialog extends Dialog {
 
         // localhostButton.setLayoutData(localhostData);
         // localhostButton.setVisible(false);
-        tempLabel = new Label(propertyContainer, SWT.NONE);
-        tempLabel.setText(Messages.localHostButtonText);
-        GridData localhostData = new GridData();
-        localhostData.horizontalSpan = 3;
-        tempLabel.setLayoutData(localhostData);
+//        tempLabel = new Label(propertyContainer, SWT.NONE);
+//        tempLabel.setText(Messages.localHostButtonText);
+//        GridData localhostData = new GridData();
+//        localhostData.horizontalSpan = 3;
+//        tempLabel.setLayoutData(localhostData);
 
         /*
          * hostButton = new Button(propertyContainer, SWT.RADIO);
@@ -249,6 +253,38 @@ public class WizardToolConfigurationDialog extends Dialog {
         versionGridData.horizontalSpan = 2;
         versionText.setLayoutData(versionGridData);
 
+        Label workingDirLabel = new Label(propertyContainer, SWT.NONE);
+        workingDirLabel.setText("Working directory: ");
+
+        rootWorkingDirText = new Text(propertyContainer, SWT.BORDER);
+        GridData rootWorkingDirGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+
+        rootWorkingDirText.setLayoutData(rootWorkingDirGridData);
+
+        chooseRootDirPathButton = new Button(propertyContainer, SWT.PUSH);
+        chooseRootDirPathButton.setText("  ...  ");
+        chooseRootDirPathButton.addSelectionListener(new PathChooserButtonListener(rootWorkingDirText, true, getShell()));
+        
+        new Label(propertyContainer, SWT.NONE);
+        
+        defaultTempDirButton = new Button(propertyContainer, SWT.CHECK);
+        GridData defaultTempDirData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+        defaultTempDirData.horizontalSpan = 2;
+        defaultTempDirButton.setText(Messages.rceTempUsed);
+        defaultTempDirButton.setLayoutData(defaultTempDirData);
+        defaultTempDirButton.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                saveAllConfig();
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
+
         limitInstancesButton = new Button(propertyContainer, SWT.CHECK);
         limitInstancesButton.setText(Messages.limitExecutionInstances);
         limitInstancesText = new Text(propertyContainer, SWT.BORDER);
@@ -272,44 +308,6 @@ public class WizardToolConfigurationDialog extends Dialog {
 
             }
         });
-        Label workingDirLabel = new Label(propertyContainer, SWT.NONE);
-        workingDirLabel.setText("Working directory: ");
-        GridData workingDirLabelData = new GridData();
-        workingDirLabelData.horizontalSpan = 3;
-        workingDirLabel.setLayoutData(workingDirLabelData);
-
-        defaultTempDirButton = new Button(propertyContainer, SWT.RADIO);
-        GridData defaultTempDirData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-        defaultTempDirData.horizontalSpan = 3;
-        defaultTempDirButton.setText(Messages.rceTempUsed);
-        defaultTempDirButton.setLayoutData(defaultTempDirData);
-        defaultTempDirButton.addSelectionListener(new SelectionListener() {
-
-            @Override
-            public void widgetSelected(SelectionEvent arg0) {
-                saveAllConfig();
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-                widgetSelected(arg0);
-            }
-        });
-        customTempDirButton = new Button(propertyContainer, SWT.RADIO);
-        customTempDirButton.setText(Messages.useCustomTempDir);
-        GridData customTempDirData = new GridData();
-        customTempDirButton.setLayoutData(customTempDirData);
-
-        rootWorkingDirText = new Text(propertyContainer, SWT.BORDER);
-        GridData rootWorkingDirGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-
-        rootWorkingDirText.setLayoutData(rootWorkingDirGridData);
-
-        chooseRootDirPathButton = new Button(propertyContainer, SWT.PUSH);
-        chooseRootDirPathButton.setText("  ...  ");
-        chooseRootDirPathButton.setEnabled(false);
-        chooseRootDirPathButton.addSelectionListener(new PathChooserButtonListener(rootWorkingDirText, true, getShell()));
-
     }
 
     @Override
@@ -341,9 +339,6 @@ public class WizardToolConfigurationDialog extends Dialog {
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void create() {
         super.create();
@@ -405,8 +400,8 @@ public class WizardToolConfigurationDialog extends Dialog {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
-                rootWorkingDirText.setEnabled(customTempDirButton.getSelection());
-                chooseRootDirPathButton.setEnabled(/* !hostButton.getSelection() && */customTempDirButton.getSelection());
+                rootWorkingDirText.setEnabled(!defaultTempDirButton.getSelection());
+                chooseRootDirPathButton.setEnabled(/* !hostButton.getSelection() && */!defaultTempDirButton.getSelection());
                 validateInput();
             }
 
@@ -416,7 +411,6 @@ public class WizardToolConfigurationDialog extends Dialog {
             }
         };
         defaultTempDirButton.addSelectionListener(sl2);
-        customTempDirButton.addSelectionListener(sl2);
     }
 
     protected void validateInput() {

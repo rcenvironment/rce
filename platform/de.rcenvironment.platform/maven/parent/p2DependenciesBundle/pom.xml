@@ -14,6 +14,82 @@
 		<relativePath>../common</relativePath>
 	</parent>
 
+	<properties>
+		<relativePathToProjectsRoot>..</relativePathToProjectsRoot>
+	</properties>
+
+	<!-- Note: for most of the mirrored repositories, the original URLs are 
+		present as well, but commented out. This is intended to support testing of 
+		new artifacts from these repositories before mirroring them. - R. Mischke, 
+		Oct 2015 -->
+
+	<repositories>
+		<repository>
+			<id>p2-mirror-indigo</id>
+			<layout>p2</layout>
+			<url>${project.baseUri}${relativePathToProjectsRoot}/de.rcenvironment.thirdparty/mirror/p2/eclipse.org/indigo-sr2</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>p2-eclipse-orbit</id>
+			<layout>p2</layout>
+			<url>${project.baseUri}${relativePathToProjectsRoot}/de.rcenvironment.thirdparty/mirror/p2/eclipse.org/orbit</url>
+			<!-- <url>${rce.maven.eclipseOrbitRepositoryUrl}</url> -->
+			<snapshots>
+				<!-- prevent Maven from using this repository for snapshot parent POMs 
+					(which produces a warning as the layout is not recognized) -->
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>p2-eclipse-nebula</id>
+			<layout>p2</layout>
+			<url>${project.baseUri}${relativePathToProjectsRoot}/de.rcenvironment.thirdparty/mirror/p2/eclipse.org/nebula</url>
+			<!-- <url>${rce.maven.eclipseNebulaRepositoryUrl}</url> -->
+			<snapshots>
+				<!-- prevent Maven from using this repository for snapshot parent POMs 
+					(which produces a warning as the layout is not recognized) -->
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>p2-ajdt</id>
+			<layout>p2</layout>
+			<url>${project.baseUri}${relativePathToProjectsRoot}/de.rcenvironment.thirdparty/mirror/p2/eclipse.org/ajdt</url>
+			<!-- <url>http://download.eclipse.org/tools/ajdt/42/update/</url> -->
+			<snapshots>
+				<!-- prevent Maven from using this repository for snapshot parent POMs 
+					(which produces a warning as the layout is not recognized) -->
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>p2-mirror-pdf4eclipse</id>
+			<layout>p2</layout>
+			<url>${project.baseUri}${relativePathToProjectsRoot}/de.rcenvironment.thirdparty/mirror/p2/de.vonloesch.pdf4eclipse</url>
+			<!-- <url>${rce.maven.eclipseNebulaRepositoryUrl}</url> -->
+			<snapshots>
+				<!-- prevent Maven from using this repository for snapshot parent POMs 
+					(which produces a warning as the layout is not recognized) -->
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+		<repository>
+			<id>p2-mirror-quickimage</id>
+			<layout>p2</layout>
+			<url>${project.baseUri}${relativePathToProjectsRoot}/de.rcenvironment.thirdparty/mirror/p2/nu.psnet.quickimage</url>
+			<!-- <url>${rce.maven.eclipseNebulaRepositoryUrl}</url> -->
+			<snapshots>
+				<!-- prevent Maven from using this repository for snapshot parent POMs 
+					(which produces a warning as the layout is not recognized) -->
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
+
+	</repositories>
+
 	<dependencies>
 		<!-- OSGi-enabled Maven artifacts; made available on the p2 level by the 
 			"mvn-osgi" feature - R. Mischke -->

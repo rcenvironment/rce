@@ -1,0 +1,59 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="automated_gui_testing">
+	<title>Automated GUI Testing</title>
+	<sect2>
+	<title>Getting started</title>
+		<para>This section describes the required steps to create your first automated GUI test for RCE
+			using the RCP testing tools (RCPTT): 
+			<orderedlist>
+				<listitem>
+					<para>Download RCPTT for the respective platform from
+						http://www.eclipse.org/rcptt/download/</para>
+				</listitem>
+				<listitem>
+					<para>Please note that you have to use an RCE release or snapshot built after July 2nd 2015.
+					For the time being a snapshot can be downloaded here: http://updates-external.sc.dlr.de/rce/6.x/products/standard/snapshots/trunk/zip/</para>
+					<para>TODO: Remove this remark once the latest RCE release contains the respective fix.</para>
+				</listitem>
+				<listitem>
+					<para>Check out dev_config.ini file somewhere on your file system. It can be
+						found here:
+						de.rcenvironment\eclipse\launch\installation_data\dev_config.ini</para>
+				</listitem>
+				<listitem>
+					<para>Now you can start RCPTT and add RCE as an application under test (AUT).
+						Therefore right click somewhere in the "Applications" view at the bottom and
+						select "New...". Via "Browse..." you can navigate to RCE's installation
+						folder, i.e. the folder that contains the rce executable. When RCPTT
+						identifies RCE the name is automatically inserted, but can be replaced by a
+						more convenient one. Click "Finish" to complete the dialog.</para>
+				</listitem>
+				<listitem>
+					<para>To allow RCPTT to start RCE the config.ini has to be set. Therefore right
+						click on the application you just added in the "Applications" view and
+						select "Configure...". In the following dialog, click "Advanced..." on the
+						right hand side. In the just opened window browse to the "Configuration"
+						tab. Here in the second group "Configuration File" you can select a
+						config.ini that should be used. Select "Use an existing config.ini file as a
+						template" and point to the respective location there you checked out the
+						dev_config.ini from the RCE repository. Confirm the configuration window
+						with "OK".</para>
+				</listitem>
+				<listitem>
+					<para>To check out whether RCE can be started, right click on the application
+						and select "Run". If RCE starts, you can start to create your own test
+						cases</para>
+					<para>TODO: Add location where already existent test cases are stored and new
+						ones can be added.</para>
+				</listitem>
+				<listitem>
+					<para>In principle the creation of test cases is the same for every RCP based
+						application. Therefore RCPTT's "Getting Started" guide which uses the
+						Eclipse IDE as application under test is a good reference. The ideas
+						presented here can easily be adapted to RCE's context. You can find it here:
+						https://www.eclipse.org/rcptt/documentation/userguide/getstarted/</para>
+				</listitem>
+			</orderedlist>
+		</para>
+	</sect2>
+</sect1>

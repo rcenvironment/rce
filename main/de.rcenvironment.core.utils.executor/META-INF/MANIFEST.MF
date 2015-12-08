@@ -2,9 +2,10 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Executor
 Bundle-SymbolicName: de.rcenvironment.core.utils.executor
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.common.validation,

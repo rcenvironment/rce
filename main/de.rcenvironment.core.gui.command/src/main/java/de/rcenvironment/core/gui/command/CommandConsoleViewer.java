@@ -23,6 +23,7 @@ import org.eclipse.jface.action.IMenuManager;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.action.Separator;
+import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
@@ -50,12 +51,10 @@ import org.eclipse.ui.part.ViewPart;
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.command.spi.AbstractInteractiveCommandConsole;
-import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -67,6 +66,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Marc Stammerjohann
  * @author Doreen Seider (command history tweaks)
  * @author Robert Mischke (fixed #10886)
+ * @author Sascha Zur
  */
 public class CommandConsoleViewer extends ViewPart {
 
@@ -74,14 +74,9 @@ public class CommandConsoleViewer extends ViewPart {
 
     private static final int RCEPROMPTLENGTH = RCEPROMPT.length();
 
-    private static final String KEYCOMMAND = "UsedCommands";
-
-    private static final String SAVEDCOMMANDCOUNTER = "SavedCommandCounter";
-
     private static final Color PROMPT_COLOR_BLUE = Display.getCurrent().getSystemColor(SWT.COLOR_BLUE);
 
-    /** Constant. Command History is limited to 30 entries. */
-    private static final int COMMAND_LIMIT = 30;
+    private static final int MAXIMUM_PASTE_LENGTH = 10000;
 
     /** Used to insert text in new line. It is not allowed to insert text behind this position. */
     private int caretLinePosition;
@@ -101,20 +96,21 @@ public class CommandConsoleViewer extends ViewPart {
 
     private CommandExecutionService commandExecutionService;
 
-    private PersistentSettingsService persistentSettingsService;
-
-    private final List<String> usedCommands = new ArrayList<String>();
-
-    // replacing the line break with the platform-independent one results in errors (invalid argument) in #setSelection(int start);
+    // replacing the line break with the platform-independent one results in errors (invalid
+    // argument) in #setSelection(int start);
     // investigate if "\n" causes issues
     private final String lineBreak = "\n";
-    
+
     private final String platformIndependentLineBreak = System.lineSeparator();
 
     /** starts at -1. */
     private int commandPosition = 0 - 1;
 
     private final Log log = LogFactory.getLog(getClass());
+
+    private CommandHandler commandService;
+
+    private List<String> usedCommands;
 
     /**
      * An {@link Action} to clear the displayed text in the console.
@@ -151,15 +147,34 @@ public class CommandConsoleViewer extends ViewPart {
             // clipboard so that only this line will be
             Clipboard clipboard = new Clipboard(Display.getCurrent());
             String content = ((String) clipboard.getContents(TextTransfer.getInstance()));
-            if (content != null && content.contains(platformIndependentLineBreak)){
-                clipboard.setContents(new String[]{content.substring(0, content.indexOf(platformIndependentLineBreak))}, 
-                        new Transfer[]{ TextTransfer.getInstance()});
-            }
-            styledtext.paste();
-            String line = getLineWithoutRCEPROMPT(currentLine);
-            setStyledRange(caretLinePosition, line.length());
-            if (!line.isEmpty()) {
-                clearConsoleAction.setEnabled(true);
+            final int contentLength = content.length();
+            if (content != null && contentLength < MAXIMUM_PASTE_LENGTH) {
+                if (content.contains(platformIndependentLineBreak)) {
+
+                    content = content.replaceAll(platformIndependentLineBreak, " ");
+
+                }
+
+                clipboard.setContents(new String[] { content },
+                    new Transfer[] { TextTransfer.getInstance() });
+
+                styledtext.paste();
+                String line = getLineWithoutRCEPROMPT(currentLine);
+                setStyledRange(caretLinePosition, line.length());
+                if (!line.isEmpty()) {
+                    clearConsoleAction.setEnabled(true);
+                }
+            } else {
+                Display.getCurrent().asyncExec(new Runnable() {
+
+                    @Override
+                    public void run() {
+                        String warningMessage = "The text could not be pasted because it is too long. "
+                            + "Its length is " + contentLength + " characters but the maximum allowed length is " 
+                            + MAXIMUM_PASTE_LENGTH + " characters.";
+                        MessageDialog.open(MessageDialog.ERROR, null, "Warning", warningMessage, SWT.NONE);
+                    }
+                });
             }
         }
     }
@@ -208,16 +223,16 @@ public class CommandConsoleViewer extends ViewPart {
         hookContextMenu();
         contributeToActionBars();
         registerServices();
-        getCommandHistory();
+        commandService = new CommandHandler();
+        usedCommands = commandService.getUsedCommands();
 
         textOutputReceiver = new CommandConsoleOutputAdapter();
     }
 
-    /** Register {@link CommandExecutionService} and {@link PersistentSettingsService}. */
+    /** Register {@link CommandExecutionService}. */
     private void registerServices() {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         commandExecutionService = serviceRegistryAccess.getService(CommandExecutionService.class);
-        persistentSettingsService = serviceRegistryAccess.getService(PersistentSettingsService.class);
     }
 
     private void hookContextMenu() {
@@ -266,70 +281,6 @@ public class CommandConsoleViewer extends ViewPart {
         styledtext.setFocus();
     }
 
-    /** Retrieve commands from persistent service. */
-    private void getCommandHistory() {
-        String commands = persistentSettingsService.readStringValue(KEYCOMMAND);
-        if (commands != null) {
-            String[] commandSplit = StringUtils.splitAndUnescape(commands);
-            for (String element : commandSplit) {
-                addUsedCommand(element);
-            }
-        }
-    }
-
-    /**
-     * Save command with persistent service. Used as History. Commands are available after restart.
-     * 
-     * @param command to be saved
-     */
-    private void saveCommand(String command) {
-        String savedCommands = persistentSettingsService.readStringValue(KEYCOMMAND);
-        String savedCommandCounter = persistentSettingsService.readStringValue(SAVEDCOMMANDCOUNTER);
-        String escapeAndConcat = null;
-        int savedCounter;
-        if (savedCommandCounter == null) {
-            savedCounter = 0;
-        } else {
-            savedCounter = Integer.parseInt(savedCommandCounter);
-        }
-        if (savedCounter < COMMAND_LIMIT) {
-            // saves new command
-            if (savedCommands == null) {
-                escapeAndConcat = StringUtils.escapeAndConcat(command);
-            } else {
-                String[] splitAndUnescape = splitAndUnescapeCommand(savedCommands, command, savedCounter);
-                escapeAndConcat = StringUtils.escapeAndConcat(splitAndUnescape);
-            }
-            persistentSettingsService.saveStringValue(SAVEDCOMMANDCOUNTER, "" + ++savedCounter);
-        } else {
-            // if limit of saving commands is reached, last command will be removed
-            String[] splitAndUnescape = splitAndRemoveLast(savedCommands, command);
-            escapeAndConcat = StringUtils.escapeAndConcat(splitAndUnescape);
-        }
-        persistentSettingsService.saveStringValue(KEYCOMMAND, escapeAndConcat);
-    }
-
-    /** Splits saved commands and adds new command to be saved. */
-    private String[] splitAndUnescapeCommand(String savedCommands, String command, int savedCounter) {
-        String[] splitAndUnescape = new String[savedCounter + 1];
-        String[] commandSplit = StringUtils.splitAndUnescape(savedCommands);
-        for (int i = 0; i < commandSplit.length; i++) {
-            splitAndUnescape[i] = commandSplit[i];
-        }
-        splitAndUnescape[splitAndUnescape.length - 1] = command;
-        return splitAndUnescape;
-    }
-
-    /** removes last command. */
-    private String[] splitAndRemoveLast(String savedCommands, String command) {
-        String[] splitAndUnescape = StringUtils.splitAndUnescape(savedCommands);
-        for (int i = 0; i < splitAndUnescape.length - 1; i++) {
-            splitAndUnescape[i] = splitAndUnescape[i + 1];
-        }
-        splitAndUnescape[splitAndUnescape.length - 1] = command;
-        return splitAndUnescape;
-    }
-
     /** Changes output text color to black. */
     private void setStyledRange(int styledstart, int styledlength) {
         StyleRange styleRange = new StyleRange();
@@ -337,15 +288,6 @@ public class CommandConsoleViewer extends ViewPart {
         styleRange.length = styledlength;
         styleRange.foreground = PROMPT_COLOR_BLUE;
         styledtext.setStyleRange(styleRange);
-    }
-
-    private void addUsedCommand(String command) {
-        usedCommands.remove(command);
-        int size = usedCommands.size();
-        if (size == COMMAND_LIMIT) {
-            usedCommands.remove(size - 1);
-        }
-        usedCommands.add(0, command);
     }
 
     /** Display all used commands. */
@@ -515,21 +457,39 @@ public class CommandConsoleViewer extends ViewPart {
 
         @Override
         public void keyPressed(KeyEvent keyEvent) {
+
+            String command = getLineWithoutRCEPROMPT(currentLine);
+
             if (!getLineWithoutRCEPROMPT(0).isEmpty()) {
                 clearConsoleAction.setEnabled(true);
             }
             if (keyEvent.keyCode == SWT.CR) {
-                String command = getLineWithoutRCEPROMPT(currentLine);
-                if (command.equals(Messages.historyUsedCommand)) {
-                    displayUsedCommands();
-                } else {
-                    resetCommandPosition();
-                    addUsedCommand(command);
-                    setCaretLinePosition(caretLinePosition + command.length());
+                if (getLineWithoutRCEPROMPT(currentLine).isEmpty()) {
+
                     increaseCurrentLine();
                     insertRCEPrompt();
-                    // run command in separate thread to keep the UI responsive
-                    SharedThreadPool.getInstance().execute(new ExecuteCommand(command));
+
+                } else {
+
+                    if (command.equals(Messages.historyUsedCommand)) {
+                        displayUsedCommands();
+                        return;
+                    } else if (command.equals("clear")) {
+
+                        clearConsoleAction.run();
+                        return;
+
+                    } else {
+                        setSelection(styledtext.getCaretOffset() + getLineWithoutRCEPROMPT(currentLine).length());
+
+                        resetCommandPosition();
+                        // addUsedCommand(command);
+                        setCaretLinePosition(caretLinePosition + command.length());
+                        increaseCurrentLine();
+                        insertRCEPrompt();
+                        // run command in separate thread to keep the UI responsive
+                        SharedThreadPool.getInstance().execute(new ExecuteCommand(command));
+                    }
                 }
             }
             if (!getLineWithoutRCEPROMPT(currentLine).isEmpty() && getCurrentCaretLocation() > caretLinePosition) {
@@ -583,9 +543,7 @@ public class CommandConsoleViewer extends ViewPart {
         private void executeReturn(TraverseEvent event) {
             String line = getLineWithoutRCEPROMPT(currentLine);
             int currentCaretLocation = getCurrentCaretLocation();
-            if (currentCaretLocation == caretLinePosition && line.isEmpty()) {
-                disableEvent(event);
-            } else if (currentCaretLocation < caretLinePosition) {
+            if (currentCaretLocation < caretLinePosition) {
                 disableEvent(event);
             } else {
                 if (!line.isEmpty()) {
@@ -732,7 +690,10 @@ public class CommandConsoleViewer extends ViewPart {
         @Override
         @TaskDescription("Execute Command")
         public void run() {
-            saveCommand(command);
+
+            commandService.saveCommand(command);
+            commandService.addUsedCommand(command);
+
             List<String> tokens = getTokens();
             Future<CommandExecutionResult> asyncExecMultiCommand =
                 commandExecutionService.asyncExecMultiCommand(tokens, textOutputReceiver, "command console");

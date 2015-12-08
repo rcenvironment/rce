@@ -12,10 +12,10 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.Version;
 
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
@@ -57,7 +57,8 @@ public class BuiltInCommandPlugin implements CommandPlugin {
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
         contributions.add(new CommandDescription(CMD_HELP, "", false, "list available commands"));
-        contributions.add(new CommandDescription(CMD_VERSION, "", false, "print version information"));
+        contributions.add(new CommandDescription(CMD_VERSION, "[--detailed]", false, "print version information"));
+
         // developer commands
         contributions.add(new CommandDescription(CMD_DEV, "", true, "alias of \"help --dev\" [deprecated]"));
         contributions.add(new CommandDescription(CMD_DUMMY, "", true, "prints a test message"));
@@ -67,8 +68,9 @@ public class BuiltInCommandPlugin implements CommandPlugin {
         contributions.add(new CommandDescription(CMD_STATS, "", true, "show internal statistics"));
         contributions.add(new CommandDescription(CMD_OSGI, "[-o <filename>] <command>", true,
             "executes an OSGi/Equinox console command; use -o to write text output to a file"));
-        contributions.add(new CommandDescription(CMD_TASKS, "[-a]", true, "show information about internal tasks",
-            "-a - Extended information: list tasks with a unique id"));
+        contributions.add(new CommandDescription(CMD_TASKS, "[-a] [-i]", true, "show information about internal tasks",
+            "-a - Show all tasks, including inactive ones",
+            "-i - Extended information: list tasks with a unique id"));
         return contributions;
     }
 
@@ -138,9 +140,18 @@ public class BuiltInCommandPlugin implements CommandPlugin {
     }
 
     private void performVersion(CommandContext context) {
-        context.println("RCE platform version: " + VersionUtils.getVersionOfPlatformBundles());
-        context.println("RCE core version: " + VersionUtils.getVersionOfCoreBundles());
-        context.println("RCE product version: " + VersionUtils.getVersionOfProduct());
+        if (context.consumeNextTokenIfEquals("--detailed")) {
+            context.println("RCE platform version: " + VersionUtils.getVersionOfPlatformBundles());
+            context.println("RCE core version: " + VersionUtils.getVersionOfCoreBundles());
+            context.println("RCE product version: " + VersionUtils.getVersionOfProduct());
+        } else {
+            Version version = VersionUtils.getVersionOfProduct();
+            String buildId = VersionUtils.getBuildIdAsString(version);
+            if (buildId == null) {
+                buildId = "-";
+            }
+            context.println(StringUtils.format("%s (build ID: %s)", VersionUtils.getVersionAsString(version), buildId));
+        }
     }
 
     private void performCrash(CommandContext context) {
@@ -162,20 +173,30 @@ public class BuiltInCommandPlugin implements CommandPlugin {
      * @param context
      * 
      * @return String the console output
+     * @throws CommandException on syntax error
      */
-    private void performTasks(CommandContext context) {
-        // check for "-a" (all) flag
-        boolean addTaskIds = "-a".equals(context.consumeNextToken());
-        context.println(SharedThreadPool.getInstance().getFormattedStatistics(addTaskIds));
+    private void performTasks(CommandContext context) throws CommandException {
+        boolean addTaskIds = false;
+        boolean includeInactive = false;
+        String token;
+        while ((token = context.consumeNextToken()) != null) {
+            switch (token) {
+            case "-a": // "all"
+                includeInactive = true;
+                break;
+            case "-i": // "ids"
+                addTaskIds = true;
+                break;
+            default:
+                throw CommandException.syntaxError("Unknown parameter: " + token, context);
+            }
+        }
+        context.println(SharedThreadPool.getInstance().getFormattedStatistics(addTaskIds, includeInactive));
     }
 
     private void performStats(CommandContext context) {
-        Map<String, Map<String, Long>> report = StatsCounter.getFullReport();
-        for (Map.Entry<String, Map<String, Long>> category : report.entrySet()) {
-            context.println(category.getKey());
-            for (Map.Entry<String, Long> entry : category.getValue().entrySet()) {
-                context.println(StringUtils.format("  %,d - %s", entry.getValue(), entry.getKey()));
-            }
+        for (String line : StatsCounter.getFullReportAsStandardTextRepresentation()) {
+            context.println(line);
         }
     }
 

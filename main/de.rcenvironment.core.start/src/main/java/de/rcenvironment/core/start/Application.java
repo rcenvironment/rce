@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.start;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.equinox.app.IApplication;
@@ -15,9 +17,11 @@ import org.eclipse.equinox.app.IApplicationContext;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.FrameworkUtil;
 
-import de.rcenvironment.core.start.common.CommandLineArguments;
+import de.rcenvironment.core.configuration.CommandLineArguments;
+import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.start.common.InstanceRunner;
-import de.rcenvironment.core.start.common.Platform;
+import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
  * This class represents the default application.
@@ -33,17 +37,15 @@ public class Application implements IApplication {
     public Object start(IApplicationContext context) throws Exception {
 
         org.eclipse.core.runtime.Platform.addLogListener(new EclipseLogListener());
-        
-        try {
-            String[] args = (String[]) context.getArguments().get(IApplicationContext.APPLICATION_ARGS);
-            CommandLineArguments.parseArguments(args);
-        } catch (IllegalArgumentException e) {
-            log.error("Error parsing command-line options", e);
+
+        // check command-line options for validity; TODO convert into validator?
+        if (CommandLineArguments.hasConfigurationErrors()) {
+            log.error("Error parsing command-line options; shutting down");
             // no Eclipse return value for "error", so just terminate
             return IApplication.EXIT_OK;
         }
 
-        Platform.setHeadless(CommandLineArguments.isHeadlessModeRequested());
+        Instance.setHeadless(CommandLineArguments.isHeadlessModeRequested());
         Bundle currentBundle = FrameworkUtil.getBundle(getClass());
         if (currentBundle != null) {
             log.debug("Running from common launcher bundle " + currentBundle);
@@ -65,13 +67,21 @@ public class Application implements IApplication {
                 break;
             }
         }
-        InstanceRunner instanceRunner = Platform.getRunner();
-        return instanceRunner.run();
+        InstanceRunner instanceRunner = Instance.getInstanceRunner();
+        int runnerResult = instanceRunner.run();
+
+        final List<String> statsLines = StatsCounter.getFullReportAsStandardTextRepresentation();
+        final String mergedStatsLines = org.apache.commons.lang3.StringUtils.join(statsLines, "\n");
+        log.debug("Statistics counters on Application shutdown:\n" + mergedStatsLines);
+
+        log.debug("Thread pool state on Application shutdown:\n" + SharedThreadPool.getInstance().getFormattedStatistics(true, true));
+
+        return runnerResult;
     }
 
     @Override
     public void stop() {
-        Platform.shutdown();
+        Instance.shutdown();
     }
 
 }

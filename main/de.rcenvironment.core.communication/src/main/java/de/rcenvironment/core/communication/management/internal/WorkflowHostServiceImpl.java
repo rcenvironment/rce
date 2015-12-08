@@ -33,8 +33,8 @@ import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 
 /**
  * Default {@link WorkflowHostService} implementation.
@@ -43,7 +43,7 @@ import de.rcenvironment.core.utils.incubator.ListenerProvider;
  */
 // FIXME temporary package location to simplify migration; move to "de.rcenvironment.core.component.workflow.internal"
 // (or similar) when complete - misc_ro
-public class WorkflowHostServiceImpl implements WorkflowHostService, ListenerProvider {
+public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalServicesProvider {
 
     private NodeConfigurationService platformService;
 
@@ -80,9 +80,9 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, ListenerPro
     }
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        List<ListenerDeclaration> result = new ArrayList<ListenerDeclaration>();
-        result.add(new ListenerDeclaration(NodePropertiesChangeListener.class, new NodePropertiesChangeListenerAdapter() {
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        List<AdditionalServiceDeclaration> result = new ArrayList<AdditionalServiceDeclaration>();
+        result.add(new AdditionalServiceDeclaration(NodePropertiesChangeListener.class, new NodePropertiesChangeListenerAdapter() {
 
             @Override
             public void onReachableNodePropertiesChanged(Collection<? extends NodeProperty> addedProperties,
@@ -93,7 +93,7 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, ListenerPro
 
         }));
         // register listener on self
-        result.add(new ListenerDeclaration(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
+        result.add(new AdditionalServiceDeclaration(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
 
             @Override
             public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,

@@ -42,6 +42,15 @@ public interface VirtualCommunicationBundle {
     <T> T getService(Class<T> clazz);
 
     /**
+     * Allows injection of service instances; useful for remote service call testing.
+     * 
+     * @param <T> the service interface class
+     * @param clazz the service interface class
+     * @param implementation the service instance
+     */
+    <T> void injectService(Class<T> clazz, T implementation);
+
+    /**
      * Convenience method to register a {@link NetworkTransportProvider}.
      * 
      * @param newProvider the {@link NetworkTransportProvider} instance to register

@@ -24,11 +24,11 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases for {@link CallbackServiceImpl}.
@@ -55,10 +55,10 @@ public class CallbackServiceImplTest {
     /**
      * Test.
      * 
-     * @throws CommunicationException if an error occurs.
+     * @throws RemoteOperationException if an error occurs.
      **/
     @Test
-    public void testRemainingMethods() throws CommunicationException {
+    public void testRemainingMethods() throws RemoteOperationException {
         String id = service.addCallbackObject(callbackObject, piRemote);
         assertNotNull(id);
         assertEquals(id, service.addCallbackObject(callbackObject, piRemote));
@@ -74,22 +74,22 @@ public class CallbackServiceImplTest {
         service.setTTL("unknown2", new Long(2));
 
         assertEquals("some callback method called", service.callback(id, "someCallbackMethod", new ArrayList<Serializable>()));
-        
+
         try {
             service.callback(id, "unknownMethod", new ArrayList<Serializable>());
             fail(StringUtils.format("Method 'unknownMethod' is not defined for  %s", DummyObject.class.getSimpleName()));
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
-        
+
         try {
             service.callback(id, "someMethod", new ArrayList<Serializable>());
             fail(StringUtils
                 .format("Method 'someMethod' of %s is not allowed to be called from remote.", DummyObject.class.getSimpleName()));
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
-        
+
         callbackObject = null;
         System.gc();
         assertNull(service.getCallbackObject(id));
@@ -101,10 +101,10 @@ public class CallbackServiceImplTest {
     /**
      * Test.
      * 
-     * @throws CommunicationException if an error occurs.
+     * @throws RemoteOperationException (expected)
      **/
-    @Test(expected = CommunicationException.class)
-    public void testForFailure() throws CommunicationException {
+    @Test(expected = RemoteOperationException.class)
+    public void testForFailure() throws RemoteOperationException {
         service.callback("id", "toString", new ArrayList<Serializable>());
     }
 
@@ -152,5 +152,5 @@ public class CallbackServiceImplTest {
             return piLocal;
         }
     }
-    
+
 }

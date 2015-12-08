@@ -48,7 +48,7 @@ import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Component
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Discipline;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Parameter;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
-import de.rcenvironment.core.utils.incubator.xml.XMLException;
+import de.rcenvironment.core.utils.common.xml.XMLException;
 
 /**
  * GUI-Controller handling the main Vampzero application. This controller doesn't control resource handles, it's all delegated to the

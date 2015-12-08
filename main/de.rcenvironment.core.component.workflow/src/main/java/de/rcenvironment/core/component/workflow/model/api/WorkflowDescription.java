@@ -54,13 +54,17 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
 
     private final String identifier;
 
-    private int workflowVersionNumber = WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER;
+    private int workflowVersionNumber = WorkflowConstants.INITIAL_WORKFLOW_VERSION_NUMBER;
 
     private String name;
+    
+    private String fileName;
 
     private String additionalInformation;
-
+    
     private NodeIdentifier controllerNode;
+    
+    private boolean isControllerNodeIdTransient = false;
 
     private final List<WorkflowNode> nodes = new ArrayList<WorkflowNode>();
 
@@ -96,6 +100,14 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     public void setName(String name) {
         this.name = name;
     }
+    
+    public String getFileName() {
+        return fileName;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
 
     public String getAdditionalInformation() {
         return additionalInformation;
@@ -104,13 +116,21 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     public void setAdditionalInformation(final String additionalInformation) {
         this.additionalInformation = additionalInformation;
     }
-
+    
     public NodeIdentifier getControllerNode() {
         return controllerNode;
     }
 
     public void setControllerNode(NodeIdentifier controllerNode) {
         this.controllerNode = controllerNode;
+    }
+    
+    public boolean getIsControllerNodeIdTransient() {
+        return isControllerNodeIdTransient;
+    }
+    
+    public void setIsControllerNodeIdTransient(boolean isControllerNodeIdTransient) {
+        this.isControllerNodeIdTransient = isControllerNodeIdTransient;
     }
 
     public List<WorkflowNode> getWorkflowNodes() {
@@ -323,6 +343,20 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     }
     
     /**
+     * Removes a list of {@link WorkflowNode}s and their {@link Connection}s.
+     * 
+     * @param nodesToRemove The list of {@link WorkflowNode}s to remove.
+     * @return List of {@link Connection}s deleted
+     */
+    public List<Connection> removeWorkflowNodesAndRelatedConnectionsWithoutNotify(List<WorkflowNode> nodesToRemove) {
+        List<Connection> cnsDeleted = new ArrayList<>();
+        for (WorkflowNode node : nodesToRemove){
+            cnsDeleted.addAll(removeWorkflowNodeAndRelatedConnectionsWithoutNotify(node));
+        }
+        return cnsDeleted;
+    }
+    
+    /**
      * Removes a list of {@link WorkflowNode}s.
      * 
      * @param nodesToRemove The list of {@link WorkflowNode}s to remove.
@@ -495,10 +529,10 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
             bos.close();
             return wd;
         } catch (IOException e) {
-            LogFactory.getLog(ComponentDescription.class).error("cloning workflow description failed", e);
+            LogFactory.getLog(ComponentDescription.class).error("Failed to clone workflow description", e);
             throw new RuntimeException(e);
         } catch (ClassNotFoundException e) {
-            LogFactory.getLog(ComponentDescription.class).error("cloning workflow description failed", e);
+            LogFactory.getLog(ComponentDescription.class).error("Failed to clone workflow description", e);
             throw new RuntimeException(e);
         }
     }

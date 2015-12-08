@@ -14,5 +14,6 @@
  		interface="de.rcenvironment.core.communication.api.PlatformService"
  		name="Platform Service"
  		policy="dynamic"
- 	/> 
+ 	/>
+
 </scr:component>

@@ -8,9 +8,14 @@
 
 package de.rcenvironment.core.component.xml.impl;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+
 import java.io.File;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.easymock.EasyMock;
 import org.junit.Before;
@@ -24,18 +29,22 @@ import de.rcenvironment.core.component.xml.XMLComponentConstants;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
-import de.rcenvironment.core.utils.incubator.xml.XMLException;
-import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
+import de.rcenvironment.core.utils.common.xml.XMLException;
+import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
 
 /**
  * Test for the EndpointXMLUtilsImpl.
  * 
  * This unit test only tests for the correct exception handling for wrong parameters. The behavior for correct inputs is already tested in
- * the XMLMergerIntegrationTest.
+ * the {@link XMLMergerComponentTest}.
+ * 
+ * TODO review the test cases if reasonable. do they actually create a reasonable safety net for {@link EndpointXMLServiceImpl}?
  *
  * @author Brigitte Boden
  */
 public class EndpointXMLServiceImplTest {
+
+    private static final String NULL_POINTER_EXCEPTION_EXPECTED = "NullPointerException expected";
 
     /**
      * Junit Exception rule.
@@ -61,6 +70,20 @@ public class EndpointXMLServiceImplTest {
     private final class EndpointXMLServiceImplTestComponentContextMock extends ComponentContextMock {
 
         private static final long serialVersionUID = 5310024048572964077L;
+        
+        private static final String OUTPUT_1 = "out_1";
+        
+        @Override
+        public Set<String> getOutputs() {
+            Set<String> outputs = new HashSet<>();
+            outputs.add(OUTPUT_1);
+            return outputs;
+        }
+        
+        @Override
+        public boolean isDynamicOutput(String outputName) {
+            return outputName.equals(OUTPUT_1);
+        }
 
     }
 
@@ -94,11 +117,25 @@ public class EndpointXMLServiceImplTest {
         Map<String, TypedDatum> inputs = new HashMap<String, TypedDatum>();
         inputs.put("input", typedDatumFactory.createFloat(0.0));
         context.setConfigurationValue(XMLComponentConstants.CONFIG_KEY_XPATH, "xpath");
-
-        exception.expect(ComponentException.class);
-        endpointXMLService.updateXMLWithInputs(null, inputs, context);
-        endpointXMLService.updateXMLWithInputs(originCPACS, inputs, context);
-        endpointXMLService.updateXMLWithInputs(originCPACS, inputs, null);
+        try {
+            endpointXMLService.updateXMLWithInputs(null, inputs, context);
+            fail(NULL_POINTER_EXCEPTION_EXPECTED);
+        } catch (NullPointerException e) {
+            assertTrue(true);
+        }
+        // removed as the NPE will occur later on, always after the XMLSupportService mock is used that always throws an exception
+//        try {
+//            endpointXMLService.updateXMLWithInputs(originCPACS, inputs, null);
+//            fail(NULL_POINTER_EXCEPTION_EXPECTED);
+//        } catch (NullPointerException e) {
+//            assertTrue(true);
+//        }
+        try {
+            endpointXMLService.updateXMLWithInputs(originCPACS, inputs, context);
+            fail("ComponentException expected");
+        } catch (ComponentException e) {
+            assertTrue(true);
+        }
     }
 
     /**
@@ -108,9 +145,24 @@ public class EndpointXMLServiceImplTest {
      */
     @Test
     public void testUpdateOutputsFromXML() throws Exception {
-        exception.expect(ComponentException.class);
-        endpointXMLService.updateOutputsFromXML(null, context);
-        endpointXMLService.updateOutputsFromXML(originCPACS, context);
-        endpointXMLService.updateOutputsFromXML(originCPACS, null);
+        try {
+            endpointXMLService.updateOutputsFromXML(null, context);
+            fail(NULL_POINTER_EXCEPTION_EXPECTED);
+        } catch (NullPointerException e) {
+            assertTrue(true);
+        }
+        try {
+            endpointXMLService.updateOutputsFromXML(originCPACS, null);
+            fail(NULL_POINTER_EXCEPTION_EXPECTED);
+        } catch (NullPointerException e) {
+            assertTrue(true);
+        }
+        try {
+            endpointXMLService.updateOutputsFromXML(originCPACS, context);
+            fail("ComponentException expected");
+        } catch (ComponentException e) {
+            assertTrue(true);
+        }
+       
     }
 }

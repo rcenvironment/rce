@@ -30,7 +30,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  */
-public class EndpointDefinitionImpl implements Serializable, EndpointDefinition {
+public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implements Serializable, EndpointDefinition {
 
     private static final String KEY_DATATYPE = "datatype";
     
@@ -53,7 +53,7 @@ public class EndpointDefinitionImpl implements Serializable, EndpointDefinition 
     private static final String KEY_METADATA = "metaData";
     
     private static final String KEY_INITIAL_ENDPOINTS = "initialEndpoints";
-
+    
     private static final long serialVersionUID = -3853446362359127472L;
 
     private Map<String, Object> rawEndpointDefinition;
@@ -75,24 +75,6 @@ public class EndpointDefinitionImpl implements Serializable, EndpointDefinition 
     private EndpointMetaDataDefinitionImpl metaDataDefinition;
     
     private List<InitialDynamicEndpointDefinitionImpl> initialEndpointDefinitions;
-
-    @JsonIgnore
-    @Override
-    public String getName() {
-        return (String) definition.get(EndpointDefinitionConstants.KEY_NAME);
-    }
-
-    @JsonIgnore
-    @Override
-    public String getIdentifier() {
-        return (String) definition.get(EndpointDefinitionConstants.KEY_IDENTIFIER);
-    }
-
-    @JsonIgnore
-    @Override
-    public String getGroupName() {
-        return (String) definition.get(EndpointDefinitionConstants.KEY_GROUP);
-    }
     
     @JsonIgnore
     @Override
@@ -187,6 +169,7 @@ public class EndpointDefinitionImpl implements Serializable, EndpointDefinition 
     @SuppressWarnings("unchecked")
     public void setRawEndpointDefinition(Map<String, Object> rawEndpointDefinition) {
         this.rawEndpointDefinition = rawEndpointDefinition;
+        this.rawEndpointGroupDefinition = rawEndpointDefinition;
         this.definition = new HashMap<String, Object>(rawEndpointDefinition);
         
         this.dataTypes = new ArrayList<DataType>();

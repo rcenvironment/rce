@@ -464,12 +464,12 @@ public abstract class AbstractSQLComponent extends AbstractComponent {
                         componentContext.writeOutput(columnName, value);
                     }
                     // store the row in the full row list if necessary
-                    if (storeFullRowList) {
+                    if (storeFullRowList && fullRowList != null) {
                         fullRowList.add(row);
                     }
                 }
             }
-        } else if (storeFullRowList) {
+        } else if (storeFullRowList && fullRowList != null) {
             // store the row in the full row list if necessary
             // iterate over the rows
             for (final TypedValue[] row : rows) {

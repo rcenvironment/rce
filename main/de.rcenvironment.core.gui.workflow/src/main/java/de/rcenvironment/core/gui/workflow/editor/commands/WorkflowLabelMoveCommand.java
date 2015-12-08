@@ -56,7 +56,7 @@ public class WorkflowLabelMoveCommand extends Command {
         newLocation = newBounds.getLocation();
         newSize = newBounds.getSize();
         oldLocation = new Point(label.getX(), label.getY());
-        oldSize = new Dimension(label.getSize().getCopy());
+        oldSize = new Dimension(label.getWidth(), label.getHeight());
     }
 
     @Override
@@ -73,14 +73,14 @@ public class WorkflowLabelMoveCommand extends Command {
 
     @Override
     public void redo() {
-        label.setSize(newSize.getCopy());
+        label.setSize(newSize.width, newSize.height);
         label.setLocation(newLocation.x, newLocation.y);
         label.firePropertyChange(WorkflowLabel.PROPERTY_CHANGE);
     }
 
     @Override
     public void undo() {
-        label.setSize(oldSize.getCopy());
+        label.setSize(oldSize.width, oldSize.height);
         label.setLocation(oldLocation.x, oldLocation.y);
         label.firePropertyChange(WorkflowLabel.PROPERTY_CHANGE);
     }

@@ -19,18 +19,19 @@ import java.util.concurrent.Callable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
-import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link DistributedPersistentComponentDescriptionUpdateService}.
@@ -43,8 +44,6 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
     
     private CommunicationService communicationService;
 
-    private BundleContext context;
-    
     @Override
     public int getFormatVersionsAffectedByUpdate(List<PersistentComponentDescription> descriptions, final boolean silent) {
 
@@ -62,14 +61,13 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
                 @Override
                 @TaskDescription("Distributed persistent component update check: getFormatVersionsAffectedByUpdate()")
                 public Integer call() throws Exception {
-                    PersistentComponentDescriptionUpdateService udpateService = (PersistentComponentDescriptionUpdateService)
-                        communicationService.getService(PersistentComponentDescriptionUpdateService.class,
-                            node2, context);
                     try {
-                        return udpateService
-                            .getFormatVersionsAffectedByUpdate(sortedDescriptionsMap.get(node2), silent);
-                    } catch (UndeclaredThrowableException e) {
-                        LOGGER.warn("Failed to check for persistent component updates for node: " + node2, e);
+                        RemotablePersistentComponentDescriptionUpdateService udpateService = communicationService
+                            .getRemotableService(RemotablePersistentComponentDescriptionUpdateService.class, node2);
+                        return udpateService.getFormatVersionsAffectedByUpdate(sortedDescriptionsMap.get(node2), silent);
+                    } catch (RemoteOperationException | RuntimeException e) {
+                        LOGGER.warn(StringUtils.format("Failed to check for persistent component updates for node: %s; cause: %s", 
+                            node2, e.toString()));
                         return null;
                     }
                     
@@ -113,9 +111,8 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
                 @Override
                 @TaskDescription("Distributed persistent component update: performComponentDescriptionUpdates()")
                 public List call() throws Exception {
-                    PersistentComponentDescriptionUpdateService updateService = (PersistentComponentDescriptionUpdateService)
-                        communicationService.getService(PersistentComponentDescriptionUpdateService.class,
-                            node2, context);
+                    RemotablePersistentComponentDescriptionUpdateService updateService = communicationService
+                        .getRemotableService(RemotablePersistentComponentDescriptionUpdateService.class, node2);
                     if ((updateService.getFormatVersionsAffectedByUpdate(unModdescriptions, silent) & formatVersion) == formatVersion) {
                         try {
                             return updateService
@@ -146,10 +143,6 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
             }
         }
         return allUpdatedDescriptions;
-    }
-
-    protected void activate(BundleContext bundleContext) {
-        this.context = bundleContext;
     }
 
     protected void bindCommunicationService(CommunicationService newCommunicationService) {

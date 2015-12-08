@@ -21,7 +21,6 @@ import de.rcenvironment.components.script.common.registry.ScriptExecutor;
 import de.rcenvironment.components.script.execution.DefaultScriptExecutor;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.scripting.WorkflowConsoleForwardingWriter;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.scripting.ScriptingService;
@@ -61,17 +60,17 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
     protected String workingPath = "";
 
     @Override
-    public boolean prepareExecutor(ComponentContext componentContext) {
-
-        super.prepareExecutor(componentContext);
-
+    public boolean prepareExecutor(ComponentContext componentContext) throws ComponentException {
+        boolean successful = super.prepareExecutor(componentContext);
         try {
             // this method determins the locaton of the jython.jar
             jythonPath = ScriptingUtils.getJythonPath();
-        } catch (IOException e2) {
-            e2.printStackTrace();
+        } catch (IOException e) {
+            throw new ComponentException("Internal error: Failed to intialize Jython", e);
         }
-
+        if (jythonPath == null) {
+            throw new ComponentException("Internal error: Failed to intialize Jython");
+        }
         File scripts = new File(tempDir, "scripts");
         File file =
             new File(scripts, "script.tmp");
@@ -81,7 +80,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         stateMap = new HashMap<String, Object>();
         scriptingService = componentContext.getService(ScriptingService.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
-        return false;
+        return successful;
     }
 
     @Override
@@ -100,11 +99,11 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                     WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
     }
 
-    private void loadScript(String userScript) {
+    private void loadScript(String userScript) throws ComponentException {
         // wrappingScript = wrappingScript + userScript;
         body = userScript;
         if (body == null || body.length() == 0) {
-            LOGGER.error("No Python script provided");
+            throw new ComponentException("No Python script configured");
         }
     }
 
@@ -127,15 +126,13 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 // its changig the working directory.
                 scriptEngine.eval(header);
             } catch (ScriptException e) {
-                throw new ComponentException("Failed to run Jython script: " + e.toString());
+                throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
             }
             try {
                 // execute the script, written by the user.
                 scriptEngine.eval(body);
             } catch (ScriptException e) {
-                String line = "Script has errors!\n " + e.getCause().toString();
-                componentContext.printConsoleLine(line, ConsoleRow.Type.STDERR);
-                throw new ComponentException("Could not run script. Maybe the script has errors? \n\n: " + e.toString());
+                throw new ComponentException("Failed to execute script", e);
             }
             try {
                 // this script defines the outputChannel, so that all outputs sent with
@@ -144,9 +141,10 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 ((WorkflowConsoleForwardingWriter) scriptEngine.getContext().getWriter()).awaitPrintingLinesFinished();
                 ((WorkflowConsoleForwardingWriter) scriptEngine.getContext().getErrorWriter()).awaitPrintingLinesFinished();
             } catch (ScriptException e) {
-                throw new ComponentException("Failed reading Output Channels! \n\n: " + e.toString());
+                throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
             } catch (InterruptedException e) {
-                LOGGER.error("Waiting for stdout or stderr writer was interrupted: " + e.toString());
+                componentContext.getLog().componentError("Failed to wait for console output. Some output might be missing");
+                LOGGER.error("Failed to wait for stdout or stderr writer", e);
             }
         }
     }
@@ -155,9 +153,9 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
     public boolean postRun() throws ComponentException {
         ScriptingUtils.writeAPIOutput(stateMap, componentContext, scriptEngine, workingPath, historyDataItem);
         try {
-            closeConsoleWritersAndAddLogsToHistoryDataItem();
+            closeConsoleWriters();
         } catch (IOException e) {
-            LOGGER.error("Closing or storing console log file failed", e);
+            LOGGER.error("Failed to close stdout or stderr writer", e);
         }
 
         return true;

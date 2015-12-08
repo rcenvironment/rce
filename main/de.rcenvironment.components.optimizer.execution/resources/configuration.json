@@ -24,6 +24,18 @@
         {
             "key": "storeComponentHistoryData",
             "defaultValue": "false"
+        },
+        {
+            "key": "loopFaultTolerance_5e0ed1cd",
+            "defaultValue": "Fail"
+        },
+        {
+            "key": "loopRerunAndFail_5e0ed1cd",
+            "defaultValue": "1"
+        },
+        {
+            "key": "loopRerunAndDiscard_5e0ed1cd",
+            "defaultValue": "1"
         }
     ],
     "placeholders": [

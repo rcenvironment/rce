@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.converger.execution.tests</artifactId>
 	<name>RCE Converger Component Tests</name>
-	<version>6.3.0.qualifier</version>
+	<version>7.0.0.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

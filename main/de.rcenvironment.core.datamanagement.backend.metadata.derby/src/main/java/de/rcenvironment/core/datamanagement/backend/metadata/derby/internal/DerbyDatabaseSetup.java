@@ -25,6 +25,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TAB
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_DB_VERSION_INFO;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_DATA;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_INSTANCE;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_ENDPOINT_INSTANCE_PROPERTIES;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_TIMELINE_INTERVAL;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_TYPED_DATUM;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TABLE_WORKFLOW_RUN;
@@ -32,15 +33,22 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.TAB
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_COMPONENT_RUNS;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_COMPONENT_TIMELINE_INTERVALS;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_ENDPOINT_DATA;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_ENDPOINT_INSTANCE_PROPERTIES;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_COMPONENTRUN;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_DATAREFERENCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_TYPEDDATUM;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.WORKFLOW_FILE_REFERENCE;
 
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.SQLTransientConnectionException;
 import java.sql.Statement;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,10 +60,33 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Derby meta data db setup.
  * 
  * @author Jan Flink
+ * @author Brigitte Boden
  */
 public abstract class DerbyDatabaseSetup {
 
-    private static final String CURRENT_DB_VERSION = "6.1";
+    private static final String VERSION_6_1 = "6.1";
+
+    private static final String VERSION_ZERO = "0";
+
+    /**
+     * For release versions, the version is the release number (e.g. "7.0") For versions during development phases, the release number is
+     * followed by "dev[number]", e.g. "7.0dev1".
+     */
+    // private static final String CURRENT_DB_VERSION = "7.0dev2";
+
+    private static final String CURRENT_DB_VERSION = "7.0";
+
+    /**
+     * This array contains all former database versions which can be updated to the current version, in ascending order. For each of those
+     * versions, an update path must be defined in the update method below.
+     */
+    private static final String[] UPDATABLE_VERSIONS = { VERSION_ZERO, VERSION_6_1 };
+
+    /**
+     * This array contains all former database versions which are equivalent to the current version. No update is required, just the db
+     * version in the database will be set to the current version.
+     */
+    private static final String[] VERSIONS_REQUIRING_NO_UPDATE = { "7.0dev1" };
 
     private static final int QUERY_EXECUTION_TIMEOUT = 600000;
 
@@ -73,12 +104,13 @@ public abstract class DerbyDatabaseSetup {
 
     protected static void setupDatabase(final Connection connection) throws SQLException {
         Statement statement = connection.createStatement();
+        final List<String> updatableVersions = Arrays.asList(UPDATABLE_VERSIONS);
+        final List<String> versionsRequiringNoUpdate = Arrays.asList(VERSIONS_REQUIRING_NO_UPDATE);
         if (!tableExists(statement, MetaDataConstants.TABLE_DB_VERSION_INFO)) {
-            // if DB version is 0 - table version info does not exist - update to version 6.1
             if (tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)) {
-                LOGGER.debug("Updating database: v 0 --> v 6.1");
-                createTableDBVersionInfo(connection, CURRENT_DB_VERSION);
+                // if DB version is 0 - table version info does not exist - update to version 7.0
                 deleteViews(connection);
+                updateDatabaseToCurrentVersion(connection, new LinkedList<String>(updatableVersions));
                 createViews(connection);
             } else {
                 // set up a fresh database
@@ -87,6 +119,25 @@ public abstract class DerbyDatabaseSetup {
                 createTables(connection);
                 createIndexes(connection);
                 createViews(connection);
+            }
+        } else if (!getDBVersion(connection).equals(CURRENT_DB_VERSION)) {
+            String formerVersion = getDBVersion(connection);
+            if (versionsRequiringNoUpdate.contains(formerVersion)) {
+                LOGGER.debug("Updating database version: v " + formerVersion + " --> " + CURRENT_DB_VERSION + " . No change required.");
+                setDBVersion(CURRENT_DB_VERSION, connection);
+            } else if (updatableVersions.contains(formerVersion)) {
+                // A queue representing the necessary update steps (contains the startVersion for each update step).
+                Queue<String> requiredUpdates =
+                    new LinkedList<String>(updatableVersions.subList(updatableVersions.indexOf(formerVersion), updatableVersions.size()));
+                deleteViews(connection);
+                updateDatabaseToCurrentVersion(connection, requiredUpdates);
+                createViews(connection);
+            } else {
+                // Database has an unknown (probably future) version.
+                throw new RuntimeException(StringUtils.format("Failed to update the database from version %s to %s"
+                        + ". Most likely reason: It was used with a newer version of RCE before. Use a newer version "
+                        + "of RCE or choose another profile directory. (See the user guide for more information "
+                        + "about the profile directory.)", getDBVersion(connection), CURRENT_DB_VERSION));
             }
         } else if (!tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)
             || !tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN_PROPERTIES)
@@ -100,6 +151,7 @@ public abstract class DerbyDatabaseSetup {
             || !tableExists(statement, MetaDataConstants.TABLE_ENDPOINT_INSTANCE)
             || !tableExists(statement, MetaDataConstants.TABLE_TYPED_DATUM)
             || !tableExists(statement, MetaDataConstants.TABLE_ENDPOINT_DATA)
+            || !tableExists(statement, MetaDataConstants.TABLE_ENDPOINT_INSTANCE_PROPERTIES)
             || !tableExists(statement, MetaDataConstants.REL_COMPONENTINSTANCE_DATAREFERENCE)
             || !tableExists(statement, MetaDataConstants.REL_WORKFLOWRUN_DATAREFERENCE)
             || !tableExists(statement, MetaDataConstants.REL_COMPONENTRUN_DATAREFERENCE)
@@ -107,11 +159,13 @@ public abstract class DerbyDatabaseSetup {
             || !viewExists(statement, MetaDataConstants.VIEW_COMPONENT_RUNS)
             || !viewExists(statement, MetaDataConstants.VIEW_COMPONENT_TIMELINE_INTERVALS)
             || !viewExists(statement, MetaDataConstants.VIEW_ENDPOINT_DATA)
+            || !viewExists(statement, MetaDataConstants.VIEW_ENDPOINT_INSTANCE_PROPERTIES)
             || !viewExists(statement, MetaDataConstants.VIEW_WORKFLOWRUN_COMPONENTRUN)
             || !viewExists(statement, MetaDataConstants.VIEW_WORKFLOWRUN_DATAREFERENCE)
             || !viewExists(statement, MetaDataConstants.VIEW_WORKFLOWRUN_TYPEDDATUM)) {
             throw new RuntimeException("Unknown DB state!");
         }
+
         statement.close();
         LOGGER.debug(StringUtils.format("Database version is %s", getDBVersion(connection)));
     }
@@ -125,6 +179,7 @@ public abstract class DerbyDatabaseSetup {
                     deleteView(VIEW_COMPONENT_RUNS, connection);
                     deleteView(VIEW_COMPONENT_TIMELINE_INTERVALS, connection);
                     deleteView(VIEW_ENDPOINT_DATA, connection);
+                    deleteView(VIEW_ENDPOINT_INSTANCE_PROPERTIES, connection);
                     deleteView(VIEW_WORKFLOWRUN_DATAREFERENCE, connection);
                     deleteView(VIEW_WORKFLOWRUN_TYPEDDATUM, connection);
                     deleteView(VIEW_WORKFLOWRUN_COMPONENTRUN, connection);
@@ -155,6 +210,63 @@ public abstract class DerbyDatabaseSetup {
         stmt.close();
     }
 
+    /**
+     * Updates the database to the current version, if possible. This method has to be updated on each new database version to include the
+     * new updates!
+     * 
+     * @param startVersion The version to start with.
+     * @param connection The database connection.
+     * @throws SQLTransientConnectionException
+     */
+    private static void updateDatabaseToCurrentVersion(Connection connection, Queue<String> requiredUpdates)
+        throws SQLTransientConnectionException {
+
+        String startVersion = requiredUpdates.poll();
+        if (startVersion == null) {
+            // Queue is empty, no updates necessary any more.
+            setDBVersion(CURRENT_DB_VERSION, connection);
+            return;
+        } else if (startVersion.equals(VERSION_ZERO)) {
+            updateFrom0To61(connection);
+        } else if (startVersion.equals(VERSION_6_1)) {
+            updateFrom61To70(connection);
+        }
+        // Recursively call update method do perform the next update in the queue.
+        updateDatabaseToCurrentVersion(connection, requiredUpdates);
+    }
+
+    // Methods performing the individual version updates.
+    private static void updateFrom0To61(Connection connection) {
+        LOGGER.debug("Updating database: v 0 --> v 6.1");
+        createTableDBVersionInfo(connection, VERSION_6_1);
+    }
+
+    private static void updateFrom61To70(Connection connection) throws SQLTransientConnectionException {
+        LOGGER.debug("Updating database: v 6.1 --> v 7.0");
+        try {
+            DatabaseMetaData dbm = connection.getMetaData();
+            ResultSet rs = dbm.getTables(null, null, TABLE_ENDPOINT_INSTANCE_PROPERTIES, null);
+            if (!rs.next()) {
+                createTable(TABLE_ENDPOINT_INSTANCE_PROPERTIES, connection);
+            }
+
+            rs = dbm.getColumns(null, null, TABLE_WORKFLOW_RUN, WORKFLOW_FILE_REFERENCE);
+            if (!rs.next()) {
+                // Add colums for wfFile to WorkflowRun table
+                Statement stmt = connection.createStatement();
+                String sql = "ALTER TABLE %s ADD %s LONG VARCHAR";
+                stmt.execute(StringUtils.format(sql, TABLE_WORKFLOW_RUN, WORKFLOW_FILE_REFERENCE));
+                LOGGER.debug("Added column WORKFLOW_FILE_DATA_REFERENCE_ID to WORKFLOW_RUN table.");
+            }
+
+        } catch (SQLException e) {
+            if (e instanceof SQLTransientConnectionException) {
+                throw (SQLTransientConnectionException) e;
+            }
+            throw new RuntimeException("Failed to update data management meta data db.", e);
+        }
+    }
+
     private static void createTableDBVersionInfo(final Connection connection, final String dbVersion) {
         final Runnable task = new SQLRunnable(MAX_RETRIES) {
 
@@ -182,8 +294,12 @@ public abstract class DerbyDatabaseSetup {
 
     private static void setDBVersion(String dbVersion, Connection connection) {
         try {
-            String sql = "INSERT INTO " + TABLE_DB_VERSION_INFO + " VALUES('%s')";
+            String sql = "DELETE FROM " + TABLE_DB_VERSION_INFO;
             Statement stmt = connection.createStatement();
+            stmt.executeUpdate(StringUtils.format(sql, dbVersion));
+            stmt.close();
+            sql = "INSERT INTO " + TABLE_DB_VERSION_INFO + " VALUES('%s')";
+            stmt = connection.createStatement();
             stmt.executeUpdate(StringUtils.format(sql, dbVersion));
             stmt.close();
             LOGGER.info(StringUtils.format("Set database version to %s", dbVersion));
@@ -319,6 +435,7 @@ public abstract class DerbyDatabaseSetup {
             createTable(TABLE_DATA_REFERENCE, connection);
             createTable(TABLE_BINARY_REFERENCE, connection);
             createTable(TABLE_ENDPOINT_INSTANCE, connection);
+            createTable(TABLE_ENDPOINT_INSTANCE_PROPERTIES, connection);
             createTable(TABLE_TYPED_DATUM, connection);
             createTable(TABLE_ENDPOINT_DATA, connection);
             createTable(REL_COMPONENTRUN_DATAREFERENCE, connection);
@@ -369,6 +486,9 @@ public abstract class DerbyDatabaseSetup {
                 break;
             case TABLE_ENDPOINT_INSTANCE:
                 sql = DerbyDatabaseSetupSqlStatements.getSqlTableEndpointInstance();
+                break;
+            case TABLE_ENDPOINT_INSTANCE_PROPERTIES:
+                sql = DerbyDatabaseSetupSqlStatements.getSqlTableEndpointInstanceProperties();
                 break;
             case TABLE_ENDPOINT_DATA:
                 sql = DerbyDatabaseSetupSqlStatements.getSqlTableEndpointData();
@@ -422,6 +542,7 @@ public abstract class DerbyDatabaseSetup {
         try {
             createView(VIEW_COMPONENT_RUNS, connection);
             createView(VIEW_ENDPOINT_DATA, connection);
+            createView(VIEW_ENDPOINT_INSTANCE_PROPERTIES, connection);
             createView(VIEW_COMPONENT_TIMELINE_INTERVALS, connection);
             createView(VIEW_WORKFLOWRUN_COMPONENTRUN, connection);
             createView(VIEW_WORKFLOWRUN_DATAREFERENCE, connection);
@@ -446,6 +567,9 @@ public abstract class DerbyDatabaseSetup {
                 break;
             case VIEW_ENDPOINT_DATA:
                 sql = DerbyDatabaseSetupSqlStatements.getSqlViewEndpointData();
+                break;
+            case VIEW_ENDPOINT_INSTANCE_PROPERTIES:
+                sql = DerbyDatabaseSetupSqlStatements.getSqlViewEndpointInstanceProperties();
                 break;
             case VIEW_COMPONENT_TIMELINE_INTERVALS:
                 sql = DerbyDatabaseSetupSqlStatements.getSqlViewComponentTimelineIntervals();

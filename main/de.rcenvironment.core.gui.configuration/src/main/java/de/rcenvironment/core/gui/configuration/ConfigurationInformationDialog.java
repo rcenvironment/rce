@@ -20,6 +20,7 @@ import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
+import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionEvent;
@@ -45,14 +46,17 @@ import de.rcenvironment.core.start.gui.WorkspaceSettings;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
- * Dialog that shows information about the configuration and offers to open sample configuration
- * files.
+ * Dialog that shows information about the configuration and offers to open sample configuration files.
  * 
  * @author Oliver Seebach
  * @author Robert Mischke
  * @author Sascha Zur
  */
 public class ConfigurationInformationDialog extends Dialog {
+
+    private static final int MINIMUM_HEIGHT = 250;
+
+    private static final int MINIMUM_WIDTH = 500;
 
     private final ConfigurationService configurationService;
 
@@ -80,11 +84,13 @@ public class ConfigurationInformationDialog extends Dialog {
         setShellStyle(SWT.DIALOG_TRIM | SWT.PRIMARY_MODAL | SWT.RESIZE);
         initConfigurationFileAndPathMapping();
         loadConfigurationDetails();
+
     }
 
     @Override
     protected void configureShell(Shell shell) {
         shell.setText("Configuration Information");
+        shell.setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
         super.configureShell(shell);
     }
 
@@ -102,18 +108,24 @@ public class ConfigurationInformationDialog extends Dialog {
     @Override
     protected Control createDialogArea(Composite parent) {
 
-        GridLayout dialogGridLayout = new GridLayout(1, true);
-        parent.setLayout(dialogGridLayout);
+        Composite dialogArea = (Composite) super.createDialogArea(parent);
+        dialogArea.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        dialogArea.setLayout(new GridLayout());
 
-        GridData dialogGridData = new GridData();
-        dialogGridData.grabExcessHorizontalSpace = true;
-        dialogGridData.verticalAlignment = GridData.BEGINNING;
-        dialogGridData.horizontalAlignment = GridData.FILL;
-        parent.setLayoutData(dialogGridData);
+        ScrolledComposite scrolled = new ScrolledComposite(dialogArea,
+            SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER);
+        scrolled.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        scrolled.setLayout(new GridLayout());
+        scrolled.setExpandVertical(true);
+        scrolled.setExpandHorizontal(true);
+
+        Composite container = new Composite(scrolled, SWT.NONE);
+        scrolled.setContent(container);
+        container.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+        container.setLayout(new GridLayout());
 
         // ----------------------------------------------------
-
-        Group informationGroup = new Group(parent, SWT.NONE);
+        Group informationGroup = new Group(container, SWT.NONE);
         informationGroup.setText("General");
 
         GridLayout informationGroupGridLayout = new GridLayout(1, true);
@@ -131,10 +143,9 @@ public class ConfigurationInformationDialog extends Dialog {
             + "(see 'File System Locations' below). You can easily open and edit it with the \"Help > Open Configuration File\" \n"
             + "menu option, or with the corresponding tool bar button.");
         informationLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16));
-
+        
         // ----------------------------------------------------
-
-        Group examplesGroup = new Group(parent, SWT.NONE);
+        Group examplesGroup = new Group(container, SWT.NONE);
         examplesGroup.setText("Example Configurations");
 
         GridLayout examplesGroupGridLayout = new GridLayout(1, true);
@@ -159,7 +170,6 @@ public class ConfigurationInformationDialog extends Dialog {
         examplesList.setLayoutData(new GridData(GridData.FILL, GridData.BEGINNING, true, false));
         examplesList.addSelectionListener(new ExampleListSelectionListener());
         examplesList.addMouseListener(new MouseAdapter() {
-
             @Override
             public void mouseDoubleClick(MouseEvent event) {
                 openSelectionInEditor();
@@ -167,20 +177,18 @@ public class ConfigurationInformationDialog extends Dialog {
                 closeConfigurationDialog();
             }
         });
-
         loadButton = new Button(examplesGroup, SWT.PUSH);
         loadButton.setText("Open in Editor (read-only)");
         loadButton.setEnabled(false);
         loadButton.addSelectionListener(new LoadButtonSelectionListener());
 
         // ----------------------------------------------------
-
-        Group locationsGroup = new Group(parent, SWT.NONE);
+        Group locationsGroup = new Group(container, SWT.NONE);
         locationsGroup.setText("File System Locations");
-
+        
         GridLayout locationsGroupGridLayout = new GridLayout(2, false);
         locationsGroup.setLayout(locationsGroupGridLayout);
-
+        
         GridData locationsGroupGridData = new GridData();
         locationsGroupGridData.grabExcessHorizontalSpace = true;
         locationsGroupGridData.verticalAlignment = GridData.BEGINNING;
@@ -223,8 +231,7 @@ public class ConfigurationInformationDialog extends Dialog {
         askWorkspaceLocationButton.setLayoutData(checkBoxData);
 
         // ----------------------------------------------------
-
-        Group applyGroup = new Group(parent, SWT.NONE);
+        Group applyGroup = new Group(container, SWT.NONE);
         applyGroup.setText("Apply Changes");
 
         GridLayout applyGroupGridLayout = new GridLayout(1, true);
@@ -243,8 +250,11 @@ public class ConfigurationInformationDialog extends Dialog {
         applyLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16));
 
         // ----------------------------------------------------
-
-        return super.createDialogArea(parent);
+        container.setSize(container.computeSize(SWT.NONE,
+            SWT.NONE, true));
+        scrolled.setMinSize(getInitialSize());
+        scrolled.setVisible(true);
+        return dialogArea;
     }
 
     private void initConfigurationFileAndPathMapping() {

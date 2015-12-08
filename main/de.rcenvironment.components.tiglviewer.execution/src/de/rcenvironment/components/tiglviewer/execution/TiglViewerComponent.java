@@ -36,9 +36,9 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 public class TiglViewerComponent extends DefaultComponent {
 
     private static final Log LOG = LogFactory.getLog(TiglViewerComponent.class);
-    
+
     private static TiglViewerView view;
-    
+
     private ComponentContext componentContext;
 
     private ComponentDataManagementService dataManagementService;
@@ -46,12 +46,12 @@ public class TiglViewerComponent extends DefaultComponent {
     private File tempFile = null;
 
     private boolean firstTime = true;
-    
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
     }
-    
+
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
@@ -60,51 +60,54 @@ public class TiglViewerComponent extends DefaultComponent {
         Bundle guiBundle = Platform.getBundle("de.rcenvironment.components.tiglviewer.gui");
         try {
             if (guiBundle != null && guiBundle.getState() != Bundle.ACTIVE) {
-                LOG.debug("Starting bundle " + guiBundle);
+                LOG.debug("Starting bundle: " + guiBundle);
                 guiBundle.start();
             }
         } catch (BundleException e) {
-            LOG.error("Failed to start bundle " + guiBundle, e);
+            LOG.error("Failed to start bundle: " + guiBundle, e);
         }
     }
 
-    
     @Override
     public void processInputs() throws ComponentException {
-        try {
-            TypedDatum td = componentContext.readInput("TiGL Viewer File");
 
-            if (td instanceof FileReferenceTD) {
-                FileReferenceTD inputFile = (FileReferenceTD) td;
+        TypedDatum td = componentContext.readInput("TiGL Viewer File");
 
-                if (firstTime) {
-                    // firstTime logic cannot be done in prepare() because only on this stage filename for tempfile is available.
-                    // TiGLViewer is aware of incoming filename.
-                    try {
-                        tempFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(inputFile.getFileName());
+        if (td instanceof FileReferenceTD) {
+            FileReferenceTD inputFile = (FileReferenceTD) td;
 
-                        dataManagementService.copyReferenceToLocalFile(inputFile.getFileReference(), tempFile,
-                            componentContext.getDefaultStorageNodeId());
-
-                        if (view != null) {
-                            view.showView(tempFile);
-                        } else {
-                            throw new ComponentException("Cannot show TiGL Viewer. Maybe there is no GUI available.");
-                        }
-                    } catch (IOException e) {
-                        throw new ComponentException("Cannot create temp file for TiGL Viewer.", e);
-                    }
-
-                    firstTime = false;
-                } else {
+            if (firstTime) {
+                // firstTime logic cannot be done in prepare() because only on this stage filename for temp file is available.
+                // TiGLViewer is aware of incoming filename.
+                try {
+                    tempFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(inputFile.getFileName());
+                } catch (IOException e) {
+                    throw new ComponentException("Failed to create temporary geometry file required by TiGL Viewer", e);
+                }
+                try {
                     dataManagementService.copyReferenceToLocalFile(inputFile.getFileReference(), tempFile,
                         componentContext.getDefaultStorageNodeId());
+                } catch (IOException e) {
+                    throw new ComponentException("Failed to load geometry file into temporary file used by TiGL Viewer", e);
+                }
+                if (view != null) {
+                    view.showView(tempFile);
+                } else {
+                    throw new ComponentException("Failed to show geometry in TiGL Viewer - most likely,"
+                        + " because the TiGL Viewer is not supported on your operating system");
                 }
 
-                componentContext.writeOutput("TiGL Viewer File", td);
+                firstTime = false;
+            } else {
+                try {
+                    dataManagementService.copyReferenceToLocalFile(inputFile.getFileReference(), tempFile,
+                        componentContext.getDefaultStorageNodeId());
+                } catch (IOException e) {
+                    throw new ComponentException("Failed to update geometry in temporary file used by TiGL Viewer", e);
+                }
             }
-        } catch (IOException e) {
-            throw new ComponentException("Cannot update temp file for TiGL Viewer.", e);
+
+            componentContext.writeOutput("TiGL Viewer File", td);
         }
 
     }
@@ -117,8 +120,8 @@ public class TiglViewerComponent extends DefaultComponent {
     public static synchronized void setRuntimeView(TiglViewerView newView) {
 
         if (view != null) {
-            throw new IllegalStateException("Tried to set TiGL Viewer Runtime View (" + newView + ") when one is already configured: "
-                + view);
+            LogFactory.getLog(TiglViewerComponent.class).warn("Tried to set TiGL Viewer Runtime View (" + newView + ")"
+                + " when one is already configured: " + view);
         }
         view = newView;
     }

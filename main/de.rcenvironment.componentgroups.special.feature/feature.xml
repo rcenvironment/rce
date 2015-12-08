@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.componentgroups.special.feature"
       label="RCE Special Components Feature"
-      version="6.3.0.qualifier"
+      version="7.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

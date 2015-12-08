@@ -155,6 +155,23 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
         tabsListGridData.horizontalSpan = 2;
         propGroupList.setLayoutData(tabsListGridData);
         propGroupList.addSelectionListener(new PropertyGroupTableListener(propGroupList));
+        propGroupList.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+                if (e.keyCode == SWT.DEL) {
+
+                    if (propGroupList.getSelection().length == 1) {
+                        if (propertyTabMap.containsKey(propGroupList.getSelection()[0])) {
+                            propertyTabMap.remove(propGroupList.getSelection()[0]);
+                            updateTabListContent();
+                        }
+                    }
+
+                }
+            }
+        });
 
         groupNameText = new Text(tabConfigurationComposite, SWT.BORDER);
         GridData tabNameTextGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
@@ -174,6 +191,7 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
                 if (e.keyCode == SWT.CR) {
                     e.doit = false;
                 }
+
             }
         });
         addGroupButton = new Button(tabConfigurationComposite, SWT.PUSH);
@@ -246,7 +264,7 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
         GridData tableData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         propertyTable.setLayoutData(tableData);
-
+        fillContextMenu(propertyTable);
         // first column - name
         TableColumn col1 = new TableColumn(propertyTable, SWT.NONE);
         col1.setText(Messages.key);
@@ -302,10 +320,25 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
                 TableItem[] selection = propertyTable.getSelection();
                 if (selection != null && selection.length > 0) {
-                    btnSelectionListener.editProperty(selection);
+                    editProperty(selection);
                     updatePropertyTable();
                 }
 
+            }
+        });
+
+        propertyTable.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+                if (e.keyCode == SWT.DEL) {
+
+                    TableItem[] selection = propertyTable.getSelection();
+                    removeProperty(selection);
+                    updatePropertyTable();
+
+                }
             }
         });
 
@@ -649,11 +682,34 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
         private final Button button;
 
-        private final Table table;
+        private final Table selectionTable;
 
         public ButtonSelectionListener(Button button, Table table) {
             this.button = button;
-            this.table = table;
+            this.selectionTable = table;
+
+        }
+
+        @Override
+        public void widgetSelected(SelectionEvent arg0) {
+            TableItem[] selection = selectionTable.getSelection();
+
+            if (button.equals(tableButtonAdd)) {
+
+                addProperty();
+
+            } else if (button.equals(tableButtonEdit)) {
+                if (selection != null && selection.length > 0) {
+
+                    editProperty(selection);
+
+                }
+            } else if (button.equals(tableButtonRemove)) {
+
+                removeProperty(selection);
+
+            }
+            updatePropertyTable();
         }
 
         @Override
@@ -662,59 +718,6 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
         }
 
-        @SuppressWarnings("unchecked")
-        @Override
-        public void widgetSelected(SelectionEvent arg0) {
-            TableItem[] selection = table.getSelection();
-            if (button.equals(tableButtonAdd)) {
-                WizardPropertyEditDialog wped =
-                    new WizardPropertyEditDialog(null, Messages.add + " " + Messages.property, new HashMap<String, String>(),
-                        getAllPropertyNames(),
-                        getAllPropertyDisplayNames());
-                int exit = wped.open();
-                if (exit == Dialog.OK) {
-                    ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).put(wped.getConfig().get(KEY_PROPERTY_KEY),
-                        wped.getConfig());
-                }
-            } else if (button.equals(tableButtonEdit)) {
-                if (selection != null && selection.length > 0) {
-
-                    editProperty(selection);
-
-                }
-            } else if (button.equals(tableButtonRemove)) {
-                if (selection != null && selection.length > 0) {
-                    Map<String, String> propertyConfig =
-                        (Map<String, String>) ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).get(selection[0]
-                            .getText());
-                    ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0]))
-                        .remove(propertyConfig.get(KEY_PROPERTY_KEY));
-
-                }
-            }
-            updatePropertyTable();
-        }
-
-        @SuppressWarnings("unchecked")
-        private void editProperty(TableItem[] selection) {
-
-            Map<String, String> propertyConfigCopy = new HashMap<String, String>();
-            if (propGroupList.getSelection().length > 0 && selection != null && selection.length > 0) {
-                propertyConfigCopy.putAll((Map<String, String>) ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0]))
-                    .get(selection[0].getText()));
-                String oldpropertyConfig = selection[0].getText();
-                WizardPropertyEditDialog wped =
-                    new WizardPropertyEditDialog(null, Messages.edit + " " + Messages.property, propertyConfigCopy,
-                        getAllPropertyNames(), getAllPropertyDisplayNames());
-                int exit = wped.open();
-                if (exit == Dialog.OK) {
-                    ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).remove(oldpropertyConfig);
-                    ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).put(
-                        wped.getConfig().get(KEY_PROPERTY_KEY),
-                        wped.getConfig());
-                }
-            }
-        }
     }
 
     /**
@@ -749,6 +752,80 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
     @Override
     public void updatePage() {
         // TODO Auto-generated method stub
+
+    }
+
+    @Override
+    protected void onAddClicked() {
+        addProperty();
+        updatePropertyTable();
+
+    }
+
+    @Override
+    protected void onEditClicked() {
+
+        TableItem[] selection = propertyTable.getSelection();
+        editProperty(selection);
+
+    }
+
+    @Override
+    protected void onRemoveClicked() {
+
+        TableItem[] selection = propertyTable.getSelection();
+        removeProperty(selection);
+        updatePropertyTable();
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void editProperty(TableItem[] selection) {
+
+        Map<String, String> propertyConfigCopy = new HashMap<String, String>();
+        if (propGroupList.getSelection().length > 0 && selection != null && selection.length > 0) {
+            propertyConfigCopy.putAll((Map<String, String>) ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0]))
+                .get(selection[0].getText()));
+            String oldpropertyConfig = selection[0].getText();
+            WizardPropertyEditDialog wped =
+                new WizardPropertyEditDialog(null, Messages.edit + " " + Messages.property, propertyConfigCopy,
+                    getAllPropertyNames(), getAllPropertyDisplayNames());
+            int exit = wped.open();
+            if (exit == Dialog.OK) {
+                ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).remove(oldpropertyConfig);
+                ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).put(
+                    wped.getConfig().get(KEY_PROPERTY_KEY),
+                    wped.getConfig());
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private void removeProperty(TableItem[] selection) {
+
+        if (selection != null && selection.length > 0) {
+
+            Map<String, String> propertyConfig =
+                (Map<String, String>) ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).get(selection[0]
+                    .getText());
+            ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0]))
+                .remove(propertyConfig.get(KEY_PROPERTY_KEY));
+        }
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void addProperty() {
+
+        WizardPropertyEditDialog wped =
+            new WizardPropertyEditDialog(null, Messages.add + " " + Messages.property, new HashMap<String, String>(),
+                getAllPropertyNames(),
+                getAllPropertyDisplayNames());
+        int exit = wped.open();
+        if (exit == Dialog.OK) {
+            ((Map<String, Object>) propertyTabMap.get(propGroupList.getSelection()[0])).put(wped.getConfig().get(KEY_PROPERTY_KEY),
+                wped.getConfig());
+        }
 
     }
 }

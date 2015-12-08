@@ -7,7 +7,4 @@
 		<description>The Optimizer Component is used to perform optimizations within a workflow.</description>
 		<topic href="resources/help/html/usage.xhtml" label="Optimizer Component Usage"></topic>
 	</context>
-	<context id="doe" title="DoE Component Help">
-		<description>The Design of Experiments Component is currently under test. Help is coming soon.</description>
-	</context>
 </contexts>

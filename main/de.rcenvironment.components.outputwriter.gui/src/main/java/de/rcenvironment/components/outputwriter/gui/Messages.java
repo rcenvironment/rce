@@ -14,6 +14,7 @@ import org.eclipse.osgi.util.NLS;
  * Contains the messages of Outputwriter GUI.
  * 
  * @author Hendrik Abbenhaus
+ * @author Brigitte Boden
  * 
  */
 public class Messages extends NLS {
@@ -62,6 +63,119 @@ public class Messages extends NLS {
     /** Constant. */
     public static String note;
 
+    /** Text for OutputLocation Table. */
+    public static String inputsForOutputLocation;
+
+    /** Title for OutputLocation Edit Dialog. */
+    public static String outputLocationEditDialogTitle;
+
+    /** Title for OutputLocation Add Dialog. */
+    public static String outputLocationAddDialogTitle;
+
+    /** Title for OutputLocation Pane. */
+    public static String outputLocationPaneTitle;
+
+    /** Root folder section title. */
+    public static String rootFolderSectionTitle;
+
+    /** Text for root folder checkbox. */
+    public static String selectAtStart;
+
+    /** Text for root folder dialog. */
+    public static String selectRootFolder;
+
+    /** Labels for settings in OutputWriterEndpointEditDialog and OutputLocation Edit Dialog. */
+
+    /** Name field. */
+    // public static String name;
+
+    /** Filename field. */
+    public static String outputLocFilename;
+
+    /** Filename field. */
+    public static String inputTargetName;
+
+    /** Target folder field. */
+    public static String targetFolder;
+
+    /** Subfolder field. */
+    public static String subFolder;
+
+    /** Text for "insert" button. */
+    public static String insertButtonText;
+
+    /** Text for "header" field. */
+    public static String header;
+
+    /** Text for "format String" field. */
+    public static String format;
+
+    /** Text for "Handle existing file" field. */
+    public static String handleExisting;
+
+    /** Text for add button in outputLocation Dialog. */
+    public static String add;
+
+    /** Text for add button in outputLocation Dialog. */
+    public static String edit;
+
+    /** Text for add button in outputLocation Dialog. */
+    public static String remove;
+
+    /** Message: Optional. */
+    public static String optionalMessage;
+
+    /** Message: Only one subfolder. */
+    public static String onlyOneSubfolderMessage;
+
+    /** Message: Handling option only for file from previous iteration. */
+    public static String previousIterationMessage;
+
+    /** Warning if input is connected to no output. */
+    public static String noOutputForInput;
+
+    /** Warning if not input is connected to an output. */
+    public static String noInputForOutput;
+
+    /** Warning if placeholder cannot be matched. */
+    public static String unmatchedPlaceholder;
+
+    /** Warning if header placeholder cannot be matched. */
+    public static String unmatchedHeaderPlaceholder;
+
+    /** Warning if input does not exist. */
+    public static String missingInput;
+
+    /** Warning if output location has connected as well as unconnected inputs. */
+    public static String connectedAndUnconnectedInputs;
+
+    /** Confirm dialog on input changes. */
+    public static String editingInputWithOutputLocationDialogTitle;
+
+    /** Confirm dialog on input changes. */
+    public static String editingInputWithOutputLocationDialogText;
+
+    /** Confirm dialog on input changes. */
+    public static String deletingInputWithOutputLocationDialogText;
+
+    /** Example for header field. */
+    public static String headerMessage;
+
+    /** Example for format field. */
+    public static String formatMessage;
+
+    /** Warning on empty inputs table. */
+    public static String emptyInputTable;
+
+    /** Title for options group. */
+    public static String groupTitleTargetFile;
+
+    /** Title for options group. */
+    public static String groupTitleFormat;
+
+    /** Title for options group. */
+    public static String groupTitleInputs;
+
     private static final String BUNDLE_NAME = Messages.class.getPackage()
         .getName() + ".messages";
 
@@ -71,11 +185,11 @@ public class Messages extends NLS {
     }
 
     /*
-     * public static String Type(Type type){ switch (type) { case FILE: return addfile; case FOLDER:
-     * return addfolder; default: return null; } }
+     * public static String Type(Type type){ switch (type) { case FILE: return addfile; case FOLDER: return addfolder; default: return null;
+     * } }
      * 
-     * public static Type getTypeByText(String text){ if (text.contains(addfile)){ return Type.FILE;
-     * }else if(text.contains(addfolder)){ return Type.FOLDER; }else{ return null; }
+     * public static Type getTypeByText(String text){ if (text.contains(addfile)){ return Type.FILE; }else if(text.contains(addfolder)){
+     * return Type.FOLDER; }else{ return null; }
      * 
      * }
      */

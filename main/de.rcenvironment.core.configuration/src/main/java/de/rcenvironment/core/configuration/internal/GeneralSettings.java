@@ -24,6 +24,14 @@ class GeneralSettings {
 
     private boolean isRelay;
 
+    private double[] location;
+
+    private String locationName;
+
+    private String contact;
+
+    private String additionalInformation;
+
     private String tempDirectoryOverride;
 
     public GeneralSettings(ConfigurationSegment configurationSegment) {
@@ -31,6 +39,11 @@ class GeneralSettings {
         isWorkflowHost = configurationSegment.getBoolean("isWorkflowHost", false);
         isRelay = configurationSegment.getBoolean("isRelay", false);
         tempDirectoryOverride = configurationSegment.getString("tempDirectory");
+        location = new double[] { configurationSegment.getSubSegment("coordinates").getDouble("lat", 0.0),
+            configurationSegment.getSubSegment("coordinates").getDouble("long", 0.0) };
+        locationName = configurationSegment.getString("locationName", "");
+        contact = configurationSegment.getString("contact", "");
+        additionalInformation = configurationSegment.getString("information", "");
     }
 
     public String getRawInstanceName() {
@@ -47,6 +60,22 @@ class GeneralSettings {
 
     public String getTempDirectoryOverride() {
         return tempDirectoryOverride;
+    }
+
+    public double[] getLocation() {
+        return location;
+    }
+
+    public String getLocationName() {
+        return locationName;
+    }
+
+    public String getContact() {
+        return contact;
+    }
+
+    public String getAdditionalInformation() {
+        return additionalInformation;
     }
 
 }

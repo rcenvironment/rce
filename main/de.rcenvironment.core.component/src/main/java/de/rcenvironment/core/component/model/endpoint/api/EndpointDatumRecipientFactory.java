@@ -25,14 +25,16 @@ public final class EndpointDatumRecipientFactory {
      * 
      * @param inputIdentifier target input identifier (is the name of the input)
      * @param componentExecutionIdentifier execution identifier of the target component instance
+     * @param componentInstanceName name of the target component instance
      * @param inputsNode {@link NodeIdentifier} of the target node
      * @return {@link EndpointDatumRecipient} instance
      */
     public static EndpointDatumRecipient createEndpointDatumRecipient(String inputIdentifier, String componentExecutionIdentifier,
-        NodeIdentifier inputsNode) {
+        String componentInstanceName, NodeIdentifier inputsNode) {
         EndpointDatumRecipientImpl endpointDatumRecipient = new EndpointDatumRecipientImpl();
         endpointDatumRecipient.setIdentifier(inputIdentifier);
         endpointDatumRecipient.setInputsComponentExecutionIdentifier(componentExecutionIdentifier);
+        endpointDatumRecipient.setInputsComponentInstanceName(componentInstanceName);
         endpointDatumRecipient.setInputsNodeId(inputsNode);
         return endpointDatumRecipient;
     }

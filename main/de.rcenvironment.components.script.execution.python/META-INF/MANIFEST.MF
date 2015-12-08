@@ -2,13 +2,12 @@ Manifest-Version: 1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Python
-Bundle-SymbolicName: de.rcenvironment.components.script.execution.python;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.script.execution.python
+Bundle-Version: 7.0.0.qualifier
 Export-Package: de.rcenvironment.components.script.execution.python
 Service-Component: OSGI-INF/*.xml
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy
 Require-Bundle: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.scripting
 Import-Package: de.rcenvironment.components.script.common,
@@ -25,4 +24,5 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.core.scripting.python,
  de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.scripting,
- org.apache.commons.logging;version="1.0.4"
+ org.apache.commons.logging;version="1.1.1"
+RCE-Component: true

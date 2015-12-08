@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE TiGL Viewer Component Execution
-Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.execution;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.execution
+Bundle-Version: 7.0.0.qualifier
 Service-Component: OSGI-INF/*.xml
 Require-Bundle: org.eclipse.osgi,
  org.eclipse.core.resources,
@@ -11,7 +11,6 @@ Require-Bundle: org.eclipse.osgi,
 Export-Package: de.rcenvironment.components.tiglviewer.execution
 RCE-Component: true
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy
 Import-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,

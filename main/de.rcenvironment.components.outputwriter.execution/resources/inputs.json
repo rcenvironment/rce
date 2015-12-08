@@ -5,7 +5,11 @@
             "group":"write",
             "dataTypes":[
                 "FileReference",
-                "DirectoryReference"
+                "DirectoryReference",
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float"
             ],
             "defaultDataType":"FileReference",
             "inputHandlingOptions":[
@@ -21,13 +25,17 @@
             "defaultInputExecutionConstraint":"Required",
             "metaData": {
                 "filename": {
-                    "guiName": "Target name",
+                    "guiName": "Target file/directory",
                     "guiPosition": "0",
                     "guiGroup": "Options",
                     "visibility": "shown",
                     "dataType": "Text",
                     "defaultValue": "",
-                    "validation": "required"
+                    "validation": "required",
+                    "endpointDataTypes":[
+                        "FileReference",
+                        "DirectoryReference"
+                    ]
                 },
                  "folderForSaving": {
                     "guiName": "Target folder",
@@ -36,15 +44,26 @@
                     "visibility": "developerConfigurable",
                     "dataType": "Text",
                     "defaultValue": "",
-                    "validation": "required"
+                    "validation": "required",
+                     "endpointDataTypes":[
+                        "FileReference",
+                        "DirectoryReference"
+                    ]
                 }
             }
         }
     ],
-    "inputGroups":[
+    "staticInputGroups":[
         {
-            "identifier":"write",
+            "name":"write",
             "type": "Or"
+        }
+    ],
+    "dynamicInputGroups":[
+        {
+            "identifier":"dynamicAndGroup",
+            "type": "And",
+            "group": "write"
         }
     ]
 }

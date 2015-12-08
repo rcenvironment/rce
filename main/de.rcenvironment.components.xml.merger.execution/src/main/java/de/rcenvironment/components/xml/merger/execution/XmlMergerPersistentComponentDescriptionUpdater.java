@@ -23,7 +23,6 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
-import de.rcenvironment.cpacs.utils.common.components.PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -96,19 +95,19 @@ public class XmlMergerPersistentComponentDescriptionUpdater implements Persisten
 
         
         // StaticOutput CPACS=FileReference, Static Input CPACS=FileReference, Integrate=FileReference
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticInput(description, CPACS); 
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticInput(description, "CPACS to integrate");
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticOutputCPACS(description);
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticInput(description, CPACS); 
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticInput(description, "CPACS to integrate");
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticOutput(description, CPACS);
         
         
         // if ConfigValue consumeCPACS==true; CPACS and Integrate CPACS StaticInputs = required
         // else StaticInput CPACS=initialized, Integrate = required
         // Delete ConfigValue consumeCPACS 
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.updateConsumeCPACSFlag(description);
+        description = PersistentComponentDescriptionUpdaterUtils.updateConsumeCPACSFlag(description);
         
         
         // Sets all incoming channels usage to "optional."
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.updateDynamicInputsOptional(description);
+        description = PersistentComponentDescriptionUpdaterUtils.updateDynamicInputsOptional(description);
 
         description.setComponentVersion(V3_0);
         

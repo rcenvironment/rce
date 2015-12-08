@@ -18,6 +18,7 @@ import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.execution.OptimizerAlgorithmExecutor;
 import de.rcenvironment.components.optimizer.execution.algorithms.registry.OptimizerAlgorithmExecutorFactory;
 import de.rcenvironment.components.optimizer.execution.algorithms.registry.OptimizerAlgorithmExecutorFactoryRegistry;
+import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
@@ -48,7 +49,7 @@ public class OptimizerAlgorithmExecutorFactoryRegistryImpl implements OptimizerA
     @Override
     public OptimizerAlgorithmExecutor createAlgorithmProviderInstance(String algorithmPackage, String algorithm,
         Map<String, MethodDescription> methodConfiguration, Map<String, TypedDatum> outputValues, Collection<String> input,
-        ComponentContext compContext, Map<String, Map<String, Double>> boundMaps) {
+        ComponentContext compContext, Map<String, Map<String, Double>> boundMaps) throws ComponentException {
 
         OptimizerAlgorithmExecutor result = null;
         for (OptimizerAlgorithmExecutorFactory currentProvider : factories) {

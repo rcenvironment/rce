@@ -18,7 +18,7 @@ import java.io.Serializable;
  * TODO make immutable to allow passing instances from gui to model and vice versa without side effects and without creating new
  * instances - seid_do, April 2015
  */
-public class Location implements Serializable {
+public class Location implements Serializable, Comparable<Location> {
 
     private static final long serialVersionUID = 3311137685734060246L;
 
@@ -36,6 +36,15 @@ public class Location implements Serializable {
     @Override
     public String toString() {
         return (this.x + ":" + this.y);
+    }
+
+    @Override
+    public int compareTo(Location o) {
+        int result = Integer.valueOf(x).compareTo(Integer.valueOf(o.x));
+        if (result == 0) {
+            result = Integer.valueOf(y).compareTo(Integer.valueOf(o.y));
+        }
+        return result;
     }
 
 }

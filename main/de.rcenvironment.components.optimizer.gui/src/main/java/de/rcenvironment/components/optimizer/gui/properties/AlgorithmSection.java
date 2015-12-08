@@ -62,6 +62,8 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
     /**
      * Selections.
      */
+    private static final String COULD_NOT_PARSE_METHOD_FILE = "Could not parse method file";
+
     private Combo comboMainAlgorithmSelection;
 
     private final ObjectMapper mapper = new ObjectMapper();
@@ -115,7 +117,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         Arrays.sort(methods);
         firstAlgo = new Composite(algorithmConfigurationParent, SWT.NONE);
         firstAlgo.setLayout(new GridLayout(2, false));
-        new Label(firstAlgo, SWT.NONE).setText("Main method");
+        new Label(firstAlgo, SWT.NONE).setText("Main algorithm");
         new Label(firstAlgo, SWT.NONE);
         comboMainAlgorithmSelection = new Combo(firstAlgo, SWT.BORDER | SWT.READ_ONLY);
         comboMainAlgorithmSelection.setItems(methods);
@@ -129,7 +131,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         secondAlgo.setLayout(new GridLayout(2, false));
         secondAlgo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
 
-        new Label(secondAlgo, SWT.NONE).setText("Second method");
+        new Label(secondAlgo, SWT.NONE).setText("Second algorithm");
         new Label(secondAlgo, SWT.NONE);
         comboSecondAlgorithmSelection = new Combo(secondAlgo, SWT.BORDER | SWT.READ_ONLY);
         comboSecondAlgorithmSelection.setItems(methods);
@@ -143,7 +145,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
         thirdAlgo = new Composite(algorithmConfigurationParent, SWT.NONE);
         thirdAlgo.setLayout(new GridLayout(2, false));
 
-        new Label(thirdAlgo, SWT.NONE).setText("Third method");
+        new Label(thirdAlgo, SWT.NONE).setText("Third algorithm");
         new Label(thirdAlgo, SWT.NONE);
         comboThirdAlgorithmSelection = new Combo(thirdAlgo, SWT.BORDER | SWT.READ_ONLY);
         comboThirdAlgorithmSelection.setItems(methods);
@@ -183,7 +185,7 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                 allConfiguredDescriptions = OptimizerFileLoader.getAllMethodDescriptions(getAlgorithmFolder());
                 if (allConfiguredDescriptions != null) {
                     setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
-                        mapper.defaultPrettyPrintingWriter().writeValueAsString(allConfiguredDescriptions));
+                        mapper.writerWithDefaultPrettyPrinter().writeValueAsString(allConfiguredDescriptions));
                 }
             } catch (JsonParseException e) {
                 logger.error(e);
@@ -261,11 +263,11 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                     setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
                         mapper.defaultPrettyPrintingWriter().writeValueAsString(methodDescriptions));
                 } catch (JsonParseException e) {
-                    logger.error("Could not parse method file ", e);
+                    logger.error(COULD_NOT_PARSE_METHOD_FILE, e);
                 } catch (JsonMappingException e) {
-                    logger.error("Could not map method file ", e);
+                    logger.error(COULD_NOT_PARSE_METHOD_FILE, e);
                 } catch (IOException e) {
-                    logger.error("Could not load method file ", e);
+                    logger.error(COULD_NOT_PARSE_METHOD_FILE, e);
                 }
             }
         } else {
@@ -302,8 +304,8 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                     // if SGB is chosen, only Dakota LHS is available for the second algorithm
                     comboSecondAlgorithmSelection.add(OptimizerComponentConstants.DAKOTA_LHS);
                     comboThirdAlgorithmSelection.setItems(
-                        mainAlgorithm.getSpecificSettings().get(OptimizerComponentConstants.APPROX_METHOD_KEY).
-                            get(OptimizerComponentConstants.DEFAULT_VALUE_KEY).split(COMMA));
+                        mainAlgorithm.getSpecificSettings().get(OptimizerComponentConstants.APPROX_METHOD_KEY)
+                            .get(OptimizerComponentConstants.DEFAULT_VALUE_KEY).split(COMMA));
                     secondAlgo.setVisible(true);
                     thirdAlgo.setVisible(true);
                     comboSecondAlgorithmSelection.select(comboSecondAlgorithmSelection.indexOf(OptimizerComponentConstants.DAKOTA_LHS));
@@ -338,11 +340,11 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                 pythonLabel.setVisible(false);
             }
         } catch (JsonParseException e1) {
-            logger.error("Could not parse method file", e1);
+            logger.error(COULD_NOT_PARSE_METHOD_FILE, e1);
         } catch (JsonMappingException e1) {
-            logger.error("Could not map method file", e1);
+            logger.error(COULD_NOT_PARSE_METHOD_FILE, e1);
         } catch (IOException e1) {
-            logger.error("Could not load method file", e1);
+            logger.error(COULD_NOT_PARSE_METHOD_FILE, e1);
         }
     }
 
@@ -399,21 +401,21 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
                     if (attachedCombo.getText().equals("")) {
                         MessageBox dialog =
                             new MessageBox(parent.getShell(), SWT.ICON_WARNING | SWT.OK);
-                        dialog.setText("No method");
-                        dialog.setMessage("No method selected!");
+                        dialog.setText("No Algorithm");
+                        dialog.setMessage("No algorithm selected!");
                         dialog.open();
                     } else {
                         MethodPropertiesDialogGenerator dialog = new MethodPropertiesDialogGenerator(
                             parent.getShell(), allConfiguredDescriptions.get(attachedCombo.getText()));
                         if (dialog.open() == Dialog.OK) {
                             setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
-                                mapper.defaultPrettyPrintingWriter().writeValueAsString(allConfiguredDescriptions));
+                                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(allConfiguredDescriptions));
                         }
                     }
 
                 }
             } catch (JsonParseException e1) {
-                logger.error("Could not parse method file", e1);
+                logger.error(COULD_NOT_PARSE_METHOD_FILE, e1);
             } catch (JsonMappingException e1) {
                 logger.error("Could not map method file", e1);
             } catch (IOException e1) {
@@ -430,12 +432,39 @@ public abstract class AlgorithmSection extends ValidatingWorkflowNodePropertySec
      */
     private class SelectAlgorithmListener implements Listener {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void handleEvent(final Event event) {
+            String key = comboMainAlgorithmSelection.getItem(comboMainAlgorithmSelection.getSelectionIndex());
             if (event.widget.equals(comboMainAlgorithmSelection)) {
                 refreshShownAlgorithms();
+                String configString = getConfiguration().getConfigurationDescription()
+                    .getConfigurationValue(OptimizerComponentConstants.METHODCONFIGURATIONS);
+                try {
+
+                    Map<String, MethodDescription> allConfiguredDescriptions = null;
+                    if (configString == null || configString.isEmpty()) {
+                        allConfiguredDescriptions = OptimizerFileLoader.getAllMethodDescriptions(getAlgorithmFolder());
+                    } else {
+                        allConfiguredDescriptions = mapper.readValue(configString, new HashMap<String, MethodDescription>().getClass());
+                    }
+                    if (!allConfiguredDescriptions.containsKey(key)) {
+                        MethodDescription desc = OptimizerFileLoader.loadMethod(key);
+                        if (desc != null) {
+                            allConfiguredDescriptions.put(key, desc);
+                            setProperty(OptimizerComponentConstants.METHODCONFIGURATIONS,
+                                mapper.writerWithDefaultPrettyPrinter().writeValueAsString(allConfiguredDescriptions));
+                        }
+                    }
+                } catch (JsonParseException e1) {
+                    logger.error(COULD_NOT_PARSE_METHOD_FILE, e1);
+                } catch (JsonMappingException e1) {
+                    logger.error("Could not map method file", e1);
+                } catch (IOException e1) {
+                    logger.error("Could not load method file", e1);
+                }
+
             }
-            String key = comboMainAlgorithmSelection.getItem(comboMainAlgorithmSelection.getSelectionIndex());
             if (secondAlgo.isVisible() && comboSecondAlgorithmSelection.getSelectionIndex() >= 0
                 && !comboSecondAlgorithmSelection.getItem(comboSecondAlgorithmSelection.getSelectionIndex()).equals("")) {
                 key += COMMA + comboSecondAlgorithmSelection.getItem(comboSecondAlgorithmSelection.getSelectionIndex());

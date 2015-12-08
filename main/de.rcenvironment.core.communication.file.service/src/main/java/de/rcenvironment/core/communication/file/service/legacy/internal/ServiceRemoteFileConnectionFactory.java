@@ -13,7 +13,6 @@ import java.net.URI;
 
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.spi.RemoteFileConnectionFactory;
@@ -40,8 +39,8 @@ public class ServiceRemoteFileConnectionFactory implements RemoteFileConnectionF
     }
     
     @Override
-    public RemoteFileConnection createRemoteFileConnection(User cert, URI uri) throws IOException {
-        return new ServiceRemoteFileConnection(cert, uri, communicationService, context);
+    public RemoteFileConnection createRemoteFileConnection(URI uri) throws IOException {
+        return new ServiceRemoteFileConnection(uri, communicationService, context);
     }
 
 }

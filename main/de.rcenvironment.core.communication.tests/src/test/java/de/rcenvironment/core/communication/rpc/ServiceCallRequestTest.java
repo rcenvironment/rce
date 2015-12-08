@@ -29,11 +29,6 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 public class ServiceCallRequestTest extends TestCase {
 
     /**
-     * Constant.
-     */
-    private static final String SERVICE_PROPERTIES = null;
-
-    /**
      * Class under test.
      */
     private ServiceCallRequest myCommunicationRequest;
@@ -41,7 +36,7 @@ public class ServiceCallRequestTest extends TestCase {
     @Override
     protected void setUp() throws Exception {
         myCommunicationRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
-            SERVICE, SERVICE_PROPERTIES, METHOD, PARAMETER_LIST);
+            SERVICE, METHOD, PARAMETER_LIST);
     }
 
     @Override
@@ -57,9 +52,8 @@ public class ServiceCallRequestTest extends TestCase {
      * Test Constructor for success.
      */
     public void testForSuccess() {
-        new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, SERVICE_PROPERTIES, METHOD, PARAMETER_LIST);
-        new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, "", METHOD, PARAMETER_LIST);
-        new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, SERVICE_PROPERTIES, METHOD, null);
+        new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, METHOD, PARAMETER_LIST);
+        new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, METHOD, null);
     }
 
     /*
@@ -71,42 +65,42 @@ public class ServiceCallRequestTest extends TestCase {
      */
     public void testForFailure() {
         try {
-            new ServiceCallRequest(null, REMOTE_PLATFORM, SERVICE, SERVICE_PROPERTIES, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(null, REMOTE_PLATFORM, SERVICE, METHOD, PARAMETER_LIST);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_PLATFORM, null, SERVICE, SERVICE_PROPERTIES, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_PLATFORM, null, SERVICE, METHOD, PARAMETER_LIST);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, null, SERVICE_PROPERTIES, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, null, METHOD, PARAMETER_LIST);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, "", SERVICE_PROPERTIES, METHOD, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, "", METHOD, PARAMETER_LIST);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, SERVICE_PROPERTIES, null, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, null, PARAMETER_LIST);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
 
         try {
-            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, SERVICE_PROPERTIES, null, PARAMETER_LIST);
+            new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE, null, PARAMETER_LIST);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
@@ -119,12 +113,12 @@ public class ServiceCallRequestTest extends TestCase {
 
     /** Test. */
     public void testRequestedPlatform() {
-        assertEquals(LOCAL_PLATFORM, myCommunicationRequest.getRequestedPlatform());
+        assertEquals(LOCAL_PLATFORM, myCommunicationRequest.getDestination());
     }
 
     /** Test. */
     public void testGetCallingPlatform() {
-        assertEquals(REMOTE_PLATFORM, myCommunicationRequest.getCallingPlatform());
+        assertEquals(REMOTE_PLATFORM, myCommunicationRequest.getSender());
     }
 
     /**
@@ -132,15 +126,7 @@ public class ServiceCallRequestTest extends TestCase {
      * 
      */
     public void testGetServiceForSuccess() {
-        myCommunicationRequest.getService();
-    }
-
-    /**
-     * Test method for success.
-     * 
-     */
-    public void testGetServicePropertiesForSuccess() {
-        myCommunicationRequest.getServiceProperties();
+        myCommunicationRequest.getServiceName();
     }
 
     /**
@@ -148,7 +134,7 @@ public class ServiceCallRequestTest extends TestCase {
      * 
      */
     public void testGetServiceMethodForSuccess() {
-        myCommunicationRequest.getServiceMethod();
+        myCommunicationRequest.getMethodName();
     }
 
     /**
@@ -159,16 +145,12 @@ public class ServiceCallRequestTest extends TestCase {
         myCommunicationRequest.getParameterList();
     }
 
-    /*
-     * test for sanity.
-     */
-
     /**
      * Test method for sanity.
      * 
      */
     public void testGetHostForSanity() {
-        NodeIdentifier host = myCommunicationRequest.getRequestedPlatform();
+        NodeIdentifier host = myCommunicationRequest.getDestination();
         assertEquals(host, LOCAL_PLATFORM);
     }
 
@@ -177,7 +159,7 @@ public class ServiceCallRequestTest extends TestCase {
      * 
      */
     public void testGetServiceForSanity() {
-        String service = myCommunicationRequest.getService();
+        String service = myCommunicationRequest.getServiceName();
         assertEquals(service, SERVICE);
 
     }
@@ -186,18 +168,8 @@ public class ServiceCallRequestTest extends TestCase {
      * Test method for sanity.
      * 
      */
-    public void testGetServicePropertiesForSanity() {
-        String serviceProperties = myCommunicationRequest.getServiceProperties();
-        assertEquals(serviceProperties, SERVICE_PROPERTIES);
-
-    }
-
-    /**
-     * Test method for sanity.
-     * 
-     */
     public void testGetServiceMethodForSanity() {
-        String serviceMethod = myCommunicationRequest.getServiceMethod();
+        String serviceMethod = myCommunicationRequest.getMethodName();
         assertEquals(serviceMethod, METHOD);
     }
 
@@ -208,14 +180,6 @@ public class ServiceCallRequestTest extends TestCase {
     public void testGetParameterListForSanity() {
         List<? extends Serializable> list = myCommunicationRequest.getParameterList();
         assertEquals(list, PARAMETER_LIST);
-    }
-
-    /**
-     * Test increaseHopCount method.
-     */
-    public void testIncreaseHopCount() {
-        assertEquals(myCommunicationRequest.increaseHopCount(), new Integer(1));
-        assertEquals(myCommunicationRequest.increaseHopCount(), new Integer(2));
     }
 
 }

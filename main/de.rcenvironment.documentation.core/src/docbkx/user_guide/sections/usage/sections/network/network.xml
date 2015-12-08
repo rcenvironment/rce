@@ -1,0 +1,109 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="network">
+	<title>Connecting RCE instances via the RCE network or via SSH connections</title>
+	<para>RCE provides two possibilities to connect your RCE instance to other RCE instances and to use
+		the user-integrated tools and components published on those instances: The RCE network
+		connections and SSH connections. RCE connections are meant to be used only in a trusted
+		network (e.g. your institution's internal network). The RCE network traffic is currently
+			<emphasis>not encrypted</emphasis>. This means that it is <emphasis>not
+			secure</emphasis> to expose RCE server ports to untrusted networks like the internet. In
+		the case that it is not possible or not secure to use RCE connections, SSH connections
+		provide a more secure alternative. However, not all tools can be used via an SSH connection
+		in the current version. The following table compares the two connection types:<table
+			frame="all">
+			<title>Connection types</title>
+			<tgroup cols="6">
+				<colspec colname="c1" colnum="1" colwidth="2.06*"/>
+				<colspec colname="newCol4" colnum="2" colwidth="1.7*"/>
+				<colspec colname="newCol9" colnum="3" colwidth="2.55*"/>
+				<colspec colname="newCol6" colnum="4" colwidth="1.66*"/>
+				<colspec colname="newCol7" colnum="5" colwidth="1.99*"/>
+				<colspec colname="c2" colnum="6" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry>Connection type</entry>
+						<entry>Access to all published  tools</entry>
+						<entry>Supporting all RCE network functions (e.g. tool documentation, remote
+							monitoring...)</entry>
+						<entry>Encrypted traffic</entry>
+						<entry>Using login name and password</entry>
+						<entry>Symmetrical</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>RCE connections</entry>
+						<entry><emphasis role="bold">yes</emphasis></entry>
+						<entry><emphasis role="bold">yes</emphasis></entry>
+						<entry><emphasis role="bold">no</emphasis></entry>
+						<entry><emphasis role="bold">no</emphasis></entry>
+						<entry><emphasis role="bold">yes</emphasis></entry>
+					</row>
+					<row>
+						<entry>SSH connections</entry>
+						<entry><emphasis role="bold">no</emphasis></entry>
+						<entry><emphasis role="bold">no</emphasis></entry>
+						<entry><emphasis role="bold">yes</emphasis></entry>
+						<entry><emphasis role="bold">yes</emphasis></entry>
+						<entry><emphasis role="bold">no</emphasis></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table></para>
+	<sect2>
+		<title>RCE Network Connections</title>
+		<para>RCE connections are meant to be used only in a trusted network (e.g. your
+			institution's internal network). To build up a network of RCE instances, at least one of
+			the instances has to be configured as a server (see the "Configuration" section or the
+			sample configuration file "Relay server" for details).</para>
+		<para>On the client side, RCE network connections can be added in the "network" view by clicking
+			"Add network connection" and entering the hostname and port of an RCE server instance.
+			The connections are shown in the "RCE Network"->"Connections" subtree. They can also be
+			edited, connected and disconnected in the network view. However, the changes made here
+			are not saved in the configuration yet, i.e. they will be lost when RCE is closed or
+			restarted. To permanently add connections, you can edit the configuration file (see the
+			"Configuration" section for details). </para>
+		<para>In the "RCE Network" -> "Instances" subtree all RCE instances in the network are
+			listed. When expanding the entry for an instance, you can see monitoring data like CPU
+			or RAM usage for this instance, and the published components and tools of this instance
+			(if it has any).</para>
+		<para>The published components and tools of the other instances in your network are also shown in
+			the palette of the Workflow Editor. From there, you can use them in your workflows just
+			like your local components and tools. When you start a workflow, in the "Execute
+			Workflow" wizard there is an overview which component will be run on which RCE instance.
+			If a component is available on several instances, you can choose here on which instance
+			it should be run. In the same wizard, you can also choose another instance as the
+			"Controller Target Instance", which means that the workflow execution will be controlled
+			by this instance (see the section "Configuration Parameters" for more information). This
+			can be useful when you start a long-running workflow where all components are run on
+			remote instances and you do not want to keep your local computer connected all the
+			time.</para>
+	</sect2>
+	<sect2>
+		<title>SSH Remote Access Connections</title>
+		<para>SSH connections provide a more secure alternative to the standard RCE connections and can be
+			used to access tools remotely that were integrated using the "Remote Tool Access"
+			template, which determines certain inputs and outputs. The RCE instance that publishes
+			the tool, or another instance connected to it by RCE network connections, has to be
+			configured as an RCE remote access server (see the "Configuration" section or the sample
+			configuration file "Remote access server" for details). </para>
+		<para>On the client side, SSH connections can be added in the "network" view by clicking "Add SSH
+			Remote Access Connection". In the following dialog, enter the hostname and port of an
+			RCE instance that provides an SSH server, as well as the username and passphrase of an
+			SSH account configured on this instance. The connections are shown in the "SSH Remote
+			Access"->"SSH Remote Access Connections" subtree. They can also be edited, connected and
+			disconnected in the "network" view. It is possible to store passphrases using the
+			Eclipse Secure Storage Mechanism. However, the changes made here are not saved in the
+			configuration yet, i.e. they will be lost when RCE is closed or restarted. To
+			permanently add SSH connections, you can edit the configuration file (see the
+			"Configuration" section for details). However, it is not possible yet to store the
+			passphrases for such connections permanently.</para>
+		<para>The published tools meeting the requirements of the "Remote Tool Access" template are shown
+			in the palette of the Workflow Editor in the group "SSH Remote Access Tools" (this may
+			take a few seconds after connecting, as the tool list is fetched from the remote hosts
+			every few seconds). From there, you can use them in your workflows just like your local
+			components and tools. Differently from tools accessed by RCE network connections, in
+			this case the component is shown to be executed on your local instance in the Workflow
+			Execution wizard.</para>
+	</sect2>
+</sect1>

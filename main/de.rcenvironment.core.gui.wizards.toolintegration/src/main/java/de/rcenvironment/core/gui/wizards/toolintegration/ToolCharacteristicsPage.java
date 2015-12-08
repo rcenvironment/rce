@@ -16,6 +16,8 @@ import java.util.Map;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.io.FilenameUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.window.Window;
@@ -38,19 +40,26 @@ import org.eclipse.ui.dialogs.ElementListSelectionDialog;
 import org.eclipse.ui.help.IWorkbenchHelpSystem;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
+import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * @author Sascha Zur
  */
 public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
-    private static final int LABEL_WIDTH = 80;
+    private static final String DOTS = "  ...  ";
+
+    private static final int LABEL_WIDTH = 90;
 
     private static final int TOOL_DESCRIPTION_TEXT_HEIGHT = 50;
 
     private static final String KEY_KEYS = "properties";
+
+    private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
+        '*', '?', '\"', '>', '<', '|' };
 
     protected Map<String, Object> configurationMap;
 
@@ -71,6 +80,14 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     private Button uploadIconToFolder;
 
     private List<String> groupNames;
+
+    private Text documenationText;
+
+    private String docValid = "";
+
+    private String iconValid = "";
+
+    private PathChooserButtonListener docPathChooserButtonListener;
 
     protected ToolCharacteristicsPage(String pageName, Map<String, Object> configurationMap, List<String> usedToolnames,
         List<String> groupNames) {
@@ -109,17 +126,25 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.nameRequired,
                 ToolIntegrationConstants.KEY_TOOL_NAME);
         ((GridData) toolNameText.getLayoutData()).horizontalSpan = 2;
-        toolNameText.addListener(SWT.Verify, new AlphanumericalTextContraintListener(true, false));
+        toolNameText.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         iconText =
             addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.iconPath, ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
         iconText.setMessage(Messages.iconSizeMessage);
+        iconText.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(ModifyEvent arg0) {
+                iconValid = validateIcon();
+                validate(true);
+            }
+        });
         GridLayout iconCompLayout = new GridLayout(2, false);
         iconCompLayout.marginWidth = 0;
         Composite iconComp = new Composite(toolPropertiesGroup, SWT.NONE);
         iconComp.setLayout(iconCompLayout);
 
         Button choosePathButton = new Button(iconComp, SWT.PUSH);
-        choosePathButton.setText("  ...  ");
+        choosePathButton.setText(DOTS);
         choosePathButton.addSelectionListener(new PathChooserButtonListener(iconText, false, getShell()));
         uploadIconToFolder = new Button(iconComp, SWT.CHECK);
         uploadIconToFolder.setText(Messages.copyIconButtonLabel);
@@ -143,7 +168,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         GridData groupNameTextData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
         groupNameText.setLayoutData(groupNameTextData);
         Button chooseGroupButton = new Button(toolPropertiesGroup, SWT.PUSH);
-        chooseGroupButton.setText("  ...  ");
+        chooseGroupButton.setText(DOTS);
         chooseGroupButton.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -157,6 +182,22 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             }
         });
 
+        documenationText =
+            addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, "Documentation: ", ToolIntegrationConstants.KEY_DOC_FILE_PATH);
+        Button chooseDocButton = new Button(toolPropertiesGroup, SWT.PUSH);
+        chooseDocButton.setText(DOTS);
+
+        docPathChooserButtonListener = new PathChooserButtonListener(documenationText, false, getShell());
+        chooseDocButton.addSelectionListener(docPathChooserButtonListener);
+        documenationText.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(ModifyEvent arg0) {
+                docValid = validateDoc();
+                validate(true);
+            }
+
+        });
         Label toolDescriptionLabel = new Label(toolPropertiesGroup, SWT.NONE);
         toolDescriptionLabel.setText(Messages.toolDescription);
         GridData toolDescriptionLabelData = new GridData();
@@ -165,9 +206,8 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         descriptionTextArea = new Text(toolPropertiesGroup, SWT.BORDER | SWT.MULTI | SWT.V_SCROLL | SWT.WRAP);
         descriptionTextArea.addModifyListener(new TextModifyListener(descriptionTextArea));
         descriptionTextArea.setData(KEY_KEYS, ToolIntegrationConstants.KEY_TOOL_DESCRIPTION);
-        descriptionTextArea.addTraverseListener(new DescriptionTraverseListener());        
-        
-        
+        descriptionTextArea.addTraverseListener(new DescriptionTraverseListener());
+
         GridData descriptionData =
             new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
         descriptionData.heightHint = TOOL_DESCRIPTION_TEXT_HEIGHT;
@@ -189,12 +229,59 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
     }
 
+    private String validateDoc() {
+        if (documenationText.getText() != null && !documenationText.getText().isEmpty()) {
+            File doc = new File(documenationText.getText());
+            if (!doc.exists() && !doc.isAbsolute()
+                && configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) != null
+                && !((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)).isEmpty()) {
+                ToolIntegrationContext context = ((ToolIntegrationWizard) getWizard()).getCurrentContext();
+                doc = new File(new File(
+                    new File(new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory()),
+                        (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)),
+                    ToolIntegrationConstants.DOCS_DIR_NAME), documenationText.getText());
+            }
+            if (doc.exists()) {
+                String extension = FilenameUtils.getExtension(doc.getAbsolutePath());
+                if (!ArrayUtils.contains(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS, extension)) {
+                    return "Documentation extension not valid.";
+                }
+            } else {
+                return "Documentation does not exist. (If old documentation exists, it will not be deleted)";
+            }
+        }
+        return "";
+    }
+
+    private String validateIcon() {
+        if (iconText.getText() != null && !iconText.getText().isEmpty()) {
+            try {
+                File icon = new File(iconText.getText());
+                if (!icon.exists() && !icon.isAbsolute()
+                    && (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) != null
+                    && !((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)).isEmpty()) {
+                    ToolIntegrationContext context = ((ToolIntegrationWizard) getWizard()).getCurrentContext();
+                    icon = new File(new File(
+                        new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory()),
+                        (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)),
+                        iconText.getText());
+                }
+                Image image = ImageIO.read(icon);
+                if (image == null) {
+                    return "Icon path or file format is invalid. The default icon will be used.";
+                }
+            } catch (IOException ex) {
+                return "Icon path or file format is invalid. The default icon will be used.";
+            }
+        }
+        return "";
+    }
+
     private void showGroupSelectionDialog() {
         ElementListSelectionDialog dlg =
             new ElementListSelectionDialog(
                 getShell(),
-                new LabelProvider()
-            );
+                new LabelProvider());
         dlg.setElements(groupNames.toArray());
         dlg.setHelpAvailable(false);
         dlg.setMultipleSelection(false);
@@ -243,13 +330,14 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             validate(false);
         }
     }
-    
+
     /**
-     * Listener allowing to leave the description field by pressing TAB (instead of inserting a tab into the text).
+     * Listener allowing to leave the description field by pressing TAB (instead of inserting a tab
+     * into the text).
      *
      * @author bode_br
      */
-    
+
     private class DescriptionTraverseListener implements TraverseListener {
 
         @Override
@@ -263,16 +351,15 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     private void validate(boolean update) {
         setMessage(null, DialogPage.NONE);
         setPageComplete(true);
-        if (iconText.getText() != null && !iconText.getText().isEmpty()) {
-            try {
-                File icon = new File(iconText.getText());
-                Image image = ImageIO.read(icon);
-                if (image == null) {
-                    setMessage("Icon path or file format is invalid. The default icon will be used.", DialogPage.WARNING);
-                }
-            } catch (IOException ex) {
-                setMessage("Icon path or file format is invalid. The default icon will be used.", DialogPage.WARNING);
-            }
+        String nameError = StringUtils.checkAgainstCommonInputRules(toolNameText.getText());
+        if (nameError != null) {
+            setMessage("This tool name is invalid for running the tool via Remote Access:\n  " + nameError, DialogPage.WARNING);
+        }
+        if (!iconValid.isEmpty()) {
+            setMessage(iconValid, DialogPage.WARNING);
+        }
+        if (!docValid.isEmpty()) {
+            setMessage(docValid, DialogPage.WARNING);
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) == null
             || ((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)).isEmpty()) {
@@ -303,6 +390,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             configurationMap.put(ToolIntegrationConstants.KEY_UPLOAD_ICON, true);
         }
         updatePageValues();
+
     }
 
     private void updatePageValues() {
@@ -320,6 +408,20 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             uploadIconToFolder.setSelection(true);
         } else {
             uploadIconToFolder.setSelection(false);
+        }
+        if (configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH) != null) {
+            documenationText.setText((String) configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH));
+            File pathToOpen = new File(documenationText.getText());
+            if (!pathToOpen.isAbsolute()) {
+                ToolIntegrationContext context = ((ToolIntegrationWizard) getWizard()).getCurrentContext();
+                pathToOpen = new File(
+                    new File(new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory()),
+                        (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)),
+                    ToolIntegrationConstants.DOCS_DIR_NAME);
+            }
+            docPathChooserButtonListener.setOpenPath(pathToOpen);
+        } else {
+            documenationText.setText("");
         }
         if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME) != null) {
             groupNameText.setText((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME));
@@ -340,18 +442,6 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             integratorEmail.setText((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_EMAIL));
         } else {
             integratorEmail.setText("");
-        }
-        if (!(new File(iconText.getText()).isAbsolute())) {
-            String configPath = ((ChooseConfigurationPage) getWizard().getPreviousPage(this)).getChoosenConfigPath();
-            File toolFolder = new File(configPath).getParentFile();
-            if (toolFolder != null) {
-                File icon = new File(toolFolder, iconText.getText());
-                if (icon.exists() && icon.isFile()) {
-                    uploadIconToFolder.setSelection(true);
-                    iconText.setText(icon.getAbsolutePath());
-                }
-            }
-
         }
         validate(true);
     }

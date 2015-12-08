@@ -47,8 +47,7 @@ public interface EndpointMetaDataDefinition {
 
     /**
      * @param key meta data key
-     * @return activation filter: meta data value set under which the meta datum is active in the
-     *         GUI
+     * @return activation filter: meta data value set under which the meta datum is active in the GUI
      */
     Map<String, List<String>> getGuiActivationFilter(String key);
 
@@ -63,7 +62,7 @@ public interface EndpointMetaDataDefinition {
      * @return GUI names of possible values for this meta data.
      */
     List<String> getGuiNamesOfPossibleValues(String key);
-    
+
     /**
      * @param key meta data key
      * @return default meta data value or <code>null</code> if no default is defined
@@ -79,8 +78,7 @@ public interface EndpointMetaDataDefinition {
     /**
      * @param key meta data key
      * @param dataType {@link DataType} to check for
-     * @return <code>true</code> if meta datum is defined for given {@link DataType}, otherwise
-     *         <code>false</code>
+     * @return <code>true</code> if meta datum is defined for given {@link DataType}, otherwise <code>false</code>
      */
     boolean isDefinedForDataType(String key, DataType dataType);
 
@@ -95,11 +93,17 @@ public interface EndpointMetaDataDefinition {
      * @return visibility level of meta datum
      */
     Visibility getVisibility(String key);
-    
+
     /**
      * @param key meta data key to get activation filter for
      * @return action filter as map or <code>null</code> if no activation filter was defined
      */
     Map<String, List<String>> getActivationFilter(String key);
+
+    /**
+     * @param key meta data key
+     * @return true if the metadata with the given key should be persisted in the data management.
+     */
+    boolean isPersistent(String key);
 
 }

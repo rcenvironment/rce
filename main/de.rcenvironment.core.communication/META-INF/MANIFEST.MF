@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication
 Bundle-SymbolicName: de.rcenvironment.core.communication;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.channel,
  de.rcenvironment.core.communication.common,
@@ -22,6 +22,8 @@ Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.routing,
  de.rcenvironment.core.communication.rpc,
  de.rcenvironment.core.communication.spi,
+ de.rcenvironment.core.communication.sshconnection,
+ de.rcenvironment.core.communication.sshconnection.api,
  de.rcenvironment.core.communication.testutils,
  de.rcenvironment.core.communication.transport.spi,
  de.rcenvironment.core.communication.transport.virtual.testutils,
@@ -29,25 +31,32 @@ Export-Package: de.rcenvironment.core.communication.api,
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
-DynamicImport-Package: *
-Import-Package: de.rcenvironment.core.authentication,
+DynamicImport-Package: de.rcenvironment.*
+Import-Package: com.jcraft.jsch;version="0.1.45",
+ de.rcenvironment.core.authentication,
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
+ de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
+ de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.core.utils.ssh.jsch,
+ de.rcenvironment.core.utils.ssh.jsch.executor,
  edu.uci.ics.jung.algorithms.filters;version="2.0.1",
  edu.uci.ics.jung.algorithms.shortestpath;version="2.0.1",
  edu.uci.ics.jung.graph;version="2.0.1",
  edu.uci.ics.jung.graph.util;version="2.0.1",
+ org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",
  org.codehaus.jackson;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.type;version="1.9.13",
+ org.eclipse.equinox.security.storage;version="1.0.0",
  org.osgi.framework
 Service-Component: OSGI-INF/*.xml, OSGI-INF/new/*.xml
 Bundle-ClassPath: .

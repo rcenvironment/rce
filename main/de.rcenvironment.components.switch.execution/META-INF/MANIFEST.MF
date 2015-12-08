@@ -2,31 +2,24 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Switch Execution
 Bundle-SymbolicName: de.rcenvironment.components.switch.execution
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Export-Package: de.rcenvironment.components.switchcmp.execution
-Import-Package: de.rcenvironment.components.script.common,
- de.rcenvironment.components.script.common.registry,
- de.rcenvironment.components.switchcmp.common,
+Import-Package: de.rcenvironment.components.switchcmp.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.model.spi,
- de.rcenvironment.core.component.scripting,
  de.rcenvironment.core.component.update.api,
  de.rcenvironment.core.component.update.spi,
  de.rcenvironment.core.datamodel.api,
- de.rcenvironment.core.datamodel.types.api,
- de.rcenvironment.core.notification,
  de.rcenvironment.core.scripting,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.scripting,
- org.apache.commons.lang3.math;version="3.1.0",
  org.apache.commons.lang3.text;version="3.1.0",
- org.apache.commons.logging;version="1.0.4",
  org.codehaus.jackson;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.node;version="1.9.13"

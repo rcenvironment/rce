@@ -19,27 +19,37 @@ public interface WorkflowExecutionControllerCallback extends BatchedConsoleRowsP
      * Called if component changed its state.
      * 
      * @param compExeId execution identifier of component executed
-     * @param oldState old {@link ComponentState}
      * @param newState new {@link ComponentState}
      * @param executionCount current execution count
      * @param executionCountOnResets execution count on component resets
      */
     // introduced as null parameter can not be passed to a remote accessible method (the appropriate method won't be find on the other node)
-    void onComponentStateChanged(String compExeId, ComponentState oldState, ComponentState newState,
-        Integer executionCount, String executionCountOnResets);
+    void onComponentStateChanged(String compExeId, ComponentState newState, Integer executionCount, String executionCountOnResets);
     
     /**
      * Called if component changed its state.
      * 
      * @param compExeId execution identifier of component executed
-     * @param oldState old {@link ComponentState}
      * @param newState new {@link ComponentState}
      * @param executionCount current execution count
      * @param executionCountOnResets execution count on component resets
-     * @param t {@link Throwable} of new state was caused by an exception
+     * @param errorId error id of the cause
      */
-    void onComponentStateChanged(String compExeId, ComponentState oldState, ComponentState newState,
-        Integer executionCount, String executionCountOnResets, Throwable t);
+    void onComponentStateChanged(String compExeId, ComponentState newState, Integer executionCount, 
+        String executionCountOnResets, String errorId);
+    
+    /**
+     * Called if component changed its state.
+     * 
+     * @param compExeId execution identifier of component executed
+     * @param newState new {@link ComponentState}
+     * @param executionCount current execution count
+     * @param executionCountOnResets execution count on component resets
+     * @param errorId id of the cause
+     * @param errorMessage error message of the cause
+     */
+    void onComponentStateChanged(String compExeId, ComponentState newState, Integer executionCount, 
+        String executionCountOnResets, String errorId, String errorMessage);
 
     /**
      * Called on for input values passed to an upcoming call of {@link Component#processInputs()}.

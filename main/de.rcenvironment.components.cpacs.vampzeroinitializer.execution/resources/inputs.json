@@ -27,7 +27,8 @@
                     "guiGroup": "CPACS Values",
 					"visibility" : "shown",
 					"defaultValue" : "",
-					"validation" : "required"
+					"validation" : "required",
+					"persistent" : "true"
                 }
             }
         }

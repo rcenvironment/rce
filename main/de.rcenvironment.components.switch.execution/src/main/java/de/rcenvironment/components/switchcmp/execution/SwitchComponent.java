@@ -23,7 +23,6 @@ import de.rcenvironment.components.switchcmp.common.SwitchComponentHistoryDataIt
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -33,7 +32,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
- * 
  * Switch component.
  * 
  * @author David Scholz
@@ -85,7 +83,6 @@ public class SwitchComponent extends DefaultComponent {
         String errorMessage = ScriptValidation.validateScript(condition, engine, getInputAndConnectionStatus(),
                 getInputsAndDataTypes());
         if (!errorMessage.isEmpty()) { // validation before workflowstart
-            componentContext.printConsoleLine(errorMessage, ConsoleRow.Type.STDERR);
             throw new ComponentException(errorMessage);
         }
     }
@@ -131,14 +128,14 @@ public class SwitchComponent extends DefaultComponent {
                 returnValue = engine.get("returnValue");
             }
         } catch (ScriptException e) {
-            componentContext.printConsoleLine(e.getMessage(), ConsoleRow.Type.STDERR);
-            throw new ComponentException("Failed to interpret condition: " + conditionWithActualValues); // should
-                                                                                                         // never
-                                                                                                         // happen
+            throw new ComponentException(StringUtils.format("Failed to interpret condition '%s': %s", 
+                conditionWithActualValues, e.getMessage()), e); // should never happen
         }
+        
+        componentContext.getLog().componentInfo(StringUtils.format("Evaluated '%s' -> %b", conditionWithActualValues, returnValue));
 
         if (historyDataItem != null) {
-            historyDataItem.setActualCondition(StringUtils.format("%s = %b", conditionWithActualValues, returnValue));
+            historyDataItem.setActualCondition(StringUtils.format("%s -> %b", conditionWithActualValues, returnValue));
             historyDataItem.setConditionPattern(condition);
         }
 
@@ -156,19 +153,16 @@ public class SwitchComponent extends DefaultComponent {
             }
             outputName = SwitchComponentConstants.FALSE_OUTPUT;
         }
-        componentContext.printConsoleLine(StringUtils.format("Wrote to '%s': %s", outputName, switchDatum),
-            ConsoleRow.Type.COMPONENT_OUTPUT);
+        componentContext.getLog().componentInfo(StringUtils.format("Wrote to '%s': %s", outputName, switchDatum));
 
         writeFinalHistoryDataItem();
     }
-
-    @Override
-    public void tearDown(FinalComponentState state) {
-        if (state.equals(FinalComponentState.FAILED)) {
-            writeFinalHistoryDataItem();
-        }
-    }
     
+    @Override
+    public void completeStartOrProcessInputsAfterFailure() throws ComponentException {
+        writeFinalHistoryDataItem();
+    }
+
     private void initializeNewHistoryDataItem() {
         if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             historyDataItem = new SwitchComponentHistoryDataItem(SwitchComponentConstants.COMPONENT_ID);

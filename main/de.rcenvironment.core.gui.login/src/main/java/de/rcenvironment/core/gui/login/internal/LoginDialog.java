@@ -34,6 +34,8 @@ import org.globus.gsi.OpenSSLKey;
 import de.rcenvironment.core.authentication.AuthenticationService;
 import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authentication.User.Type;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.login.LoginConfiguration;
 import de.rcenvironment.core.login.LoginInput;
 
@@ -316,7 +318,7 @@ public class LoginDialog extends Dialog {
     @Override
     protected void configureShell(Shell newShell) {
         super.configureShell(newShell);
-        iconImage = new Image(newShell.getDisplay(), getClass().getResourceAsStream("/resources/images/icon16.png")); //$NON-NLS-1$
+        iconImage = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_16);
         newShell.setImage(iconImage);
         if (!relogin) {
             newShell.setText(Messages.loginDialog);
@@ -324,15 +326,6 @@ public class LoginDialog extends Dialog {
             newShell.setText(Messages.reLoginDialog);
         }
         newShell.setActive();
-    }
-
-    @Override
-    public boolean close() {
-        // images have also to be disposed when "cancel" is pressed in the dialog.
-        if (iconImage != null) {
-            iconImage.dispose();
-        }
-        return super.close();
     }
 
     // create tabFolder and call methods which fill the tabs

@@ -32,11 +32,11 @@ public class SerializableLogEntry implements Serializable, Comparable<Serializab
     private final int level;
     private final String message;
     private final long time;
-    private final Throwable exception;
+    private final String exception;
     private NodeIdentifier platformId;
 
     
-    public SerializableLogEntry(String bundleName, int level, String message, long time, Throwable exception) {
+    public SerializableLogEntry(String bundleName, int level, String message, long time, String exception) {
         
         this.bundleName = bundleName;
         this.level = level;
@@ -61,7 +61,7 @@ public class SerializableLogEntry implements Serializable, Comparable<Serializab
         return time;
     }
     
-    public Throwable getException() {
+    public String getException() {
         return exception;
     }
 
@@ -121,7 +121,7 @@ public class SerializableLogEntry implements Serializable, Comparable<Serializab
         }
         
         if (compResult == 0 && exception != null && o.getException() != null) {
-            compResult = exception.toString().compareTo(o.getException().toString());
+            compResult = exception.compareTo(o.getException());
         }
 
         return compResult;

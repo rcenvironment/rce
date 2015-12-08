@@ -91,6 +91,12 @@ public class OptimizerHistoryDataItemSubtreeBuilder implements ComponentHistoryD
                 restartFileNode.setAssociatedFilename("Optimizer calculation file");
                 restartFileNode.setDataReferenceId(historyData.getRestartFileReference());
             }
+            if (historyData.getResultFileReference() != null) {
+                DMBrowserNode resultFileNode =
+                    DMBrowserNode.addNewLeafNode("Optimizer result file", DMBrowserNodeType.DMFileResource, parentNode);
+                resultFileNode.setAssociatedFilename("Optimizer result file");
+                resultFileNode.setDataReferenceId(historyData.getResultFileReference());
+            }
         } else {
             String exceptionInformationText = "";
             if (historyDataItem != null) {

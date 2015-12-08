@@ -43,7 +43,10 @@ public final class EndpointDefinitionConstants {
     public static final String JSON_KEY_DYNAMIC_OUTPUTS_META_DATA = "dynamicOutputMetaData";
     
     /** JSON key used in .json definition file. */
-    public static final String JSON_KEY_INPUT_GROUPS = "inputGroups";
+    public static final String JSON_KEY_STATIC_INPUT_GROUPS = "staticInputGroups";
+    
+    /** JSON key used in .json definition file. */
+    public static final String JSON_KEY_DYNAMIC_INPUT_GROUPS = "dynamicInputGroups";
     
     /** Constant. */
     public static final String KEY_NAME = "name";

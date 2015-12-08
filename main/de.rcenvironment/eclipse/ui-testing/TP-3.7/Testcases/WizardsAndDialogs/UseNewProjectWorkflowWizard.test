@@ -1,0 +1,64 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _DysjgCPgEeWMU9qdIQ2Zdw
+Element-Name: UseNewProjectWorkflowWizard
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _Wi0VMGteEeW6Pd5E4Whelw
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 11/3/15 7:39 PM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+get-button "Create workflow (M1+M2+N)" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text 123
+    get-button Finish | click
+}
+get-button "Create workflow (M1+M2+N)" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text 123
+    get-button Finish | click
+}
+get-window "New Workflow" | get-window Error | get-property title | equals Error | verify-true
+with [get-window "New Workflow"] {
+    get-window Error | get-button OK | click
+    get-button "Next >" | click
+    get-button "Place in new project" | click
+    get-button "Use default project name" | uncheck
+    get-editbox -after [get-label "Project name:"] | set-text 123456
+    get-button Finish | click
+}
+get-view "Project Explorer" | get-tree | select 123456 | get-menu "New Workflow" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text 123456
+    get-button "Next >" | click
+    get-tree | select 123
+    get-button Finish | click
+}
+get-view "Project Explorer" | get-tree | select 123456 | get-menu "New Workflow" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text 123456
+    get-button Finish | click
+}
+get-view "Project Explorer" | get-tree | select 123456 | get-menu "New Workflow" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text asd
+    get-button "Next >" | click
+    get-button "Place in new project" | click
+    get-button Finish | click
+}
+get-view "Project Explorer" | get-tree | get-menu "New Workflow" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text fgh
+    get-button "Next >" | click
+    get-button "Place in new project" | click
+    get-button "Use default project name" | uncheck
+    get-editbox -after [get-label "Project name:"] | set-text hjk
+    get-button Finish | click
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

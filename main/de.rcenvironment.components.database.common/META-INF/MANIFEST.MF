@@ -1,0 +1,23 @@
+Manifest-Version: 1.0
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Database Component Common
+Bundle-SymbolicName: de.rcenvironment.components.database.common
+Bundle-Version: 7.0.0.qualifier
+Bundle-Vendor: DLR
+Bundle-ClassPath: .
+Export-Package: de.rcenvironment.components.database.common,
+ de.rcenvironment.components.database.common.jdbc
+Import-Package: de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.model.endpoint.api,
+ de.rcenvironment.core.configuration,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.utils.common,
+ org.apache.commons.logging;version="1.1.1",
+ org.codehaus.jackson;version="1.9.13",
+ org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13",
+ org.osgi.framework;version="1.6.0"
+Service-Component: OSGI-INF/*.xml
+RCE-Component: true

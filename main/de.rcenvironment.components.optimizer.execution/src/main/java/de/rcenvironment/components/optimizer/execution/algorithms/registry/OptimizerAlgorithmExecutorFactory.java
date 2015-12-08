@@ -13,6 +13,7 @@ import java.util.Map;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.execution.OptimizerAlgorithmExecutor;
+import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
@@ -42,8 +43,10 @@ public interface OptimizerAlgorithmExecutorFactory {
      * @param lowerMap map with lower bounds start values
      * @param upperMap map with upper bounds start values
      * @return instance for executing methods
+     * @throws ComponentException on unexpected errors when creating instance of {@link OptimizerAlgorithmExecutor}
      */
     OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(String algorithm,
         Map<String, MethodDescription> methodConfiguration, Map<String, TypedDatum> outputValues,
-        Collection<String> input, ComponentContext ci, Map<String, Double> upperMap, Map<String, Double> lowerMap);
+        Collection<String> input, ComponentContext ci, Map<String, Double> upperMap, Map<String, Double> lowerMap) 
+        throws ComponentException;
 }

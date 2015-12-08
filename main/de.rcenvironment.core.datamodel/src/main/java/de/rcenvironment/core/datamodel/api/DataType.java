@@ -15,14 +15,15 @@ import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.EmptyTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
-import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
+import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.StructuredDataTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Defines the data types of RCE 3.0.0 and later.
@@ -122,7 +123,7 @@ public enum DataType {
     /**
      * Use if no output can be computed due to invalid inputs. Used in optimization loops.
      */
-    NotAValue("Indefinite", "Ind", NotAValueTD.class),
+    NotAValue("Not-a-value", "Ind", NotAValueTD.class),
     
     /**
      * Used for workflow control purposes.
@@ -187,7 +188,7 @@ public enum DataType {
                 return type;
             }
         }
-        throw new IllegalArgumentException("No match for classname " + shortName);
+        throw new IllegalArgumentException(StringUtils.format("No matching data type for given short name found: '%s'", shortName));
     }
 
     /**

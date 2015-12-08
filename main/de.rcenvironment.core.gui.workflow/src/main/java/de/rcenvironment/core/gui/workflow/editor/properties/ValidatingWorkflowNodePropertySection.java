@@ -152,7 +152,7 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
                         }
                     }
                     final Boolean colorized = (Boolean) control.getData(CONTROL_COLORIZED_KEY);
-                    if (valid && colorized != null && colorized) {
+                    if (valid && Boolean.TRUE.equals(colorized)) {
                         control.setData(CONTROL_COLORIZED_KEY, false);
                         control.setBackground((Color) control.getData(CONTROL_COLOR_KEY));
                         control.setData(CONTROL_COLOR_KEY, null);

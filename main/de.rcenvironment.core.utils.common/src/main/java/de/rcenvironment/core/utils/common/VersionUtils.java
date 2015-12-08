@@ -19,15 +19,11 @@ import org.osgi.framework.Version;
  * 
  * @author Robert Mischke
  * @author Jan Flink
+ * @author Doreen Seider
  */
 public final class VersionUtils {
 
-
     private static final String VERSION_INFO_RCE_STANDARD = "de.rcenvironment.core.gui.branding.default.versioninfo";
-
-    private static final String VERSION_INFO_RCE_CPACS = "de.rcenvironment.cpacs.branding";
-
-    private static final String VERSION_INFO_RCE_TRANSPORT = "de.rcenvironment.transport.branding";
 
     private static final String PLATFORM_BUNDLES_PREFIX = "de.rcenvironment.platform.";
 
@@ -36,7 +32,7 @@ public final class VersionUtils {
     private VersionUtils() {}
 
     /**
-     * @return the OSGi version of the RCE "core" bundles, or null if it could not be determined
+     * @return the OSGi version of the RCE "core" bundles, or <code>null</code> if it could not be determined
      */
     public static Version getVersionOfCoreBundles() {
         Bundle ownBundle = FrameworkUtil.getBundle(OWN_CLASS);
@@ -48,7 +44,7 @@ public final class VersionUtils {
     }
 
     /**
-     * @return the OSGi version of the RCE "platform" bundles, or null if it could not be determined
+     * @return the OSGi version of the RCE "platform" bundles, or <code>null</code> if it could not be determined
      */
     public static Version getVersionOfPlatformBundles() {
         Log log = LogFactory.getLog(OWN_CLASS); // not a static field to conserve memory
@@ -75,7 +71,7 @@ public final class VersionUtils {
 
     /**
      * @return the OSGi version of the RCE "product" determined via the product specific branding
-     *         bundles, null if it could not be determined
+     *         bundles, <code>null</code> if it could not be determined
      */
     public static Version getVersionOfProduct() {
         Log log = LogFactory.getLog(OWN_CLASS); // not a static field to conserve memory
@@ -90,16 +86,48 @@ public final class VersionUtils {
                 if (bundle.getSymbolicName().startsWith(VERSION_INFO_RCE_STANDARD)) {
                     version = bundle.getVersion();
                     break;
-                } else if (bundle.getSymbolicName().startsWith(VERSION_INFO_RCE_CPACS)) {
-                    version = bundle.getVersion();
-                    break;
-                } else if (bundle.getSymbolicName().startsWith(VERSION_INFO_RCE_TRANSPORT)) {
-                    version = bundle.getVersion();
-                    break;
                 }
             }
         }
         return version;
+    }
+
+    /**
+     * @param version {@link Version} to parse
+     * @return version number of the {@link Version} given + optional type of version (RC, Snapshot)
+     */
+    public static String getVersionAsString(Version version) {
+        final String suffixSnapshot = "_SNAPSHOT";
+        final String suffixRC = "_RC";
+        final String suffixQualifier = "qualifier";
+        
+        String versionNumber = version.getMajor() + "." + version.getMinor() + "." + version.getMicro();
+        String versionQualifier = version.getQualifier();
+        String versionType = null;
+        if (versionQualifier.endsWith(suffixRC)) {
+            versionType = "Release_Candidate";
+        } else if (versionQualifier.endsWith(suffixSnapshot)) {
+            versionType = "Snapshot";
+        } else if (versionQualifier.endsWith(suffixQualifier)) {
+            versionType = "Development";
+        }
+        if (versionType == null) {
+            return versionNumber;
+        } else {
+            return StringUtils.format("%s_%s", versionNumber, versionType);            
+        }
+    }
+    
+    /**
+     * @param version {@link Version} containing the build ID
+     * @return build ID of the {@link Version} given or <code>null</code> if no one exists
+     */
+    public static String getBuildIdAsString(Version version) {
+        if (version.getQualifier().endsWith("qualifier")) {
+            return null;
+        } else {
+            return version.getQualifier().split("^" + version.getMajor() + "\\." + version.getMinor() + "\\." + version.getMicro())[0];
+        }
     }
 
 }

@@ -2,6 +2,7 @@
 	<implementation class="de.rcenvironment.core.communication.management.internal.BenchmarkServiceImpl" />
 	<service>
 		<provide interface="de.rcenvironment.core.communication.management.BenchmarkService"/>
+		<provide interface="de.rcenvironment.core.communication.management.RemoteBenchmarkService"/>
 	</service>
 	<reference
 		bind="bindCommunicationService"

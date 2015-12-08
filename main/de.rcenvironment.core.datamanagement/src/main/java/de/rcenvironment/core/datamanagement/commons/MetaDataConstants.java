@@ -13,6 +13,7 @@ package de.rcenvironment.core.datamanagement.commons;
  * 
  * @author Jan Flink
  */
+
 public final class MetaDataConstants {
 
     /**
@@ -64,6 +65,11 @@ public final class MetaDataConstants {
      * Name of column for holding final state.
      */
     public static final String FINAL_STATE = "FINAL_STATE";
+    
+    /**
+     * Name of column for holding workflow run IDs.
+     */
+    public static final String WORKFLOW_FILE_REFERENCE = "WORKFLOW_FILE_REFERENCE";
 
     /**
      * Name of column for holding timline data items.
@@ -149,6 +155,11 @@ public final class MetaDataConstants {
      * Name of table holding component run properties.
      */
     public static final String TABLE_COMPONENT_RUN_PROPERTIES = "COMPONENT_RUN_PROPERTIES";
+    
+    /**
+     * Name of table holding endpoint instance properties.
+     */
+    public static final String TABLE_ENDPOINT_INSTANCE_PROPERTIES = "ENDPOINT_INSTANCE_PROPERTIES";
 
     /**
      * Name of table holding endpoint information.
@@ -269,6 +280,11 @@ public final class MetaDataConstants {
      * Name of the view holding joined endpoint instances with endpoint data and typed datum.
      */
     public static final String VIEW_ENDPOINT_DATA = "V_ENDPOINT_DATA";
+    
+    /**
+     * Name of the view holding endpoint instances.
+     */
+    public static final String VIEW_ENDPOINT_INSTANCE_PROPERTIES = "V_ENDPOINT_INSTANCE_PROPERTIES";
 
     /**
      * Name of the view holding joined component runs with timeline intervals.
@@ -289,6 +305,16 @@ public final class MetaDataConstants {
      * Name of the view holding joined data references with binary references.
      */
     public static final String VIEW_WORKFLOWRUN_TYPEDDATUM = "V_WORKFLOWRUN_TYPEDDATUM";
+
+    /**
+     * Name of the key handling deletion states properties tables.
+     */
+    public static final String KEY_FILES_DELETED = "FILES_DELETED";
+
+    /**
+     * Value for deletion state of manuelly deleted files.
+     */
+    public static final String VALUE_FILES_DELETED_MANUALLY = "DELETED_MANUALLY";
 
     private MetaDataConstants() {
 

@@ -35,7 +35,7 @@ import de.rcenvironment.components.cluster.execution.internal.ClusterJobFinishLi
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -65,6 +65,10 @@ import de.rcenvironment.core.utils.ssh.jsch.executor.context.JSchExecutorContext
  */
 public class ClusterComponent extends DefaultComponent {
 
+    private static final String FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED = "Failed to wait for job to become completed";
+
+    private static final String FAILED_TO_SUBMIT_JOB = "Failed to submit job: ";
+
     private static final String FAILED_FILE_NAME = "cluster_job_failed";
 
     private static final String SLASH = "/";
@@ -73,13 +77,13 @@ public class ClusterComponent extends DefaultComponent {
 
     private static final String AT = "@";
 
-    private static final int UNKNOWN = -1;
-
     private static final String PATH_PATTERN = "iteration-%d/cluster-job-%d";
 
-    private static final Log LOG = LogFactory.getLog(ClusterComponent.class);
-
     private static Log log = LogFactory.getLog(ClusterComponent.class);
+    
+    private final Object executorLock = new Object();
+    
+    private ComponentLog componentLog;
 
     private ComponentContext componentContext;
 
@@ -101,7 +105,7 @@ public class ClusterComponent extends DefaultComponent {
 
     private Map<String, String> pathsToQueuingSystemCommands;
 
-    private int jobCount = UNKNOWN;
+    private Integer jobCount = null;
 
     private boolean considerSharedInputDir = true;
 
@@ -112,10 +116,11 @@ public class ClusterComponent extends DefaultComponent {
     private boolean isJobScriptProvidedWithinInputDir;
 
     private Map<String, Deque<TypedDatum>> inputValues = new HashMap<String, Deque<TypedDatum>>();
-
+    
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
+        componentLog = componentContext.getLog();
     }
 
     @Override
@@ -155,18 +160,18 @@ public class ClusterComponent extends DefaultComponent {
 
         try {
             context.setUpSession();
-            log.debug("Session established: " + authUser + AT + host + ":" + port);
+            componentLog.componentInfo("Session established: " + authUser + AT + host + ":" + port);
         } catch (IOException e) {
-            throw new ComponentException("Establishing connection to remote host failed.", e);
+            throw new ComponentException("Failed to establish connection to remote host", e);
         } catch (ValidationFailureException e) {
-            throw new ComponentException("Validation of passed parameters failed", e);
+            throw new ComponentException("Failed to validate passed parameters", e);
         }
 
         try {
             executor = context.setUpSandboxedExecutor();
-            log.debug("Remote sandbox created: " + authUser + AT + host + ":" + port);
+            componentLog.componentInfo("Remote sandbox created: " + executor.getWorkDirPath());
         } catch (IOException e) {
-            throw new ComponentException("Setting up remote sandbox failed", e);
+            throw new ComponentException("Failed to set up remote sandbox", e);
         }
 
         upDownloadSemaphore = new Semaphore(clusterConfiguration.getMaxChannels());
@@ -187,10 +192,10 @@ public class ClusterComponent extends DefaultComponent {
             }
             inputValues.get(inputName).add(componentContext.readInput(inputName));
         }
-        if (jobCount == UNKNOWN && inputValues.containsKey(ClusterComponentConstants.INPUT_JOBCOUNT)) {
-            jobCount = (int) ((IntegerTD) inputValues.get(ClusterComponentConstants.INPUT_JOBCOUNT).poll()).getIntValue();
+        if (jobCount == null && inputValues.containsKey(ClusterComponentConstants.INPUT_JOBCOUNT)) {
+            jobCount = readAndEvaluateJobCount();
         }
-        if (jobCount != UNKNOWN && inputValues.containsKey(ClusterComponentConstants.INPUT_JOBINPUTS)
+        if (jobCount != null && inputValues.containsKey(ClusterComponentConstants.INPUT_JOBINPUTS)
             && inputValues.get(ClusterComponentConstants.INPUT_JOBINPUTS).size() >= jobCount
             && (!considerSharedInputDir || (inputValues.containsKey(ClusterComponentConstants.INPUT_SHAREDJOBINPUT)
             && inputValues.get(ClusterComponentConstants.INPUT_SHAREDJOBINPUT).size() >= 1))) {
@@ -219,9 +224,17 @@ public class ClusterComponent extends DefaultComponent {
             // download
             downloadDirectoriesAndSendToOutputsOnJobFinished(queues);
 
-            jobCount = UNKNOWN;
+            jobCount = null;
             iteration++;
         }
+    }
+    
+    private Integer readAndEvaluateJobCount() throws ComponentException {
+        Integer count = Integer.valueOf((int) ((IntegerTD) inputValues.get(ClusterComponentConstants.INPUT_JOBCOUNT).poll()).getIntValue());
+        if (count <= 0) {
+            throw new ComponentException(StringUtils.format("Job count is invalid. It is %d, but must be greater than 0", count));
+        }
+        return count;
     }
 
     @Override
@@ -239,38 +252,36 @@ public class ClusterComponent extends DefaultComponent {
                 // delete here explicitly as context.tearDownSandbox(executor) doesn't support -r option for safety reasons
                 executor.start("rm -r " + sandbox);
                 context.tearDownSession();
-                log.debug("Remote sandbox deleted: " + sandbox);
+                componentLog.componentInfo("Remote sandbox deleted: " + sandbox);
             } catch (IOException e) {
-                log.error("Deleting remote sandbox failed: " + sandbox, e);
+                String errorMessage = "Failed to delete remote sandbox '%s'";
+                componentLog.componentInfo(StringUtils.format(errorMessage, sandbox) + ": " + e.getMessage());
+                log.error(StringUtils.format(errorMessage, sandbox), e);
             }
         }
     }
 
-    private void uploadJobScript() {
-        String message = "Uploading job script failed";
+    private void uploadJobScript() throws ComponentException {
+        String message = "Failed to upload job script";
         try {
             File jobFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(
                 ClusterComponentConstants.JOB_SCRIPT_NAME);
             FileUtils.write(jobFile, componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT));
-            logInfoMetaInformation("Uploading job script: " + jobFile.getName());
+            componentLog.componentInfo("Uploading job script: " + jobFile.getName());
             upDownloadSemaphore.acquire();
             executor.uploadFileToWorkdir(jobFile, ".");
             upDownloadSemaphore.release();
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(jobFile);
-            logInfoMetaInformation("Job script uploaded: " + jobFile.getName());
-        } catch (IOException e) {
-            logErrorMetaInformation(message);
-            throw new RuntimeException(message, e);
-        } catch (InterruptedException e) {
-            logErrorMetaInformation(message);
-            throw new RuntimeException(message, e);
+            componentLog.componentInfo("Job script uploaded: " + jobFile.getName());
+        } catch (IOException | InterruptedException e) {
+            throw new ComponentException(message, e);
         }
 
     }
 
     private void uploadInputDirectories(List<DirectoryReferenceTD> inputDirs, final DirectoryReferenceTD sharedInputDir) {
 
-        logInfoMetaInformation("Start uploading input directories...");
+        componentLog.componentInfo("Uploading input directories...");
         int count = 0;
         CallablesGroup<RuntimeException> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(RuntimeException.class);
 
@@ -298,9 +309,9 @@ public class ClusterComponent extends DefaultComponent {
                 @TaskDescription("Upload shared input directory for cluster job execution")
                 public RuntimeException call() throws Exception {
                     try {
-                        logInfoMetaInformation("Start uploading shared input directory...");
+                        componentLog.componentInfo("Uploading shared input directory...");
                         uploadInputDirectory(sharedInputDir, "", "cluster-job-shared-input");
-                        logInfoMetaInformation("Uploading shared input directory finished");
+                        componentLog.componentInfo("Shared input directory uploaded");
                         return null;
                     } catch (RuntimeException e) {
                         return e;
@@ -314,13 +325,13 @@ public class ClusterComponent extends DefaultComponent {
             @Override
             public void onAsyncException(Exception e) {
                 // should never happen
-                LOG.warn("Illegal state: Uncaught exception from Callable", e);
+                log.warn("Illegal state: Uncaught exception from Callable", e);
             }
         });
 
         for (RuntimeException e : exceptions) {
             if (e != null) {
-                LOG.error("Exception caught when uploading directories: " + e.getMessage());
+                log.error("Exception caught when uploading directories", e);
             }
         }
 
@@ -330,33 +341,29 @@ public class ClusterComponent extends DefaultComponent {
             }
         }
 
-        logInfoMetaInformation("Uploading input directories finished");
+        componentLog.componentInfo("Input directories uploaded");
     }
 
-    private void uploadInputDirectory(DirectoryReferenceTD jobDir, String directoryParent, String dirName) {
-        String message = "Uploading directory failed: ";
+    private void uploadInputDirectory(DirectoryReferenceTD jobDir, String directoryParent, String dirName) throws ComponentException {
+        String message = "Failed to upload directory: ";
         try {
             File dir = TempFileServiceAccess.getInstance().createManagedTempDir();
             dataManagementService.copyDirectoryReferenceTDToLocalDirectory(componentContext, jobDir,
                 dir);
-            logInfoMetaInformation("Uploading directory: " + jobDir.getDirectoryName());
+            componentLog.componentInfo("Uploading directory: " + jobDir.getDirectoryName());
             File inputDir = new File(dir, dirName);
             new File(dir, jobDir.getDirectoryName()).renameTo(inputDir);
             upDownloadSemaphore.acquire();
             executor.uploadDirectoryToWorkdir(inputDir, "iteration-" + iteration + directoryParent);
             upDownloadSemaphore.release();
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(dir);
-            logInfoMetaInformation("Directory uploaded: " + jobDir.getDirectoryName());
-        } catch (IOException e) {
-            logErrorMetaInformation(message + jobDir.getDirectoryName());
-            throw new RuntimeException(message + jobDir.getDirectoryName(), e);
-        } catch (InterruptedException e) {
-            logErrorMetaInformation(message + jobDir.getDirectoryName());
-            throw new RuntimeException(message + jobDir.getDirectoryName(), e);
+            componentLog.componentInfo("Directory uploaded: " + jobDir.getDirectoryName());
+        } catch (IOException | InterruptedException e) {
+            throw new ComponentException(message + jobDir.getDirectoryName(), e);
         }
     }
 
-    private Queue<BlockingQueue<String>> submitJobs() {
+    private Queue<BlockingQueue<String>> submitJobs() throws ComponentException {
         Queue<BlockingQueue<String>> blockingQueues = new LinkedList<BlockingQueue<String>>();
         for (int i = 0; i < jobCount; i++) {
             blockingQueues.add(submitJob(i));
@@ -365,7 +372,7 @@ public class ClusterComponent extends DefaultComponent {
         return blockingQueues;
     }
 
-    private BlockingQueue<String> submitJob(int job) {
+    private BlockingQueue<String> submitJob(int job) throws ComponentException {
 
         final int byteBuffer = 10000;
 
@@ -375,74 +382,72 @@ public class ClusterComponent extends DefaultComponent {
             String mkDirOutputCommand = "mkdir " + getOutputFolderPath(job) + " ";
             executor.start(mkDirOutputCommand);
             executor.waitForTermination();
-            String qsubCommand = buildQsubCommand(SLASH + getJobFolderPath(job));
+            String qsubCommand = buildQsubCommand(getJobFolderPath(job));
             executor.start(qsubCommand);
-            LOG.debug("Submitted job to cluster: " + ClusterComponentConstants.JOB_SCRIPT_NAME
-                + " from " + getJobFolderPath(job));
-            InputStream stdoutStream = executor.getStdout();
-            InputStream stderrStream = executor.getStderr();
-            executor.waitForTermination();
+            componentLog.componentInfo(StringUtils.format("Job submitted: %s from %s", 
+                ClusterComponentConstants.JOB_SCRIPT_NAME, getJobFolderPath(job)));
+            
+            try (InputStream stdoutStream = executor.getStdout();
+                InputStream stderrStream = executor.getStderr()) {
 
-            BufferedInputStream bufferedStdoutStream = new BufferedInputStream(stdoutStream);
-            BufferedInputStream bufferedStderrStream = new BufferedInputStream(stderrStream);
+                executor.waitForTermination();
 
-            bufferedStdoutStream.mark(byteBuffer);
-            bufferedStderrStream.mark(byteBuffer);
+                try (BufferedInputStream bufferedStdoutStream = new BufferedInputStream(stdoutStream);
+                    BufferedInputStream bufferedStderrStream = new BufferedInputStream(stderrStream)) {
 
-            String stderr = IOUtils.toString(bufferedStderrStream);
-            if (stderr != null && !stderr.isEmpty()) {
-                componentContext.printConsoleLine(stderr, ConsoleRow.Type.STDERR);
-                throw new RuntimeException("Submitting job failed: " + stderr);
+                    bufferedStdoutStream.mark(byteBuffer);
+                    bufferedStderrStream.mark(byteBuffer);
+
+                    String stderr = IOUtils.toString(bufferedStderrStream);
+                    if (stderr != null && !stderr.isEmpty()) {
+                        throw new ComponentException(FAILED_TO_SUBMIT_JOB + stderr);
+                    }
+                    stdout = IOUtils.toString(bufferedStdoutStream);
+
+                    bufferedStdoutStream.reset();
+                    bufferedStderrStream.reset();
+
+                    // do it after termination because stdout and stderr is needed for component logic and not only for logging purposes.
+                    // the delay is short because cluster job submission produces only few console output and terminates very quickly
+                    for (String line : stdout.split("\n")) {
+                        componentLog.toolStdout(line);
+                    }
+                }
             }
-            stdout = IOUtils.toString(bufferedStdoutStream);
 
-            bufferedStdoutStream.reset();
-            bufferedStderrStream.reset();
-
-            // do it after termination because stdout and stderr is needed for component logic and not only for logging purposes.
-            // the delay is short because cluster job submission produces only few console output and terminates very quickly
-            for (String line : stdout.split("\n")) {
-                componentContext.printConsoleLine(line, ConsoleRow.Type.STDOUT);
-            }
-
-            IOUtils.closeQuietly(stdoutStream);
-            IOUtils.closeQuietly(stderrStream);
-
-            IOUtils.closeQuietly(bufferedStdoutStream);
-            IOUtils.closeQuietly(bufferedStderrStream);
-
-        } catch (IOException e) {
-            throw new RuntimeException("Executing job sumbission failed", e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException("Waiting for termination of job sumbission failed", e);
+        } catch (IOException | InterruptedException e) {
+            throw new ComponentException("Failed to submit job", e);
         }
 
         String jobId = extractJobIdFromQsubStdout(stdout);
 
-        LOG.debug("Job id of submitted job: " + jobId);
+        componentLog.componentInfo("Id of submitted job: " + jobId);
         BlockingQueue<String> synchronousQueue = new SynchronousQueue<String>();
         clusterService.addClusterJobStateChangeListener(jobId, new ClusterJobFinishListener(synchronousQueue));
 
         return synchronousQueue;
     }
 
-    private String buildQsubCommand(String path) {
+    private String buildQsubCommand(String path) throws ComponentException {
         String jobScript = ClusterComponentConstants.JOB_SCRIPT_NAME;
         if (isJobScriptProvidedWithinInputDir) {
-            jobScript = path + "/input/" + jobScript;
-            jobScript = jobScript.replaceFirst(SLASH, "");
+            jobScript = "input" + SLASH + jobScript;
+        } else {
+            for (@SuppressWarnings("unused") String subdir : path.split(SLASH)) {
+                jobScript = ".." + SLASH + jobScript;
+            }
         }
         return buildQsubCommand(path, jobScript);
     }
 
-    private String buildQsubCommand(String path, String jobScript) {
+    private String buildQsubCommand(String path, String jobScript) throws ComponentException {
         switch (queuingSystem) {
         case TORQUE:
             return buildTorqueQsubCommand(path, jobScript);
         case SGE:
             return buildSgeQsubCommand(path, jobScript);
         default:
-            throw new RuntimeException("Queuing system not supported: " + queuingSystem.name());
+            throw new ComponentException("Queuing system not supported: " + queuingSystem.name());
         }
     }
 
@@ -457,35 +462,39 @@ public class ClusterComponent extends DefaultComponent {
     }
 
     private String buildTorqueQsubCommand(String path, String jobScript) {
-        StringBuffer buffer = new StringBuffer(buildQsubMainCommand());
-        buffer.append(" -d ");
-        buffer.append(executor.getWorkDirPath() + path);
-        buffer.append(" " + executor.getWorkDirPath() + "/");
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("cd " + path);
+        buffer.append(" && ");
+        buffer.append(buildQsubMainCommand());
+        buffer.append(" -d $PWD");
+        buffer.append(" ");
         buffer.append(jobScript);
         return buffer.toString();
     }
 
     private String buildSgeQsubCommand(String path, String scriptFileName) {
-        StringBuffer buffer = new StringBuffer(buildQsubMainCommand());
-        buffer.append(" -wd ");
-        buffer.append(executor.getWorkDirPath() + path);
+        StringBuffer buffer = new StringBuffer();
+        buffer.append("cd " + path);
+        buffer.append(" && ");
+        buffer.append(buildQsubMainCommand());
+        buffer.append(" -wd $PWD");
         buffer.append(" ");
         buffer.append(scriptFileName);
         return buffer.toString();
     }
 
-    private String extractJobIdFromQsubStdout(String stdout) {
+    private String extractJobIdFromQsubStdout(String stdout) throws ComponentException {
         switch (queuingSystem) {
         case TORQUE:
             return extractJobIdFromTorqueQsubStdout(stdout);
         case SGE:
             return extractJobIdFromSgeQsubStdout(stdout);
         default:
-            throw new RuntimeException("Queuing system not supported: " + queuingSystem.name());
+            throw new ComponentException("Queuing system not supported: " + queuingSystem.name());
         }
     }
 
-    private String extractJobIdFromTorqueQsubStdout(String stdout) {
+    private String extractJobIdFromTorqueQsubStdout(String stdout) throws ComponentException {
         Matcher matcher = Pattern.compile("\\d+\\.\\w+").matcher(stdout);
         if (matcher.find()) {
             return matcher.group();
@@ -494,17 +503,17 @@ public class ClusterComponent extends DefaultComponent {
             if (matcher.find()) {
                 return matcher.group();
             } else {
-                throw new RuntimeException("Executing job sumbission failed: " + stdout);
+                throw new ComponentException(FAILED_TO_SUBMIT_JOB + stdout);
             }
         }
     }
 
-    private String extractJobIdFromSgeQsubStdout(String stdout) {
+    private String extractJobIdFromSgeQsubStdout(String stdout) throws ComponentException {
         Matcher matcher = Pattern.compile("\\d+").matcher(stdout);
         if (matcher.find()) {
             return matcher.group();
         } else {
-            throw new RuntimeException("Executing job sumbission failed: " + stdout);
+            throw new ComponentException(FAILED_TO_SUBMIT_JOB + stdout);
         }
     }
 
@@ -524,12 +533,12 @@ public class ClusterComponent extends DefaultComponent {
                     try {
                         try {
                             if (queueSnapshot.take().equals(ClusterComponentConstants.CLUSTER_FETCHING_FAILED)) {
-                                throw new RuntimeException("Waiting for job become completed failed");
+                                throw new ComponentException(FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED);
                             }
                             checkIfClusterJobSucceeded(jobSnapshot);
                             downloadDirectoryAndSendToOutput(jobSnapshot);
                         } catch (InterruptedException e) {
-                            throw new RuntimeException("Waiting for job become completed was interrupted", e);
+                            throw new RuntimeException("Internal error: " + FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED, e);
                         }
                         return null;
                     } catch (RuntimeException e) {
@@ -544,13 +553,13 @@ public class ClusterComponent extends DefaultComponent {
             @Override
             public void onAsyncException(Exception e) {
                 // should never happen
-                LOG.warn("Illegal state: Uncaught exception from Callable", e);
+                log.warn("Illegal state: Uncaught exception from Callable", e);
             }
         });
 
         for (RuntimeException e : exceptions) {
             if (e != null) {
-                LOG.error("Exception caught when downloading directories: " + e.getMessage());
+                log.error("Exception caught when downloading directories: " + e.getMessage());
             }
         }
 
@@ -562,50 +571,51 @@ public class ClusterComponent extends DefaultComponent {
 
     }
 
-    // synchronized to prevent starting executor in parallel
-    private synchronized void checkIfClusterJobSucceeded(int job) throws ComponentException {
+    private void checkIfClusterJobSucceeded(int job) throws ComponentException {
 
-        String message =
-            StringUtils.format("Failed to determine if cluster job %d succeeded. Assumed that it does, to avoid false negatives.", job);
+        String message = StringUtils.format("Failed to determine if cluster job %d succeeded - assumed that it does"
+            + " to avoid false negatives", job);
         String path = getOutputFolderPath(job);
         String command = StringUtils.format("ls %s", path);
         try {
-            executor.start(command);
-            InputStream stdoutStream = executor.getStdout();
-            InputStream stderrStream = executor.getStderr();
-            executor.waitForTermination();
-            if (!IOUtils.toString(stderrStream).isEmpty()) {
-                log.error(StringUtils.format("Failed to execute command '%s' on %s: %s", command,
-                    sshConfiguration.getDestinationHost(), IOUtils.toString(stderrStream)));
-                log.error(message);
-            } else if (IOUtils.toString(stdoutStream).contains(FAILED_FILE_NAME)) {
-                String errorMessage = "N/A";
-                File file = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("out-" + job);
-                try {
-                    executor.downloadFileFromWorkdir(path + SLASH + FAILED_FILE_NAME, file);
-                    errorMessage = FileUtils.readFileToString(file);
-                } catch (IOException e) {
-                    log.error(StringUtils.format("Downloading file '%s' failed. Error message could not extracted.", FAILED_FILE_NAME));
+            synchronized (executorLock) {
+                executor.start(command);
+                try (InputStream stdoutStream = executor.getStdout();
+                    InputStream stderrStream = executor.getStderr()) {
+                    executor.waitForTermination();
+                    if (!IOUtils.toString(stderrStream).isEmpty()) {
+                        componentLog.componentError(StringUtils.format("Failed to execute command '%s' on %s: %s", command,
+                            sshConfiguration.getDestinationHost(), IOUtils.toString(stderrStream)));
+                        componentLog.componentError(message);
+                    } else if (IOUtils.toString(stdoutStream).contains(FAILED_FILE_NAME)) {
+                        String errorMessage = "N/A";
+                        File file = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("out-" + job);
+                        try {
+                            executor.downloadFileFromWorkdir(path + SLASH + FAILED_FILE_NAME, file);
+                            errorMessage = FileUtils.readFileToString(file);
+                        } catch (IOException e) {
+                            componentLog.componentError(StringUtils.format("Failed to download file '%s' "
+                                + "- error message could not be extracted", FAILED_FILE_NAME));
+                        }
+                        throw new ComponentException(StringUtils.format("Cluster job %d failed with message: %s", job, errorMessage));
+                    } else {
+                        componentLog.componentInfo(StringUtils.format("Cluster job %d succeeded", job));
+                    }
                 }
-                logErrorMetaInformation(StringUtils.format("Cluster job '%d' failed with message: %s", job, errorMessage));
-                throw new ComponentException(StringUtils.format("Cluster job '%d' failed with message: %s", job, errorMessage));
-            } else {
-                logInfoMetaInformation(StringUtils.format("Cluster job %d succeeded", job));
             }
-        } catch (IOException e) {
-            log.error(message, e);
-        } catch (InterruptedException e) {
+        } catch (IOException | InterruptedException e) {
+            componentLog.componentError(message + ": " + e.getMessage());
             log.error(message, e);
         }
     }
 
-    private void downloadDirectoryAndSendToOutput(int job) {
+    private void downloadDirectoryAndSendToOutput(int job) throws ComponentException {
 
         String message = "Downloading output directory failed: ";
         String path = getOutputFolderPath(job);
         try {
             File dir = TempFileServiceAccess.getInstance().createManagedTempDir();
-            logInfoMetaInformation("Downloading output directory: " + path);
+            componentLog.componentInfo("Downloading output directory: " + path);
             upDownloadSemaphore.acquire();
             executor.downloadDirectoryFromWorkdir(path, dir);
             upDownloadSemaphore.release();
@@ -614,12 +624,10 @@ public class ClusterComponent extends DefaultComponent {
             DirectoryReferenceTD dirRef = dataManagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext,
                 outputDir, outputDir.getName());
             componentContext.writeOutput(ClusterComponentConstants.OUTPUT_JOBOUTPUTS, dirRef);
-            logInfoMetaInformation("Output directory downloaded: " + path + ". Will be send as: " + outputDir.getName());
+            componentLog.componentInfo("Output directory downloaded: " + path + ". Will be sent as: " + outputDir.getName());
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(dir);
-        } catch (IOException e) {
-            throw new RuntimeException(message + path, e);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(message + path, e);
+        } catch (IOException | InterruptedException e) {
+            throw new ComponentException(message + path, e);
         }
     }
 
@@ -631,21 +639,4 @@ public class ClusterComponent extends DefaultComponent {
         return getJobFolderPath(job) + SLASH + OUTPUT_FOLDER_NAME;
     }
 
-    private void logInfoMetaInformation(String text) {
-        log.info(text);
-        logMetaInformation(text);
-    }
-
-    private void logErrorMetaInformation(String text) {
-        log.error(text);
-        logMetaInformation(text);
-    }
-
-    private void logMetaInformation(String text) {
-        componentContext.printConsoleLine(text, ConsoleRow.Type.COMPONENT_OUTPUT);
-    }
-
-    protected void activate(org.osgi.service.component.ComponentContext ctx) {
-        // TODO delete?
-    }
 }

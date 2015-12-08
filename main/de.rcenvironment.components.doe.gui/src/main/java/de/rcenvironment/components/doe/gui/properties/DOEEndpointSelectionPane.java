@@ -19,6 +19,8 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
@@ -58,6 +60,7 @@ public class DOEEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void executeAddCommand(String name, DataType type, Map<String, String> metaData) {
         WorkflowNodeCommand command = new DOEAddDynamicEndpointCommand(endpointType, endpointIdToManage, name, type, metaData, this);
+        metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
         execute(command);
     }
 

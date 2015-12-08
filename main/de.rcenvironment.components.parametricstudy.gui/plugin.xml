@@ -25,7 +25,20 @@
                filter="de.rcenvironment.components.parametricstudy.gui.properties.ParametricStudyComponentFilter"
                enablesFor="1">
          </propertySection>
-        
+        <propertySection
+               tab="workflow.editor.tab.parametricstudy.FaultTolerantLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.LoopBehaviorInCaseOfFailureSection"
+               id="workflow.editor.tab.Properties.Section.FaultTolerantLoop"
+               filter="de.rcenvironment.components.parametricstudy.gui.properties.ParametricStudyComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.parametricstudy.NestedLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
+               id="workflow.editor.tab.Properties.Section.NestedLoop"
+               filter="de.rcenvironment.components.parametricstudy.gui.properties.ParametricStudyComponentFilter"
+               enablesFor="1">
+         </propertySection>
       </propertySections>
    </extension>
    
@@ -39,7 +52,18 @@
                category="default"               
                id="workflow.editor.tab.parametricstudy.InputsOutputs">
          </propertyTab>
-        
+         <propertyTab
+               label="Fault Tolerance"
+               category="default"
+               afterTab="workflow.editor.tab.parametricstudy.InputsOutputs"
+               id="workflow.editor.tab.parametricstudy.FaultTolerantLoop">
+         </propertyTab>
+        <propertyTab
+               label="Nested Loop"
+               category="default"
+               afterTab="workflow.editor.tab.parametricstudy.FaultTolerantLoop"
+               id="workflow.editor.tab.parametricstudy.NestedLoop">
+         </propertyTab>
       </propertyTabs>
    </extension>
 
@@ -81,4 +105,11 @@
       <builder class="de.rcenvironment.components.parametricstudy.gui.ParametricStudyHistoryDataItemSubtreeBuilder"/>
    </extension>
   
+  <extension
+         point="de.rcenvironment.core.gui.workflow.nodeValidators">
+       <validator
+            class="de.rcenvironment.core.gui.workflow.editor.properties.LoopComponentWorkflowNodeValidator"
+            filter="de.rcenvironment.components.parametricstudy.gui.properties.ParametricStudyComponentFilter">
+       </validator>
+    </extension>
 </plugin>

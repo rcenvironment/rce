@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+                      "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+    <head>
+        <title>Database Component Usage</title>
+    </head>
+    <body>
+        <div class="WordSection1">
+            <h2>
+                <span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; color:windowtext;mso-ansi-language:EN-US"
+                    > Database Component Usage </span>
+            </h2><h3>
+                <span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    > Synopsis </span>
+            </h3><p>
+                <span style="mso-ansi-language:EN-US"> With the database component databases can be
+                    accessed. Database management is not the focus of this component.</span>
+            </p><h3>
+                <span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    > Rationale </span></h3>The database component executes one or more SQL
+            statements and can write the result of each statement into one output if specified. </div>
+        <div class="WordSection1">The statement can be composed using inputs configured in the
+            component (see "Inputs/Outputs"). </div>
+        <div class="WordSection1">Currently supported statement types are SELECT, INSERT, UPDATE,
+            DELETE. Statements to manage the database like managing tables, views and user account
+            are not supported.<h3><span
+                    style="mso-fareast-font-family:&#34;Times New Roman&#34;; mso-ansi-language:EN-US"
+                    > Usage </span></h3></div>
+        <div>
+            <h5><b>Defining a database connection</b></h5>
+        </div>
+        <div>In the properties view of the database component there is a "Database" tab. Here you
+            can define the database connection this component works on. Note that currently drivers
+            for MySQL and PostgreSQL databases are supported. The credentials required to access the
+            database can be entered later on when you execute the workflow.</div>
+        <div>
+            <h5><b>Use the credentials</b></h5>
+        </div>
+        <div>When you execute a workflow that contains a database component you are asked for the
+            username and password. Note that you can store the password in an encrypted storage if
+            you check the "save" check box.</div>
+        <div>
+            <h5><b>Using your own connectors:</b></h5>
+        </div>
+        <div>As default a MySQL JDBC connector in version 5.1.17 is used and already shipped with
+            your RCE installation. You can find it in the subfolder ".../extras/database_connectors"
+            in your RCE installation folder. If you want to use your own connector simply replace
+            the connector file. It will automatically be loaded when you restart RCE.</div>
+        <div>
+            <h5><b>Database statements:</b></h5>
+        </div>
+        <div>For each database component you can enter multiple statements. They are defined in the
+            "Statement" tab. Pressing the "&lt; + >" tab will open a new statement tab. Every tab
+            must not contain more than one statement. For every statement you can define whether its
+            result should be written to an output. To dynamically compose database statements by
+            using inputs you can make use of the "Input" group. A placeholder is added at the
+            current caret position which will be replaced by the actual input value at runtime.
+            Likewise the "Templates" group will insert templates for the given statement types which
+            you can edit to fit your purpose.</div>
+        <div>
+        <h5>
+            Writing multiple times to the same output
+        </h5>
+        </div>
+        <div>It is possible to configure multiple statements to write their result sets to the same
+            output. The results are queued. Note that this can cause subsequent components to run
+            multiple times to consume the queued values.</div>
+        <div>
+            <h5><b>Output "success"</b></h5>
+        </div>
+        <div>There is a static output of type boolean named "success". It is set to <i>true</i> if
+            the given statement and result set distribution was successful. It is useful when a
+            database statement does not yield a result set (like a SELECT statement, for instance)
+            but should trigger the start of a succeeding component. If there are multiple statements
+            defined in a component instance then the "success" output is written when all statements
+            have been processed.</div>
+        <div>
+            <h5><b>Valid statement types:</b></h5>
+        </div>
+        <div>The database component is designed to query and update databases on a lightweight
+            basis. As already mentioned above typical database management statements like creating,
+            altering and dropping tables or working on views and user account is not the aim of this
+            component. Thus, the following four database statement types are supported. That means,
+            each statement must begin with one of the following phrases:<ul>
+                <li>SELECT</li>
+                <li>INSERT</li>
+                <li>UPDATE</li>
+                <li>DELETE</li>
+            </ul></div>
+        <div>
+            <h5><b>Handling Small Tables:</b></h5>
+        </div>
+        <div>Inputs of type "Small Table" can only be used in INSERT statements.</div>
+        <div>Example:</div>
+        <div>
+            <ul>
+                <li>INSERT INTO table_name (id, col1, col2, col3) VALUES ${in:mySmallTable}</li>
+            </ul>
+        </div>
+        <div>Outputs of type "Small Table" are filled by converting the result set from the database
+            to RCE's data types. Note that small tables cannot be encapsulated in small
+            tables.</div>
+        <div>
+            <h5><b>Handling Result Sets:</b></h5>
+        </div>
+        <div>If a result set is empty but configured to be written to an output, this is interpreted
+            as an error.</div>
+        <div>If a result set has exactly one row and one column, it is tried to be mapped to the
+            respective RCE data type.</div>
+        <div>If a result set has more than one entry and the respective output channel is small
+            table a mapping is tried.</div>
+        <div>If the respective output channel is boolean, short text, integer or float but the
+            result set has more than one entry this is interpreted as a potential erroneous
+            configuration and causes the component to fail.</div>
+        <div>
+            <h5><b>Local Execution Only</b></h5>
+        </div>
+        <div>Please note that the database component cannot be published and remotely used. To use
+            the database in your local workflow make sure you can access the database from your
+            machine and configure the database component accordingly.</div>
+        <div>
+            <h3>Examples</h3>
+        </div>
+        <div>The following example refer to the "world" example which can be found at the mysql
+            website: https://dev.mysql.com/doc/index-other.html</div>
+        <div>The following list gives examples for the statement types without inputs configured in
+            the component:</div>
+        <div>
+            <ul>
+                <li>SELECT * FROM City; </li>
+                <li>DELETE FROM City WHERE ID = 3076; </li>
+                <li>UPDATE City SET Population = 1000000 WHERE ID = 3071; </li>
+                <li>INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES (4080,
+                    'Cochem', 'DEU', 'Rheinland-Pfalz', 5213);</li>
+            </ul>
+        </div>
+        <div>The following examples demonstrate the usage of inputs configured in the
+            component:</div>
+        <div>
+            <ul>
+                <li>SELECT * FROM City WHERE ID = ${in:id}; </li>
+                <li>DELETE FROM City WHERE ID = ${in:id}; </li>
+                <li>UPDATE City SET Population = ${in:population} WHERE ID = ${in:id}; </li>
+                <li>INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES (${in:id},
+                    ${in:name}, ${in:code}, ${in:district}, ${in:population});</li>
+            </ul>
+        </div>
+        <div>Considering inputs of type small table, the example above in the context of the world
+            database would look as follows, assumed the input is properly defined:</div>
+        <div>
+            <ul>
+                <li> INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES
+                    ${in:smallTable} ;</li>
+            </ul>
+        </div>
+        <div>For further information you may want to refer to the MySQL documentation:
+            https://dev.mysql.com/doc/refman/5.7/en/sql-syntax.html</div>
+    </body>
+</html>

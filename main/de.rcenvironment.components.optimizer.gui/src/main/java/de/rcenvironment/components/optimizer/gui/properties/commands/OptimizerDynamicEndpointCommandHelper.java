@@ -12,8 +12,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
-import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.datamodel.api.DataType;
 
 /**
  * Helper class for OptimizerDynamicEndpointCommands.
@@ -50,18 +52,25 @@ public final class OptimizerDynamicEndpointCommandHelper {
         final WorkflowNode workflowNode) {
         if (metaData.get(OptimizerComponentConstants.META_KEY_HAS_BOUNDS) != null
             && !Boolean.parseBoolean(metaData.get(OptimizerComponentConstants.META_KEY_HAS_BOUNDS))) {
+            Map<String, String> lowerBoundsMetaData = new HashMap<String, String>();
+            lowerBoundsMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
             workflowNode.getInputDescriptionsManager()
                 .addDynamicEndpointDescription(
                     OptimizerComponentConstants.ID_STARTVALUES,
                     name + OptimizerComponentConstants.BOUNDS_STARTVALUE_LOWER_SIGNITURE
-                        + OptimizerComponentConstants.STARTVALUE_SIGNATURE, type,
-                    new HashMap<String, String>());
+                        + OptimizerComponentConstants.STARTVALUE_SIGNATURE,
+                    type,
+                    lowerBoundsMetaData);
+            Map<String, String> upperBoundsMetaData = new HashMap<String, String>();
+            upperBoundsMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+
             workflowNode.getInputDescriptionsManager()
                 .addDynamicEndpointDescription(
                     OptimizerComponentConstants.ID_STARTVALUES,
                     name + OptimizerComponentConstants.BOUNDS_STARTVALUE_UPPER_SIGNITURE
-                        + OptimizerComponentConstants.STARTVALUE_SIGNATURE, type,
-                    new HashMap<String, String>());
+                        + OptimizerComponentConstants.STARTVALUE_SIGNATURE,
+                    type,
+                    upperBoundsMetaData);
         }
     }
 

@@ -116,6 +116,31 @@
             }
         },
         {
+            "identifier":"toForward",
+            "group":"valuesToOptimize",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        },
+        {
             "identifier": "startvalues",
             "group" : "startValues",
             "dataTypes": [
@@ -174,24 +199,24 @@
             }
         }
     ],
-     "inputGroups":[
+     "staticInputGroups":[
         {
-            "identifier":"valuesToOptimize",
+            "name":"valuesToOptimize",
             "type":"And",
             "group":"startOrRunValues"
         },
         {
-            "identifier":"startValues",
+            "name":"startValues",
             "type":"And",
             "group":"startOrRunValues"
         },
          {
-            "identifier":"startOrRunValues",
+            "name":"startOrRunValues",
             "type": "Or",
             "group":"innerLoop"
         },
         {
-            "identifier":"innerLoop",
+            "name":"innerLoop",
             "type": "Or"
         }
     ]

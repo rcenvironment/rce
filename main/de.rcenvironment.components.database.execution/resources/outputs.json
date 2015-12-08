@@ -1,0 +1,24 @@
+{
+    "staticOutputs": [
+        {
+            "name": "Success",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicOutputs":[
+        {
+            "identifier":"default",
+            "dataTypes":[
+                "ShortText",
+                "Integer",
+                "Float",
+                "Boolean",
+                "SmallTable"
+            ],
+            "defaultDataType":"SmallTable"
+        }
+    ]
+}

@@ -7,15 +7,18 @@
  */
 package de.rcenvironment.core.gui.wizards.exampleproject;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.util.Enumeration;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.IFile;
+import org.eclipse.core.resources.IFolder;
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
@@ -32,6 +35,11 @@ import org.eclipse.ui.IWorkbench;
 import org.eclipse.ui.IWorkbenchWizard;
 import org.osgi.framework.Bundle;
 
+import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
+
 /**
  * This is a sample new wizard. Its role is to create a new file resource in the provided container.
  * If the container resource (a folder or a project) is selected in the workspace when the wizard is
@@ -44,15 +52,16 @@ import org.osgi.framework.Bundle;
  */
 
 public abstract class NewExampleProjectWizard extends Wizard implements INewWizard {
-    
+
+    private static final String ASTERISK = "*";
+
     private static final String APOSTROPH = "'";
-      
+
     private NewExampleProjectWizardPage page;
 
     private ISelection selection;
 
     private final Log log = LogFactory.getLog(getClass());
-
 
     /**
      * Constructor for NewDemoProjectWizard.
@@ -70,7 +79,7 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
         page = new NewExampleProjectWizardPage(selection, this);
         Bundle bundle = Platform.getBundle(getPluginID());
         // enumerate template folder sub-directories
-        @SuppressWarnings("rawtypes") final Enumeration templateDirs = bundle.findEntries("templates", "*", false);
+        @SuppressWarnings("rawtypes") final Enumeration templateDirs = bundle.findEntries("templates", ASTERISK, false);
         while (templateDirs.hasMoreElements()) {
             final URL elementURL = (URL) templateDirs.nextElement();
             final String rawPath = elementURL.getPath();
@@ -84,16 +93,20 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     /**
      * This method is called when 'Finish' button is pressed in the wizard. We will create an
      * operation and run it using wizard as execution context.
+     * 
      * @return boolean : done
      */
     @Override
     public boolean performFinish() {
+
         final String newProjectName = page.getNewProjectName();
+        final boolean copyTool = page.getCreateTIExample();
         IRunnableWithProgress op = new IRunnableWithProgress() {
+
             @Override
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
-                    doFinish(getTemplateFoldername(), newProjectName, monitor);
+                    doFinish(getTemplateFoldername(), newProjectName, monitor, copyTool);
                 } catch (CoreException e) {
                     throw new InvocationTargetException(e);
                 } finally {
@@ -113,21 +126,63 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
         return true;
     }
 
+    private void copyExampleTool(Bundle bundle) {
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        ConfigurationService configurationService = serviceRegistryAccess.getService(ConfigurationService.class);
+        File integrationFolder = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTEGRATION_DATA);
+        File commonsFolder = new File(new File(integrationFolder, "tools"), "common");
+        if (!commonsFolder.exists()) {
+            commonsFolder.mkdirs();
+        }
+        try {
+            @SuppressWarnings("rawtypes") final Enumeration toolFiles =
+                bundle.findEntries("templates/" + "integration_example", ASTERISK, true);
+            while (toolFiles.hasMoreElements()) {
+                final URL elementURL = (URL) toolFiles.nextElement();
+                final String rawPath = elementURL.getPath();
+                final String targetPath = rawPath.replaceFirst("^/templates/\\w+/", "");
+                final File target = new File(commonsFolder, targetPath);
+                if (!target.exists()) {
+                    if (target.isDirectory() || rawPath.endsWith("/")) {
+                        target.mkdirs();
+                    } else {
+                        InputStream fileStream = null;
+                        try {
+                            fileStream = elementURL.openStream();
+                            FileUtils.copyInputStreamToFile(fileStream, target);
+                        } catch (IOException e) {
+                            log.error("Could not copy tool integration example", e);
+                        } finally {
+                            if (fileStream != null) {
+                                fileStream.close();
+                            }
+                        }
+                    }
+                }
+            }
+        } catch (IOException e) {
+            log.error("Could not copy tool integration example", e);
+        }
+
+    }
+
     /**
      * The worker method. It will find the container, create the file if missing or just replace its
      * contents, and open the editor on the newly created file.
      * 
-     * @param templateName 
+     * @param templateName
      */
 
-    private void doFinish(String templateName, String newProjectName, IProgressMonitor monitor) throws CoreException {
+    private void doFinish(String templateName, String newProjectName, IProgressMonitor monitor, boolean copyIntegrationExample)
+        throws CoreException {
+
         IWorkspaceRoot root = ResourcesPlugin.getWorkspace().getRoot();
         IProject project = root.getProject(newProjectName);
         project.create(monitor);
         project.open(monitor);
         monitor.worked(1);
         Bundle bundle = Platform.getBundle(getPluginID());
-        @SuppressWarnings("rawtypes") final Enumeration templateFiles = bundle.findEntries("templates/" + templateName, "*", true);
+        @SuppressWarnings("rawtypes") final Enumeration templateFiles = bundle.findEntries("templates/" + templateName, ASTERISK, true);
         log.debug("Copying project template '" + templateName + APOSTROPH);
         try {
             while (templateFiles.hasMoreElements()) {
@@ -139,6 +194,10 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
                 }
                 final String targetPath = rawPath.replaceFirst("^/templates/\\w+/", "");
                 IFile file = project.getFile(targetPath);
+                if (!file.getParent().exists()) {
+                    IFolder parent = (IFolder) file.getParent();
+                    parent.create(true, true, null);
+                }
                 log.debug("Copying template file '" + elementURL + " to '" + targetPath + APOSTROPH);
                 InputStream fileStream = null;
                 try {
@@ -150,9 +209,13 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
                     }
                 }
             }
+            if (copyIntegrationExample) {
+                copyExampleTool(bundle);
+            }
         } catch (IOException e) {
             log.error("Error while creating example project", e);
         }
+
     }
 
     /**
@@ -166,23 +229,26 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     public void init(IWorkbench workbench, IStructuredSelection newSelection) {
         this.selection = newSelection;
     }
-    
+
     /**
      * Used to set project default name in inhertited class.
+     * 
      * @return String
      */
     public abstract String getProjectDefaultName();
-    
+
     /**
      * Used to set plugin id in inhertited class.
+     * 
      * @return String
      */
     public abstract String getPluginID();
+
     /**
      * Used to set template foldername in inhertited class.
+     * 
      * @return String
      */
     public abstract String getTemplateFoldername();
-  
- 
+
 }

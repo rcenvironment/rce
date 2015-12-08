@@ -35,6 +35,7 @@ import org.codehaus.jackson.node.TextNode;
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerFileLoader;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
@@ -48,6 +49,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  */
 public class OptimizerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
+
+    private static final String SELF_LOOP_ENDPOINT = "SelfLoopEndpoint";
+
+    private static final String OUTER_LOOP_ENDPOINT = "OuterLoopEndpoint";
+
+    private static final String DYNAMIC_OUTPUTS = "dynamicOutputs";
 
     private static final String GOAL = "goal";
 
@@ -70,6 +77,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String NAME = "name";
 
+    private static final String STATIC_OUTPUTS = "staticOutputs";
+
     private static final String NAN = "NaN";
 
     private static final String WEIGHT = "weight";
@@ -81,6 +90,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
     private static final String ALGORITHM = "algorithm";
 
     private static final String CONFIGURATION = "configuration";
+
+    private static final String LOOP_ENDPOINT_TYPE = "loopEndpointType_5e0ed1cd";
 
     private static final Log LOGGER = LogFactory.getLog(OptimizerPersistentComponentDescriptionUpdater.class);
 
@@ -100,9 +111,9 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String V6_2 = "6.2";
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final String V7_0 = "7.0";
 
-    private final String currentVersion = V6_2;
+    private static ObjectMapper mapper = new ObjectMapper();
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -138,6 +149,14 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             && persistentComponentDescriptionVersion.compareTo(V6_1) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
+        if (silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V6_2) < 0) {
+            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+        }
+        if (!silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V7_0) < 0) {
+            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+        }
         return versionsToUpdate;
     }
 
@@ -153,22 +172,104 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
                 && description.getComponentVersion().compareTo(V5_0) < 0) {
                 description = updateToVersion50(description);
+            } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
+                && description.getComponentVersion().compareTo(V7_0) < 0) {
+                description = updateToVersion70(description);
             }
         } else {
-            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
-                && description.getComponentVersion().compareTo(V5_1) < 0) {
-                description = updateToVersion51(description);
-            }
-            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
-                && description.getComponentVersion().compareTo(V6_0) < 0) {
-                description = updateToVersion60(description);
-            }
-            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
-                && description.getComponentVersion().compareTo(V6_1) < 0) {
-                description = updateToVersion61(description);
+            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+                if (description.getComponentVersion().compareTo(V5_1) < 0) {
+                    description = updateToVersion51(description);
+                }
+                if (description.getComponentVersion().compareTo(V6_0) < 0) {
+                    description = updateToVersion60(description);
+                }
+                if (description.getComponentVersion().compareTo(V6_1) < 0) {
+                    description = updateToVersion61(description);
+                }
+                if (description.getComponentVersion().compareTo(V6_2) < 0) {
+                    description = updateFrom61To62(description);
+                }
             }
         }
         return description;
+    }
+
+    private PersistentComponentDescription updateToVersion70(PersistentComponentDescription description)
+        throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode staticOutputs = node.get(STATIC_OUTPUTS);
+        if (staticOutputs != null) {
+            for (JsonNode outputEndpoint : staticOutputs) {
+                ObjectNode metaData = (ObjectNode) outputEndpoint.get(METADATA);
+                if (metaData == null) {
+                    metaData = JsonNodeFactory.instance.objectNode();
+                    ((ObjectNode) outputEndpoint).put(METADATA, metaData);
+                }
+                if (outputEndpoint.get(NAME).getTextValue().equals("Outer loop done")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, "InnerLoopEndpoint");
+                }
+                if (outputEndpoint.get(NAME).getTextValue().equals("Iteration")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
+                }
+                if (outputEndpoint.get(NAME).getTextValue().equals("Gradient request")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
+                }
+                if (outputEndpoint.get(NAME).getTextValue().equals("Done")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                }
+            }
+        }
+        JsonNode dynamicOutputs = node.get(DYNAMIC_OUTPUTS);
+        if (dynamicOutputs != null) {
+            for (JsonNode outputEndpoint : dynamicOutputs) {
+                ObjectNode metaData = (ObjectNode) outputEndpoint.get(METADATA);
+                if (outputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("Design")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
+                }
+                if (outputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("optima")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                }
+            }
+        }
+        JsonNode dynamicInputs = node.get(DYNAMIC_INPUTS);
+        if (dynamicInputs != null) {
+            for (JsonNode inputEndpoint : dynamicInputs) {
+                ObjectNode metaData = (ObjectNode) inputEndpoint.get(METADATA);
+                if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("Objective")
+                    || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("Constraint")
+                    || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("gradients")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
+                }
+                if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("startvalues")
+                    || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("outerLoopDone")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                }
+            }
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
+        newdesc.setComponentVersion(V7_0);
+        return newdesc;
+    }
+
+    private PersistentComponentDescription updateFrom61To62(PersistentComponentDescription description)
+        throws JsonParseException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode staticOutputs = node.get(STATIC_OUTPUTS);
+        if (staticOutputs != null) {
+            for (JsonNode outputEndpoint : staticOutputs) {
+                ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
+                if (outputEndpoint.get(NAME).getTextValue().equals("Optimizer is finished")) {
+                    ((ObjectNode) outputEndpoint).put(NAME, LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
+                }
+            }
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
+        newdesc.setComponentVersion(V6_2);
+        return newdesc;
+
     }
 
     @SuppressWarnings("unchecked")
@@ -192,7 +293,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             Map<String, Object> specifics =
                 (Map<String, Object>) ((HashMap<String, Object>) configs
                     .get(DAKOTA_COLINY_COBYLA_CONSTRAINT_OPTIMIZATION_BY_LINEAR_APPROXIMATIONS)).get(
-                    SPECIFIC_SETTINGS);
+                        SPECIFIC_SETTINGS);
             specifics.put("solution_accuracy", accuracyNode);
 
         }
@@ -314,7 +415,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
-        ArrayNode dynEndpoints = (ArrayNode) node.get("dynamicOutputs");
+        ArrayNode dynEndpoints = (ArrayNode) node.get(DYNAMIC_OUTPUTS);
 
         if (dynEndpoints != null) {
             List<JsonNode> newNodes = new LinkedList<JsonNode>();
@@ -354,7 +455,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
     private PersistentComponentDescription updateToVersion3(PersistentComponentDescription description) throws JsonParseException,
         IOException {
         description =
-            PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier("dynamicOutputs", "Design", description);
+            PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier(DYNAMIC_OUTPUTS, "Design", description);
 
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -363,7 +464,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
                 if (endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER) == null
-                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).equals("null")
+                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).getTextValue().equals("null")
                     || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).isNull()) {
                     ObjectNode objectEndpoint = (ObjectNode) endpoint;
                     objectEndpoint.remove(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER);
@@ -401,7 +502,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         }
         // Add Static endpoints
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
-        description.setComponentVersion(currentVersion);
+        description.setComponentVersion(V3_0);
         return description;
     }
 
@@ -417,8 +518,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         boolean hasMetaData = false;
         for (JsonNode otherEndpoint : dynEndpoints) {
             if (otherEndpoint.get(NAME).getTextValue().contains(OptimizerComponentConstants.GRADIENT_DELTA)
-                && otherEndpoint.get(NAME).getTextValue().
-                    contains(OptimizerComponentConstants.GRADIENT_DELTA + objectEndpoint.get(NAME).getTextValue() + ".")) {
+                && otherEndpoint.get(NAME).getTextValue()
+                    .contains(OptimizerComponentConstants.GRADIENT_DELTA + objectEndpoint.get(NAME).getTextValue() + ".")) {
                 hasMetaData = true;
             }
         }
@@ -431,8 +532,10 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         JsonParseException,
         JsonProcessingException, JsonGenerationException, JsonMappingException {
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
-        JsonNode completeComponent = mapper.readTree(jsonParser);
+        JsonNode completeComponent;
+        try (JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString())) {
+            completeComponent = mapper.readTree(jsonParser);
+        }
         JsonNode completeConfiguration = completeComponent.get(CONFIGURATION);
         JsonNode algorithmNode = null;
         JsonNode methodsConfigurationNode = null;

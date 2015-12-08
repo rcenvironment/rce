@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.datamanagement.backend.metadata.derby</artifactId>
 	<name>RCE Core Data Management Meta Data Backend Bundle</name>
-	<version>6.3.0.qualifier</version>
+	<version>7.0.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -1,6 +1,7 @@
 {
   "templateName" : "CPACS Tool with return directory",
-  "postScript" : "RCE.write_output('Return directory', '${dir:tool}/ReturnDirectory')",
+  "postScript" : "${out:Return directory} = \"${dir:tool}/ReturnDirectory\"",
+  "imitationScript" : "${out:Return directory} = \"${dir:tool}/ImitationMode/DummyReturnDirectory\"",
   "alwaysRun" : true,
   "groupName" : "CPACS",
   "setToolDirAsWorkingDir" : true,
@@ -22,6 +23,7 @@
   "cpacsResultFilename" : "cpacsResult.xml",
   "mappingOutputFilename" :  "mappingOutput.xml",
   "toolOutputFilename" : "ToolOutput/toolOutput.xml", 
+  "imitationToolOutputFilename" : "ImitationMode/dummyOutput.xml",  
   "copyToolBehavior" : "once",
   "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
   "outputs" : [ {

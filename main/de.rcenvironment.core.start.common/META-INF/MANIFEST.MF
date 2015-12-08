@@ -2,12 +2,13 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Common
 Bundle-SymbolicName: de.rcenvironment.core.start.common
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Service-Component: OSGI-INF/*.xml
 Import-Package: de.rcenvironment.core.command.api,
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
+ de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.textstream,
  org.apache.commons.lang3;version="3.1.0",
@@ -15,6 +16,7 @@ Import-Package: de.rcenvironment.core.command.api,
  org.osgi.service.cm;version="1.3.0"
 Require-Bundle: org.eclipse.core.runtime
 Export-Package: de.rcenvironment.core.start.common,
- de.rcenvironment.core.start.common.validation
+ de.rcenvironment.core.start.common.validation.api,
+ de.rcenvironment.core.start.common.validation.spi
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR

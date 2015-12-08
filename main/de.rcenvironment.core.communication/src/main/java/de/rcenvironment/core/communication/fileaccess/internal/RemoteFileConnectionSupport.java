@@ -17,7 +17,6 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
 import org.osgi.framework.ServiceReference;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.spi.RemoteFileConnectionFactory;
@@ -52,14 +51,13 @@ public final class RemoteFileConnectionSupport {
     /**
      * Returns a new {@link RemoteFileConnection} instance.
      * 
-     * @param cert The user's certificate.
      * @param uri The URI for which a {@link RemoteFileConnection} instance should be created.
      * @return A new {@link RemoteFileConnection} object.
      * @throws CommunicationException Thrown if the {@link RemoteFileConnection} object could not be
      *         created.
      * @throws IOException if the file does not exist remotely.
      */
-    public static RemoteFileConnection getRemoteFileConnection(User cert, URI uri) throws CommunicationException, IOException {
+    public static RemoteFileConnection getRemoteFileConnection(URI uri) throws CommunicationException, IOException {
 
         // try to get the remote input stream access object by getting and calling the remote input
         // stream access factory
@@ -82,6 +80,6 @@ public final class RemoteFileConnectionSupport {
             throw new CommunicationException(ERROR_SERVICE_NOT_REGISTERED);
         }
 
-        return remoteFileConnectionFactory.createRemoteFileConnection(cert, uri);
+        return remoteFileConnectionFactory.createRemoteFileConnection(uri);
     }
 }

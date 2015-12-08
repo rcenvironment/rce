@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.testutils;
 import java.util.concurrent.Callable;
 
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
+import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
@@ -106,7 +106,7 @@ public class VirtualInstanceGroup implements CommonVirtualInstanceControl {
     }
 
     @Override
-    public void addNetworkTrafficListener(RawMessageChannelTrafficListener listener) {
+    public void addNetworkTrafficListener(MessageChannelTrafficListener listener) {
         for (CommonVirtualInstanceControl instance : instances) {
             instance.addNetworkTrafficListener(listener);
         }

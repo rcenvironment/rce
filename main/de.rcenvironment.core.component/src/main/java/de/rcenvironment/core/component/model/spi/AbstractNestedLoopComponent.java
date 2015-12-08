@@ -8,11 +8,9 @@
 
 package de.rcenvironment.core.component.model.spi;
 
-import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
-import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
 
@@ -43,84 +41,97 @@ import de.rcenvironment.core.datamodel.types.api.InternalTD;
  * @author Sascha Zur
  * @author Doreen Seider
  */
-public abstract class AbstractNestedLoopComponent extends DefaultComponent {
-
-    protected ComponentContext componentContext;
-
-    protected TypedDatumFactory typedDatumFactory;
+public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent {
 
     private boolean isInInnerLoop;
+    
+    private boolean isFinallyDone = false;
+
+    private boolean isReset;
 
     @Override
-    public void setComponentContext(ComponentContext componentContext) {
-        this.componentContext = componentContext;
+    public void startComponentSpecific() throws ComponentException {
+        isInInnerLoop = Boolean.valueOf(componentContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
+        startNestedComponentSpecific();
     }
 
     @Override
-    public void start() throws ComponentException {
-        typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
-
-        isInInnerLoop = Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
-
-        startHook();
-    }
-
-    @Override
-    public void processInputs() throws ComponentException {
-
-        if (componentContext.getInputsWithDatum().contains(ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
-            if (((BooleanTD) componentContext.readInput(ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)).getBooleanValue()) {
-                outerLoopFinished();
-            }
-            return;
-        }
-        processInputsHook();
-        if (isFinished()) {
-            onLoopFinished();
+    public void processInputsComponentSpecific() throws ComponentException {
+        
+        if (loopFailureRequested) {
+            isReset = true;
+            sendReset();
         } else {
-            sendValues();
+            if (componentContext.getInputsWithDatum().contains(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
+                if (((BooleanTD) componentContext.readInput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)).getBooleanValue()) {
+                    outerLoopIsFinished();
+                }
+                return;
+            }
+            processInputsNestedComponentSpecific();
+            if (isDone()) {
+                loopIsFinished();
+            } else {
+                sendValuesNestedComponentSpecific();
+            }
         }
     }
 
     @Override
-    public void reset() throws ComponentException {
-        finishLoop(false);
-        resetInnerLoopHook();
-        start();
+    public void resetComponentSpecific() throws ComponentException {
+        resetNestedComponentSpecific();
+        startNestedComponentSpecific();
+        isReset = false;
+    }
+    
+    @Override
+    protected boolean isDone() {
+        return isDoneNestedComponentSpecific() || (!isInInnerLoop() && isFinallyDone());
+    }
+    
+    @Override
+    protected boolean isFinallyDone() {
+        return isFinallyDone;
+    }
+    
+    protected boolean isInInnerLoop() {
+        return isInInnerLoop;
     }
 
-    private void sendValues() {
-        sendValuesHook();
+    @Override
+    protected boolean isReset() {
+        return isReset;
     }
 
-    private void outerLoopFinished() throws ComponentException {
+    private void loopIsFinished() throws ComponentException {
+        if (isInInnerLoop) {
+            isReset = true;
+            sendReset();
+        } else {
+            outerLoopIsFinished();
+        }
+    }
+    
+    private void outerLoopIsFinished() throws ComponentException {
         finishLoop(true);
-        componentContext.closeAllOutputs();
+    }
+    
+    @Override
+    protected void finishLoopComponentSpecific(boolean outerLoopFinished) throws ComponentException {
+        finishLoop(outerLoopFinished);
     }
 
     private void finishLoop(boolean outerLoopFinished) throws ComponentException {
         if (outerLoopFinished) {
-            sendLoopDone();
+            isFinallyDone = true;
             if (!isInInnerLoop) {
                 sendFinalValues();
-                finishLoopHook();
+                finishLoopNestedComponentSpecific();
             }
         } else {
             sendFinalValues();
-            finishLoopHook();
+            finishLoopNestedComponentSpecific();
         }
-    }
-
-    private void onLoopFinished() throws ComponentException {
-        if (isInInnerLoop) {
-            sendReset();
-        } else {
-            outerLoopFinished();
-        }
-    }
-
-    private void sendLoopDone() {
-        componentContext.writeOutput(getLoopFinishedEndpointName(), typedDatumFactory.createBoolean(true));
     }
 
     /**
@@ -130,7 +141,7 @@ public abstract class AbstractNestedLoopComponent extends DefaultComponent {
      * @return true, if component is not finished.
      * @throws ComponentException
      */
-    protected void startHook() throws ComponentException {}
+    protected void startNestedComponentSpecific() throws ComponentException {}
 
     /**
      * This hook is for implementing the component logic.
@@ -140,29 +151,23 @@ public abstract class AbstractNestedLoopComponent extends DefaultComponent {
      * @return
      * @throws ComponentException
      */
-    protected void processInputsHook() throws ComponentException {}
+    protected void processInputsNestedComponentSpecific() throws ComponentException {}
 
     /**
      * Component dependent part when a loop is reset if it is an inner loop.
      */
-    protected abstract void resetInnerLoopHook();
+    protected abstract void resetNestedComponentSpecific();
 
     /**
      * Component dependent part when a loop is finished.
      */
-    protected abstract void finishLoopHook();
-
-    /**
-     * @return name of the boolean output that is used for telling other components if the loop is
-     *         finished.
-     */
-    protected abstract String getLoopFinishedEndpointName();
+    protected abstract void finishLoopNestedComponentSpecific();
 
     /**
      * @return whether the components logic is finished (no more runSteps) or not.
      */
-    protected abstract boolean isFinished();
-
+    protected abstract boolean isDoneNestedComponentSpecific();
+    
     /**
      * If needed, the component should send e.g. optimized values at this point.
      * 
@@ -171,14 +176,21 @@ public abstract class AbstractNestedLoopComponent extends DefaultComponent {
     protected abstract void sendFinalValues() throws ComponentException;
 
     /**
-     * Send {@link InternalTD} to all inner loop outputs.
+     * Send {@link InternalTD} to all self loop outputs.
      */
-    protected abstract void sendReset();
+    protected void sendReset() {
+        for (String output : componentContext.getOutputs()) {
+            if (LoopEndpointType.fromString(componentContext.getOutputMetaDataValue(
+                output, LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE)) == LoopEndpointType.SelfLoopEndpoint) {
+                componentContext.resetOutput(output);
+            }
+        }
+    }
 
     /**
      * This method consumes a start value from an input. Receiving new values should be individual
      * for every component.
      */
-    protected abstract void sendValuesHook();
+    protected abstract void sendValuesNestedComponentSpecific();
 
 }

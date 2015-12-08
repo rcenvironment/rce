@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Node Properties Service">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" activate="activate" name="Node Properties Service">
 
 	<implementation class="de.rcenvironment.core.communication.nodeproperties.internal.NodePropertiesServiceImpl" />
 	<service>

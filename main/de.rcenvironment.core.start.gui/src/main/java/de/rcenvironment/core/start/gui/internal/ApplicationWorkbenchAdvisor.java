@@ -17,8 +17,11 @@ import java.util.Properties;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IPartListener;
 import org.eclipse.ui.IWorkbenchPage;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.IWorkbenchWindow;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.application.IWorkbenchConfigurer;
@@ -43,7 +46,11 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Christian Weiss
  */
+// TODO this class references several classes from org.eclipse.ui.internal; review this while/after switching to e4
+@SuppressWarnings("restriction")
 public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
+
+    private static final String READ_ONLY_WF_EDITOR_ID = "de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor";
 
     private static final int MINIMUM_HEIGHT = 250;
 
@@ -65,8 +72,9 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
     public WorkbenchWindowAdvisor createWorkbenchWindowAdvisor(IWorkbenchWindowConfigurer configurer) {
         IWorkbenchWindowConfigurer windowConfigurer = configurer;
         String platformName = configService.getInstanceName();
-        if (platformName != null) {
-            windowConfigurer.setTitle(StringUtils.format(windowTitle, windowConfigurer.getTitle(), platformName));
+        String appName = Platform.getProduct().getName();
+        if (platformName != null && appName != null) {
+            windowConfigurer.setTitle(StringUtils.format(windowTitle, appName, platformName));
         }
         return new ApplicationWorkbenchWindowAdvisor(configurer);
     }
@@ -93,34 +101,42 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
     @Override
     public void postStartup() {
         super.postStartup();
-        // For 6.2.0, the NPE which occurs sometimes on Linux is just catched (see Mantis issue 12230).
-        // After 6.2.0 the cause of the NPE should be investigated (see Mantis issue 0012243) and this code improved. - seid_do, June 2015
-        try {
-            Display.getDefault().getActiveShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
-        } catch (NullPointerException e) { 
-            LOGGER.warn("Failed to set the minimum size of  RCE's main window");
-        }
-        // refreshes the Resource Explorer, otherwise projects will not be shown
-        IWorkbenchWindow[] workbenchs =
-            PlatformUI.getWorkbench().getWorkbenchWindows();
-        ProjectExplorer view = null;
-        for (IWorkbenchWindow workbench : workbenchs) {
-            for (IWorkbenchPage page : workbench.getPages()) {
-                view = (ProjectExplorer)
-                    page.findView("org.eclipse.ui.navigator.ProjectExplorer");
-                break;
+
+        Display.getDefault().asyncExec(new Runnable() {
+
+            @Override
+            public void run() {
+
+                // refreshes the Resource Explorer, otherwise projects will not be shown
+                IWorkbenchWindow[] workbenchs =
+                    PlatformUI.getWorkbench().getWorkbenchWindows();
+                ProjectExplorer view = null;
+                for (IWorkbenchWindow workbench : workbenchs) {
+                    for (IWorkbenchPage page : workbench.getPages()) {
+                        view = (ProjectExplorer)
+                            page.findView("org.eclipse.ui.navigator.ProjectExplorer");
+                        break;
+                    }
+                }
+
+                if (view == null) {
+                    LOGGER.warn("Project Explorer could not be found at startup so its resources could not be refreshed automatically.");
+                    return;
+                }
+                view.getCommonViewer().setInput(ResourcesPlugin.getWorkspace().getRoot());
+
+                // remove unwanted menu entries from project explorer's context menu
+                ContextMenuItemRemover.removeUnwantedMenuEntries(view.getCommonViewer().getControl());
+
+                removeUnwantedNewWizards();
+
+                // setting minimum size for the whole RCE window
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
+
+                // register listener to programmatically set project explorer's resources when closing and reopening it
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getPartService().addPartListener(new WorkbenchWindowPartListener());
             }
-        }
-        if (view == null) {
-            return;
-        }
-        view.getCommonViewer().setInput(ResourcesPlugin.getWorkspace().getRoot());
-
-        // remove unwanted menu entries from project explorer's context menu
-        ContextMenuItemRemover.removeUnwantedMenuEntries(view.getCommonViewer().getControl());
-
-        removeUnwantedNewWizards();
-
+        });
     }
 
     private void removeUnwantedNewWizards() {
@@ -141,7 +157,7 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
                 WorkbenchWizardElement wizardElement = (WorkbenchWizardElement) wizard;
                 if (unwantedNewWizardIds.contains(wizardElement.getId())) {
                     ((AbstractExtensionWizardRegistry) WorkbenchPlugin.getDefault().getNewWizardRegistry()).
-                    removeExtension(wizardElement.getConfigurationElement().getDeclaringExtension(), new Object[] { wizardElement });
+                        removeExtension(wizardElement.getConfigurationElement().getDeclaringExtension(), new Object[] { wizardElement });
                 }
             }
         }
@@ -156,4 +172,31 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         return results.toArray(new IWizardDescriptor[0]);
     }
 
+    /**
+     * PartListener for WorkbenchWindow making sure the ProjectExplorer shows resources on reopen properly.
+     *
+     * @author Oliver Seebach
+     */
+    private final class WorkbenchWindowPartListener implements IPartListener {
+
+        @Override
+        public void partOpened(IWorkbenchPart workbenchPart) {
+            if (workbenchPart instanceof ProjectExplorer) {
+                ((ProjectExplorer) workbenchPart).getCommonViewer().setInput(ResourcesPlugin.getWorkspace().getRoot());
+            }
+        }
+
+        @Override
+        public void partDeactivated(IWorkbenchPart workbenchPart) {}
+
+        @Override
+        public void partClosed(IWorkbenchPart workbenchPart) {}
+
+        @Override
+        public void partBroughtToTop(IWorkbenchPart workbenchPart) {}
+
+        @Override
+        public void partActivated(IWorkbenchPart workbenchPart) {}
+    }
+    
 }

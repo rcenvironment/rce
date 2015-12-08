@@ -48,7 +48,6 @@ import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
-import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -65,6 +64,10 @@ public class EndpointEditDialog extends Dialog {
 
     private static final int GROUPS_MIN_WIDTH = 235;
 
+    private static final int MINIMUM_HEIGHT = 125;
+
+    private static final int MINIMUM_WIDTH = 250;
+
     protected final ComponentInstanceProperties configuration;
 
     protected final EndpointType type;
@@ -78,9 +81,9 @@ public class EndpointEditDialog extends Dialog {
     protected String currentName;
 
     protected DataType currentDataType;
-    
+
     protected EndpointDefinition.InputDatumHandling currentInputHandling;
-    
+
     protected EndpointDefinition.InputExecutionContraint currentInputExecutionConstraint;
 
     protected String title;
@@ -93,13 +96,13 @@ public class EndpointEditDialog extends Dialog {
 
     protected Map<String, String> metadataValues;
 
+    protected EndpointDescriptionsManager epManager;
+
     private final String id;
 
     private final boolean isStatic;
 
     private Map<String, DataType> guiNameToDataType;
-
-    private EndpointDescriptionsManager epManager;
 
     private Combo comboInputDatumHandling;
 
@@ -133,14 +136,14 @@ public class EndpointEditDialog extends Dialog {
         this.title = StringUtils.format(Messages.title, actionType, direction);
         this.metaData = metaData;
         this.metadataValues = metadataValues;
-        
+
         if (!isStatic) { // if static initializeValues is called with the actual name
             setDataType();
             setInputHandling();
             setInputExecutionConstraint();
         }
     }
-    
+
     private void setDataType() {
         if (isStatic || epManager.getEndpointDescription(currentName) != null) {
             currentDataType = epManager.getEndpointDescription(currentName).getDataType();
@@ -148,28 +151,28 @@ public class EndpointEditDialog extends Dialog {
             currentDataType = epManager.getDynamicEndpointDefinition(id).getDefaultDataType();
         }
     }
-    
+
     private void setInputHandling() {
         if (metadataValues.containsKey(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING)) {
             currentInputHandling = EndpointDefinition.InputDatumHandling.valueOf(
                 metadataValues.get(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING));
         } else {
             if (isStatic || epManager.getEndpointDescription(currentName) != null) {
-                currentInputHandling = epManager.getEndpointDescription(currentName).getDeclarativeEndpointDescription()
+                currentInputHandling = epManager.getEndpointDescription(currentName).getEndpointDefinition()
                     .getDefaultInputDatumHandling();
             } else {
-                currentInputHandling = epManager.getDynamicEndpointDefinition(id).getDefaultInputDatumHandling();                
+                currentInputHandling = epManager.getDynamicEndpointDefinition(id).getDefaultInputDatumHandling();
             }
         }
     }
-    
+
     private void setInputExecutionConstraint() {
         if (metadataValues.containsKey(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)) {
             currentInputExecutionConstraint = InputExecutionContraint.valueOf(
                 metadataValues.get(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT));
         } else {
             if (isStatic || epManager.getEndpointDescription(currentName) != null) {
-                currentInputExecutionConstraint = epManager.getEndpointDescription(currentName).getDeclarativeEndpointDescription()
+                currentInputExecutionConstraint = epManager.getEndpointDescription(currentName).getEndpointDefinition()
                     .getDefaultInputExecutionConstraint();
             } else {
                 currentInputExecutionConstraint = epManager.getDynamicEndpointDefinition(id).getDefaultInputExecutionConstraint();
@@ -260,6 +263,12 @@ public class EndpointEditDialog extends Dialog {
         }
     }
 
+    /**
+     * Creates the settings.
+     *
+     * @param sortedKeyMap the sorted key map
+     * @param container the container
+     */
     private void createSettings(Map<Integer, String> sortedKeyMap, Composite container) {
         for (String key : sortedKeyMap.values()) {
             if (!metaData.getVisibility(key).equals(Visibility.developerConfigurable)
@@ -336,14 +345,21 @@ public class EndpointEditDialog extends Dialog {
         result.setText(value);
         if (dataType.equals(EndpointMetaDataConstants.TYPE_INT)) {
             result.addVerifyListener(new NumericalTextConstraintListener(result,
-                WidgetGroupFactory.ONLY_INTEGER));
+                NumericalTextConstraintListener.ONLY_INTEGER));
             if (value.equals(MINUS)) {
                 result.setText("");
             }
         }
         if (dataType.equals(EndpointMetaDataConstants.TYPE_FLOAT)) {
             result.addVerifyListener(new NumericalTextConstraintListener(result,
-                WidgetGroupFactory.ONLY_FLOAT));
+                NumericalTextConstraintListener.ONLY_FLOAT));
+            if (value.equals(MINUS)) {
+                result.setText("");
+            }
+        }
+        if (dataType.equals(EndpointMetaDataConstants.TYPE_FLOAT_GREATER_ZERO)) {
+            result.addVerifyListener(new NumericalTextConstraintListener(result,
+                NumericalTextConstraintListener.ONLY_FLOAT | NumericalTextConstraintListener.GREATER_ZERO));
             if (value.equals(MINUS)) {
                 result.setText("");
             }
@@ -371,29 +387,29 @@ public class EndpointEditDialog extends Dialog {
 
         // store initial name to skip validation if unchanged
         initialName = currentName;
-        
+
         // set initial input when editing
         if (currentName != null) {
             textfieldName.setText(currentName);
         }
-        
+
         Label dataTypeLabel = new Label(container, SWT.NONE);
         dataTypeLabel.setText(Messages.dataType + COLON);
         dataTypeLabel.setLayoutData(textGridData);
         createDataTypeComboBox(container);
-        
+
         if (type == EndpointType.INPUT) {
             Label inputHandlingLabel = new Label(container, SWT.NONE);
             inputHandlingLabel.setText("Handling" + COLON);
             inputHandlingLabel.setLayoutData(textGridData);
             createInputHandlingComboBox(container);
-            
+
             Label executionConstraintLabel = new Label(container, SWT.NONE);
             executionConstraintLabel.setText("Constraint" + COLON);
             executionConstraintLabel.setLayoutData(textGridData);
             createInputExecutionContraintComboBox(container);
         }
-        
+
     }
 
     private void createDataTypeComboBox(Composite container) {
@@ -418,7 +434,7 @@ public class EndpointEditDialog extends Dialog {
         }
         Collections.sort(dataTypesGuiNames);
         comboDataType.setItems(dataTypesGuiNames.toArray(new String[dataTypesGuiNames.size()]));
-        
+
         if (currentDataType != null) {
             comboDataType.select(comboDataType.indexOf(currentDataType.getDisplayName()));
         } else {
@@ -428,7 +444,7 @@ public class EndpointEditDialog extends Dialog {
 
         comboDataType.setEnabled(possibleDataTypes.size() > 1);
     }
-    
+
     private void createInputHandlingComboBox(Composite container) {
         comboInputDatumHandling = new Combo(container, SWT.BORDER | SWT.READ_ONLY | SWT.RIGHT);
         comboInputDatumHandling.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -451,7 +467,7 @@ public class EndpointEditDialog extends Dialog {
         }
         Collections.sort(inputHandlingGuiNames);
         comboInputDatumHandling.setItems(inputHandlingGuiNames.toArray(new String[inputHandlingGuiNames.size()]));
-        
+
         if (currentInputHandling != null) {
             comboInputDatumHandling.select(comboInputDatumHandling.indexOf(currentInputHandling.getDisplayName()));
         } else {
@@ -461,7 +477,7 @@ public class EndpointEditDialog extends Dialog {
 
         comboInputDatumHandling.setEnabled(possibleInputinputHandlingOptions.size() > 1);
     }
-    
+
     private void createInputExecutionContraintComboBox(Composite container) {
         comboInputExecutionContraint = new Combo(container, SWT.BORDER | SWT.READ_ONLY | SWT.RIGHT);
         comboInputExecutionContraint.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -485,7 +501,7 @@ public class EndpointEditDialog extends Dialog {
         }
         Collections.sort(executionConstraintsGuiNames);
         comboInputExecutionContraint.setItems(executionConstraintsGuiNames.toArray(new String[executionConstraintsGuiNames.size()]));
-        
+
         if (currentInputExecutionConstraint != null) {
             comboInputExecutionContraint.select(comboInputExecutionContraint.indexOf(currentInputExecutionConstraint.getDisplayName()));
         } else {
@@ -495,12 +511,14 @@ public class EndpointEditDialog extends Dialog {
 
         comboInputExecutionContraint.setEnabled(possibleInputHandlingOptions.size() > 1);
     }
-    
+
     @Override
     public void create() {
         super.create();
         // dialog title
         getShell().setText(title);
+        getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
+
         // initial validation
         validateInput();
         // set listeners here so the ok button is initialized
@@ -674,6 +692,7 @@ public class EndpointEditDialog extends Dialog {
 
     /**
      * Updates meta data values and returns them.
+     * 
      * @return meta data as {@link Map}
      */
     public Map<String, String> getMetadataValues() {
@@ -704,7 +723,7 @@ public class EndpointEditDialog extends Dialog {
                 }
                 metadataValues.put(widgetToKeyMap.get(source), value);
             }
-           
+
             validateInput();
         }
     }
@@ -751,7 +770,7 @@ public class EndpointEditDialog extends Dialog {
         return currentDataType;
     }
 
-    private String getNameInputFromUI() {
+    protected String getNameInputFromUI() {
         return textfieldName.getText();
     }
 
@@ -765,7 +784,7 @@ public class EndpointEditDialog extends Dialog {
         currentDataType = getTypeSelectionFromUI();
         if (type == EndpointType.INPUT) {
             currentInputHandling = guiNameToInputDatumHandling.get(comboInputDatumHandling.getText());
-            currentInputExecutionConstraint = guiNameToInputExecutionConstraint.get(comboInputExecutionContraint.getText());            
+            currentInputExecutionConstraint = guiNameToInputExecutionConstraint.get(comboInputExecutionContraint.getText());
         }
         callSuperOkPressed();
     }

@@ -9,10 +9,13 @@
 package de.rcenvironment.components.outputwriter.gui;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CLabel;
 import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
@@ -22,6 +25,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
@@ -29,8 +33,11 @@ import org.eclipse.swt.widgets.Text;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
+import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 
@@ -38,6 +45,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  * Special edit dialog for the output writer.
  * 
  * @author Sascha Zur
+ * @author Brigitte Boden
  */
 public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
 
@@ -46,7 +54,13 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
 
     private static final int MINUS_ONE = -1;
 
+    private static final String COLON = ":";
+
     private final Set<String> paths;
+
+    private Text result;
+
+    private CLabel hintLabel;
 
     public OutputWriterEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
         ComponentInstanceProperties configuration, EndpointType direction,
@@ -56,40 +70,37 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
     }
 
     @Override
+    protected Control createDialogArea(Composite parent) {
+        Control superControl = super.createDialogArea(parent);
+        hintLabel = new CLabel((Composite) superControl, SWT.NONE);
+        hintLabel
+            .setText(
+                "You are adding a primitive data type input."
+                    + "Therefore, you also\nneed to add this input to a target file in the table below.");
+        hintLabel.setImage(ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16));
+        return superControl;
+    }
+
+    @Override
     protected Text createLabelAndTextfield(Composite container, String text, String dataType, String value) {
         final Label nameLabel = new Label(container, SWT.NONE);
         nameLabel.setText(text + "    ");
-        final Text result = new Text(container, SWT.SINGLE | SWT.BORDER);
+        result = new Text(container, SWT.SINGLE | SWT.BORDER);
         result.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
+        if (value.equals("-")) {
+            value = "";
+        }
         result.setText(value);
         result.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         new Label(container, SWT.NONE).setText("");
         final Composite placeholderComp = new Composite(container, SWT.NONE);
         placeholderComp.setLayout(new GridLayout(2, false));
-        final Combo placeholderCombo = new Combo(placeholderComp, SWT.READ_ONLY);
-        Button insertButton = new Button(placeholderComp, SWT.PUSH);
-        insertButton.setText("Insert");
-        placeholderCombo.setItems(OutputWriterComponentConstants.WORDLIST);
-        placeholderCombo.select(0);
-        insertButton.addSelectionListener(new SelectionListener() {
+        placeholderComp.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
+        final Combo placeholderCombo =
+            OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp, OutputWriterComponentConstants.WORDLIST);
+        OutputWriterGuiUtils.createPlaceholderInsertButton(placeholderComp, placeholderCombo, result);
 
-            @Override
-            public void widgetSelected(SelectionEvent arg0) {
-                int positionbuffer = result.getCaretPosition();
-                String word = placeholderCombo.getText();
-                result.insert(word);
-                if (result.getText().length() >= (positionbuffer + word.length())) {
-                    result.setSelection(positionbuffer + word.length());
-                }
-                result.forceFocus();
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-
-            }
-        });
-        new Label(container, SWT.NONE).setText("Target folder: ");
+        new Label(container, SWT.NONE).setText(Messages.targetFolder + COLON);
         final Combo directoryCombo = new Combo(container, SWT.READ_ONLY);
         directoryCombo.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
         if (!paths.contains(OutputWriterComponentConstants.ROOT_DISPLAY_NAME)) {
@@ -110,9 +121,9 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
             directoryCombo.select(0);
         }
         metadataValues.put(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING, "" + directoryCombo.getText());
-        new Label(container, SWT.NONE).setText("Sub folder: ");
+        new Label(container, SWT.NONE).setText(Messages.subFolder + COLON);
         final Text additionalFolder = new Text(container, SWT.SINGLE | SWT.BORDER);
-        additionalFolder.setMessage("Optional");
+        additionalFolder.setMessage(Messages.optionalMessage);
         additionalFolder.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
         additionalFolder.addModifyListener(new ModifyListener() {
 
@@ -122,37 +133,24 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
                     OutputWriterComponentConstants.ROOT_DISPLAY_NAME + File.separator + ((Text) arg0.getSource()).getText());
             }
         });
-        if (directoryCombo.getSelectionIndex() > 0) {
-            additionalFolder.setEnabled(false);
-        }
+
         new Label(container, SWT.NONE).setText("");
-        new Label(container, SWT.NONE).setText("Note: Currently, only one sub folder is allowed");
+        new Label(container, SWT.NONE).setText(Messages.onlyOneSubfolderMessage);
         new Label(container, SWT.NONE).setText("");
+
         final Composite placeholderComp2 = new Composite(container, SWT.NONE);
         placeholderComp2.setLayout(new GridLayout(2, false));
-        final Combo placeholderCombo2 = new Combo(placeholderComp2, SWT.READ_ONLY);
-        final Button insertButton2 = new Button(placeholderComp2, SWT.PUSH);
-        insertButton2.setText("Insert");
-        placeholderCombo2.setItems(OutputWriterComponentConstants.WORDLIST);
-        placeholderCombo2.select(0);
-        insertButton2.addSelectionListener(new SelectionListener() {
+        placeholderComp2.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
+        final Combo placeholderCombo2 =
+            OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp2, OutputWriterComponentConstants.WORDLIST);
+        final Button insertButton2 =
+            OutputWriterGuiUtils.createPlaceholderInsertButton(placeholderComp2, placeholderCombo2, additionalFolder);
 
-            @Override
-            public void widgetSelected(SelectionEvent arg0) {
-                int positionbuffer = additionalFolder.getCaretPosition();
-                String word = placeholderCombo2.getText();
-                additionalFolder.insert(word);
-                if (additionalFolder.getText().length() >= (positionbuffer + word.length())) {
-                    additionalFolder.setSelection(positionbuffer + word.length());
-                }
-                additionalFolder.forceFocus();
-            }
-
-            @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-                widgetDefaultSelected(arg0);
-            }
-        });
+        if (directoryCombo.getSelectionIndex() > 0) {
+            additionalFolder.setEnabled(false);
+            placeholderCombo2.setEnabled(false);
+            insertButton2.setEnabled(false);
+        }
 
         directoryCombo.addSelectionListener(new SelectionListener() {
 
@@ -172,6 +170,14 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         additionalFolder.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         return result;
 
+    }
+
+    @Override
+    protected boolean validateMetaDataInputs() {
+        List<String> forbiddenFilenames = Arrays.asList(OutputWriterComponentConstants.PROBLEMATICFILENAMES_WIN);
+        hintLabel.setVisible(!comboDataType.getText().equals(DataType.FileReference.getDisplayName())
+            && !comboDataType.getText().equals(DataType.DirectoryReference.getDisplayName()));
+        return super.validateMetaDataInputs() && !forbiddenFilenames.contains(result.getText().toUpperCase());
     }
 
 }

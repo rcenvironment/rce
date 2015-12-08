@@ -16,7 +16,7 @@
 			<!-- XPathChooserView -->
          <propertySection
                tab="workflow.editor.tab.merger.XPathChooser"
-               class="de.rcenvironment.cpacs.gui.xpathchooser.XPathChooserPropertyView"
+               class="de.rcenvironment.core.gui.xpathchooser.XPathChooserPropertyView"
                id="workflow.editor.tab.merger.XPathChooser.Section"
                filter="de.rcenvironment.components.xml.merger.gui.XmlMergerComponentFilter">
          </propertySection>
@@ -49,7 +49,7 @@
             <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
+               label="Workflow Data"
                afterTab="workflow.editor.tab.merger.XPathChooser">
          </propertyTab>
         </propertyTabs>

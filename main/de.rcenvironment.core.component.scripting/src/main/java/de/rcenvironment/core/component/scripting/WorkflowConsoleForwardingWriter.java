@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 
-import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.scripting.python.PythonOutputWriter;
@@ -24,19 +24,24 @@ import de.rcenvironment.core.scripting.python.PythonOutputWriter;
  */
 public final class WorkflowConsoleForwardingWriter extends PythonOutputWriter {
 
-    private ComponentContext componentContext;
+    private static final String CONSOLE_ROW_TYPE_NOT_SUPPORTED = "Console row type not supported: ";
+
+    private ComponentLog componentLog;
 
     private final Type consoleType;
     
     private final CountDownLatch printingLinesFinishedLatch = new CountDownLatch(1);
 
-    public WorkflowConsoleForwardingWriter(Object lock, ComponentContext componentContext, ConsoleRow.Type type) {
-        this(lock, componentContext, type, null);
+    public WorkflowConsoleForwardingWriter(Object lock, ComponentLog componentLog, ConsoleRow.Type type) {
+        this(lock, componentLog, type, null);
     }
 
-    public WorkflowConsoleForwardingWriter(Object lock, ComponentContext componentContext, ConsoleRow.Type consoleType, File logFile) {
+    public WorkflowConsoleForwardingWriter(Object lock, ComponentLog componentLog, ConsoleRow.Type consoleType, File logFile) {
         super(lock, logFile);
-        this.componentContext = componentContext;
+        this.componentLog = componentLog;
+        if (consoleType != Type.TOOL_OUT && consoleType != Type.TOOL_ERROR) {
+            throw new IllegalArgumentException(CONSOLE_ROW_TYPE_NOT_SUPPORTED + consoleType);
+        }
         this.consoleType = consoleType;
     }
 
@@ -53,7 +58,7 @@ public final class WorkflowConsoleForwardingWriter extends PythonOutputWriter {
                 public void run() {
                     // set to null as the WorkflowConsoleForwardingWriter instance are hold by the Jython sript engine
                     // for any length of time
-                    componentContext = null;
+                    componentLog = null;
                 }
             });
         }
@@ -64,7 +69,16 @@ public final class WorkflowConsoleForwardingWriter extends PythonOutputWriter {
         if (line == null) {
             printingLinesFinishedLatch.countDown();
         } else {
-            componentContext.printConsoleLine(line, consoleType);
+            switch (consoleType) {
+            case TOOL_OUT:
+                componentLog.toolStdout(line);
+                break;
+            case TOOL_ERROR:
+                componentLog.toolStderr(line);
+                break;
+            default:
+                throw new IllegalArgumentException(CONSOLE_ROW_TYPE_NOT_SUPPORTED + consoleType);
+            }
         }
     }
     

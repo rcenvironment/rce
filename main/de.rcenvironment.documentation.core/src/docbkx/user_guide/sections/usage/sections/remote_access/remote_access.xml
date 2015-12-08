@@ -6,45 +6,18 @@
 		RCE's features (like network distribution, data management, logging, ...) when integrating
 		the application itself is not possible or desirable. For example, applications that are
 		based on frequent user interaction are not a good fit for being run as part of an automated
-		workflow, but may still want to use some of RCE's features.</para>
-	<para>This section describes the Remote Access feature from an end-user's perspective. Using
-		scripts and templates contained in the RCE distribution, this will guide you through the
-		creation of a simple example, which you can expand to build your own solutions.</para>
+		workflow, but may still want to use some of RCE's features. </para>
+	<para>This section describes how to publish tools or workflows such that they can be used via
+		Remote Access. It will guide you through the creation of a simple example, which you can
+		expand to build your own solutions. </para>
 	<sect2>
 		<title>Basic Concepts</title>
 		<para>The basic idea of the Remote Access interface is that the external application opens an SSH
 			connection to RCE, and initiates the tool or workflow execution via text commands. Input
-			and output data, as well as log files, are transfered using SCP. To demonstrate this
-			interface, and how to interact with it, example script files are provided for Windows
-			and Linux. This documentation explains how to set up and use these scripts.</para>
-		<para>Note that these scripts are not the Remote Access interface itself, but only prototype
-			examples of how to use it. Native command-line tools and system libraries (e.g. Windows
-			.dll and Linux .so files) are under development, and will be available soon.</para>
-	</sect2>
-	<sect2>
-		<title>Prerequisites</title>
-		<para>Except for RCE (and the Java installation it needs to run), you need just one more piece of
-			software to use the Remote Tool Access example. <phrase os="windows">On Windows, you
-				need to have "Putty" (an SSH client) installed on your system.</phrase>
-			<phrase os="linux">On Linux, the "sshpass" package is required. (This assumes that "ssh"
-				and "scp" commands are already present on the system.)</phrase></para>
-		<note>
-			<para os="windows">You can download Putty (free of charge) from
-					<uri>http://www.chiark.greenend.org.uk/~sgtatham/putty/</uri>. If you install it
-				into the default location, there is nothing more to do. If you choose a different
-				installation path, you need to adjust the Putty path in the run.bat file described
-				later.</para>
-			<para os="linux">To install the "sshpass" package, check if your Linux distribution's package
-				manager provides it. On Debian, Ubuntu or Mint systems, for example, you can install
-				it by running the command <code>sudo apt-get install sshpass</code> in a terminal.
-				On other distributions, like CentOS or SUSE, you may need to compile and install it
-				from source. To do so, download the source from
-					<uri>http://sourceforge.net/projects/sshpass/files/sshpass/1.05/</uri>, unpack
-				it, and run the standard <code>./configure &amp;&amp; make &amp;&amp; make
-					install</code> sequence as root. (Please note that these steps are only required
-				for the shell script examples to work. It is not required for the Remote Access
-				interface itself.)</para>
-		</note>
+			and output data, as well as log files, are transfered using SCP. For using the
+			integrated tools and workflows remotely, a standalone remote access tool is currently
+			under development and will be released soon. The integrated tools can also be used in a
+			remote RCE instance via SSH connections.</para>
 	</sect2>
 	<sect2>
 		<title>Tool vs. Workflow Execution</title>
@@ -54,20 +27,19 @@
 	</sect2>
 	<sect2>
 		<title>Setting up the Single Tool Execution Example</title>
-		<para>These steps will guide you through the configuration of an integrated tool, and will show
-			you how to access it using the provided example scripts. Using this example, you will be
-			able to easily integrate your own text-based tools into RCE and invoke them using the
-			Remote Access interface.</para>
+		<para>These steps will guide you through the configuration of an integrated tool. Using this
+			example, you will be able to easily integrate your own text-based tools into RCE and
+			invoke them using the Remote Access interface.</para>
 		<para>
 			<itemizedlist>
 				<listitem>
-					<para>Download and unpack/install an RCE distribution (version 6.0.0 or higher).</para>
+					<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
 				</listitem>
 				<listitem>
-					<para>Run RCE and select the "Help > Configuration Information" menu option.
-						From the list of configuration examples, double-click "Remote Access Server"
-						to open it. Mark all text (Ctrl-A) and copy it to the clipboard
-						(Ctrl-C).</para>
+					<para>Use the configuration UI (described in the "Run RCE and select the "Help > Configuration
+						Information" menu option. From the list of configuration examples,
+						double-click "Remote Access Server" to open it. Mark all text (Ctrl-A) and
+						copy it to the clipboard (Ctrl-C).</para>
 				</listitem>
 				<listitem>
 					<para>Select the "Help > Open Configuration File" menu option, select all text
@@ -77,8 +49,9 @@
 					<para>Save the file, and select "File > Restart" to apply the new configuration.
 						The Remote Access SSH interface is now running, with a pre-configured SSH
 						account of "ra_demo", password "ra_demo".<note>
-							<para>IMPORTANT: "ra_demo" is just an example account for testing within
-								a secure network. Create a new account with a better password before
+							<para>IMPORTANT: "ra_demo" is just an example account for testing within a secure network.
+								Create a new account with a better password (for example using the
+								configuration UI described in the "Configuration" section) before
 								using the Remote Access interface in production. Publishing tools
 								using this default account is a potential security risk.</para>
 						</note></para>
@@ -122,57 +95,7 @@
 					</itemizedlist>
 				</listitem>
 				<listitem>
-					<para>You now have an example tool that can be accessed with the "Remote Access" feature. To do
-						so, navigate to the "examples<phrase os="linux">/</phrase><phrase
-							os="windows">\</phrase>remote_access" sub-folder in the RCE folder. Copy
-						the <phrase os="linux">run-tool.sh</phrase><phrase os="windows"
-							>run-tool.bat</phrase> file to an empty folder.</para>
-				</listitem>
-				<listitem>
-					<para>Create a folder named "input" next to the <phrase os="linux">run-tool.sh</phrase><phrase
-							os="windows">run-tool.bat</phrase> file. This folder will be uploaded
-						and made available to the integrated tool. Copy some test files into
-						it.</para>
-				</listitem>
-				<listitem>
-					<para>Open the <phrase os="linux">run-tool.sh</phrase><phrase os="windows"
-							>run-tool.bat</phrase> file in a text editor. Enter the tool id and
-						version you entered in the wizard in place of the "<code>###</code>"
-						placeholders. Optionally, set something for the parameter placeholder as
-						well. Save and exit the file.</para>
-				</listitem>
-				<listitem>
-					<para>Open a <phrase os="linux">terminal</phrase><phrase os="windows">command
-							prompt</phrase> in the current folder. <note os="windows">
-							<para>A simple way to do this in Windows 7 is to hold the Shift key and
-								right-click in an empty space of the current folder, and then select
-								"Open command window here" from the menu.</para>
-						</note></para>
-				</listitem>
-				<listitem>
-					<para><phrase os="linux">Make the shell script executable by running <code>chmod +x
-								run.sh</code> and then start the demo with
-								<code>./run-tool.sh</code></phrase><phrase os="windows">Enter
-								<code>run-tool</code> in the command prompt window and press Enter
-							to start the demo.</phrase> You should see some progress output
-						now.</para>
-				</listitem>
-				<listitem>
-					<para>When using the Remote Access feature for the first time, there may be a security warning
-						to verify the identity of the RCE instance you are connecting to. Confirm
-						the question by entering "y" and pressing Enter. This answer is saved, so
-						the question should not appear again for the same RCE instance.</para>
-				</listitem>
-				<listitem>
-					<para>After the tool run has finished, there should be two new folders next to the "input"
-						folder, named "output" and "logs". "output" contains files generated by the
-						integrated tool, while "logs" contains generall process information.
-						Currently, it should contain a single file named "workflow.log" which
-						provides detail information about the steps that were executed.<note>
-							<para>Make sure to delete or rename the "output" and "logs" folders
-								before running the Tool Access script again, as they will interfere
-								with the next run's downloads.</para>
-						</note></para>
+					<para>You now have an example tool that can be accessed with the "Remote Access" feature. </para>
 				</listitem>
 				<listitem>
 					<para>To get an impression of how this feature interacts with existing RCE features, you can
@@ -210,8 +133,7 @@
 		<para>
 			<itemizedlist>
 				<listitem>
-					<para>Download and unpack/install an RCE distribution (version 6.0.0 or
-						higher).</para>
+					<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
 				</listitem>
 				<listitem>
 					<para>Run RCE and select the "Help > Open Configuration Information" menu option. From the list
@@ -226,8 +148,9 @@
 					<para>Save the file, and select "File > Restart" to apply the new configuration.
 						The Remote Access SSH interface is now running, with a pre-configured SSH
 						account of "ra_demo", password "ra_demo".<note>
-							<para>IMPORTANT: "ra_demo" is just an example account for testing within
-								a secure network. Create a new account with a better password before
+							<para>IMPORTANT: "ra_demo" is just an example account for testing within a secure network.
+								Create a new account with a better password (for example using the
+								configuration UI described in the "Configuration" section) before
 								using the Remote Access interface in production. Publishing tools
 								using this default account is a potential security risk.</para>
 						</note></para>
@@ -297,62 +220,8 @@
 							myPublishId</code></para>
 				</listitem>
 				<listitem>
-					<para>You now have a workflow file that can be executed using the "Remote Access" feature. To
-						do so, navigate to the "examples<phrase os="linux">/</phrase><phrase
-							os="windows">\</phrase>remote_access" sub-folder in the RCE installation
-						folder. Copy the <phrase os="linux">run-wf.sh</phrase><phrase os="windows"
-							>run-wf.bat</phrase> file to an empty folder.<note>
-							<para>If you don't know where your RCE installation folder is, use "Help
-								> Open Configuration Information".</para>
-						</note></para>
-				</listitem>
-				<listitem>
-					<para>Create a folder named "input" next to the <phrase os="linux"
-							>run-wf.sh</phrase><phrase os="windows">run-wf.bat</phrase> file. This
-						folder will be uploaded and made available to the integrated tool. Copy some
-						test files into it.</para>
-				</listitem>
-				<listitem>
-					<para>Open the <phrase os="linux">run-wf.sh</phrase><phrase os="windows"
-							>run-wf.bat</phrase> file in a text editor. Enter the workflow's
-							<replaceable>&lt;id></replaceable> chosen above in place of the
-							"<code>###</code>" placeholders. Optionally, set something for the
-						parameter placeholder as well. Save and exit the file.</para>
-				</listitem>
-				<listitem>
-					<para>Open a <phrase os="linux">terminal</phrase><phrase os="windows">command
-							prompt</phrase> in the current folder. <note os="windows">
-							<para>A simple way to do this in Windows 7 is to hold the Shift key and
-								right-click in an empty space of the current folder, and then select
-								"Open command window here" from the menu.</para>
-						</note></para>
-				</listitem>
-				<listitem>
-					<para><phrase os="linux">Make the shell script executable by running <code>chmod
-								+x run-wf.sh</code> and then start the demo with
-								<code>./run-wf.sh</code></phrase><phrase os="windows">Enter
-								<code>run-wf</code> in the command prompt window and press Enter to
-							start the demo.</phrase> You should see some progress output now.</para>
-				</listitem>
-				<listitem>
-					<para>When using the Remote Access feature for the first time, there may be a security warning
-						to verify the identity of the RCE instance you are connecting to. Confirm
-						the question by entering "y" and pressing Enter. This answer is saved, so
-						the question should not appear again for the same RCE instance. If you
-						receive a warning that the server's SSH key has changed (e.g. after
-						reinstalling RCE), follow the command's instructions on how to reset the
-						stored key.</para>
-				</listitem>
-				<listitem>
-					<para>After the workflow run has finished, there should be two new folders next
-						to the "input" folder, named "output" and "logs". "output" contains files
-						generated by the integrated tool, while "logs" contains generall process
-						information. Currently, it should contain a single file named "workflow.log"
-						which provides detail information about the steps that were executed.<note>
-							<para>Make sure to delete or rename the "output" and "logs" folders
-								before running the Tool Access script again, as they will interfere
-								with the next run's downloads.</para>
-						</note></para>
+					<para>You now have a workflow file that can be executed using the "Remote Access"
+						feature.</para>
 				</listitem>
 				<listitem>
 					<para>To get an impression of how this feature interacts with existing RCE

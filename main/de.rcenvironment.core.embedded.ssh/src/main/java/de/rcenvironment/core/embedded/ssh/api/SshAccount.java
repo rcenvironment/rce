@@ -19,12 +19,17 @@ public interface SshAccount {
     /**
      * @return the login/username
      */
-    String getUsername();
+    String getLoginName();
 
     /**
-     * @return the login password
+     * @return the clear-text login password (deprecated, as this is insecure)
      */
     String getPassword();
+
+    /**
+     * @return the configured hash of the login password
+     */
+    String getPasswordHash();
 
     /**
      * @return the string representation of this account's public key (TODO document format)

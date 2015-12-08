@@ -34,20 +34,25 @@ public interface ComponentInstanceProperties {
      * @param listener the {@link PropertyChangeListener}
      */
     void removePropertyChangeListener(PropertyChangeListener listener);
-    
+
     /**
      * @return {@link EndpointDescriptionsManager} for inputs
      */
     EndpointDescriptionsManager getInputDescriptionsManager();
-    
+
     /**
      * @return {@link EndpointDescriptionsManager} for outputs
      */
     EndpointDescriptionsManager getOutputDescriptionsManager();
-    
+
     /**
      * @return {@link ConfigurationDescription}
      */
     ConfigurationDescription getConfigurationDescription();
-    
+
+    /**
+     * @return the component identifier concatenated with its version.
+     */
+    String getComponentIdentifierWithVersion();
+
 }

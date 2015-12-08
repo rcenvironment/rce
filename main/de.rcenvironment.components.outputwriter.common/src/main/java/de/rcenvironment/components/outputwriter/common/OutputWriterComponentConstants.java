@@ -15,6 +15,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
  * 
  * @author Hendrik Abbenhaus
  * @author Sascha Zur
+ * @author Brigitte Boden
  * 
  */
 public final class OutputWriterComponentConstants {
@@ -28,14 +29,29 @@ public final class OutputWriterComponentConstants {
     /** placeholder suffix. */
     public static final String PH_SUFFIX = "]";
 
+    /** placeholder delimiter. */
+    public static final String PH_DELIM = " - ";
+
+    /** inputname without prefix and suffix. */
+    public static final String INPUTNAME = "Input name";
+
     /** placeholder inputname. */
-    public static final String PH_INPUTNAME = PH_PREFIX + "Input name" + PH_SUFFIX;
+    public static final String PH_INPUTNAME = PH_PREFIX + INPUTNAME + PH_SUFFIX;
 
     /** placeholder workflowname. */
     public static final String PH_WORKFLOWNAME = PH_PREFIX + "Workflow name" + PH_SUFFIX;
 
     /** placeholder timestamp. */
-    public static final String PH_TIMESTAMP = PH_PREFIX + "Timestamp" + PH_SUFFIX;
+    public static final String TIMESTAMP = "Timestamp";
+
+    /** placeholder timestamp. */
+    public static final String PH_TIMESTAMP = PH_PREFIX + TIMESTAMP + PH_SUFFIX;
+
+    /** placeholder linebreak. */
+    public static final String LINEBREAK = "Linebreak";
+
+    /** placeholder linebreak. */
+    public static final String PH_LINEBREAK = PH_PREFIX + LINEBREAK + PH_SUFFIX;
 
     /** placeholder wf timestamp. */
     public static final String PH_WF_START_TS = PH_PREFIX + "Timestamp at workflow start" + PH_SUFFIX;
@@ -48,6 +64,9 @@ public final class OutputWriterComponentConstants {
 
     /** All Placeholder. */
     public static final String[] WORDLIST = new String[] { PH_COMP_NAME, PH_INPUTNAME, PH_TIMESTAMP, PH_WF_START_TS, PH_WORKFLOWNAME };
+
+    /** All Placeholders for Output Locations. */
+    public static final String[] WORDLIST_OUTPUT = new String[] { PH_COMP_NAME, PH_TIMESTAMP, PH_WF_START_TS, PH_WORKFLOWNAME };
 
     /** Constant. */
     public static final String ROOT_DISPLAY_NAME = PH_PREFIX + "root" + PH_SUFFIX;
@@ -85,40 +104,41 @@ public final class OutputWriterComponentConstants {
     /** Constant. */
     public static final String CONFIG_KEY_FILENAME = "filename";
 
-    /**
-     * type of owtreeitem.
-     * 
-     * @author Hendrik Abbenhaus
-     * 
-     * 
-     */
-    public enum Type {
-        /** Type file. */
-        FILE,
-        /** Type folder. */
-        FOLDER,
-        /** Type root. */
-        ROOT
-    };
+    /** Constant. */
+    public static final String CONFIG_KEY_OUTPUTLOCATIONS = "outputLocations";
+    
+    /** Constant. */
+    public static final String EP_IDENTIFIER = "dynamicAndGroup";
+    
+    /** Constant. */
+    public static final String DEFAULT_GROUP = "write";
 
     /**
-     * handle if file exist.
-     * 
-     * @author Hendrik Abbenhaus
-     * 
+     * How to handle an existing file.
+     *
      */
-    public enum Handle {
-        /** do nothing. */
-        DO_NOTHING,
-        /** override. */
-        OVERRIDE,
-        /** append. */
+    public enum HandleExistingFile {
+        /**
+         * Append to existing file.
+         */
         APPEND,
-        /** auto rename. */
+        /**
+         * Override existing file.
+         */
+        OVERRIDE,
+        /**
+         * Change filename of new file.
+         */
         AUTORENAME
     }
+
+    /**
+     * Default value for handle existing file (for Outputlocations).
+     */
+    public static final HandleExistingFile DEFAULT_HANDLE_EXISTING_FILE = HandleExistingFile.APPEND;
 
     private OutputWriterComponentConstants() {
 
     }
+
 }

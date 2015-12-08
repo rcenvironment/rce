@@ -35,6 +35,37 @@
         </para>
     </sect2>
     <sect2>
+        <title>Directory Structure for Integrated Tools</title>
+        <para>When executing an integrated tool, a certain directory structure is created in the
+            chosen working directory. This structure depends on the options you have chosen in the
+            integration wizard. The two options that matter are "Use a new working directory each
+            run" and "Tool copying behaviour".</para>
+        <para><inlinegraphic fileref="images/Folderstructure.png" width="400px"/></para>
+        <para><emphasis role="bold">Root Working Directory</emphasis>: This is the directory you
+            choose in the "Workflow Integration Wizard" as "Working Directory".</para>
+        <para><emphasis role="bold">Config Directory</emphasis>: In this directory, the
+            configuration file that may be created by the tool integration will be created by
+            default. The configuration files can be created from the properties that are defined for
+            the tool on the "Tool Properties" page.</para>
+        <para><emphasis role="bold">Input Directory</emphasis>: All inputs of type "File" and
+            "Directory" will be copied here. They will have a subdirectory that is named exactly as
+            the input's name (e.g. the input "x" of type "File" will be put into "Input
+            Directory/x/filename").</para>
+        <para><emphasis role="bold">Output Directory</emphasis>: All file and directory outputs from
+            the tool can be written into this directory. After that, you can use the placeholder for
+            this directory, to assign this outputs to RCE output endpoints in the post execution
+            script. </para>
+        <para><emphasis role="bold">Tool Directory</emphasis>: This is the directory, where the
+            actual tool is. If the tool should not be copied, it will be exactly the same directory
+            that you choose, otherwise it will be the same as the chosen directory but copied to the
+            working directory.</para>
+        <para><emphasis role="bold">Working Directory</emphasis>: A working directory is always the
+            location, where all the other directories will be created. If the "Use a new working
+            directory on each run" option is disabled, this will always be the same as the "Root
+            Working Directory". Otherwise, a new directory is created each run (the name will be the
+            run number) and is the working directory for the run.</para>
+    </sect2>
+    <sect2>
         <title>Copying of Integrated Tools</title>
         <para> When a component is created in the integration wizard, a configuration file is
             created.</para>

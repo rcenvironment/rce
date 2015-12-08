@@ -9,17 +9,13 @@
 package de.rcenvironment.core.component.execution.internal;
 
 import java.lang.ref.WeakReference;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.collections4.map.LRUMap;
-import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionControllerService;
@@ -27,6 +23,9 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionException
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionService;
 import de.rcenvironment.core.component.execution.api.ComponentState;
+import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
+import de.rcenvironment.core.component.execution.api.RemotableComponentExecutionControllerService;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link ComponentExecutionService}.
@@ -37,131 +36,81 @@ public class ComponentExecutionServiceImpl implements ComponentExecutionService 
 
     private static final int CACHE_SIZE = 20;
     
-    private BundleContext bundleContext;
-    
     private CommunicationService communicationService;
     
-    private PlatformService platformService;
-
-    private Map<String, WeakReference<ComponentExecutionControllerService>> executionControllerServices = new LRUMap<>(CACHE_SIZE);
+    private ComponentExecutionControllerService cmpExeCtrlService;
     
-    protected void activate(BundleContext context) {
-        bundleContext = context;
-    }
+    private Map<String, WeakReference<RemotableComponentExecutionControllerService>> executionControllerServices = new LRUMap<>(CACHE_SIZE);
     
     @Override
-    public String init(ComponentExecutionContext executionContext, String authToken, Long referenceTimestamp) throws CommunicationException,
-        ComponentExecutionException {
-        
-        try {
-            return getExecutionControllerService(executionContext.getNodeId())
+    public String init(ComponentExecutionContext executionContext, String authToken, Long referenceTimestamp)
+        throws RemoteOperationException, ComponentExecutionException {
+        return getExecutionControllerService(executionContext.getNodeId())
                 .createExecutionController(executionContext, authToken, referenceTimestamp);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-            // won't be reached as #handleUndeclaredThrowableException always throws an exception
-            return null;
-        }
-        
     }
     
     @Override
-    public void pause(String executionId, NodeIdentifier node) throws CommunicationException {
-        try {
-            getExecutionControllerService(node).performPause(executionId);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-        }
+    public void pause(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(node).performPause(executionId);
     }
 
     @Override
-    public void resume(String executionId, NodeIdentifier node) throws CommunicationException {
-        try {
-            getExecutionControllerService(node).performResume(executionId);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-        }
+    public void resume(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(node).performResume(executionId);
     }
 
     @Override
-    public void cancel(String executionId, NodeIdentifier node) throws CommunicationException {
-        try {
-            getExecutionControllerService(node).performCancel(executionId);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-        }
+    public void cancel(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(node).performCancel(executionId);
     }
 
     @Override
-    public void dispose(String executionId, NodeIdentifier node) throws CommunicationException {
-        try {
-            getExecutionControllerService(node).performDispose(executionId);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-        }
+    public void dispose(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(node).performDispose(executionId);
     }
 
     @Override
-    public void prepare(String executionId, NodeIdentifier node) throws CommunicationException {
-        try {
-            getExecutionControllerService(node).performPrepare(executionId);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-        }
+    public void prepare(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(node).performPrepare(executionId);
     }
     
     @Override
-    public void start(String executionId, NodeIdentifier node) throws CommunicationException {
-        try {
-            getExecutionControllerService(node).performStart(executionId);
-        } catch (UndeclaredThrowableException e) {
-            handleUndeclaredThrowableException(e);
-        }
-    }
-    
-    private ComponentExecutionControllerService getExecutionControllerService(NodeIdentifier node) {
-        ComponentExecutionControllerService compCtrlService = null;
-        synchronized (executionControllerServices) {
-            if (executionControllerServices.containsKey(node.getIdString())) {
-                compCtrlService = executionControllerServices.get(node.getIdString()).get();
-            }
-            if (compCtrlService == null) {
-                compCtrlService = (ComponentExecutionControllerService) communicationService.getService(
-                    ComponentExecutionControllerService.class, node, bundleContext);
-                executionControllerServices.put(node.getIdString(),
-                    new WeakReference<ComponentExecutionControllerService>(compCtrlService));
-            }
-        }
-        return compCtrlService;
-    }
-    
-    private void handleUndeclaredThrowableException(UndeclaredThrowableException e) throws CommunicationException {
-        if (e.getCause() instanceof CommunicationException) {
-            throw (CommunicationException) e.getCause();
-        } else if (e.getCause() instanceof RuntimeException) {
-            throw (RuntimeException) e.getCause();
-        } else {
-            // should not happen as checked exceptions are thrown directly
-            throw e;
-        }
+    public void start(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+        getExecutionControllerService(node).performStart(executionId);
     }
     
     @Override
-    public ComponentState getComponentState(String executionId, NodeIdentifier node) throws CommunicationException {
+    public ComponentState getComponentState(String executionId, NodeIdentifier node) throws ExecutionControllerException,
+        RemoteOperationException {
         return getExecutionControllerService(node).getComponentState(executionId);
     }
 
     @Override
     public Set<ComponentExecutionInformation> getLocalComponentExecutionInformations() {
-        return new HashSet<ComponentExecutionInformation>(getExecutionControllerService(platformService.getLocalNodeId())
-            .getComponentExecutionInformations());
+        return new HashSet<ComponentExecutionInformation>(cmpExeCtrlService.getComponentExecutionInformations());
+    }
+    
+    private RemotableComponentExecutionControllerService getExecutionControllerService(NodeIdentifier node) {
+        RemotableComponentExecutionControllerService compCtrlService = null;
+        synchronized (executionControllerServices) {
+            if (executionControllerServices.containsKey(node.getIdString())) {
+                compCtrlService = executionControllerServices.get(node.getIdString()).get();
+            }
+            if (compCtrlService == null) {
+                compCtrlService = communicationService.getRemotableService(RemotableComponentExecutionControllerService.class, node);
+                executionControllerServices.put(node.getIdString(),
+                    new WeakReference<RemotableComponentExecutionControllerService>(compCtrlService));
+            }
+        }
+        return compCtrlService;
     }
 
     protected void bindCommunicationService(CommunicationService newService) {
         communicationService = newService;
     }
-
-    protected void bindPlatformService(PlatformService newService) {
-        platformService = newService;
+    
+    protected void bindComponentExecutionControllerService(ComponentExecutionControllerService newService) {
+        cmpExeCtrlService = newService;
     }
 
 }

@@ -42,14 +42,19 @@ public interface EndpointDefinitionsProvider {
     EndpointDefinition getDynamicEndpointDefinition(String id);
     
     /**
-     * @return set of {@link EndpointGroupDefinition}s
+     * @return set of dynamic {@link EndpointGroupDefinition}s
      */
-    Set<EndpointGroupDefinition> getEndpointGroups();
+    Set<EndpointGroupDefinition> getDynamicEndpointGroupDefinitions();
+    
+    /**
+     * @return set of static {@link EndpointGroupDefinition}s
+     */
+    Set<EndpointGroupDefinition> getStaticEndpointGroupDefinitions();
 
     /**
-     * @param groupName name of the endpoint group
-     * @return {@link EndpointGroupDefinition} with given group name of <code>null</code> if there is none
+     * @param name name of the dynamic endpoint group
+     * @return {@link EndpointGroupDefinition} with given group name or <code>null</code> if there is none
      */
-    EndpointGroupDefinition getEndpointGroup(String groupName);
+    EndpointGroupDefinition getDynamicEndpointGroupDefinition(String name);
 
 }

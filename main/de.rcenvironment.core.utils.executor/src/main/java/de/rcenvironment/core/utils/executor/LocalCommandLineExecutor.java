@@ -22,6 +22,9 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+
 /**
  * A {@link CommandLineExecutor} that executes the given commands locally.
  * 
@@ -95,8 +98,10 @@ public class LocalCommandLineExecutor extends AbstractCommandLineExecutor implem
 
         if (stdinStream != null) {
             final OutputStream stdin = process.getOutputStream();
-            new Thread() {
+            SharedThreadPool.getInstance().execute(new Runnable() {
+
                 @Override
+                @TaskDescription("LocalCommandLineExecutor input stream pipe")
                 public void run() {
                     try {
                         IOUtils.copy(stdinStream, stdin);
@@ -106,7 +111,7 @@ public class LocalCommandLineExecutor extends AbstractCommandLineExecutor implem
                         log.error("Error writing STDIN stream", e);
                     }
                 };
-            }.start();
+            });
         }
     }
 

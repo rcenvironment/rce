@@ -4,112 +4,120 @@
     <title>Developing a new Component</title>
     <sect2 id="about_components">
         <title>Component Bundle Setup</title>
-        <para>A RCE component consists of up to three OSGi bundles named the
+        <para>An RCE component usually consists of up to three OSGi bundles: named the
                 <emphasis>execution</emphasis>, <emphasis>gui</emphasis>, and
-                <emphasis>common</emphasis> bundles. The execution bundle is always present. The gui
-            bundle can be ommitted if the component does not provide a GUI. The common bundle is
-            optional and holds code or resources that are used by both the execution and gui
-            bundles.</para>
+                <emphasis>common</emphasis> bundles:</para>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>Execution: Contains the component's lifecycle.</para>
+                </listitem>
+                <listitem>
+                    <para>GUI: Contains the user interface to configure the component. If a
+                        component does not require a user interface this bundle can be
+                        ommitted.</para>
+                </listitem>
+                <listitem>
+                    <para>Common: Contains code resources which are used by both the execution and
+                        the GUI bundle. This bundle is optional, too.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
         <para>Note that in the context of Eclipse, OSGi bundles are called <emphasis>Plug-In
                 Projects</emphasis>, and can be extended with Eclipse-specific features. In
             practice, the terms <emphasis>bundle</emphasis> and <emphasis>plugin</emphasis> are
             often used interchangeably.</para>
     </sect2>
     <sect2 id="new_execution_plugin">
-        <title>Creating the "execution" Bundle</title>
+        <title>Creating the <emphasis>execution</emphasis> Bundle</title>
         <para>To start developing your first component, generate a new Eclipse Plug-In Project by
-            selecting the corresponding option from menu bar: </para>
+            selecting the corresponding item in the menu bar: </para>
         <para><inlinegraphic fileref="images/new_plugin.png" scale="70" align="center"/></para>
-        <para>Fill in the dialog properties to configure the plug-in project. The name of this new
-            project should match the RCE naming conventions by starting with
-            "de.rcenvironment.components." and ending with ".execution"; so the full name of the
+        <para>Fill in the dialog properties to configure the plug-in project. The name of the new
+            project should match the RCE naming conventions. That means it should start with
+            "de.rcenvironment.components." and end with ".execution"; so the full name of the
             execution bundle should be
-                "de.rcenvironment.components.<replaceable>yourcomponentid</replaceable>.execution",
-            where <replaceable>yourcomponentid</replaceable> is the id of your new component. Change
-            the property "Source folder" to "src/main/java" and "Output folder" to "target". Proceed
-            by clicking "Next >".</para>
+                "de.rcenvironment.components.<replaceable>&lt;yourcomponentid></replaceable>.execution",
+            where <replaceable>&lt;yourcomponentid></replaceable> is the ID of your new component.
+            Change the property "Source folder" to "src/main/java" and "Output folder" to "target".
+            Proceed by clicking "Next >".</para>
         <para><inlinegraphic fileref="images/new_project_first_page.png" scale="70"/></para>
         <para>Now specify the version of your component; you can choose this freely. The name of
             this plugin should always be "RCE Components
-                <replaceable>YourComponentName</replaceable> Execution" for the execution bundle,
-            where <replaceable>YourComponentName</replaceable> again is your component's display
-            name. Press the "Finish" button to complete the general configuration of this
-            plugin.</para>
+                <replaceable>&lt;YourComponentName></replaceable> Execution" for the execution
+            bundle, where <replaceable>&lt;YourComponentName></replaceable> again is your
+            component's display name. Press the "Finish" button to complete the general
+            configuration of this plugin.</para>
         <para>
             <inlinegraphic fileref="images/new_project_second_page.png" scale="70"/></para>
-        <para>After Eclipse creates the configured structure of folders, the plugin is not ready for
-            being a RCE component plugin yet. </para>
-        <para>Create a folder called "resources" in your project. If you have icon files for your
-            component, put them into this folder as icon files (PNG, JPG, BMP or GIF) in 16×16 and
-            32×32 pixels resolution. Name these icons
-            "<replaceable>yourcomponentname</replaceable>16.png" and
-                "<replaceable>yourcomponentname</replaceable>32.png". Also create an "input.json",
-            an "output.json" and a "configuration.json" file in this folder, where you later define
-            the inputs, outputs and configuration of your component.</para>
-        <para>As a start, the files can have the default content, which in the case of "input.json"
-            and "output.json" files is:</para>
-        <para><code>{ }</code></para>
-        <para>and for the "configuration.json" file is:</para>
-        <para><code>{ "configuration":[ ] }</code></para>
+        <para>Eclipse now creates the configured structure of folders, but the plugin is not ready
+            for being used as an RCE component yet. </para>
+        <para>Create a folder called "resources" in the project you just created. If you have icon
+            files for your component, put them into this folder. Supported formats are PNG, JPG, BMP
+            and GIF. We recommend a resolution of 16×16 and 32×32 pixels. Conventionally these icons
+            are namend "<replaceable>&lt;yourcomponentname></replaceable>16.png" and
+                "<replaceable>&lt;yourcomponentname></replaceable>32.png". Also create an
+            "inputs.json", an "outputs.json" and a "configuration.json" file in the resource folder
+            you just created, where you later define the inputs, outputs and configuration of your
+            component.</para>
+        <para>As a start, the files can contain an empty JSON object as content. So it suffices to
+            enter the following text in these three files:</para>
+        <programlisting><![CDATA[{ }]]></programlisting>
+        <para>Note that the files must be present and must not be empty.</para>
         <para>Now create a Java class in your source folder by right-clicking on "src/main/java" in
             the Eclipse Project Explorer. As this will be the central class of your component, give
-            it a name like "<replaceable>YourComponentName</replaceable>Component.java"
-                ("<replaceable>YourComponentName</replaceable>" is your camel-cased component id,
-            and then add "Component.java"). This Java class must inherit the
-                <code>DefaultComponent</code> class and override these two functions:</para>
-        <para><code>@Override</code></para>
-            <para><code>public void onPrepare(ComponentInstanceInformation incCompInstanceInformation) throws ComponentException {</code></para>
-                <para><code>super.onPrepare(incCompInstanceInformation); // this super must be called because of the implementation of the default component.</code></para>
-                    <para><code>}</code></para>
-        
-        <para><code>@Override</code></para>
-        <para><code>public boolean runStep(Input newInput, Map&lt;String, Queue&lt;Input>> inputValues) throws ComponentException {</code></para>
-                <para><code>return true;</code></para>
-                    <para><code>}</code></para>
-        <para>The <code>onPrepare</code> function is called once when the workflow starts. Among
-            other things, this is the place where configuration values are loaded into the Java
-            component. </para>
+            it a name like "<replaceable>&lt;YourComponentName></replaceable>Component.java"
+                (<replaceable>&lt;YourComponentName></replaceable> is your component's display name
+            in camel case, and then add "Component.java"). This Java class must extend
+                <code>de.rcenvironment.core.component.model.spi.DefaultComponent</code>. </para>
+        <para>To implement the functionality of your component override the according methods. The
+            most basic methods to be overriden are:</para>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para>processInput: Is called whenever the component receives a new input. In
+                        loops this method is called multiple times.</para>
+                </listitem>
+                <listitem>
+                    <para>start: Is called at component start once. Initializations can be placed
+                        here.</para>
+                </listitem>
+                <listitem>
+                    <para>dispose: Is called when the component disposes. Clean up methods can be
+                        placed here to release resources.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
         <para>Now create a folder called "<code>OSGI-INF</code>" in your project folder, by using
             the standard Eclipse function (File->New->Folder). This folder will contain all OSGi
             service definitions for your project. One way to create an OSGi service definition is
-            creating a file "<replaceable>yourComponentName</replaceable>.xml"
-                ("<replaceable>yourComponentName</replaceable>" is your own component name again)
-            and copying the following source code into it. Replace all occurences of
-                "<replaceable>yourComponentName</replaceable>" with the display name of your
-            component, and all occurences of "<replaceable>yourcomponentname</replaceable>" with its
-            id:</para>
-        <para><code>&lt;?xml version="1.0" encoding="UTF-8"?> </code></para>
-        <para><code>&lt;scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"
-                factory="de.rcenvironment.rce.component"
-                    name="<replaceable>YourComponentName"></replaceable></code></para>
-        <para><code>&lt;implementation
-                    class="de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.execution.<replaceable>yourcomponentname</replaceable>Component "/>
-            </code></para>
-        <para><code>&lt;service></code></para>
-        <para><code>&lt;provide interface="de.rcenvironment.core.component.registration.api.Registerable"/>
-            </code></para>
-        <para><code>&lt;/service> </code></para>
-        <para><code>&lt;property name="rce.component.class" type="String"
-                    value="de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.execution.<replaceable>yourcomponentname</replaceable>Component"/>
-            </code></para>
-        <para><code>&lt;property name="rce.component.version" type="String" value="1.0"/>
-            </code></para>
-        <para><code>&lt;property name="rce.component.name" type="String" value="<replaceable>YourComponentName</replaceable>"/> </code></para>
-        <para><code>&lt;property name="rce.component.group" type="String" value="Test"/>
-            </code></para>
-        <para><code>&lt;property name="rce.component.icon-16" type="String"
-                    value="/resources/<replaceable>yourcomponentname</replaceable>16.<replaceable>png</replaceable>"/>
-            </code></para>
-        <para><code>&lt;property name="rce.component.icon-32" type="String"
-                    value="/resources/<replaceable>yourcomponentname</replaceable>32.<replaceable>png</replaceable>"/>
-            </code></para>
-        <para><code>&lt;property name="rce.component.inputs" type="String"
-                value="/resources/inputs.json"/> </code></para>
-        <para><code>&lt;property name="rce.component.outputs" type="String"
-                value="/resources/outputs.json"/> </code></para>
-        <para><code>&lt;property name="rce.component.configuration" type="String"
-                value="/resources/configuration.json"/> </code></para>
-        <para><code>&lt;/scr:component></code></para>
+            creating a file "<replaceable>&lt;yourComponentName></replaceable>.xml"
+                ("<replaceable>&lt;yourComponentName></replaceable>" is your own component's display
+            name again) and copying the following source code into it. Replace all occurences of
+                "<replaceable>&lt;yourComponentName></replaceable>" with the display name of your
+            component, and all occurences of "<replaceable>&lt;yourcomponentname></replaceable>"
+            with its id:</para>
+        <programlisting language="xml"><![CDATA[
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0"
+	factory="de.rcenvironment.rce.component" name="<yourcomponentname>">
+	<implementation class="de.rcenvironment.components.<yourcomponentname>.
+	execution.<yourComponentName>Component" />
+	<service>
+		<provide interface="de.rcenvironment.core.component.registration.api.Registerable" />
+	</service>
+	<property name="rce.component.class" type="String" value="de.rcenvironment.components.
+	<yourcomponentname>.execution.<yourComponentName>Component" />
+	<property name="rce.component.version" type="String" value="1.0" />
+	<property name="rce.component.name" type="String" value="<yourcomponentname>" />
+	<property name="rce.component.group" type="String" value="Test" />
+	<property name="rce.component.icon-16" type="String" value="/resources/yourcomponentname16.png" />
+	<property name="rce.component.icon-32" type="String" value="/resources/yourcomponentname32.png" />
+	<property name="rce.component.inputs" type="String" value="/resources/inputs.json" />
+	<property name="rce.component.outputs" type="String" value="/resources/outputs.json" />
+	<property name="rce.component.configuration" type="String" value="/resources/configuration.json" />
+</scr:component>
+        ]]></programlisting>
         <para>Some of these definitions are optional or refer to elements that do not exist yet. The
             first lines provide the general XML header, followed by the OSGi root element. The
                 <code>factory</code> attribute is the part that links this definition into the RCE
@@ -127,9 +135,17 @@
         <para>The created plugin project automatically contains a folder named "META-INF". Edit the
             "MANIFEST.INF" file in this directory by double-clicking it and selecting the
             "MANIFEST.MF" tab. Add the following lines to it and save:</para>
-        <para><code>Service-Component: OSGI-INF/*.xml</code></para>
-        <para><code>RCE-Component: true</code></para>
-        <para><code>Export-Package: de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.execution</code></para>
+        <programlisting language="xml"><![CDATA[       
+Service-Component: OSGI-INF/*.xml
+RCE-Component: true
+Export-Package: de.rcenvironment.components.<yourcomponentname>.execution
+        ]]></programlisting>
+        <para> Note that "Export Package: " and the first name have to be in the same line. A second
+            element would be added in the next line with a leading space. Moreover the file must end
+            with a linebreak. </para>
+        <para>Also note that errors containing "inconsistent hierarchies" can be solved by adding
+            the required referenced packages in the Import-Package property analogous to the
+            Export-Package property.</para>
         <para>The first line tells the OSGi framework where to look for the component declaration we
             created before. The second line declares this plug-in as an RCE component. The last line
             makes the package of your main class visible to other bundles, which is required so RCE
@@ -138,8 +154,13 @@
         <para>Next, edit the "build.properties" file in the main folder of your plugin project. This
             file should always look the same for the execution bundles and can be copied from the
             sample component. It should look like this: </para>
-        <para><code> source.. = src/main/java</code></para>
-        <para><code> bin.includes = META-INF/,\ OSGI-INF/,\ resources/,\ . </code></para>
+        <programlisting language="xml"><![CDATA[       
+ source.. = src/main/java
+ bin.includes = META-INF/,\ 
+ OSGI-INF/,\ 
+ resources/,\ 
+ . 
+        ]]></programlisting>
         <para>After this step, the plugin configuration is complete. It should look like this in the
             Eclipse Package Explorer:</para>
         <para><inlinegraphic fileref="images/new_project_all_config.png" scale="60"/></para>
@@ -148,98 +169,172 @@
             "OSGI-INF/..." XML file.</para>
     </sect2>
     <sect2 id="new_common_plugin">
-        <title>Creating a "common" Bundle</title>
-        <para>Creating the common Bundle is not as complex as creating an execution Bundle, as it
-            will only provide shared code. Generate a new Eclipse Plug-In Project by selecting the
-            same option as in the "execution" bundle section. The project name should follow the RCE
-            naming conventions, simular to the execution bundle but ending with ".common" instead of
+        <title>Creating a <emphasis>common</emphasis> Bundle</title>
+        <para>Generate a new Eclipse Plug-In Project by selecting the same option as in the
+            "execution" bundle section above. The project name should follow the RCE naming
+            conventions, similar to the execution bundle but ending with ".common" instead of
             ".execution".</para>
-        <para>Add the Java classes you want to create to the source folder, within a package with
-            the same name as the bundle's name (or sub-packages of it). For holding shared
-            constants, the usual convention is a Java class named
-                "<replaceable>YourComponentName</replaceable>ComponentConstants.java". Create this
-            class, and add your first constant for defining the component id: </para>
-        <para><code>public static final String COMPONENT_ID =
-                    "de.rcenvironment.components.<replaceable>>yourcomponentname</replaceable>.execution.<replaceable>YourComponentName</replaceable>Component";</code></para>
+        <para>Add the Java classes to the source folder, within a package with the same name as the
+            bundle's name (or sub-packages of it). For holding shared constants, the usual
+            convention is a Java class named
+            "<replaceable>&lt;YourComponentName></replaceable>ComponentConstants.java". Create this
+            class, and add your first constant for defining the component id and adapt the
+            placeholders in the usual manner: <programlisting><![CDATA[    
+public static final String COMPONENT_ID = 
+    "de.rcenvironment.components.<yourcomponentname>.
+        execution.<YourComponentName>Component";
+            ]]></programlisting>
+        </para>
         <para>In order to keep track of your constants, it's advisable to give all constants a short
             comment.</para>
         <para>To complete the setup, add the names of the all Java packages you created to the
             "Export-Package" attribute in the source code of the META-INF/MANIFEST.MF file.
             Example:</para>
-        <para><code>Export-Package: de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.common</code></para>
+        <programlisting><![CDATA[    
+Export-Package: de.rcenvironment.components.<yourcomponentname>.common
+            ]]></programlisting>
     </sect2>
     <sect2 id="new_gui_plugin">
-        <title>Creating a "gui" Bundle</title>
-        <para>To add a graphical user interface (GUI) for your component, create a "gui" bundle. Start by
-            generating a new Eclipse Plug-In Project, as you did for the "execution" and "common"
-            bundle.</para> 
-        <para>Each component GUI must provide a <emphasis>component filter</emphasis> to check
-            whether it is the proper GUI for a given component. Create a Java class in the source
-            folder, again using the bundle name as the root package name and let it extend from <code>de.rcenvironment.rce.gui.workflow.editor.properties.ComponentFilter</code>. To define the component filter,
-            implement following function:</para>
-        <para><code>@Override</code></para>
-        <para><code>public boolean filterComponentName(String componentId) {</code></para> 
-        <para><code>return componentId.startsWith(<replaceable>YourComponentName</replaceable>ComponentConstants.COMPONENT_ID);</code></para>
-        <para><code>}</code></para>
+        <title>Creating a <emphasis>gui</emphasis> Bundle</title>
+        <para>To add a graphical user interface for your component, create a "gui" bundle. Start by
+            generating a new blank Eclipse Plug-In Project, as you did for the "execution" and
+            "common" bundle.</para>
+        <para>The graphical user interface is shown in the properties tab which is usually shown at
+            the bottom of RCE when the component is focused in the workflow editor.</para>
+        <para>Custom sections can be defined. Therefore create a package called like the project
+            containing it. Inside the package create a class called
+                "<replaceable>&lt;YourComponentName></replaceable>Section.java" which extends
+                <code>de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodePropertySection</code>.
+            Override the method <code>createCompositeContent</code> to fill the GUI. </para>
+        <para>Each component GUI must provide a <emphasis>Component Filter</emphasis>. It is used to
+            determine which sections the GUI for the respective component consists of. Inside the
+            package you just created add a class called
+                "<replaceable>&lt;YourComponentName></replaceable>ComponentFilter.java". extending
+                <code>de.rcenvironment.core.gui.workflow.editor.properties.ComponentFilter</code>.
+            To define the component filter, override the following method:</para>
+        <programlisting><![CDATA[    
+@Override
+public boolean filterComponentName(String componentId) {
+return componentId.startsWith(YourComponentNameComponentConstants.COMPONENT_ID);
+}
+            ]]></programlisting>
         <para>As usual, change <replaceable>YourComponentName</replaceable> to the name of your own
             component. This method will only return <code>true</code> for the component id used in
             the "execution" bundle, so it will only be shown for that component.</para>
-        <para>To provide GUI elements, add a new file called "plugin.xml" to the root of the project
-            folder. Copy the following code into it:</para>
-        <para><code>&lt;?xml version="1.0" encoding="UTF-8"?> &lt;?eclipse version="3.2"?></code></para>
-        <para><code>&lt;plugin> </code></para>
-        <para><code>&lt;!-- Property Sections --> </code></para>
-        <para><code>&lt;extension point="org.eclipse.ui.views.properties.tabbed.propertySections"></code></para>
-        <para><code>&lt;propertySections contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor"></code></para>
-        
-        <para>For each tab that you would like to add to the "Properties" view, add the following
-            entry. Make sure that the "filter" attribute contains the correct path of the component
-            filter class created above:</para>
-        <para><code>&lt;propertySection tab="workflow.editor.tab.<replaceable>yourcomponentname</replaceable>.Propertys"</code></para>
-        <para><code>class="de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.gui.ComponentSection"</code></para>
-        <para><code>id="workflow.editor.tab.Properties.Section.Propertys"</code></para>
-        <para><code>filter="de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.gui.<replaceable>YourComponentName</replaceable>ComponentFilter"</code></para>
-        <para><code>enablesFor="1">&lt;/propertySection></code></para>
-        
-        <para>To create a Input/Output selection GUI, you can use a default class:</para>
-        <para><code>&lt;propertySection tab="workflow.editor.tab.<replaceable>yourcomponentname</replaceable>.InOutputs"</code></para>
-        <para><code>class="de.rcenvironment.core.gui.workflow.editor.properties.DefaultEndpointPropertySection"</code></para>
-        <para><code>id="workflow.editor.tab.Properties.Section.InputsOutputs" </code></para>
-        <para><code>filter="de.rcenvironment.components.<replaceable>yourcomponentname</replaceable>.gui.<replaceable>YourComponentName</replaceable>ComponentFilter"</code></para>
-        <para><code>enablesFor="1">&lt;/propertySection></code></para>
-        
-        <para>Remember to make the file valid XML by closing the definition blocks with the
+        <para>To provide sections as GUI elements, add a new file called "plugin.xml" to the root of
+            the project folder. It is common to have a section where you can manage inputs and
+            outputs and another section where component specific GUI elements are located. The
+            following code demonstrates this and can be pasted into the plugin.xml you just created.
+            As usual, adapt the component names and IDs accordingly. It is explained below:</para>
+        <programlisting><![CDATA[    
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.2"?>
+<plugin>
+
+   <!-- Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertySections">
+      <propertySections contributorId=
+      "de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+      
+         <propertySection
+               tab=
+               "workflow.editor.tab.<yourcomponentid>.General"
+               class=
+               "de.rcenvironment.components.<yourcomponentid>.
+               gui.<yourComponentName>Section"
+               id=
+               "workflow.editor.tab.Properties.Section.General"
+               filter=
+               "de.rcenvironment.components.<yourcomponentid>.
+               gui.<yourComponentName>ComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         
+         <propertySection
+               tab=
+               "workflow.editor.tab.<yourcomponentid>.InputsOutputs"
+               class=
+               "de.rcenvironment.core.gui.workflow.editor.
+               properties.DefaultEndpointPropertySection"
+               id=
+               "workflow.editor.tab.Properties.Section.InputsOutputs"
+               filter=
+               "de.rcenvironment.components.<yourcomponentid>.
+               gui.<yourComponentName>ComponentFilter"
+               enablesFor=
+               "1">
+         </propertySection>
+         
+      </propertySections>
+   </extension>
+   
+   <!-- Register Property Sections -->
+   <extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs">
+      <propertyTabs contributorId=
+      "de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+         
+         <propertyTab 
+         	   label="General"
+               category="default"
+               id="workflow.editor.tab.<yourcomponentid>.General">
+         </propertyTab>
+         
+         <propertyTab
+               label="Inputs/Outputs"
+               category="default"
+               id="workflow.editor.tab.<yourcomponentid>.InputsOutputs">
+         </propertyTab>
+
+     </propertyTabs>
+   </extension>
+
+</plugin>
+            ]]></programlisting>
+        <para>For each section that you would like to add to the "Properties" view, add the entries
+            like you can see in the propertySection and the propertyTab parts. Make sure that the
+            "filter" attribute contains the correct path of the component filter class created
+            above. The first entry in property section and property tab adds a general custom
+            section to the GUI while the second entry adds a section to manage inputs and
+            outputs.</para>
+        <para>Remember to keep the file valid by closing the definition blocks with the
             corresponding end tags:</para>
-        <para><code>&lt;/propertySections> </code></para>
-        <para><code>&lt;/extension> </code></para>
-        
         <para>After assigning the property tabs to their classes, you have to register each tab as a
-                <code>propertyTab</code>. Add this to the file once:</para>
-        <para><code>&lt;!-- Register Property Sections --> </code></para>
-        <para><code>&lt;extension point="org.eclipse.ui.views.properties.tabbed.propertyTabs"></code></para>
-        <para><code>&lt;propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor"></code></para>
-        
-        <para>Now for each tab, add this: </para>
-        <para><code>&lt;propertyTab</code></para>
-        <para><code>label="Propertys"</code></para>
-        <para><code>category="default"</code></para>
-        <para><code>id="workflow.editor.tab.<replaceable>yourcomponentname</replaceable>.Propertys"></code></para>
-        <para><code>&lt;/propertyTab></code></para>
-        <para>The id should be the same as you chosse for this tab in the field "tab" above.
-            Customise the tab title by editing the <code>label</code> attributed. If you refer to a
-            externalized messages file, put a percent character in front of it:</para>
-        
-        <para><code>&lt;propertyTab</code></para>
-        <para><code>label="%inOutputtabtitle"</code></para>
-        <para><code>category="default"</code></para>
-        <para><code>id="workflow.editor.tab.powerset.InOutputs"></code></para>
-        <para><code>&lt;/propertyTab></code></para>
-        <para>As above, make sure to create valid XML by finish the markup blocks with their closing
-            tags:</para>
-        <para><code>&lt;/propertyTabs></code></para>
-        <para><code>&lt;/extension></code></para>
-        <para><code>&lt;/plugin></code></para>
-        
+                <code>propertyTab</code>.</para>
+        <para>Note that the ID of the propertyTab should be the same as the "tab" in the
+            propertySection above. Customise the section title by editing the <code>label</code>
+            attribute. </para>
+        <para> TODO: Add explanation how to use Messages file. </para>
     </sect2>
-    
+    <sect2 id="add_new_component_to_svn">
+        <title>Adding your new component to SVN</title>
+        <para>
+            It is recommended to develop a new component in a separate development branch. 
+            Therefore create a new branch. One of the several ways to do so is using TortoiseSVN.
+            Check out the trunk. In the context menu of this folder select "TortoiseSVN > Branch/Tag".
+            Navigate to the destination path which should be located in the branches folder. 
+            Call the new branch "dev_<replaceable>YourComponentName</replaceable>" where <replaceable>YourComponentName</replaceable> is the display name of your component.
+            Then add the folders of the projects you created above to the structure in your file system.
+            Select them and right click to open the context menu. Then select "TortoiseSVN > Add...".
+            To commit them into the branch, open the context menu again and select "Commit... ".
+        </para>
+    </sect2>
 </sect1>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

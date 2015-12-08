@@ -8,7 +8,10 @@
 
 package de.rcenvironment.core.utils.common;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -28,6 +31,38 @@ public final class StatsCounter {
 
     private static ThreadsafeAutoCreationMap<String, ThreadsafeAutoCreationMap<String, AtomicLong>> counterMap;
 
+    private static ThreadsafeAutoCreationMap<String, ThreadsafeAutoCreationMap<String, ValueTrackerEntry>> valueTrackerMap;
+
+    /**
+     * A holder for simple statistics over an unknown number of values added over time.
+     * 
+     * @author Robert Mischke
+     */
+    private static final class ValueTrackerEntry {
+
+        private long n;
+
+        private long min = Long.MAX_VALUE;
+
+        private long max = Long.MIN_VALUE;
+
+        private double sum;
+
+        public synchronized void register(long value) {
+            min = Math.min(min, value);
+            max = Math.max(max, value);
+            sum += value;
+            n++;
+        }
+
+        public String render() {
+            if (n == 0) {
+                return "-";
+            }
+            return StringUtils.format("Total %,.2f, Average %,.2f, Min %,d, Max %,d, counted %,d times", sum, sum / n, min, max, n);
+        }
+    }
+
     // prevent instantiation
     private StatsCounter() {}
 
@@ -40,6 +75,18 @@ public final class StatsCounter {
                     @Override
                     protected AtomicLong createNewEntry(String key) {
                         return new AtomicLong();
+                    }
+                };
+            };
+        };
+        valueTrackerMap = new ThreadsafeAutoCreationMap<String, ThreadsafeAutoCreationMap<String, ValueTrackerEntry>>() {
+
+            protected ThreadsafeAutoCreationMap<String, ValueTrackerEntry> createNewEntry(String key) {
+                return new ThreadsafeAutoCreationMap<String, ValueTrackerEntry>() {
+
+                    @Override
+                    protected ValueTrackerEntry createNewEntry(String key) {
+                        return new ValueTrackerEntry();
                     }
                 };
             };
@@ -103,6 +150,20 @@ public final class StatsCounter {
     }
 
     /**
+     * Registers an event's value, for example an task's duration.
+     * 
+     * @param category the category identifier
+     * @param key the key within the category
+     * @param value the value associated with an event
+     */
+    public static void registerValue(String category, String key, long value) {
+        if (!ENABLED) {
+            return;
+        }
+        valueTrackerMap.get(category).get(key).register(value);
+    }
+
+    /**
      * Clears/resets all contained statistics.
      */
     public static void resetAll() {
@@ -123,13 +184,24 @@ public final class StatsCounter {
      * 
      * @return the map of counter maps
      */
-    public static Map<String, Map<String, Long>> getFullReport() {
-        Map<String, Map<String, Long>> result = new TreeMap<>();
+    public static Map<String, Map<String, String>> getFullReport() {
+        Map<String, Map<String, String>> result = new TreeMap<>(); // sort by category names
 
-        Map<String, ThreadsafeAutoCreationMap<String, AtomicLong>> snapshot = counterMap.getShallowCopy();
-        for (Map.Entry<String, ThreadsafeAutoCreationMap<String, AtomicLong>> category : snapshot.entrySet()) {
+        Map<String, ThreadsafeAutoCreationMap<String, AtomicLong>> countersSnapshot = counterMap.getShallowCopy();
+        for (Map.Entry<String, ThreadsafeAutoCreationMap<String, AtomicLong>> category : countersSnapshot.entrySet()) {
             Map<String, AtomicLong> categoryCopy = category.getValue().getShallowCopy();
-            result.put(category.getKey(), convertCategoryMap(categoryCopy));
+            result.put(category.getKey(), renderCategoryCounters(categoryCopy));
+        }
+
+        Map<String, ThreadsafeAutoCreationMap<String, ValueTrackerEntry>> valueTrackersSnapshot = valueTrackerMap.getShallowCopy();
+        for (Entry<String, ThreadsafeAutoCreationMap<String, ValueTrackerEntry>> category : valueTrackersSnapshot.entrySet()) {
+            Map<String, ValueTrackerEntry> valueTrackersCopy = category.getValue().getShallowCopy();
+            Map<String, String> newMap = renderValueTrackers(valueTrackersCopy);
+            Map<String, String> existingMap = result.put(category.getKey(), newMap);
+            if (existingMap != null) {
+                // the same category name was used for counters and value trackers; merge the two maps
+                newMap.putAll(existingMap);
+            }
         }
 
         return result;
@@ -141,14 +213,41 @@ public final class StatsCounter {
      * @param category the category id
      * @return the counter map
      */
-    public static Map<String, Long> getReportForCategory(String category) {
-        return convertCategoryMap(counterMap.get(category).getShallowCopy());
+    public static Map<String, String> getReportForCategory(String category) {
+        return renderCategoryCounters(counterMap.get(category).getShallowCopy());
     }
 
-    private static Map<String, Long> convertCategoryMap(Map<String, AtomicLong> categoryCopy) {
-        Map<String, Long> categoryResult = new TreeMap<String, Long>();
+    /**
+     * Fetches all data via {@link #getFullReport()} and renders it into a standard representation.
+     * 
+     * @return the rendered text lines
+     */
+    public static List<String> getFullReportAsStandardTextRepresentation() {
+        List<String> output = new ArrayList<>();
+        Map<String, Map<String, String>> report = StatsCounter.getFullReport();
+        for (Map.Entry<String, Map<String, String>> category : report.entrySet()) {
+            output.add(category.getKey());
+            for (Map.Entry<String, String> entry : category.getValue().entrySet()) {
+                output.add(StringUtils.format("  %s - %s", entry.getValue(), entry.getKey()));
+            }
+        }
+        return output;
+    }
+
+    private static Map<String, String> renderCategoryCounters(Map<String, AtomicLong> categoryCopy) {
+        Map<String, String> categoryResult = new TreeMap<String, String>();
         for (Map.Entry<String, AtomicLong> entry : categoryCopy.entrySet()) {
-            categoryResult.put(entry.getKey(), entry.getValue().get());
+            String rendered = StringUtils.format("%,d", entry.getValue().get());
+            categoryResult.put(entry.getKey(), rendered);
+        }
+        return categoryResult;
+    }
+
+    private static Map<String, String> renderValueTrackers(Map<String, ValueTrackerEntry> categoryCopy) {
+        Map<String, String> categoryResult = new TreeMap<String, String>();
+        for (Entry<String, ValueTrackerEntry> entry : categoryCopy.entrySet()) {
+            String rendered = entry.getValue().render();
+            categoryResult.put(entry.getKey(), rendered);
         }
         return categoryResult;
     }

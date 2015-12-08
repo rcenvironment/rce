@@ -9,6 +9,7 @@
 package de.rcenvironment.core.utils.common;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 import java.util.Arrays;
 
@@ -98,52 +99,103 @@ public class StringUtilsTest {
         checkConcatAndSplit(StringUtils.ESCAPE_CHARACTER + StringUtils.ESCAPE_CHARACTER);
     }
 
+    /**
+     * Test of {@link StringUtils#checkAgainstCommonInputRules(String)}.
+     */
+    @Test
+    public void testCommonValidInputSet() {
+        assertNull(StringUtils.checkAgainstCommonInputRules(""));
+
+        // verify positive examples
+        final String validTestChars = "azAZ09 .,-+_()";
+        assertNull(StringUtils.checkAgainstCommonInputRules(validTestChars));
+
+        final String validSingleChars = "azAZ_09";
+        for (char c : validSingleChars.toCharArray()) {
+            String testString = Character.toString(c);
+            assertNull(testString, StringUtils.checkAgainstCommonInputRules(testString));
+        }
+
+        // check: spaces should not be allowed as first or last char
+        assertEquals(StringUtils.COMMON_VALID_INPUT_FIRST_CHARACTER_ERROR, StringUtils.checkAgainstCommonInputRules(" " + validTestChars));
+        assertEquals(StringUtils.COMMON_VALID_INPUT_LAST_CHARACTER_ERROR, StringUtils.checkAgainstCommonInputRules(validTestChars + " "));
+
+        // test counter-examples
+        // TODO replace non-ascii characters with unicode values for robustness
+        // TODO add more exotic characters
+        final String forbiddenTestChars = "\0\t\n:;~*?!<>|äöüßÄÖÜ@";
+        final int expectedCharCount = 20;
+        assertEquals(StringUtils.COMMON_VALID_INPUT_CHARSET_ERROR, StringUtils.checkAgainstCommonInputRules(forbiddenTestChars));
+        assertEquals(expectedCharCount, forbiddenTestChars.toCharArray().length); // prevent accidents during string->char splitting
+        for (char c : forbiddenTestChars.toCharArray()) {
+            String testString = Character.toString(c);
+            assertEquals(testString, StringUtils.COMMON_VALID_INPUT_CHARSET_ERROR, StringUtils.checkAgainstCommonInputRules(testString));
+        }
+    }
+
     /** Test fault tolerant implementation of {@link String#format(String, Object...)}. */
     @Test
     public void testStringFormat() {
-        String placeholderText = "%s %b %d";
+        String formatString = "%s %b %d";
         String stringValue = "RCE";
-        boolean isCorrect = true;
-        int number = 5;
-        String message = "red green blue";
-        String correctFormat = stringValue + " " + isCorrect + " " + number;
-        
-        String result = StringUtils.format(placeholderText);
-        assertEquals(placeholderText, result);
+        boolean booleanValue = true;
+        int intValue = 5;
 
-        result = StringUtils.format(placeholderText, stringValue);
-        assertEquals(placeholderText + StringUtils.FORMAT_SEPARATOR + stringValue, result);
+        String nullFormatString = null;
+        String stringNullValue = null;
+        Boolean booleanNullValue = null;
+        Integer integerNullValue = null;
 
-        result = StringUtils.format(placeholderText, stringValue, isCorrect);
-        assertEquals(placeholderText + StringUtils.FORMAT_SEPARATOR + stringValue + StringUtils.FORMAT_SEPARATOR + isCorrect, result);
+        String anyStringValue = "red green blue";
 
-        result = StringUtils.format(placeholderText, stringValue, isCorrect, number);
-        assertEquals(correctFormat, result);
+        String expectedResultString = stringValue + " " + booleanValue + " " + intValue;
 
-        result = StringUtils.format(placeholderText, stringValue, isCorrect, number, message);
-        assertEquals(correctFormat, result);
+        String result = StringUtils.format(formatString);
+        assertEquals(formatString, result);
+
+        result = StringUtils.format(formatString, stringValue);
+        System.err.println(result);
+        assertEquals(formatString + StringUtils.FORMAT_SEPARATOR + stringValue, result);
+
+        result = StringUtils.format(formatString, stringValue, booleanValue);
+        assertEquals(formatString + StringUtils.FORMAT_SEPARATOR + stringValue + StringUtils.FORMAT_SEPARATOR + booleanValue, result);
+
+        result = StringUtils.format(formatString, stringValue, booleanValue, intValue);
+        assertEquals(expectedResultString, result);
+
+        result = StringUtils.format(formatString, stringValue, booleanValue, intValue, anyStringValue);
+        assertEquals(expectedResultString, result);
+
+        result = StringUtils.format(formatString, stringNullValue);
+        assertEquals(formatString + StringUtils.FORMAT_SEPARATOR + stringNullValue, result);
+
+        result = StringUtils.format(formatString, null, null);
+        assertEquals(formatString + StringUtils.FORMAT_SEPARATOR + stringNullValue
+            + StringUtils.FORMAT_SEPARATOR + stringNullValue, result);
+
+        result = StringUtils.format(formatString, stringNullValue, booleanNullValue, integerNullValue);
+        assertEquals(stringNullValue + " " + Boolean.valueOf(null) + " " + integerNullValue, result);
     }
 
     /**
-     * Tests all 4-character combinations of a standard character, the separator, the escape
-     * character, and a null string.
+     * Tests all 4-character combinations of a standard character, the separator, the escape character, and a null string.
      */
     @Test
     public void testCombinations() {
         String[] chars = new String[] { SINGLE_ALPHABETIC_CHARACTER, StringUtils.ESCAPE_CHARACTER, StringUtils.SEPARATOR };
-        for (int i1 = 0; i1 < chars.length; i1++) {
+        for (String c : chars) {
             // 1-char combinations
-            checkConcatAndSplit(chars[i1]);
-            for (int i2 = 0; i2 < chars.length; i2++) {
+            checkConcatAndSplit(c);
+            for (String d : chars) {
                 // 2-char combinations
-                checkConcatAndSplit(chars[i1] + chars[i2]);
-                for (int i3 = 0; i3 < chars.length; i3++) {
+                checkConcatAndSplit(c + d);
+                for (String e : chars) {
                     // 3-char combinations
-                    checkConcatAndSplit(chars[i1] + chars[i2] + chars[i3]);
-                    for (int i4 = 0; i4 < chars.length; i4++) {
+                    checkConcatAndSplit(c + d + e);
+                    for (String f : chars) {
                         // extended test with 4-char combinations
-                        String testString = chars[i1] + chars[i2] + chars[i3] + chars[i4];
-                        String testString2 = chars[i2] + chars[i4] + chars[i1] + chars[i3];
+                        String testString = c + d + e + f;
+                        String testString2 = d + f + c + e;
                         checkConcatAndSplit(testString);
                         checkConcatAndSplit(testString2);
                         checkConcatAndSplit(testString, testString);
@@ -159,6 +211,6 @@ public class StringUtilsTest {
         String concatenated = StringUtils.escapeAndConcat(parts);
         String[] restored = StringUtils.splitAndUnescape(concatenated);
         Assert.assertArrayEquals("Concat-and-split result was not equal for input \"" + Arrays.toString(parts) + "\", serialized form: \""
-            + concatenated + "\"", (Object[]) parts, (Object[]) restored);
+            + concatenated + "\"", parts, restored);
     }
 }

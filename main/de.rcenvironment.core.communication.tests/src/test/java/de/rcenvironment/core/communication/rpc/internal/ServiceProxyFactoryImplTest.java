@@ -9,7 +9,6 @@
 package de.rcenvironment.core.communication.rpc.internal;
 
 import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.LOCAL_PLATFORM;
-import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.REQUEST;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -19,8 +18,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -42,12 +39,13 @@ import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
+import de.rcenvironment.core.communication.rpc.ServiceCallResultFactory;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.communication.utils.MessageUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases for {@link ServiceProxyFactoryImpl}.
@@ -61,24 +59,24 @@ public class ServiceProxyFactoryImplTest {
 
     private final int sum = 3;
 
-    private final ServiceCallResult addResult = new ServiceCallResult(sum);
+    private final ServiceCallResult addResult = ServiceCallResultFactory.wrapReturnValue(sum);
 
-    private final ServiceCallResult callbackResult = new ServiceCallResult(new Serializable() {
+    private final ServiceCallResult callbackResult = ServiceCallResultFactory.wrapReturnValue(new Serializable() {
 
         private static final long serialVersionUID = -35724097511389572L;
     });
 
     private final String value = new String("value");
 
-    private final ServiceCallResult valueResult = new ServiceCallResult(value);
+    private final ServiceCallResult valueResult = ServiceCallResultFactory.wrapReturnValue(value);
 
     private final IOException exception = new IOException("Simulated test exception");
 
-    private final ServiceCallResult exceptionResult = new ServiceCallResult(exception);
+    private final ServiceCallResult exceptionResult = ServiceCallResultFactory.wrapMethodException(exception);
 
     private ServiceProxyFactoryImpl serviceProxyFactory;
 
-    private RemoteServiceCallServiceImpl remoteServiceCallService;
+    private RemoteServiceCallSenderServiceImpl remoteServiceCallService;
 
     /**
      * Common setup.
@@ -86,7 +84,7 @@ public class ServiceProxyFactoryImplTest {
     @Before
     public void setUp() {
         // note that the routing service is bound in the individual tests - misc_ro
-        remoteServiceCallService = new RemoteServiceCallServiceImpl();
+        remoteServiceCallService = new RemoteServiceCallSenderServiceImpl();
 
         serviceProxyFactory = new ServiceProxyFactoryImpl();
         serviceProxyFactory.bindCallbackService(new DummyCallbackService());
@@ -107,44 +105,45 @@ public class ServiceProxyFactoryImplTest {
     @Test
     public void testCreateServiceProxyForSuccess() {
 
-        Object proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class, null, (String) null);
-        assertTrue(proxy instanceof MethodCallerTestMethods);
+        Object proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        assertTrue(proxy instanceof MethodCallTestInterface);
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class,
-            new Class<?>[] { BundleActivator.class, Bundle.class }, (Map<String, String>) null);
-        assertTrue(proxy instanceof MethodCallerTestMethods);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class,
+            new Class<?>[] { BundleActivator.class, Bundle.class });
+        assertTrue(proxy instanceof MethodCallTestInterface);
         assertTrue(proxy instanceof BundleActivator);
         assertTrue(proxy instanceof Bundle);
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class, null, "(&(rumpel=false)(pumpel=true)");
-        assertTrue(proxy instanceof MethodCallerTestMethods);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        assertTrue(proxy instanceof MethodCallTestInterface);
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class,
-            null, REQUEST.getServiceProperties());
-        assertTrue(proxy instanceof MethodCallerTestMethods);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        assertTrue(proxy instanceof MethodCallTestInterface);
 
         Map<String, String> properties = new HashMap<String, String>();
         properties.put("rumpel", "false");
         properties.put("pumpel", "true");
 
-        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class, null, properties);
-        assertTrue(proxy instanceof MethodCallerTestMethods);
+        proxy = serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
+        assertTrue(proxy instanceof MethodCallTestInterface);
 
     }
 
     /**
      * Tests an RPC call with an return value of type "int".
+     * 
+     * @throws RemoteOperationException not expected; would indicate a test error
      */
     @Test
-    public void testNativeReturnValue() {
-        MethodCallerTestMethods proxy =
-            (MethodCallerTestMethods) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class,
-                null, (String) null);
+    public void testNativeReturnValue() throws RemoteOperationException {
+        MethodCallTestInterface proxy =
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
         Serializable expectedReturnValue;
 
         // create a network mock that simulates the remote generation of the expected result
-        expectedReturnValue = Integer.valueOf(new MethodCallerTestMethodsImpl().add(1, 2));
-        MessageRoutingService routingServiceMock = createSingleCallNetworkMock(expectedReturnValue);
+        expectedReturnValue = Integer.valueOf(new MethodCallTestInterfaceImpl().add(1, 2));
+        MessageRoutingService routingServiceMock =
+            createSingleCallNetworkMock(ServiceCallResultFactory.wrapReturnValue(expectedReturnValue));
         remoteServiceCallService.bindMessageRoutingService(routingServiceMock);
 
         EasyMock.replay(routingServiceMock);
@@ -156,41 +155,45 @@ public class ServiceProxyFactoryImplTest {
 
     /**
      * Tests an RPC call with a String return value.
+     * 
+     * @throws RemoteOperationException not expected; would indicate a test error
      */
     @Test
-    public void testStringReturnValue() {
+    public void testStringReturnValue() throws RemoteOperationException {
 
-        MethodCallerTestMethods proxy =
-            (MethodCallerTestMethods) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class,
-                null, (String) null);
+        MethodCallTestInterface proxy =
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
         Serializable expectedReturnValue;
 
         // create a network mock that simulates the remote generation of the expected result
-        expectedReturnValue = new MethodCallerTestMethodsImpl().getValue();
-        MessageRoutingService routingServiceMock = createSingleCallNetworkMock(expectedReturnValue);
+        expectedReturnValue = new MethodCallTestInterfaceImpl().getString();
+        MessageRoutingService routingServiceMock =
+            createSingleCallNetworkMock(ServiceCallResultFactory.wrapReturnValue(expectedReturnValue));
         remoteServiceCallService.bindMessageRoutingService(routingServiceMock);
 
         EasyMock.replay(routingServiceMock);
 
-        assertEquals(expectedReturnValue, proxy.getValue());
+        assertEquals(expectedReturnValue, proxy.getString());
 
         EasyMock.verify(routingServiceMock);
     }
 
     /**
      * Tests that passing a callback object as a remote method parameter succeeds.
+     * 
+     * @throws RemoteOperationException not expected; would indicate a test error
      **/
     @Test
-    public void testCallbackParameterDoesNotFail() {
+    public void testCallbackParameterDoesNotFail() throws RemoteOperationException {
 
-        MethodCallerTestMethods proxy =
-            (MethodCallerTestMethods) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class,
-                null, (String) null);
+        MethodCallTestInterface proxy =
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
         Serializable expectedReturnValue;
 
         // create a network mock that simulates the remote generation of the expected result
         expectedReturnValue = Integer.valueOf(3);
-        MessageRoutingService routingServiceMock = createSingleCallNetworkMock(expectedReturnValue);
+        MessageRoutingService routingServiceMock =
+            createSingleCallNetworkMock(ServiceCallResultFactory.wrapReturnValue(expectedReturnValue));
         remoteServiceCallService.bindMessageRoutingService(routingServiceMock);
 
         EasyMock.replay(routingServiceMock);
@@ -204,24 +207,23 @@ public class ServiceProxyFactoryImplTest {
 
     /**
      * Tests that exceptions throw by the target method are correctly forwarded to the caller.
+     * 
+     * @throws RemoteOperationException not expected; would indicate a test error
      */
     @Test
-    public void testRemoteExceptionThrowing() {
+    public void testRemoteExceptionThrowing() throws RemoteOperationException {
 
-        MethodCallerTestMethods proxy =
-            (MethodCallerTestMethods) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallerTestMethods.class,
-                null, (String) null);
-        Serializable expectedReturnValue;
+        MethodCallTestInterface proxy =
+            (MethodCallTestInterface) serviceProxyFactory.createServiceProxy(LOCAL_NODE_ID, MethodCallTestInterface.class, null);
 
         // create a network mock that simulates the remote generation of the expected result
-        expectedReturnValue = exception;
-        MessageRoutingService routingServiceMock = createSingleCallNetworkMock(expectedReturnValue);
+        MessageRoutingService routingServiceMock = createSingleCallNetworkMock(ServiceCallResultFactory.wrapMethodException(exception));
         remoteServiceCallService.bindMessageRoutingService(routingServiceMock);
 
         EasyMock.replay(routingServiceMock);
 
         try {
-            proxy.exceptionFunction();
+            proxy.ioExceptionThrower();
             fail();
         } catch (IOException e) {
             assertTrue(true);
@@ -238,36 +240,28 @@ public class ServiceProxyFactoryImplTest {
     @Test
     public void testCreateServiceProxyForFailure() {
         try {
-            serviceProxyFactory.createServiceProxy(null, MethodCallerTestMethods.class, null, (String) null);
+            serviceProxyFactory.createServiceProxy(null, MethodCallTestInterface.class, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
         try {
-            serviceProxyFactory.createServiceProxy(LOCAL_PLATFORM, null, null, (String) null);
+            serviceProxyFactory.createServiceProxy(LOCAL_PLATFORM, null, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
         }
     }
 
-    private MessageRoutingService createSingleCallNetworkMock(final Serializable mockReturnValue) {
-        MessageRoutingService routingServiceMock = EasyMock.createMock(MessageRoutingService.class);
+    private MessageRoutingService createSingleCallNetworkMock(final ServiceCallResult serviceCallResult) {
         // define expected calls
-        Future<NetworkResponse> networkResponseMock = SharedThreadPool.getInstance().submit(new Callable<NetworkResponse>() {
-
-            @Override
-            public NetworkResponse call() throws Exception {
-                // request is not available in this mock, so fake a request
-                NetworkRequest request =
-                    NetworkRequestFactory
-                        .createNetworkRequest(null, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, LOCAL_NODE_ID, LOCAL_NODE_ID);
-                NetworkResponse response =
-                    NetworkResponseFactory.generateSuccessResponse(request,
-                        MessageUtils.serializeSafeObject(new ServiceCallResult(mockReturnValue)));
-                return response;
-            }
-        });
+        MessageRoutingService routingServiceMock = EasyMock.createMock(MessageRoutingService.class);
+        // a request is not available in this mock, so fake a request
+        NetworkRequest request =
+            NetworkRequestFactory
+                .createNetworkRequest(null, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, LOCAL_NODE_ID, LOCAL_NODE_ID);
+        NetworkResponse networkResponseMock = NetworkResponseFactory.generateSuccessResponse(request,
+            MessageUtils.serializeSafeObject(serviceCallResult));
         EasyMock.expect(routingServiceMock.performRoutedRequest(EasyMock.anyObject(byte[].class),
             EasyMock.eq(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC), EasyMock.eq(LOCAL_NODE_ID)))
             .andReturn(networkResponseMock);
@@ -299,36 +293,32 @@ public class ServiceProxyFactoryImplTest {
         public void initialize(NetworkContact contact) throws CommunicationException {}
 
         @Override
-        public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws CommunicationException {
+        public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws RemoteOperationException {
             ServiceCallResult result = null;
-            if (serviceCallRequest.getRequestedPlatform().equals(LOCAL_NODE_ID)
-                && serviceCallRequest.getService().equals(MethodCallerTestMethods.class.getCanonicalName())
-                && serviceCallRequest.getServiceMethod().equals("add")
-                && serviceCallRequest.getServiceProperties() == null
+            if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+                && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
+                && serviceCallRequest.getMethodName().equals("add")
                 && serviceCallRequest.getParameterList().get(0).equals(1)
                 && serviceCallRequest.getParameterList().get(1).equals(2)
                 && serviceCallRequest.getParameterList().size() == 2) {
 
                 result = addResult;
-            } else if (serviceCallRequest.getRequestedPlatform().equals(LOCAL_NODE_ID)
-                && serviceCallRequest.getService().equals(MethodCallerTestMethods.class.getCanonicalName())
-                && serviceCallRequest.getServiceMethod().equals("callbackTest")
-                && serviceCallRequest.getServiceProperties() == null
+            } else if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+                && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
+                && serviceCallRequest.getMethodName().equals("callbackTest")
                 && (serviceCallRequest.getParameterList().get(0) instanceof CallbackProxy)
                 && serviceCallRequest.getParameterList().size() == 1) {
 
                 result = callbackResult;
-            } else if (serviceCallRequest.getRequestedPlatform().equals(LOCAL_NODE_ID)
-                && serviceCallRequest.getService().equals(MethodCallerTestMethods.class.getCanonicalName())
-                && serviceCallRequest.getServiceMethod().equals("getValue")
-                && serviceCallRequest.getServiceProperties() == null
+            } else if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+                && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
+                && serviceCallRequest.getMethodName().equals("getValue")
                 && serviceCallRequest.getParameterList().size() == 0) {
 
                 result = valueResult;
-            } else if (serviceCallRequest.getRequestedPlatform().equals(LOCAL_NODE_ID)
-                && serviceCallRequest.getService().equals(MethodCallerTestMethods.class.getCanonicalName())
-                && serviceCallRequest.getServiceMethod().equals("exceptionFunction")
-                && serviceCallRequest.getServiceProperties() == null
+            } else if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+                && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
+                && serviceCallRequest.getMethodName().equals("exceptionFunction")
                 && serviceCallRequest.getParameterList().size() == 0) {
 
                 result = exceptionResult;
@@ -408,7 +398,7 @@ public class ServiceProxyFactoryImplTest {
 
         @Override
         public Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters)
-            throws CommunicationException {
+            throws RemoteOperationException {
             return null;
         }
 

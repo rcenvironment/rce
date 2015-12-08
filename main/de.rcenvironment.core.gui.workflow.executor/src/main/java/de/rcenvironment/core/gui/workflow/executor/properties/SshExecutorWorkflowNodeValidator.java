@@ -27,12 +27,12 @@ public class SshExecutorWorkflowNodeValidator extends AbstractWorkflowNodeValida
     @Override
     protected Collection<WorkflowNodeValidationMessage> validate() {
         
-        List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();
+        final List<WorkflowNodeValidationMessage> messages = new LinkedList<>();
         
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_HOST);
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_PORT);
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_SANDBOXROOT);
-        messages = checkIfStringIsConfigured(messages, SshExecutorConstants.CONFIG_KEY_SCRIPT);            
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_HOST));
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_PORT));
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_SANDBOXROOT));
+        messages.addAll(checkIfStringIsConfigured(SshExecutorConstants.CONFIG_KEY_SCRIPT));
         
         return messages;
     }
@@ -49,8 +49,9 @@ public class SshExecutorWorkflowNodeValidator extends AbstractWorkflowNodeValida
         return messages;
     }
     
-    protected List<WorkflowNodeValidationMessage> checkIfStringIsConfigured(List<WorkflowNodeValidationMessage> messages,
-        String configurationKey) {
+    protected List<WorkflowNodeValidationMessage> checkIfStringIsConfigured(String configurationKey) {
+        final List<WorkflowNodeValidationMessage> messages = new LinkedList<>();
+
         final String value = getProperty(configurationKey);
         if (value == null || value.isEmpty()) {
             WorkflowNodeValidationMessage validationMessage =

@@ -34,7 +34,9 @@ import de.rcenvironment.core.command.common.CommandException.Type;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
-import de.rcenvironment.core.component.workflow.execution.internal.HeadlessWorkflowExecutionServiceImpl;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
+import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowDescriptionLoaderCallback;
+import de.rcenvironment.core.component.workflow.execution.headless.internal.HeadlessWorkflowExecutionServiceImpl;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
 import de.rcenvironment.core.notification.DistributedNotificationService;
@@ -157,9 +159,10 @@ public class WfCommandPluginTest {
      * "loading workflow file failed" (case insensitive)
      * 
      * @throws CommandException on unexpected command errors
+     * @throws WorkflowFileException  on unexpected errors
      */
     @Test
-    public void testWFRunCommandWithInvalidFile() throws CommandException {
+    public void testWFRunCommandWithInvalidFile() throws CommandException, WorkflowFileException {
 
         // create invalid workflow testfile
         File dir = null;
@@ -176,16 +179,13 @@ public class WfCommandPluginTest {
         Assert.assertTrue(testfile.exists());
         Assert.assertTrue(testfile.isFile());
 
-        PersistentWorkflowDescriptionUpdateService pwdUpdateServiceMock = EasyMock
-            .createNiceMock(PersistentWorkflowDescriptionUpdateService.class);
-        // define mock expectation
-        EasyMock
-            .expect(
-                pwdUpdateServiceMock.isUpdateForWorkflowDescriptionAvailable(EasyMock.anyObject(PersistentWorkflowDescription.class),
-                    EasyMock.anyBoolean())).andReturn(false).anyTimes();
-        EasyMock.replay(pwdUpdateServiceMock);
-        workflowExecutionService.bindWorkflowDescriptionUpdateService(pwdUpdateServiceMock);
-
+        final String errorMessage = "failed";
+        WorkflowExecutionService wfExeService = EasyMock.createNiceMock(WorkflowExecutionService.class);
+        EasyMock.expect(wfExeService.loadWorkflowDescriptionFromFileConsideringUpdates(EasyMock.isA(File.class), 
+            EasyMock.isA(HeadlessWorkflowDescriptionLoaderCallback.class))).andThrow(new WorkflowFileException(errorMessage)).anyTimes();
+        EasyMock.replay(wfExeService);
+        workflowExecutionService.bindWorkflowExecutionService(wfExeService);
+        
         List<String> tokens = new ArrayList<String>();
         tokens.add(STRING_WF);
         tokens.add(STRING_RUN);
@@ -204,9 +204,7 @@ public class WfCommandPluginTest {
             fail(MESSAGE_EXPECTED_COMMAND_EXCEPTION);
         } catch (CommandException e) {
             assertEquals(Type.EXECUTION_ERROR, e.getType());
-            String message = e.getMessage();
-            assertTrue("Unexpected reponse text (should contain 'failed to parse'): " + message,
-                message.toLowerCase().contains("failed to parse"));
+            assertEquals(errorMessage, e.getMessage());
         }
 
         // test callback parameter(s)
@@ -252,7 +250,6 @@ public class WfCommandPluginTest {
                 pwdUpdateServiceMock.isUpdateForWorkflowDescriptionAvailable(EasyMock.anyObject(PersistentWorkflowDescription.class),
                     EasyMock.anyBoolean())).andReturn(false).anyTimes();
         EasyMock.replay(pwdUpdateServiceMock);
-        workflowExecutionService.bindWorkflowDescriptionUpdateService(pwdUpdateServiceMock);
 
         List<String> tokens = new ArrayList<String>();
         tokens.add(STRING_WF);

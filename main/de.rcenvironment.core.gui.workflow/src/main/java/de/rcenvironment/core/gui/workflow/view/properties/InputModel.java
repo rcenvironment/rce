@@ -96,7 +96,7 @@ public final class InputModel {
         for (EndpointDatum input : inputs) {
             if (isValue(input)) {
                 String workflowId = input.getWorkflowExecutionIdentifier();
-                String componentId = input.getInputComponentExecutionIdentifier();
+                String componentId = input.getInputsComponentExecutionIdentifier();
                 String inputName = input.getInputName();
                 if (!allInputs.containsKey(workflowId)) {
                     allInputs.put(workflowId, new HashMap<String, Map<String, Deque<EndpointDatum>>>());

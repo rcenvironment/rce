@@ -19,10 +19,4 @@ public interface NodeInformation {
      * @return the display name associated with the node, or null if none is available/known
      */
     String getDisplayName();
-
-    /**
-     * @return whether this node is known to act as a "workflow host"; if this is unknown, "false"
-     *         is returned
-     */
-    boolean isWorkflowHost();
 }

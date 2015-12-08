@@ -36,7 +36,7 @@
 		policy="dynamic"/>
 	<reference
 		name="ServiceCallHandler" 
-		interface="de.rcenvironment.core.communication.rpc.ServiceCallHandler" 
+		interface="de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService" 
 		cardinality="1..1" 
 		bind="bindServiceCallHandler" 
 		policy="dynamic"/>

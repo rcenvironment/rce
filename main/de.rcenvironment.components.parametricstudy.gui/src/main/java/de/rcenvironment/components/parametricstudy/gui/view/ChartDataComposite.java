@@ -10,6 +10,10 @@ package de.rcenvironment.components.parametricstudy.gui.view;
 
 import java.io.File;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -58,7 +62,8 @@ import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
  * @author Christian Weiss
  */
 @SuppressWarnings("deprecation")
-//This is a legacy class which will not be adapted to the new Data Types. Thus, the deprecation warnings are suppressed here.
+// This is a legacy class which will not be adapted to the new Data Types. Thus, the deprecation
+// warnings are suppressed here.
 public class ChartDataComposite extends Composite implements ISelectionProvider {
 
     private static final int DEFAULT_COLUMN_WIDTH = 100;
@@ -269,34 +274,38 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             String selected = fd.open();
             if (selected != null) {
                 File excelFile = null;
+                excelFile = new File(selected); // or "e.xls"
                 if (studyDatastore != null) {
                     if (!selected.substring(selected.lastIndexOf('.') + 1).toLowerCase().equals("xls")) {
                         selected += ".xls";
                     }
-                    excelFile = new File(selected); // or "e.xls"
                     TypedValue[][] values = new TypedValue[studyDatastore.getDatasetCount() + 1][];
 
                     Iterator<StudyDataset> it = studyDatastore.getDatasets().iterator();
                     int i = 0;
+                    List<Dimension> dimensions = getSortedDimensions(studyDatastore.getStructure());
+                    List<Measure> measures = getSortedMeasures(studyDatastore.getStructure());
                     while (it.hasNext()) {
 
                         StudyDataset next = it.next();
 
                         if (i == 0) {
-                            values[i] = new TypedValue[next.getValues().size()];
-                            int j = next.getValues().size() - 1;
-                            for (String str : next.getValues().keySet()) {
-                                values[0][j] = new TypedValue(VariableType.String, str);
-                                j--;
+                            values[i] = new TypedValue[dimensions.size() + measures.size()];
+                            for (int j = 0; j < dimensions.size(); j++) {
+                                values[0][j] = new TypedValue(VariableType.String, dimensions.get(j).getName());
                             }
-                            i = 1;
+                            for (int j = dimensions.size(); j < measures.size() + dimensions.size(); j++) {
+                                values[0][j] = new TypedValue(VariableType.String, measures.get(j - dimensions.size()).getName());
+                            }
+                            i++;
                         }
 
-                        values[i] = new TypedValue[next.getValues().size()];
-                        int j = next.getValues().size() - 1;
-                        for (String key : next.getValues().keySet()) {
-                            values[i][j] = new TypedValue(VariableType.Real, "" + next.getValue(key));
-                            j--;
+                        values[i] = new TypedValue[dimensions.size() + measures.size()];
+                        for (int j = 0; j < dimensions.size(); j++) {
+                            values[i][j] = new TypedValue(next.getValue(dimensions.get(j).getName()));
+                        }
+                        for (int j = dimensions.size(); j < measures.size() + dimensions.size(); j++) {
+                            values[i][j] = new TypedValue(next.getValue(measures.get(j - dimensions.size()).getName()));
                         }
                         i++;
                     }
@@ -305,11 +314,38 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 } else {
                     success = false;
                 }
-                
+
                 StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
 
             }
         }
+
+    }
+
+    private List<Measure> getSortedMeasures(final StudyStructure structure) {
+        Collection<Measure> measureCollection = structure.getMeasures();
+        List<Measure> measureList = new ArrayList<Measure>(measureCollection);
+        Collections.sort(measureList, new Comparator<Measure>() {
+
+            @Override
+            public int compare(Measure o1, Measure o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        return measureList;
+    }
+
+    private List<Dimension> getSortedDimensions(final StudyStructure structure) {
+        Collection<Dimension> collection = structure.getDimensions();
+        List<Dimension> list = new ArrayList<Dimension>(collection);
+        Collections.sort(list, new Comparator<Dimension>() {
+
+            @Override
+            public int compare(Dimension o1, Dimension o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
+        return list;
     }
 
     /**

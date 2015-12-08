@@ -20,6 +20,7 @@ import de.rcenvironment.components.excel.common.ExcelComponentHistoryDataItem;
 import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
+import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.model.api.LocalExecutionOnly;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
@@ -29,6 +30,7 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.rce.components.excel.commons.ChannelValue;
@@ -40,16 +42,15 @@ import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
  * 
  * @author Markus Kunde
  * @author Patrick Schaefer
- * @author Doreen Seider
  */
 @LocalExecutionOnly
 public class ExcelComponent extends ExcelRCEComponent {
     
-    private static final String EXCEPTION_MSG_CANNOT_DETERMINE_VALUE = "Value at Excel address was null. Cannot determine value.";
+    private static final String EXCEPTION_MSG_CANNOT_DETERMINE_VALUE = "No value at Excel cell(s), cannot determine value(s)";
 
-    private static final String EXCEPTION_MSG_WRONGTYPE_2 = " while value is ";
+    private static final String EXCEPTION_MSG_WRONGTYPE_2 = " while value is of type ";
 
-    private static final String EXCEPTION_MSG_WRONGTYPE_1 = "Channel-Type is ";
+    private static final String EXCEPTION_MSG_WRONGTYPE_1 = "Output type is ";
 
     /** OLE cannot handle filename longer than 20 characters. */
     private static final int MAXIMUM_FILENAME_OLE_ACCEPTS = 20;
@@ -84,7 +85,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                 originExcelFile = ExcelUtils.getAbsoluteFile(componentContext.getConfigurationValue(ExcelComponentConstants.XL_FILENAME));
 
                 if (originExcelFile == null) {
-                    throw new ComponentException("Cannot execute Excel component. Maybe filename/path is wrong?");
+                    throw new ComponentException("No Excel file given");
                 }
                 excelWorkingFile = tempFileUtils.createTempFileWithFixedFilename(originExcelFile.getName()); 
                 FileUtils.copyFile(originExcelFile, excelWorkingFile, true);
@@ -98,14 +99,13 @@ public class ExcelComponent extends ExcelRCEComponent {
                     if (renamed) {
                         excelWorkingFile = dest;
                     } else {
-                        LOG.error("Could not shorten file name. "
-                            + "It's possible that VBA Codes did not execute. "
-                            + "Component will continue to try.");
+                        componentLog.componentError("Failed to shorten file name. It's possible that VBA Codes did not execute."
+                            + " Component will continue to try.");
                     }
                 } 
             } catch (IOException e) {
-                LOG.error(e);
-                throw new ComponentException("Could not copy origin Excel file to temp directory.");
+                throw new ComponentException("Failed to copy origin Excel file to temporary directory"
+                    + " (required for the Excel component to work)", e);
             }
                
             
@@ -138,7 +138,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                 try {
                     tempFileUtils.disposeManagedTempDirOrFile(excelWorkingFile);
                 } catch (IOException e) {
-                    LOG.error("Cannot delete sandbox Excel file.");
+                    LOG.error("Failed to delete temporary Excel file", e);
                 }
             }
         }
@@ -166,10 +166,12 @@ public class ExcelComponent extends ExcelRCEComponent {
                     ShortTextTD text = (ShortTextTD) td;
                     componentContext.writeOutput(outputName, text);
                 } else if (td != null) {
-                    LOG.warn("Trying Excel value to cast to ShortText.");
+                    componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to"
+                        + " %s (data type of output '%s')...", DataType.ShortText.getDisplayName(), td, outputName));
                     ShortTextTD text;
                     try {
                         text = typedDatumConverter.castOrConvertUnsafe(td, ShortTextTD.class);
+                        componentLog.componentInfo(StringUtils.format("Sucessfully converted '%s' to ShortText", td));
                         componentContext.writeOutput(outputName, text);
                     } catch (DataTypeException e) {
                         throw new ComponentException(EXCEPTION_MSG_WRONGTYPE_1 + DataType.ShortText.getDisplayName()
@@ -185,10 +187,12 @@ public class ExcelComponent extends ExcelRCEComponent {
                     FloatTD number = (FloatTD) td;
                     componentContext.writeOutput(outputName, number);
                 } else if (td != null) {
-                    LOG.warn("Trying Excel value to cast to Float.");
+                    componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to"
+                        + " %s (data type of output '%s')...", DataType.Float.getDisplayName(), td, outputName));
                     FloatTD number;
                     try {
                         number = typedDatumConverter.castOrConvert(td, FloatTD.class);
+                        componentLog.componentInfo(StringUtils.format("Sucessfully converted '%s' to Float", td));
                         componentContext.writeOutput(outputName, number);
                     } catch (DataTypeException e) {
                         throw new ComponentException(EXCEPTION_MSG_WRONGTYPE_1 + DataType.Float.getDisplayName()
@@ -204,10 +208,12 @@ public class ExcelComponent extends ExcelRCEComponent {
                     IntegerTD number = (IntegerTD) td;
                     componentContext.writeOutput(outputName, number);
                 } else if (td != null) {
-                    LOG.warn("Trying Excel value to cast to Integer.");
+                    componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to %s "
+                        + "(data type of output '%s')...", DataType.Integer.getDisplayName(), td, outputName));
                     IntegerTD number;
                     try {
                         number = typedDatumConverter.castOrConvert(td, IntegerTD.class);
+                        componentLog.componentInfo(StringUtils.format("Sucessfully converted '%s' to Integer", td));
                         componentContext.writeOutput(outputName, number);
                     } catch (DataTypeException e) {
                         throw new ComponentException(EXCEPTION_MSG_WRONGTYPE_1 + DataType.Integer.getDisplayName()
@@ -223,10 +229,12 @@ public class ExcelComponent extends ExcelRCEComponent {
                     BooleanTD b = (BooleanTD) td;
                     componentContext.writeOutput(outputName, b);
                 } else if (td != null) {
-                    LOG.warn("Trying Excel value to cast to Boolean.");
+                    componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to %s "
+                        + "(data type of output '%s')...", DataType.Boolean.getDisplayName(), td, outputName));
                     BooleanTD b;
                     try {
                         b = typedDatumConverter.castOrConvert(td, BooleanTD.class);
+                        componentLog.componentInfo(StringUtils.format("Sucessfully converted '%s' to Integer", td));
                         componentContext.writeOutput(outputName, b);
                     } catch (DataTypeException e) {
                         throw new ComponentException(EXCEPTION_MSG_WRONGTYPE_1 + DataType.Boolean.getDisplayName()
@@ -250,11 +258,11 @@ public class ExcelComponent extends ExcelRCEComponent {
                 if (value != null) {
                     componentContext.writeOutput(outputName, value);
                 } else {
-                    throw new ComponentException("Cannot get Table values from Excel file.");
+                    throw new ComponentException(EXCEPTION_MSG_CANNOT_DETERMINE_VALUE);
                 }
                 break;
             default:
-                throw new ComponentException("Wrong output channel type discovered: " + componentContext
+                throw new ComponentException("Output type not supported: " + componentContext
                     .getOutputDataType(outputName).getDisplayName());
             } 
             
@@ -296,22 +304,22 @@ public class ExcelComponent extends ExcelRCEComponent {
             switch(componentContext.getInputDataType(inputName)) {
             case ShortText:
                 value = typedDatumFactory.createSmallTable(1, 1);
-                value.setTypedDatumForCell((ShortTextTD) input, 0, 0);
+                value.setTypedDatumForCell(input, 0, 0);
                 excelService.setValues(excelFile, addr, value);
                 break;
             case Float:
                 value = typedDatumFactory.createSmallTable(1, 1);
-                value.setTypedDatumForCell((FloatTD) input, 0, 0);
+                value.setTypedDatumForCell(input, 0, 0);
                 excelService.setValues(excelFile, addr, value);
                 break;
             case Integer:
                 value = typedDatumFactory.createSmallTable(1, 1);
-                value.setTypedDatumForCell((IntegerTD) input, 0, 0);
+                value.setTypedDatumForCell(input, 0, 0);
                 excelService.setValues(excelFile, addr, value);
                 break;
             case Boolean:
                 value = typedDatumFactory.createSmallTable(1, 1);
-                value.setTypedDatumForCell((BooleanTD) input, 0, 0);
+                value.setTypedDatumForCell(input, 0, 0);
                 excelService.setValues(excelFile, addr, value);
                 break;
             case SmallTable:

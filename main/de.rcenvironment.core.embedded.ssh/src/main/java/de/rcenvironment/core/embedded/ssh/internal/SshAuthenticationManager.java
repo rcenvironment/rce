@@ -10,6 +10,8 @@ package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.apache.commons.lang3.RandomStringUtils;
@@ -17,6 +19,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.server.PasswordAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
+import org.mindrot.jbcrypt.BCrypt;
 
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
@@ -50,12 +53,12 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         if (usernameParam != null && !usernameParam.isEmpty() && passwordParam != null && !passwordParam.isEmpty()) {
             if (usernameParam.startsWith(SshConstants.TEMP_USER_PREFIX)) {
                 TemporarySshAccount tempUser = getTemporaryAccountByName(usernameParam);
-                if (tempUser != null && tempUser.getPassword().equals(passwordParam)) {
+                if (tempUser != null && checkPassword(tempUser, passwordParam)) {
                     loginCorrect = true;
                 }
             } else {
-                SshAccount user = configuration.getAccountByName(usernameParam);
-                if (user != null && user.getPassword().equals(passwordParam)) {
+                SshAccount user = configuration.getAccountByName(usernameParam, false);
+                if (user != null && checkPassword(user, passwordParam)) {
                     loginCorrect = true;
                 }
             }
@@ -108,7 +111,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
     }
 
     private SshAccountRole getRoleForUser(String userName) {
-        SshAccount user = configuration.getAccountByName(userName);
+        SshAccount user = configuration.getAccountByName(userName, true);
         SshAccountRole role = null;
         if (user != null) {
             role = configuration.getRoleByName(user.getRole());
@@ -117,19 +120,27 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
     }
 
     /**
-     * Returns the {@link SshUser} object matching the given username, or throws an {@link AuthenticationException} if no such user exists.
+     * Returns the {@link SshUser} object matching the given login name, or throws an {@link AuthenticationException} if no such user
+     * exists.
      * 
-     * @param userName the login name of the account to fetch
-     * @return the {@link SshAccount} object matching the given username
-     * @throws AuthenticationException if no matching account was found
+     * @param loginName the login name of the account to fetch
+     * @param allowDisabled true if disabled accounts should be returned as well; if false, null is returned for disabled accounts
+     * @return the {@link SshAccount} object matching the given login name, or null if no such account exists
      */
-    public SshAccount getAccountByUsername(String userName) throws AuthenticationException {
-        SshAccount user = configuration.getAccountByName(userName);
-        if (user != null) {
-            return user;
-        } else {
-            throw new AuthenticationException(StringUtils.format("No SSH account for username \"%s\"", userName));
+    public SshAccount getAccountByLoginName(String loginName, boolean allowDisabled) {
+        // TODO nothing prevents "weird" SSH names to be defined via the configuration file at this time (e.g. starting with space)
+        return configuration.getAccountByName(loginName, allowDisabled);
+    }
+
+    /**
+     * @return all accounts in a sorted map, with their login names as map key
+     */
+    public SortedMap<String, SshAccount> getAllAcountsByLoginName() {
+        SortedMap<String, SshAccount> result = new TreeMap<>();
+        for (SshAccountImpl account : configuration.getAccounts()) {
+            result.put(account.getLoginName(), account);
         }
+        return result;
     }
 
     /**
@@ -144,7 +155,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         TemporarySshAccount result = null;
         if (temporaryAccounts != null) {
             for (TemporarySshAccount tempUser : temporaryAccounts) {
-                if (tempUser.getUsername().equals(name)) {
+                if (tempUser.getLoginName().equals(name)) {
                     result = tempUser;
                 }
             }
@@ -173,7 +184,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         // create name
         String randomAccountNamePart = RandomStringUtils.randomAlphanumeric(SshConstants.TEMP_USER_NAME_RANDOM_LENGTH);
         String username = SshConstants.TEMP_USER_PREFIX + randomAccountNamePart;
-        tempAccount.setUsername(username);
+        tempAccount.setLoginName(username);
         // create password
         tempAccount.setPassword(RandomStringUtils.randomAlphanumeric(SshConstants.TEMP_USER_PASSWORD_RANDOM_LENGTH));
         // set Path
@@ -184,7 +195,7 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
             throw new RuntimeException("Failed to create temporary SCP directory", e);
         }
         log.debug(StringUtils.format("Created temporary SCP account '%s' with virtual SCP path '%s' mapped to local path '%s'",
-            tempAccount.getUsername(), tempAccount.getVirtualScpRootPath(), tempAccount.getLocalScpRootPath().getAbsolutePath()));
+            tempAccount.getLoginName(), tempAccount.getVirtualScpRootPath(), tempAccount.getLocalScpRootPath().getAbsolutePath()));
 
         temporaryAccounts.add(tempAccount);
         return tempAccount;
@@ -195,10 +206,29 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
     public void discardTemporarySshAccount(String name) {
         for (int i = 0; i < temporaryAccounts.size(); i++) {
             TemporarySshAccount tempUser = temporaryAccounts.get(i);
-            if (tempUser.getUsername().equals(name)) {
+            if (tempUser.getLoginName().equals(name)) {
                 temporaryAccounts.remove(i);
             }
         }
+    }
+
+    private boolean checkPassword(SshAccount account, String password) {
+        if (account.getPasswordHash() != null) {
+            // TODO move to common utility function
+            final boolean result = BCrypt.checkpw(password, account.getPasswordHash());
+            log.debug(StringUtils.format("Used password hash to check login attempt for user \"%s\" - accepted = %s",
+                account.getLoginName(), result));
+            return result;
+        }
+        if (account.getPassword() != null) {
+            final boolean result = account.getPassword().equals(password);
+            log.warn(StringUtils.format("Used clear-text password to check login attempt for user \"%s\" - accepted = %s",
+                account.getLoginName(), result));
+            return result;
+        }
+        log.error("Consistency error: SSH login attempt with a password for user \"" + account.getLoginName()
+            + "\", but the local account has neither a clear-text nor a hashed password");
+        return false;
     }
 
 }

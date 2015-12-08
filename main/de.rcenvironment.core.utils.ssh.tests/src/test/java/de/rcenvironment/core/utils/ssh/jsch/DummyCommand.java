@@ -28,13 +28,6 @@ public class DummyCommand implements Command {
     /** Test constant. */
     public static final String EMPTY_STRING = "";
     
-    /** Test constant. */
-    // TODO document: what is this relative to? - misc_ro, May 2013
-    public static final String WORKDIR_LOCAL = "./local-workdir/";
-
-    /** Test constant. */
-    public static final String WORKDIR_REMOTE = "./remote-workdir/";
-    
     protected ExitCallback exitCallback;
 
     private String stdout;

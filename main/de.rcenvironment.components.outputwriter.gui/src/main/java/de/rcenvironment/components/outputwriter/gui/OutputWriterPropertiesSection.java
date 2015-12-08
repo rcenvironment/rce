@@ -20,11 +20,13 @@ import org.eclipse.swt.widgets.DirectoryDialog;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
+import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
+import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
@@ -35,6 +37,7 @@ import de.rcenvironment.core.gui.workflow.editor.properties.DefaultEndpointPrope
  * 
  * @author Hendrik Abbenhaus
  * @author Sascha Zur
+ * @author Brigitte Boden
  * 
  */
 public class OutputWriterPropertiesSection extends DefaultEndpointPropertySection {
@@ -47,40 +50,63 @@ public class OutputWriterPropertiesSection extends DefaultEndpointPropertySectio
 
     private Composite noteComposite;
 
+    private OutputLocationPane outputLocationPane;
+
     public OutputWriterPropertiesSection() {
 
         OutputWriterEndpointSelectionPane outputPane =
             new OutputWriterEndpointSelectionPane(Messages.inputs, EndpointType.INPUT, this, false, "default", false);
         setColumns(1);
         setPanes(outputPane);
+
+        outputLocationPane = new OutputLocationPane(this);
+
+        outputPane.setOutputLocationPane(outputLocationPane);
+    }
+
+    @Override
+    public void refreshSection() {
+        super.refreshSection();
+        final ComponentInstanceProperties configuration = getConfiguration();
+        outputLocationPane.setConfiguration(configuration);
+        outputLocationPane.refresh();
     }
 
     @Override
     public void createCompositeContent(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
-        parent.setLayout(new FillLayout(SWT.VERTICAL));
+        parent.setLayout(new FillLayout(SWT.VERTICAL | SWT.V_SCROLL));
         super.createCompositeContent(parent, aTabbedPropertySheetPage);
-        TabbedPropertySheetWidgetFactory factory = aTabbedPropertySheetPage.getWidgetFactory();
+
+        GridData layoutData;
+        TabbedPropertySheetWidgetFactory toolkit = aTabbedPropertySheetPage.getWidgetFactory();
+        Composite content = new LayoutComposite(parent);
+        Composite outputComposite = toolkit.createFlatFormComposite(content);
+
+        outputComposite.setLayout(new GridLayout(1, true));
+        outputLocationPane.createControl(outputComposite, Messages.outputLocationPaneTitle, toolkit);
+        layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
+        outputLocationPane.getControl().setLayoutData(layoutData);
+
         Composite root = new LayoutComposite(parent);
-        Composite rootComposite = factory.createFlatFormComposite(root);
+        Composite rootComposite = toolkit.createFlatFormComposite(root);
         rootComposite.setLayout(new GridLayout(1, true));
-        
-        final Section sectionProperties = factory.createSection(rootComposite, Section.TITLE_BAR | Section.EXPANDED);
-        sectionProperties.setText("Root Folder");
-        GridData layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
-        sectionProperties.setLayoutData(layoutData);
-        final Composite sectionInstallationClient = factory.createComposite(sectionProperties);
-        sectionInstallationClient.setLayout(new GridLayout(1, true));
-        createRootSection(sectionInstallationClient);
-        sectionProperties.setClient(sectionInstallationClient);
-        sectionProperties.setVisible(true);
+        createRootSection(rootComposite, toolkit);
+
+        rootComposite.layout();
+        outputComposite.layout();
     }
 
-    private Composite createRootSection(final Composite parent) {
-        Composite rootgroup = new Composite(parent, SWT.NONE);
+    private Composite createRootSection(final Composite parent, FormToolkit toolkit) {
+
+        final Section sectionProperties = toolkit.createSection(parent, Section.TITLE_BAR | Section.EXPANDED);
+        sectionProperties.setText(Messages.rootFolderSectionTitle);
+        GridData layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
+        sectionProperties.setLayoutData(layoutData);
+
+        Composite rootgroup = toolkit.createComposite(sectionProperties);
         rootgroup.setLayout(new GridLayout(2, false));
-        rootgroup.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
         workflowStartCheckbox = new Button(rootgroup, SWT.CHECK);
-        workflowStartCheckbox.setText("Select at workflow start");
+        workflowStartCheckbox.setText(Messages.selectAtStart);
 
         workflowStartCheckbox.setLayoutData(new GridData(SWT.LEFT,
             SWT.TOP, true, false, 2, 1));
@@ -115,8 +141,8 @@ public class OutputWriterPropertiesSection extends DefaultEndpointPropertySectio
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 DirectoryDialog dialog = new DirectoryDialog(parent.getShell());
-                dialog.setText("Select Folder");
-                dialog.setMessage("Select target root folder:");
+                dialog.setText(Messages.selectRootFolder);
+                dialog.setMessage(Messages.selectRootFolder);
                 String result = dialog.open();
                 if (result != null) {
                     rootText.setText(result);
@@ -141,6 +167,10 @@ public class OutputWriterPropertiesSection extends DefaultEndpointPropertySectio
         warnLabel.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
         noteLabel.setBackground(Display.getCurrent().getSystemColor(SWT.COLOR_WHITE));
         noteLabel.setText(Messages.note);
+
+        sectionProperties.setClient(rootgroup);
+        sectionProperties.setVisible(true);
+
         return rootgroup;
     }
 

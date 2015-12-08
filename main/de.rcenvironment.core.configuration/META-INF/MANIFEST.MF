@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: de.rcenvironment.core.configuration,
@@ -11,12 +11,14 @@ Export-Package: de.rcenvironment.core.configuration,
 Import-Package: de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.configuration.discovery.bootstrap,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.incubator,
  org.apache.commons.io,
  org.apache.commons.logging;version="1.1.1",
  org.codehaus.jackson;version="1.9.13",
  org.codehaus.jackson.impl;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",
+ org.codehaus.jackson.node;version="1.9.13",
  org.codehaus.jackson.type;version="1.9.13",
  org.codehaus.jackson.util;version="1.9.13",
  org.eclipse.equinox.security.storage;version="1.0.0",
@@ -24,3 +26,4 @@ Import-Package: de.rcenvironment.core.configuration.bootstrap,
  org.osgi.framework
 Bundle-ClassPath: .
 Service-Component: OSGI-INF/*.xml
+Bundle-Activator: de.rcenvironment.core.configuration.internal.Activator

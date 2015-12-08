@@ -11,43 +11,51 @@ package de.rcenvironment.core.datamanagement.internal;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.UndeclaredThrowableException;
-import java.util.HashMap;
+import java.net.URI;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
 import org.easymock.EasyMock;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
+import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.ServiceReference;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
-import de.rcenvironment.core.datamanagement.FileDataService;
+import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
+import de.rcenvironment.core.datamanagement.RemotableFileDataService;
+import de.rcenvironment.core.datamanagement.backend.DataBackend;
+import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.DistributableInputStream;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamanagement.testutils.FileDataServiceDefaultStub;
 import de.rcenvironment.core.datamodel.api.CompressionFormat;
+import de.rcenvironment.core.notification.api.RemotableNotificationService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
 /**
- * Test cases of {@link DistributedFileDataServiceImpl}.
+ * Test cases of {@link FileDataServiceImpl}.
  * 
  * @author Doreen Seider
  * @author Robert Mischke (adapted for new upload mechanism)
@@ -56,14 +64,35 @@ public class DistributedFileDataServiceImplTest {
 
     private static final String REVISION = "1";
 
+    private static final String CLOSE_BRACKET = ")";
+
+    private static final String OPEN_BRACKET = "(";
+
+    private static final String EQUALS_SIGN = "=";
+
     // should be >UPLOAD_CHUNK_SIZE for proper testing
     private static final int UPLOAD_TEST_SIZE = 300000;
 
+    // should be <UPLOAD_CHUNK_SIZE for proper testing of single step upload
+    private static final int SMALL_UPLOAD_TEST_SIZE = 1024;
+
+    private static String xmlBackendProvider = "snoopy";
+
+    private static String fileBackendProvider = "linus";
+
+    private static String dataScheme = "ftp";
+
+    private static String catalogBackendProvider = "de.rcenvironment.core.datamanagement.backend.metadata.derby";
+
+    /**
+     * Exception handler for expected exceptions.
+     */
+    @Rule
+    public final ExpectedException exception = ExpectedException.none();
+
     private final int read = 7;
 
-    private DistributedFileDataServiceImpl distrFDS;
-
-    private User certificateMock;
+    private FileDataServiceImpl fileDataService;
 
     private NodeIdentifier localNodeId;
 
@@ -84,6 +113,15 @@ public class DistributedFileDataServiceImplTest {
 
     private NodeIdentifier mockRemoteNodeId;
 
+    private MetaDataBackendService catalogBackend = EasyMock.createNiceMock(MetaDataBackendService.class);
+
+    private DataBackend dataBackend;
+
+    private BackendSupport backendSupport;
+
+    private UUID notReachableReferenceID;
+
+
     public DistributedFileDataServiceImplTest() {
         mockRemoteNodeId = NodeIdentifierFactory.fromNodeId("horst:7");
     }
@@ -95,12 +133,10 @@ public class DistributedFileDataServiceImplTest {
     public void setUp() {
         TempFileServiceAccess.setupUnitTestEnvironment();
 
-        certificateMock = EasyMock.createNiceMock(User.class);
-        EasyMock.expect(certificateMock.isValid()).andReturn(true);
-        EasyMock.replay(certificateMock);
-
         localNodeId = NodeIdentifierFactory.fromNodeId("horst:1");
+        unreachableNodeId = NodeIdentifierFactory.fromNodeId("unreachable:1");
         referenceID = UUID.randomUUID();
+        notReachableReferenceID = UUID.randomUUID();
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
@@ -108,7 +144,7 @@ public class DistributedFileDataServiceImplTest {
         birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
         notReachableReference =
-            new DataReference(referenceID.toString(), NodeIdentifierFactory.fromNodeId("notreachable:1"), birefs);
+            new DataReference(notReachableReferenceID.toString(), unreachableNodeId, birefs);
 
         is = new InputStream() {
 
@@ -119,24 +155,40 @@ public class DistributedFileDataServiceImplTest {
         };
         mds = new MetaDataSet();
 
-        distrFDS = new DistributedFileDataServiceImpl();
-        distrFDS.bindCommunicationService(new MockCommunicationService());
-        distrFDS.bindPlatformService(new MockPlatformService());
-        distrFDS.bindFileDataService(new MockLocalFileDataService());
-        distrFDS.activate(EasyMock.createNiceMock(BundleContext.class));
+        fileDataService = new FileDataServiceImpl();
+        fileDataService.bindCommunicationService(new MockCommunicationService());
+        fileDataService.bindPlatformService(new MockPlatformService());
+        fileDataService.activate(EasyMock.createNiceMock(BundleContext.class));
+
+        dataBackend = EasyMock.createNiceMock(DataBackend.class);
+        EasyMock.expect(dataBackend.get(EasyMock.anyObject(URI.class))).andReturn(new InputStream() {
+
+            @Override
+            public int read() throws IOException {
+                return 0;
+            }
+        });
+        EasyMock.replay(dataBackend);
+
+        backendSupport = new BackendSupport();
+        backendSupport.bindConfigurationService(new DummyConfigurationService());
+        backendSupport.bindDataBackendService(dataBackend);
+        backendSupport.activate(createBundleContext(catalogBackend, dataBackend));
     }
 
     /**
      * Test.
      * 
      * @throws IOException if an error occurs.
+     * @throws CommunicationException on communication error
      */
     @Test
-    public void testGetStreamFromDataReference() throws IOException {
-        InputStream stream = distrFDS.getStreamFromDataReference(certificateMock, reference);
+    public void testGetStreamFromDataReference() throws IOException, CommunicationException {
+        InputStream stream = fileDataService.getStreamFromDataReference(reference);
         assertEquals(read, stream.read());
-        stream = distrFDS.getStreamFromDataReference(certificateMock, notReachableReference);
-        assertNull(stream);
+        exception.expect(UndeclaredThrowableException.class);
+        stream = fileDataService.getStreamFromDataReference(notReachableReference);
+
     }
 
     /**
@@ -147,10 +199,10 @@ public class DistributedFileDataServiceImplTest {
     @Test
     public void testLocalNewReferenceFromStream() throws Exception {
         // test local
-        DataReference dr = distrFDS.newReferenceFromStream(certificateMock, is, mds, localNodeId);
+        DataReference dr = fileDataService.newReferenceFromStream(is, mds, localNodeId);
         assertEquals(reference, dr);
         // test "null" (should be local)
-        dr = distrFDS.newReferenceFromStream(certificateMock, is, mds, null);
+        dr = fileDataService.newReferenceFromStream(is, mds, null);
         assertEquals(reference, dr);
     }
 
@@ -163,7 +215,37 @@ public class DistributedFileDataServiceImplTest {
     public void testDistributedNewReferenceFromStream() throws Exception {
         assertFalse(localNodeId.equals(mockRemoteNodeId));
         InputStream testStream = new ByteArrayInputStream(new byte[UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = distrFDS.newReferenceFromStream(certificateMock, testStream, mds, mockRemoteNodeId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteNodeId);
+        assertNotNull(remoteRef);
+        assertEquals(lastMockRemoteDataReference, remoteRef);
+        assertEquals(mockRemoteNodeId, remoteRef.getNodeIdentifier());
+    }
+
+    /**
+     * Test for small uploads.
+     * 
+     * @throws Exception on uncaught errors
+     */
+    @Test
+    public void testDistributedNewReferenceFromStreamSmallUpload() throws Exception {
+        assertFalse(localNodeId.equals(mockRemoteNodeId));
+        InputStream testStream = new ByteArrayInputStream(new byte[SMALL_UPLOAD_TEST_SIZE]);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteNodeId);
+        assertNotNull(remoteRef);
+        assertEquals(lastMockRemoteDataReference, remoteRef);
+        assertEquals(mockRemoteNodeId, remoteRef.getNodeIdentifier());
+    }
+
+    /**
+     * Test for small uploads, stream not returning full buffer.
+     * 
+     * @throws Exception on uncaught errors
+     */
+    @Test
+    public void testDistributedNewReferenceFromStreamNoFullBuffer() throws Exception {
+        assertFalse(localNodeId.equals(mockRemoteNodeId));
+        InputStream testStream = new MockInputStream(new byte[SMALL_UPLOAD_TEST_SIZE]);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteNodeId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
         assertEquals(mockRemoteNodeId, remoteRef.getNodeIdentifier());
@@ -177,35 +259,42 @@ public class DistributedFileDataServiceImplTest {
     private class MockCommunicationService extends CommunicationServiceDefaultStub {
 
         @Override
-        public Object getService(Class<?> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-            throws IllegalStateException {
-            return getService(iface, new HashMap<String, String>(), nodeId, bundleContext);
+        @SuppressWarnings("unchecked")
+        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext) throws IllegalStateException {
+            if (nodeId.equals(localNodeId)) {
+                return (T) new MockLocalFileDataService();
+            } else if (nodeId.equals(unreachableNodeId)) {
+                return (T) new MockUnreachableFileDataService();
+            } else {
+                return (T) new MockRemoteFileDataService();
+            }
         }
 
         @Override
-        public Object getService(Class<?> iface, Map<String, String> properties, NodeIdentifier nodeId,
-            BundleContext bundleContext) throws IllegalStateException {
-            if (nodeId.equals(localNodeId)) {
-                return new MockLocalFileDataService();
+        @SuppressWarnings("unchecked")
+        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
+            if (iface == RemotableNotificationService.class
+                && nodeId.equals(localNodeId)) {
+                return (T) new MockLocalFileDataService();
             } else if (nodeId.equals(unreachableNodeId)) {
-                return new MockUnreachableFileDataService();
+                return (T) new MockUnreachableFileDataService();
             } else {
-                return new MockRemoteFileDataService();
+                return (T) new MockRemoteFileDataService();
             }
         }
     }
 
     /**
-     * Test implementation of the {@link FileDataService}.
+     * Test implementation of the {@link RemotableFileDataService}.
      * 
      * @author Doreen Seider
      */
     private class MockLocalFileDataService extends FileDataServiceDefaultStub {
 
         @Override
-        public InputStream getStreamFromDataReference(User proxyCertificate, DataReference dataReference, Boolean calledFromRemote)
+        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote)
             throws AuthorizationException {
-            if (proxyCertificate.equals(certificateMock) && dataReference.equals(reference)) {
+            if (dataReference.equals(reference)) {
                 return is;
             } else {
                 throw new RuntimeException();
@@ -213,10 +302,10 @@ public class DistributedFileDataServiceImplTest {
         }
 
         @Override
-        public DataReference newReferenceFromStream(User proxyCertificate, InputStream inputStream,
+        public DataReference newReferenceFromStream(InputStream inputStream,
             MetaDataSet metaDataSet) throws AuthorizationException {
-            if (proxyCertificate.equals(certificateMock) && inputStream.equals(is)
-                || proxyCertificate.equals(certificateMock) && inputStream instanceof DistributableInputStream) {
+            if (inputStream.equals(is)
+                || inputStream instanceof DistributableInputStream) {
                 return reference;
             } else {
                 throw new RuntimeException();
@@ -231,36 +320,36 @@ public class DistributedFileDataServiceImplTest {
         }
 
         @Override
-        public String initializeUpload(User user) throws IOException {
+        public String initializeUpload() throws IOException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public long appendToUpload(User user, String id, byte[] data) throws IOException {
+        public long appendToUpload(String id, byte[] data) throws IOException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public void finishUpload(User user, String id, MetaDataSet metaDataSet) throws IOException {
+        public void finishUpload(String id, MetaDataSet metaDataSet) throws IOException {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public DataReference pollUploadForDataReference(User user, String id) {
+        public DataReference pollUploadForDataReference(String id) {
             throw new UnsupportedOperationException();
         }
     }
 
     /**
-     * Mock of a remote {@link FileDataService} based on the actual {@link FileDataServiceImpl} implementation.
+     * Mock of a remote {@link RemotableFileDataService} based on the actual {@link RemotableFileDataServiceImpl} implementation.
      * 
      * @author Robert Mischke
      */
-    private class MockRemoteFileDataService extends FileDataServiceImpl {
+    private class MockRemoteFileDataService extends RemotableFileDataServiceImpl {
 
         @Override
         @AllowRemoteAccess
-        public DataReference newReferenceFromStream(User user, InputStream inputStream, MetaDataSet metaDataSet)
+        public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet)
             throws AuthorizationException {
             Set<BinaryReference> birefs = new HashSet<BinaryReference>();
             birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
@@ -268,49 +357,65 @@ public class DistributedFileDataServiceImplTest {
             lastMockRemoteDataReference = new DataReference(referenceID.toString(), mockRemoteNodeId, birefs);
             return lastMockRemoteDataReference;
         }
+
+        @Override
+        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote)
+            throws AuthorizationException {
+            if (dataReference.equals(reference)) {
+                return is;
+            } else {
+                throw new RuntimeException();
+            }
+        }
+
     }
 
     /**
-     * Not reachable test implementation of the {@link FileDataService}. Used for remote upload testing.
+     * Not reachable test implementation of the {@link RemotableFileDataService}. Used for remote upload testing.
      * 
      * @author Doreen Seider
      */
-    private class MockUnreachableFileDataService implements FileDataService {
+    private class MockUnreachableFileDataService implements RemotableFileDataService {
 
         @Override
-        public InputStream getStreamFromDataReference(User proxyCertificate, DataReference dataReference, Boolean calledFromRemote)
+        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote)
             throws AuthorizationException {
             throw new UndeclaredThrowableException(null);
         }
 
         @Override
-        public DataReference newReferenceFromStream(User proxyCertificate, InputStream inputStream, MetaDataSet metaDataSet)
+        public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet)
             throws AuthorizationException {
             throw new UndeclaredThrowableException(null);
         }
 
         @Override
-        public String initializeUpload(User user) throws IOException {
+        public String initializeUpload() throws IOException {
             throw new UndeclaredThrowableException(null);
         }
 
         @Override
-        public long appendToUpload(User user, String id, byte[] data) throws IOException {
+        public long appendToUpload(String id, byte[] data) throws IOException {
             throw new UndeclaredThrowableException(null);
         }
 
         @Override
-        public void finishUpload(User user, String id, MetaDataSet metaDataSet) throws IOException {
+        public void finishUpload(String id, MetaDataSet metaDataSet) throws IOException {
             throw new UndeclaredThrowableException(null);
         }
 
         @Override
-        public DataReference pollUploadForDataReference(User user, String id) {
+        public DataReference pollUploadForDataReference(String id) {
             throw new UndeclaredThrowableException(null);
         }
 
         @Override
         public void deleteReference(String dataReference) throws AuthorizationException {
+            throw new UndeclaredThrowableException(null);
+        }
+
+        @Override
+        public DataReference uploadInSingleStep(byte[] data, MetaDataSet metaDataSet) throws IOException {
             throw new UndeclaredThrowableException(null);
         }
 
@@ -332,6 +437,111 @@ public class DistributedFileDataServiceImplTest {
         @Override
         public boolean isLocalNode(NodeIdentifier nodeId) {
             return localNodeId.equals(nodeId);
+        }
+
+    }
+
+    /**
+     * Test implementation for simulating the situation where read() does not return a full buffer.
+     * 
+     * @author Brigitte Boden
+     */
+    private class MockInputStream extends ByteArrayInputStream {
+
+        private static final int CHUNK_SIZE = 256;
+
+        public MockInputStream(byte[] buf) {
+            super(buf);
+        }
+
+        @Override
+        public int read(byte[] b) throws IOException {
+            if (b.length > CHUNK_SIZE) {
+                return super.read(b, 0, CHUNK_SIZE);
+            }
+            return super.read(b);
+        }
+
+        @Override
+        public synchronized int read(byte[] b, int off, int len) {
+            if (len > CHUNK_SIZE) {
+                return super.read(b, off, CHUNK_SIZE);
+            }
+            return super.read(b, off, len);
+        }
+    }
+
+    /**
+     * Helper method creating a {@link BundleContext} object which retrieves the given backend services.
+     * 
+     * @param catalogBackend {@link MetaDataBackendService} to retrieve.
+     * @param dataBackend {@link DataBackend} to retrieve.
+     * @return the {@link BundleContext}.
+     */
+    public static BundleContext createBundleContext(MetaDataBackendService catalogBackend, DataBackend dataBackend) {
+
+        BundleContext bundleContext = EasyMock.createNiceMock(BundleContext.class);
+
+        Bundle bundleMock = EasyMock.createNiceMock(Bundle.class);
+        EasyMock.expect(bundleMock.getSymbolicName()).andReturn("huebscherName").anyTimes();
+        EasyMock.replay(bundleMock);
+
+        EasyMock.expect(bundleContext.getBundle()).andReturn(bundleMock).anyTimes();
+
+        // catalog backend
+        String catalogFilterString = OPEN_BRACKET + MetaDataBackendService.PROVIDER + EQUALS_SIGN
+            + catalogBackendProvider + CLOSE_BRACKET;
+        ServiceReference catalogServiceRef = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference[] catalogServiceRefs = { catalogServiceRef };
+        try {
+            EasyMock.expect(bundleContext.getServiceReferences(MetaDataBackendService.class.getName(), catalogFilterString))
+                .andReturn(catalogServiceRefs).anyTimes();
+        } catch (InvalidSyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        EasyMock.expect(bundleContext.getService(catalogServiceRef)).andReturn(catalogBackend).anyTimes();
+
+        // data backend
+        String dataFilterStringForScheme = OPEN_BRACKET + DataBackend.PROVIDER + EQUALS_SIGN + fileBackendProvider + CLOSE_BRACKET;
+        String dataFilterStringForProvider = OPEN_BRACKET + DataBackend.PROVIDER + EQUALS_SIGN + xmlBackendProvider + CLOSE_BRACKET;
+        String dataSchemefilterString = OPEN_BRACKET + DataBackend.SCHEME + EQUALS_SIGN + dataScheme + CLOSE_BRACKET;
+        ServiceReference dataServiceRef = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference[] dataServiceRefs = { dataServiceRef };
+        try {
+            EasyMock.expect(bundleContext.getServiceReferences(DataBackend.class.getName(), dataFilterStringForProvider))
+                .andReturn(dataServiceRefs).anyTimes();
+            EasyMock.expect(bundleContext.getServiceReferences(DataBackend.class.getName(), dataFilterStringForScheme))
+                .andReturn(dataServiceRefs).anyTimes();
+            EasyMock.expect(bundleContext.getServiceReferences(DataBackend.class.getName(), dataSchemefilterString))
+                .andReturn(dataServiceRefs).anyTimes();
+        } catch (InvalidSyntaxException e) {
+            throw new RuntimeException(e);
+        }
+        EasyMock.expect(bundleContext.getService((ServiceReference) dataServiceRef)).andReturn(dataBackend).anyTimes();
+
+        // for failures
+        EasyMock.expect(bundleContext.getServiceReference((String) null)).andReturn(null).anyTimes();
+
+        EasyMock.replay(bundleContext);
+
+        return bundleContext;
+    }
+
+    /**
+     * Test implementation of {@link ConfigurationService}.
+     * 
+     * @author Doreen Seider
+     */
+    private class DummyConfigurationService extends MockConfigurationService.ThrowExceptionByDefault {
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public <T> T getConfiguration(String identifier, Class<T> clazz) {
+            DataManagementConfiguration config = new DataManagementConfiguration();
+            config.setMetaDataBackend(catalogBackendProvider);
+            config.setFileDataBackend(fileBackendProvider);
+
+            return (T) config;
         }
 
     }

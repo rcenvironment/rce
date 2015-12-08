@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.text.MessageFormat;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.fileaccess.internal.RemoteFileConnectionSupport;
 import de.rcenvironment.core.utils.incubator.Assertions;
@@ -45,13 +44,13 @@ public class RemoteInputStream extends InputStream implements Serializable {
      *        file://host:platformNo/absolutePathToFile)
      * @throws IOException if the file could not be accessed remotely.
      */
-    public RemoteInputStream(User cert, URI uri) throws IOException {
+    public RemoteInputStream(URI uri) throws IOException {
 
         Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, "uri"));
         Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, "certificate"));
 
         try {
-            remoteFileConnection = RemoteFileConnectionSupport.getRemoteFileConnection(cert, uri);
+            remoteFileConnection = RemoteFileConnectionSupport.getRemoteFileConnection(uri);
         } catch (CommunicationException e) {
             throw new IOException(e);
         }

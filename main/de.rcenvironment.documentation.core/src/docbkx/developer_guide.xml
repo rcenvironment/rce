@@ -29,20 +29,30 @@
 	</chapter>
 	
 	<chapter>
-		<title>Coding</title>
+		<title>Coding Guidelines</title>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/new_component.xml" />
-	</chapter>
-	
-	<chapter>
-		<title>Debugging and Monitoring</title>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/debugging_monitoring.xml" />
 	</chapter>
 	
+	<!--
 	<chapter>
-		<title>Quality Assurance</title>
-		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-			href="developer_guide/sections/quality_assurance.xml" />
+		<title>System Architecture</title>
 	</chapter>
+	-->
+	
+	<chapter>
+		<title>Quality Assurance and Testing</title>
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+			href="developer_guide/sections/automated_gui_testing.xml" />
+	</chapter>
+
+	<chapter>
+		<title>Licensing and Copyright</title>
+		<!-- TODO add information about handling third-party license information -->
+		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
+			href="developer_guide/sections/copyright_information.xml" />
+	</chapter>
+	
 </book>

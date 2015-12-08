@@ -16,11 +16,11 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.BlockingDeque;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.logging.LogFactory;
 
@@ -35,7 +35,10 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinition;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDescription;
+import de.rcenvironment.core.component.model.endpoint.impl.EndpointDatumImpl;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -52,9 +55,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  */
 public class ExecutionScheduler {
     
-    private final String componentExeutionIdentifier;
-    
-    private final String logMessagPrefix;
+    private final String compExeId;
     
     private final BlockingDeque<EndpointDatum> endpointDatumsToProcess;
     
@@ -62,7 +63,7 @@ public class ExecutionScheduler {
     
     private final ComponentStateMachine stateMachine;
     
-    private final Map<String, EndpointGroupDefinition> endpointGroupDefinitions = new HashMap<>();
+    private final Map<String, EndpointGroupDescription> endpointGroupDescriptions = new HashMap<>();
     
     private final Map<String, EndpointDatum> inputsOccupied = Collections.synchronizedMap(new HashMap<String, EndpointDatum>());
     
@@ -86,25 +87,31 @@ public class ExecutionScheduler {
     
     private final Set<String> finishedInputs = new HashSet<>();
     
-    private int inputsCount = 0;
+    private final Map<String, Set<String>> idsOfNotAValueDatumsReceived = new HashMap<>();
     
-    private final Map<String, Set<String>> idsOfIndefiniteDatumsReceived = new HashMap<>();
-    
-    private final Set<String> idsIndefiniteDatumsSent = Collections.synchronizedSet(new HashSet<String>());
+    private final Set<String> idsNotAValueDatumsSent = Collections.synchronizedSet(new HashSet<String>());
     
     private final Set<String> resetDataIdsForwarded = Collections.synchronizedSet(new HashSet<String>());
     
-    private AtomicBoolean loopResetRequested = new AtomicBoolean(false);
+    private final Set<String> failureDataIdsForwarded = Collections.synchronizedSet(new HashSet<String>());
+    
+    private final AtomicBoolean loopResetRequested = new AtomicBoolean(false);
     
     private final Set<String> resetDataIdsSent = Collections.synchronizedSet(new HashSet<String>());
     
-    private AtomicBoolean loopReset = new AtomicBoolean(false);
+    private final AtomicBoolean loopReset = new AtomicBoolean(false);
     
-    private State state = State.IDLING;
+    private final AtomicReference<EndpointDatum> resetDatumToFoward = new AtomicReference<>(null);
     
-    private EndpointDatum resetDatumToFoward;
+    private final AtomicReference<EndpointDatum> failureDatumToFoward = new AtomicReference<>(null);
     
     private Future<?> schedulingFuture;
+    
+    private int inputsCount = 0;
+
+    private State state = State.IDLING;
+    
+    private TypedDatumFactory typedDatumFactory;
     
     /**
      * States a component can be form a scheduling perspective.
@@ -114,27 +121,24 @@ public class ExecutionScheduler {
     protected enum State {
         IDLING,
         PROCESS_INPUT_DATA,
-        PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA,
+        PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA,
         FINISHED,
         RESET,
+        FAILURE_FORWARD,
         LOOP_RESET;
     }
     
     protected ExecutionScheduler(ComponentExecutionContext compExeContext, BlockingDeque<EndpointDatum> endpointDatumsToProcess,
         ComponentStateMachine stateMachine) {
-        componentExeutionIdentifier = compExeContext.getExecutionIdentifier();
-        logMessagPrefix =
-            StringUtils.format("'%s' (%s) of workflow '%s' (%s): ", compExeContext.getInstanceName(),
-                compExeContext.getExecutionIdentifier(), compExeContext.getWorkflowInstanceName(),
-                compExeContext.getWorkflowExecutionIdentifier());
+        compExeId = compExeContext.getExecutionIdentifier();
         this.endpointDatumsToProcess = endpointDatumsToProcess;
         this.stateMachine = stateMachine;
     }
     
     protected void initialize(ComponentExecutionContext compExeContext) throws ComponentExecutionException {
         EndpointDescriptionsManager endpointDescriptionsManager = compExeContext.getComponentDescription().getInputDescriptionsManager();
-        for (EndpointGroupDefinition groupDefinition : endpointDescriptionsManager.getEndpointGroupDefinitions()) {
-            endpointGroupDefinitions.put(groupDefinition.getIdentifier(), groupDefinition);
+        for (EndpointGroupDescription groupDescription : endpointDescriptionsManager.getEndpointGroupDescriptions()) {
+            endpointGroupDescriptions.put(groupDescription.getName(), groupDescription);
         }
         
         for (EndpointDescription endpointDescription : endpointDescriptionsManager.getEndpointDescriptions()) {
@@ -142,7 +146,7 @@ public class ExecutionScheduler {
             Map<String, String> metaData = endpointDescription.getMetaData();
             String inputHandling = metaData.get(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING);
             if (inputHandling == null) {
-                inputHandling = endpointDescription.getDeclarativeEndpointDescription().getDefaultInputDatumHandling().name();
+                inputHandling = endpointDescription.getEndpointDefinition().getDefaultInputDatumHandling().name();
             }
             if (inputHandling.equals(EndpointDefinition.InputDatumHandling.Constant.name())) {
                 constantInputs.add(endpointDescription.getName());
@@ -155,7 +159,7 @@ public class ExecutionScheduler {
             
             String inputExecutionConstraint = metaData.get(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT);
             if (inputExecutionConstraint == null) {
-                inputExecutionConstraint = endpointDescription.getDeclarativeEndpointDescription()
+                inputExecutionConstraint = endpointDescription.getEndpointDefinition()
                     .getDefaultInputExecutionConstraint().name();
             }
             if (inputExecutionConstraint.equals(EndpointDefinition.InputExecutionContraint.RequiredIfConnected.name())) {
@@ -163,7 +167,7 @@ public class ExecutionScheduler {
                     addToRequiredInputsOrGroups(endpointDescriptionsManager, endpointDescription);
                 }
             } else if (inputExecutionConstraint.equals(EndpointDefinition.InputExecutionContraint.None.name())) {
-                if (endpointDescription.getGroupName() == null) {
+                if (endpointDescription.getParentGroupName() == null) {
                     throw new ComponentExecutionException(StringUtils.format(
                         "Input '%s' of component '%s' is declared as not required, but it is not part of an input group of type 'or'",
                         endpointDescription.getName(), compExeContext.getInstanceName()));
@@ -176,14 +180,16 @@ public class ExecutionScheduler {
                 }
             } else {
                 if (!endpointDescription.isConnected()) {
-                    throw new ComponentExecutionException(StringUtils.format("Input '%s' of component '%s' is declared as required, "
-                        + "but it is not connected to an ouput.",
+                    throw new ComponentExecutionException(StringUtils.format("The execution constraint of input '%s' of component '%s' "
+                        + "is declared as 'required', but the input is not connected to an output. Either connect it to an output or "
+                        + "alter its execution constraint (e.g., to 'required if connected') or delete the input at all. Note: "
+                        + "The two latter options might not be applicable in this particular case.",
                         endpointDescription.getName(), compExeContext.getInstanceName()));
                 }
                 addToRequiredInputsOrGroups(endpointDescriptionsManager, endpointDescription);
             }
         }
-
+        
     }
     
     protected synchronized void start() {
@@ -219,15 +225,15 @@ public class ExecutionScheduler {
             synchronized (inputsOccupied) {
                 if (inputsOccupied.containsKey(endpointDatum.getInputName())) {
                     if (constantInputs.contains(endpointDatum.getInputName())) {
-                        throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
+                        throw new ComponentExecutionException(StringUtils.format(
                             "A second value at input '%s' type 'constant' received. Only one value is allowed. "
                             + "First: %s. Second: %s. (Except in inner loops. There, one value is allowed for each inner loop run.)",
                             endpointDatum.getInputName(), inputsOccupied.get(endpointDatum.getInputName()), endpointDatum));
                     } else if (!queuedConsumingInputs.contains(endpointDatum.getInputName())) {
-                        throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
+                        throw new ComponentExecutionException(StringUtils.format(
                             "A new value at input '%s' of type 'single' received, but the current one was not consumed yet. "
                             + "Current: %s. New: %s. Queue of values is not allowed at inputs of type 'single'. "
-                            + "Use input type 'queue' if queuing is intended.",
+                            + "Use input type 'queue' if queuing is allowed and intended.",
                             endpointDatum.getInputName(), inputsOccupied.get(endpointDatum.getInputName()), endpointDatum));
                     }
                 } else {
@@ -241,14 +247,8 @@ public class ExecutionScheduler {
     }
     
     protected synchronized void stop() throws InterruptedException, ExecutionException {
-        if (schedulingFuture != null) {
+        if (schedulingFuture != null && !schedulingFuture.isCancelled()) {
             schedulingFuture.cancel(true);
-            try {
-                schedulingFuture.get();
-            } catch (CancellationException e) {
-                // intended
-                e = null;
-            }
         }
         schedulingFuture = null;
     }
@@ -261,11 +261,11 @@ public class ExecutionScheduler {
     private void addToRequiredInputsOrGroups(EndpointDescriptionsManager endpointDescriptionsManager,
         EndpointDescription endpointDescription) {
         inputsCount++;
-        if (endpointDescription.getGroupName() == null) {
+        if (endpointDescription.getParentGroupName() == null || endpointDescription.getParentGroupName().equals("null")) {
             requiredInputsOrGroups.add(endpointDescription.getName());
         } else {
-            requiredInputsOrGroups.add(getTopLevelGroup(endpointDescriptionsManager, endpointDescription.getGroupName()));
-            fillGroups(endpointDescriptionsManager, endpointDescription.getName(), endpointDescription.getGroupName());
+            requiredInputsOrGroups.add(getTopLevelGroup(endpointDescriptionsManager, endpointDescription.getParentGroupName()));
+            fillGroups(endpointDescriptionsManager, endpointDescription.getName(), endpointDescription.getParentGroupName());
         }
     }
     
@@ -276,16 +276,16 @@ public class ExecutionScheduler {
         }
         groups.get(groupName).add(inputOrGroupName);
         
-        if (endpointDescriptionsManager.getEndpointGroupDefnition(groupName).getGroupName() != null) {
+        if (endpointDescriptionsManager.getEndpointGroupDescription(groupName).getParentGroupName() != null) {
             fillGroups(endpointDescriptionsManager, groupName, endpointDescriptionsManager
-                .getEndpointGroupDefnition(groupName).getGroupName());
+                .getEndpointGroupDescription(groupName).getParentGroupName());
         }
     }
     
     private String getTopLevelGroup(EndpointDescriptionsManager endpointDescriptionsManager, String groupName) {
-        if (endpointDescriptionsManager.getEndpointGroupDefnition(groupName).getGroupName() != null) {
+        if (endpointDescriptionsManager.getEndpointGroupDescription(groupName).getParentGroupName() != null) {
             return getTopLevelGroup(endpointDescriptionsManager, endpointDescriptionsManager
-                .getEndpointGroupDefnition(groupName).getGroupName());
+                .getEndpointGroupDescription(groupName).getParentGroupName());
         } else {
             return groupName;
         }
@@ -293,7 +293,7 @@ public class ExecutionScheduler {
     
     protected State getSchedulingState() throws InterruptedException, ComponentExecutionException {
         updateState();
-        if (state != State.PROCESS_INPUT_DATA && state != State.PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA) {
+        if (state != State.PROCESS_INPUT_DATA && state != State.PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA) {
             addEndpointDatum(validatedEndpointDatumsToProcess.take());
             updateState();
         }
@@ -329,9 +329,15 @@ public class ExecutionScheduler {
     }
     
     protected InternalTDImpl getResetDatum() {
-        InternalTDImpl resetDatum = (InternalTDImpl) resetDatumToFoward.getValue();
-        resetDatumToFoward = null;
+        InternalTDImpl resetDatum = (InternalTDImpl) resetDatumToFoward.get().getValue();
+        resetDatumToFoward.set(null);
         return resetDatum;
+    }
+    
+    protected InternalTDImpl getFailureDatum() {
+        InternalTDImpl failureDatum = (InternalTDImpl) failureDatumToFoward.get().getValue();
+        failureDatumToFoward.set(null);
+        return failureDatum;
     }
     
     private void addEndpointDatum(EndpointDatum endpointDatum) throws ComponentExecutionException {
@@ -351,14 +357,14 @@ public class ExecutionScheduler {
         if (loopResetRequested.get() && (endpointDatum.getValue().getDataType() != DataType.Internal
             || ((InternalTDImpl) endpointDatum.getValue()).getType() != InternalTDImpl.InternalTDType.NestedLoopReset)) {
             if (endpointDatum.getValue().getDataType() == DataType.Internal) {
-                throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
-                    "Received input at '%s' of type 'Internal (Finished)', "
-                    + "but component is waiting for datums of type 'Internal (Reset)'",
+                throw new ComponentExecutionException(StringUtils.format(
+                    "Received input at '%s' of type 'Internal (Finished)', but component is waiting for datums of type 'Internal (Reset)'."
+                    + " Review the connections of your (nested) loop(s). Refer to the user guide if in doubt.",
                     endpointDatum.getInputName()));
             } else {
-                throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
-                    "Received input at '%s' of type '%s', "
-                    + "but component is waiting for datums of type 'Internal (Reset)'",
+                throw new ComponentExecutionException(StringUtils.format(
+                    "Received input at '%s' of type '%s', but component is waiting for datums of type 'Internal (Reset)'."
+                    + " Review the connections of your (nested) loop(s). Refer to the user guide if in doubt.",
                     endpointDatum.getInputName(), endpointDatum.getValue().getDataType().getDisplayName()));
             }
         }
@@ -371,26 +377,51 @@ public class ExecutionScheduler {
         case WorkflowFinish:
             finishedInputs.add(endpointDatum.getInputName());
             break;
-        case NestedLoopReset:
-            if (!loopResetRequested.get()) {
-                if (!internalDatum.getHopsToTraverse().peek().getHopExecutionIdentifier().equals(componentExeutionIdentifier)) {
-                    throw new ComponentExecutionException(logMessagPrefix
-                        + "Received reset datum, but component is not the latest recipient");
-                } else if (resetDataIdsForwarded.contains(internalDatum.getIdentifier())) {
-                    throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
-                        "Received reset datum forwarded at input '%s' again", endpointDatum.getInputName()));
-                } else {
-                    resetDatumToFoward = endpointDatum;
-                    resetDataIdsForwarded.add(internalDatum.getIdentifier());
-                }
+        case FailureInLoop:
+            if (internalDatum.getHopsToTraverse().isEmpty()) { // final component
+                handleNonInternalEndpointDatumAdded(convertEndpointDatum(endpointDatum, Long.valueOf(internalDatum.getPayload())));
+            } else if (!internalDatum.getHopsToTraverse().peek().getHopExecutionIdentifier().equals(compExeId)) { // sanity check
+                throw new ComponentExecutionException("Internal error: Received failure datum, but component is not the recipient,"
+                    + " , there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
+            } else if (failureDataIdsForwarded.contains(internalDatum.getIdentifier())) { // sanity check
+                throw new ComponentExecutionException(StringUtils.format(
+                    "Received failure datum twice (was forwarded at input '%s'); id: " + internalDatum.getIdentifier()
+                    +  "; Review the connections of your (nested) loop(s). Refer to the user guide if in doubt.",
+                    endpointDatum.getInputName()));
             } else {
+                failureDatumToFoward.set(endpointDatum);
+                failureDataIdsForwarded.add(internalDatum.getIdentifier());
+            }
+            break;
+        case NestedLoopReset:
+            if (loopResetRequested.get()) {
+                if (!internalDatum.getHopsToTraverse().isEmpty()) { // not final component
+                    LogFactory.getLog(getClass()).warn("Internal error: Initiated reset, received own reset datum, but component"
+                        + " is not the final recipient, there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
+                }
                 if (!resetDataIdsSent.remove(internalDatum.getIdentifier())) {
-                    throw new ComponentExecutionException(logMessagPrefix + StringUtils.format(
-                        "Received unexpected (wrong identifier) input at '%s' of type '%s'-Reset",
+                    throw new ComponentExecutionException(StringUtils.format(
+                        "Internal error: Received unexpected (wrong identifier) input at '%s' of type '%s'",
                         endpointDatum.getInputName(), endpointDatum.getValue().getDataType().getDisplayName()));
                 }
                 if (resetDataIdsSent.isEmpty()) {
                     loopReset.set(true);
+                }
+            } else {
+                if (internalDatum.getHopsToTraverse().isEmpty()) { // sanity check
+                    throw new ComponentExecutionException("Internal error: Received reset datum and component is the final recipient,"
+                        + " but no loop reset was requested");
+                } else if (!internalDatum.getHopsToTraverse().peek().getHopExecutionIdentifier().equals(compExeId)) { // sanity check
+                    throw new ComponentExecutionException("Internal error: Received reset datum, but component is not the final"
+                        + " recipient; there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
+                } else if (resetDataIdsForwarded.contains(internalDatum.getIdentifier())) { // sanity check
+                    throw new ComponentExecutionException(StringUtils.format(
+                        "Received reset datum twice (was forwarded at input '%s'); id: " + internalDatum.getIdentifier()
+                        +  "; Review the connections of your (nested) loop(s). Refer to the user guide if in doubt.",
+                        endpointDatum.getInputName()));
+                } else {
+                    resetDatumToFoward.set(endpointDatum);
+                    resetDataIdsForwarded.add(internalDatum.getIdentifier());
                 }
             }
             break;
@@ -399,34 +430,49 @@ public class ExecutionScheduler {
         }
     }
     
+    private EndpointDatum convertEndpointDatum(EndpointDatum endpointDatumToConvert, Long dmId) {
+        EndpointDatumImpl endpointDatumToAdd = new EndpointDatumImpl();
+        endpointDatumToAdd.setEndpointDatumRecipient(endpointDatumToConvert.getEndpointDatumRecipient());
+        endpointDatumToAdd.setValue(typedDatumFactory.createNotAValue(
+            ((InternalTDImpl) endpointDatumToConvert.getValue()).getIdentifier()));
+        endpointDatumToAdd.setDataManagementId(dmId);
+        endpointDatumToAdd.setWorkfowNodeId(endpointDatumToConvert.getWorkflowNodeId());
+        endpointDatumToAdd.setOutputsComponentExecutionIdentifier(endpointDatumToConvert.getOutputsComponentExecutionIdentifier());
+        endpointDatumToAdd.setOutputsNodeId(endpointDatumToConvert.getOutputsNodeId());
+        endpointDatumToAdd.setWorkflowExecutionIdentifier(endpointDatumToConvert.getWorkflowExecutionIdentifier());
+        return endpointDatumToAdd;
+        
+    }
+    
     private void handleNonInternalEndpointDatumAdded(EndpointDatum endpointDatum) throws ComponentExecutionException {
         if (endpointDatum.getValue().getDataType().equals(DataType.NotAValue)) {
             NotAValueTD datum = (NotAValueTD) endpointDatum.getValue();
-            if (idsOfIndefiniteDatumsReceived.containsKey(endpointDatum.getInputName())
-                && idsOfIndefiniteDatumsReceived.get(endpointDatum.getInputName()).contains(datum.getIdentifier())) {
-                throw new ComponentExecutionException(logMessagPrefix + "Received 'not a value' datum twice"
+            if (idsOfNotAValueDatumsReceived.containsKey(endpointDatum.getInputName())
+                && idsOfNotAValueDatumsReceived.get(endpointDatum.getInputName()).contains(datum.getIdentifier())) {
+                throw new ComponentExecutionException("Internal error: Received 'not a value' datum twice"
                     + " I.e., no component handled it appropriately within this loop.");
 
-            } else if (idsIndefiniteDatumsSent.contains(datum.getIdentifier())) {
-                throw new ComponentExecutionException(logMessagPrefix + "Received own 'not a value' datum"
-                    + " I.e., no component handled it appropriately within this loop.");
+            } else if (idsNotAValueDatumsSent.contains(datum.getIdentifier())) {
+                throw new ComponentExecutionException("Received own 'not a value' datum"
+                    + " I.e., no component handled it appropriately within this loop"
+                    +  "; Review the components and connections of your (nested) loop(s). Refer to the user guide if in doubt.");
             } else {
-                if (!idsOfIndefiniteDatumsReceived.containsKey(endpointDatum.getInputName())) {
-                    idsOfIndefiniteDatumsReceived.put(endpointDatum.getInputName(), new HashSet<String>());
+                if (!idsOfNotAValueDatumsReceived.containsKey(endpointDatum.getInputName())) {
+                    idsOfNotAValueDatumsReceived.put(endpointDatum.getInputName(), new HashSet<String>());
                 }
-                idsOfIndefiniteDatumsReceived.get(endpointDatum.getInputName()).add(datum.getIdentifier());
+                idsOfNotAValueDatumsReceived.get(endpointDatum.getInputName()).add(datum.getIdentifier());
             }
         }
         finishedInputs.remove(endpointDatum.getInputName());
         endpointDatums.get(endpointDatum.getInputName()).add(endpointDatum);
     }
     
-    protected void addIndefiniteDatumSent(String identifier) {
-        idsIndefiniteDatumsSent.add(identifier);
+    protected void addNotAValueDatumSent(String identifier) {
+        idsNotAValueDatumsSent.add(identifier);
     }
     
-    protected void addResetDataIdsSent(Set<String> identifiers) {
-        resetDataIdsSent.addAll(identifiers);
+    protected void addResetDataIdSent(String identifier) {
+        resetDataIdsSent.add(identifier);
         loopResetRequested.set(true);
     }
     
@@ -440,10 +486,12 @@ public class ExecutionScheduler {
         } else if (finishedInputs.size() == inputsCount) {
             checkIfDatumAtConsumingInputsLeft();
             state = State.FINISHED;
-        } else if (resetDatumToFoward != null) {
+        } else if (resetDatumToFoward.get() != null) {
             checkIfDatumAtConsumingInputsLeft();
             resetConstantInputs();
             state = State.RESET;
+        } else if (failureDatumToFoward.get() != null) {
+            state = State.FAILURE_FORWARD;
         } else if (loopReset.get()) {
             loopReset.set(false);
             loopResetRequested.set(false);
@@ -478,8 +526,8 @@ public class ExecutionScheduler {
                     buffer.append(", ");
                 }
                 buffer.delete(buffer.length() - 3, buffer.length() - 1);
-                logMessage = logMessagPrefix + StringUtils.format("Component is finished or reset, "
-                    + "but values for input '%s' are not processed yet: %s", inputName, buffer.toString());
+                logMessage = StringUtils.format("Component is finished or reset, "
+                    + "but there are values for input '%s' left that are not processed yet: %s", inputName, buffer.toString());
                 if (notRequiredInputs.contains(inputName)) {
                     LogFactory.getLog(ExecutionScheduler.class).warn(logMessage);
                     logMessage = null;
@@ -502,12 +550,14 @@ public class ExecutionScheduler {
             return false;
         }
         for (String identifier : inputsOrGroupIds) {
-            if (endpointGroupDefinitions.containsKey(identifier)) {
+            if (endpointGroupDescriptions.containsKey(identifier)) {
                 if (!checkGroupForExecutable(identifier)) {
+                    inputsWithValue.clear();
                     return false;
                 }
             } else {
                 if (endpointDatums.get(identifier).isEmpty()) {
+                    inputsWithValue.clear();
                     return false;
                 } else {
                     inputsWithValue.add(identifier);
@@ -519,7 +569,7 @@ public class ExecutionScheduler {
     
     private boolean isExecutableWithOrCondition(Set<String> inputsOrGroupIds) {
         for (String identifier : inputsOrGroupIds) {
-            if (endpointGroupDefinitions.containsKey(identifier)) {
+            if (endpointGroupDescriptions.containsKey(identifier)) {
                 if (checkGroupForExecutable(identifier)) {
                     return true;
                 }
@@ -529,12 +579,13 @@ public class ExecutionScheduler {
                 return true;
             }
         }
+        inputsWithValue.clear();
         return false;
     }
 
     private boolean checkGroupForExecutable(String groupName) {
-        EndpointGroupDefinition groupDefinition = endpointGroupDefinitions.get(groupName);
-        if (groupDefinition.getType().equals(EndpointGroupDefinition.Type.And)) {
+        EndpointGroupDescription groupDescription = endpointGroupDescriptions.get(groupName);
+        if (groupDescription.getEndpointGroupDefinition().getLogicOperation().equals(EndpointGroupDefinition.LogicOperation.And)) {
             return isExecutableWithAndCondition(groups.get(groupName));
         } else {
             return isExecutableWithOrCondition(groups.get(groupName));
@@ -546,11 +597,15 @@ public class ExecutionScheduler {
         for (String inputIdentifier : endpointDatums.keySet()) {
             if (!endpointDatums.get(inputIdentifier).isEmpty()
                 && endpointDatums.get(inputIdentifier).getFirst().getValue().getDataType() == DataType.NotAValue) {
-                newState = State.PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA;
+                newState = State.PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA;
                 break;
             }
         }
         return newState;
+    }
+    
+    protected void setTypedDatumFactory(TypedDatumFactory typedDatumFactory) {
+        this.typedDatumFactory = typedDatumFactory;
     }
     
 }

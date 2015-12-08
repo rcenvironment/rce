@@ -12,8 +12,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.start.common.Platform;
-import de.rcenvironment.core.start.gui.GUIRunner;
+import de.rcenvironment.core.start.common.Instance;
+import de.rcenvironment.core.start.gui.GUIInstanceRunner;
 
 /**
  * Simple activator to "inject" the GUI instance runner.
@@ -25,7 +25,7 @@ public class Activator implements BundleActivator {
     @Override
     public void start(BundleContext arg0) throws Exception {
         LogFactory.getLog(getClass()).debug("Initializing GUI runner");
-        Platform.setRunner(new GUIRunner());
+        Instance.setInstanceRunner(new GUIInstanceRunner());
     }
 
     @Override

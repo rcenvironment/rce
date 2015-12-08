@@ -103,6 +103,7 @@ public class JoinerPersistentComponentDescriptionUpdater implements PersistentCo
                 description = updateFromV3ToV31(description);
             case V3_1:
                 description = updateFromV31ToV32(description);
+                description = updateFromV32ToV33(description);
                 break;
             default:
                 break;

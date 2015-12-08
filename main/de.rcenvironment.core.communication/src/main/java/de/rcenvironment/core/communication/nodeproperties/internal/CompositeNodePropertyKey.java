@@ -52,8 +52,13 @@ public class CompositeNodePropertyKey {
         return compositeKey.equals(((CompositeNodePropertyKey) obj).compositeKey);
     }
 
+    public String getAsUniqueString() {
+        return compositeKey;
+    }
+
     @Override
     public String toString() {
         return compositeKey;
     }
+
 }

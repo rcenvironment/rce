@@ -27,7 +27,7 @@ public class EndpointGroupDefinitionImpl implements Serializable, EndpointGroupD
 
     private static final String KEY_TYPE = "type";
     
-    private Map<String, Object> rawEndpointGroupDefinition;
+    protected Map<String, Object> rawEndpointGroupDefinition;
     
     @JsonIgnore
     @Override
@@ -37,13 +37,19 @@ public class EndpointGroupDefinitionImpl implements Serializable, EndpointGroupD
     
     @JsonIgnore
     @Override
-    public Type getType() {
-        return Type.valueOf((String) rawEndpointGroupDefinition.get(KEY_TYPE));
+    public String getName() {
+        return (String) rawEndpointGroupDefinition.get(EndpointDefinitionConstants.KEY_NAME);
     }
 
     @JsonIgnore
     @Override
-    public String getGroupName() {
+    public LogicOperation getLogicOperation() {
+        return LogicOperation.valueOf((String) rawEndpointGroupDefinition.get(KEY_TYPE));
+    }
+
+    @JsonIgnore
+    @Override
+    public String getParentGroupName() {
         return (String) rawEndpointGroupDefinition.get(EndpointDefinitionConstants.KEY_GROUP);
     }
     

@@ -22,16 +22,8 @@ import org.eclipse.draw2d.geometry.Rectangle;
  */
 public class RoundedLineBorder extends LineBorder {
 
-    /** Width of the surrounding rectangle in logic points. */
-    private int ovalWidth;
-
-    /** Height of the surrounding rectangle in logic points. */ 
-    private int ovalHeight;  
-    
-    public RoundedLineBorder(int ovalWidth, int ovalHeight) {
+    public RoundedLineBorder() {
         super();
-        this.ovalWidth = ovalWidth;
-        this.ovalHeight = ovalHeight;     
     }   
     
 
@@ -65,7 +57,7 @@ public class RoundedLineBorder extends LineBorder {
             graphics.setForegroundColor(figure.getForegroundColor());
         }
 
-        graphics.drawRoundRectangle(tempRect, ovalWidth, ovalHeight);
+        graphics.drawOval(tempRect);
     }
     
 }

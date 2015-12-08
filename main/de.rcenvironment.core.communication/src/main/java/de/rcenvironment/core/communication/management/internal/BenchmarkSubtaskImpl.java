@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.management.BenchmarkSubtask;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Default {@link BenchmarkSubtask} implementation.
@@ -29,8 +30,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
 
     /**
-     * Default/fallback value when there is no actual result, for example the "average duration on
-     * success" when all requests have failed.
+     * Default/fallback value when there is no actual result, for example the "average duration on success" when all requests have failed.
      */
     private static final int NO_DURATION_AVAILABLE_VALUE = -1;
 
@@ -186,11 +186,10 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
             builder.append(node);
         }
         String targetDescr = builder.toString();
-        return String
-            .format(
-                "target nodes: {%s}, requests per target: %d, request size: %d, response size: %d, "
-                    + "response delay: %dms, threads per target: %d",
-                targetDescr, numMessages, requestSize, responseSize, responseDelay, threadsPerTarget);
+        return StringUtils.format(
+            "target nodes: {%s}, requests per target: %d, request size: %d, response size: %d, "
+                + "response delay: %dms, threads per target: %d",
+            targetDescr, numMessages, requestSize, responseSize, responseDelay, threadsPerTarget);
     }
 
     public long getRemainingRequestCount() {
@@ -250,7 +249,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
      * @param duration the total duration
      * @param error null on normal completion, or the generated exception
      */
-    public void recordSingleResult(NodeIdentifier targetNode, long duration, RuntimeException error) {
+    public void recordSingleResult(NodeIdentifier targetNode, long duration, RemoteOperationException error) {
         NodeResultContainer resultContainer = nodeResults.get(targetNode);
         synchronized (resultContainer) {
             resultContainer.setNumFinished(resultContainer.getNumFinished() + 1);
@@ -259,7 +258,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
                 resultContainer.setNumSuccess(resultContainer.getNumSuccess() + 1);
                 resultContainer.setTotalSuccessfulTime(resultContainer.getTotalSuccessfulTime() + duration);
             } else {
-                LogFactory.getLog(getClass()).warn("Error on benchmark request", error);
+                LogFactory.getLog(getClass()).warn("Error on benchmark request: " + error.getMessage());
                 resultContainer.setTotalFailureTime(resultContainer.getTotalFailureTime() + duration);
             }
             if (resultContainer.getNumFinished() == numMessages) {

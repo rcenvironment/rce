@@ -62,12 +62,18 @@ public final class MetaDataKeys {
 
     /** Database identifier of the component run. */
     public static final String COMPONENT_RUN_ID = "rce.common.component_run_id";
+    
+    /** Database identifier of the component run. */
+    public static final String COMPONENT_INSTANCE_ID = "rce.common.component_instance_id";
+    
+    /** Database identifier of the workflow run. */
+    public static final String WORKFLOW_RUN_ID = "rce.common.workflow_run_id";
 
     /** Final state of the workflow run. */
     public static final String WORKFLOW_FINAL_STATE = "rce.common.workflow_final_state";
 
     /** Flag for existence of data references. */
-    public static final String WORKFLOW_HAS_DATAREFERENCES = "rce.common.workflow_has_datareferences";
+    public static final String WORKFLOW_FILES_DELETED = "rce.common.workflow_files_deleted";
 
     /** Flag for deletion marker. */
     public static final String WORKFLOW_MARKED_FOR_DELETION = "rce.common.workflow_marked_for_deletion";

@@ -254,6 +254,7 @@ public class VirtualServiceRegistry {
         Class<? extends Object> implementationClass = implementation.getClass();
         try {
             try {
+                // TODO support activate(BundleContext) as well; requires definition of a virtual BundleContext first, though - misc_ro
                 final Method noArgs = implementationClass.getMethod("activate", new Class<?>[0]);
                 if (!service.expectActivator) {
                     throw new IllegalArgumentException("Activator found in " + implementationClass.getName()

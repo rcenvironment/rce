@@ -27,6 +27,9 @@ public final class ScriptComponentConstants {
     /** Config key for script language. */
     public static final String SCRIPT_LANGUAGE = "scriptLanguage";
     
+    /** Config key for script language. */
+    public static final String COMPONENT_SIZE = "componentSize";
+    
     /** Default config value. Must be equal to the preconfigured script in '...execution/resources/configuration.json' */
     public static final String DEFAULT_SCRIPT_WITHOUT_COMMENTS_AND_IMPORTS =
         "import sys\n\nsys.stderr.write('Script was not configured')\nsys.stderr.flush()";
@@ -39,6 +42,9 @@ public final class ScriptComponentConstants {
 
     /** Input group name. */
     public static final String GROUP_NAME_AND = "default";
+    
+    /** Input group name. */
+    public static final String PROP_KEY_XOR = "xor";
 
     private ScriptComponentConstants() {}
     

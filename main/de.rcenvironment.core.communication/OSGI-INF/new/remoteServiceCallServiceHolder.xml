@@ -2,7 +2,7 @@
 	<implementation class="de.rcenvironment.core.communication.rpc.internal.CallbackInvocationHandler$RemoteServiceCallServiceHolder"/>
 	<reference
 		name="Remote Service Call Service"
-		interface="de.rcenvironment.core.communication.rpc.RemoteServiceCallService"
+		interface="de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService"
 		cardinality="1..1"
 		bind="bindRemoteServiceCallService"
 		policy="dynamic"

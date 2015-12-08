@@ -21,7 +21,6 @@ import de.rcenvironment.core.component.execution.api.ThreadHandler;
  */
 public class DefaultComponent implements Component {
 
-    
     @Override
     public boolean treatStartAsComponentRun() {
         return false;
@@ -41,6 +40,9 @@ public class DefaultComponent implements Component {
     @Override
     public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {}
 
+    @Override
+    public void completeStartOrProcessInputsAfterFailure() throws ComponentException {}
+    
     @Override
     public void reset() throws ComponentException {
     }

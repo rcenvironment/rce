@@ -8,8 +8,6 @@
 
 package de.rcenvironment.components.excel.gui.properties;
 
-
-
 import java.io.File;
 
 import org.eclipse.swt.SWT;
@@ -22,6 +20,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
@@ -30,7 +29,11 @@ import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelService;
 import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.components.excel.common.SimpleExcelService;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
 /**
  * "Properties" view tab for defining macros to run.
@@ -40,6 +43,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  */
 public class MacrosSection extends ValidatingWorkflowNodePropertySection {
 
+    private Object lock = new Object();
+    
     private Composite macroGroup;
 
     private CCombo comboMacroPre;
@@ -47,9 +52,9 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
     private CCombo comboMacroRun;
 
     private CCombo comboMacroPost;
-    
-    private Button discoverMacros;
-    
+
+    private Button discoverMacrosButton;
+
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         final TabbedPropertySheetWidgetFactory toolkit = aTabbedPropertySheetPage.getWidgetFactory();
@@ -59,6 +64,12 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
 
         final Composite macrosChoosingSection = toolkit.createFlatFormComposite(content);
         initMacrosChoosingSection(toolkit, macrosChoosingSection);
+    }
+
+    @Override
+    public void aboutToBeShown() {
+        super.aboutToBeShown();
+        discoverMacros();
     }
 
     /**
@@ -78,16 +89,16 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
         layoutData = new GridData(GridData.FILL_HORIZONTAL);
         client.setLayoutData(layoutData);
         client.setLayout(new GridLayout(1, false));
-        
+
         CLabel lblDescription = toolkit.createCLabel(client, Messages.macrosSectionDescription);
 
         macroGroup = toolkit.createComposite(client);
         macroGroup.setLayout(new GridLayout(2, true));
-        
+
         GridData gridData = new GridData();
         gridData.horizontalAlignment = GridData.FILL;
         gridData.grabExcessHorizontalSpace = true;
-        
+
         toolkit.createCLabel(macroGroup, Messages.preMacro);
         comboMacroPre = toolkit.createCCombo(macroGroup);
         comboMacroPre.setEditable(true);
@@ -102,48 +113,67 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
         comboMacroPost.setData(CONTROL_PROPERTY_KEY, ExcelComponentConstants.POST_MACRO);
 
         toolkit.createCLabel(macroGroup, "");
-        discoverMacros = toolkit.createButton(macroGroup, Messages.macrosDiscoverButtonLabel, SWT.PUSH);
+        discoverMacrosButton = toolkit.createButton(macroGroup, Messages.macrosDiscoverButtonLabel, SWT.PUSH);
+        discoverMacrosButton.setImage(ImageManager.getInstance().getSharedImage(StandardImages.REFRESH_16));
 
         lblDescription.setLayoutData(gridData);
-        comboMacroPre.setLayoutData(gridData);        
+        comboMacroPre.setLayoutData(gridData);
         comboMacroRun.setLayoutData(gridData);
         comboMacroPost.setLayoutData(gridData);
-        
-        
-        section.setClient(client);
-        
-    }
 
+        section.setClient(client);
+
+    }
+    
 
     /**
      * Discover all macros available in Excel file and fill Combo-lists with them.
      * 
      */
     private void discoverMacros() {
-        ExcelService excelService = new SimpleExcelService();
-        
-        File xlFile = ExcelUtils.getAbsoluteFile(getProperty(ExcelComponentConstants.XL_FILENAME));
-        if (xlFile != null) {
-            String[] macrosAvailable = excelService.getMacros(xlFile);
-            comboMacroPre.setItems(macrosAvailable);
-            comboMacroRun.setItems(macrosAvailable);
-            comboMacroPost.setItems(macrosAvailable);
-        }
+        SharedThreadPool.getInstance().execute(new Runnable() {
+
+            @Override
+            @TaskDescription("Browses the given excel file for macros")
+            public void run() {
+                ExcelService excelService = new SimpleExcelService();
+                File xlFile = ExcelUtils.getAbsoluteFile(getProperty(ExcelComponentConstants.XL_FILENAME));
+                if (xlFile != null) {
+                    final String[] macrosAvailable;
+                    synchronized (lock) {
+                        macrosAvailable = excelService.getMacros(xlFile);
+                    }
+                    Display.getDefault().asyncExec(new Runnable() {
+
+                        @Override
+                        @TaskDescription("Sets the items of the macro combo boxes")
+                        public void run() {
+                            synchronized (lock) {
+                                if (!comboMacroPre.isDisposed() && !comboMacroRun.isDisposed() && !comboMacroPost.isDisposed()) {
+                                    comboMacroPre.setItems(macrosAvailable);
+                                    comboMacroRun.setItems(macrosAvailable);
+                                    comboMacroPost.setItems(macrosAvailable);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
     @Override
     protected void refreshBeforeValidation() {
         macroGroup.pack(true);
     }
-    
+
     @Override
     protected Controller createController() {
         return new MacrosController();
     }
 
     /**
-     * Custom {@link DefaultController} implementation to handle the activation of the GUI
-     * controls.
+     * Custom {@link DefaultController} implementation to handle the activation of the GUI controls.
      * 
      * @author Markus Kunde
      */
@@ -152,11 +182,11 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
         @Override
         protected void widgetSelected(final SelectionEvent event, final Control source) {
             super.widgetSelected(event, source);
-            if (source == discoverMacros) {
+            if (source == discoverMacrosButton) {
                 discoverMacros();
             }
         }
 
     }
-    
+
 }

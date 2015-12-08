@@ -19,6 +19,7 @@ import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 
 /**
@@ -49,6 +50,7 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
                     sharedThreadPool.execute(new Runnable() {
 
                         @Override
+                        @TaskDescription("Communication Layer: Virtual instance startup")
                         public void run() {
                             try {
                                 performStartup();
@@ -72,6 +74,7 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
                     sharedThreadPool.execute(new Runnable() {
 
                         @Override
+                        @TaskDescription("Communication Layer: Virtual instance crash simulation")
                         public void run() {
                             try {
                                 performSimulatedCrash();
@@ -94,6 +97,7 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
                     sharedThreadPool.execute(new Runnable() {
 
                         @Override
+                        @TaskDescription("Communication Layer: Virtual instance shutdown")
                         public void run() {
                             try {
                                 performShutdown();

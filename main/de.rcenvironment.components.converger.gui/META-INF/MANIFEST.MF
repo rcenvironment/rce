@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Converger Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.converger.gui;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin
@@ -17,6 +17,7 @@ Import-Package: de.rcenvironment.components.converger.common,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.utils.incubator,
+ de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
  de.rcenvironment.core.utils.common,
@@ -31,4 +32,4 @@ Import-Package: de.rcenvironment.components.converger.common,
 Require-Bundle: org.eclipse.ui.views.properties.tabbed,
  org.eclipse.core.runtime,
  org.eclipse.gef
-Bundle-ActivationPolicy: lazy
+RCE-Component: true

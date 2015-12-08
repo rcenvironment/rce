@@ -35,9 +35,9 @@
             ]
         }
     ],
-    "inputGroups":[
+    "staticInputGroups":[
         {
-            "identifier":"join",
+            "name":"join",
             "type": "Or"
         }
     ]

@@ -82,6 +82,13 @@ public interface Component extends Registerable {
     void reset() throws ComponentException;
     
     /**
+     * Called if exception in {@link #start()} or {@link #processInputs()} was thrown. It is called immediately afterwards.
+     * 
+     * @throws ComponentException on component error
+     */
+    void completeStartOrProcessInputsAfterFailure() throws ComponentException;
+    
+    /**
      * Called if the component reached any of the final states. Valid ones are defined in {@link FinalComponentState}.
      * 
      * @param state final state reached

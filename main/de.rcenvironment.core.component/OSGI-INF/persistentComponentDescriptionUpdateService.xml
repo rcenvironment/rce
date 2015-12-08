@@ -1,7 +1,7 @@
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Persistent Component Description Update Service">
 	<implementation class="de.rcenvironment.core.component.update.internal.PersistentComponentDescriptionUpdateServiceImpl"/>
 	<service>
-		<provide interface="de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdateService"/>
+		<provide interface="de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService"/>
 	</service>
 	<reference name="Persistent Component Description Updater"
 		interface="de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater"

@@ -11,16 +11,16 @@ package de.rcenvironment.components.doe.gui.properties;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.doe.common.DOEAlgorithms;
 import de.rcenvironment.components.doe.common.DOEConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
-import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
+import de.rcenvironment.core.gui.workflow.editor.properties.LoopComponentWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
 
 /**
@@ -28,11 +28,11 @@ import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidatio
  * 
  * @author Sascha Zur
  */
-public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
+public class DOEWorkflowNodeValidator extends LoopComponentWorkflowNodeValidator {
 
     @Override
     protected Collection<WorkflowNodeValidationMessage> validate() {
-        final List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();
+        final Collection<WorkflowNodeValidationMessage> messages = super.validate();
 
         final boolean hasOutputs = getOutputs().size() > 0;
 
@@ -48,7 +48,7 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
             int runNumber = Integer.parseInt(getProperty(DOEConstants.KEY_RUN_NUMBER));
             final WorkflowNodeValidationMessage tooManySamplesMessage = new WorkflowNodeValidationMessage(
                 WorkflowNodeValidationMessage.Type.ERROR,
-                "",                Messages.tooManySamples,                Messages.tooManySamples);
+                "", Messages.tooManySamples, Messages.tooManySamples);
 
             if (getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_FULLFACT)) {
                 if (Math.pow(runNumber, outputCount) >= DOEAlgorithms.MAXMIMAL_RUNS) {
@@ -87,8 +87,8 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
 
         return messages;
     }
- 
-    private void checkTableDimensions(List<WorkflowNodeValidationMessage> messages) {
+
+    private void checkTableDimensions(Collection<WorkflowNodeValidationMessage> messages) {
         if (getProperty(DOEConstants.KEY_TABLE) == null || getProperty(DOEConstants.KEY_TABLE).isEmpty()) {
             final WorkflowNodeValidationMessage startSampleErrorMessage = new WorkflowNodeValidationMessage(
                 WorkflowNodeValidationMessage.Type.ERROR,
@@ -138,8 +138,8 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
                     if (getProperty(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
                         && (getProperty(DOEConstants.KEY_END_SAMPLE) != null
                             && !getProperty(DOEConstants.KEY_END_SAMPLE).isEmpty() && Double
-                            .parseDouble(getProperty(DOEConstants.KEY_END_SAMPLE)) > Double
-                            .parseDouble(getProperty(DOEConstants.KEY_RUN_NUMBER)) - 1)) {
+                                .parseDouble(getProperty(DOEConstants.KEY_END_SAMPLE)) > Double
+                                    .parseDouble(getProperty(DOEConstants.KEY_RUN_NUMBER)) - 1)) {
                         final WorkflowNodeValidationMessage endSampleErrorMessage = new WorkflowNodeValidationMessage(
                             WorkflowNodeValidationMessage.Type.ERROR,
                             DOEConstants.KEY_END_SAMPLE,
@@ -160,7 +160,7 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
         }
     }
 
-    private void checkStartAndEndSample(final List<WorkflowNodeValidationMessage> messages) {
+    private void checkStartAndEndSample(final Collection<WorkflowNodeValidationMessage> messages) {
         String startSampleString = getProperty(DOEConstants.KEY_START_SAMPLE);
         Integer startSample = null;
         try {
@@ -219,17 +219,19 @@ public class DOEWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
         }
 
     }
+
     @Override
     protected Set<EndpointDescription> getOutputs() {
         Set<EndpointDescription> outputs = new HashSet<>(super.getOutputs());
-        EndpointDescription toRemove = null;
-        for (EndpointDescription e : outputs){
-            if (e.getName().equals(DOEConstants.OUTPUT_FINISHED_NAME)){
-                toRemove = e;
+
+        Iterator<EndpointDescription> outputsIterator = outputs.iterator();
+        while (outputsIterator.hasNext()) {
+            EndpointDescription next = outputsIterator.next();
+            if (LoopComponentConstants.ENDPOINT_ID_TO_FORWARD.equals(next.getDynamicEndpointIdentifier())
+                || LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE.equals(next.getName())
+                || LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE.equals(next.getName())) {
+                outputsIterator.remove();
             }
-        }
-        if (toRemove != null){
-            outputs.remove(toRemove);
         }
         return outputs;
     }

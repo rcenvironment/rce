@@ -363,10 +363,10 @@ public class LargeScaleScenarioDuplexTests extends AbstractLargeScaleTest {
             // connect outwards into both directions; this differs from the original setup, but
             // should result in the same topology due to duplex connections being used -- misc_ro
             if (failingIndex > 0) {
-                testTopology.connect(failingIndex, failingIndex - 1, false);
+                testTopology.connect(failingIndex, failingIndex - 1);
             }
             if (failingIndex < testSize - 1) {
-                testTopology.connect(failingIndex, failingIndex + 1, false);
+                testTopology.connect(failingIndex, failingIndex + 1);
             }
             waitForNextMessage();
             waitForNetworkSilence();

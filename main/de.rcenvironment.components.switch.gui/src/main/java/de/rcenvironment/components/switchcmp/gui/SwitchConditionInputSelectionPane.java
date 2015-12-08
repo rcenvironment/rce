@@ -63,7 +63,7 @@ public class SwitchConditionInputSelectionPane extends EndpointSelectionPane {
         SwitchConditionEndpointEditDialog dialog =
             new SwitchConditionEndpointEditDialog(Display.getDefault().getActiveShell(),
                 EndpointActionType.EDIT, configuration, endpointType,
-                endpointIdToManage, isStaticEndpoint, endpoint.getDeclarativeEndpointDescription()
+                endpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(), newMetaData);
 
         onEditClicked(name, dialog, newMetaData);

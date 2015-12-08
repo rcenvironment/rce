@@ -63,5 +63,13 @@ public interface TestParametersProvider {
      * @return the parsed parameter value, or the given default value
      */
     int getOptionalInteger(String key, int defaultValue);
+    
+    /**
+     * Returns the integer value of the given parameter. If it is undefined, or cannot be parsed, an {@link AssertionError} is thrown.
+     * 
+     * @param key the parameter key
+     * @return the parsed parameter value
+     */
+    int getExistingInteger(String key);
 
 }

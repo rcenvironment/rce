@@ -7,6 +7,7 @@
  */
 package de.rcenvironment.core.utils.ssh.jsch.executor.context;
 
+import java.io.File;
 import java.io.IOException;
 
 import org.apache.commons.logging.Log;
@@ -90,8 +91,9 @@ public class JSchExecutorContext implements ExecutorContext {
         log.debug("Setting SSH sandbox to " + sandboxDir);
         // create sandbox
         CommandLineExecutor executor = new JSchCommandLineExecutor(jschSession, tempDirFactory.getRootDir());
+        String sandboxDirName = new File(sandboxDir).getName();
         try {
-            executor.start("mkdir -p " + sandboxDir);
+            executor.start("mkdir -p " + sandboxDirName);
             executor.waitForTermination();
         } catch (InterruptedException e) {
             log.warn("Interrupted while setting up remote SSH sandbox", e);

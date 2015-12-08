@@ -61,6 +61,12 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
     protected Map<String, Deque<EndpointHistoryDataItem>> outputs = Collections.synchronizedMap(new HashMap<String,
         Deque<EndpointHistoryDataItem>>());
 
+    // MetaData for Inputs
+    protected Map<String, Map<String, String>> inputMetaData = Collections.synchronizedMap(new HashMap<String, Map<String, String>>());
+
+    // MetaData for Outputs
+    protected Map<String, Map<String, String>> outputMetaData = Collections.synchronizedMap(new HashMap<String, Map<String, String>>());
+
     private String identifier;
 
     public void setIdentifier(String identifier) {
@@ -88,6 +94,26 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
 
     public Map<String, Deque<EndpointHistoryDataItem>> getOutputs() {
         return outputs;
+    }
+
+    /**
+     * Get the endpoint meta data for an endpoint.
+     * 
+     * @param endpointName name of the endpoint.
+     * @return map containing the metadata.
+     */
+    public Map<String, String> getMetaDataForInput(String endpointName) {
+        return inputMetaData.get(endpointName);
+    }
+
+    /**
+     * Get the endpoint meta data for an endpoint.
+     * 
+     * @param endpointName name of the endpoint.
+     * @return map containing the metadata.
+     */
+    public Map<String, String> getMetaDataForOutput(String endpointName) {
+        return outputMetaData.get(endpointName);
     }
 
     /**
@@ -142,7 +168,15 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
     }
 
     /**
-     * @param outputName name of output to add
+     * @param inputName name of input to add
+     * @param metaData the metaData to add
+     */
+    public synchronized void setInputMetaData(String inputName, Map<String, String> metaData) {
+        inputMetaData.put(inputName, metaData);
+    }
+
+    /**
+     * @param outputName name of output 
      * @param value value of output to add
      */
     public synchronized void addOutput(String outputName, TypedDatum value) {
@@ -150,6 +184,14 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
             outputs.put(outputName, new LinkedList<EndpointHistoryDataItem>());
         }
         outputs.get(outputName).addLast(new EndpointHistoryDataItem(System.currentTimeMillis(), outputName, value));
+    }
+    
+    /**
+     * @param outputName name of output
+     * @param metaData the metaData to add
+     */
+    public synchronized void setOutputMetaData(String outputName, Map<String, String> metaData) {
+        outputMetaData.put(outputName, metaData);
     }
 
     private static Map<String, Deque<EndpointHistoryDataItem>> getInputsFromString(String endpoints, TypedDatumSerializer serializer)

@@ -18,13 +18,13 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient
  */
 public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
 
-    private static final long serialVersionUID = 2972547709143320719L;
-
     private String inputIdentifier;
     
     private String inputsComponentExecutionIdentifier;
     
-    private NodeIdentifier inputsNode;
+    private String inputsComponentInstanceName;
+    
+    private NodeIdentifier inputsNodeId;
     
     @Override
     public String getInputName() {
@@ -32,25 +32,33 @@ public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
     }
 
     @Override
-    public String getInputComponentExecutionIdentifier() {
+    public String getInputsComponentExecutionIdentifier() {
         return inputsComponentExecutionIdentifier;
     }
 
     @Override
+    public String getInputsComponentInstanceName() {
+        return inputsComponentInstanceName;
+    }
+    @Override
     public NodeIdentifier getInputsNodeId() {
-        return inputsNode;
+        return inputsNodeId;
     }
 
     public void setIdentifier(String identifier) {
         this.inputIdentifier = identifier;
     }
 
-    public void setInputsComponentExecutionIdentifier(String inputsCompExeIdentifier) {
-        this.inputsComponentExecutionIdentifier = inputsCompExeIdentifier;
+    public void setInputsComponentExecutionIdentifier(String inputsComponentExecutionIdentifier) {
+        this.inputsComponentExecutionIdentifier = inputsComponentExecutionIdentifier;
+    }
+    
+    public void setInputsComponentInstanceName(String inputsComponentInstanceName) {
+        this.inputsComponentInstanceName = inputsComponentInstanceName;
     }
 
-    public void setInputsNodeId(NodeIdentifier node) {
-        this.inputsNode = node;
+    public void setInputsNodeId(NodeIdentifier inputsNodeId) {
+        this.inputsNodeId = inputsNodeId;
     }
 
 }

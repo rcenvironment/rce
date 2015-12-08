@@ -70,7 +70,7 @@ public class SshConfiguration {
 
         for (Entry<String, ConfigurationSegment> entry : configurationSegment.listElements("accounts").entrySet()) {
             SshAccountImpl account = entry.getValue().mapToObject(SshAccountImpl.class);
-            account.setUsername(entry.getKey());
+            account.setLoginName(entry.getKey());
             accounts.add(account);
         }
 
@@ -137,7 +137,7 @@ public class SshConfiguration {
 
                 // distinct user names (no empty string values)
                 if (valUsers.contains(user)) {
-                    logger.info("User names must be distinct. Found two users with name: " + user.getUsername());
+                    logger.info("User names must be distinct. Found two users with name: " + user.getLoginName());
                     isValid = false;
                 } else {
                     valUsers.add(user);
@@ -156,13 +156,19 @@ public class SshConfiguration {
      * 
      * Get a user for a user name.
      * 
-     * @param userName - the name of the user
-     * @return - the user for the given name
+     * @param loginName - the name of the user
+     * @param allowDisabled true if disabled accounts should be returned as well; if false, null is returned for disabled accounts
+     * @return - the account object for the given name, if matched
      */
-    public SshAccount getAccountByName(String userName) {
+    public SshAccount getAccountByName(String loginName, boolean allowDisabled) {
         SshAccount curUser = null;
         for (SshAccount user : accounts) {
-            if (user.isEnabled() && user.getUsername().equals(userName)) {
+            if (user.getLoginName().equals(loginName) && (allowDisabled || user.isEnabled())) {
+                if (curUser != null) {
+                    LogFactory.getLog(getClass()).error(
+                        "Invalid state: more than one SSH account matched for login name '" + loginName + "'! Returning 'null' for safety");
+                    return null;
+                }
                 curUser = user;
                 break;
             }

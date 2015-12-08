@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SQL Component Execution
-Bundle-SymbolicName: de.rcenvironment.components.sql.execution;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.sql.execution
+Bundle-Version: 7.0.0.qualifier
 Import-Package: de.rcenvironment.components.sql.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,
@@ -25,5 +25,4 @@ Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Bundle-ClassPath: .
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy
 Export-Package: de.rcenvironment.components.sql.execution

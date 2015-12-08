@@ -17,6 +17,8 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
  */
 public final class NoRouteToNodeException extends Exception {
 
+    private static final long serialVersionUID = 3448576774973336658L;
+
     private final NodeIdentifier targetNodeId;
 
     public NoRouteToNodeException(String message, NodeIdentifier targetNodeId) {

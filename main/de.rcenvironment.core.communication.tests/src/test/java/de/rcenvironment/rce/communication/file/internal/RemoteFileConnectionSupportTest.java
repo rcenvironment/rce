@@ -19,7 +19,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.internal.RemoteFileConnectionSupport;
@@ -37,8 +36,6 @@ public class RemoteFileConnectionSupportTest extends TestCase {
     private BundleContext contextMock = EasyMock.createNiceMock(BundleContext.class);
 
     private RemoteFileConnectionSupport support;
-
-    private User cert = EasyMock.createNiceMock(User.class);
 
     @Override
     protected void setUp() throws Exception {
@@ -59,7 +56,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
         ServiceReference ref = EasyMock.createNiceMock(ServiceReference.class);
 
         RemoteFileConnectionFactory factoryMock = EasyMock.createStrictMock(RemoteFileConnectionFactory.class);
-        EasyMock.expect(factoryMock.createRemoteFileConnection(cert, new URI(URI)))
+        EasyMock.expect(factoryMock.createRemoteFileConnection(new URI(URI)))
             .andReturn(EasyMock.createNiceMock(RemoteFileConnection.class));
         EasyMock.replay(factoryMock);
 
@@ -72,7 +69,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
 
         support.activate(contextMock);
 
-        RemoteFileConnection connection = RemoteFileConnectionSupport.getRemoteFileConnection(cert, new URI(URI));
+        RemoteFileConnection connection = RemoteFileConnectionSupport.getRemoteFileConnection(new URI(URI));
         assertNotNull(connection);
     }
 
@@ -88,7 +85,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
         EasyMock.replay(contextMock);
         support.activate(contextMock);
         try {
-            RemoteFileConnectionSupport.getRemoteFileConnection(cert, new URI(URI));
+            RemoteFileConnectionSupport.getRemoteFileConnection(new URI(URI));
             fail();
         } catch (CommunicationException e) {
             assertTrue(true);
@@ -101,7 +98,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
         EasyMock.replay(contextMock);
         support.activate(contextMock);
         try {
-            RemoteFileConnectionSupport.getRemoteFileConnection(cert, new URI(URI));
+            RemoteFileConnectionSupport.getRemoteFileConnection(new URI(URI));
             fail();
         } catch (CommunicationException e) {
             assertTrue(true);
@@ -116,7 +113,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
         EasyMock.replay(contextMock);
         support.activate(contextMock);
         try {
-            RemoteFileConnectionSupport.getRemoteFileConnection(cert, new URI(URI));
+            RemoteFileConnectionSupport.getRemoteFileConnection(new URI(URI));
             fail();
         } catch (CommunicationException e) {
             assertTrue(true);

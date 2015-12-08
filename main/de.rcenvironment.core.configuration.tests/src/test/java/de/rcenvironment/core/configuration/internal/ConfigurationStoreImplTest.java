@@ -27,7 +27,9 @@ import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
+import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
@@ -37,6 +39,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Robert Mischke
  */
 public class ConfigurationStoreImplTest {
+
+    private static final String MINIMAL_CONFIG_TEST_FILE_PATH = "/configurationStore/minimal.json";
 
     private static final double DOUBLE_TEST_VALUE = 1.5;
 
@@ -146,10 +150,11 @@ public class ConfigurationStoreImplTest {
      * Tests standard hierarchical read operations.
      * 
      * @throws IOException on uncaught exceptions
+     * @throws ConfigurationException on uncaught exceptions
      */
     @Test
-    public void testBasicNavigation() throws IOException {
-        copyResourceToFile("/configurationStore/minimal.json", testFile);
+    public void testBasicNavigation() throws IOException, ConfigurationException {
+        copyResourceToFile(MINIMAL_CONFIG_TEST_FILE_PATH, testFile);
 
         ConfigurationStore configStore = new ConfigurationStoreImpl(testFile);
         ConfigurationSegment rootSegment = configStore.getSnapshotOfRootSegment();
@@ -172,13 +177,19 @@ public class ConfigurationStoreImplTest {
      * Test the basic read/write cycle.
      * 
      * @throws IOException on uncaught exceptions
+     * @throws ConfigurationException on uncaught exceptions
      */
     @Test
-    public void testReadWrite() throws IOException {
-        copyResourceToFile("/configurationStore/minimal.json", testFile);
+    public void testConfigurationWriting() throws IOException, ConfigurationException {
+        copyResourceToFile(MINIMAL_CONFIG_TEST_FILE_PATH, testFile);
         ConfigurationStore configStore = new ConfigurationStoreImpl(testFile);
-        ConfigurationSegment snapshot = configStore.getSnapshotOfRootSegment();
-        configStore.update(snapshot);
+        ConfigurationSegment root = configStore.getSnapshotOfRootSegment();
+        final WritableConfigurationSegment addedSegment = root.getOrCreateWritableSubSegment("added");
+        addedSegment.setString("stringKey", "stringValue");
+        configStore.update(root);
+        final String content = FileUtils.readFileToString(testFile);
+        // whitespace-tolerant RegExp test for the new configuration entries
+        assertTrue(content, content.matches("(?s).*\"added\"\\s?: \\{\\s+\"stringKey\"\\s?: \"stringValue\"\\s+\\}.*"));
     }
 
     private ConfigurationSegment setupPlaceholderConfiguration() {

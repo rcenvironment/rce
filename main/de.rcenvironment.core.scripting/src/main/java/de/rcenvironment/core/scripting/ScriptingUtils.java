@@ -11,6 +11,7 @@ package de.rcenvironment.core.scripting;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -71,6 +72,8 @@ public final class ScriptingUtils {
 
     private static final String COMMA = ",";
 
+    private static final int MAXIMUM_SMALL_TABLE_ENTRIES = 10000;
+
     private static TypedDatumFactory typedDatumFactory;
 
     private static ComponentDataManagementService componentDatamanagementService;
@@ -89,10 +92,17 @@ public final class ScriptingUtils {
         if (jythonPath == null) {
             // getting the Path where the Jython.jar is located. This is needed to
             // import Libraries to the jython script, e.g. os or re.
-            String osgiBundlestore = System.getProperty("osgi.bundlestore");
-            File osgiBundlestoreDir = new File(osgiBundlestore.replaceAll(ESCAPESLASH, SLASH));
-            jythonPath = findJythonPath(osgiBundlestoreDir);
+            String osgiConfigurationArea = System.getProperty("osgi.configuration.area");
+            String decode = URLDecoder.decode(osgiConfigurationArea, "UTF-8");
+            File osgiBundlestoreDir = null;
+            if (decode.startsWith("file:/")) {
+                osgiBundlestoreDir = new File(decode.substring(decode.indexOf("/")));
+            }
+            if (osgiBundlestoreDir != null) {
+                jythonPath = findJythonPath(osgiBundlestoreDir);
+            }
         }
+        // return null;
         return jythonPath;
     }
 
@@ -140,15 +150,15 @@ public final class ScriptingUtils {
      * @param tempDir for creating temp files
      * @param tempFiles to delete removed
      * @return prepared header script
+     * @throws ComponentException on unexpected error
      */
     public static String prepareHeaderScript(Map<String, Object> localStateMap, ComponentContext componentContext, File tempDir,
-        List<File> tempFiles) {
-        InputStream in = ScriptingUtils.class.getResourceAsStream("/resources/RCE_Jython.py");
+        List<File> tempFiles) throws ComponentException {
         String currentHeader = "";
-        try {
+        try (InputStream in = ScriptingUtils.class.getResourceAsStream("/resources/RCE_Jython.py")) {
             currentHeader = IOUtils.toString(in);
         } catch (IOException e) {
-            LOGGER.error(e);
+            throw new ComponentException("Internal error: Failed to intialize script that is wrapped around the actual script", e);
         }
 
         String stateMapDefinition = "RCE_STATE_VARIABLES = {";
@@ -185,15 +195,17 @@ public final class ScriptingUtils {
             if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
                 && (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
                     InputExecutionContraint.RequiredIfConnected.name())
-                || componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.NotRequired.name()))) {
+                    || componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)
+                        .equals(
+                            InputExecutionContraint.NotRequired.name()))) {
                 notConnected.add(input);
             }
         }
         for (String input : componentContext.getInputs()) {
             if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
                 && componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.NotRequired.name()) && !componentContext.getInputsWithDatum().contains(input)) {
+                    InputExecutionContraint.NotRequired.name())
+                && !componentContext.getInputsWithDatum().contains(input)) {
                 notConnected.add(input);
             }
         }
@@ -207,7 +219,7 @@ public final class ScriptingUtils {
         return currentHeader;
     }
 
-    private static String prepareInput(File tempDir, ComponentContext compContext, List<File> tempFiles) {
+    private static String prepareInput(File tempDir, ComponentContext compContext, List<File> tempFiles) throws ComponentException {
         final String openBracket = "[";
         String dataDefinition = "RCE_Dict_InputChannels = { ";
         String nameAndValue = "";
@@ -229,7 +241,7 @@ public final class ScriptingUtils {
                         componentDatamanagementService.copyFileReferenceTDToLocalFile(compContext, (FileReferenceTD) input, file);
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to load input file from the data management", e);
+                    throw new ComponentException("Failed to read input file from the data management", e);
                 }
                 nameAndValue += QUOTE + file.getAbsolutePath().toString().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
                 break;
@@ -248,7 +260,7 @@ public final class ScriptingUtils {
                             (DirectoryReferenceTD) input, dirInputDir);
                     }
                 } catch (IOException e) {
-                    throw new RuntimeException("Failed to load input directory from the data management", e);
+                    throw new ComponentException("Failed to read input directory from the data management", e);
                 }
                 nameAndValue += QUOTE + dir.getAbsolutePath().toString().replaceAll(ESCAPESLASH, SLASH) + QUOTE;
                 break;
@@ -280,6 +292,14 @@ public final class ScriptingUtils {
             case Vector:
                 VectorTD vector = (VectorTD) input;
                 nameAndValue += openBracket;
+                if (vector.getRowDimension() > MAXIMUM_SMALL_TABLE_ENTRIES) {
+                    throw new ComponentException(
+                        StringUtils.format(
+                            "Vector of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                            + " use Python as script language instead",
+                            inputName,
+                            vector.getRowDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
+                }
                 for (int i = 0; i < vector.getRowDimension(); i++) {
                     nameAndValue += vector.getFloatTDOfElement(i).getFloatValue() + COMMA;
                 }
@@ -291,6 +311,14 @@ public final class ScriptingUtils {
             case SmallTable:
                 SmallTableTD table = (SmallTableTD) input;
                 nameAndValue += openBracket;
+                if (table.getRowCount() * table.getColumnCount() > MAXIMUM_SMALL_TABLE_ENTRIES) {
+                    throw new ComponentException(
+                        StringUtils.format(
+                            "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                                + " use Python as script language instead",
+                            inputName,
+                            table.getRowCount() * table.getColumnCount(), MAXIMUM_SMALL_TABLE_ENTRIES));
+                }
                 for (int i = 0; i < table.getRowCount(); i++) {
                     if (table.getRowCount() > 1) {
                         nameAndValue += openBracket;
@@ -373,8 +401,7 @@ public final class ScriptingUtils {
 
     @SuppressWarnings("unchecked")
     protected static void writeOutputByType(Object value, DataType type, String name, String workingPath, ScriptEngine engine,
-        ComponentHistoryDataItem historyDataItem, ComponentContext componentContext)
-        throws ComponentException {
+        ComponentHistoryDataItem historyDataItem, ComponentContext componentContext) throws ComponentException {
         TypedDatum outputValue = null;
         switch (type) {
         case ShortText:
@@ -387,8 +414,8 @@ public final class ScriptingUtils {
             try {
                 outputValue = typedDatumFactory.createFloat(Double.parseDouble(value.toString()));
             } catch (NumberFormatException e) {
-                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Float", value.toString()));
-                throw new ComponentException(e);
+                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float",
+                    value.toString()), e);
             }
 
             break;
@@ -396,8 +423,8 @@ public final class ScriptingUtils {
             try {
                 outputValue = typedDatumFactory.createInteger(Long.parseLong(value.toString()));
             } catch (NumberFormatException e) {
-                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Integer", value.toString()));
-                throw new ComponentException(e);
+                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float",
+                    value.toString()), e);
             }
 
             break;
@@ -467,18 +494,19 @@ public final class ScriptingUtils {
             }
             if (file.exists()) {
                 if (type.equals("file")) {
-                    outputValue =
-                        componentDatamanagementService.createFileReferenceTDFromLocalFile(componentContext, file, file.getName());
+                    outputValue = componentDatamanagementService.createFileReferenceTDFromLocalFile(
+                        componentContext, file, file.getName());
                 } else {
                     outputValue = componentDatamanagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, file,
                         file.getName());
                 }
             } else {
                 throw new ComponentException(StringUtils.format(
-                    "Could not write %s for output \"%s\" because it does not exist: %s", type, name, file.getAbsolutePath()));
+                    "Failed to write %s to output '%s' as it does not exist: %s", type, name, file.getAbsolutePath()));
             }
-        } catch (IOException ex) {
-            throw new ComponentException("Failed to write FileReference to output Channel", ex);
+        } catch (IOException e) {
+            throw new ComponentException(StringUtils.format("Failed to store %s into the data management - "
+                + "if it is not stored in the data management, it can not be sent as output value", type), e);
         }
         return outputValue;
     }

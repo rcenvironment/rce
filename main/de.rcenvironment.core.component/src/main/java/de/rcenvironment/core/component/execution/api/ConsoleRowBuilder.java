@@ -72,6 +72,15 @@ public class ConsoleRowBuilder {
     }
     
     /**
+     * @param sequenceNumber sequenceNumber of the {@link ConsoleRow}
+     * @return {@link ConsoleRowBuilder} instance for method chaining
+     */
+    public ConsoleRowBuilder setSequenceNumber(long sequenceNumber) {
+        consoleRow.setSequenceNumber(sequenceNumber);
+        return this;
+    }
+    
+    /**
      * @return {@link ConsoleRow} instance
      */
     public ConsoleRow build() {

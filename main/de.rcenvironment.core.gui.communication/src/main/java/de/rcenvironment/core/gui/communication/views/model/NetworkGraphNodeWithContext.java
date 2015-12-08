@@ -14,6 +14,8 @@ import de.rcenvironment.core.communication.common.NetworkGraphNode;
 import de.rcenvironment.core.communication.common.WorkflowHostUtils;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNode;
+import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -21,7 +23,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Robert Mischke
  */
-public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeWithContext> {
+public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeWithContext>, ContributedNetworkViewNode {
 
     /**
      * This context defines what information aspect of a {@link NetworkGraphNode} is represented by this tree node, or the subtree below it.
@@ -34,14 +36,6 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
          */
         ROOT,
         /**
-         * Components published to all reachable nodes.
-         */
-        PUBLISHED_COMPONENTS_FOLDER,
-        /**
-         * Locally installed components.
-         */
-        LOCAL_COMPONENTS_FOLDER,
-        /**
          * The parent folder of the {@link NodeProperty} values of this node.
          */
         RAW_NODE_PROPERTIES_FOLDER,
@@ -52,7 +46,11 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
         /**
          * A single {@link ComponentInstallation}.
          */
-        COMPONENT_INSTALLATION
+        COMPONENT_INSTALLATION,
+        /**
+         * System resource informations.
+         */
+        RESOURCE_MONITORING_FOLDER
     }
 
     private final NetworkGraphNode node;
@@ -67,17 +65,22 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
 
     private final NetworkGraphNodeWithContext parent;
 
-    public NetworkGraphNodeWithContext(NetworkGraphNodeWithContext parent, Context context) {
+    // the (optional) contributor of this node, which is also used for fetching its children
+    private final NetworkViewContributor contributor;
+
+    public NetworkGraphNodeWithContext(NetworkGraphNodeWithContext parent, Context context, NetworkViewContributor contributor) {
         this.parent = parent;
         this.node = parent.node;
         this.attachedNodeProperties = parent.attachedNodeProperties;
         this.context = context;
+        this.contributor = contributor;
     }
 
-    public NetworkGraphNodeWithContext(NetworkGraphNode node, Context context) {
+    public NetworkGraphNodeWithContext(NetworkGraphNode node, Context context, NetworkViewContributor contributor) {
         this.parent = null;
         this.node = node;
         this.context = context;
+        this.contributor = contributor;
     }
 
     public NetworkGraphNodeWithContext getParent() {
@@ -114,6 +117,11 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
 
     public void setDisplayText(String displayText) {
         this.displayText = displayText;
+    }
+
+    @Override
+    public NetworkViewContributor getContributor() {
+        return contributor;
     }
 
     @Override
@@ -212,4 +220,5 @@ public class NetworkGraphNodeWithContext implements Comparable<NetworkGraphNodeW
         // very simple; does not cover component installations etc.
         return StringUtils.format("%s [%s]", getDisplayNameOfNode(), context);
     }
+
 }

@@ -21,6 +21,13 @@
                filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter"
                enablesFor="1">
 		 </propertySection>
+		 <propertySection
+               tab="workflow.editor.tab.parametricstudy.FaultTolerantLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.LoopBehaviorInCaseOfFailureSection"
+               id="workflow.editor.tab.Properties.Section.FaultTolerantLoop"
+               filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter"
+               enablesFor="1">
+         </propertySection>
          <propertySection
                tab="workflow.editor.tab.converger.NestedLoop"
                class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
@@ -47,9 +54,15 @@
                id="workflow.editor.tab.converger.Parameters">
          </propertyTab>
          <propertyTab
-               label="%nestedLoop"
+               label="Fault Tolerance"
                category="default"
                afterTab="workflow.editor.tab.converger.Parameters"
+               id="workflow.editor.tab.parametricstudy.FaultTolerantLoop">
+         </propertyTab>
+         <propertyTab
+               label="%nestedLoop"
+               category="default"
+               afterTab="workflow.editor.tab.parametricstudy.FaultTolerantLoop"
                id="workflow.editor.tab.converger.NestedLoop">
          </propertyTab>
       </propertyTabs>

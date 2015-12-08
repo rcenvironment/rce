@@ -12,9 +12,6 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.UUID;
 
-import org.easymock.EasyMock;
-
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 
@@ -41,8 +38,6 @@ public class DistributableInputStreamTest {
     private int n;
 
     private long skipped = 9;
-
-    private User cert = EasyMock.createNiceMock(User.class);
 
     private DataReference dataRef;
 

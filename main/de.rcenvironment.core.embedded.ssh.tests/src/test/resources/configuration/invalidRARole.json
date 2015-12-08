@@ -1,0 +1,10 @@
+{
+	"roles" : {
+		"remote access" : {
+			"allowedCommandPatterns" : [
+				"net info",
+				"components list"
+			]
+		}
+	}
+}

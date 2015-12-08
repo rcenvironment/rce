@@ -22,14 +22,15 @@ import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
+import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Background task which sets the time to live (TTL) for call back objects and call back proxy objects
- * which are held by {@link CallbackService} and {@link CallbackProxyService}. Additionally, it
- * removes objects and proxies which time to live is expired.
+ * Background task which sets the time to live (TTL) for call back objects and call back proxy objects which are held by
+ * {@link CallbackService} and {@link CallbackProxyService}. Additionally, it removes objects and proxies which time to live is expired.
  * 
  * @author Doreen Seider
  * @author Robert Mischke
@@ -57,7 +58,7 @@ public class CleanJob {
     private static BundleContext context;
 
     private static CommunicationService communicationService;
-    
+
     private static Map<String, ScheduledFuture<?>> scheduleAtFixedRate = new HashMap<String, ScheduledFuture<?>>();
 
     /** Only called by OSGi. */
@@ -75,25 +76,25 @@ public class CleanJob {
     protected void unbindCommunicationService(CommunicationService oldCommunicationService) {
         communicationService = ServiceUtils.createFailingServiceProxy(CommunicationService.class);
     }
-    
+
     /**
      * Cleans callback objects and callback proxies.
      * 
      * @author Doreen Seider
      */
     protected static class CleanRunnable implements Runnable {
-        
+
         private final Class<?> iface;
-        
+
         private final Map<String, WeakReference<Object>> objects;
-        
+
         private final Map<String, NodeIdentifier> nodes;
-        
+
         private final Map<String, Long> ttls;
-                
+
         protected CleanRunnable(Class<?> iface, Map<String, WeakReference<Object>> objects,
             Map<String, Long> ttls, Map<String, NodeIdentifier> nodes) {
-            
+
             this.iface = iface;
             this.objects = objects;
             this.nodes = nodes;
@@ -101,7 +102,7 @@ public class CleanJob {
         }
 
         @Override
-        @TaskDescription("Clean up callback objects and proxies (unreferenced, TTL expired) and renew TTL for remaining")
+        @TaskDescription("Communication Layer: Purge old callback objects/proxies and renew TTL for remaining")
         public void run() {
 
             // remove all unreferenced and expired objects and renew TTL for all remaining objects
@@ -115,15 +116,18 @@ public class CleanJob {
                     } else {
                         try {
                             if (iface == CallbackProxyService.class) {
-                                CallbackService service = (CallbackService) communicationService.getService(CallbackService.class,
-                                    nodes.get(id), context);
-                                service.setTTL(id, ttls.get(id));
+                                RemotableCallbackService remoteService =
+                                    (RemotableCallbackService) communicationService.getRemotableService(RemotableCallbackService.class,
+                                        nodes.get(id));
+                                remoteService.setTTL(id, ttls.get(id));
                             } else if (iface == CallbackService.class) {
-                                CallbackProxyService service = (CallbackProxyService) communicationService
-                                    .getService(CallbackProxyService.class, nodes.get(id), context);
-                                service.setTTL(id, new Date(System.currentTimeMillis() + CleanJob.TTL_MSEC).getTime());
+                                // this code path doesn't seem to be used anymore; replacing with exception to test - misc_ro, Oct 2015
+                                throw new RemoteOperationException("Unexpected callback code path used");
+                                // CallbackProxyService service = (CallbackProxyService) communicationService
+                                // .getService(CallbackProxyService.class, nodes.get(id), context);
+                                // service.setTTL(id, new Date(System.currentTimeMillis() + CleanJob.TTL_MSEC).getTime());
                             }
-                        } catch (RuntimeException e) {
+                        } catch (RemoteOperationException | RuntimeException e) {
                             // temporary fix for remote call failures;
                             // see https://www.sistec.dlr.de/mantis/view.php?id=6542
                             LogFactory.getLog(getClass()).debug("Failed to update TTL for id " + id + " via " + iface.getSimpleName()
@@ -153,10 +157,10 @@ public class CleanJob {
         synchronized (CleanJob.class) {
             if (!scheduleAtFixedRate.containsKey(iface.getCanonicalName())) {
                 CleanRunnable runnable = new CleanRunnable(iface, objects, ttls, platforms);
-                scheduleAtFixedRate.put(iface.getCanonicalName(), 
-                    SharedThreadPool.getInstance().scheduleAtFixedRate(runnable, CleanJob.UPDATE_INTERVAL_MSEC));                
+                scheduleAtFixedRate.put(iface.getCanonicalName(),
+                    SharedThreadPool.getInstance().scheduleAtFixedRate(runnable, CleanJob.UPDATE_INTERVAL_MSEC));
             }
-            
+
         }
     }
 
@@ -179,6 +183,5 @@ public class CleanJob {
         }
 
     }
-
 
 }

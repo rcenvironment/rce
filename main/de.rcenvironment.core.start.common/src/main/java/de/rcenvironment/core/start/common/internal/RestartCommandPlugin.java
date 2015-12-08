@@ -15,7 +15,7 @@ import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
-import de.rcenvironment.core.start.common.Platform;
+import de.rcenvironment.core.start.common.Instance;
 
 /**
  * Provides the "restart" console command.
@@ -50,7 +50,7 @@ public class RestartCommandPlugin implements CommandPlugin {
      */
     private void performRestart(CommandContext context) {
         context.println("Restarting RCE ...");
-        Platform.restart();
+        Instance.restart();
     }
 
 }

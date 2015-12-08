@@ -1,0 +1,43 @@
+{ 
+	"dynamicOutputs": [
+        {
+            "identifier": "to_evaluate",
+            "dataTypes": [
+                "Float",
+                "Integer",
+                "Boolean"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        },
+        {
+            "identifier": "evaluation_results",
+            "dataTypes": [
+                "Float",
+                "Integer",
+                "Boolean"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions":[
+	            "Single",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+     ]
+
+}

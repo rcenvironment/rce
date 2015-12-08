@@ -31,19 +31,20 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
-import de.rcenvironment.core.communication.messaging.internal.HealthCheckRequestHandler;
+import de.rcenvironment.core.communication.messaging.internal.HealthCheckNetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.internal.MessageEndpointHandlerImpl;
-import de.rcenvironment.core.communication.messaging.internal.RPCRequestHandler;
+import de.rcenvironment.core.communication.messaging.internal.RPCNetworkRequestHandler;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertyConstants;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
-import de.rcenvironment.core.communication.rpc.ServiceCallHandler;
+import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -73,7 +74,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
     private ScheduledFuture<?> connectionHealthCheckTaskHandle;
 
-    private ServiceCallHandler serviceCallHandler;
+    private RemoteServiceCallHandlerService serviceCallHandler;
 
     private NodePropertiesService nodePropertiesService;
 
@@ -82,6 +83,8 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
     private long sessionStartTimeMsec;
 
     private boolean autoStartNetworkOnActivation = true; // disabled by integration tests
+
+    private boolean started;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -137,7 +140,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         connectionHealthCheckTaskHandle = SharedThreadPool.getInstance().scheduleAtFixedRate(new Runnable() {
 
             @Override
-            @TaskDescription("Connection health check (trigger task)")
+            @TaskDescription("Communication Layer: Connection health check (trigger task)")
             public void run() {
                 try {
                     connectionService.triggerHealthCheckForAllChannels();
@@ -146,6 +149,8 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
                 }
             }
         }, CommunicationConfiguration.CONNECTION_HEALTH_CHECK_INTERVAL_MSEC);
+
+        started = true;
     }
 
     @Override
@@ -167,7 +172,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         SharedThreadPool.getInstance().execute(new Runnable() {
 
             @Override
-            @TaskDescription("Connect to remote node (trigger task)")
+            @TaskDescription("Communication Layer: Connect to remote node (trigger task)")
             public void run() {
                 try {
                     log.debug("Initiating asynchronous connection to " + ncp);
@@ -181,6 +186,13 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
     @Override
     public synchronized void shutDownNetwork() {
+
+        if (!started) {
+            log.debug("Network layer was not started, ignoring request to shut down");
+            return;
+        }
+        started = false;
+
         connectionService.setShutdownFlag(true);
 
         connectionHealthCheckTaskHandle.cancel(true);
@@ -268,11 +280,11 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
     }
 
     /**
-     * Define the {@link ServiceCallHandler} implementation to use for incoming RPC calls; made public for integration testing.
+     * Define the {@link RemoteServiceCallHandlerService} implementation to use for incoming RPC calls; made public for integration testing.
      * 
-     * @param newInstance the {@link ServiceCallHandler} to use
+     * @param newInstance the {@link RemoteServiceCallHandlerService} to use
      */
-    public void bindServiceCallHandler(ServiceCallHandler newInstance) {
+    public void bindServiceCallHandler(RemoteServiceCallHandlerService newInstance) {
         serviceCallHandler = newInstance;
     }
 
@@ -302,8 +314,10 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         NodeInformationRegistryImpl.getInstance().updateFrom(ownNodeInformation);
 
         MessageEndpointHandler messageEndpointHandler = new MessageEndpointHandlerImpl();
-        messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCRequestHandler(serviceCallHandler));
-        messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK, new HealthCheckRequestHandler());
+        messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCNetworkRequestHandler(
+            serviceCallHandler));
+        messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK,
+            new HealthCheckNetworkRequestHandler());
 
         connectionService.setMessageEndpointHandler(messageEndpointHandler);
 
@@ -313,15 +327,18 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         // register metadata protocol handler
         messageEndpointHandler.registerRequestHandlers(nodePropertiesService.getNetworkRequestHandlers());
 
-        if (autoStartNetworkOnActivation) { // default is true; only disabled in tests
+        // "autoStartNetworkOnActivation" is true by default; only disabled in test code
+        if (autoStartNetworkOnActivation && !CommandLineArguments.isDoNotStartNetworkRequested()) {
             SharedThreadPool.getInstance().execute(new Runnable() {
 
                 @Override
-                @TaskDescription("Communication Layer Startup")
+                @TaskDescription("Communication Layer: Main startup")
                 public void run() {
                     startUpNetwork();
                 }
             });
+        } else {
+            log.debug("Network startup is disabled");
         }
     }
 
@@ -345,6 +362,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         localData.put(NodePropertyConstants.KEY_NODE_ID, ownNodeInformation.getNodeIdString());
         localData.put(NodePropertyConstants.KEY_DISPLAY_NAME, ownNodeInformation.getDisplayName());
         localData.put(NodePropertyConstants.KEY_SESSION_START_TIME, Long.toString(sessionStartTimeMsec));
+
         // TODO @5.0: review: provide options to disable? - misc_ro
         localData.put("debug.sessionStartInfo",
             DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG).format(new Date(sessionStartTimeMsec))); // temporary
@@ -357,6 +375,13 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         localData.put("debug.osInfo", StringUtils.format("%s (%s/%s)",
             System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch")));
         localData.put("debug.isRelay", Boolean.toString(configurationService.isRelay()));
+        if (configurationService.getLocationCoordinates() != null) {
+            localData.put("coordinates",
+                "[" + configurationService.getLocationCoordinates()[0] + "," + configurationService.getLocationCoordinates()[1] + "]");
+        }
+        localData.put("locationName", configurationService.getLocationName());
+        localData.put("contact", configurationService.getInstanceContact());
+        localData.put("additionalInformation", configurationService.getInstanceAdditionalInformation());
         return localData;
     }
 }

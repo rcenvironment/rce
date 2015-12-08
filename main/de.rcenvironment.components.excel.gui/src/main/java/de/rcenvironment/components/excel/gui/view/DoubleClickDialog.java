@@ -24,8 +24,9 @@ import org.eclipse.swt.widgets.TableItem;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.components.excel.common.GarbageDestroyer;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.rce.components.excel.commons.ChannelValue;
 
 
@@ -78,7 +79,7 @@ public class DoubleClickDialog extends Dialog {
         boolean ret = super.close();
         
         //Not nice, but workbook-object will not released.
-        new Thread(new GarbageDestroyer()).start();
+        ExcelUtils.destroyGarbage();
         
         return ret;
     }
@@ -114,8 +115,7 @@ public class DoubleClickDialog extends Dialog {
         gridData = new GridData(SWT.RIGHT, SWT.TOP, false, false, 1, 1);
         Label header = new Label(composite, SWT.NONE);
         header.setText(Messages.doubleClickHeader);
-        Image image = new Image(parentComposite.getDisplay(), 
-            ExcelView.getImageDescriptor(ExcelViewConstants.ICONNAME_EXCEL_64).getImageData());
+        Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_LARGE);
         header.setImage(image);
         header.setLayoutData(gridData);
    
@@ -181,9 +181,9 @@ public class DoubleClickDialog extends Dialog {
         for (int loopIndex = 0; loopIndex < vals.getColumnCount(); loopIndex++) {
             table.getColumn(loopIndex).pack();
         }
-        
+
         //Not nice, but workbook-object will not released.
-        new Thread(new GarbageDestroyer()).start();
+        ExcelUtils.destroyGarbage();
     }
 
 }

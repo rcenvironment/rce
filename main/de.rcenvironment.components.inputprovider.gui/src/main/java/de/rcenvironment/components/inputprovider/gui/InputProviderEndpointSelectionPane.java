@@ -125,7 +125,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
         InputProviderEndpointEditDialog dialog =
             new InputProviderEndpointEditDialog(Display.getDefault().getActiveShell(),
                 EndpointActionType.EDIT, configuration, endpointType,
-                endpointIdToManage, false, icon, endpoint.getDeclarativeEndpointDescription()
+                endpointIdToManage, false, icon, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(), newMetaData);
 
         onEditClicked(name, dialog, newMetaData);

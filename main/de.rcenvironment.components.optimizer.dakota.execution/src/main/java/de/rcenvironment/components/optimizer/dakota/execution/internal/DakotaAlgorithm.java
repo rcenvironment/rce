@@ -36,7 +36,6 @@ import static de.rcenvironment.components.optimizer.dakota.execution.internal.Da
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.HESSIAN_STEP_SIZE;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.INTERVAL_TYPE_HESSIAN_KEY;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.INTERVAL_TYPE_KEY;
-import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.META_IS_DISCRETE;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.NEWLINE;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.NORMAL;
 import static de.rcenvironment.components.optimizer.dakota.execution.internal.DakotaConstants.NO_GRADIENTS;
@@ -110,7 +109,9 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
 /**
  * This class provides everything for running the dakota optimizer blackbox.
@@ -119,11 +120,17 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
+    private static final String NAN = "NaN";
+
     private static final String APOSTROPHE = "'";
 
     private static final String INPUT_ARGUMENT = " -input ";
 
     private static final String RESTART_FILE_ARGUMENT = " -read_restart ";
+
+    private static final Object LOCK_OBJECT = new Object();
+
+    private static final double RESULT_EPS = 1e-10;
 
     private static File dakotaExecutablePath = null;
 
@@ -153,8 +160,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
     public DakotaAlgorithm(String algorithm, Map<String, MethodDescription> methodConfigurations, Map<String, TypedDatum> outputValues,
         Collection<String> input2, ComponentContext compContext, Map<String, Double> upperMap,
-        Map<String, Double> lowerMap) {
-        super(compContext, compContext.getWorkflowExecutionIdentifier() + ".in", "results.out");
+        Map<String, Double> lowerMap) throws ComponentException {
+        super(compContext, "dakotaInput.in", "results.out");
 
         typedDatumFactory = compContext.getService(TypedDatumService.class).getFactory();
         this.algorithm = algorithm;
@@ -164,59 +171,68 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         this.upperMap = upperMap;
         this.lowerMap = lowerMap;
 
-        if (Boolean.parseBoolean(compContext.getConfigurationValue(OptimizerComponentConstants.USE_CUSTOM_DAKOTA_PATH))) {
-            dakotaExecutablePath = new File(compContext.getConfigurationValue(OptimizerComponentConstants.CUSTOM_DAKOTA_PATH));
-            if (!(dakotaExecutablePath.exists() && dakotaExecutablePath.isFile() && dakotaExecutablePath.canExecute())) {
-                dakotaExecutablePath = null;
-                LOGGER.info("Dakota binary not found at user specified location. Switching to default version.");
-            }
-        }
-
-        if (dakotaExecutablePath == null) {
-            try {
-                if (OS.isFamilyWindows()) {
-                    dakotaExecutablePath =
-                        new File(TempFileServiceAccess.getInstance().createManagedTempDir("DakotaBinary"), "dakota/dakota.exe");
-
-                } else if (OS.isFamilyUnix()) {
-                    dakotaExecutablePath =
-                        new File(TempFileServiceAccess.getInstance().createManagedTempDir("DakotaBinary"), "dakota/dakota");
-                } else {
+        synchronized (LOCK_OBJECT) {
+            if (Boolean.parseBoolean(compContext.getConfigurationValue(OptimizerComponentConstants.USE_CUSTOM_DAKOTA_PATH))) {
+                dakotaExecutablePath = new File(compContext.getConfigurationValue(OptimizerComponentConstants.CUSTOM_DAKOTA_PATH));
+                if (!(dakotaExecutablePath.exists() && dakotaExecutablePath.isFile() && dakotaExecutablePath.canExecute())) {
                     dakotaExecutablePath = null;
+                    compContext.getLog().componentInfo("Dakota binary not found at user specified location. Switching to default location");
                 }
-            } catch (IOException e) {
-                LOGGER.error("Could not create temp file for dakota binary", e);
+            }
+
+            if (dakotaExecutablePath == null) {
+
+                try {
+                    if (OS.isFamilyWindows()) {
+                        dakotaExecutablePath =
+                            new File(TempFileServiceAccess.getInstance().createManagedTempDir("DakotaBinary"), "dakota/dakota.exe");
+
+                    } else if (OS.isFamilyUnix()) {
+                        dakotaExecutablePath =
+                            new File(TempFileServiceAccess.getInstance().createManagedTempDir("DakotaBinary"), "dakota/dakota");
+                    } else {
+                        dakotaExecutablePath = null;
+                    }
+                } catch (IOException e) {
+                    throw new ComponentException("Failed to create temporary file (required to execute Dakota binaries)", e);
+                }
             }
         }
         workingDir.setExecutable(true);
-        if (!dakotaExecutablePath.exists()) {
-            InputStream dakotaInput;
+        if (dakotaExecutablePath != null && !dakotaExecutablePath.exists()) {
+            String path = null;
             if (OS.isFamilyWindows()) {
-                dakotaInput = CommonBundleClasspathStub.class.getResourceAsStream("/resources/binaries/dakota.exe");
+                path = "/resources/binaries/dakota.exe";
             } else if (OS.isFamilyUnix()) {
-                dakotaInput = CommonBundleClasspathStub.class.getResourceAsStream("/resources/binaries/dakota");
-            } else {
-                dakotaInput = null;
+                path = "/resources/binaries/dakota";
             }
-            if (dakotaInput != null) {
-                try {
-                    FileUtils.copyInputStreamToFile(dakotaInput, dakotaExecutablePath);
-                    if (OS.isFamilyWindows()) {
-                        String[] dllFiles = new String[] { "libifcoremd.dll", "libmmd.dll", "msvcp100.dll", "msvcr100.dll" };
-                        for (String dll : dllFiles) {
-                            FileUtils.copyInputStreamToFile(CommonBundleClasspathStub.class
-                                .getResourceAsStream("/resources/binaries/" + dll), new File(dakotaExecutablePath.getParentFile(), dll));
-                        }
+            if (path != null) {
+                try (InputStream dakotaInput = CommonBundleClasspathStub.class.getResourceAsStream(path)) {
+                    if (dakotaInput != null) {
+                        FileUtils.copyInputStreamToFile(dakotaInput, dakotaExecutablePath);
+                        if (OS.isFamilyWindows()) {
+                            String[] dllFiles = new String[] { "libifcoremd.dll", "libmmd.dll",
+                                "msvcp100.dll", "msvcr100.dll" };
+                            for (String dll : dllFiles) {
+                                FileUtils.copyInputStreamToFile(CommonBundleClasspathStub.class
+                                    .getResourceAsStream("/resources/binaries/" + dll),
+                                    new File(dakotaExecutablePath.getParentFile(), dll));
+                            }
 
+                        }
+                    } else {
+                        initFailed.set(true);
+                        throw new ComponentException("Failed to copy Dakota binaries: Dakota files might not be installed.");
                     }
                 } catch (IOException e) {
                     initFailed.set(true);
-                    startFailedException = new ComponentException("Could not copy dakota binary:", e);
+                    throw new ComponentException("Failed to copy Dakota binaries", e);
                 }
                 dakotaExecutablePath.setExecutable(true);
             } else {
                 initFailed.set(true);
-                startFailedException = new ComponentException("Dakota binaries not found. Maybe Dakota is not installed?");
+                startFailedException = new ComponentException("Dakota binaries not found; "
+                    + "most likely because Dakota is not available for your operating system");
             }
             dakotaExecutablePath.setExecutable(true);
         }
@@ -235,7 +251,6 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         String outputFileName) throws IOException {
         File fo = new File(messageFromClient.getCurrentWorkingDir() + File.separatorChar + outputFileName);
         fo.createNewFile();
-        LOGGER.debug(fo.getAbsolutePath());
         FileWriter fw2 = new FileWriter(fo);
         Queue<String> keyQueue = new LinkedList<String>();
         for (String key : functionVariables.keySet()) {
@@ -254,8 +269,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                     // see Dakota User Manuel Sec. 7.2.4
                     fw2.append("-");
                 }
-                if (functionVariables.get(key).isInfinite()) {
-                    fw2.append("NaN");
+                if (functionVariables.get(key).isNaN()) {
+                    fw2.append(NAN);
                 } else {
                     fw2.append(functionVariables.get(key) + " ");
                 }
@@ -265,16 +280,16 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
             keyQueue.offer(key);
         }
         if (constraintOrder != null) {
-            for (int constraintIterator = 0; constraintIterator < constraintOrder.length; constraintIterator++) {
+            for (String element : constraintOrder) {
                 if ((currentActiveSetVectorNumber & 1) != 0) {
-                    if (constraintVariables.get(constraintOrder[constraintIterator]).isInfinite()) {
-                        fw2.append(WHITESPACES + "1e99 ");
+                    if (constraintVariables.get(element).isNaN()) {
+                        fw2.append(WHITESPACES + NAN);
                     } else {
-                        fw2.append(WHITESPACES + constraintVariables.get(constraintOrder[constraintIterator]) + " ");
+                        fw2.append(WHITESPACES + constraintVariables.get(element) + " ");
                     }
                     fw2.append(IOUtils.LINE_SEPARATOR);
                 }
-                keyQueue.offer(constraintOrder[constraintIterator]);
+                keyQueue.offer(element);
             }
         }
         while (!keyQueue.isEmpty()) {
@@ -283,9 +298,9 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
             if ((currentActiveSetVectorNumber & 2) != 0) {
                 fw2.append("[");
-                for (int i = 0; i < variableOrderForWholeExecution.length; i++) {
+                for (String element : variableOrderForWholeExecution) {
                     String gradientName = GRADIENT_DELTA + key + DOT
-                        + GRADIENT_DELTA + variableOrderForWholeExecution[i];
+                        + GRADIENT_DELTA + element;
                     if (compContext.getInputDataType(gradientName) == DataType.Vector) {
                         for (int j = 0; j < Integer.valueOf(compContext.getOutputMetaDataValue(
                             gradientName.substring(gradientName.lastIndexOf(OptimizerComponentConstants.GRADIENT_DELTA) + 1),
@@ -293,8 +308,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                             if (functionVariablesGradients.containsKey(gradientName
                                 + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j)) {
                                 if (functionVariablesGradients.get(
-                                    gradientName + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j).isInfinite()) {
-                                    fw2.append(WHITESPACES + "1e99");
+                                    gradientName + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j).isNaN()) {
+                                    fw2.append(WHITESPACES + NAN);
                                 } else {
                                     fw2.append(WHITESPACES + functionVariablesGradients.get(
                                         gradientName + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j));
@@ -303,8 +318,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                         }
                     } else {
                         if (functionVariablesGradients.containsKey(gradientName)) {
-                            if (functionVariablesGradients.get(gradientName).isInfinite()) {
-                                fw2.append(WHITESPACES + "1e99");
+                            if (functionVariablesGradients.get(gradientName).isNaN()) {
+                                fw2.append(WHITESPACES + NAN);
                             } else {
                                 fw2.append(WHITESPACES + functionVariablesGradients.get(
                                     gradientName));
@@ -325,82 +340,108 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
     @Override
     public void readOutputFileFromExternalProgram(Map<String, TypedDatum> outputValueMap) throws IOException {
         File paramsFile = null;
-        for (File f : new File(messageFromClient.getCurrentWorkingDir()).listFiles()) {
-            if (f.getAbsolutePath().endsWith("params.in")) {
-                paramsFile = f;
-            }
-        }
-        BufferedReader fr = new BufferedReader(new FileReader(paramsFile));
-        String[] firstLine = fr.readLine().split("\\s+");
-        int varCount = 0;
-        if (firstLine != null) {
-            try {
-                varCount = Integer.parseInt(firstLine[1]);
-            } catch (NumberFormatException e) {
-                LOGGER.error("Could not read variable count", e);
-            }
-        }
-        Map<String, Double> newOutput = new HashMap<String, Double>();
-        for (int i = 0; i < varCount; i++) {
-            String x = fr.readLine();
-            String[] xStrg = x.split(" ");
-
-            // Search for first not empty field
-            int j = 0;
-            while (xStrg != null && xStrg[j].isEmpty()) {
-                j++;
-            }
-            if (xStrg != null) {
-                newOutput.put(xStrg[j + 1], Double.parseDouble(xStrg[j]));
-            }
-
-        }
-        fr.readLine();
-        // read active set number
-
-        String[] asvLine = fr.readLine().split(" ");
-        int j = 0;
-        while (asvLine != null && asvLine[j].isEmpty()) {
-            j++;
-        }
-        if (asvLine != null) {
-            currentActiveSetVectorNumber = Integer.parseInt(asvLine[j]);
-        } else {
-            currentActiveSetVectorNumber = 0;
-        }
-        fr.close();
-        outputValueMap.clear();
-        for (String key : newOutput.keySet()) {
-            if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
-                String variableName = key.substring(0, key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
-                if (compContext.getOutputs().contains(variableName) && compContext.getOutputDataType(variableName) == DataType.Vector) {
-                    if (!outputValueMap.containsKey(variableName)) {
-                        VectorTD vector =
-                            typedDatumFactory.createVector(Integer.parseInt(compContext.getOutputMetaDataValue(variableName,
-                                OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
-                        for (int i = 0; i < vector.getRowDimension(); i++) {
-                            vector.setFloatTDForElement(
-                                typedDatumFactory.createFloat(newOutput.get(variableName
-                                    + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i)), i);
-                        }
-                        outputValueMap.put(variableName, vector);
+        if (messageFromClient != null && messageFromClient.getCurrentWorkingDir() != null) {
+            File cwd = new File(messageFromClient.getCurrentWorkingDir());
+            if (cwd.listFiles() != null) {
+                for (File f : cwd.listFiles()) {
+                    if (f.getAbsolutePath().endsWith("params.in")) {
+                        paramsFile = f;
                     }
-                } else {
-                    outputValueMap.put(key, typedDatumFactory.createFloat(newOutput.get(key)));
                 }
             }
-            outputValueMap.put(key, typedDatumFactory.createFloat(newOutput.get(key)));
+            try (BufferedReader fr = new BufferedReader(new FileReader(paramsFile))) {
+                String firstLineString = fr.readLine();
+                if (firstLineString != null) {
+                    String[] firstLine = firstLineString.split("\\s+");
+                    int varCount = 0;
+                    if (firstLine != null) {
+                        try {
+                            varCount = Integer.parseInt(firstLine[1]);
+                        } catch (NumberFormatException e) {
+                            throw new IOException("Failed to parse parameters file", e);
+                        }
+                    }
+                    Map<String, Double> newOutput = new HashMap<String, Double>();
+                    for (int i = 0; i < varCount; i++) {
+                        String x = fr.readLine();
+                        if (x != null) {
+                            String[] xStrg = x.split(" ");
+
+                            // Search for first not empty field
+                            int j = 0;
+                            while (xStrg != null && xStrg[j].isEmpty()) {
+                                j++;
+                            }
+                            if (xStrg != null) {
+                                newOutput.put(xStrg[j + 1], Double.parseDouble(xStrg[j]));
+                            }
+                        }
+
+                    }
+
+                    fr.readLine();
+                    // read active set number
+                    String asvLineString = fr.readLine();
+
+                    if (asvLineString != null) {
+                        String[] asvLine = asvLineString.split(" ");
+                        int j = 0;
+                        while (asvLine != null && asvLine[j].isEmpty()) {
+                            j++;
+                        }
+                        if (asvLine != null) {
+                            currentActiveSetVectorNumber = Integer.parseInt(asvLine[j]);
+                        } else {
+                            currentActiveSetVectorNumber = 0;
+                        }
+                        fr.close();
+                        outputValueMap.clear();
+                        for (String key : newOutput.keySet()) {
+                            processOutput(outputValueMap, newOutput, key);
+                        }
+                    }
+                }
+            }
         }
     }
 
+    private void processOutput(Map<String, TypedDatum> outputValueMap, Map<String, Double> newOutput, String key) {
+        if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+            String variableName =
+                key.substring(0, key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
+            if (compContext.getOutputs().contains(variableName)
+                && compContext.getOutputDataType(variableName) == DataType.Vector) {
+                if (!outputValueMap.containsKey(variableName)) {
+                    VectorTD vector =
+                        typedDatumFactory.createVector(Integer.parseInt(compContext.getOutputMetaDataValue(variableName,
+                            OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
+                    for (int i = 0; i < vector.getRowDimension(); i++) {
+                        vector.setFloatTDForElement(
+                            typedDatumFactory.createFloat(newOutput.get(variableName
+                                + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i)),
+                            i);
+                    }
+                    outputValueMap.put(variableName, vector);
+                }
+            } else {
+                outputValueMap.put(key, typedDatumFactory.createFloat(newOutput.get(key)));
+            }
+        }
+        outputValueMap.put(key, typedDatumFactory.createFloat(newOutput.get(key)));
+    }
+
     @Override
-    public Map<String, Double> getOptimalDesignVariables() {
+    public int getOptimalRunNumber() {
         File output = new File(workingDir.getAbsolutePath(), "consoleStdOutput.txt");
         Map<String, Double> results = new HashMap<String, Double>();
         try {
             List<String> outputLines = FileUtils.readLines(output);
             boolean readParameters = false;
             for (String s : outputLines) {
+
+                if (s.startsWith(DakotaConstants.FINISH_STRING_FROM_DAKOTA)) {
+                    return Integer.parseInt(s.substring(DakotaConstants.FINISH_STRING_FROM_DAKOTA.length()));
+                }
                 if (s.startsWith(DakotaConstants.BEST_OBJECTIVE_STRING_FROM_DAKOTA)) {
                     readParameters = false;
                 }
@@ -413,16 +454,29 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                 if (s.startsWith(DakotaConstants.BEST_PARAMETERS_STRING_FROM_DAKOTA)) {
                     readParameters = true;
                 }
-
             }
-
+            for (Integer iteration : iterationData.keySet()) {
+                Map<String, Double> iterationValues = iterationData.get(iteration);
+                boolean containsAll = true;
+                for (String variable : results.keySet()) {
+                    // Have to use this since the accuracy of the variables is a bit different.
+                    if (Math.abs(results.get(variable) - iterationValues.get(variable)) > RESULT_EPS) {
+                        containsAll = false;
+                    }
+                }
+                if (containsAll) {
+                    return iteration;
+                }
+            }
         } catch (IOException e) {
-            return null;
+            return Integer.MIN_VALUE;
         }
-        return results;
+
+        return Integer.MIN_VALUE;
     }
 
     @Override
+    @TaskDescription("Optimizer Algorithm Executor Dakota")
     public void run() {
         String command = dakotaExecutablePath.getAbsolutePath();
         if (compContext.getConfigurationValue(OptimizerComponentConstants.USE_RESTART_FILE) != null
@@ -444,7 +498,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         this.stop();
     }
 
-    private void createDakotaInputFile() {
+    private void createDakotaInputFile() throws ComponentException {
         try {
             createScript();
             createValueAndConstraintOrders();
@@ -506,7 +560,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
             FileUtils.writeStringToFile(dakotaInputFile, content);
             // FileUtils.copyFile(f, new File("C:/testInputBounds.in"));
         } catch (IOException e) {
-            LOGGER.error(e.getMessage());
+            throw new ComponentException("Failed to create input file for Dakota", e);
         }
     }
 
@@ -554,8 +608,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                         variableOrderForWholeExecution[i].lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
             }
 
-            if (compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE) != null
-                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE))) {
+            if (compContext.getOutputMetaDataValue(variableName, OptimizerComponentConstants.META_IS_DISCRETE) != null
+                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, OptimizerComponentConstants.META_IS_DISCRETE))) {
                 discrete = true;
             }
             if (isDiscrete == discrete) {
@@ -591,8 +645,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                 && e.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
                 variableName = e.substring(0, e.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
             }
-            if (compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE) != null
-                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE))) {
+            if (compContext.getOutputMetaDataValue(variableName, OptimizerComponentConstants.META_IS_DISCRETE) != null
+                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, OptimizerComponentConstants.META_IS_DISCRETE))) {
                 isDiscrete = true;
             }
             if (discrete == isDiscrete) {
@@ -664,8 +718,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                         variableOrderForWholeExecution[i].lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
             }
 
-            if (compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE) != null
-                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, META_IS_DISCRETE))) {
+            if (compContext.getOutputMetaDataValue(variableName, OptimizerComponentConstants.META_IS_DISCRETE) != null
+                && Boolean.parseBoolean(compContext.getOutputMetaDataValue(variableName, OptimizerComponentConstants.META_IS_DISCRETE))) {
                 discrete = true;
             }
 
@@ -713,9 +767,9 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         } else {
             boundValues = upperMap;
         }
-        for (int i = 0; i < constraintOrder.length; i++) {
+        for (String element : constraintOrder) {
             for (String e : input) {
-                if (e.equals(constraintOrder[i])
+                if (e.equals(element)
                     && compContext.getDynamicInputIdentifier(e).equals(ID_CONSTRAINT)) {
                     if (!e.contains(OptimizerComponentConstants.GRADIENT_DELTA) && compContext.getInputDataType(e) == DataType.Vector) {
                         int vectorSize =
@@ -813,9 +867,9 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
                     if ((settings.get(attributeKey).get(NOKEYWORD_KEY) == null
                         || !settings.get(attributeKey).get(NOKEYWORD_KEY)
-                        .equalsIgnoreCase(TRUE))
+                            .equalsIgnoreCase(TRUE))
                         && !(attributeKey.equalsIgnoreCase(OUTPUT)
-                        && value.equalsIgnoreCase(NORMAL))) {
+                            && value.equalsIgnoreCase(NORMAL))) {
                         methodProperties += (TABS + attributeKey + " = ");
                     } else {
                         methodProperties += (" ");
@@ -829,8 +883,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                         }
                     }
                 }
-                if (settings.get(attributeKey).get(NO_LINEBREAK_KEY) == null || !settings.get(attributeKey).
-                    get(NO_LINEBREAK_KEY).equalsIgnoreCase(TRUE)) {
+                if (settings.get(attributeKey).get(NO_LINEBREAK_KEY) == null
+                    || !settings.get(attributeKey).get(NO_LINEBREAK_KEY).equalsIgnoreCase(TRUE)) {
                     methodProperties += NEWLINE;
                 }
             }
@@ -875,26 +929,38 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
     @Override
     public void writeHistoryDataItem(OptimizerComponentHistoryDataItem historyItem) {
-        if (dakotaInputFileReference == null) {
-            try {
-                dakotaInputFileReference =
-                    compContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(compContext,
-                        dakotaInputFile,
-                        "dakotaInput.in");
-            } catch (IOException e) {
-                LOGGER.error(e);
+        if (historyItem != null) {
+            if (dakotaInputFileReference == null) {
+                try {
+                    dakotaInputFileReference =
+                        compContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(compContext,
+                            dakotaInputFile,
+                            "dakotaInput.in");
+                } catch (IOException e) {
+                    String errorMessage = "Failed to store Dakota input file into the data management"
+                        + "; it is not available in the workflow data browser";
+                    String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(LOGGER, errorMessage, e);
+                    compContext.getLog().componentError(errorMessage, e, errorId);
+                }
             }
-        }
-        historyItem.setInputFileReference(dakotaInputFileReference.getFileReference());
-        String restartFileReference;
-        try {
-            restartFileReference =
-                compContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(compContext,
-                    new File(workingDir, "dakota.rst"),
-                    "dakota.rst").getFileReference();
-            historyItem.setRestartFileReference(restartFileReference);
-        } catch (IOException e) {
-            LOGGER.error(e);
+            if (dakotaInputFileReference != null) {
+                historyItem.setInputFileReference(dakotaInputFileReference.getFileReference());
+            }
+
+            String restartFileReference;
+            try {
+                restartFileReference =
+                    compContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(compContext,
+                        new File(workingDir, "dakota.rst"),
+                        "dakota.rst").getFileReference();
+                historyItem.setRestartFileReference(restartFileReference);
+            } catch (IOException e) {
+                String errorMessage = "Failed to store Dakota restart file into the data management"
+                    + "; it is not available in the workflow data browser";
+                String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(LOGGER, errorMessage, e);
+                compContext.getLog().componentError(errorMessage, e, errorId);
+
+            }
         }
     }
 }

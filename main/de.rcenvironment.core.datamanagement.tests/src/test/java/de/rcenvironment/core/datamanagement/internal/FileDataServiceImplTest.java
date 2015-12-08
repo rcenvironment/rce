@@ -19,7 +19,6 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
@@ -31,17 +30,16 @@ import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamodel.api.CompressionFormat;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Test cases for {@link FileDataServiceImpl}.
+ * Test cases for {@link RemotableFileDataServiceImpl}.
  * 
  * @author Juergen Klein
  */
 public class FileDataServiceImplTest {
 
     private final URI location = URI.create("test");
-
-    private User certificate;
 
     private NodeIdentifier pi;
 
@@ -51,17 +49,13 @@ public class FileDataServiceImplTest {
 
     private DataReference anotherDr;
 
-    private FileDataServiceImpl fileDataService;
+    private RemotableFileDataServiceImpl fileDataService;
 
     /** Set up. */
     @Before
     public void setUp() {
         pi = NodeIdentifierFactory.fromNodeId("naklar:6");
         drId = UUID.randomUUID();
-
-        certificate = EasyMock.createNiceMock(User.class);
-        EasyMock.expect(certificate.isValid()).andReturn(true).anyTimes();
-        EasyMock.replay(certificate);
 
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
@@ -71,9 +65,9 @@ public class FileDataServiceImplTest {
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
         anotherDr = new DataReference(UUID.randomUUID().toString(), pi, birefs);
 
-        fileDataService = new FileDataServiceImpl();
+        fileDataService = new RemotableFileDataServiceImpl();
         fileDataService.bindPlatformService(new PlatformServiceDefaultStub());
-        
+
         MetaDataBackendService metaDataBackendService = EasyMock.createNiceMock(MetaDataBackendService.class);
         EasyMock.replay(metaDataBackendService);
 
@@ -84,12 +78,16 @@ public class FileDataServiceImplTest {
     /** Test. */
     @Test
     public void testGetStreamFromDataReference() {
-        fileDataService.getStreamFromDataReference(certificate, dr, true);
+        fileDataService.getStreamFromDataReference(dr, true);
     }
 
-    /** Test. */
+    /**
+     * Test.
+     * 
+     * @throws RemoteOperationException standard remote operation exception
+     */
     @Test
-    public void testNewReferenceFromStream() {
+    public void testNewReferenceFromStream() throws RemoteOperationException {
         InputStream is = new InputStream() {
 
             @Override
@@ -99,7 +97,7 @@ public class FileDataServiceImplTest {
         };
         MetaDataSet meta = new MetaDataSet();
         meta.setValue(new MetaData(MetaDataKeys.COMPONENT_RUN_ID, true, true), "7");
-        fileDataService.newReferenceFromStream(certificate, is, meta);
+        fileDataService.newReferenceFromStream(is, meta);
     }
 
     /**

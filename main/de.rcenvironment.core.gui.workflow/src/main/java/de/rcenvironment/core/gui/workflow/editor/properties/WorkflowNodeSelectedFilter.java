@@ -10,10 +10,10 @@ package de.rcenvironment.core.gui.workflow.editor.properties;
 
 import org.eclipse.jface.viewers.IFilter;
 
+import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.gui.workflow.AdvancedTabVisibilityHelper;
 import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
-import de.rcenvironment.core.start.common.CommandLineArguments;
 
 
 /**

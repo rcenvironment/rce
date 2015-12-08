@@ -21,7 +21,7 @@
     
 	<property name="rce.component.name" type="String" value="SQL Writer"/>
 	
-	<property name="rce.component.group" type="String" value="Data"/>
+	<property name="rce.component.group" type="String" value="_Deprecated"/>
 	
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.sql.execution.SQLWriterComponent"/>
 	

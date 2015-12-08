@@ -26,7 +26,6 @@ import org.apache.sshd.server.ExitCallback;
 import org.apache.sshd.server.SessionAware;
 import org.apache.sshd.server.session.ServerSession;
 
-import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
@@ -46,7 +45,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
 
     private String sshCommand;
 
-    private String username;
+    private String loginName;
 
     private ExitCallback callback;
 
@@ -76,22 +75,21 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
     public void start(Environment env) throws IOException {
         // start thread
         environment = env;
-        username = environment.getEnv().get(Environment.ENV_USER);
-        try {
-            userAccount = authenticationManager.getAccountByUsername(username);
-        } catch (AuthenticationException e) {
-            outputAdapter.addOutput("Invalid login name.");
-            logger.warn("Blocked unrecognized SSH account " + username);
+        loginName = environment.getEnv().get(Environment.ENV_USER);
+        userAccount = authenticationManager.getAccountByLoginName(loginName, false); // false = do not allow disabled
+        if (userAccount == null) {
+            outputAdapter.addOutput("Invalid/unknown login name: " + loginName);
+            logger.warn("Blocked unrecognized SSH account " + loginName);
             callback.onExit(0);
         }
         // initialize console (if user is not a temp user)
         if (isPotentiallyAllowedToRunCommands()) {
-            outputAdapter.setActiveUser(username);
+            outputAdapter.setActiveUser(loginName);
             // TODO review: thread safety? - misc_ro
             SharedThreadPool.getInstance().execute(this);
         } else {
             outputAdapter.addOutput("Your account is not allowed to run an interactive shell or execute commands.");
-            logger.warn("Blocked command/shell access for account " + username);
+            logger.warn("Blocked command/shell access for account " + loginName);
             callback.onExit(0);
         }
     }
@@ -133,7 +131,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
             callback.onExit(1);
         }
         // End Console (Closes the connection)
-        logger.debug("Command processing for shell ended for user: " + username);
+        logger.debug("Command processing for shell ended for user: " + loginName);
     }
 
     @Override
@@ -183,18 +181,18 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
 
     private CommandExecutionResult executeSingleCommand(String command) throws IOException {
         if (command != null && !command.isEmpty()) {
-            if (authenticationManager.isAllowedToExecuteConsoleCommand(username, command)) {
+            if (authenticationManager.isAllowedToExecuteConsoleCommand(loginName, command)) {
                 if (command.equalsIgnoreCase(SshConstants.EXIT_COMMAND)) {
                     // stop interactive shell on exit command
                     return CommandExecutionResult.EXIT_REQUESTED;
                 } else {
                     // TODO review: this logs all console commands, which may be a problem when the log is accessible from remote - misc_ro
-                    logger.debug(StringUtils.format("Executing shell command '%s' for user '%s'", command, username));
+                    logger.debug(StringUtils.format("Executing shell command '%s' for user '%s'", command, loginName));
                     // TODO pass invoker information for non-temporary accounts as well
                     return sendToExecutionService(command, userAccount);
                 }
             } else {
-                logger.debug("User " + username + " tried to execute command " + command
+                logger.debug("User " + loginName + " tried to execute command " + command
                     + ". Attempt was blocked because of missing role privileges.");
                 outputAdapter.addOutput("\r\nCommand " + command
                     + " not executed. You either do not have the privileges to execute this command or it does not exist.", true, false);

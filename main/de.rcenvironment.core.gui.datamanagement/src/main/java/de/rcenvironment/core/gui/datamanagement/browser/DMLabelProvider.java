@@ -52,6 +52,8 @@ public class DMLabelProvider extends ColumnLabelProvider {
             result = ImageManager.getInstance().getSharedImage(StandardImages.FILE_16);
         } else if (node.getType() == DMBrowserNodeType.InformationText) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16);
+        } else if (node.getType() == DMBrowserNodeType.ComponentHostInformation) {
+            result = DMBrowserImages.IMG_COMPONENTS;
         } else if (node.getType() == DMBrowserNodeType.WarningText) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16);
         } else if (node.getType() == DMBrowserNodeType.HistoryRoot) {
@@ -99,6 +101,8 @@ public class DMLabelProvider extends ColumnLabelProvider {
             result = imageManager.getSharedImage(StandardImages.COMMON_TEXT_16);
         } else if (node.getType() == DMBrowserNodeType.Custom && node.getIcon() != null) {
             result = node.getIcon();
+        } else if (node.getType() == DMBrowserNodeType.SqlFolder) {
+            result =  imageManager.getSharedImage(StandardImages.SQL_STATEMENTS); 
         }
         return result;
     }

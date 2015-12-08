@@ -8,18 +8,12 @@
 
 package de.rcenvironment.core.communication.routing.internal;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,8 +23,8 @@ import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
-import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
+import de.rcenvironment.core.communication.messaging.direct.api.DirectMessagingSender;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
@@ -50,12 +44,9 @@ import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.utils.common.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
 
 /**
  * A implementation of the {@link NetworkRoutingService} interface.
@@ -63,7 +54,7 @@ import de.rcenvironment.core.utils.incubator.ListenerProvider;
  * @author Phillip Kroll
  * @author Robert Mischke
  */
-public class NetworkRoutingServiceImpl implements NetworkRoutingService, MessageRoutingService, ListenerProvider {
+public class NetworkRoutingServiceImpl implements NetworkRoutingService, MessageRoutingService, AdditionalServicesProvider {
 
     /**
      * Keeps track of of distributed link state changes to adapt the local graph knowledge.
@@ -185,6 +176,8 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     private MessageChannelService messageChannelService;
 
+    private DirectMessagingSender directMessagingSender;
+
     private NodeConfigurationService configurationService;
 
     private LinkStateRoutingProtocolManager protocolManager;
@@ -197,8 +190,6 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     private TopologyMap topologyMap;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
-
     private final NetworkTopologyChangeTracker topologyChangeTracker = new NetworkTopologyChangeTracker();
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
@@ -209,7 +200,9 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     private final Log log = LogFactory.getLog(getClass());
 
-    private long forwardingTimeoutMsec;
+    private int routedRequestTimeoutMsec;
+
+    private int forwardingTimeoutMsec;
 
     private String localNodeIdString;
 
@@ -218,6 +211,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
      */
     public void activate() {
         ownNodeInformation = configurationService.getInitialNodeInformation();
+        routedRequestTimeoutMsec = configurationService.getRequestTimeoutMsec();
         forwardingTimeoutMsec = configurationService.getForwardingTimeoutMsec();
         localNodeId = ownNodeInformation.getNodeId();
         localNodeIdString = localNodeId.getIdString();
@@ -238,26 +232,24 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     }
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        List<ListenerDeclaration> result = new ArrayList<ListenerDeclaration>();
-        result.add(new ListenerDeclaration(LinkStateKnowledgeChangeListener.class, new LinkStateKnowledgeChangeTracker()));
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        List<AdditionalServiceDeclaration> result = new ArrayList<AdditionalServiceDeclaration>();
+        result.add(new AdditionalServiceDeclaration(LinkStateKnowledgeChangeListener.class, new LinkStateKnowledgeChangeTracker()));
         return result;
     }
 
     @Override
-    public Future<NetworkResponse> performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver) {
+    public NetworkResponse performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver) {
+        return performRoutedRequest(payload, messageType, receiver, routedRequestTimeoutMsec);
+    }
+
+    @Override
+    public NetworkResponse performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver, int timeoutMsec) {
         final NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, localNodeId, receiver);
         if (forceLocalRPCSerialization && receiver.equals(localNodeId)) {
-            return threadPool.submit(new Callable<NetworkResponse>() {
-
-                @Override
-                @TaskDescription("Simulate local RPC (forced serialization)")
-                public NetworkResponse call() throws Exception {
-                    return messageChannelService.handleLocalForcedSerializationRPC(request, localNodeId);
-                }
-            });
+            return messageChannelService.handleLocalForcedSerializationRPC(request, localNodeId);
         }
-        return sendToNextHop(request);
+        return sendToNextHopAndAwaitResponse(request, timeoutMsec);
     }
 
     @Override
@@ -302,6 +294,8 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             throw new IllegalStateException();
         }
         this.messageChannelService = service;
+        // note: currently extending each other
+        this.directMessagingSender = service;
     }
 
     /**
@@ -368,9 +362,9 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         // log.debug("Raw network graph update:\n" + NetworkFormatter.networkGraphToGraphviz(cachedRawNetworkGraph, true));
         // log.debug("Reachable network graph update:\n" + NetworkFormatter.networkGraphToGraphviz(cachedReachableNetworkGraph, true));
 
-        StatsCounter.count("Network topology changes", "network graph changed");
+        StatsCounter.count("Network topology/routing", "Network graph changes");
         if (topologyChangeTracker.updateReachableNetwork(cachedReachableNetworkGraph)) {
-            StatsCounter.count("Network topology updates", "set of reachable nodes changed");
+            StatsCounter.count("Network topology/routing", "Set of reachable nodes changes");
         } else {
             if (verboseLogging) {
                 log.debug("Ignoring low-level topology change event, as it had no effect on the set of reachable nodes");
@@ -386,25 +380,9 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         String sender = metadata.getSender().getIdString();
         String receiver = metadata.getFinalRecipient().getIdString();
 
-        // TODO this blocks a thread for each forwarded request; improve in future version
-        Future<NetworkResponse> responseFuture = sendToNextHop(forwardingRequest);
-        NetworkResponse response = null;
-        try {
-            response = responseFuture.get(configurationService.getForwardingTimeoutMsec(), TimeUnit.MILLISECONDS);
-        } catch (TimeoutException e) {
-            log.warn(StringUtils.format("Timeout while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
-                ownNodeIdString, requestId));
-            response = NetworkResponseFactory.generateResponseForExceptionWhileRouting(forwardingRequest, ownNodeIdString, e);
-        } catch (InterruptedException e) {
-            log.warn(StringUtils.format("Interrupted while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
-                ownNodeIdString, requestId), e);
-            response = NetworkResponseFactory.generateResponseForExceptionWhileRouting(forwardingRequest, ownNodeIdString, e);
-        } catch (ExecutionException e) {
-            log.warn(
-                StringUtils.format("Error while forwarding message from %s to %s at %s (ReqId=%s)", sender,
-                    receiver, ownNodeIdString, requestId), e);
-            response = NetworkResponseFactory.generateResponseForExceptionWhileRouting(forwardingRequest, ownNodeIdString, e);
-        }
+        // TODO while improved in 7.0, this still blocks one thread for each forwarded request
+        final NetworkResponse response = sendToNextHopAndAwaitResponse(forwardingRequest, forwardingTimeoutMsec);
+        // should be redundant; can be removed in 8.0.0
         if (response == null) {
             throw new IllegalStateException(
                 StringUtils.format("NULL response after forwarding message from %s to %s at %s (ReqId=%s)", sender,
@@ -413,29 +391,54 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         return response;
     }
 
-    private Future<NetworkResponse> sendToNextHop(final NetworkRequest request) {
+    private NetworkResponse sendToNextHopAndAwaitResponse(final NetworkRequest request, int timeoutMsec) {
+        WaitForResponseBlocker responseBlocker = new WaitForResponseBlocker(request, localNodeId);
+        sendToNextHopAsync(request, responseBlocker);
+        return responseBlocker.await(timeoutMsec);
+
+        // TODO review: attach error source or trace information here if the response does not represent success
+
+        // try {
+        // response = responseFuture.get(configurationService.getForwardingTimeoutMsec(), TimeUnit.MILLISECONDS);
+        // } catch (TimeoutException e) {
+        // log.warn(StringUtils.format("Timeout while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
+        // ownNodeIdString, requestId));
+        // response = NetworkResponseFactory.generateResponseForExceptionDuringDelivery(forwardingRequest, ownNodeIdString, e);
+        // } catch (InterruptedException e) {
+        // log.warn(StringUtils.format("Interrupted while forwarding message from %s to %s at %s (ReqId=%s)", sender, receiver,
+        // ownNodeIdString, requestId), e);
+        // response = NetworkResponseFactory.generateResponseForExceptionDuringDelivery(forwardingRequest, ownNodeIdString, e);
+        // } catch (ExecutionException e) {
+        // log.warn(
+        // StringUtils.format("Error while forwarding message from %s to %s at %s (ReqId=%s)", sender,
+        // receiver, ownNodeIdString, requestId), e);
+        // response = NetworkResponseFactory.generateResponseForExceptionDuringDelivery(forwardingRequest, ownNodeIdString, e);
+        // }
+
+    }
+
+    private void sendToNextHopAsync(final NetworkRequest request, NetworkResponseHandler responseHandler) {
         NodeIdentifier receiver = request.accessMetaData().getFinalRecipient();
-        // TODO move routing into Callable for faster return of caller thread? (still relevant @4.0?) - misc_ro
         NetworkGraphLink nextLink;
         try {
+            // TODO move routing into Callable for faster return of caller thread? (still relevant @4.0?) - misc_ro
             nextLink = cachedReachableNetworkGraph.getRoutingInformation().getNextLinkTowards(receiver);
         } catch (NoRouteToNodeException e) {
             final NodeIdentifier sender = request.accessMetaData().getSender();
-            log.warn(StringUtils.format("Found no route for a request from %s to %s (occurred on %s, type=%s, trace=%s)",
-                sender, receiver, localNodeId, request.getMessageType(), request.accessMetaData().getTrace()));
-            // convert to Future containing failure response
-            return threadPool.submit(new Callable<NetworkResponse>() {
+            log.debug(StringUtils.format("Found no route for a request from %s to %s (type=%s, trace=%s)",
+                sender, receiver, request.getMessageType(), request.accessMetaData().getTrace()));
 
-                @Override
-                @TaskDescription("Create response for routing failure")
-                public NetworkResponse call() throws Exception {
-                    if (localNodeId.equals(sender)) {
-                        return NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localNodeId);
-                    } else {
-                        return NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localNodeId);
-                    }
-                };
-            });
+            // generate failure response
+            final NetworkResponse response;
+            if (localNodeId.equals(sender)) {
+                response = NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localNodeId);
+            } else {
+                response = NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localNodeId);
+            }
+
+            // send to result handler
+            responseHandler.onResponseAvailable(response);
+            return;
         }
 
         // if (verboseLogging) {
@@ -443,10 +446,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         // receiver, nextLink.getTargetNodeId(), nextLink.getLinkId()));
         // }
 
-        WaitForResponseCallable responseCallable =
-            new WaitForResponseCallable(request, forwardingTimeoutMsec, localNodeIdString);
-        sendIntoLink(request, nextLink, responseCallable);
-        return threadPool.submit(responseCallable);
+        sendDirectMessageAsync(request, nextLink, responseHandler);
 
         // TODO restore routing retry? (on higher call level?)
 
@@ -481,33 +481,25 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
      * @param link the {@link NetworkGraphLink} identifying the message channel to use
      * @param outerResponseHander the {@link NetworkResponseHandler} to report the response to
      */
-    private void sendIntoLink(NetworkRequest request, final NetworkGraphLink link,
+    private void sendDirectMessageAsync(NetworkRequest request, final NetworkGraphLink link,
         final NetworkResponseHandler outerResponseHander) {
+
+        if (outerResponseHander == null) {
+            throw new IllegalArgumentException("Outer response handler must not be null");
+        }
 
         NetworkResponseHandler responseHandler = new NetworkResponseHandler() {
 
             @Override
             public void onResponseAvailable(NetworkResponse response) {
-                if (!response.isSuccess()) {
-                    Serializable loggableContent;
-                    try {
-                        loggableContent = response.getDeserializedContent();
-                    } catch (SerializationException e) {
-                        // used for logging only
-                        loggableContent = "Failed to deserialize content: " + e;
-                    }
-                    log.warn(StringUtils.format("Received non-success response for request id '%s' at '%s': result code: %s, body: '%s'",
-                        response.getRequestId(), localNodeId, response.getResultCode(), loggableContent));
-                }
-                if (outerResponseHander != null) {
-                    outerResponseHander.onResponseAvailable(response);
-                } else {
-                    log.warn("No outer response handler");
-                }
+                // TODO add failure backtrace route here?
+                // if (!response.isSuccess()) {
+                // }
+                outerResponseHander.onResponseAvailable(response);
             }
 
         };
 
-        messageChannelService.sendRequest(request, link.getLinkId(), responseHandler);
+        directMessagingSender.sendDirectMessageAsync(request, link.getLinkId(), responseHandler);
     }
 }

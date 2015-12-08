@@ -20,6 +20,8 @@ import de.rcenvironment.core.component.model.configuration.impl.ConfigurationExt
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionsProviderImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
+import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 
 /**
@@ -102,6 +104,16 @@ public class ComponentInterfaceBuilder {
     }
 
     /**
+     * 
+     * @param docuHash has of the doumentation folder for the tool.
+     * @return builder object for method chaining purposes
+     */
+    public ComponentInterfaceBuilder setDocumentationHash(String docuHash) {
+        componentInterface.setDocumentationHash(docuHash);
+        return this;
+    }
+
+    /**
      * @param version version of the component
      * @return builder object for method chaining purposes
      */
@@ -168,8 +180,8 @@ public class ComponentInterfaceBuilder {
      * @param configurationExtensionDefinitions extended configuration definitions
      * @return builder object for method chaining purposes
      */
-    public ComponentInterfaceBuilder setConfigurationExtensionDefinitions(Set<ConfigurationExtensionDefinition>
-        configurationExtensionDefinitions) {
+    public ComponentInterfaceBuilder setConfigurationExtensionDefinitions(
+        Set<ConfigurationExtensionDefinition> configurationExtensionDefinitions) {
         Set<ConfigurationExtensionDefinitionImpl> configurationDefinitionsImpls = new HashSet<ConfigurationExtensionDefinitionImpl>();
         for (ConfigurationExtensionDefinition definition : configurationExtensionDefinitions) {
             configurationDefinitionsImpls.add((ConfigurationExtensionDefinitionImpl) definition);
@@ -195,7 +207,7 @@ public class ComponentInterfaceBuilder {
         componentInterface.setPerformLazyDisposal(performLazyDisposal);
         return this;
     }
-    
+
     /**
      * @param configurationDefinition configuration definitions
      * @return builder object for method chaining purposes
@@ -204,14 +216,14 @@ public class ComponentInterfaceBuilder {
         componentInterface.setConfigurationDefinition((ConfigurationDefinitionImpl) configurationDefinition);
         return this;
     }
-    
+
     /**
-     * @param canHandleIndefiniteInputDataTypes whether component can handle incoming {@link TypedDatum}s of {@link DataType}
-     *        {@link NotAValueTD}
+     * @param canHandleNotAValueDataTypes whether component can handle incoming
+     *        {@link TypedDatum}s of {@link DataType} {@link NotAValueTD}
      * @return builder object for method chaining purposes
      */
-    public ComponentInterfaceBuilder setCanHandleUndefinedInputDatums(boolean canHandleIndefiniteInputDataTypes) {
-        componentInterface.setCanHandleIndefiniteInputDataTypes(canHandleIndefiniteInputDataTypes);
+    public ComponentInterfaceBuilder setCanHandleNotAValueDataTypes(boolean canHandleNotAValueDataTypes) {
+        componentInterface.setCanHandleNotAValueDataTypes(canHandleNotAValueDataTypes);
         return this;
     }
 
@@ -221,4 +233,5 @@ public class ComponentInterfaceBuilder {
     public ComponentInterface build() {
         return componentInterface;
     }
+
 }

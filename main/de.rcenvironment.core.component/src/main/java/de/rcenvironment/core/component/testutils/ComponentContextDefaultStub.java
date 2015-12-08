@@ -14,7 +14,7 @@ import java.util.Set;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
+import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.PersistedComponentData;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -27,6 +27,8 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 public class ComponentContextDefaultStub implements ComponentContext {
 
     private static final long serialVersionUID = 9197713563968264677L;
+    
+    private ComponentLog componentLogStub = new ComponentLogDefaultStub();
 
     @Override
     public String getExecutionIdentifier() {
@@ -162,11 +164,6 @@ public class ComponentContextDefaultStub implements ComponentContext {
     }
 
     @Override
-    public void printConsoleLine(String line, Type consoleLineType) {
-
-    }
-
-    @Override
     public <T> T getService(Class<T> clazz) {
         return null;
     }
@@ -226,5 +223,16 @@ public class ComponentContextDefaultStub implements ComponentContext {
     public boolean isDynamicOutput(String outputName) {
         return false;
     }
+
+    @Override
+    public ComponentLog getLog() {
+        return componentLogStub;
+    }
+
+    @Override
+    public void announceExternalProgramStart() {}
+
+    @Override
+    public void announceExternalProgramTermination() {}
 
 }

@@ -56,7 +56,7 @@ class NetworkTopologyChangeTracker {
         callbackManager.enqueueCallback(new AsyncCallback<NetworkTopologyChangeListener>() {
 
             @Override
-            @TaskDescription("Topology change callback")
+            @TaskDescription("Communication Layer: Topology change callback (1p)")
             public void performCallback(NetworkTopologyChangeListener listener) {
                 listener.onReachableNetworkChanged(reachableNetworkGraph);
             }
@@ -73,7 +73,7 @@ class NetworkTopologyChangeTracker {
             callbackManager.enqueueCallback(new AsyncCallback<NetworkTopologyChangeListener>() {
 
                 @Override
-                @TaskDescription("Topology change callback")
+                @TaskDescription("Communication Layer: Topology change callback (3p)")
                 public void performCallback(NetworkTopologyChangeListener listener) {
                     listener.onReachableNodesChanged(newReachableNodesCopy, addedNodesCopy, removedNodesCopy);
                 }
@@ -133,7 +133,7 @@ class NetworkTopologyChangeTracker {
         callbackManager.enqueueCallback(new AsyncCallback<NetworkTopologyChangeListener>() {
 
             @Override
-            @TaskDescription("Topology change callback")
+            @TaskDescription("Communication Layer: Topology change callback (0p)")
             public void performCallback(NetworkTopologyChangeListener listener) {
                 listener.onNetworkTopologyChanged();
             }

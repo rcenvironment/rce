@@ -7,8 +7,6 @@
  */
 package de.rcenvironment.components.cpacs.vampzeroinitializer.gui;
 
-import java.io.File;
-
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
@@ -20,6 +18,9 @@ import org.eclipse.swt.widgets.Layout;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
+
 /**
  * Abstract super class to abstract over stand-alone SWT and Eclipse-SWT widget generation.
  * 
@@ -28,12 +29,10 @@ import org.eclipse.swt.widgets.Text;
  */
 public abstract class AbstractSwtHelper {
 
-    private static final String ICONS_FILE = "resources/icons";
-
     /**
      * Icon for revert button.
      */
-    protected Image revertImage;
+    protected Image undoImage;
 
     /**
      * The apply image.
@@ -51,25 +50,9 @@ public abstract class AbstractSwtHelper {
      * @param display The parent display
      */
     protected AbstractSwtHelper(final Display display) {
-        
-        try {
-            revertImage = new Image(display, getClass().getClassLoader().getResourceAsStream("resources/icons/undo_edit.gif"));
-            okImage = new Image(display, getClass().getClassLoader().getResourceAsStream("resources/icons/ok.png"));
-            saveImage = new Image(display, getClass().getClassLoader().getResourceAsStream("resources/icons/save_edit.gif"));
-        } catch (final IllegalArgumentException e) {
-            revertImage = new Image(display, new File(ICONS_FILE, "undo_edit.gif").getAbsolutePath());
-            okImage = new Image(display, new File(ICONS_FILE, "ok.png").getAbsolutePath());
-            saveImage = new Image(display, new File(ICONS_FILE, "save_edit.gif").getAbsolutePath());
-        }
-    }
-
-    /**
-     * Clean up.
-     */
-    protected void dispose() {
-        revertImage.dispose();
-        okImage.dispose();
-        saveImage.dispose();
+        undoImage = ImageManager.getInstance().getSharedImage(StandardImages.UNDO);
+        saveImage = ImageManager.getInstance().getSharedImage(StandardImages.SAVE);
+        okImage = ImageManager.getInstance().getSharedImage(StandardImages.TICK);
     }
 
     /**
@@ -86,6 +69,11 @@ public abstract class AbstractSwtHelper {
         }
     }
 
+    /**
+     * Clean up. Currently nothing. Subclasses may override.
+     */
+    protected void dispose() {}
+    
     /**
      * Currently nothing. Subclasses may override.
      */

@@ -127,7 +127,7 @@ public class WorkflowNodeLabelConnectionCreateCommand extends Command {
                 if (size.height == 0) {
                     size.height = LABEL_INITIAL_HEIGHT;
                 }
-                labels.get(i).setSize(size);
+                labels.get(i).setSize(size.width, size.height);
                 positionCounter++;
                 model.addWorkflowLabel(labels.get(i));
             }

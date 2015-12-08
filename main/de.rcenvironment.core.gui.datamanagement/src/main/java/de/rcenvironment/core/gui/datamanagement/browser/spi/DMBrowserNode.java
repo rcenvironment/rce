@@ -9,14 +9,15 @@
 package de.rcenvironment.core.gui.datamanagement.browser.spi;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.graphics.Image;
 
@@ -26,6 +27,10 @@ import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.types.api.MatrixTD;
+import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
+import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
 
 /**
@@ -34,6 +39,8 @@ import de.rcenvironment.core.gui.datamanagement.browser.Activator;
  *         TODO list additional authors; incomplete
  */
 public final class DMBrowserNode {
+
+    private static final AtomicLong TEMP_FILE_SEQUENCE_NUMBER = new AtomicLong(0);
 
     private static final List<DMBrowserNode> IMMUTABLE_NO_CHILDREN_LIST = Collections.unmodifiableList(new ArrayList<DMBrowserNode>(0));
 
@@ -58,9 +65,9 @@ public final class DMBrowserNode {
     private String dataReferenceId = null;
 
     private String fileContent = null;
-    
+
     private String fileName = null;
-    
+
     private String fileReferencePath = null;
 
     private String associatedFilename = null;
@@ -166,7 +173,6 @@ public final class DMBrowserNode {
                 builder.append("_");
                 builder.append(getNodeIdentifier().getIdString());
                 break;
-            case HistoryObject:
             default:
                 builder.append(getTitle());
             }
@@ -340,28 +346,34 @@ public final class DMBrowserNode {
      *         (lazy init).
      */
     public String getFileReferencePath() {
+        if (fileReferencePath != null && !new File(fileReferencePath).exists()) {
+            fileReferencePath = null;
+        }
         if (fileReferencePath == null && fileContent != null) {
-            createTempFileForFileContent(fileName, fileContent);
+            writeTempFileForFileContent(fileName, fileContent);
         }
         return fileReferencePath;
     }
-    
-    private void createTempFileForFileContent(String filename, String text) {
+
+    private File createTempFileForFileContent(String filename) {
+        File tempDir = new File(Activator.getInstance().getBundleSpecificTempDir(),
+            String.valueOf(TEMP_FILE_SEQUENCE_NUMBER.incrementAndGet()));
+        tempDir.mkdir();
+        File endpointTempDir = new File(tempDir, "endpoints");
+        endpointTempDir.mkdir();
+        return new File(endpointTempDir, filename);
+    }
+
+    private void writeTempFileForFileContent(String filename, String text) {
         File tempFile = null;
         try {
-            File tempDir = new File(Activator.getInstance().getBundleSpecificTempDir(), UUID.randomUUID().toString());
-            tempDir.mkdir();
-            File endpointTempDir = new File(tempDir, "endpoints");
-            endpointTempDir.mkdir();
-            tempFile = new File(endpointTempDir, filename);
+            tempFile = createTempFileForFileContent(filename);
             if (!tempFile.exists()) {
-                PrintWriter out = new PrintWriter(tempFile);
-                out.write(text);
-                out.flush();
-                out.close();
+                FileUtils.write(tempFile, text);
             }
         } catch (IOException e) {
             LogFactory.getLog(getClass()).error("Failed to create temporary file for node content", e);
+            return;
         }
         setAssociatedFilename(filename);
         setFileReferencePath(tempFile.getAbsolutePath());
@@ -502,13 +514,129 @@ public final class DMBrowserNode {
     }
 
     /**
-     * Set the text content, which should be opened in read-only editor on demand.
+     * Set the text content that should be opened in read-only editor on demand.
+     * 
      * @param fContent text to open in read-only editor
      * @param fName file name shown in editor
      */
     public void setFileContentAndName(String fContent, String fName) {
         this.fileContent = fContent;
         this.fileName = fName;
+    }
+
+    /**
+     * Sets {@link SmallTableTD} that should be opened in read-only editor on demand.
+     * 
+     * @param table {@link SmallTableTD} to open in read-only editor
+     * @param fName file name shown in editor
+     */
+    public void setSmallTableTDAndFileName(SmallTableTD table, String fName) {
+        this.fileName = fName;
+        writeTempFileForMatrixTD(fName, table);
+    }
+
+    /**
+     * Sets {@link MatrixTD} that should be opened in read-only editor on demand.
+     * 
+     * @param matrix {@link MatrixTD} to open in read-only editor
+     * @param fName file name shown in editor
+     */
+    public void setMatrixTDAndFileName(MatrixTD matrix, String fName) {
+        this.fileName = fName;
+        writeTempFileForMatrixTD(fName, matrix);
+    }
+
+    /**
+     * Sets {@link MatrixTD} that should be opened in read-only editor on demand.
+     * 
+     * @param vector {@link VectorTD} to open in read-only editor
+     * @param fName file name shown in editor
+     */
+    public void setVectorTDAndFileName(VectorTD vector, String fName) {
+        this.fileName = fName;
+        writeTempFileForMatrixTD(fName, vector);
+    }
+
+    private void writeTempFileForMatrixTD(String filename, TypedDatum tableMatrixOrVector) {
+        // changed @7.0.0: always do this, even if temp file creation fails
+        setAssociatedFilename(filename);
+        File tempFile = null;
+        try {
+            tempFile = createTempFileForFileContent(filename);
+            if (tempFile != null && !tempFile.exists()) {
+                try (FileWriter writer = new FileWriter(tempFile.getAbsoluteFile(), true)) {
+                    int[] rowAndColumnCount = getRowAndColumnCount(tableMatrixOrVector);
+                    for (int row = 0; row < rowAndColumnCount[0]; row++) {
+                        for (int column = 0; column < rowAndColumnCount[1]; column++) {
+                            TypedDatum entry = getEntry(row, column, tableMatrixOrVector);
+                            if (entry != null) {
+                                writer.append(getEntry(row, column, tableMatrixOrVector).toString());
+                            } else {
+                                writer.append(" ");
+                            }
+                            if (rowAndColumnCount[1] - column > 1) {
+                                writer.append(", ");
+                            }
+                        }
+                        writer.append("\r\n");
+                    }
+                }
+            }
+            if (tempFile != null) {
+                setFileReferencePath(tempFile.getAbsolutePath());
+            }
+        } catch (IOException e) {
+            LogFactory.getLog(getClass()).error("Failed to create temporary file for node content", e);
+            return;
+        }
+    }
+
+    private int[] getRowAndColumnCount(TypedDatum tableMatrixOrVector) {
+        if (tableMatrixOrVector instanceof SmallTableTD) {
+            return getRowAndColumnCount((SmallTableTD) tableMatrixOrVector);
+        } else if (tableMatrixOrVector instanceof MatrixTD) {
+            return getRowAndColumnCount((MatrixTD) tableMatrixOrVector);
+        } else if (tableMatrixOrVector instanceof VectorTD) {
+            return getRowAndColumnCount((VectorTD) tableMatrixOrVector);
+        } else {
+            return new int[] { 0, 0 };
+        }
+    }
+
+    private int[] getRowAndColumnCount(SmallTableTD table) {
+        return new int[] { table.getRowCount(), table.getColumnCount() };
+    }
+
+    private int[] getRowAndColumnCount(MatrixTD matrix) {
+        return new int[] { matrix.getRowDimension(), matrix.getColumnDimension() };
+    }
+
+    private int[] getRowAndColumnCount(VectorTD vector) {
+        return new int[] { 0, vector.getRowDimension() };
+    }
+
+    private TypedDatum getEntry(int rowIndex, int columnIndex, TypedDatum tableMatrixOrVector) {
+        if (tableMatrixOrVector instanceof SmallTableTD) {
+            return getEntry(rowIndex, columnIndex, (SmallTableTD) tableMatrixOrVector);
+        } else if (tableMatrixOrVector instanceof MatrixTD) {
+            return getEntry(rowIndex, columnIndex, (MatrixTD) tableMatrixOrVector);
+        } else if (tableMatrixOrVector instanceof VectorTD) {
+            return getEntry(rowIndex, columnIndex, (VectorTD) tableMatrixOrVector);
+        } else {
+            return null;
+        }
+    }
+
+    private TypedDatum getEntry(int rowIndex, int columnIndex, SmallTableTD table) {
+        return table.getTypedDatumOfCell(rowIndex, columnIndex);
+    }
+
+    private TypedDatum getEntry(int rowIndex, int columnIndex, MatrixTD matrix) {
+        return matrix.getFloatTDOfElement(rowIndex, columnIndex);
+    }
+
+    private TypedDatum getEntry(int rowIndex, int columnIndex, VectorTD vector) {
+        return vector.getFloatTDOfElement(rowIndex);
     }
 
 }

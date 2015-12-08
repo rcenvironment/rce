@@ -39,18 +39,21 @@ class RCE:
   		 Gets the value for the given input name or returns the default value if there is no input connected and the input not required
   		 """
    		 if name in RCE_LIST_REQ_IF_CONNECTED_INPUTS and (defaultValue is None):
-   		 	raise ValueError("Input " + str(name) + " not connected.")
+   		 	raise ValueError("Input '" + str(name) + "' is not connected")
    		 elif name in RCE_LIST_REQ_IF_CONNECTED_INPUTS and not (defaultValue is None):
    		 	return defaultValue
 		 else:
 		 	 if name not in dictIn:
-			 	raise ValueError("Input " + str(name) + " not defined or has no value.")
+		 	 	if (defaultValue is None):
+			 		raise ValueError("Input '" + str(name) + "' is not defined or it has no value")
+			 	else:
+			 		return defaultValue
 			 else: 
 				return dictIn[name]
 
 	def write_output(self,key,value):
 		if not str(key) in RCE_LIST_OUTPUTNAMES:
-			raise ValueError("Output " + str(key) + " not defined.")
+			raise ValueError("Output '" + str(key) + "' is not defined")
 		else :
 			if key in dictOut:
 				dictOut[key].append(value)
@@ -60,13 +63,13 @@ class RCE:
 
 	def write_not_a_value_output(self, name):
 		if not str(name) in RCE_LIST_OUTPUTNAMES:
-			raise NameError("Output " + str(name) + " does not exist.")
+			raise NameError("Output '" + str(key) + "' is not defined")
 		if not name in listIndef:
 			listIndef.append(name)
 			
 	def close_output(self,key):
 		if not str(key) in RCE_LIST_OUTPUTNAMES:
-			raise NameError("Output " + str(key) + " does not exist.")
+			raise NameError("Output '" + str(key) + "' is not defined")
 		if not key in listClose:
 			listClose.append(key)
 
@@ -81,21 +84,24 @@ class RCE:
 		Writes a variable name in the dictionary for the components state
 		"""		
 		if not str(name) in RCE_STATE_VARIABLES:
-			raise ValueError("No value for " + str(name) + " defined!")
+			raise ValueError("No state variable stored for '" + str(name) + "'")
 		else :
 			return RCE_STATE_VARIABLES[name]
-	def read_state_variable(self, name, defaultValue = 0):
+	def read_state_variable(self, name, defaultValue = None):
 		""" 
 		Reads the given state variables value, if it exists, else an error is raised
 		"""
 		if str(name) in RCE_STATE_VARIABLES:
 			return RCE_STATE_VARIABLES[name]
 		else:
-			RCE_STATE_VARIABLES[name] = defaultValue
-			return defaultValue
+			if (defaultValue is None):
+				return defaultValue
+			else:
+				RCE_STATE_VARIABLES[name] = defaultValue	
+				return defaultValue
 		
 	def read_state_variable_default(self, name, defaultValue):
-		print "The method 'read_state_variable_default' is deprecated. Please use 'read_state_variable(name, defaultValue)."
+		print "The method 'read_state_variable_default' is deprecated. Please use 'read_state_variable(name, defaultValue)"
 		return RCE.read_state_variable(name, defaultValue)
  
 	def get_state_dict(self):

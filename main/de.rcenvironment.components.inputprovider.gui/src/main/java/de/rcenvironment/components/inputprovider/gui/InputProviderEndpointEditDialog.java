@@ -8,12 +8,15 @@
 
 package de.rcenvironment.components.inputprovider.gui;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Map;
 
 import org.eclipse.core.resources.IResource;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.MouseEvent;
-import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
@@ -22,7 +25,9 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.Dialog;
 import org.eclipse.swt.widgets.DirectoryDialog;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
@@ -68,8 +73,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
 
     private Button selectAtStartCheckbox;
 
-    private Label atStartLabel;
-    
+
     public InputProviderEndpointEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
         EndpointType direction, String id, boolean isStatic, Image icon, EndpointMetaDataDefinition metaData,
         Map<String, String> metadataValues) {
@@ -196,6 +200,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         g.grabExcessHorizontalSpace = true;
         atStartComposite.setLayoutData(g);
         selectAtStartCheckbox = new Button(atStartComposite, SWT.CHECK);
+        selectAtStartCheckbox.setText(Messages.chooseAtWorkflowStart);
         selectAtStartCheckbox.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -207,23 +212,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {}
         });
-        atStartLabel = new Label(atStartComposite, SWT.NONE);
-        atStartLabel.setText(Messages.chooseAtWorkflowStart);
-        atStartLabel.addMouseListener(new MouseListener() {
 
-            @Override
-            public void mouseUp(MouseEvent arg0) {
-                selectAtStartCheckbox.setSelection(!selectAtStartCheckbox.getSelection());
-                setSelectedAtStart();
-                validateInput();
-            }
-
-            @Override
-            public void mouseDown(MouseEvent arg0) {}
-
-            @Override
-            public void mouseDoubleClick(MouseEvent arg0) {}
-        });
         selectFromProjectButton = new Button(fileSelectionComposite, SWT.PUSH);
         selectFromProjectButton.setText(Messages.selectFromProject);
         g = new GridData(GridData.CENTER, GridData.CENTER, false, false);
@@ -232,7 +221,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
 
             @Override
             public void widgetSelected(SelectionEvent event) {
-                
+
                 IResource resource;
                 if (comboDataType.getText().equals(DataType.DirectoryReference.getDisplayName())) {
                     resource = PropertyTabGuiHelper.selectDirectoryFromActiveProject(confContainer.getShell(),
@@ -244,7 +233,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                 if (resource != null) {
                     textField.setText(resource.getFullPath().makeRelative().toPortableString());
                     metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE,
-                        FileSourceType.fromProject.name());                    
+                        FileSourceType.fromProject.name());
                 }
             }
 
@@ -260,13 +249,17 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             public void widgetSelected(SelectionEvent event) {
                 String path;
                 if (comboDataType.getText().equals(DataType.DirectoryReference.getDisplayName())) {
-                    DirectoryDialog dialog = new DirectoryDialog(confContainer.getShell());
+                    DirectoryDialog dialog = new DirectoryDialog(confContainer.getShell(), SWT.OPEN);
                     dialog.setText(Messages.selectDirectory);
                     dialog.setMessage(Messages.selectDirectoryFromFileSystem);
+                    checkIfPathExists(dialog, textField.getText());
                     path = dialog.open();
                 } else {
-                    path = PropertyTabGuiHelper.selectFileFromFileSystem(confContainer.getShell(), null,
-                        Messages.selectFile);
+                    FileDialog dialog = new FileDialog(confContainer.getShell(), SWT.OPEN);
+
+                    dialog.setText(Messages.selectFile);
+                    checkIfPathExists(dialog, textField.getText());
+                    path = dialog.open();
                 }
                 if (path != null) {
                     textField.setText(path);
@@ -274,17 +267,52 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                 }
             }
 
+            private void checkIfPathExists(Dialog dialog, String text) {
+                Path isThisPathExisting = Paths.get(text);
+                if (Files.exists(isThisPathExisting, LinkOption.NOFOLLOW_LINKS)) {
+                    if (dialog instanceof DirectoryDialog) {
+                        ((DirectoryDialog) dialog).setFilterPath(isThisPathExisting.toString());
+                    } else {
+
+                        // Type FileDialog
+                        if (isThisPathExisting.getParent() != null) {
+                            ((FileDialog) dialog).setFilterPath(isThisPathExisting.getParent().toString());
+
+                        } else {
+                            // The path value is empty. This would open the last opened FileDialog if we not set the root path.
+                            File[] paths = File.listRoots();
+                            if (paths[0].getPath() != null) {
+                                ((FileDialog) dialog).setFilterPath(paths[0].getPath());
+                            } else {
+                                return;
+                            }
+
+                        }
+
+                    }
+
+                    return;
+                }
+
+                if (isThisPathExisting.getParent() != null) {
+                    checkIfPathExists(dialog, isThisPathExisting.getParent().toString());
+                } else {
+                    return;
+                }
+
+            }
+
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {}
         });
         setFileOrDirectorySelected(false);
     }
-    
+
     private void setSelectedAtStart() {
         boolean selectAtStart = selectAtStartCheckbox.getSelection();
         textField.setEnabled(!selectAtStart);
         if (selectAtStart) {
-            textField.setText("-");            
+            textField.setText("-");
         } else {
             textField.setText("");
         }
@@ -301,9 +329,9 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
         }
         if (selectAtStart) {
-            metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE, FileSourceType.atWorkflowStart.name());            
+            metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE, FileSourceType.atWorkflowStart.name());
         } else {
-            metadataValues.remove(InputProviderComponentConstants.META_FILESOURCETYPE);            
+            metadataValues.remove(InputProviderComponentConstants.META_FILESOURCETYPE);
         }
     }
 
@@ -311,14 +339,12 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         selectAtStartCheckbox.setEnabled(selected);
         selectFromProjectButton.setEnabled(false);
         selectFromFileSystemButton.setEnabled(false);
-        atStartLabel.setEnabled(selected);
     }
 
     private void setFileOrDirectorySelected(boolean selected) {
         selectAtStartCheckbox.setEnabled(selected);
         selectFromProjectButton.setEnabled(selected);
         selectFromFileSystemButton.setEnabled(selected);
-        atStartLabel.setEnabled(selected);
     }
 
     private void createBooleanCombo() {
@@ -365,7 +391,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             if (!dataType.equals(EndpointMetaDataConstants.TYPE_BOOL)
                 && (metaData.getPossibleValues(key) == null || metaData.getPossibleValues(key).contains("*"))) {
                 if (((Text) widget).getText().equals("") && (validation != null
-                    && (validation.contains(ComponentConstants.INPUT_USAGE_TYPE_REQUIRED))) 
+                    && (validation.contains(ComponentConstants.INPUT_USAGE_TYPE_REQUIRED)))
                     && !(comboDataType.getText().equalsIgnoreCase(DataType.ShortText.getDisplayName()))) {
                     isValid = false;
                 } else if (!((Text) widget).getText().equals("")) {
@@ -399,4 +425,5 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
         }
         return isValid;
     }
+
 }

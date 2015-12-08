@@ -9,14 +9,12 @@
 package de.rcenvironment.core.utils.ssh.jsch.executor;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
@@ -26,19 +24,21 @@ import org.apache.sshd.server.command.ScpCommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
+import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.concurrent.RunnablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.ssh.jsch.DummyCommand;
 import de.rcenvironment.core.utils.ssh.jsch.DummyPasswordAuthenticator;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
-import de.rcenvironment.core.utils.ssh.jsch.Utils;
+import de.rcenvironment.core.utils.ssh.jsch.SshTestUtils;
 
 /**
  * Test case for {@link JSchCommandLineExecutor}.
@@ -47,87 +47,81 @@ import de.rcenvironment.core.utils.ssh.jsch.Utils;
  */
 public class JSchCommandLineExecutorParallelTest {
 
-    private static final int WAIT_FOR_THREADS_MSEC = 15000;
-
     private static final int TIMEOUT = 20000;
-
-    private static final String TESTING_CONNECTION_FAILED = "Testing connection failed:\n";
 
     private static final String LOCALHOST = "localhost";
 
+    private TempFileService tempFileService = TempFileServiceAccess.getInstance();
+    
     private File localWorkdir;
 
     private File remoteWorkdir;
 
     /**
-     * Set up test environment.
+     * Initial set up of test environment.
      * 
-     * @throws IOException on error
-     **/
-    @Before
-    public void setUp() throws IOException {
+     * @throws IOException on unexpected error
+     */
+    @BeforeClass
+    public static void initialSetUp() throws IOException {
         TempFileServiceAccess.setupUnitTestEnvironment();
     }
 
     /**
-     * Set up work dir.
+     * Set up test environment.
      * 
-     * @throws IOException on error
+     * @throws IOException on unexpected error
      **/
     @Before
-    public void createWorkDir() throws IOException {
-        remoteWorkdir = new File(DummyCommand.WORKDIR_REMOTE);
-        remoteWorkdir.mkdir();
-        localWorkdir = new File(DummyCommand.WORKDIR_LOCAL);
-        localWorkdir.mkdir();
+    public void setUp() throws IOException {
+        remoteWorkdir = tempFileService.createManagedTempDir();
+        localWorkdir = tempFileService.createManagedTempDir();
     }
 
     /**
-     * Delete work dir.
+     * Tear down test environment.
      * 
-     * @throws IOException on error
+     * @throws InterruptedException on error when stopping the server
+     * @throws IOException on unexpected error
      **/
     @After
-    public void deleteWorkDir() throws IOException {
-        FileUtils.deleteQuietly(localWorkdir);
-        FileUtils.deleteQuietly(remoteWorkdir);
+    public void tearDown() throws InterruptedException, IOException {
+        tempFileService.disposeManagedTempDirOrFile(remoteWorkdir);
+        tempFileService.disposeManagedTempDirOrFile(localWorkdir);
     }
-
+    
     /**
      * Tests parallel running of several SSH servers (as could happen i.e. on Jenkins)
      * 
      * @author Brigitte Boden
-     * 
-     * @throws IOException on error
-     * @throws JSchException on error
-     * @throws SshParameterException on error
-     * @throws InterruptedException on error
+     * @throws Exception on unexpected errors
      */
     @SuppressWarnings("serial")
     @Test(timeout = TIMEOUT)
-    public void testParallelServers() throws JSchException, SshParameterException, IOException, InterruptedException {
+    public void testParallelServers() throws Exception {
 
         final int numServers = 10;
         final CountDownLatch threadsCompletedLatch = new CountDownLatch(numServers);
 
+        RunnablesGroup runnablesGroup = SharedThreadPool.getInstance().createRunnablesGroup();
+        
         for (int i = 0; i < numServers; i++) {
 
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            runnablesGroup.add(new Runnable() {
 
                 @Override
                 @TaskDescription(value = "Running SSH server")
                 public void run() {
                     SshServer sshServer;
                     int port;
-                    //Starting the SSH server will fail if the port is already in use, in that case it will be retried with another port.
-                    boolean retry = true;
+                    // Starting the SSH server will fail if the port is already in use, in that case it will be retried with another port.
+                    int retry = 0;
                     do {
-                        port = Utils.getRandomPortNumber();
+                        port = SshTestUtils.getRandomPortNumber();
                         sshServer = SshServer.setUpDefaultServer();
                         sshServer.setPort(port);
                         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
                         sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {
-
                             {
                                 add(new UserAuthPassword.Factory());
                             }
@@ -135,12 +129,14 @@ public class JSchCommandLineExecutorParallelTest {
                         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
                         try {
                             sshServer.start();
-                            retry = false;
+                            break;
                         } catch (IOException e) {
-                            fail("Starting SSH server failed:\n" + e);
-                            retry = true;
+                            if (retry++ > 3) {
+                                throw new RuntimeException("Failed to start SSH server at port: "
+                                    + port, e);                                
+                            }
                         }
-                    } while (retry);
+                    } while (true);
                      
                     
                     // Establish a connections and est downloading work dir
@@ -149,11 +145,10 @@ public class JSchCommandLineExecutorParallelTest {
                     try {
                         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
                             null, DummyPasswordAuthenticator.PASSWORD, null);
-                        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+                        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
-                        Utils.createFileOnServerSidesWorkDir(sshServer, session, RandomStringUtils.randomAlphabetic(6),
-                            fileContent,
-                            executor);
+                        SshTestUtils.createFileOnServerSidesWorkDir(sshServer, session, remoteWorkdir,
+                            RandomStringUtils.randomAlphabetic(6), fileContent, executor);
 
                         sshServer.setCommandFactory(new ScpCommandFactory());
 
@@ -162,24 +157,25 @@ public class JSchCommandLineExecutorParallelTest {
                         assertEquals(1, dir.listFiles().length);
 
                         TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(dir);
-                    } catch (JSchException e) {
-                        fail(TESTING_CONNECTION_FAILED + e);
-                    } catch (SshParameterException e) {
-                        fail(TESTING_CONNECTION_FAILED + e);
-                    } catch (IOException e) {
-                        fail(TESTING_CONNECTION_FAILED + e);
-                    } catch (InterruptedException e) {
-                        fail(TESTING_CONNECTION_FAILED + e);
+                    } catch (JSchException | SshParameterException | IOException | InterruptedException e) {
+                        throw new RuntimeException("Testing connection failed", e);
                     }
 
                     try {
                         sshServer.stop();
                     } catch (InterruptedException e) {
-                        fail("Stopping SSH server failed:\n" + e);
+                        throw new RuntimeException("Failed to stop server", e);
                     }
                     threadsCompletedLatch.countDown();
                 }
             });
+            
+        }
+        
+        for (Exception e : runnablesGroup.executeParallel()) {
+            if (e != null) {
+                throw e;
+            }
         }
         threadsCompletedLatch.await();
     }

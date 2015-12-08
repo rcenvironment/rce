@@ -221,7 +221,7 @@ public class TopologyMapTest extends TestCase {
 
         assertFalse(GRAPH_DOES_NOT_CONTAIN_NODE, networkGraph.containsNode(NODE_5));
 
-        log.info(NetworkFormatter.summary(networkGraph));
+        // log.info(NetworkFormatter.summary(networkGraph));
         assertTrue(LSA_CAUSED_NO_UPDATE, networkGraph.update(lsa));
 
         assertTrue(GRAPH_CONTAINS_NODE, networkGraph.containsNode(NODE_5));
@@ -766,11 +766,11 @@ public class TopologyMapTest extends TestCase {
 
         lsa = graph1.generateNewLocalLSA();
         assertTrue(lsa.getSequenceNumber() > node1NewSeqNo);
-        node1NewSeqNo = graph1.getSequenceNumberOfNode(NODE_2);
+        node1NewSeqNo = graph1.getSequenceNumberOfNode(NODE_1);
         assertEquals(node1NewSeqNo, lsa.getSequenceNumber());
 
         assertTrue(graph2.update(lsa));
-        assertEquals(node2NewSeqNo, graph2.getSequenceNumberOfNode(NODE_2));
+        assertEquals(node1NewSeqNo, graph2.getSequenceNumberOfNode(NODE_1));
         assertTrue(graph1.equals(graph2));
 
         graph2.addLink(NODE_2, NODE_1, CONNECTION_ID_1);
@@ -788,8 +788,8 @@ public class TopologyMapTest extends TestCase {
         assertEquals(node2NewSeqNo, graph2.getSequenceNumberOfNode(NODE_2));
         assertEquals(graph1.getSequenceNumberOfNode(NODE_3), graph2.getSequenceNumberOfNode(NODE_3));
 
-        log.info(NetworkFormatter.summary(graph2));
-        log.info(NetworkFormatter.summary(graph1));
+        // log.info(NetworkFormatter.summary(graph2));
+        // log.info(NetworkFormatter.summary(graph1));
     }
 
     /**

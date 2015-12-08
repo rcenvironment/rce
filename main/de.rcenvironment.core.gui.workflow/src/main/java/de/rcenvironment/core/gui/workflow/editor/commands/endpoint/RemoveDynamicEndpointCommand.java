@@ -101,7 +101,8 @@ public class RemoveDynamicEndpointCommand extends WorkflowNodeCommand {
                 final ComponentInstanceProperties componentInstanceConfiguration = getProperties();
                 if (direction == EndpointType.INPUT) {
                     componentInstanceConfiguration.getInputDescriptionsManager().addDynamicEndpointDescription(id, name,
-                        oldDescription.getDataType(), oldDescription.getMetaData());
+                        oldDescription.getDataType(), oldDescription.getMetaData(), oldDescription.getIdentifier(),
+                        oldDescription.getParentGroupName(), true);
                 } else {
                     componentInstanceConfiguration.getOutputDescriptionsManager().addDynamicEndpointDescription(id, name,
                         oldDescription.getDataType(), oldDescription.getMetaData());

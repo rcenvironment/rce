@@ -16,14 +16,14 @@ import org.osgi.framework.BundleContext;
 import de.rcenvironment.core.authentication.AuthenticationService;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.login.AbstractLogin;
+import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 
 /**
- * Class handling services used this {@link Bundle}. The services are injected then provided by
- * getters. This kind of workaround is needed because the class {@link AbstractLogin} can not get
- * the service injected directly because it is abstract and thus can not be instantiated. But this
- * is a prerequisite for declarative service components.
+ * Class handling services used this {@link Bundle}. The services are injected then provided by getters. This kind of workaround is needed
+ * because the class {@link AbstractLogin} can not get the service injected directly because it is abstract and thus can not be
+ * instantiated. But this is a prerequisite for declarative service components.
  * 
  * @author Doreen Seider
  * @author Tobias Menden
@@ -35,15 +35,15 @@ public class ServiceHandler {
     private static AuthenticationService nullAuthenticationService =
         ServiceUtils.createFailingServiceProxy(AuthenticationService.class);
 
-    private static NotificationService nullNotificationService =
-        ServiceUtils.createFailingServiceProxy(NotificationService.class);
+    private static DistributedNotificationService nullNotificationService =
+        ServiceUtils.createFailingServiceProxy(DistributedNotificationService.class);
 
     private static ConfigurationService nullConfigurationService =
         ServiceUtils.createFailingServiceProxy(ConfigurationService.class);
 
     private static AuthenticationService authenticationService = nullAuthenticationService;
 
-    private static NotificationService notificationService = nullNotificationService;
+    private static DistributedNotificationService notificationService = nullNotificationService;
 
     private static ConfigurationService configurationService = nullConfigurationService;
 
@@ -99,7 +99,7 @@ public class ServiceHandler {
      * 
      * @param newNotificationService The {@link NotificationService} to bind.
      */
-    public void bindNotificationService(NotificationService newNotificationService) {
+    public void bindNotificationService(DistributedNotificationService newNotificationService) {
         notificationService = newNotificationService;
     }
 
@@ -126,7 +126,7 @@ public class ServiceHandler {
      * 
      * @param oldNotificationService The {@link NotificationService} to unbind.
      */
-    protected void unbindNotificationService(NotificationService oldNotificationService) {
+    protected void unbindNotificationService(DistributedNotificationService oldNotificationService) {
         notificationService = nullNotificationService;
     }
 
@@ -142,7 +142,7 @@ public class ServiceHandler {
         return authenticationService;
     }
 
-    public static NotificationService getNotificationService() {
+    public static DistributedNotificationService getNotificationService() {
         return notificationService;
     }
 }

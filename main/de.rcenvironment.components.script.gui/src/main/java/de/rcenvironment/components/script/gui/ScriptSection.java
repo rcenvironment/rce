@@ -77,7 +77,7 @@ public class ScriptSection extends AbstractScriptSection {
             Composite scriptParent = factory.createFlatFormComposite(parentComposite);
             scriptParent.setLayout(new RowLayout());
             new Label(scriptParent, SWT.NONE).setText(Messages.chooseLanguage);
-            languages = new CCombo(scriptParent, SWT.BORDER);
+            languages = new CCombo(scriptParent, SWT.BORDER | SWT.READ_ONLY);
             languages.setData(CONTROL_PROPERTY_KEY, ScriptComponentConstants.SCRIPT_LANGUAGE);
             ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
             ScriptExecutorFactoryRegistry scriptExecutorRegistry = serviceRegistryAccess.getService(ScriptExecutorFactoryRegistry.class);

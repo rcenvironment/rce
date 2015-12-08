@@ -197,7 +197,7 @@ public class TempFileManager {
             String givenPath = tempFileOrDir.getCanonicalPath();
             String rootPath = instanceRootDir.getCanonicalPath();
             if (!givenPath.startsWith(rootPath)) {
-                throw new IOException(String
+                throw new IOException(StringUtils
                     .format("Temporary file or directory '%s' does not match "
                         + "the root temp directory '%s' -- ignoring delete request", givenPath, rootPath));
             }

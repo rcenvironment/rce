@@ -23,7 +23,6 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
@@ -31,6 +30,7 @@ import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.internal.CleanJob.CleanRunnable;
 import de.rcenvironment.core.communication.spi.CallbackObject;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases for {@link CleanJob}.
@@ -147,17 +147,17 @@ public class CleanJobTest {
     private class DummyCommunicatioService extends CommunicationServiceDefaultStub {
 
         @Override
-        public Object getService(Class<?> iface, NodeIdentifier nodeId, BundleContext bundleContext)
+        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
             throws IllegalStateException {
-            Object service = null;
+            T service = null;
             if (iface == CallbackService.class && nodeId.equals(pi1) && bundleContext == contextMock) {
-                service = new DummyCallbackService1();
+                service = (T) new DummyCallbackService1();
             } else if (iface == CallbackService.class && nodeId.equals(pi2) && bundleContext == contextMock) {
-                service = new DummyCallbackService2();
+                service = (T) new DummyCallbackService2();
             } else if (iface == CallbackProxyService.class && nodeId.equals(pi1) && bundleContext == contextMock) {
-                service = new DummyCallbackProxyService1();
+                service = (T) new DummyCallbackProxyService1();
             } else if (iface == CallbackProxyService.class && nodeId.equals(pi2) && bundleContext == contextMock) {
-                service = new DummyCallbackProxyService2();
+                service = (T) new DummyCallbackProxyService2();
             }
             return service;
         }
@@ -178,7 +178,7 @@ public class CleanJobTest {
 
         @Override
         public Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters)
-            throws CommunicationException {
+            throws RemoteOperationException {
             return null;
         }
 
@@ -216,7 +216,7 @@ public class CleanJobTest {
 
         @Override
         public Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters)
-            throws CommunicationException {
+            throws RemoteOperationException {
             return null;
         }
 

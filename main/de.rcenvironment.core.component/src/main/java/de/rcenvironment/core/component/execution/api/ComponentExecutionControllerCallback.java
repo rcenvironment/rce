@@ -71,11 +71,12 @@ public interface ComponentExecutionControllerCallback {
     boolean isOutputClosed(String outputName);
     
     /**
-     * Prints given line to the workflow console. As type {@link ConsoleRow.Type.STDOUT} and {@link ConsoleRow.Type.STDERR} are allowed-
+     * Prints given line to the workflow console. As type {@link ConsoleRow.Type.STDOUT} and
+     * {@link ConsoleRow.Type.STDERR} are allowed-
      * 
      * @param line line to print
-     * @param consoleRowType type of the console row. Must be one of {@link ConsoleRow.Type.STDOUT} or {@link ConsoleRow.Type.STDERR} are
-     *        allowed-
+     * @param consoleRowType type of the console row. Must be one of {@link ConsoleRow.Type.STDOUT} or
+     *        {@link ConsoleRow.Type.STDERR} are allowed-
      */
     void printConsoleRow(String line, Type consoleRowType);
     

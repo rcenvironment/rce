@@ -60,25 +60,16 @@ public class WorkflowPlaceholderHandlerTest {
     @Before
     public void init() {
         WorkflowPlaceholderHandler.setPersistentSettingsService(new DummyPersistentSettingsService());
-        weph = WorkflowPlaceholderHandler
-            .createPlaceholderDescriptionFromWorkflowDescription(wd, "");
+        weph = WorkflowPlaceholderHandler.createPlaceholderDescriptionFromWorkflowDescription(wd, "");
     }
 
     /** Test. */
     @Test
     public void testGetNameOfPlaceholder() {
-        Assert.assertEquals("myPlaceholder1",
-            WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder1));
-        Assert.assertEquals("myPlaceholder2",
-            WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder2));
-        Assert.assertEquals("myPlaceholder3",
-            WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder3));
-        Assert.assertEquals("myPlaceholder4",
-            WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder4));
+        Assert.assertEquals("myPlaceholder1", WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder1));
+        Assert.assertEquals("myPlaceholder2",  WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder2));
+        Assert.assertEquals("myPlaceholder3", WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder3));
+        Assert.assertEquals("myPlaceholder4", WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder4));
     }
 
     /** Test. */
@@ -88,41 +79,29 @@ public class WorkflowPlaceholderHandlerTest {
         weph.addPlaceholder(placeholder2, componentID1, componentUUID1);
         weph.addPlaceholder(placeholder3, componentID1, componentUUID1);
         weph.addPlaceholder(placeholder4, componentID1, componentUUID1);
-        Assert.assertFalse(ComponentUtils.isEncryptedPlaceholder(componentID1
-            + dot
-            + WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder1), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
-        Assert.assertTrue(ComponentUtils.isEncryptedPlaceholder(componentID1
-            + dot
-            + WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder2), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
-        Assert.assertFalse(ComponentUtils.isEncryptedPlaceholder(componentID1
-            + dot
-            + WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder3), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
-        Assert.assertTrue(ComponentUtils.isEncryptedPlaceholder(componentID1
-            + dot
-            + WorkflowPlaceholderHandler
-                .getNameOfPlaceholder(placeholder4), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
+        Assert.assertFalse(ComponentUtils.isEncryptedPlaceholder(componentID1 + dot
+            + WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder1), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
+        Assert.assertTrue(ComponentUtils.isEncryptedPlaceholder(componentID1 + dot
+            + WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder2), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
+        Assert.assertFalse(ComponentUtils.isEncryptedPlaceholder(componentID1 + dot
+            + WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder3), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
+        Assert.assertTrue(ComponentUtils.isEncryptedPlaceholder(componentID1 + dot
+            + WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder4), WorkflowPlaceholderHandler.getEncryptedPlaceholder()));
     }
 
     /** Test. */
     @Test
     public void testPlaceholderGetter() {
         weph.addPlaceholder(placeholder1, componentID1, componentUUID1);
-        Assert.assertTrue(weph.getIdentifiersOfPlaceholderContainingComponents().contains(
-            componentID1));
-        Assert.assertFalse(weph.getIdentifiersOfPlaceholderContainingComponents().contains(
-            componentID2));
-        Assert.assertTrue(weph.getPlaceholderNameSetOfComponentInstance(
-            componentUUID1).contains(WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder1)));
+        Assert.assertTrue(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID1));
+        Assert.assertFalse(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID2));
+        Assert.assertTrue(weph.getPlaceholderNameSetOfComponentInstance(componentUUID1)
+            .contains(WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder1)));
         weph.addPlaceholder(placeholder2, componentID1, componentUUID1);
-        Assert.assertTrue(weph.getIdentifiersOfPlaceholderContainingComponents().contains(
-            componentID1));
-        Assert.assertFalse(weph.getIdentifiersOfPlaceholderContainingComponents().contains(
-            componentID2));
-        Assert.assertTrue(weph.getPlaceholderNameSetOfComponentInstance(
-            componentUUID1).contains(WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder2)));
+        Assert.assertTrue(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID1));
+        Assert.assertFalse(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID2));
+        Assert.assertTrue(weph.getPlaceholderNameSetOfComponentInstance(componentUUID1)
+            .contains(WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder2)));
         weph.addPlaceholder(placeholder3, componentID1, null);
         Assert.assertTrue(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID1));
         Assert.assertFalse(weph.getIdentifiersOfPlaceholderContainingComponents().contains(componentID2));
@@ -130,12 +109,9 @@ public class WorkflowPlaceholderHandlerTest {
             WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder3)));
         Assert.assertTrue(weph.getPlaceholderNameSetOfComponentID(componentID1).contains(
             WorkflowPlaceholderHandler.getNameOfPlaceholder(placeholder3)));
-        Assert.assertTrue(weph.getPlaceholderNamesOfComponentInstance(
-            componentUUID1).contains(placeholder1));
-        Assert.assertFalse(weph.getPlaceholderNamesOfComponentInstance(
-            componentUUID1).contains(placeholder3));
-        Assert.assertFalse(weph.getPlaceholderNamesOfComponentInstance(
-            componentUUID1).contains(placeholder4));
+        Assert.assertTrue(weph.getPlaceholderNamesOfComponentInstance(componentUUID1).contains(placeholder1));
+        Assert.assertFalse(weph.getPlaceholderNamesOfComponentInstance(componentUUID1).contains(placeholder3));
+        Assert.assertFalse(weph.getPlaceholderNamesOfComponentInstance(componentUUID1).contains(placeholder4));
         Assert.assertFalse(weph.getPlaceholderOfComponent(componentID1).contains(placeholder1));
         Assert.assertTrue(weph.getPlaceholderOfComponent(componentID1).contains(placeholder3));
         Assert.assertFalse(weph.getPlaceholderOfComponent(componentID1).contains(placeholder4));

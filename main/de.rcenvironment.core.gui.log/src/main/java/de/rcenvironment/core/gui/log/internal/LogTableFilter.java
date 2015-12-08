@@ -23,17 +23,15 @@ import org.osgi.service.log.LogService;
 import de.rcenvironment.core.log.SerializableLogEntry;
 
 /**
- * Listener for GUI-elements such as check box, drop down box, and text field to realize changes.
- * In case of changes it pushes to refresh displaying the data and organizes filtering table data. 
+ * Listener for GUI-elements such as check box, drop down box, and text field to realize changes. In case of changes it pushes to refresh
+ * displaying the data and organizes filtering table data.
  * 
  * @author Enrico Tappert
  */
 public class LogTableFilter extends ViewerFilter implements SelectionListener, KeyListener {
 
-    /** Constant.*/
+    /** Constant. */
     private static final String Filter = ".*";
-
-    private boolean myDebugSetup;
 
     private boolean myErrorSetup;
 
@@ -97,17 +95,16 @@ public class LogTableFilter extends ViewerFilter implements SelectionListener, K
     /**
      * 
      * Collect view settings, push to refresh displaying.
-     *
+     * 
      */
     private void updateTableView() {
-        myDebugSetup = myLoggingView.getDebugSelection();
         myErrorSetup = myLoggingView.getErrorSelection();
         myInfoSetup = myLoggingView.getInfoSelection();
         myWarnSetup = myLoggingView.getWarnSelection();
 
         setSearchTerm(myLoggingView.getSearchText());
 
-        LogModel.getInstance().setCurrentPlatform(myLoggingView.getPlatform());
+        LogModel.getInstance().setSelectedLogSource(myLoggingView.getPlatform());
 
         myTableViewer.refresh();
     }
@@ -115,9 +112,7 @@ public class LogTableFilter extends ViewerFilter implements SelectionListener, K
     private boolean isLevelSelected(int level) {
         boolean returnValue = false;
 
-        if ((LogService.LOG_DEBUG == level) && myDebugSetup) {
-            returnValue = true;
-        } else if ((LogService.LOG_ERROR == level) && myErrorSetup) {
+        if ((LogService.LOG_ERROR == level) && myErrorSetup) {
             returnValue = true;
         } else if ((LogService.LOG_INFO == level) && myInfoSetup) {
             returnValue = true;
@@ -145,8 +140,8 @@ public class LogTableFilter extends ViewerFilter implements SelectionListener, K
         // search is case insensitive
 
         // Escape all regex expressions except for the *
-        char[] regexsymbols = { '(' , ')' , '{' , '}' , '[' , ']' , '^' , '?' , '.' , '\\' , '$' , '|' , '+' };
-        mySearchTerm = searchTerm.toLowerCase(); 
+        char[] regexsymbols = { '(', ')', '{', '}', '[', ']', '^', '?', '.', '\\', '$', '|', '+' };
+        mySearchTerm = searchTerm.toLowerCase();
         StringBuffer searchTermBuffer = new StringBuffer(mySearchTerm);
 
         int offset = 0;
@@ -159,27 +154,26 @@ public class LogTableFilter extends ViewerFilter implements SelectionListener, K
                 }
             }
         }
-        
+
         mySearchTerm = searchTermBuffer.toString();
         while (mySearchTerm.contains(" ")) {
             if (mySearchTerm.indexOf(" ") != mySearchTerm.length() - 1) {
-                mySearchTerm = mySearchTerm.replaceFirst(" ", "*|*");
+                mySearchTerm = mySearchTerm.replaceFirst(" ", ".");
             } else {
                 mySearchTerm = mySearchTerm.replaceFirst(" ", "");
             }
         }
-        
+
         mySearchTerm = mySearchTerm.replaceAll("\\*", ".*");
         mySearchTerm = Filter + mySearchTerm + Filter;
 
         try {
-            myPattern = Pattern.compile(mySearchTerm);    
+            myPattern = Pattern.compile(mySearchTerm);
         } catch (PatternSyntaxException e) {
             myPattern = Pattern.compile(""); // should not happen
         }
 
     }
-
 
     private boolean messageMatchesSearchTerm(String message) {
         // search is case insensitive - see also method 'setSearchTerm'

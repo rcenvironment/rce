@@ -1,0 +1,24 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Distributed Data Reference Service">
+	<implementation class="de.rcenvironment.core.datamanagement.internal.DataReferenceServiceImpl" /> 
+	<service>
+		<provide interface="de.rcenvironment.core.datamanagement.DataReferenceService" /> 
+	</service>
+	<reference bind="bindWorkflowHostService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.management.WorkflowHostService"
+ 		name="Workflow Host Service"
+ 		policy="dynamic"
+ 	/>
+ 	<reference bind="bindCommunicationService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.api.CommunicationService"
+ 		name="Communication Service"
+ 		policy="dynamic"
+ 	/>
+ 	<reference bind="bindPlatformService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.communication.api.PlatformService"
+ 		name="Platform Service"
+ 		policy="dynamic"
+ 	/>
+</scr:component>

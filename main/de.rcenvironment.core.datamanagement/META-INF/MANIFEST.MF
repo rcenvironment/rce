@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Data Management
 Bundle-SymbolicName: de.rcenvironment.core.datamanagement;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Export-Package: 
  de.rcenvironment.core.datamanagement,
  de.rcenvironment.core.datamanagement.backend,
@@ -12,7 +12,6 @@ Bundle-ClassPath: .
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
-DynamicImport-Package: *
 Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.authorization,
  de.rcenvironment.core.communication.api,
@@ -23,8 +22,10 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
+ de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.incubator,
+ org.apache.commons.compress.archivers;version="1.4.0",
  org.apache.commons.compress.archivers.tar;version="1.4.0",
  org.apache.commons.compress.compressors.gzip;version="1.4.0",
  org.apache.commons.io,

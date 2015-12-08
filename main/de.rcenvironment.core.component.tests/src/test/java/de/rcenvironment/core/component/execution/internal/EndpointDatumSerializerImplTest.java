@@ -31,7 +31,9 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
  */
 public class EndpointDatumSerializerImplTest {
 
-    private NodeIdentifier compNodeId = NodeIdentifierFactory.fromNodeId("comp-node");
+    private NodeIdentifier compNodeIdTarget = NodeIdentifierFactory.fromNodeId("comp-node_t");
+    
+    private NodeIdentifier compNodeIdSource = NodeIdentifierFactory.fromNodeId("comp-node_s");
     
     private NodeIdentifier wfCtrlNodeId = NodeIdentifierFactory.fromNodeId("wf-ctrl-node");
 
@@ -52,16 +54,22 @@ public class EndpointDatumSerializerImplTest {
         EndpointDatum internalEndpointDatumMock = EasyMock.createNiceMock(EndpointDatum.class);
         EasyMock.expect(internalEndpointDatumMock.getInputName()).andReturn("int-input-name").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getValue()).andReturn(internalTypedDatumMock).anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getInputComponentExecutionIdentifier()).andReturn("comp-exe-id-1").anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getInputsNodeId()).andReturn(compNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getInputsComponentExecutionIdentifier()).andReturn("comp-exe-id-1").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getInputsComponentInstanceName()).andReturn("comp name 1").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getInputsNodeId()).andReturn(compNodeIdTarget).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getWorkflowNodeId()).andReturn(wfCtrlNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getOutputsComponentExecutionIdentifier()).andReturn("comp-exe-id-4").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getOutputsNodeId()).andReturn(compNodeIdSource).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getWorkflowExecutionIdentifier()).andReturn("wf-exe-id-1").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getDataManagementId()).andReturn(null).anyTimes();
         EasyMock.replay(internalEndpointDatumMock);
         
+        
+        String expectedSerializedEndpointDatum = "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-"
+            + "3a12-48aa-9440-c078646e7172\"}:comp-exe-id-1:comp name 1:comp-node_t:comp-exe-id-4:comp-node_s:wf-exe-id-1:wf-ctrl-node:";
+            
         String serializedEndpointDatum = endpointDatumSerializer.serializeEndpointDatum(internalEndpointDatumMock);
-        assertEquals("int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-3a12-48aa-9440-c078646e7172\"}"
-            + ":comp-exe-id-1:comp-node:wf-exe-id-1:wf-ctrl-node:", serializedEndpointDatum);
+        assertEquals(expectedSerializedEndpointDatum, serializedEndpointDatum);
     }
     
     /**
@@ -101,14 +109,18 @@ public class EndpointDatumSerializerImplTest {
         EndpointDatum internalEndpointDatumMock = EasyMock.createNiceMock(EndpointDatum.class);
         EasyMock.expect(internalEndpointDatumMock.getInputName()).andReturn("input-name").anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getValue()).andReturn(typedDatumMock).anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getInputComponentExecutionIdentifier()).andReturn("comp-exe-id-2").anyTimes();
-        EasyMock.expect(internalEndpointDatumMock.getInputsNodeId()).andReturn(compNodeId).anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getInputsComponentExecutionIdentifier()).andReturn("comp-exe-id-2").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getInputsComponentInstanceName()).andReturn("comp name 2").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getInputsNodeId()).andReturn(compNodeIdTarget).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getWorkflowNodeId()).andReturn(wfCtrlNodeId).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getWorkflowExecutionIdentifier()).andReturn("wf-exe-id-2").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getOutputsComponentExecutionIdentifier()).andReturn("comp-exe-id-5").anyTimes();
+        EasyMock.expect(internalEndpointDatumMock.getOutputsNodeId()).andReturn(compNodeIdSource).anyTimes();
         EasyMock.expect(internalEndpointDatumMock.getDataManagementId()).andReturn(dmId).anyTimes();
         EasyMock.replay(internalEndpointDatumMock);
         
-        String expectedSerializedEndpointDatum = "input-name:serial-float-td:comp-exe-id-2:comp-node:wf-exe-id-2:wf-ctrl-node:";
+        String expectedSerializedEndpointDatum = "input-name:serial-float-td:comp-exe-id-2:comp name 2"
+            + ":comp-node_t:comp-exe-id-5:comp-node_s:wf-exe-id-2:wf-ctrl-node:";
         if (dmId != null) {
             expectedSerializedEndpointDatum += dmId;
         }
@@ -123,14 +135,16 @@ public class EndpointDatumSerializerImplTest {
     public void testDeserializationOfEndDatumWithInternalTypedDatum() {
         EndpointDatumSerializerImpl endpointDatumSerializer = new EndpointDatumSerializerImpl();
         EndpointDatum deserializeEndpointDatum = endpointDatumSerializer.deserializeEndpointDatum(
-            "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-3a12-48aa-9440-c078646e7172\"}"
-            + ":comp-exe-id-1:comp-node:wf-exe-id-1:wf-ctrl-node:");
+            "int-input-name:{\"t\"\\:\"WorkflowFinish\",\"i\"\\:\"6b5d89c8-3a12-48aa-9440-c078646e7172\"}:"
+            + "comp-exe-id-1:comp name 1:comp-node_t:comp-exe-id-3:comp-node_s:wf-exe-id-1:wf-ctrl-node:");
         
         assertEquals("int-input-name", deserializeEndpointDatum.getInputName());
         assertNull(deserializeEndpointDatum.getDataManagementId());
-        assertEquals("comp-exe-id-1", deserializeEndpointDatum.getInputComponentExecutionIdentifier());
-        assertEquals(compNodeId, deserializeEndpointDatum.getInputsNodeId());
+        assertEquals("comp-exe-id-1", deserializeEndpointDatum.getInputsComponentExecutionIdentifier());
+        assertEquals("comp name 1", deserializeEndpointDatum.getInputsComponentInstanceName());
+        assertEquals(compNodeIdTarget, deserializeEndpointDatum.getInputsNodeId());
         assertEquals("wf-exe-id-1", deserializeEndpointDatum.getWorkflowExecutionIdentifier());
+        assertEquals("comp-exe-id-3", deserializeEndpointDatum.getOutputsComponentExecutionIdentifier());
         assertEquals(wfCtrlNodeId, deserializeEndpointDatum.getWorkflowNodeId());
         assertEquals("6b5d89c8-3a12-48aa-9440-c078646e7172", ((InternalTDImpl) deserializeEndpointDatum.getValue()).getIdentifier());
         assertEquals(InternalTDType.WorkflowFinish, ((InternalTDImpl) deserializeEndpointDatum.getValue()).getType());
@@ -169,7 +183,8 @@ public class EndpointDatumSerializerImplTest {
         
         endpointDatumSerializer.bindTypedDatumService(typedDatumServiceMock);
         
-        String serializedEndpointDatum = "input-name:serial-float-td:comp-exe-id-2:comp-node:wf-exe-id-2:wf-ctrl-node:";
+        String serializedEndpointDatum = "input-name:serial-float-td:comp-exe-id-2:comp name 2"
+            + ":comp-node_t:comp-exe-id-5:comp-node_s:wf-exe-id-2:wf-ctrl-node:";
         if (dmId != null) {
             serializedEndpointDatum += dmId + ":";
         }
@@ -177,9 +192,12 @@ public class EndpointDatumSerializerImplTest {
         
         assertEquals("input-name", deserializedEndpointDatum.getInputName());
         assertEquals(dmId, deserializedEndpointDatum.getDataManagementId());
-        assertEquals("comp-exe-id-2", deserializedEndpointDatum.getInputComponentExecutionIdentifier());
-        assertEquals(compNodeId, deserializedEndpointDatum.getInputsNodeId());
+        assertEquals("comp-exe-id-2", deserializedEndpointDatum.getInputsComponentExecutionIdentifier());
+        assertEquals("comp name 2", deserializedEndpointDatum.getInputsComponentInstanceName());
+        assertEquals(compNodeIdTarget, deserializedEndpointDatum.getInputsNodeId());
         assertEquals("wf-exe-id-2", deserializedEndpointDatum.getWorkflowExecutionIdentifier());
+        assertEquals("comp-exe-id-5", deserializedEndpointDatum.getOutputsComponentExecutionIdentifier());
+        assertEquals(compNodeIdSource, deserializedEndpointDatum.getOutputsNodeId());
         assertEquals(wfCtrlNodeId, deserializedEndpointDatum.getWorkflowNodeId());
         assertEquals(typedDatumMock, deserializedEndpointDatum.getValue());
     }

@@ -72,7 +72,7 @@ public class AsyncOrderedExecutionQueueTest {
             Assert.fail(e.toString());
         }
         assertEquals(0, executed.get());
-        queue.cancel(true);
+        queue.cancelAndWaitForLastRunningTask();
         assertEquals(1, executed.get());
     }
 
@@ -83,7 +83,57 @@ public class AsyncOrderedExecutionQueueTest {
      */
     @Test(timeout = SHORT_TEST_TIMEOUT)
     public void testCancelOnEmptyQueueDoesNotBlock() throws TimeoutException {
-        queue.cancel(true);
+        queue.cancelAndWaitForLastRunningTask();
+    }
+
+    /**
+     * Tests canceling a filled queue.
+     * 
+     * @throws TimeoutException if canceling hangs unexpectedly
+     */
+    @Test
+    public void testCancelFromInsideTaskExecution() throws TimeoutException {
+        final int totalJobCount = 10;
+        final int iterationToCancelIn = 5; // one-based index
+        final int waitForCompletionTime = 200;
+
+        final AtomicInteger executed = new AtomicInteger();
+        for (int i = 1; i <= totalJobCount; i++) {
+            final int i2 = i;
+            queue.enqueue(new Runnable() {
+
+                @Override
+                public void run() {
+                    executed.incrementAndGet();
+                    if (i2 == iterationToCancelIn) {
+                        queue.enqueue(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                // crude but functional way to trigger test failure
+                                executed.addAndGet(totalJobCount);
+                            }
+                        });
+                        queue.cancelAsync();
+                        queue.enqueue(new Runnable() {
+
+                            @Override
+                            public void run() {
+                                // crude but functional way to trigger test failure
+                                executed.addAndGet(totalJobCount);
+                            }
+                        });
+                    }
+                }
+            });
+        }
+        try {
+            Thread.sleep(waitForCompletionTime);
+        } catch (InterruptedException e) {
+            Assert.fail(e.toString());
+        }
+        // test expectation: no other task was executed after the one that cancel() was called from
+        assertEquals(iterationToCancelIn, executed.get());
     }
 
 }

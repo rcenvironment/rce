@@ -36,45 +36,42 @@ public class DMTreeSorter extends ViewerSorter{
     private static final MetaData METADATA_HISTORY_TIMESTAMP = new MetaData(
         HistoryMetaDataKeys.HISTORY_TIMESTAMP, true, true);
 
-    private static boolean stopSorting;
+    private static boolean enableSorting;
     
-    private int sortType;
+    private int sortingType;
 
     public DMTreeSorter(int sortType) {
-        this.sortType = sortType;
-        // sorting enable
-        stopSorting = false;
-    }
-    @Override
-    public int category(Object element) {
-        return 0;
+        this.sortingType = sortType;
+        enableSorting = true;
     }
     @Override
     public int compare(Viewer viewer, Object e1, Object e2) {
-        int result = 0;
         DMBrowserNode o1 = (DMBrowserNode) e1;
         DMBrowserNode o2 = (DMBrowserNode) e2;
-        boolean sortable = isSortable(o1) && isSortable(o2);
-        sortable &= !stopSorting;
-        if (sortType == SORT_BY_NAME_ASC && sortable) {
-            result = o1.getTitle().compareToIgnoreCase(o2.getTitle());
-        } else if (sortType == SORT_BY_NAME_DESC && sortable) {
-            result = -o1.getTitle().compareToIgnoreCase(o2.getTitle());
-        } else {
-            if (o1.getMetaData() != null && o2.getMetaData() != null && sortable) {
+        if (!enableSorting || !isSortable(o1, sortingType) || !isSortable(o2, sortingType)) {
+            return 0;
+        }
+        switch (sortingType) {
+        case SORT_BY_NAME_ASC:
+            return o1.getTitle().compareToIgnoreCase(o2.getTitle());
+        case SORT_BY_NAME_DESC:
+            return o2.getTitle().compareToIgnoreCase(o1.getTitle());
+        case SORT_BY_TIMESTAMP:
+        case SORT_BY_TIMESTAMP_DESC:
+            if (o1.getMetaData() != null && o2.getMetaData() != null) {
                 String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
                 String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
                 long time1 = nullSafeLongValue(val1);
                 long time2 = nullSafeLongValue(val2);
-                result = ComparatorUtils.compareLong(time1, time2);
-                if (sortType == SORT_BY_TIMESTAMP_DESC) {
-                    result *= (0 - 1);
+                if (sortingType == SORT_BY_TIMESTAMP_DESC) {
+                    return ComparatorUtils.compareLong(time2, time1);
                 }
-            } else {
-                result = 0;
+                return ComparatorUtils.compareLong(time1, time2);
             }
+        default:
+            return 0;
         }
-        return result;
+
     }
 
     private long nullSafeLongValue(String val1) {
@@ -88,31 +85,51 @@ public class DMTreeSorter extends ViewerSorter{
      * 
      * Sorting depends on the Browser Node Type.
      * 
-     * @param node
+     * @param node the node to check
+     * @param type the sorting type
      * @return sortable state of the node
      */
-    private boolean isSortable(DMBrowserNode node) {
+    public boolean isSortable(DMBrowserNode node, int type) {
         boolean sortable = false;
         final DMBrowserNodeType nodeType = node.getType();
         if (nodeType.equals(DMBrowserNodeType.Workflow)) {
             sortable = true;
-        } else if (nodeType.equals(DMBrowserNodeType.Component)) {
-            if (sortType == SORT_BY_NAME_ASC || sortType == SORT_BY_NAME_DESC) {
+        } else if (nodeType.equals(DMBrowserNodeType.Timeline) || nodeType.equals(DMBrowserNodeType.Component)) {
+            if (type == SORT_BY_TIMESTAMP || type == SORT_BY_TIMESTAMP_DESC) {
+                sortable = true;
+            }
+        } else if (nodeType.equals(DMBrowserNodeType.Components)) {
+            if (type == SORT_BY_NAME_ASC || type == SORT_BY_NAME_DESC) {
                 sortable = true;
             }
         } else if (nodeType.equals(DMBrowserNodeType.HistoryObject)) {
-            if (sortType == SORT_BY_TIMESTAMP || sortType == SORT_BY_TIMESTAMP_DESC) {
+            if (type == SORT_BY_TIMESTAMP || type == SORT_BY_TIMESTAMP_DESC) {
+                sortable = true;
+            }
+        } else if (nodeType.equals(DMBrowserNodeType.ComponentHostInformation)) {
+            if (type == SORT_BY_NAME_ASC || type == SORT_BY_NAME_DESC) {
                 sortable = true;
             }
         }
         return sortable;
     }
 
+
     /**
-     * Stops the sorting of the Tree Sorter.
+     * Enables or disables sorting of the Tree Sorter.
+     * 
+     * @param enable true if sorting should be enabled.
      */
-    public static void stopSorting() {
-        stopSorting = true;
+    public void enableSorting(boolean enable) {
+        enableSorting = enable;
+    }
+
+    public void setSortingType(int sortingType) {
+        this.sortingType = sortingType;
+    }
+
+    public int getSortingType() {
+        return sortingType;
     }
 
 }

@@ -29,8 +29,9 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
  */
 public class WorkflowNode extends PropertiesChangeSupport implements Serializable, ComponentInstanceProperties, Comparable<WorkflowNode> {
 
-    /** {@link Pattern} to match property names of {@link java.beans.PropertyChangeEvent}s concerning
-     * properties. */
+    /**
+     * {@link Pattern} to match property names of {@link java.beans.PropertyChangeEvent}s concerning properties.
+     */
     public static final Pattern PROPERTIES_PATTERN = Pattern.compile("^properties\\.(.*)$");
 
     /** Property that is fired when the location changes. */
@@ -38,7 +39,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
 
     /** Property that is fired when the name changes. */
     public static final String PROPERTY_NODE_ATTRIBUTES = "de.rcenvironment.props.n";
-    
+
     private static final long serialVersionUID = -7495156467094187194L;
 
     private ComponentDescription compDesc;
@@ -52,26 +53,28 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
 
     /** Y position of the location in a graphical editor. */
     private int y;
-    
+
     private boolean isEnabled = true;
-    
+
     private boolean valid = false;
+
+    private boolean isChecked = false;
+
+    private boolean init = false;
 
     /**
      * Constructor.
      * 
-     * @param componentDescription The {@link ComponentDescription} of the
-     *        {@link de.rcenvironment.core.component.model.spi.Component} represented by this
-     *        {@link WorkflowNode}.
-     * @param componentConfiguration The configuration of this
-     *        {@link de.rcenvironment.core.component.model.spi.Component} represented by this
-     *        {@link WorkflowNode}.
+     * @param componentDescription The {@link ComponentDescription} of the {@link de.rcenvironment.core.component.model.spi.Component}
+     *        represented by this {@link WorkflowNode}.
+     * @param componentConfiguration The configuration of this {@link de.rcenvironment.core.component.model.spi.Component} represented by
+     *        this {@link WorkflowNode}.
      */
     public WorkflowNode(ComponentDescription componentDescription) {
         compDesc = componentDescription;
         identifier = UUID.randomUUID().toString();
     }
-    
+
     @Override
     public String toString() {
         return compDesc.getIdentifier();
@@ -92,7 +95,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     public int getY() {
         return y;
     }
-    
+
     public boolean isEnabled() {
         return isEnabled;
     }
@@ -106,7 +109,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
         y = newY;
         firePropertyChange(PROPERTY_COMMUNICATION_NODE);
     }
-    
+
     /**
      * @param newEnabled <code>true</code> of {@link WorkflowNode} is activated and considered during execution, otherwise
      *        <code>false</code>
@@ -157,7 +160,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     public void setIdentifier(String newIdentifier) {
         identifier = newIdentifier;
     }
-    
+
     @Override
     public synchronized void addPropertyChangeListener(PropertyChangeListener l) {
         super.addPropertyChangeListener(l);
@@ -173,7 +176,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
         getInputDescriptionsManager().removePropertyChangeListener(l);
         getOutputDescriptionsManager().removePropertyChangeListener(l);
     }
-    
+
     @Override
     public int compareTo(WorkflowNode o) {
         return getName().compareTo(o.getName());
@@ -192,6 +195,32 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     @Override
     public ConfigurationDescription getConfigurationDescription() {
         return compDesc.getConfigurationDescription();
+    }
+
+    @Override
+    public String getComponentIdentifierWithVersion() {
+        return getComponentDescription().getIdentifier();
+    }
+
+    public boolean isChecked() {
+        return isChecked;
+    }
+
+    public void setChecked(boolean checked) {
+        this.isChecked = checked;
+    }
+
+
+    /**
+     * 
+     * @return flag.
+     */
+    public boolean isInit() {
+        return init;
+    }
+
+    public void setInit(boolean init) {
+        this.init = init;
     }
 
 }

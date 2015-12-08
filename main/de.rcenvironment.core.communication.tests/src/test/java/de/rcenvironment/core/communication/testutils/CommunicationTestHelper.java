@@ -17,7 +17,8 @@ import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
-import de.rcenvironment.core.communication.rpc.internal.MethodCallerTestMethods;
+import de.rcenvironment.core.communication.rpc.ServiceCallResultFactory;
+import de.rcenvironment.core.communication.rpc.internal.MethodCallTestInterface;
 
 /**
  * Test constants for the communication tests.
@@ -39,7 +40,7 @@ public final class CommunicationTestHelper {
     /**
      * Test service.
      */
-    public static final String SERVICE = MethodCallerTestMethods.class.getCanonicalName();
+    public static final String SERVICE = MethodCallTestInterface.class.getCanonicalName();
 
     /**
      * Test name of the host.
@@ -79,12 +80,12 @@ public final class CommunicationTestHelper {
     /**
      * Test method.
      */
-    public static final String METHOD = "remoteCallAllowed";
+    public static final String METHOD = "getString";
 
     /**
      * Test return value.
      */
-    public static final String RETURN_VALUE = "Hallo Welt";
+    public static final String RETURN_VALUE = MethodCallTestInterface.DEFAULT_RESULT_OR_MESSAGE_STRING;
 
     /**
      * Test parameter.
@@ -105,18 +106,18 @@ public final class CommunicationTestHelper {
      * Test communication request.
      */
     public static final ServiceCallRequest REQUEST = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE,
-        null, METHOD, PARAMETER_LIST);
+        METHOD, PARAMETER_LIST);
 
     /**
      * Test communication request.
      */
     public static final ServiceCallRequest REMOTE_REQUEST = new ServiceCallRequest(REMOTE_PLATFORM, LOCAL_PLATFORM, SERVICE,
-        null, METHOD, PARAMETER_LIST);
+        METHOD, PARAMETER_LIST);
 
     /**
      * Test communication request.
      */
-    public static final ServiceCallResult RESULT = new ServiceCallResult(RETURN_VALUE);
+    public static final ServiceCallResult RESULT = ServiceCallResultFactory.wrapReturnValue(RETURN_VALUE);
 
     /**
      * Test communication request.

@@ -19,6 +19,9 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String waitSignalNodeLabel;
+    
+    /** Constant. */
+    public static String additionalInformation;
 
     /** Constant. */
     public static String deleteNodeActionContextMenuLabel;
@@ -142,6 +145,15 @@ public class Messages extends NLS {
     
     /** Constant. */
     public static String componentRunInformationSubtree; 
+    
+    /** Constant. */
+    public static String workflowFile; 
+    
+    /** Constant. */
+    public static String errorLogFile; 
+    
+    /** Constant. */
+    public static String componentLogFile; 
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

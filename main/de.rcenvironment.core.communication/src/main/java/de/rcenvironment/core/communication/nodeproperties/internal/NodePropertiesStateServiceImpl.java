@@ -33,9 +33,9 @@ import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
 
 /**
  * A service that listens for low-level {@link RawNodePropertiesChangeListener} and {@link NetworkTopologyChangeListener} events, and
@@ -43,7 +43,7 @@ import de.rcenvironment.core.utils.incubator.ListenerProvider;
  * 
  * @author Robert Mischke
  */
-public class NodePropertiesStateServiceImpl implements ListenerProvider {
+public class NodePropertiesStateServiceImpl implements AdditionalServicesProvider {
 
     private static final Set<NodeProperty> IMMUTABLE_EMPTY_PROPERTY_SET = Collections.unmodifiableSet(new HashSet<NodeProperty>());
 
@@ -77,9 +77,9 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
     }
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        final List<ListenerDeclaration> result = new ArrayList<ListenerDeclaration>();
-        result.add(new ListenerDeclaration(RawNodePropertiesChangeListener.class, new RawNodePropertiesChangeListener() {
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        final List<AdditionalServiceDeclaration> result = new ArrayList<AdditionalServiceDeclaration>();
+        result.add(new AdditionalServiceDeclaration(RawNodePropertiesChangeListener.class, new RawNodePropertiesChangeListener() {
 
             @Override
             public void onRawNodePropertiesAddedOrModified(Collection<? extends NodeProperty> newProperties) {
@@ -87,7 +87,7 @@ public class NodePropertiesStateServiceImpl implements ListenerProvider {
             }
 
         }));
-        result.add(new ListenerDeclaration(NetworkTopologyChangeListener.class, new NetworkTopologyChangeListenerAdapter() {
+        result.add(new AdditionalServiceDeclaration(NetworkTopologyChangeListener.class, new NetworkTopologyChangeListenerAdapter() {
 
             @Override
             public void onReachableNodesChanged(Set<NodeIdentifier> newReachableNodes, Set<NodeIdentifier> addedNodes,

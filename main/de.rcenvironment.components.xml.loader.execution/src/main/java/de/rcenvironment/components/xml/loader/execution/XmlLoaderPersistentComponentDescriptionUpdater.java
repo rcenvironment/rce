@@ -23,7 +23,6 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
-import de.rcenvironment.cpacs.utils.common.components.PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -95,10 +94,10 @@ public class XmlLoaderPersistentComponentDescriptionUpdater implements Persisten
         
         
         // StaticOutput CPACS=FileReference
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticOutputCPACS(description);
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticOutput(description, "CPACS");
  
         // Sets all incoming channels usage to "optional."
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.updateDynamicInputsOptional(description);
+        description = PersistentComponentDescriptionUpdaterUtils.updateDynamicInputsOptional(description);
                
         
         description.setComponentVersion(currentVersion);

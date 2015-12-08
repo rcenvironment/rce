@@ -8,29 +8,28 @@
 
 package de.rcenvironment.components.optimizer.common.execution;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
+import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 
 /**
@@ -45,6 +44,16 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
     protected static final String CLOSE_BRACKET_AND_NL = ")\n";
 
     protected static final String REGEX_DOT = "\\.";
+
+    private static final String DOT = ".";
+
+    private static final int NEGATE_VALUE = -1;
+
+    private static final String META_STEP = "step";
+
+    private static final String META_BASE = "base";
+
+    private static final String VALUE = "value";
 
     protected final String apostroph = "'";
 
@@ -64,10 +73,12 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
 
     private boolean gradRequest;
 
+    private List<String> orderedOutputValueKeys;
+
     public CommonPythonAlgorithmExecutor(String algorithm, Map<String, MethodDescription> methodConfiguration,
         Map<String, TypedDatum> outputValues,
         Collection<String> input, ComponentContext compContext,
-        Map<String, Double> upperMap, Map<String, Double> lowerMap, String inputFilename) {
+        Map<String, Double> upperMap, Map<String, Double> lowerMap, String inputFilename) throws ComponentException {
         super(compContext, compContext.getInstanceName(), inputFilename);
         this.algorithm = algorithm;
         this.methodConfiguration = methodConfiguration;
@@ -76,208 +87,223 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
         this.lowerMap = lowerMap;
         this.upperMap = upperMap;
         typedDatumFactory = compContext.getService(TypedDatumService.class).getFactory();
+
     }
 
     public CommonPythonAlgorithmExecutor() {
 
     }
 
-    protected void writeConfigurationFile(File parafile) {
+    protected void writeConfigurationFile(File configFile) throws ComponentException {
+        Map<String, Object> configuration = new HashMap<>();
+
+        addOutputsToConfig(configuration);
+
+        addInputsToConfig(configuration);
+
+        String[] algos = algorithm.split(comma);
+
+        for (String algo : algos) {
+            Map<String, Map<String, String>> allSettings = methodConfiguration.get(algo).getSpecificSettings();
+            Map<String, Object> settings = new HashMap<>();
+            for (String key : allSettings.keySet()) {
+                Map<String, Object> set = new HashMap<>();
+                String dataType = allSettings.get(key).get("dataType");
+
+                String value = allSettings.get(key).get("Value");
+                if (value == null || value.isEmpty()) {
+                    value = allSettings.get(key).get("DefaultValue");
+                }
+
+                switch (dataType) {
+                case "Real":
+                    set.put(VALUE, Double.parseDouble(value));
+                    break;
+                case "Int":
+                    set.put(VALUE, Integer.parseInt(value));
+                    break;
+                case "Bool":
+                    set.put(VALUE, Boolean.parseBoolean(value));
+                    break;
+                case "None":
+                default:
+                    set.put(VALUE, value);
+                }
+                settings.put(key, set);
+            }
+            configuration.put("algorithmSettings", settings);
+            configuration.put("algorithm", algo.substring(0, algo.lastIndexOf("[") - 1));
+        }
+
+        ObjectMapper mapper = new ObjectMapper();
         try {
-            BufferedWriter fw = new BufferedWriter(new FileWriter(parafile));
-            List<String> orderedInputValueKeys = new ArrayList<String>(input.size());
-            for (String e : input) {
-                orderedInputValueKeys.add(e);
-            }
-            Collections.sort(orderedInputValueKeys);
-            List<String> orderedOutputValueKeys = new ArrayList<String>();
-            for (String output : outputValues.keySet()) {
-                if (compContext.getOutputDataType(output) == DataType.Vector) {
-                    for (int i = 0; i < Integer.valueOf(compContext.getOutputMetaDataValue(output,
-                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
-                        orderedOutputValueKeys.add(output + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i);
-                    }
-                } else {
-                    orderedOutputValueKeys.add(output);
-                }
-            }
-            Collections.sort(orderedOutputValueKeys);
-            fw.append("def setting(DBase,Optim):\n"
-                + "\tDBase.nDesVar = " + orderedOutputValueKeys.size() + "\n");
-
-            for (String key : orderedOutputValueKeys) {
-                fw.append("\tDBase.DesVar['name'].append('" + key + "')\n");
-                if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)
-                    && compContext.getOutputDataType((key.substring(0, key.
-                        indexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)))) == DataType.Vector
-                       && ! outputValues.containsKey(key)) {
-                    fw.append("\tDBase.DesVar['init'].append("
-                        + ((VectorTD) outputValues.get(key.substring(0, key.
-                                indexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)))).getFloatTDOfElement(Integer
-                                    .parseInt(key.substring(key
-                                        .lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL) + 1)))
-                        + CLOSE_BRACKET_AND_NL);
-                } else {
-                    fw.append("\tDBase.DesVar['init'].append(" + outputValues.get(key) + CLOSE_BRACKET_AND_NL);
-                }
-                fw.append("\tDBase.DesVar['mini'].append(" + lowerMap.get(key) + CLOSE_BRACKET_AND_NL
-                    + "\tDBase.DesVar['maxi'].append(" + upperMap.get(key) + CLOSE_BRACKET_AND_NL);
-                if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
-                    fw.append("\tDBase.DesVar['step'].append(" + compContext.getOutputMetaDataValue(
-                        key.substring(0, key.indexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)), "step")
-                        + CLOSE_BRACKET_AND_NL + "\tDBase.DesVar['base'].append(" + compContext.getOutputMetaDataValue(
-                            key.substring(0, key.indexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)), "base")
-                        + CLOSE_BRACKET_AND_NL);
-                } else {
-                    fw.append("\tDBase.DesVar['step'].append(" + compContext.getOutputMetaDataValue(key, "step")
-                        + CLOSE_BRACKET_AND_NL
-                        + "\tDBase.DesVar['base'].append(" + compContext.getOutputMetaDataValue(key, "base") + CLOSE_BRACKET_AND_NL);
-                }
-
-            }
-
-            fw.append("\tDBase.Goal['name'] = [ ");
-            int i = 1;
-            int countInput = countInput(input);
-            for (String key : orderedInputValueKeys) {
-                if (compContext.getDynamicInputIdentifier(key).equals(OptimizerComponentConstants.ID_OBJECTIVE)
-                    && !key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
-                    fw.append(apostroph + key + apostroph);
-                    if (i++ < countInput) {
-                        fw.append(comma);
-                    }
-                }
-            }
-            fw.append("] \n"
-                + "\n"
-                + "\tDBase.Cons['name'] = [");
-            i = 1;
-            int countConstraints = countConstraint(input);
-            for (String key : orderedInputValueKeys) {
-                if (compContext.getDynamicInputIdentifier(key).equals(OptimizerComponentConstants.ID_CONSTRAINT)
-                    && !key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
-                    if (compContext.getInputDataType(key) == DataType.Vector) {
-                        for (int j = 0; j < Integer.parseInt(compContext.getInputMetaDataValue(key,
-                            OptimizerComponentConstants.METADATA_VECTOR_SIZE)); j++) {
-                            fw.append(apostroph + key + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j + apostroph);
-                            if (j < Integer.parseInt(compContext.getInputMetaDataValue(key,
-                                OptimizerComponentConstants.METADATA_VECTOR_SIZE)) - 1) {
-                                fw.append(comma);
-                            }
-                        }
-                    } else {
-                        fw.append(apostroph + key + apostroph);
-                    }
-
-                    if (i++ < countConstraints) {
-                        fw.append(comma);
-                    }
-                }
-            }
-            fw.append("] \n");
-            fw.append("\tDBase.Cons['mini'] = [");
-            appendBoundList(lowerMap, fw, orderedInputValueKeys, countConstraints);
-
-            fw.append("]\n");
-            fw.append("\tDBase.Cons['maxi'] = [");
-            appendBoundList(upperMap, fw, orderedInputValueKeys, countConstraints);
-
-            fw.append("]\n");
-
-            String[] algos = algorithm.split(comma);
-            for (String algo : algos) {
-                String pyranhaClass = methodConfiguration.get(algo).getMethodCode().split(REGEX_DOT)[0];
-                Map<String, Map<String, String>> settings = methodConfiguration.get(algo).getSpecificSettings();
-                for (String attributeKey : settings.keySet()) {
-                    fw.append("\tOptim." + pyranhaClass + "['" + attributeKey + "'] = ");
-                    String value = settings.get(attributeKey).get(OptimizerComponentConstants.VALUE_KEY);
-                    if (value == null || value.equals("")) {
-                        value = settings.get(attributeKey).get(OptimizerComponentConstants.DEFAULT_VALUE_KEY);
-                    }
-                    if (settings.get(attributeKey).get(OptimizerComponentConstants.DATA_TYPE_KEY).equalsIgnoreCase("String")) {
-                        fw.append(apostroph + value + "'\n");
-                    } else {
-                        fw.append(value + "\n");
-                    }
-                }
-            }
-            addAlgorithmsToFile(fw, algos);
-            
-            fw.flush();
-            fw.close();
+            mapper.writerWithDefaultPrettyPrinter().writeValue(configFile, configuration);
         } catch (IOException e) {
-            LOGGER.error("Could not create configuration file", e);
+            throw new ComponentException("Failed to write configuration file", e);
         }
 
     }
 
-    protected abstract void addAlgorithmsToFile(BufferedWriter fw, String[] algos) throws IOException;
+    private void addInputsToConfig(Map<String, Object> configuration) {
+        List<String> orderedInputValueKeys = new ArrayList<String>(input.size());
+        for (String e : input) {
+            orderedInputValueKeys.add(e);
+        }
+        Collections.sort(orderedInputValueKeys);
 
-    private void appendBoundList(Map<String, Double> list, BufferedWriter fw, List<String> orderedInputValueKeys, int countConstraints)
-        throws IOException {
-        int i;
-        i = 1;
+        List<String> orderedObjectives = new LinkedList<>();
+        List<String> orderedConstraints = new LinkedList<>();
+        List<String> orderedGradients = new LinkedList<>();
+        Map<String, Double> minValues = new HashMap<>();
+        Map<String, Double> maxValues = new HashMap<>();
+        Map<String, Double> objectiveWeights = new HashMap<>();
+
         for (String key : orderedInputValueKeys) {
+            if (compContext.getDynamicInputIdentifier(key).equals(OptimizerComponentConstants.ID_OBJECTIVE)
+                && !key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
+                orderedObjectives.add(key);
+                String weight = compContext.getInputMetaDataValue(key, OptimizerComponentConstants.META_WEIGHT);
+                objectiveWeights.put(key, Double.parseDouble(weight));
+            }
             if (compContext.getDynamicInputIdentifier(key).equals(OptimizerComponentConstants.ID_CONSTRAINT)
                 && !key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
-                if (compContext.getInputDataType(key) == DataType.Vector) {
-                    for (int j = 0; j < Integer.parseInt(compContext.getInputMetaDataValue(key,
-                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); j++) {
-                        fw.append("" + list.get(key + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j));
-                        if (j < Integer.parseInt(compContext.getInputMetaDataValue(key,
-                            OptimizerComponentConstants.METADATA_VECTOR_SIZE)) - 1) {
-                            fw.append(comma);
-                        }
+                orderedConstraints.add(key);
+                minValues.put(key, lowerMap.get(key));
+                maxValues.put(key, upperMap.get(key));
+            }
+            if (key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
+                orderedGradients.add(key);
+            }
+        }
+
+        configuration.put("objectives", orderedObjectives);
+        configuration.put("constraints", orderedConstraints);
+        configuration.put("gradients", orderedGradients);
+        configuration.put("objectivesWeights", objectiveWeights);
+        configuration.put("minValuesConstraints", minValues);
+        configuration.put("maxValuesConstraints", maxValues);
+
+    }
+
+    private void addOutputsToConfig(Map<String, Object> configuration) {
+        orderedOutputValueKeys = new ArrayList<String>();
+        for (String output : outputValues.keySet()) {
+            if (compContext.getOutputDataType(output) == DataType.Vector) {
+                for (int i = 0; i < Integer.valueOf(compContext.getOutputMetaDataValue(output,
+                    OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                    orderedOutputValueKeys.add(output + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i);
+                }
+            } else {
+                orderedOutputValueKeys.add(output);
+            }
+        }
+        Collections.sort(orderedOutputValueKeys);
+        Map<String, Double> initValues = new HashMap<>();
+        Map<String, Double> baseValues = new HashMap<>();
+        Map<String, Double> stepValues = new HashMap<>();
+        Map<String, Boolean> discreteValues = new HashMap<>();
+        Map<String, Double> minValues = new HashMap<>();
+        Map<String, Double> maxValues = new HashMap<>();
+
+        for (String key : orderedOutputValueKeys) {
+
+            if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)
+                && compContext.getOutputDataType(getVectorName(key)) == DataType.Vector) {
+                if (outputValues.containsKey(key)) {
+                    initValues.put(key, ((FloatTD) outputValues.get(key)).getFloatValue());
+                }
+                discreteValues.put(key, Boolean.parseBoolean(
+                    compContext.getOutputMetaDataValue(getVectorName(key), OptimizerComponentConstants.META_IS_DISCRETE)));
+            } else {
+                initValues.put(key, ((FloatTD) outputValues.get(key)).getFloatValue());
+            }
+            if (!key.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
+                if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+                    if (compContext.getOutputMetaDataValue(getVectorName(key), META_BASE) != null) {
+                        baseValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(
+                            getVectorName(key), META_BASE)));
+                    }
+                    if (compContext.getOutputMetaDataValue(getVectorName(key), META_STEP) != null) {
+                        stepValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(
+                            getVectorName(key), META_STEP)));
                     }
                 } else {
-                    fw.append("" + list.get(key));
+                    if (compContext.getOutputMetaDataValue(key, META_BASE) != null) {
+                        baseValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(key, META_BASE)));
+                    }
+                    if (compContext.getOutputMetaDataValue(key, META_STEP) != null) {
+                        stepValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(key, META_STEP)));
+                    }
                 }
-                if (i++ < countConstraints) {
-                    fw.append(comma);
+            }
+            minValues.put(key, lowerMap.get(key));
+            maxValues.put(key, upperMap.get(key));
+        }
+
+        configuration.put("designVariableCount", orderedOutputValueKeys.size());
+        configuration.put("designVariables", orderedOutputValueKeys);
+        configuration.put("initValues", initValues);
+        configuration.put("minValuesVariables", minValues);
+        configuration.put("maxValuesVariables", maxValues);
+        configuration.put("baseValues", baseValues);
+        configuration.put("stepValues", stepValues);
+        configuration.put("discreteValues", discreteValues);
+
+    }
+
+    private int getVectorIndex(String key) {
+        return Integer.parseInt(key.substring(key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)));
+    }
+
+    private String getVectorName(String key) {
+        return key.substring(0, key.indexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public void readOutputFileFromExternalProgram(Map<String, TypedDatum> outputValueMap) throws IOException {
+        if (messageFromClient != null) {
+            String currentWorkingDir = messageFromClient.getCurrentWorkingDir();
+            if (currentWorkingDir != null) {
+                File[] cwdFiles = new File(currentWorkingDir).listFiles();
+                if (cwdFiles != null) {
+                    File outputFile = cwdFiles[0];
+                    ObjectMapper mapper = new ObjectMapper();
+                    Map<String, Object> result = mapper.readValue(outputFile, new HashMap<String, Object>().getClass());
+                    List<Double> outputs = (List<Double>) result.get("designVar");
+                    int offset = 0;
+                    for (int i = 0; i < orderedOutputValueKeys.size(); i += offset) {
+                        offset = readOutputs(outputValueMap, outputs, i);
+                    }
+                    gradRequest = (Boolean) result.get("gradRequest");
                 }
             }
         }
     }
 
-    @Override
-    public void readOutputFileFromExternalProgram(Map<String, TypedDatum> outputValueMap) throws IOException {
-        File outputFile = new File(messageFromClient.getCurrentWorkingDir()).listFiles()[0];
-        BufferedReader fr = new BufferedReader(new FileReader(outputFile));
-        String firstLine = fr.readLine();
-        int varCount = 0;
-        try {
-            varCount = Integer.parseInt(firstLine);
-        } catch (NumberFormatException e) {
-            e.getCause();
+    private int readOutputs(Map<String, TypedDatum> outputValueMap, List<Double> outputs, int i) {
+        int offset;
+        String key = orderedOutputValueKeys.get(i);
+        offset = 1;
+        String realKey = "";
+        if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+            realKey = key.substring(0, key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
         }
-        Map<String, Double> newOutput = new HashMap<String, Double>();
-        for (int i = 0; i < varCount; i++) {
-            String x = fr.readLine();
-            newOutput.put("" + i, Double.parseDouble(x));
-        }
-        gradRequest = Boolean.parseBoolean(fr.readLine());
-        fr.close();
-        List<String> orderedOutputValueMapKeys = new ArrayList<String>(outputValueMap.keySet());
-        Collections.sort(orderedOutputValueMapKeys);
-        int offset = 0;
-        for (int i = 0; i < orderedOutputValueMapKeys.size(); i += offset) {
-            String key = orderedOutputValueMapKeys.get(i);
-            offset = 1;
-            if (key.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
-                key = key.substring(0, key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
-            }
-            if (compContext.getOutputDataType(key) == DataType.Vector) {
+
+        if (!realKey.isEmpty()) {
+            if (compContext.getOutputDataType(realKey) == DataType.Vector && !orderedOutputValueKeys.contains(realKey)) {
                 VectorTD resultVec = typedDatumFactory.createVector(Integer.parseInt(compContext.getOutputMetaDataValue(
-                    key, OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
+                    realKey, OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
                 for (int j = 0; j < resultVec.getRowDimension(); j++) {
-                    resultVec.setFloatTDForElement(typedDatumFactory.createFloat(newOutput.get("" + j)), j);
+                    resultVec.setFloatTDForElement(typedDatumFactory.createFloat(outputs.get(i + j)), j);
                 }
-                outputValueMap.put(key, resultVec);
+                outputValueMap.put(realKey, resultVec);
                 offset++;
-            } else {
-                outputValueMap.put(key, typedDatumFactory.createFloat(newOutput.get("" + i)));
             }
+        } else {
+            outputValueMap.put(key, typedDatumFactory.createFloat(outputs.get(i)));
         }
+        return offset;
     }
 
     @Override
@@ -287,69 +313,56 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
 
     @Override
     protected void writeInputFileforExternalProgram(Map<String, Double> functionVariables,
-        Map<String, Double> functionVariablesGradients,
-        Map<String, Double> constraintVariables,
-        String outputFileName)
-        throws IOException {
-        File rceInputFile = new File(messageFromClient.getCurrentWorkingDir() + File.separator + outputFileName);
-        if (!rceInputFile.exists()) {
-            rceInputFile.createNewFile();
-        }
-        String objectiveFunctions = "";
-        FileWriter fw2 = new FileWriter(rceInputFile);
+        Map<String, Double> functionVariablesGradients, Map<String, Double> constraintVariables, String outputFileName) throws IOException {
+        File rceInputFile = new File(messageFromClient.getCurrentWorkingDir(), outputFileName);
 
-        List<String> orderedFunctionVariableKeys = new ArrayList<String>(functionVariables.keySet());
-        Collections.sort(orderedFunctionVariableKeys);
-        List<String> orderedConstraintVariableKeys = new ArrayList<String>(constraintVariables.keySet());
-        Collections.sort(orderedConstraintVariableKeys);
-        List<String> orderedFunctionVariablesGradientKeys = new ArrayList<String>(functionVariablesGradients.keySet());
-        Collections.sort(orderedFunctionVariablesGradientKeys);
-
-        for (String key : orderedFunctionVariableKeys) {
+        for (String key : functionVariables.keySet()) {
             String name = key;
-            if (name.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)) {
+            if (name.contains(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)
+                && !name.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
                 name = name.substring(0, name.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
             }
-            if (compContext.getInputMetaDataValue(name, OptimizerComponentConstants.META_GOAL).equals("Maximize")) { // Maximize
+            if (!name.contains(OptimizerComponentConstants.GRADIENT_DELTA)
+                && compContext.getInputMetaDataValue(name, OptimizerComponentConstants.META_GOAL).equals("Maximize")) { // Maximize
                 // Optimizer only minimizes functions so for maximizing you need to minimize -f(x)
-                objectiveFunctions += ("-");
+                functionVariables.put(key, functionVariables.get(key) * NEGATE_VALUE);
             }
-            objectiveFunctions += (functionVariables.get(key) + comma);
+        }
 
-        }
-        fw2.append(objectiveFunctions.substring(0, objectiveFunctions.length() - 1) + IOUtils.LINE_SEPARATOR);
-        String constraintFunctions = "";
+        // Arrange gradients
+        Map<String, List<Double>> gradientsPerObjectiveOrConstraint = new HashMap<>();
 
-        for (String key : orderedConstraintVariableKeys) {
-            constraintFunctions += "" + constraintVariables.get(key) + comma;
-        }
-        if (constraintFunctions.length() > 0) {
-            fw2.append(constraintFunctions.substring(0, constraintFunctions.length() - 1) + IOUtils.LINE_SEPARATOR);
-        } else {
-            fw2.append(IOUtils.LINE_SEPARATOR);
-        }
-        for (String key : orderedFunctionVariableKeys) {
-            fw2.append("[");
-            for (String variable : orderedFunctionVariablesGradientKeys) {
-                if (variable.contains(
-                    OptimizerComponentConstants.GRADIENT_DELTA + key + "." + OptimizerComponentConstants.GRADIENT_DELTA)) {
-                    fw2.append(" " + functionVariablesGradients.get(variable));
-                }
-            }
-            fw2.append(" ]:" + key + IOUtils.LINE_SEPARATOR);
-        }
-        fw2.append(IOUtils.LINE_SEPARATOR);
-        for (String key : orderedConstraintVariableKeys) {
-            fw2.append("[");
-            for (String variable : orderedFunctionVariablesGradientKeys) {
-                if (variable.contains(
-                    OptimizerComponentConstants.GRADIENT_DELTA + key + "." + OptimizerComponentConstants.GRADIENT_DELTA)) {
-                    fw2.append(" " + functionVariablesGradients.get(variable));
-                }
-            }
-            fw2.append(" ]:" + key + IOUtils.LINE_SEPARATOR);
-        }
-        fw2.flush();
-        fw2.close();
+        getGradients(functionVariables, functionVariablesGradients, gradientsPerObjectiveOrConstraint, orderedOutputValueKeys);
+        getGradients(constraintVariables, functionVariablesGradients, gradientsPerObjectiveOrConstraint, orderedOutputValueKeys);
+
+        ObjectMapper mapper = new ObjectMapper();
+        Map<String, Object> all = new HashMap<>();
+
+        all.put("objective", functionVariables);
+        all.put("const", constraintVariables);
+
+        all.put("grad", gradientsPerObjectiveOrConstraint);
+
+        mapper.writerWithDefaultPrettyPrinter().writeValue(rceInputFile, all);
     }
+
+    private void getGradients(Map<String, Double> functionVariables, Map<String, Double> functionVariablesGradients,
+        Map<String, List<Double>> gradientsPerObjectiveOrConstraint, List<String> outputNames) {
+        for (String obj : functionVariables.keySet()) {
+            List<Double> values = new LinkedList<>();
+            for (String output : outputNames) {
+                if (functionVariablesGradients.containsKey(getGradientName(obj, output))) {
+                    values.add(functionVariablesGradients.get(getGradientName(obj, output)));
+                }
+            }
+            if (!values.isEmpty()) {
+                gradientsPerObjectiveOrConstraint.put(obj, values);
+            }
+        }
+    }
+
+    private String getGradientName(String obj, String output) {
+        return OptimizerComponentConstants.GRADIENT_DELTA + obj + DOT + OptimizerComponentConstants.GRADIENT_DELTA + output;
+    }
+
 }

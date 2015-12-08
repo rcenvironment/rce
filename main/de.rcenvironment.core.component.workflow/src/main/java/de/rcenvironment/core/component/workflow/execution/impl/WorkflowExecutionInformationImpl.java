@@ -18,6 +18,7 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionInformati
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionInformationImpl;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 
@@ -40,12 +41,16 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
     
     private String additionalInformation;
     
+    private WorkflowState workflowState;
+    
+    private Long workflowDataManagementId = null;
+    
     public WorkflowExecutionInformationImpl(WorkflowExecutionContext wfExeCtx) {
         setInstanceName(wfExeCtx.getInstanceName());
         setNodeId(wfExeCtx.getNodeId());
         setDefaultStorageNodeId(wfExeCtx.getDefaultStorageNodeId());
         setWorkflowDescription(wfExeCtx.getWorkflowDescription());
-        setWorkflowExecutionInformations(wfExeCtx);
+        setWorkflowExecutionContext(wfExeCtx);
         instantiationTime = new Date().getTime();
     }
     
@@ -78,7 +83,7 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
         return additionalInformation;
     }
     
-    private void setWorkflowExecutionInformations(WorkflowExecutionContext wfExeCtx) {
+    private void setWorkflowExecutionContext(WorkflowExecutionContext wfExeCtx) {
         componentExecutionInformations.clear();
         for (WorkflowNode wfNode : wfExeCtx.getWorkflowDescription().getWorkflowNodes()) {
             ComponentExecutionInformationImpl componentExecutionInformation = new ComponentExecutionInformationImpl();
@@ -97,6 +102,24 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
     @Override
     public int compareTo(WorkflowExecutionInformation other) {
         return getWorkflowDescription().getName().compareToIgnoreCase(other.getWorkflowDescription().getName());
+    }
+
+    @Override
+    public WorkflowState getWorkflowState() {
+        return workflowState;
+    }
+    
+    @Override
+    public Long getWorkflowDataManagementId() {
+        return workflowDataManagementId;
+    }
+    
+    public void setWorkflowState(WorkflowState workflowState) {
+        this.workflowState = workflowState;
+    }
+
+    public void setWorkflowDataManagementId(Long workflowDataManagementId) {
+        this.workflowDataManagementId = workflowDataManagementId;
     }
 
 }

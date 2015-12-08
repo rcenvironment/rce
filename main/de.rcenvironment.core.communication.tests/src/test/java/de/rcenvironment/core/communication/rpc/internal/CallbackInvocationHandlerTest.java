@@ -15,16 +15,16 @@ import static org.junit.Assert.fail;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Future;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.messaging.internal.MessageEndpointHandlerImpl;
-import de.rcenvironment.core.communication.messaging.internal.RPCRequestHandler;
+import de.rcenvironment.core.communication.messaging.internal.RPCNetworkRequestHandler;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
@@ -32,13 +32,14 @@ import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
 import de.rcenvironment.core.communication.routing.internal.NetworkRoutingServiceImpl;
-import de.rcenvironment.core.communication.rpc.ServiceCallHandler;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
-import de.rcenvironment.core.communication.rpc.api.CallbackService;
+import de.rcenvironment.core.communication.rpc.ServiceCallResultFactory;
+import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
+import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.communication.spi.CallbackObject;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.LogUtils;
 
 /**
  * Test case for {@link CallbackInvocationHandler}.
@@ -68,13 +69,15 @@ public class CallbackInvocationHandlerTest {
 
     private final String pengRV = "peng";
 
-    private final ServiceCallResult puffResult = new ServiceCallResult(puff1RV);
+    private final ServiceCallResult puffResult = ServiceCallResultFactory.wrapReturnValue(puff1RV);
 
-    private final ServiceCallResult pengResult = new ServiceCallResult(pengRV);
+    private final ServiceCallResult pengResult = ServiceCallResultFactory.wrapReturnValue(pengRV);
 
     private final NodeIdentifier piLocal = NodeIdentifierFactory.fromNodeId("mockLocalNodeId");
 
     private final NodeIdentifier piRemote = NodeIdentifierFactory.fromNodeId("mockRemoteNodeId");
+
+    private final Log log = LogFactory.getLog(getClass());
 
     /**
      * Tests various remote method calls.
@@ -86,7 +89,7 @@ public class CallbackInvocationHandlerTest {
 
         // create the simulated ServiceCallRequestPayloadHandler
         final MessageEndpointHandlerImpl scrHandler = new MessageEndpointHandlerImpl();
-        scrHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCRequestHandler(
+        scrHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCNetworkRequestHandler(
             new SimulatingServiceCallHandler()));
 
         // create the network layer mock
@@ -96,22 +99,19 @@ public class CallbackInvocationHandlerTest {
         MessageRoutingService messageRoutingServiceDelegate = new NetworkRoutingServiceImpl() {
 
             @Override
-            public Future<NetworkResponse> performRoutedRequest(final byte[] payload, final String messageType,
-                final NodeIdentifier receiver) {
-                return SharedThreadPool.getInstance().submit(new Callable<NetworkResponse>() {
-
-                    @Override
-                    public NetworkResponse call() throws Exception {
-                        NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, piLocal, receiver);
-                        NetworkResponse result;
-                        try {
-                            result = scrHandler.onRequestArrivedAtDestination(request);
-                        } catch (RuntimeException e) {
-                            result = NetworkResponseFactory.generateResponseForExceptionAtDestination(request, e);
-                        }
-                        return result;
-                    }
-                });
+            public NetworkResponse performRoutedRequest(final byte[] payload, final String messageType,
+                final NodeIdentifier receiver, int timeoutMsec) {
+                NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, piLocal, receiver);
+                NetworkResponse result;
+                try {
+                    result = scrHandler.onRequestArrivedAtDestination(request);
+                } catch (RuntimeException e) {
+                    // TODO review: is this a useful test approach?
+                    String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(log,
+                        "Uncaught RuntimeException thrown by request handler", e);
+                    result = NetworkResponseFactory.generateResponseForInternalErrorAtRecipient(request, errorId);
+                }
+                return result;
             }
         };
 
@@ -121,7 +121,7 @@ public class CallbackInvocationHandlerTest {
                     EasyMock.eq(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC), EasyMock.eq(piLocal)))
             .andDelegateTo(messageRoutingServiceDelegate).anyTimes();
 
-        RemoteServiceCallServiceImpl remoteServiceCallService = new RemoteServiceCallServiceImpl();
+        RemoteServiceCallSenderServiceImpl remoteServiceCallService = new RemoteServiceCallSenderServiceImpl();
         remoteServiceCallService.bindMessageRoutingService(messageRoutingServiceMock);
 
         // note that this approach only works for unit tests; the (currently unavoidable) singleton
@@ -158,20 +158,19 @@ public class CallbackInvocationHandlerTest {
     }
 
     /**
-     * Test {@link ServiceCallHandler} implementation.
+     * Test {@link RemoteServiceCallHandlerService} implementation.
      * 
      * @author Doreen Seider
      * @author Robert Mischke (changed from ServiceCallSender to ServiceCallHandler)
      */
-    private final class SimulatingServiceCallHandler implements ServiceCallHandler {
+    private final class SimulatingServiceCallHandler implements RemoteServiceCallHandlerService {
 
         @SuppressWarnings("unchecked")
         @Override
         public ServiceCallResult handle(ServiceCallRequest serviceCallRequest) {
-            if (serviceCallRequest.getRequestedPlatform().equals(piLocal)
-                && serviceCallRequest.getService().equals(CallbackService.class.getCanonicalName())
-                && serviceCallRequest.getServiceMethod().equals("callback")
-                && serviceCallRequest.getServiceProperties() == null
+            if (serviceCallRequest.getDestination().equals(piLocal)
+                && serviceCallRequest.getServiceName().equals(RemotableCallbackService.class.getCanonicalName())
+                && serviceCallRequest.getMethodName().equals("callback")
                 && serviceCallRequest.getParameterList().get(0).equals(objectID)) {
 
                 if (serviceCallRequest.getParameterList().get(1).equals(pengMethod)
@@ -184,11 +183,11 @@ public class CallbackInvocationHandlerTest {
                 } else if (serviceCallRequest.getParameterList().get(1).equals(throwMethod)
                     && ((ArrayList<Serializable>) serviceCallRequest.getParameterList().get(2)).size() == 0) {
                     // RPC target exceptions are wrapped in ServiceCallResults, so emulate this
-                    return new ServiceCallResult(new NullPointerException());
+                    return ServiceCallResultFactory.wrapMethodException(new NullPointerException());
                 }
             }
-            return new ServiceCallResult(new IllegalStateException("Test error: no match in "
-                + SimulatingServiceCallHandler.class.getName()));
+            return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest, "Test error: no match in "
+                + SimulatingServiceCallHandler.class.getName());
         }
     }
 
@@ -220,6 +219,7 @@ public class CallbackInvocationHandlerTest {
     private class DummyObject implements DummyInterface {
 
         private static final long serialVersionUID = 5864698550749464575L;
+
         private static final String ERROR_MESSAGE = "should never be called, because annotated to be callback remotely.";
 
         @Override

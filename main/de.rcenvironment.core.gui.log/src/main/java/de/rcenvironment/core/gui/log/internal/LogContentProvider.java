@@ -8,10 +8,13 @@
 
 package de.rcenvironment.core.gui.log.internal;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedSet;
 
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
+import org.osgi.service.log.LogService;
 
 import de.rcenvironment.core.log.SerializableLogEntry;
 
@@ -34,8 +37,19 @@ public class LogContentProvider implements IStructuredContentProvider {
         if (!(inputElement instanceof LogModel)) {
             throw new IllegalArgumentException();
         }
+
+        List<SerializableLogEntry> removeObjectsList = new ArrayList<SerializableLogEntry>();
         final LogModel logModel = (LogModel) inputElement;
         final SortedSet<SerializableLogEntry> logEntries = logModel.getLogEntries();
+
+        for (SerializableLogEntry entry : logEntries) {
+            if (entry.getLevel() == LogService.LOG_DEBUG) {
+                removeObjectsList.add(entry);
+            }
+        }
+
+        logEntries.removeAll(removeObjectsList);
+
         return logEntries.toArray();
     }
 

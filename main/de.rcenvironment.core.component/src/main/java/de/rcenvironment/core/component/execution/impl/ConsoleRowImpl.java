@@ -39,6 +39,8 @@ public class ConsoleRowImpl implements ConsoleRow {
 
     private long timestamp;
     
+    private long sequenceNumber;
+    
     @Override
     public long getTimestamp() {
         return timestamp;
@@ -79,6 +81,11 @@ public class ConsoleRowImpl implements ConsoleRow {
         return payload;
     }
     
+    @Override
+    public long getSequenzNumber() {
+        return sequenceNumber;
+    }
+    
     public void setWorkflowIdentifier(String workflowIdentifier) {
         this.workflowIdentifier = workflowIdentifier;
     }
@@ -116,6 +123,10 @@ public class ConsoleRowImpl implements ConsoleRow {
 
     public void setTimestamp(long timestamp) {
         this.timestamp = timestamp;
+    }
+    
+    public void setSequenceNumber(long sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
     }
     
     @Override

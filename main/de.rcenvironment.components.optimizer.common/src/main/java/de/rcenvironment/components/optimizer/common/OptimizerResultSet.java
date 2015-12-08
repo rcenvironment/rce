@@ -12,9 +12,12 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 
 /**
  * Class holding one set of values for an optimizer output.
@@ -24,6 +27,8 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 public class OptimizerResultSet implements Serializable {
 
     private static final long serialVersionUID = -5549958046464158432L;
+
+    private static final double CONST_1E99 = 1E99;
 
     private static TypedDatumSerializer typedDatumSerializer;
 
@@ -47,8 +52,20 @@ public class OptimizerResultSet implements Serializable {
      * @param key the key of the value to get.
      * @return the value.
      */
-    public TypedDatum getValue(final String key) {
-        return typedDatumSerializer.deserialize(values.get(key));
+    public double getValue(String key) {
+        if (values.get(key) != null) {
+            TypedDatum result = typedDatumSerializer.deserialize(values.get(key));
+            if (result.getDataType() == DataType.Float) {
+                double value = ((FloatTD) result).getFloatValue();
+                if (value == CONST_1E99) {
+                    value = Double.NaN;
+                }
+                return value;
+            } else {
+                return ((IntegerTD) result).getIntValue();
+            }
+        }
+        return Double.NaN;
     }
 
     public String getComponent() {

@@ -18,15 +18,12 @@ import java.util.Map;
 
 import javax.script.ScriptEngine;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
-import de.rcenvironment.core.component.datamanagement.history.ComponentHistoryDataItemConstants;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.scripting.WorkflowConsoleForwardingWriter;
@@ -70,10 +67,6 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
 
     protected Map<String, Object> stateMap;
 
-    private File stderrLogFile;
-
-    private File stdoutLogFile;
-
     private Writer stdoutWriter;
 
     private Writer stderrWriter;
@@ -87,14 +80,14 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
     }
 
     @Override
-    public boolean prepareExecutor(ComponentContext compCtx) {
+    public boolean prepareExecutor(ComponentContext compCtx) throws ComponentException {
         this.componentContext = compCtx;
         try {
             tempDir = TempFileServiceAccess.getInstance().createManagedTempDir("scriptExecutor");
         } catch (IOException e) {
-            LOGGER.error("Creating temp directory failed", e);
+            throw new ComponentException("Failed to create temporary directory needed to temporarely store input files/directories", e);
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -107,29 +100,10 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
         StringWriter out = new StringWriter(buffer);
         StringWriter err = new StringWriter(buffer);
 
-        initializeLogFileForHistoryDataItem();
-
-        stdoutWriter = new WorkflowConsoleForwardingWriter(out, componentContext, ConsoleRow.Type.STDOUT, stdoutLogFile);
-        stderrWriter = new WorkflowConsoleForwardingWriter(err, componentContext, ConsoleRow.Type.STDERR, stderrLogFile);
+        stdoutWriter = new WorkflowConsoleForwardingWriter(out, componentContext.getLog(), ConsoleRow.Type.TOOL_OUT, null);
+        stderrWriter = new WorkflowConsoleForwardingWriter(err, componentContext.getLog(), ConsoleRow.Type.TOOL_ERROR, null);
         scriptEngine.getContext().setWriter(stdoutWriter);
         scriptEngine.getContext().setErrorWriter(stderrWriter);
-    }
-
-    private void initializeLogFileForHistoryDataItem() {
-        if (historyDataItem != null) {
-            try {
-                stdoutLogFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(
-                    ComponentHistoryDataItemConstants.STDOUT_LOGFILE_NAME);
-            } catch (IOException e) {
-                LOGGER.error("Creating temp file for console output failed. No log file will be added to component history data", e);
-            }
-            try {
-                stderrLogFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(
-                    ComponentHistoryDataItemConstants.STDERR_LOGFILE_NAME);
-            } catch (IOException e) {
-                LOGGER.error("Creating temp file for console error output failed. No log file will be added to component history data", e);
-            }
-        }
     }
 
     @Override
@@ -142,29 +116,11 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
     @Override
     public abstract boolean postRun() throws ComponentException;
 
-    protected void closeConsoleWritersAndAddLogsToHistoryDataItem() throws IOException {
+    protected void closeConsoleWriters() throws IOException {
         stderrWriter.flush();
         stderrWriter.close();
         stdoutWriter.flush();
         stdoutWriter.close();
-
-        if (historyDataItem != null) {
-            ComponentDataManagementService componentDataManagementService =
-                componentContext.getService(ComponentDataManagementService.class);
-            if (!FileUtils.readFileToString(stderrLogFile).isEmpty()) {
-                String stderrFileRef = componentDataManagementService.createTaggedReferenceFromLocalFile(componentContext,
-                    stderrLogFile, stderrLogFile.getName());
-                historyDataItem.addLog(stderrLogFile.getName(), stderrFileRef);
-            }
-            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stderrLogFile);
-            if (!FileUtils.readFileToString(stdoutLogFile).isEmpty()) {
-                String stdoutFileRef =
-                    componentDataManagementService.createTaggedReferenceFromLocalFile(componentContext,
-                        stdoutLogFile, stdoutLogFile.getName());
-                historyDataItem.addLog(stdoutLogFile.getName(), stdoutFileRef);
-            }
-            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(stdoutLogFile);
-        }
     }
 
     protected TypedDatum getTypedDatum(Object value) {
@@ -177,7 +133,8 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
         try {
             TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempDir);
         } catch (IOException e) {
-            LOGGER.warn(e.getMessage() + " : Perhaps, a file was not closed in the script?");
+            LOGGER.error("Failed to delete temporary directory "
+                + "(probably because a file were not properly closed in the Python script)", e);
         }
 
     }
@@ -200,16 +157,6 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
     @Override
     public void setStateMap(Map<String, Object> stateMap) {
         this.stateMap = stateMap;
-    }
-
-    @Override
-    public void setStdoutLogFile(File stdoutLogFile) {
-        this.stdoutLogFile = stdoutLogFile;
-    }
-
-    @Override
-    public void setStderrLogFile(File stderrLogFile) {
-        this.stderrLogFile = stderrLogFile;
     }
 
     @Override

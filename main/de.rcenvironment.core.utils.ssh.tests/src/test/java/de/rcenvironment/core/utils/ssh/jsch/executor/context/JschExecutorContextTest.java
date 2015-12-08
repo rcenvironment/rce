@@ -33,7 +33,7 @@ import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
 import de.rcenvironment.core.utils.ssh.jsch.DummyCommand;
 import de.rcenvironment.core.utils.ssh.jsch.DummyPasswordAuthenticator;
-import de.rcenvironment.core.utils.ssh.jsch.Utils;
+import de.rcenvironment.core.utils.ssh.jsch.SshTestUtils;
 
 /**
  * Test case for {@link JSchExecutorContext}.
@@ -63,13 +63,13 @@ public class JschExecutorContextTest {
     @SuppressWarnings("serial")
     @BeforeClass
     public static void setUp() throws IOException {
-        port = Utils.getRandomPortNumber();
+        port = SshTestUtils.getRandomPortNumber();
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
         sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPassword.Factory()); }});
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
-        sshServer.setCommandFactory(Utils.createDummyCommandFactory());
+        sshServer.setCommandFactory(SshTestUtils.createDummyCommandFactory());
         sshServer.start();
     }
     
@@ -97,7 +97,7 @@ public class JschExecutorContextTest {
      * @throws IOException on error
      * @throws ValidationFailureException on error
      **/
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testLifecycle() throws IOException, ValidationFailureException {
         JSchExecutorContext context = new JSchExecutorContext(sshConfiguration);
         
@@ -140,7 +140,7 @@ public class JschExecutorContextTest {
      * @throws IOException on error
      * @throws ValidationFailureException on error
      **/
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testForLifecycleFailure() throws IOException, ValidationFailureException {
         
         SshSessionConfiguration invalidSshConfiguration = SshSessionConfigurationFactory

@@ -64,9 +64,9 @@ public enum ComponentState {
     /** Cancelling. */
     CANCELLING("Cancelling"),
     
-    /** Cancelling after input failure. */
-    CANCELLING_AFTER_INPUT_FAILURE("Cancelling after input failure"),
-    
+    /** Cancelling after failure. */
+    CANCELLING_AFTER_FAILURE("Cancelling after failure"),
+
     /** Canceled. */
     CANCELED("Cancelled"),
     

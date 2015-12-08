@@ -8,18 +8,16 @@
 
 package de.rcenvironment.core.communication.connection.internal;
 
+import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import java.util.WeakHashMap;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.logging.Log;
@@ -28,6 +26,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
+import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
@@ -38,22 +37,22 @@ import de.rcenvironment.core.communication.configuration.IPWhitelistConnectionFi
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
-import de.rcenvironment.core.communication.model.BrokenMessageChannelListener;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkResponseHandler;
-import de.rcenvironment.core.communication.model.RawNetworkResponseHandler;
 import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
+import de.rcenvironment.core.communication.protocol.ProtocolConstants.ResultCode;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
-import de.rcenvironment.core.communication.routing.internal.WaitForResponseCallable;
+import de.rcenvironment.core.communication.routing.internal.WaitForResponseBlocker;
+import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.utils.common.StatsCounter;
@@ -68,7 +67,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
- * Default implementation of {@link MessageChannelService} which also provides the {@link RawMessageChannelEndpointHandler} interface.
+ * Default implementation of {@link MessageChannelService} which also provides the {@link MessageChannelEndpointHandler} interface.
  * 
  * @author Robert Mischke
  */
@@ -85,7 +84,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     private AsyncOrderedCallbackManager<MessageChannelLifecycleListener> channelListeners;
 
-    private AsyncOrderedCallbackManager<RawMessageChannelTrafficListener> trafficListeners;
+    private AsyncOrderedCallbackManager<MessageChannelTrafficListener> trafficListeners;
 
     private NodeInformationRegistryImpl nodeInformationRegistry;
 
@@ -103,10 +102,8 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     private final Map<String, MessageChannel> activeOutgoingChannels;
 
-    private final Map<MessageChannel, MessageChannelHealthState> connectionStates = Collections
+    private final Map<MessageChannel, MessageChannelHealthState> connectionHealthStates = Collections
         .synchronizedMap(new WeakHashMap<MessageChannel, MessageChannelHealthState>());
-
-    private final Random random = new Random();
 
     private final AtomicLong healthCheckTaskCounter = new AtomicLong();
 
@@ -118,18 +115,18 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     private final IPWhitelistConnectionFilter globalIPWhitelistFilter;
 
-    private String localNodeIdString;
+    private NodeIdentifier localNodeId;
 
     private long requestTimeoutMsec;
 
     private volatile boolean shuttingDown = false;
 
     /**
-     * Main implementation of {@link RawMessageChannelEndpointHandler}.
+     * Main implementation of {@link MessageChannelEndpointHandler}.
      * 
      * @author Robert Mischke
      */
-    private class RawMessageChannelEndpointHandlerImpl implements RawMessageChannelEndpointHandler {
+    private class RawMessageChannelEndpointHandlerImpl implements MessageChannelEndpointHandler {
 
         @Override
         public InitialNodeInformation exchangeNodeInformation(InitialNodeInformation senderNodeInformation) {
@@ -149,7 +146,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             registerNewOutgoingChannel(channel);
             logger.debug(StringUtils.format("Remote-initiated channel '%s' established from '%s' to '%s' via local SCP %s", channel,
                 ownNodeInformation.getLogDescription(), channel.getRemoteNodeInformation().getLogDescription(),
-                    serverContactPoint));
+                serverContactPoint));
         }
 
         @Override
@@ -167,7 +164,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                     threadPool.execute(new Runnable() {
 
                         @Override
-                        @TaskDescription("Close mirror channel after inbound channel was closed")
+                        @TaskDescription("Communication Layer: Close mirror channel after inbound channel was closed")
                         public void run() {
                             // only set flag if the local channel is not closing already, i.e. this is not a double indirect closing
                             if (channel.getState() == MessageChannelState.ESTABLISHED) {
@@ -184,11 +181,11 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         public NetworkResponse onRawRequestReceived(final NetworkRequest request, final NodeIdentifier sourceId) {
 
             // send "request received" event to listeners
-            trafficListeners.enqueueCallback(new AsyncCallback<RawMessageChannelTrafficListener>() {
+            trafficListeners.enqueueCallback(new AsyncCallback<MessageChannelTrafficListener>() {
 
                 @Override
-                public void performCallback(RawMessageChannelTrafficListener listener) {
-                    listener.onRawRequestReceived(request, sourceId);
+                public void performCallback(MessageChannelTrafficListener listener) {
+                    listener.onRequestReceivedFromChannel(request, sourceId);
                 }
             });
 
@@ -197,7 +194,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
             byte[] contentBytes = request.getContentBytes();
             if (contentBytes != null) {
-                StatsCounter.count("Message bytes received by type (total)", messageType, contentBytes.length);
+                StatsCounter.registerValue("Messaging: Request payload bytes received by type", messageType, contentBytes.length);
             }
 
             // forward or process?
@@ -220,6 +217,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 if (!forwardingRequest.getRequestId().equals(request.getRequestId())) {
                     throw new IllegalStateException("Wrong request id on forwarding");
                 }
+                // TODO restore TTL/hop count checking here?
                 StatsCounter.count("Messages forwarded by type", messageType);
                 response = messageRoutingService.forwardAndAwait(forwardingRequest);
             }
@@ -232,11 +230,11 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
             // send "response generated" event to listeners
             // send "request received" event to listeners
-            trafficListeners.enqueueCallback(new AsyncCallback<RawMessageChannelTrafficListener>() {
+            trafficListeners.enqueueCallback(new AsyncCallback<MessageChannelTrafficListener>() {
 
                 @Override
-                public void performCallback(RawMessageChannelTrafficListener listener) {
-                    listener.onRawResponseGenerated(response, request, sourceId);
+                public void performCallback(MessageChannelTrafficListener listener) {
+                    listener.onResponseSentIntoChannel(response, request, sourceId);
                 }
             });
 
@@ -292,7 +290,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             new AsyncOrderedCallbackManager<MessageChannelLifecycleListener>(SharedThreadPool.getInstance(),
                 AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
         this.trafficListeners =
-            new AsyncOrderedCallbackManager<RawMessageChannelTrafficListener>(SharedThreadPool.getInstance(),
+            new AsyncOrderedCallbackManager<MessageChannelTrafficListener>(SharedThreadPool.getInstance(),
                 AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
         this.rawMessageChannelEndpointHandler = new RawMessageChannelEndpointHandlerImpl();
         this.brokenConnectionListener = new BrokenMessageChannelListenerImpl();
@@ -301,6 +299,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     }
 
     @Override
+    // TODO rework to synchronous call? - misc_ro, Nov 2015
     public Future<MessageChannel> connect(final NetworkContactPoint ncp, final boolean allowDuplex) throws CommunicationException {
 
         if (shuttingDown) {
@@ -315,7 +314,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         Callable<MessageChannel> connectTask = new Callable<MessageChannel>() {
 
             @Override
-            @TaskDescription("Connect to remote node (low-level task)")
+            @TaskDescription("Communication Layer: Connect to remote node (low-level task)")
             public MessageChannel call() throws Exception {
                 MessageChannel channel;
                 try {
@@ -340,7 +339,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     @Override
     public void registerNewOutgoingChannel(final MessageChannel channel) {
-        connectionStates.put(channel, new MessageChannelHealthState());
+        connectionHealthStates.put(channel, new MessageChannelHealthState());
         synchronized (activeOutgoingChannels) {
             activeOutgoingChannels.put(channel.getChannelId(), channel);
         }
@@ -400,79 +399,92 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     }
 
     @Override
-    public void sendRequest(final NetworkRequest request,
+    public void sendDirectMessageAsync(final NetworkRequest request,
         final MessageChannel channel, final NetworkResponseHandler outerResponseHandler) {
+        // default timeout
+        sendDirectMessageAsync(request, channel, outerResponseHandler, configurationService.getRequestTimeoutMsec());
+    }
+
+    @Override
+    public void sendDirectMessageAsync(final NetworkRequest request,
+        final MessageChannel channel, final NetworkResponseHandler outerResponseHandler, int timeoutMsec) {
 
         // sanity check to produce a useful stacktrace (in case a null channel slips through standard handling)
         if (channel == null) {
             throw new NullPointerException("Null channel passed to sendRequest(); request=" + request);
         }
 
-        RawNetworkResponseHandler responseHandler = new RawNetworkResponseHandler() {
+        // except for specialized unit/integration tests, this is a place where all messaging
+        // passes through, so it is a good place to gather statistics - misc_ro
+        final byte[] contentBytes = request.getContentBytes();
+        final String messageType = request.getMessageType();
+        // StatsCounter.count("Messages sent by type", messageType);
+
+        MessageChannelResponseHandler responseHandler = new MessageChannelResponseHandler() {
 
             @Override
             public void onResponseAvailable(NetworkResponse response) {
                 outerResponseHandler.onResponseAvailable(response);
+                byte[] contentBytes = response.getContentBytes();
+                if (contentBytes != null) {
+                    StatsCounter.registerValue("Messaging: Response payload bytes received by type", messageType, contentBytes.length);
+                }
             }
 
             @Override
             public void onChannelBroken(NetworkRequest request, MessageChannel channel) {
                 // send a proper response to the caller, instead of causing a timeout
-                outerResponseHandler.onResponseAvailable(NetworkResponseFactory.generateResponseForExceptionWhileRouting(request,
-                    ownNodeInformation.getNodeIdString(), new ConnectionClosedException("Channel " + channel.getChannelId()
-                        + " was broken and has been closed by " + ownNodeInformation.getNodeIdString())));
+                // note: currently not generating an error id, as there is no useful/helpful information to log here
+                outerResponseHandler.onResponseAvailable(NetworkResponseFactory.generateResponseForChannelCloseWhileWaitingForResponse(
+                    request, ownNodeInformation.getNodeId(), null));
                 handleBrokenChannel(channel);
             }
         };
-
-        // except for specialized unit/integration tests, this is a place where all messaging
-        // passes through, so it is a good place to gather statistics - misc_ro
-        byte[] contentBytes = request.getContentBytes();
-        String messageType = request.getMessageType();
-        StatsCounter.count("Messages sent by type", messageType);
-        if (contentBytes != null) {
-            StatsCounter.count("Message bytes sent by type", messageType, contentBytes.length);
-        }
 
         // check for missing sender information (can be disabled after testing)
         if (request.accessMetaData().getSenderIdString() == null) {
             logger.warn("Sending message of type " + request.getMessageType() + " with empty 'sender' field");
         }
 
-        channel.sendRequest(request, responseHandler, configurationService.getRequestTimeoutMsec());
+        channel.sendRequest(request, responseHandler, timeoutMsec);
 
-        trafficListeners.enqueueCallback(new AsyncCallback<RawMessageChannelTrafficListener>() {
+        trafficListeners.enqueueCallback(new AsyncCallback<MessageChannelTrafficListener>() {
 
             @Override
-            public void performCallback(RawMessageChannelTrafficListener listener) {
-                listener.onRequestSent(request);
+            public void performCallback(MessageChannelTrafficListener listener) {
+                listener.onRequestSentIntoChannel(request);
             }
         });
+
+        if (contentBytes != null) {
+            StatsCounter.registerValue("Messaging: Request payload bytes sent by type", messageType, contentBytes.length);
+        }
     }
 
     @Override
-    public void sendRequest(NetworkRequest request, String channelId, NetworkResponseHandler responseHandler) {
+    public void sendDirectMessageAsync(NetworkRequest request, String channelId, NetworkResponseHandler responseHandler) {
 
         // any MessageChannel seen by outside code is guaranteed to have been registered already;
         // it is possible, however, that it has been unregistered in the meantime because it was closed
         MessageChannel channel = getOutgoingChannelById(channelId);
         if (channel != null) {
-            sendRequest(request, channel, responseHandler);
+            sendDirectMessageAsync(request, channel, responseHandler);
         } else {
-            logger.warn("No message channel for id " + channelId + "; most likely, it has just been closed and therefore deregistered");
-            responseHandler.onResponseAvailable(NetworkResponseFactory.generateResponseForChannelClosedOrBroken(request));
+            // no relevant additional information, so don't create an error id
+            logger.debug("No message channel for id " + channelId + "; most likely, it has just been closed and therefore deregistered");
+            responseHandler.onResponseAvailable(NetworkResponseFactory.generateResponseForCloseOrBrokenChannelDuringRequestDelivery(
+                request, localNodeId, null));
         }
     }
 
     @Override
-    public Future<NetworkResponse> sendRequest(final NetworkRequest request, final MessageChannel channel) {
-        WaitForResponseCallable responseCallable = new WaitForResponseCallable(request, requestTimeoutMsec, localNodeIdString);
-        // responseCallable.setLogMarker(ownNodeInformation.getWrappedNodeId().getNodeId() +
-        // "/sendRequest");
-        sendRequest(request, channel, responseCallable);
-        return threadPool.submit(responseCallable);
+    public NetworkResponse sendDirectMessageBlocking(final NetworkRequest request, final MessageChannel channel, int timeout) {
+        WaitForResponseBlocker responseBlocker = new WaitForResponseBlocker(request, localNodeId);
+        // responseBlocker.setLogMarker(ownNodeInformation.getWrappedNodeId().getNodeId() + "/sendRequest");
+        sendDirectMessageAsync(request, channel, responseBlocker, timeout);
+        return responseBlocker.await(timeout);
     }
-    
+
     @Override
     public NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, NodeIdentifier sourceId) {
         return rawMessageChannelEndpointHandler.onRawRequestReceived(request, sourceId);
@@ -505,7 +517,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     }
 
     @Override
-    public void addTrafficListener(RawMessageChannelTrafficListener listener) {
+    public void addTrafficListener(MessageChannelTrafficListener listener) {
         trafficListeners.addListener(listener);
     }
 
@@ -547,72 +559,23 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 threadPool.execute(new Runnable() {
 
                     @Override
-                    @TaskDescription("Channel health check")
+                    @TaskDescription("Communication Layer: Channel health check")
                     public void run() {
                         // random delay ("jitter") to avoid all connections being checked at once
                         try {
                             try {
-                                Thread.sleep(random.nextInt(CommunicationConfiguration.CONNECTION_HEALTH_CHECK_MAX_JITTER_MSEC));
+                                Thread.sleep(ThreadLocalRandom.current().nextInt(
+                                    CommunicationConfiguration.CONNECTION_HEALTH_CHECK_MAX_JITTER_MSEC));
                             } catch (InterruptedException e) {
                                 logger.debug("Interrupted while waiting to perform the next connection health check, skipping");
                                 return;
                             }
-                            // check if the channel was closed or marked as broken in the meantime
-                            if (!channel.isReadyToUse()) {
-                                logger.debug(StringUtils.format("Channel %s is %s; skipping scheduled health check", channel.getChannelId(),
-                                    channel.getState()));
-                                return;
-                            }
-                            MessageChannelHealthState connectionState = connectionStates.get(channel);
-                            // synchronize on lock object to prevent concurrent checks
-                            synchronized (connectionState.healthCheckInProgressLock) {
-                                if (verboseLogging) {
-                                    logger.debug("Performing health check on " + channel);
-                                }
-                                boolean checkSuccessful = performConnectionHealthCheck(channel);
-                                boolean considerChannelBroken = false;
-                                // keep synchronization on state object short
-                                synchronized (connectionState) {
-                                    if (checkSuccessful) {
-                                        // log if this was a recovery
-                                        if (connectionState.healthCheckFailureCount > 0) {
-                                            logger.info(StringUtils.format(
-                                                "Channel %s to %s passed its health check after %d previous failures",
-                                                channel.getChannelId(),
-                                                channel.getRemoteNodeInformation().getNodeId(),
-                                                connectionState.healthCheckFailureCount));
-                                        }
-                                        // reset counter
-                                        connectionState.healthCheckFailureCount = 0;
-                                    } else {
-                                        // increase counter and log
-                                        connectionState.healthCheckFailureCount++;
-                                        logger.warn(StringUtils.format(
-                                            "Channel %s to %s failed a health check (%d consecutive failures)",
-                                            channel.getChannelId(),
-                                            channel.getRemoteNodeInformation().getNodeId(),
-                                            connectionState.healthCheckFailureCount));
-                                        // limit exceeded? -> consider broken
-                                        if (connectionState.healthCheckFailuresAtOrAboveLimit()) {
-                                            considerChannelBroken = true;
-                                        }
-                                    }
-                                }
-                                if (considerChannelBroken) {
-                                    threadPool.execute(new Runnable() {
-
-                                        @Override
-                                        @TaskDescription("Close broken channel after health check failure")
-                                        public void run() {
-                                            handleBrokenChannel(channel);
-                                        }
-                                    });
-                                }
-                            }
+                            performHealthCheckAndActOnResult(channel);
                         } catch (InterruptedException e) {
                             logger.debug("Interruption during channel health check", e);
                         }
                     }
+
                 }, uniqueTaskId);
             }
         }
@@ -697,7 +660,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
      */
     public void activate() {
         ownNodeInformation = configurationService.getInitialNodeInformation();
-        localNodeIdString = ownNodeInformation.getNodeId().getIdString();
+        localNodeId = ownNodeInformation.getNodeId();
         localNodeIsRelay = configurationService.isRelay();
         requestTimeoutMsec = configurationService.getRequestTimeoutMsec();
         nodeInformationRegistry = NodeInformationRegistryImpl.getInstance();
@@ -726,6 +689,73 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         ownNodeInformation = nodeInformation;
     }
 
+    private void performHealthCheckAndActOnResult(final MessageChannel channel) throws InterruptedException {
+
+        final MessageChannelHealthState connectionState = connectionHealthStates.get(channel);
+        if (connectionState == null) {
+            logger.error("Internal error: Found no health state object for channel " + channel + "; closing channel");
+            triggerAsyncClosingOfBrokenChannel(channel);
+            return;
+        }
+
+        // synchronize on lock object to prevent concurrent checks
+        synchronized (connectionState.healthCheckInProgressLock) {
+            // check if the channel was closed or marked as broken in the meantime
+            if (!channel.isReadyToUse()) {
+                logger.debug(StringUtils.format("Channel %s is %s; skipping scheduled health check",
+                    channel.getChannelId(), channel.getState()));
+                return;
+            }
+            if (verboseLogging) {
+                logger.debug("Performing health check on " + channel);
+            }
+            boolean checkSuccessful = performConnectionHealthCheckRequestResponse(channel);
+            boolean considerChannelBroken = false;
+            // keep synchronization on state object short
+            synchronized (connectionState) {
+                if (checkSuccessful) {
+                    // log if this was a recovery
+                    if (connectionState.healthCheckFailureCount > 0) {
+                        logger.debug(StringUtils.format(
+                            "Channel %s to %s passed its health check after %d previous failures",
+                            channel.getChannelId(),
+                            channel.getRemoteNodeInformation().getNodeId(),
+                            connectionState.healthCheckFailureCount));
+                    }
+                    // reset counter
+                    connectionState.healthCheckFailureCount = 0;
+                } else {
+                    // increase counter and log
+                    connectionState.healthCheckFailureCount++;
+                    // TODO try to merge with other log message ("Received no response for a health check ...")
+                    logger.debug(StringUtils.format(
+                        "Channel %s to %s failed a health check (%d consecutive failures)",
+                        channel.getChannelId(),
+                        channel.getRemoteNodeInformation().getNodeId(),
+                        connectionState.healthCheckFailureCount));
+                    // limit exceeded? -> consider broken
+                    if (connectionState.healthCheckFailuresAtOrAboveLimit()) {
+                        considerChannelBroken = true;
+                    }
+                }
+            }
+            if (considerChannelBroken) {
+                triggerAsyncClosingOfBrokenChannel(channel);
+            }
+        }
+    }
+
+    private void triggerAsyncClosingOfBrokenChannel(final MessageChannel channel) {
+        threadPool.execute(new Runnable() {
+
+            @Override
+            @TaskDescription("Communication Layer: Close broken channel after health check failure")
+            public void run() {
+                handleBrokenChannel(channel);
+            }
+        });
+    }
+
     /**
      * Performs a single request/response attempt with a random token. The receiver should reply with the same token as the response
      * content.
@@ -734,35 +764,65 @@ public class MessageChannelServiceImpl implements MessageChannelService {
      * @return true if the check was successful
      * @throws InterruptedException on thread interruption
      */
-    private boolean performConnectionHealthCheck(final MessageChannel channel) throws InterruptedException {
-        String randomToken = Integer.toString(random.nextInt());
+    private boolean performConnectionHealthCheckRequestResponse(final MessageChannel channel) throws InterruptedException {
+        String randomToken = Integer.toString(ThreadLocalRandom.current().nextInt());
         byte[] contentBytes = MessageUtils.serializeSafeObject(randomToken);
         NetworkRequest request =
             NetworkRequestFactory.createNetworkRequest(contentBytes, ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK,
                 ownNodeInformation.getNodeId(), null);
-        Future<NetworkResponse> future = sendRequest(request, channel);
-        try {
-            NetworkResponse response = future.get(CommunicationConfiguration.CONNECTION_HEALTH_CHECK_TIMEOUT_MSEC, TimeUnit.MILLISECONDS);
-            if (!response.isSuccess() && response.getResultCode() != ProtocolConstants.ResultCode.CHANNEL_CLOSED) {
-                logger.warn("Unexpected result: Received non-sucess response on channel health check for '" + channel + SINGLE_QUOTE);
+        NetworkResponse response =
+            sendDirectMessageBlocking(request, channel, CommunicationConfiguration.CONNECTION_HEALTH_CHECK_TIMEOUT_MSEC);
+
+        if (response.isSuccess()) {
+            try {
+                Serializable deserializedContent = response.getDeserializedContent();
+                // verify that the response contained the same token; this check *should* never fail
+                if (!randomToken.equals(deserializedContent)) {
+                    logger.warn(StringUtils.format(
+                        "Received successful response for a health check on channel '%s', but it contained unexpected content: %s",
+                        channel.getChannelId(), deserializedContent));
+                    return false;
+                }
+            } catch (SerializationException e) {
+                logger.warn(StringUtils.format(
+                    "Received successful response for a health check on channel '%s', but there was an error deserializing its content",
+                    channel.getChannelId()), e);
                 return false;
             }
             if (verboseLogging) {
                 logger.debug("Health check on channel " + channel + " passed");
             }
-            // verify that the response contained the same token; this check *should* never fail
-            if (!randomToken.equals(response.getDeserializedContent())) {
-                logger.warn("Received unexpected content on channel health check: " + response.getDeserializedContent());
-            }
             return true;
-        } catch (ExecutionException e) {
-            logger.debug("Exception during channel health check for channel " + channel.getChannelId(), e);
-        } catch (SerializationException e) {
-            logger.debug("Exception during channel health check for channel " + channel.getChannelId(), e);
-        } catch (TimeoutException e) {
-            logger.debug("Timeout during channel health check for channel " + channel.getChannelId());
+        } else {
+            final int numericResultCode = response.getResultCode().getCode();
+            Serializable deserializedContent = null;
+            try {
+                deserializedContent = response.getDeserializedContent();
+            } catch (SerializationException e) {
+                logger.warn(
+                    StringUtils.format(
+                        "Received non-successful response for a health check on channel '%s' (error code %d), "
+                            + "and there was also an error deserializing its content", channel.getChannelId(), numericResultCode), e);
+            }
+            if (response.getResultCode() == ResultCode.TIMEOUT_WAITING_FOR_RESPONSE) {
+                logger.warn(StringUtils.format(
+                    "Received no response for a health check on message channel '%s' within %,d milliseconds; "
+                        + "the connection or the remote instance may be overloaded",
+                    channel.getChannelId(), CommunicationConfiguration.CONNECTION_HEALTH_CHECK_TIMEOUT_MSEC));
+            } else if (response.getResultCode() == ResultCode.CHANNEL_OR_RESPONSE_LISTENER_SHUT_DOWN_WHILE_WAITING_FOR_RESPONSE) {
+                // in this case, the channel should be shutting down anyway, so don't log a health check failure
+                logger.debug(StringUtils.format(
+                    "Message channel '%s' was closed while waiting for a health check response; "
+                        + "not counting as an additional health check failure",
+                    channel.getChannelId(), CommunicationConfiguration.CONNECTION_HEALTH_CHECK_TIMEOUT_MSEC));
+                return true;
+            } else {
+                logger.warn(StringUtils.format("Received non-sucess response for a health check on channel '%s': "
+                    + "error code %d, content: %s", channel.getChannelId(), numericResultCode, deserializedContent));
+            }
+            return false;
         }
-        return false;
+
     }
 
     private void handleBrokenChannel(MessageChannel channel) {
@@ -771,7 +831,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         if (channel.getRemoteNodeInformation() != null) {
             remoteNodeText = channel.getRemoteNodeInformation().getNodeId().toString();
         }
-        logger.warn("Closing broken channel to " + remoteNodeText + " (id=" + channel.getChannelId() + ")");
+        logger.debug("Closing broken channel to " + remoteNodeText + " (id=" + channel.getChannelId() + ")");
         if (channel.markAsBroken()) {
             unregisterClosedOrBrokenChannel(channel);
         }

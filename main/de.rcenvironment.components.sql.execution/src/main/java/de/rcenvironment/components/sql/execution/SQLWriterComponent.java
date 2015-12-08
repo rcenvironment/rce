@@ -23,6 +23,7 @@ import de.rcenvironment.components.sql.common.InputMapping;
 import de.rcenvironment.components.sql.common.InputMapping.ColumnMapping;
 import de.rcenvironment.components.sql.common.InputMode;
 import de.rcenvironment.components.sql.common.SqlComponentConstants;
+import de.rcenvironment.core.component.model.api.Deprecated;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DateTimeTD;
@@ -37,6 +38,7 @@ import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
  *
  * @author Christian Weiss
  */
+@Deprecated
 public class SQLWriterComponent extends AbstractSQLComponent {
 
     private InputMode inputMode;
@@ -76,9 +78,9 @@ public class SQLWriterComponent extends AbstractSQLComponent {
 
                     final TypedDatum[][] data = input.get(inputName).toArray();
                     
-                    for (int row = 0; row < data.length; row++) {
+                    for (TypedDatum[] element : data) {
                         for (int col = 0; col < data[0].length; col++) {
-                            TypedDatum td = data[row][col];
+                            TypedDatum td = element[col];
                             switch (td.getDataType()) {
                             case ShortText:
                                 String valueString = ((ShortTextTD) td).getShortTextValue();

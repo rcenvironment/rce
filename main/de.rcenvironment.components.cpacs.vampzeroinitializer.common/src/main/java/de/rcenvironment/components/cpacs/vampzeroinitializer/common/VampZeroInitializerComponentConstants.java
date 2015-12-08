@@ -29,7 +29,13 @@ public final class VampZeroInitializerComponentConstants {
     public static final String COMPONENTNAME = "VAMPzero GUI";
 
     /** Constant. */
-    public static final String XMLCONTENT = "xmlContent";   
+    public static final String XMLCONTENT = "xmlContent";
+    
+    /** Constant. */
+    public static final String OUTPUT_NAME_CPACS = "CPACS";
+    
+    /** Constant. */
+    public static final String CPACS_FILENAME = "cpacs.xml";
     
     private VampZeroInitializerComponentConstants() {}
 }

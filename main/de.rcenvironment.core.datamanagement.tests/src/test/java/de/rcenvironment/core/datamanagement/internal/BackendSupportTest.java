@@ -146,7 +146,8 @@ public class BackendSupportTest {
         EasyMock.expect(bundleContext.getBundle()).andReturn(bundleMock).anyTimes();
 
         // catalog backend
-        String catalogFilterString = OPEN_BRACKET + MetaDataBackendService.PROVIDER + EQUALS_SIGN + catalogBackendProvider + CLOSE_BRACKET;
+        String catalogFilterString = OPEN_BRACKET + MetaDataBackendService.PROVIDER + EQUALS_SIGN
+            + catalogBackendProvider + CLOSE_BRACKET;
         ServiceReference catalogServiceRef = EasyMock.createNiceMock(ServiceReference.class);
         ServiceReference[] catalogServiceRefs = { catalogServiceRef };
         try {

@@ -17,6 +17,7 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
@@ -131,7 +132,7 @@ public class DeploymentOperationsImpl {
         if (execfile.exists()) {
             //If the file "rce" exists, this is a linux platform and we have to make the file executable.
             final LocalApacheCommandLineExecutor executor = new LocalApacheCommandLineExecutor(installationDir);
-            executor.start(String.format("chmod +x %s", execfile.getAbsolutePath()));
+            executor.start(StringUtils.format("chmod +x %s", execfile.getAbsolutePath()));
         }
     }
 

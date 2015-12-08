@@ -14,6 +14,8 @@ import java.util.concurrent.TimeoutException;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.Timeout;
 
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
@@ -37,6 +39,12 @@ public abstract class AbstractVirtualInstanceTest extends AbstractTransportBased
     protected static final String ERROR_MSG_A_NO_ROUTE_TO_B = "%s could not find a route to %s";
 
     protected static int testSize;
+
+    /**
+     * This sets a conservative timeout for all derived tests; individual test may set stricter timeouts. - misc_ro
+     */
+    @Rule
+    public Timeout globalTimeout = new Timeout(DEFAULT_SAFEGUARD_TEST_TIMEOUT);
 
     protected VirtualInstanceTestUtils instanceUtils;
 

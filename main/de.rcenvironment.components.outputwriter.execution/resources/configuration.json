@@ -11,6 +11,10 @@
         {
         	"key": "SelectRootOnWorkflowStart",
         	"defaultValue": "true"
+        },
+        {
+        	"key": "outputLocations",
+        	"defaultValue": "{}"
         }
     ],
     "placeholders": [

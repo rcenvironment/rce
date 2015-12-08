@@ -9,6 +9,8 @@ package de.rcenvironment.core.configuration.bootstrap.internal;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
@@ -32,6 +34,8 @@ public class Activator implements BundleActivator {
             // circumvent CheckStyle rule to print fatal errors before the log system is initialized
             PrintStream sysErr = System.err;
             sysErr.println("Error: " + e.getMessage());
+            // log the stacktrace without introducing a dependency on non-JRE log packages
+            Logger.getLogger("bootstrap").log(Level.SEVERE, "Error in early startup", e);
             System.exit(1);
         }
     }

@@ -5,7 +5,28 @@
             "dataTypes": [
                 "Boolean"
             ],
-            "defaultDataType": "Boolean"
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "InnerLoopEndpoint"
+                }
+            }
+        },
+        {
+            "name": "Done",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            }
         }
     ],
     "dynamicOutputs": [
@@ -33,8 +54,28 @@
                     "visibility": "shown",
                     "defaultValue": "1",
                     "validation": "required"
+                },
+                 "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "SelfLoopEndpoint"
                 }
             }
+        },
+        {
+            "identifier": "toForward",
+            "dataTypes": [
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
+            ],
+            "defaultDataType": "FileReference",
+            "readOnly": "true"
         }
     ]
 }

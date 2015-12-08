@@ -1,0 +1,90 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _7RlJ4GaBEeWE-JfpwaFXMg
+Element-Name: CreateASimpleConnection
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _7XoukGaBEeWE-JfpwaFXMg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 9/29/15 10:23 AM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+get-button "Create workflow (Ctrl+Shift+N)" | click
+with [get-window "New Workflow"] {
+    get-editbox -after [get-label "Workflow name:"] | type-text wf
+    get-button Finish | click
+}
+with [get-editor "wf.wf"] {
+    with [get-palette] {
+        with [get-palette-entry Cluster] {
+            mouse-move 48 6 -height 23 -width 125
+            mouse-move 69 1 -height 23 -width 125
+        }
+        with [get-palette-entry Joiner] {
+            mouse-move 56 8 button1 -height 23 -width 125
+            mouse-press 56 8 button1 -height 23 -width 125
+            mouse-release 56 8 button1 524288 -height 23 -width 125
+            mouse-press 56 8 button1 -height 23 -width 125
+            mouse-double-click 56 8 button1 -height 23 -width 125
+        }
+    }
+    with [get-palette | get-palette-entry Joiner] {
+        mouse-release 56 8 button1 524288 -height 23 -width 125
+        mouse-press 56 8 button1 -height 23 -width 125
+        mouse-release 56 8 button1 524288 -height 23 -width 125
+        mouse-press 56 8 button1 -height 23 -width 125
+        mouse-double-click 56 8 button1 -height 23 -width 125
+    }
+    get-palette | get-palette-entry Joiner | mouse-release 56 8 button1 524288 -height 23 -width 125
+    with [get-diagram -index 1] {
+        with [get-edit-part -className WorkflowPart | get-edit-part -text "Joiner (1)"] {
+            mouse-move 14 17 button1 -height 38 -width 38
+            mouse-press 14 17 button1 -height 38 -width 38
+            mouse-move 35 17 -mask 524288 -height 38 -width 38
+        }
+        mouse-drag 177 54 button1 524288 -height 627 -width 1202
+        mouse-release 177 54 button1 524288 -height 627 -width 1202
+        get-edit-part -className WorkflowPart | get-edit-part -text "Joiner (1)" | mouse-hover 15 17 -height 38 
+            -width 38
+        key-type "M3+d"
+        with [get-edit-part -className WorkflowPart] {
+            with [get-edit-part -text Joiner] {
+                mouse-move 22 19 button1 -height 38 -width 38
+                mouse-press 22 19 button1 -height 38 -width 38
+                mouse-release 22 19 button1 524288 -height 38 -width 38
+            }
+            with [get-edit-part -text "Joiner (1)"] {
+                mouse-move 19 22 button1 -height 38 -width 38
+                mouse-press 19 22 button1 -height 38 -width 38
+                mouse-release 19 22 button1 524288 -height 38 -width 38
+            }
+        }
+    }
+}
+with [get-window "Connection Editor"] {
+    with [get-group Source | get-tree] {
+        select "Joiner/Joined"
+        get-item "Joiner/Joined" | drag-start 20 2
+    }
+    with [get-group Target | get-tree] {
+        get-item "Joiner \\(1\\)/Input 001" | drag-enter "-59" 2 -detail move
+        get-item "Joiner \\(1\\)/Input 001" | drag-over 2 4 -detail move
+        get-item "Joiner \\(1\\)/Input 001" | drag-exit
+        get-item "Joiner \\(1\\)/Input 001" | drag-accept 2 4 -detail move
+    }
+    get-group Source | get-tree | drag-set-data
+    get-group Target | get-tree | get-item "Joiner \\(1\\)/Input 001" | drop 2 4 -detail move
+    get-group Source | get-tree | drag-end -detail move
+    get-button OK | click
+}
+get-editor "wf.wf" | get-diagram -index 1 | mouse-hover 572 606 -height 627 -width 1202
+with [get-editor "wf.wf" | get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+    get-property "getConnections().size()" | equals 1 | verify-true
+    get-property "getModel().getConnections().size()" | equals 1 | verify-true
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

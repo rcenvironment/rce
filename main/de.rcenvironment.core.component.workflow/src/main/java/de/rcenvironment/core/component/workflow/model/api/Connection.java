@@ -23,7 +23,7 @@ import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
  * @author Heinrich Wendel
  * @author Oliver Seebach
  */
-public class Connection extends PropertiesChangeSupport implements Serializable {
+public class Connection extends PropertiesChangeSupport implements Serializable, Comparable<Connection> {
 
     /** Property that is fired when a bendpoint has been changed. */
     public static final String PROPERTY_BENDPOINT = "de.rcenvironment.bendpoint";
@@ -239,6 +239,21 @@ public class Connection extends PropertiesChangeSupport implements Serializable 
     public void removeAllBendpoints(){
         bendpoints = new ArrayList<>();
         firePropertyChange(PROPERTY_BENDPOINT);
+    }
+
+    @Override
+    public int compareTo(Connection o) {
+        int result = getSourceNode().compareTo(o.getSourceNode());
+        if (result == 0) {
+            result = getOutput().compareTo(o.getOutput());
+            if (result == 0) {
+                result = getTargetNode().compareTo(o.getTargetNode());
+                if (result == 0) {
+                    result = getInput().compareTo(o.getInput());
+                }
+            }
+        }
+        return result;
     }
     
 }

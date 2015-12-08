@@ -27,6 +27,6 @@
     <property name="rce.component.color" type="String" value="yellow"/>
     <property name="rce.component.shape" type="String" value="circle"/>
     
-    <property name="rce.component.canHandleIndefiniteInputDataTypes" type="String" value="true"/>
+    <property name="rce.component.canHandleNotAValueDataTypes" type="String" value="true"/>
     
 </scr:component> 

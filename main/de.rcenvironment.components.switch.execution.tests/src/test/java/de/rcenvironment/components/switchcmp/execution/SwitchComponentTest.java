@@ -9,6 +9,8 @@
 package de.rcenvironment.components.switchcmp.execution;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,11 +20,10 @@ import java.util.Random;
 
 import junit.framework.Assert;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -55,8 +56,6 @@ public class SwitchComponentTest {
     private static final String SHIFT = " << 3";
 
     private static final String AND = " and ";
-
-    private static final Log LOGGER = LogFactory.getLog(SwitchComponent.class);
 
     private static final String INPUT_X = "x";
 
@@ -131,19 +130,25 @@ public class SwitchComponentTest {
 
     /**
      * Test if syntax errors in script are recognized.
+     * 
+     * Note: Temporary disabled due to: https://www.sistec.dlr.de/mantis/view.php?id=12844. Not reworked yet because the idea
+     * behind not immediately clear -seid_do
+     * 
      */
+    @Ignore
     @Test
     public void testRandomScript() {
         context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME, DataType.Float,
             false,
             null);
         context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
-        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, createRandomScript());
+        String randomScript = createRandomScript();
+        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, randomScript);
         try {
             component.start();
-            component.processInputs();
+            fail("ComponentException expected when starting component with condition: " + randomScript);
         } catch (ComponentException e) {
-            LOGGER.error("Unexpected error with seed: " + seed, e);
+            assertTrue(true);
         }
     }
 

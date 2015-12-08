@@ -79,10 +79,10 @@ public class ConsoleColumnSorter extends ViewerSorter {
             case 0:
                 if (cr1.getType() == cr2.getType()) {
                     returnValue = FIRST_IS_EQUAL;
-                } else if (cr1.getType() == ConsoleRow.Type.STDERR) {
+                } else if (cr1.getType() == ConsoleRow.Type.TOOL_ERROR) {
                     returnValue = FIRST_IS_GREATER;
-                } else if (cr1.getType() == ConsoleRow.Type.STDOUT) { 
-                    if (cr2.getType() == ConsoleRow.Type.STDERR) {
+                } else if (cr1.getType() == ConsoleRow.Type.TOOL_OUT) { 
+                    if (cr2.getType() == ConsoleRow.Type.TOOL_ERROR) {
                         returnValue = FIRST_IS_LESS;
                     } else {
                         returnValue = FIRST_IS_GREATER;

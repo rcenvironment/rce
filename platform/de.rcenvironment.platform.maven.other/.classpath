@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
-	<classpathentry exported="true" kind="lib" path="lib/maven/commons-csv-1.1.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
 	<classpathentry kind="con" path="org.eclipse.pde.core.requiredPlugins"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/jsch-0.1.45.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/commons-codec-1.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/poi-3.8.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/poi-ooxml-3.8.jar"/>
@@ -24,5 +22,9 @@
 	<classpathentry exported="true" kind="lib" path="lib/maven/jodd-mail-3.6.2.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/mail-1.4.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/xz-1.0.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/commons-csv-1.1.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/lanterna-2.1.9.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/manual/jBCrypt-0.4.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/jsch-0.1.53.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

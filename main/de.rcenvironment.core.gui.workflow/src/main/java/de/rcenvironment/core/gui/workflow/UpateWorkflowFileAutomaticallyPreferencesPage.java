@@ -27,7 +27,7 @@ public class UpateWorkflowFileAutomaticallyPreferencesPage extends FieldEditorPr
     
     @Override
     protected void createFieldEditors() {
-        addField(new BooleanFieldEditor(LoadingWorkflowDescriptionHelper.PREFS_KEY_UPDATEAUTOMATICALLY,
+        addField(new BooleanFieldEditor(GUIWorkflowDescriptionLoaderCallback.PREFS_KEY_UPDATEAUTOMATICALLY,
             Messages.updateIncompatibleVersionSilently, getFieldEditorParent()));
     }
 

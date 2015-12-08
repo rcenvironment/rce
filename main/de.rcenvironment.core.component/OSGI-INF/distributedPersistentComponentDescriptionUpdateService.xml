@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" name="Distributed Persistent Component Description Update Service">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Distributed Persistent Component Description Update Service">
 	<implementation class="de.rcenvironment.core.component.update.internal.DistributedPersistentComponentDescriptionUpdateServiceImpl"/>
 	<service>
 		<provide interface="de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService"/>

@@ -1,0 +1,22 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="File Service">
+
+	<implementation class="de.rcenvironment.core.communication.file.service.legacy.internal.RemotableFileStreamAccessServiceImpl" /> 
+	<service>
+		<provide interface="de.rcenvironment.core.communication.file.service.legacy.api.RemotableFileStreamAccessService"/>
+	</service>
+	
+	<reference bind="bindMetadataBackendService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.datamanagement.backend.MetaDataBackendService"
+ 		name="Query Service"
+ 		policy="dynamic"
+ 	/>
+ 	
+ 	<reference bind="bindFileDataService"
+ 		cardinality="1..1"
+ 		interface="de.rcenvironment.core.datamanagement.FileDataService"
+ 		name="File Data Service"
+ 		policy="dynamic"
+ 	/>
+ 	
+</scr:component>

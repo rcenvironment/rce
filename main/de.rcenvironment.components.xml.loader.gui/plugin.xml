@@ -18,7 +18,7 @@
          <propertySection
                tab="workflow.editor.tab.loader.XPathChooser"
                enablesFor="1"
-               class="de.rcenvironment.cpacs.gui.xpathchooser.XPathChooserPropertyView"
+               class="de.rcenvironment.core.gui.xpathchooser.XPathChooserPropertyView"
                id="workflow.editor.tab.loader.XPathChooser.Section"
                filter="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentFilter">
          </propertySection>
@@ -50,7 +50,7 @@
                <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
+               label="Workflow Data"
                afterTab="workflow.editor.tab.loader.XPathChooser">
          </propertyTab>
         </propertyTabs>

@@ -1,0 +1,27 @@
+{
+    "dynamicInputs":[
+        {
+            "identifier":"default",
+            "dataTypes":[
+                "ShortText",
+                "Integer",
+                "Float",
+                "Boolean",
+                "SmallTable"
+            ],
+            "defaultDataType":"Integer",
+            "inputHandlingOptions":[
+                "Single",
+                "Constant",
+                "Queue"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required",
+                "RequiredIfConnected",
+                "NotRequired"
+            ],
+            "defaultInputExecutionConstraint":"Required"
+        }
+    ]
+}

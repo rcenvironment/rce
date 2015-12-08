@@ -26,6 +26,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 import org.codehaus.jackson.util.DefaultPrettyPrinter.Lf2SpacesIndenter;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 
 /**
@@ -37,6 +38,8 @@ import de.rcenvironment.core.configuration.ConfigurationSegment;
 public class ConfigurationStoreImpl implements ConfigurationStore {
 
     private File storageFile;
+
+    private boolean backupFileCreated = false;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -61,7 +64,7 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
             throw new IOException("Malformed configuration file: " + e.toString());
         }
     }
-    
+
     // mapper.readTree() (the way to read the file in the first place) does not check the syntax of the entire file, but that's needed to
     // inform the user about a malformed configuration file. Feel free to improve the syntax check. Didn't find any nicer.
     private void validateJsonSyntax(ObjectMapper mapper) throws JsonParseException, IOException {
@@ -93,12 +96,24 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
     }
 
     @Override
-    public void update(ConfigurationSegment configuration) throws IOException {
+    public void update(ConfigurationSegment segment) throws ConfigurationException, IOException {
+        final WritableConfigurationSegmentImpl rootSegment = ((WritableConfigurationSegmentImpl) segment).getRootSegment();
+        if (rootSegment != segment) {
+            // could be made to work nonetheless, but enforce good calling practice
+            throw new IOException("The parameter passed to the save() method was not a root segment");
+        }
+        // TODO >7.0.0: add proper locking! not thread-safe at the moment!
         // TODO >6.0.0: quick & dirty; make more reliable
-        File backupFile = new File(storageFile.getParentFile(), storageFile.getName() + "." + System.currentTimeMillis() + ".bak");
-        log.debug("Creating backup of existing configuration file at " + backupFile);
-        Files.move(storageFile.toPath(), backupFile.toPath());
-        writeJsonFile(((WritableConfigurationSegmentImpl) configuration).getRootSegment().getSegmentRootNode(), storageFile);
+
+        // only create single backup file per instance lifetime
+        if (!backupFileCreated) {
+            File backupFile = new File(storageFile.getParentFile(), storageFile.getName() + "." + System.currentTimeMillis() + ".bak");
+            log.debug("Creating backup of existing configuration file at " + backupFile);
+            Files.move(storageFile.toPath(), backupFile.toPath());
+            backupFileCreated = true;
+        }
+
+        writeJsonFile(rootSegment.getSegmentRootNode(), storageFile);
         // NOTE: for debugging only
         // log.debug(FileUtils.readFileToString(storageFile));
     }

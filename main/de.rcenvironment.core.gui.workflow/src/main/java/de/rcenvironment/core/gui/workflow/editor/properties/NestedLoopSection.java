@@ -8,8 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.editor.properties;
 
-import java.util.HashMap;
-
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -20,7 +18,8 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
-import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -40,7 +39,7 @@ public class NestedLoopSection extends ValidatingWorkflowNodePropertySection {
         final Composite sectionInstallationClient = factory.createFlatFormComposite(sectionProperties);
         sectionInstallationClient.setLayout(new GridLayout(1, false));
         final Button button = factory.createButton(sectionInstallationClient, Messages.isNestedLoop, SWT.CHECK);
-        button.setData(CONTROL_PROPERTY_KEY, ComponentConstants.CONFIG_KEY_IS_NESTED_LOOP);
+        button.setData(CONTROL_PROPERTY_KEY, LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP);
         button.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -72,7 +71,7 @@ public class NestedLoopSection extends ValidatingWorkflowNodePropertySection {
 
         @Override
         protected void execute2() {
-            addOuterLoopOutput(getWorkflowNode());
+            addOuterLoopInput(getWorkflowNode());
         }
 
         @Override
@@ -96,19 +95,20 @@ public class NestedLoopSection extends ValidatingWorkflowNodePropertySection {
 
         @Override
         public final void undo2() {
-            addOuterLoopOutput(getWorkflowNode());
+            addOuterLoopInput(getWorkflowNode());
         }
 
     }
 
-    private void addOuterLoopOutput(WorkflowNode node) {
+    private void addOuterLoopInput(WorkflowNode node) {
         EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
-        manager.addDynamicEndpointDescription(ComponentConstants.OUPUT_ID_OUTERLOOP_DONE,
-            ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, DataType.Boolean, new HashMap<String, String>());
+        manager.addDynamicEndpointDescription(LoopComponentConstants.INPUT_ID_OUTER_LOOP_DONE,
+            LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, DataType.Boolean, 
+            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
     }
 
     private void removeOuterLoopOutput(WorkflowNode node) {
         EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
-        manager.removeDynamicEndpointDescription(ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
+        manager.removeDynamicEndpointDescription(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
     }
 }

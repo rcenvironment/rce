@@ -15,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.concurrent.Callable;
 import java.util.regex.Pattern;
 
@@ -24,18 +23,18 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
-import de.rcenvironment.core.notification.NotificationHeader;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
+import de.rcenvironment.core.notification.api.RemotableNotificationService;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link DistributedNotificationService}.
@@ -86,7 +85,7 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
 
     @Override
     public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber,
-        NodeIdentifier publishPlatform) throws CommunicationException {
+        NodeIdentifier publishPlatform) throws RemoteOperationException {
         try {
             Pattern.compile(notificationId);
         } catch (RuntimeException e) {
@@ -94,13 +93,12 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
             throw e;
         }
         try {
-            return ((NotificationService) communicationService.getService(NotificationService.class, publishPlatform, context))
-                .subscribe(notificationId, subscriber);
-        } catch (RuntimeException e) {
+            final RemotableNotificationService remoteService = (RemotableNotificationService) communicationService.getRemotableService(
+                RemotableNotificationService.class, publishPlatform);
+            return remoteService.subscribe(notificationId, subscriber);
+        } catch (RemoteOperationException e) {
             String message = MessageFormat.format("Failed to subscribe to publisher @{0}: ", publishPlatform);
-            //LOGGER.error(message, e);
-            // TODO use better exception type here? - misc_ro
-            throw new CommunicationException(message + e.toString());
+            throw new RemoteOperationException(message + e.toString());
         }
     }
 
@@ -142,49 +140,28 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
 
     @Override
     public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
-        throws CommunicationException {
+        throws RemoteOperationException {
         try {
-            ((NotificationService) communicationService.getService(NotificationService.class, publishPlatform, context))
-                .unsubscribe(notificationId, subscriber);
-        } catch (RuntimeException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to unsubscribe from remote publisher @{0}: ", publishPlatform)
+            getRemoteNotificationService(publishPlatform).unsubscribe(notificationId, subscriber);
+        } catch (RuntimeException | RemoteOperationException e) {
+            throw new RemoteOperationException(MessageFormat.format("Failed to unsubscribe from remote publisher @{0}: ", publishPlatform)
                 + e.getMessage());
-        }
-    }
-
-    @Override
-    public Map<String, SortedSet<NotificationHeader>> getNotificationHeaders(String notificationId, NodeIdentifier publishPlatform) {
-        try {
-            return ((NotificationService) communicationService.getService(NotificationService.class, publishPlatform, context))
-                .getNotificationHeaders(notificationId);
-        } catch (RuntimeException e) {
-            String message = MessageFormat.format("Failed to get remote notification headers @{0}: ", publishPlatform);
-            LOGGER.error(message, e);
-            throw new IllegalStateException(message, e);
         }
     }
 
     @Override
     public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) {
         try {
-            return ((NotificationService) communicationService.getService(NotificationService.class, publishPlatform, context))
-                .getNotifications(notificationId);
-        } catch (RuntimeException e) {
+            return getRemoteNotificationService(publishPlatform).getNotifications(notificationId);
+        } catch (RuntimeException | RemoteOperationException e) {
             String message = MessageFormat.format("Failed to get remote notifications @{0}: ", publishPlatform);
             LOGGER.error(message, e);
             throw new IllegalStateException(message, e);
         }
     }
 
-    @Override
-    public Notification getNotification(NotificationHeader header) {
-        try {
-            return ((NotificationService) communicationService
-                .getService(NotificationService.class, header.getPublishPlatform(), context)).getNotification(header);
-        } catch (RuntimeException e) {
-            String message = MessageFormat.format("Failed to get remote notification @{0}: ", header.getPublishPlatform());
-            LOGGER.error(message, e);
-            throw new IllegalStateException(message, e);
-        }
+    private RemotableNotificationService getRemoteNotificationService(NodeIdentifier publishPlatform) throws RemoteOperationException {
+        return (RemotableNotificationService) communicationService.getRemotableService(RemotableNotificationService.class, publishPlatform);
     }
+
 }

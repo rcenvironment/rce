@@ -38,7 +38,7 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
-import de.rcenvironment.core.datamanagement.DataService;
+import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.ComponentInstance;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
@@ -59,6 +59,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases for {@link DerbyMetaDataBackendServiceImpl}.
@@ -70,7 +71,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 public class DerbyMetaDataBackendTest {
 
     // "safety net" test timeout to avoid blocking continuous integration test runs
-    private static final int COMPLEX_SCENARIO_TEST_TIMEOUT = 60000;
+    private static final int COMPLEX_SCENARIO_TEST_TIMEOUT = 300000;
 
     private static final String STRING_TEST_RUN = "TestRun";
 
@@ -92,9 +93,10 @@ public class DerbyMetaDataBackendTest {
      * Sets the whole test case up.
      * 
      * @throws IOException on initialization failure
+     * @throws RemoteOperationException standard remote operation exception
      */
     @BeforeClass
-    public static void setUpTestcase() throws IOException {
+    public static void setUpTestcase() throws IOException, RemoteOperationException {
         TempFileServiceAccess.setupUnitTestEnvironment();
         tempDirectory = TempFileServiceAccess.getInstance().createManagedTempDir("derby-metadata");
         // perform db startup so the time is not added to the run time of the first test case
@@ -107,9 +109,10 @@ public class DerbyMetaDataBackendTest {
      * Set up.
      * 
      * @throws IOException on initialization failure
+     * @throws RemoteOperationException standard remote operation exception
      */
     @Before
-    public void setUp() throws IOException {
+    public void setUp() throws IOException, RemoteOperationException {
 
         metaDataSet = new MetaDataSet();
         metaDataSet.setValue(new MetaData("testkey", true), "testvalue");
@@ -126,7 +129,7 @@ public class DerbyMetaDataBackendTest {
         EasyMock.replay(bundleContext);
 
         // create and set a mock that takes blob deletion requests, and ignores them without error
-        DataService mockDataService = EasyMock.createNiceMock(DataService.class);
+        FileDataService mockDataService = EasyMock.createNiceMock(FileDataService.class);
         mockDataService.deleteReference(EasyMock.anyObject(String.class));
         EasyMock.expectLastCall().anyTimes();
         EasyMock.replay(mockDataService);

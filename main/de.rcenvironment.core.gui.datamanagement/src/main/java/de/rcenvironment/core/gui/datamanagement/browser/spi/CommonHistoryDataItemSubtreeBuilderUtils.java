@@ -14,10 +14,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
@@ -44,11 +48,6 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 public final class CommonHistoryDataItemSubtreeBuilderUtils {
 
     /**
-     * The title to display for the folder node containing stdout, stderr and exit node data.
-     */
-    public static final String EXECUTION_LOG_FOLDER_NODE_TITLE = "Execution Log";
-
-    /**
      * short text seperator between content and title.
      */
     public static final String COLON = ": ";
@@ -57,10 +56,14 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
      * max length of short text content.
      */
     public static final int MAX_LABEL_LENGTH = 30;
+    
+    private static final int MAX_NON_PERSISTENT_ENTRIES = 1000;
 
     private static final String LEAF_TEXT_FORMAT = "%s: %s";
-    
+
     private static Log logger = LogFactory.getLog(CommonHistoryDataItemSubtreeBuilderUtils.class);
+
+    private static ObjectMapper mapper = new ObjectMapper();
 
     private CommonHistoryDataItemSubtreeBuilderUtils() {};
 
@@ -84,7 +87,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
     public static void buildCommonHistoryDataItemSubtrees(CommonComponentHistoryDataItem dataItem, DMBrowserNode parent) {
 
         buildDefaultHistoryDataItemSubtrees(dataItem, parent);
-        buildLogsSubtree(dataItem, parent);
+        buildExitCodeNode(dataItem, parent);
     }
 
     /**
@@ -102,13 +105,15 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 // for one value per endpoint at one step
                 if (inputsDeque.size() == 1) {
                     EndpointHistoryDataItem currentInput = inputsDeque.pop();
-                    handleDataItem(currentInput, name, inputNode, parent.getDataReferenceId(), EndpointType.INPUT);
+                    handleDataItem(currentInput, name, inputNode, parent.getDataReferenceId(), EndpointType.INPUT,
+                        dataItem.getMetaDataForInput(name));
                     // for more than one value per endpoint at one step: endpoint name as child node, values as leaf nodes
                 } else if (inputsDeque.size() > 1) {
                     DMBrowserNodeType type = getDMBrowserNodeTypeByDataType(inputsDeque.peekFirst().getValue().getDataType());
                     DMBrowserNode inputNameNode = DMBrowserNode.addNewChildNode(name, type, inputNode);
                     for (EndpointHistoryDataItem item : inputsDeque) {
-                        handleDataItem(item, name, inputNameNode, parent.getDataReferenceId(), EndpointType.INPUT);
+                        handleDataItem(item, name, inputNameNode, parent.getDataReferenceId(), EndpointType.INPUT,
+                            dataItem.getMetaDataForInput(name));
                     }
                 }
             }
@@ -130,13 +135,15 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 // for one value per endpoint at one step
                 if (outputsDeque.size() == 1) {
                     EndpointHistoryDataItem currentOutput = outputsDeque.pop();
-                    handleDataItem(currentOutput, name, outputNode, parent.getDataReferenceId(), EndpointType.OUTPUT);
+                    handleDataItem(currentOutput, name, outputNode, parent.getDataReferenceId(), EndpointType.OUTPUT,
+                        dataItem.getMetaDataForOutput(name));
                 } else if (outputsDeque.size() > 1) {
                     // for more than one value per endpoint at one step: endpoint name as child node, values as leaf nodes
                     DMBrowserNodeType type = getDMBrowserNodeTypeByDataType(outputsDeque.peekFirst().getValue().getDataType());
                     DMBrowserNode outputNameNode = DMBrowserNode.addNewChildNode(name, type, outputNode);
                     for (EndpointHistoryDataItem item : outputsDeque) {
-                        handleDataItem(item, name, outputNameNode, parent.getDataReferenceId(), EndpointType.OUTPUT);
+                        handleDataItem(item, name, outputNameNode, parent.getDataReferenceId(), EndpointType.OUTPUT,
+                            dataItem.getMetaDataForOutput(name));
                     }
                 }
             }
@@ -149,21 +156,24 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
      * @param dataItem data point with common history data
      * @param parent parent node
      */
-    public static void buildLogsSubtree(CommonComponentHistoryDataItem dataItem, DMBrowserNode parent) {
-        if (dataItem.getLogs().size() > 0 || dataItem.getExitCode() != null) {
-            DMBrowserNode logNode = DMBrowserNode.addNewChildNode(EXECUTION_LOG_FOLDER_NODE_TITLE, DMBrowserNodeType.LogFolder, parent);
+    public static void buildExitCodeNode(CommonComponentHistoryDataItem dataItem, DMBrowserNode parent) {
 
-            if (dataItem.getLogs().size() > 0) {
-                List<String> logKeyList = sortKeys(dataItem.getLogs().keySet());
-                for (String name : logKeyList) {
-                    DMBrowserNode logFileNode = DMBrowserNode.addNewLeafNode(name, DMBrowserNodeType.DMFileResource, logNode);
-                    logFileNode.setAssociatedFilename(name);
-                    logFileNode.setDataReferenceId(dataItem.getLogs().get(name));
+        if (dataItem.getExitCode() != null) {
+            DMBrowserNode executionLogNode = null;
+            for (DMBrowserNode node : parent.getChildren()) {
+                if (node.getTitle().equals(DMBrowserNodeConstants.NODE_NAME_EXECUTION_LOG)) {
+                    executionLogNode = node;
+                    break;
                 }
             }
+            if (executionLogNode == null) {
+                executionLogNode = DMBrowserNode.addNewChildNode(DMBrowserNodeConstants.NODE_NAME_EXECUTION_LOG,
+                    DMBrowserNodeType.LogFolder, parent);
+            }
+
             if (dataItem.getExitCode() != null) {
                 DMBrowserNode.addNewLeafNode(StringUtils.format("%s: %d", "Exit code", dataItem.getExitCode()),
-                    DMBrowserNodeType.InformationText, logNode);
+                    DMBrowserNodeType.InformationText, executionLogNode);
             }
         }
     }
@@ -245,34 +255,56 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
     }
 
     private static String handleSmallTableLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
-        String fullContent = item.getValue().toString();
-        return handleLabel(fullContent, ((SmallTableTD) item.getValue()).toLengthLimitedString(MAX_LABEL_LENGTH), endpointName, node);
-    }
-
-    private static String handleVectorLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
-        String fullContent = item.getValue().toString();
-        return handleLabel(fullContent, ((VectorTD) item.getValue()).toLengthLimitedString(MAX_LABEL_LENGTH), endpointName, node);
+        SmallTableTD table = (SmallTableTD) item.getValue();
+        String abbreviatedContent =  table.toLengthLimitedString(MAX_LABEL_LENGTH);
+        if (table.getColumnCount() * table.getRowCount() > MAX_NON_PERSISTENT_ENTRIES) {
+            node.setSmallTableTDAndFileName(table, endpointName);
+            return handleLabel(abbreviatedContent, endpointName, node);
+        } else {
+            return handleLabel(table.toString(), abbreviatedContent, endpointName, node);            
+        }
     }
 
     private static String handleMatrixLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
-        String fullContent = item.getValue().toString();
-        return handleLabel(fullContent, ((MatrixTD) item.getValue()).toLengthLimitedString(MAX_LABEL_LENGTH), endpointName, node);
+        MatrixTD matrix = (MatrixTD) item.getValue();
+        String abbreviatedContent =  matrix.toLengthLimitedString(MAX_LABEL_LENGTH);
+        if (matrix.getRowDimension() * matrix.getColumnDimension() > MAX_NON_PERSISTENT_ENTRIES) {
+            node.setMatrixTDAndFileName(matrix, endpointName);
+            return handleLabel(abbreviatedContent, endpointName, node);
+        } else {
+            return handleLabel(matrix.toString(), abbreviatedContent, endpointName, node);            
+        }
     }
-    
-    private static String handleLabel(String fullContent, String abbreviatedContent, String endpointName, DMBrowserNode node) {
+
+    private static String handleVectorLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
+        VectorTD vector = (VectorTD) item.getValue();
+        String abbreviatedContent =  vector.toLengthLimitedString(MAX_LABEL_LENGTH);
+        if (vector.getRowDimension() > MAX_NON_PERSISTENT_ENTRIES) {
+            node.setVectorTDAndFileName(vector, endpointName);
+            return handleLabel(abbreviatedContent, endpointName, node);
+        } else {
+            return handleLabel(vector.toString(), abbreviatedContent, endpointName, node);            
+        }
+    }
+
+    private static String handleLabel(String abbreviatedContent, String endpointName, DMBrowserNode node) {
         String formattedLabel = StringUtils.format(LEAF_TEXT_FORMAT, endpointName, abbreviatedContent);
         node.setTitle(formattedLabel);
-        node.setFileContentAndName(fullContent, endpointName);
-
         return formattedLabel;
     }
 
+    private static String handleLabel(String fullContent, String abbreviatedContent, String endpointName, DMBrowserNode node) {
+        node.setFileContentAndName(fullContent, endpointName);
+        return handleLabel(abbreviatedContent, endpointName, node);
+    }
+
     private static void handleDataItem(EndpointHistoryDataItem item, String name, DMBrowserNode parent,
-        String historyItemDataReferenceId, EndpointType endpointType) {
+        String historyItemDataReferenceId, EndpointType endpointType, Map<String, String> endpointMetaData) {
         DataType currentDataType = item.getValue().getDataType();
         DMBrowserNodeType type = getDMBrowserNodeTypeByDataType(currentDataType);
         DMBrowserNode node = null;
-        if (currentDataType != DataType.DirectoryReference) {
+        boolean hasMetaData = endpointMetaData != null && !endpointMetaData.isEmpty();
+        if (currentDataType != DataType.DirectoryReference && !hasMetaData) {
             node = DMBrowserNode.addNewLeafNode(name, type, parent);
         } else {
             node = DMBrowserNode.addNewChildNode(name, type, parent);
@@ -299,12 +331,26 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
         } else {
             node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, name, item.getValue()));
         }
+        if (endpointMetaData != null) {
+            for (Entry<String, String> property : endpointMetaData.entrySet()) {
+                try {
+                    JsonNode tree = mapper.readTree(property.getValue());
+                    DMBrowserNode.addNewLeafNode(StringUtils.format("%s: %s", tree.get("guiName"), tree.get("value")), type, node);
+                } catch (IOException e) {
+                    logger.error("Could not parse endpoint properties from json string " + property.getValue());
+                }
+            }
+        }
     }
 
     private static void buildSubtreeForDirectoryItem(EndpointHistoryDataItem item, DMBrowserNode node, DMBrowserNode parent) {
         DirectoryReferenceTD directoryReference = null;
         if (item.getValue() instanceof DirectoryReferenceTD) {
             directoryReference = (DirectoryReferenceTD) item.getValue();
+        } else {
+            // A check to avoid potential null pointer access. Should never be reached as method is only called for directory references.
+            logger.error("Unexpected method call: item is not a directory reference.");
+            return;
         }
         File dir = new File(Activator.getInstance().getBundleSpecificTempDir(), directoryReference.getDirectoryReference());
         if (!dir.mkdir() && (!dir.exists() || dir.isFile())) {
@@ -325,7 +371,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 componentService.copyDirectoryReferenceTDToLocalDirectory(directoryReference, dir,
                     parent.getNodeWithTypeWorkflow().getNodeIdentifier());
             } catch (IOException e) {
-                logger.error("Copying directory from data management to the file system failed");
+                logger.error("Copying directory from data management to the file system failed", e);
             }
         }
 

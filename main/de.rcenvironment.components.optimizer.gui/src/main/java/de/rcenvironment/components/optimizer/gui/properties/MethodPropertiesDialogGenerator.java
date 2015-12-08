@@ -83,7 +83,7 @@ public class MethodPropertiesDialogGenerator extends Dialog {
 
             if (methodDescription.getSpecificSettings() != null && !methodDescription.getSpecificSettings().isEmpty()) {
                 CTabItem specificSettingsTab = new CTabItem(settingsTabFolder, SWT.NONE);
-                specificSettingsTab.setText("Method Specific Settings");
+                specificSettingsTab.setText("Algorithm Specific Settings");
                 Composite specificSettingsContainer = new Composite(settingsTabFolder, SWT.NONE);
                 specificSettingsContainer.setLayout(new GridLayout(2, true));
                 createSettings(methodDescription.getSpecificSettings(), specificSettingsContainer);
@@ -150,8 +150,8 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                             value);
                         widgetToKeyMap.put(newCombo, key);
                         newCombo.addModifyListener(new MethodPropertiesModifyListener());
-                    } else if (settings.get(key).
-                        get(OptimizerComponentConstants.SWTWIDGET_KEY).equals(OptimizerComponentConstants.WIDGET_CHECK)) {
+                    } else if (settings.get(key).get(OptimizerComponentConstants.SWTWIDGET_KEY)
+                        .equals(OptimizerComponentConstants.WIDGET_CHECK)) {
                         Button newCheckbox = createLabelAndCheckbox(container,
                             currentSetting.get(OptimizerComponentConstants.GUINAME_KEY),
                             value);
@@ -294,23 +294,23 @@ public class MethodPropertiesDialogGenerator extends Dialog {
             Widget source = (Widget) arg0.getSource();
             if (source instanceof Text) {
                 if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
-                    methodDescription.getCommonSettings().
-                        get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, ((Text) source).getText());
+                    methodDescription.getCommonSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                        ((Text) source).getText());
                 } else {
-                    methodDescription.getSpecificSettings().
-                        get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, ((Text) source).getText());
+                    methodDescription.getSpecificSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                        ((Text) source).getText());
                 }
             } else if (source instanceof Combo) {
                 if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
-                    methodDescription.getCommonSettings().
-                        get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, ((Combo) source).getText());
+                    methodDescription.getCommonSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                        ((Combo) source).getText());
                 } else if (methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
-                    methodDescription.getSpecificSettings().
-                        get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, ((Combo) source).getText());
+                    methodDescription.getSpecificSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                        ((Combo) source).getText());
                 } else if (methodDescription.getResponsesSettings() != null
                     && (methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(source)))) {
-                    methodDescription.getResponsesSettings().
-                        get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, ((Combo) source).getText());
+                    methodDescription.getResponsesSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                        ((Combo) source).getText());
                 }
             }
             validateInputs();
@@ -328,14 +328,14 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         public void widgetDefaultSelected(SelectionEvent e) {
             Button source = (Button) e.getSource();
             if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
-                methodDescription.getCommonSettings().
-                    get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, "" + source.getSelection());
+                methodDescription.getCommonSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                    "" + source.getSelection());
             } else if (methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
-                methodDescription.getSpecificSettings().
-                    get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, "" + source.getSelection());
+                methodDescription.getSpecificSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                    "" + source.getSelection());
             } else if (methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(source))) {
-                methodDescription.getResponsesSettings().
-                    get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY, "" + source.getSelection());
+                methodDescription.getResponsesSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                    "" + source.getSelection());
             }
             validateInputs();
         }

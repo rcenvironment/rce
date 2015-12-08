@@ -27,7 +27,6 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.testutils.AbstractVirtualInstanceTest;
@@ -35,6 +34,7 @@ import de.rcenvironment.core.communication.testutils.NetworkContactPointGenerato
 import de.rcenvironment.core.communication.testutils.TestConfiguration;
 import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.transport.virtual.VirtualTransportTestConfiguration;
 import de.rcenvironment.core.utils.common.StringUtils;

@@ -12,16 +12,20 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.fail;
-
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.notNull;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import de.rcenvironment.components.outputwriter.common.OutputLocation;
+import de.rcenvironment.components.outputwriter.common.OutputLocationList;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
+import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants.HandleExistingFile;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
@@ -39,6 +43,9 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
 import org.junit.Before;
@@ -50,6 +57,26 @@ import org.junit.Test;
  * @author Brigitte Boden
  */
 public class OutputWriterComponentTest {
+
+    private static final String INDENT = "\t";
+
+    private static final String SOME_SHORT_TEXT = "short text";
+
+    private static final String ENDPOINT_ID_TEXT = "textInput_id";
+
+    private static final String ENDPOINT_NAME_TEXT = "textInput";
+
+    private static final String ENDPOINT_ID_BOOLEAN = "booleanInput_id";
+
+    private static final String ENDPOINT_NAME_BOOLEAN = "booleanInput";
+
+    private static final String ENDPOINT_ID_INT = "intInput_id";
+
+    private static final String ENDPOINT_NAME_INT = "intInput";
+
+    private static final String ENDPOINT_ID_FLOAT = "floatInput_id";
+
+    private static final String ENDPOINT_NAME_FLOAT = "floatInput";
 
     private static final String EXCEPTION_MESSAGE = "Exception while setting up componentDataManagementServiceMock";
 
@@ -80,6 +107,8 @@ public class OutputWriterComponentTest {
     private File inputDirectory;
 
     private final Log log = LogFactory.getLog(getClass());
+
+    private ObjectMapper mapper;
 
     /**
      * Context mock for Output Writer Component test.
@@ -176,6 +205,9 @@ public class OutputWriterComponentTest {
 
         context.addService(ComponentDataManagementService.class, componentDataManagementServiceMock);
         context.setConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ROOT, testRootDir.getAbsolutePath());
+
+        mapper = new ObjectMapper();
+        mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
 
     /**
@@ -325,13 +357,13 @@ public class OutputWriterComponentTest {
         context.addSimulatedInput("inputname", "inputname_id", DataType.FileReference, true,
             generateMetadata(beginning + OutputWriterComponentConstants.PH_INPUTNAME + end, null));
         context.addSimulatedInput("start_ts", "start_ts_id", DataType.FileReference, true,
-            generateMetadata(beginning + OutputWriterComponentConstants.PH_WF_START_TS + end, null));
+            generateMetadata(beginning + "starttime" + OutputWriterComponentConstants.PH_WF_START_TS + end, null));
         context.addSimulatedInput("comp_name", "comp_name_id", DataType.FileReference, true,
             generateMetadata(beginning + OutputWriterComponentConstants.PH_COMP_NAME + end, null));
         context.addSimulatedInput("comp_type", "comp_type_id", DataType.FileReference, true,
             generateMetadata(beginning + OutputWriterComponentConstants.PH_COMP_TYPE + end, null));
         context.addSimulatedInput("ts", "ts_id", DataType.FileReference, true,
-            generateMetadata(beginning + OutputWriterComponentConstants.PH_TIMESTAMP + end, null));
+            generateMetadata(beginning + "time" + OutputWriterComponentConstants.PH_TIMESTAMP + end, null));
 
         // Send input file to each input and test if placeholders are replaced
         String fileReference = inputFile.getAbsolutePath();
@@ -367,6 +399,150 @@ public class OutputWriterComponentTest {
     }
 
     /**
+     * Test with inputs of simple data types and without targets.
+     * 
+     * @throws ComponentException e
+     */
+    @Test
+    public void testSimpleDataInputsWithoutTargets() throws ComponentException {
+
+        EasyMock.reset(componentDataManagementServiceMock);
+
+        component.start();
+        context.addSimulatedInput(ENDPOINT_NAME_FLOAT, ENDPOINT_ID_FLOAT, DataType.Float, true, null);
+        context.addSimulatedInput(ENDPOINT_NAME_INT, ENDPOINT_ID_INT, DataType.Integer, true, null);
+        context.addSimulatedInput(ENDPOINT_NAME_BOOLEAN, ENDPOINT_ID_BOOLEAN, DataType.Boolean, true, null);
+        context.addSimulatedInput(ENDPOINT_NAME_TEXT, ENDPOINT_ID_TEXT, DataType.Float, true, null);
+
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+
+        assertTrue(testRootDir.listFiles().length == 2); // This test should not produce output, thus only the input file/dir exist.
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
+    /**
+     * Test with inputs of simple data types and with several targets. ("Append" Option)
+     * 
+     * @throws ComponentException e
+     * @throws IOException e
+     */
+    @Test
+    public void testSimpleDataInputsWithTargetsAppend() throws ComponentException, IOException {
+
+        EasyMock.reset(componentDataManagementServiceMock);
+
+        createSimpleDataInputsAndTargets(HandleExistingFile.APPEND);
+
+        component.start();
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+
+        assertTrue(testRootDir.listFiles().length == 4);
+
+        for (File file : testRootDir.listFiles()) {
+            if (!file.isDirectory() && !file.getName().equals(INPUT_FILENAME)) {
+                checkSimpleDataOutputFile(file);
+            }
+        }
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
+    /**
+     * Test with inputs of simple data types and with several targets. ("Override" Option)
+     * 
+     * @throws ComponentException e
+     * @throws IOException e
+     */
+    @Test
+    public void testSimpleDataInputsWithTargetsOverride() throws ComponentException, IOException {
+
+        EasyMock.reset(componentDataManagementServiceMock);
+
+        createSimpleDataInputsAndTargets(HandleExistingFile.OVERRIDE);
+
+        component.start();
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+
+        assertTrue(testRootDir.listFiles().length == 4);
+
+        for (File file : testRootDir.listFiles()) {
+            if (!file.isDirectory() && !file.getName().equals(INPUT_FILENAME)) {
+                checkSimpleDataOutputFile(file);
+            }
+        }
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
+    /**
+     * Test with inputs of simple data types and with several targets. ("Auto-Rename" Option)
+     * 
+     * @throws ComponentException e
+     * @throws IOException e
+     */
+    @Test
+    public void testSimpleDataInputsWithTargetsAutorename() throws ComponentException, IOException {
+
+        EasyMock.reset(componentDataManagementServiceMock);
+
+        createSimpleDataInputsAndTargets(HandleExistingFile.AUTORENAME);
+
+        component.start();
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_FLOAT, typedDatumFactory.createFloat(0.0));
+        context.setInputValue(ENDPOINT_NAME_INT, typedDatumFactory.createInteger(0));
+        component.processInputs();
+        context.setInputValue(ENDPOINT_NAME_BOOLEAN, typedDatumFactory.createBoolean(false));
+        context.setInputValue(ENDPOINT_NAME_TEXT, typedDatumFactory.createShortText(SOME_SHORT_TEXT));
+        component.processInputs();
+
+        assertTrue(testRootDir.listFiles().length == 6);
+
+        for (File file : testRootDir.listFiles()) {
+            if (!file.isDirectory() && !file.getName().equals(INPUT_FILENAME)) {
+                checkSimpleDataOutputFile(file);
+            }
+        }
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
+    /**
      * Generates meta data for output writer test.
      * 
      * @param from Start value of parametric study range
@@ -397,5 +573,70 @@ public class OutputWriterComponentTest {
         file.createNewFile();
         assertTrue(file.isFile() && file.canRead());
         return file;
+    }
+
+    private void createSimpleDataInputsAndTargets(HandleExistingFile handling) {
+        context.addSimulatedInput(ENDPOINT_NAME_FLOAT, ENDPOINT_ID_FLOAT, DataType.Float, true, null);
+        context.addSimulatedInput(ENDPOINT_NAME_INT, ENDPOINT_ID_INT, DataType.Integer, true, null);
+        context.addSimulatedInput(ENDPOINT_NAME_BOOLEAN, ENDPOINT_ID_BOOLEAN, DataType.Boolean, true, null);
+        context.addSimulatedInput(ENDPOINT_NAME_TEXT, ENDPOINT_ID_TEXT, DataType.Float, true, null);
+
+        String header1 =
+            OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
+                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_FLOAT + OutputWriterComponentConstants.PH_SUFFIX + INDENT
+                + OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
+                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_INT + OutputWriterComponentConstants.PH_SUFFIX;
+
+        String header2 =
+            OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
+                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_BOOLEAN + OutputWriterComponentConstants.PH_SUFFIX + INDENT
+                + OutputWriterComponentConstants.PH_PREFIX + OutputWriterComponentConstants.INPUTNAME
+                + OutputWriterComponentConstants.PH_DELIM + ENDPOINT_NAME_TEXT + OutputWriterComponentConstants.PH_SUFFIX;
+
+        String format1 =
+            OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_FLOAT + OutputWriterComponentConstants.PH_SUFFIX + INDENT
+                + OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_INT
+                + OutputWriterComponentConstants.PH_SUFFIX + OutputWriterComponentConstants.PH_LINEBREAK;
+
+        String format2 =
+            OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_BOOLEAN + OutputWriterComponentConstants.PH_SUFFIX
+                + INDENT + OutputWriterComponentConstants.PH_PREFIX + ENDPOINT_NAME_TEXT
+                + OutputWriterComponentConstants.PH_SUFFIX + OutputWriterComponentConstants.PH_LINEBREAK;
+
+        List<String> inputs1 = new ArrayList<String>();
+        inputs1.add(ENDPOINT_NAME_FLOAT);
+        inputs1.add(ENDPOINT_NAME_INT);
+        OutputLocation ol1 =
+            new OutputLocation("output1.txt", OutputWriterComponentConstants.ROOT_DISPLAY_NAME, header1, format1,
+                handling,
+                inputs1);
+        List<String> inputs2 = new ArrayList<String>();
+        inputs2.add(ENDPOINT_NAME_BOOLEAN);
+        inputs2.add(ENDPOINT_NAME_TEXT);
+        OutputLocation ol2 =
+            new OutputLocation("output2.txt", OutputWriterComponentConstants.ROOT_DISPLAY_NAME, header2, format2,
+                handling,
+                inputs2);
+
+        OutputLocationList list = new OutputLocationList();
+        list.addOrReplaceOutputLocation(ol1);
+        list.addOrReplaceOutputLocation(ol2);
+        try {
+            context.setConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS, mapper.writeValueAsString(list));
+        } catch (IOException e) {
+            fail("Json Error");
+        }
+    }
+
+    // Checks if the file is not empty and does not contain placeholders
+    private void checkSimpleDataOutputFile(File output) throws IOException {
+        String content = FileUtils.readFileToString(output);
+        if (content.isEmpty()) {
+            fail("Output file " + output.getName() + " is empty.");
+        } else {
+            if (content.contains(OutputWriterComponentConstants.PH_PREFIX) && content.contains(OutputWriterComponentConstants.PH_SUFFIX)) {
+                fail("In output file " + output.getName() + ", not all placeholders were resolved.");
+            }
+        }
     }
 }

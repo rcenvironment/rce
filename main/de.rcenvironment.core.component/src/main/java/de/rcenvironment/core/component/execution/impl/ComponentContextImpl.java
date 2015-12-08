@@ -21,13 +21,17 @@ import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataIt
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionControllerCallback;
+import de.rcenvironment.core.component.execution.api.ComponentLog;
+import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
+import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.PersistedComponentData;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -83,6 +87,39 @@ public class ComponentContextImpl implements ComponentContext {
     private final ComponentExecutionControllerCallback controllerCallback;
 
     private final ServiceRegistryAccess serviceRegistryAccess;
+    
+    private final ComponentLog log = new ComponentLog() {
+        
+        @Override
+        public void toolStdout(String message) {
+            controllerCallback.printConsoleRow(message, Type.TOOL_OUT);
+        }
+        
+        @Override
+        public void toolStderr(String message) {
+            controllerCallback.printConsoleRow(message, Type.TOOL_ERROR);
+        }
+        
+        @Override
+        public void componentWarn(String message) {
+            controllerCallback.printConsoleRow(message, Type.COMPONENT_WARN);
+        }
+        
+        @Override
+        public void componentInfo(String message) {
+            controllerCallback.printConsoleRow(message, Type.COMPONENT_INFO);
+        }
+        
+        @Override
+        public void componentError(String message) {
+            controllerCallback.printConsoleRow(message, Type.COMPONENT_ERROR);
+        }
+
+        @Override
+        public void componentError(String message, Throwable t, String errorId) {
+            controllerCallback.printConsoleRow(StringUtils.format("%s: %s (%s)", message, t.getMessage(), errorId), Type.COMPONENT_ERROR);
+        }
+    };
 
     public ComponentContextImpl(ComponentExecutionContext compExeCtx, ComponentExecutionControllerCallback ctrlCallback) {
         executionIdentifier = compExeCtx.getExecutionIdentifier();
@@ -97,7 +134,7 @@ public class ComponentContextImpl implements ComponentContext {
         for (EndpointDescription ep : compExeCtx.getComponentDescription().getInputDescriptionsManager().getEndpointDescriptions()) {
             String inputExecutionConstraint = ep.getMetaData().get(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT);
             if (inputExecutionConstraint == null) {
-                inputExecutionConstraint = ep.getDeclarativeEndpointDescription().getDefaultInputExecutionConstraint().name();
+                inputExecutionConstraint = ep.getEndpointDefinition().getDefaultInputExecutionConstraint().name();
             }
             if (inputExecutionConstraint.equals(EndpointDefinition.InputExecutionContraint.Required.name()) || ep.isConnected()) {
                 inputs.add(ep.getName());
@@ -280,12 +317,7 @@ public class ComponentContextImpl implements ComponentContext {
     public boolean isOutputClosed(String outputName) {
         return controllerCallback.isOutputClosed(outputName);
     }
-
-    @Override
-    public void printConsoleLine(String line, Type consoleLineType) {
-        controllerCallback.printConsoleRow(line, consoleLineType);
-    }
-
+    
     @Override
     public <T> T getService(Class<T> clazz) {
         return serviceRegistryAccess.getService(clazz);
@@ -353,6 +385,21 @@ public class ComponentContextImpl implements ComponentContext {
     @Override
     public Set<String> getInputsNotConnected() {
         return inputsNotConnected;
+    }
+
+    @Override
+    public ComponentLog getLog() {
+        return log;
+    }
+
+    @Override
+    public void announceExternalProgramStart() {
+        controllerCallback.printConsoleRow(WorkflowLifecyleEventType.TOOL_STARTING.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
+    }
+
+    @Override
+    public void announceExternalProgramTermination() {
+        controllerCallback.printConsoleRow(WorkflowLifecyleEventType.TOOL_FINISHED.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
     }
 
 }

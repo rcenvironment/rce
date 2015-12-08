@@ -9,6 +9,7 @@
 package de.rcenvironment.core.datamanagement.commons;
 
 import java.io.Serializable;
+import java.util.Map;
 
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 
@@ -37,13 +38,15 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
 
     private final FinalWorkflowState finalState;
 
-    private final Boolean hasDataReferences;
+    private final Boolean areFilesDeleted;
 
     private final Boolean markedForDeletion;
 
+    private final Map<String, String> metaData;
+
     public WorkflowRunDescription(Long workflowRunID, String workflowTitle, String controllerNodeID,
-        String datamanagementNodeID, Long startTime, Long endTime, FinalWorkflowState finalState, Boolean hasDataReferences,
-        Boolean markedForDeletion) {
+        String datamanagementNodeID, Long startTime, Long endTime, FinalWorkflowState finalState, Boolean areFilesDeleted,
+        Boolean markedForDeletion, Map<String, String> metaData) {
         this.workflowRunID = workflowRunID;
         this.workflowTitle = workflowTitle;
         this.controllerNodeID = controllerNodeID;
@@ -51,8 +54,9 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
         this.startTime = startTime;
         this.endTime = endTime;
         this.finalState = finalState;
-        this.hasDataReferences = hasDataReferences;
+        this.areFilesDeleted = areFilesDeleted;
         this.markedForDeletion = markedForDeletion;
+        this.metaData = metaData;
     }
 
     /**
@@ -66,7 +70,8 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
      */
     public static WorkflowRunDescription cloneAndReplaceNodeIds(WorkflowRunDescription original, String newNodeIdString) {
         return new WorkflowRunDescription(original.workflowRunID, original.workflowTitle, newNodeIdString, newNodeIdString,
-            original.startTime, original.endTime, original.finalState, original.hasDataReferences, original.markedForDeletion);
+            original.startTime, original.endTime, original.finalState, original.areFilesDeleted, original.markedForDeletion,
+            original.getMetaData());
     }
 
     public String getWorkflowTitle() {
@@ -89,6 +94,10 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
         return endTime;
     }
 
+    public Map<String, String> getMetaData() {
+        return metaData;
+    }
+
     public Long getWorkflowRunID() {
         return workflowRunID;
     }
@@ -97,12 +106,33 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
         return finalState;
     }
 
-    public Boolean getHasDataReferences() {
-        return hasDataReferences;
+    public Boolean getAreFilesDeleted() {
+        return areFilesDeleted;
     }
 
     public Boolean isMarkedForDeletion() {
         return markedForDeletion;
+    }
+
+    /**
+     * Checks if the properties contain a field with additional information.
+     * 
+     * @return the value for additional information, if available, and null, else.
+     */
+    public String getAdditionalInformationIfAvailable() {
+        if (metaData.containsKey(PropertiesKeys.ADDITIONAL_INFORMATION)) {
+            return metaData.get(PropertiesKeys.ADDITIONAL_INFORMATION);
+        }
+        return null;
+    }
+    
+    /**
+     * Checks if the properties contain a field with an error log file.
+     * 
+     * @return the reference to the error log file, if available, and null, else.
+     */
+    public String getErrorLogFileReference() {
+        return metaData.get(PropertiesKeys.ERROR_LOG_FILE);
     }
 
     @Override

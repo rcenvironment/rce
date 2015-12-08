@@ -1,0 +1,90 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _7RlJ4GaBEeWE-JfpwaFXMg,_7SB10GaBEeWE-JfpwaFXMg
+Element-Name: InputProviderWithFilesFromFilesystem
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _7W5HsGaBEeWE-JfpwaFXMg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 9/29/15 10:43 AM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+get-button "Create workflow (Ctrl+Shift+N)" | click
+with [get-window "New Workflow"] {
+    with [get-editbox -after [get-label "Workflow name:"]] {
+        type-text "IP_Test"
+    }
+    get-button Finish | click
+}
+with [get-editor "IP_Test.wf"] {
+    with [get-palette] {
+        with [get-palette-entry "Input Provider"] {
+            mouse-move 58 2 button1 -height 23 -width 125
+            mouse-press 58 2 button1 -height 23 -width 125
+            get-figure 0 | drag-start 58 2
+        }
+    }
+    with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+        drag-enter 625 179 -detail move
+        drag-over 153 97 -detail copy
+        drag-exit
+        drag-accept 153 97 -detail copy
+    }
+    get-palette | drag-set-data
+    get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 153 97 -detail copy
+    get-palette | drag-end -detail move
+}
+get-view Properties | get-section Outputs | get-button Add | click
+with [get-window "Add Output"] {
+    get-editbox -after [get-label "Name:"] | set-text file
+    get-combo -after [get-label "Data type:"] | select File
+}
+set-dialog-result File "D:\\rcptt-profile\\InputProvider_TestData\\Root\\FirstFolder\\SecondFolder\\oneFile.txt"
+with [get-window "Add Output"] {
+    get-group "" | get-button "Select from file system" | click
+    get-button OK | click
+}
+get-view Properties | get-section Outputs | get-button Add | click
+with [get-window "Add Output"] {
+    with [get-editbox -after [get-label "Name:"]] {
+        set-text folder
+        key-type "TRAVERSE_TAB_NEXT"
+    }
+    get-combo -after [get-label "Data type:"] | select Directory
+}
+set-dialog-result Folder "D:\\rcptt-profile\\InputProvider_TestData\\Root"
+with [get-window "Add Output"] {
+    get-group "" | get-button "Select from file system" | click
+    get-button OK | click
+}
+get-button "Save All (M1+M2+S)" | click
+with [get-editor "IP_Test.wf" | get-diagram -index 1] {
+    mouse-move 331 174 button3 -height 524 -width 1202
+    mouse-press 331 174 button3 -height 524 -width 1202
+    mouse-release 331 174 button3 2097152 -height 524 -width 1202
+    get-menu "Execute Workflow" | click
+}
+get-window "Execute workflow" | get-button Ok | click
+
+wait 3000
+
+with [get-view "Workflow Data Browser"] {
+	click
+	with [get-tree] {
+		select "IP_Test.*.<local>" -all | double-click
+		select "IP_Test.*.<local>/Timeline" - all | double-click
+		select "IP_Test.*.<local>/Timeline/Input Provider - Run 1.*.<local>" - all | double-click
+		select "IP_Test.*.<local>/Timeline/Input Provider - Run 1.*.<local>/Outputs" - all | double-click
+	}
+}
+
+get-view "Workflow Data Browser" | get-tree | get-item "IP_Test.*.<local>/Timeline/Input Provider - Run 1.*.<local>/O" +
+	"utputs" | get-property childCount | equals 2 | verify-true
+//get-tab-folder | get-property activePage | contains Finished | verify-true
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

@@ -33,7 +33,7 @@ public class Messages extends NLS {
     public static String stderr;
 
     /** Constant. */
-    public static String metaInfo;
+    public static String compLog;
 
     /** Constant. */
     public static String search;

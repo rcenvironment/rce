@@ -15,14 +15,13 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 
-import de.rcenvironment.core.authentication.User;
-import de.rcenvironment.core.authorization.AuthorizationException;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementUtil;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.history.HistoryMetaDataKeys;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.datamanagement.DistributedFileDataService;
+import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
@@ -51,17 +50,14 @@ public class WorkflowHistoryServiceImpl {
     /**
      * FileDataService for storing/loading resources to the data management.
      */
-    private DistributedFileDataService fileDataService;
-    
-    private User user;
+    private FileDataService fileDataService;
 
     /**
      * Default constructor that tries to acquire all data management services automatically.
      * 
      * @param user the certificate to acquire the data management services with
      */
-    public WorkflowHistoryServiceImpl(User user, TypedDatumSerializer typedDatumSerializer, DistributedFileDataService fileDataService) {
-        this.user = user;
+    public WorkflowHistoryServiceImpl(TypedDatumSerializer typedDatumSerializer, FileDataService fileDataService) {
         this.typedDatumSerializer = typedDatumSerializer;
         this.fileDataService = fileDataService;
     }
@@ -89,11 +85,8 @@ public class WorkflowHistoryServiceImpl {
         InputStream historyDataInputStream = getHistoryDataPointAsInputStreamInputStream(historyData);
         // create reference
         try {
-            fileDataService.newReferenceFromStream(user, historyDataInputStream, mds, componentContext.getDefaultStorageNodeId());
-        } catch (AuthorizationException e) {
-            // reduce exception types
-            throw new IOException(e);
-        } catch (InterruptedException e) {
+            fileDataService.newReferenceFromStream(historyDataInputStream, mds, componentContext.getDefaultStorageNodeId());
+        } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
         }
@@ -101,14 +94,14 @@ public class WorkflowHistoryServiceImpl {
 
     private static void setHistoryMetaData(MetaDataSet mds, Serializable historyData, String userInfoText, long timestamp) {
         if (historyData instanceof ComponentHistoryDataItem) {
-            mds.setValue(METADATA_CLASS_NAME, ((ComponentHistoryDataItem) historyData).getIdentifier());            
+            mds.setValue(METADATA_CLASS_NAME, ((ComponentHistoryDataItem) historyData).getIdentifier());
         } else {
-            mds.setValue(METADATA_CLASS_NAME, historyData.getClass().getCanonicalName());            
+            mds.setValue(METADATA_CLASS_NAME, historyData.getClass().getCanonicalName());
         }
         mds.setValue(METADATA_USER_INFO_TEXT, userInfoText);
         mds.setValue(METADATA_HISTORY_TIMESTAMP, Long.toString(timestamp));
     }
-    
+
     private InputStream getHistoryDataPointAsInputStreamInputStream(Serializable historyData) throws IOException {
         if (historyData instanceof ComponentHistoryDataItem) {
             historyData = ((ComponentHistoryDataItem) historyData).serialize(typedDatumSerializer);

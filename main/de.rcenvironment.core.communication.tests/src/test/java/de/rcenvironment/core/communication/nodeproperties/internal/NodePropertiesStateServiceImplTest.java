@@ -32,7 +32,7 @@ import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesC
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.incubator.MockListenerRegistrationService;
+import de.rcenvironment.core.utils.common.service.MockAdditionalServicesRegistrationService;
 
 /**
  * {@link NodePropertiesStateServiceImpl} unit test.
@@ -173,8 +173,8 @@ public class NodePropertiesStateServiceImplTest {
 
         callbackCollector = new CallbackCollector();
 
-        MockListenerRegistrationService listenerRegistrationService = new MockListenerRegistrationService();
-        listenerRegistrationService.registerListenerProvider(service);
+        MockAdditionalServicesRegistrationService listenerRegistrationService = new MockAdditionalServicesRegistrationService();
+        listenerRegistrationService.registerAdditionalServicesProvider(service);
         serviceRawNodePropertiesChangeListener =
             listenerRegistrationService.getListeners(RawNodePropertiesChangeListener.class).iterator().next();
         serviceNetworkTopologyChangeListener =

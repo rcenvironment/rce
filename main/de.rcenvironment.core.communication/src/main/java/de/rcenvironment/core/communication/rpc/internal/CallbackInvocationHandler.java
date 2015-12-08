@@ -19,13 +19,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.rpc.RemoteServiceCallService;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
-import de.rcenvironment.core.communication.rpc.ServiceCallResult;
-import de.rcenvironment.core.communication.rpc.api.CallbackService;
+import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
+import de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.communication.spi.CallbackObject;
-import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * {@link InvocationHandler} implementation used to create proxy for objects which need to be called back.
@@ -36,14 +34,14 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public class CallbackInvocationHandler implements InvocationHandler, Serializable {
 
     /**
-     * Holds the {@link RemoteServiceCallService} for a node so it can be accessed by deserialized {@link CallbackInvocationHandler}s. (Note
-     * that the whole callback concept should be reviewed/reworked.)
+     * Holds the {@link RemoteServiceCallSenderService} for a node so it can be accessed by deserialized {@link CallbackInvocationHandler}s.
+     * (Note that the whole callback concept should be reviewed/reworked.)
      * 
      * @author Robert Mischke
      */
     public static class RemoteServiceCallServiceHolder {
 
-        private static RemoteServiceCallService remoteServiceCallService;
+        private static RemoteServiceCallSenderService remoteServiceCallService;
 
         public RemoteServiceCallServiceHolder() {}
 
@@ -52,11 +50,11 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
          * 
          * @param newInstance the new service instance
          */
-        public static void bindRemoteServiceCallService(RemoteServiceCallService newInstance) {
+        public static void bindRemoteServiceCallService(RemoteServiceCallSenderService newInstance) {
             RemoteServiceCallServiceHolder.remoteServiceCallService = newInstance;
         }
 
-        private static RemoteServiceCallService getRemoteServiceCallService() {
+        private static RemoteServiceCallSenderService getRemoteServiceCallService() {
             return remoteServiceCallService;
         }
 
@@ -125,25 +123,11 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
         }
 
         ServiceCallRequest serviceCallRequest = new ServiceCallRequest(objectHome, proxyHome,
-            CallbackService.class.getCanonicalName(), null, "callback", parameterList);
+            RemotableCallbackService.class.getCanonicalName(), "callback", parameterList);
 
-        RemoteServiceCallService remoteServiceCallService = RemoteServiceCallServiceHolder.getRemoteServiceCallService();
-        ServiceCallResult serviceCallResult = remoteServiceCallService.performRemoteServiceCall(serviceCallRequest);
+        RemoteServiceCallSenderService remoteServiceCallService = RemoteServiceCallServiceHolder.getRemoteServiceCallService();
+        return remoteServiceCallService.performRemoteServiceCallAsProxy(serviceCallRequest);
 
-        if (serviceCallResult == null) {
-            // shouldn't normally happen
-            LOGGER.warn(StringUtils.format(
-                "Received null object as service call result (id: %s, method: %s); returning null as return value", objectIdentifier,
-                methodName));
-            return null;
-        }
-
-        Throwable throwable = serviceCallResult.getThrowable();
-        if (throwable != null) {
-            throw throwable;
-        }
-
-        return serviceCallResult.getReturnValue();
     }
 
     /**

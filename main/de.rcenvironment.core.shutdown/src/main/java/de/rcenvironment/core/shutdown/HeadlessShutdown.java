@@ -24,7 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
-import de.rcenvironment.core.start.common.Platform;
+import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
@@ -135,7 +135,7 @@ public class HeadlessShutdown {
                     if (message.contains("shutdown") && message.contains(secretString)) {
                         writeToLog("Received shutdown signal, shutting down");
                         IOUtils.closeQuietly(serverSocket);
-                        Platform.shutdown();
+                        Instance.shutdown();
                         try {
                             Thread.sleep(REGULAR_SHUTDOWN_WAIT_TIME_MSEC);
                         } catch (InterruptedException e) {

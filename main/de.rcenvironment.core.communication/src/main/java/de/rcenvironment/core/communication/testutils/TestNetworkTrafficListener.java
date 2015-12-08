@@ -12,20 +12,20 @@ import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * A {@link RawMessageChannelTrafficListener} intended for keeping track of all message traffic in virtual
+ * A {@link MessageChannelTrafficListener} intended for keeping track of all message traffic in virtual
  * network tests. Can be used to wait until no message has been sent for a certain time using 
  * {@link #waitForNetworkSilence(int, int).
  * 
  * @author Robert Mischke
  */
-public class TestNetworkTrafficListener implements RawMessageChannelTrafficListener {
+public class TestNetworkTrafficListener implements MessageChannelTrafficListener {
 
     private long lastTrafficTimestamp = 0;
 
@@ -42,17 +42,17 @@ public class TestNetworkTrafficListener implements RawMessageChannelTrafficListe
     private Semaphore trafficOccured = new Semaphore(0);
 
     @Override
-    public void onRequestSent(NetworkRequest request) {
+    public void onRequestSentIntoChannel(NetworkRequest request) {
         onTraffic(true);
     }
 
     @Override
-    public void onRawRequestReceived(NetworkRequest request, NodeIdentifier sourceId) {
+    public void onRequestReceivedFromChannel(NetworkRequest request, NodeIdentifier sourceId) {
         onTraffic(false);
     }
 
     @Override
-    public void onRawResponseGenerated(NetworkResponse response, NetworkRequest request, NodeIdentifier sourceId) {
+    public void onResponseSentIntoChannel(NetworkResponse response, NetworkRequest request, NodeIdentifier sourceId) {
         // note: strictly speaking, the traffic has not happened yet, but is about to
 
         // TODO restore statistics?

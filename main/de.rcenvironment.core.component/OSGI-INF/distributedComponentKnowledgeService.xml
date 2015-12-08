@@ -1,9 +1,9 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Distributed Component Knowledge Service">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Distributed Component Knowledge Service">
 
 	<implementation class="de.rcenvironment.core.component.internal.DistributedComponentKnowledgeServiceImpl"/>
 	<service>
 		<provide interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"/>
-		<provide interface="de.rcenvironment.core.utils.incubator.ListenerProvider"/>
+		<provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider"/>
 	</service>
 	
 	<reference

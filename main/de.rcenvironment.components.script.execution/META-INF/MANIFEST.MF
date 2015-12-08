@@ -1,8 +1,8 @@
 Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Execution Bundle
-Bundle-SymbolicName: de.rcenvironment.components.script.execution;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.script.execution
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,
@@ -37,4 +37,3 @@ Export-Package: de.rcenvironment.components.script.execution
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy

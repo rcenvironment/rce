@@ -19,10 +19,11 @@ import de.rcenvironment.core.communication.configuration.NodeConfigurationServic
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
+import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
 
 /**
- * Replacement {@link NodeConfigurationService} for {@link VirtualInstance} integrations tests. Defines the configuration of
- * {@link VirtualInstance}s.
+ * Replacement {@link NodeConfigurationService} for {@link VirtualInstance} integrations tests.
+ * Defines the configuration of {@link VirtualInstance}s.
  * 
  * @author Robert Mischke
  */
@@ -92,7 +93,7 @@ public class NodeConfigurationServiceTestStub implements NodeConfigurationServic
     }
 
     @Override
-    public long getForwardingTimeoutMsec() {
+    public int getForwardingTimeoutMsec() {
         // use the default value for tests, too; can be changed if useful
         return CommunicationConfiguration.DEFAULT_FORWARDING_TIMEOUT_MSEC;
     }
@@ -118,6 +119,32 @@ public class NodeConfigurationServiceTestStub implements NodeConfigurationServic
     @Override
     public CommunicationIPFilterConfiguration getIPFilterConfiguration() {
         return new CommunicationIPFilterConfiguration(); // return default settings (no filtering)
+    }
+
+    @Override
+    public List<InitialSshConnectionConfig> getInitialSSHConnectionConfigs() {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public double[] getLocationCoordinates() {
+        return new double[] { 0, 0 };
+    }
+
+    @Override
+    public String getLocationName() {
+        return "";
+    }
+
+    @Override
+    public String getInstanceContact() {
+        return "";
+    }
+
+    @Override
+    public String getInstanceAdditionalInformation() {
+        return "";
     }
 
 }

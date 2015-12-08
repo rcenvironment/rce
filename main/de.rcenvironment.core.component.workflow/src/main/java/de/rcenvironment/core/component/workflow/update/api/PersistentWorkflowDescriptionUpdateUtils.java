@@ -20,15 +20,15 @@ public final class PersistentWorkflowDescriptionUpdateUtils {
     private PersistentWorkflowDescriptionUpdateUtils() {}
     
     /**
-     * @param orignalFilename file name of file to create backup for
+     * @param orignalFile file to create backup for
      * @return filename for backup file
      */
-    public static String getFilenameForBackupFile(String orignalFilename) {
-        String filenameWithoutFileExtension = orignalFilename.substring(0, orignalFilename.lastIndexOf("."));
+    public static String getFilenameForBackupFile(File orignalFile) {
+        String filenameWithoutFileExtension = orignalFile.getName().substring(0, orignalFile.getName().lastIndexOf("."));
         String backupBasicFilename = filenameWithoutFileExtension + "_backup";
         String backupFilename = backupBasicFilename;
         int i = 1;
-        while (new File(backupFilename + ".wf").exists()) {
+        while (new File(orignalFile.getParentFile(), backupFilename + ".wf").exists()) {
             backupFilename = backupBasicFilename + " (" + i++ + ")";
         }
         return backupFilename;

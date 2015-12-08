@@ -109,30 +109,28 @@ public final class ContextMenuItemRemover {
 
         @Override
         public void menuShown(MenuEvent menuEvent) {
+
             MenuItem preceedingMainMenuItem = null;
 
             for (MenuItem mainMenuItem : menu.getItems()) {
                 MenuItem itemToHandle = null;
-                if (mainMenuItem.isDisposed()) {
-                    itemToHandle = null;
-                } else {
+                if (!mainMenuItem.isDisposed()) {
                     itemToHandle = mainMenuItem;
-                }
-                if (itemsToRemove.contains(mainMenuItem.getText())
-                    || (preceedingMainMenuItem != null
-                        && preceedingMainMenuItem.getText().isEmpty()
-                        && itemToHandle.getText().isEmpty())) {
-                    itemToHandle.dispose();
-                } else {
-                    preceedingMainMenuItem = itemToHandle;
-                }
-
-                // handle submenu
-                if (!itemToHandle.isDisposed() && itemToHandle.getMenu() != null) {
-                    // prevent multiple listener registration
-                    if (itemToHandle.getMenu().getData("SubMenuListenerToken") == null) {
-                        itemToHandle.getMenu().setData("SubMenuListenerToken", true);
-                        itemToHandle.getMenu().addMenuListener(new CustomSubMenuListener());
+                    if (itemsToRemove.contains(mainMenuItem.getText())
+                        || (preceedingMainMenuItem != null
+                            && preceedingMainMenuItem.getText().isEmpty()
+                            && itemToHandle.getText().isEmpty())) {
+                        itemToHandle.dispose();
+                    } else {
+                        preceedingMainMenuItem = itemToHandle;
+                    }
+                    // handle submenu
+                    if (!itemToHandle.isDisposed() && itemToHandle.getMenu() != null) {
+                        // prevent multiple listener registration
+                        if (itemToHandle.getMenu().getData("SubMenuListenerToken") == null) {
+                            itemToHandle.getMenu().setData("SubMenuListenerToken", true);
+                            itemToHandle.getMenu().addMenuListener(new CustomSubMenuListener());
+                        }
                     }
                 }
             }

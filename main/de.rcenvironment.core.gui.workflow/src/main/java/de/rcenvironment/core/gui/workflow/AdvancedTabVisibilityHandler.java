@@ -14,8 +14,8 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PlatformUI;
 
+import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
-import de.rcenvironment.core.start.common.CommandLineArguments;
 
 /**
  * Handler to show or hide advanced tab.

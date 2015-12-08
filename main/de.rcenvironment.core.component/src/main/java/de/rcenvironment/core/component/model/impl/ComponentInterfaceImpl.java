@@ -35,6 +35,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class ComponentInterfaceImpl implements ComponentInterface, Serializable {
 
+    private static final long serialVersionUID = 778538723444342052L;
+
     private String displayName;
 
     private String groupName;
@@ -73,10 +75,12 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
     private boolean performLazyDisposal = false;
 
     private boolean isDeprecated = false;
-    
-    private boolean canHandleIndefiniteInputDataTypes = false;
-    
-    private boolean isResetSink = false;
+
+    private boolean canHandleNotAValueDataTypes = false;
+
+    private boolean isLoopDriver = false;
+
+    private String documentationHash = "";
 
     @Override
     public String getDisplayName() {
@@ -119,8 +123,17 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
         return icon32;
     }
 
+    @Override
+    public String getDocumentationHash() {
+        return documentationHash;
+    }
+
     public void setIcon32(byte[] icon32) {
         this.icon32 = icon32;
+    }
+
+    public void setDocumentationHash(String docuHash) {
+        this.documentationHash = docuHash;
     }
 
     @Override
@@ -250,23 +263,23 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
     public void setIsDeprecated(boolean isDeprecated) {
         this.isDeprecated = isDeprecated;
     }
-    
+
     @Override
-    public boolean getCanHandleIndefiniteInputDataTypes() {
-        return canHandleIndefiniteInputDataTypes;
+    public boolean getCanHandleNotAValueDataTypes() {
+        return canHandleNotAValueDataTypes;
     }
-    
-    public void setCanHandleIndefiniteInputDataTypes(boolean canHandleIndefiniteInputDataTypes) {
-        this.canHandleIndefiniteInputDataTypes = canHandleIndefiniteInputDataTypes;
+
+    public void setCanHandleNotAValueDataTypes(boolean canHandleNotAValueDataTypes) {
+        this.canHandleNotAValueDataTypes = canHandleNotAValueDataTypes;
     }
 
     @Override
-    public boolean getIsResetSink() {
-        return isResetSink;
+    public boolean getIsLoopDriver() {
+        return isLoopDriver;
     }
-    
-    public void setIsResetSink(boolean isResetSink) {
-        this.isResetSink = isResetSink;
+
+    public void setIsLoopDriver(boolean isLoopDriver) {
+        this.isLoopDriver = isLoopDriver;
     }
 
     @Override

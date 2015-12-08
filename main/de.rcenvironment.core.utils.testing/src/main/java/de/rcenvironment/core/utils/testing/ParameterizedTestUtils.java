@@ -77,7 +77,7 @@ public class ParameterizedTestUtils implements TestParametersProvider {
     public String getNonEmptyString(String key) {
         String value = properties.getProperty(key);
         if (value == null || value.isEmpty()) {
-            throw new AssertionError(String.format("Required test property '%s' is undefined or empty", key));
+            throw new AssertionError(StringUtils.format("Required test property '%s' is undefined or empty", key));
         }
         return value;
     }
@@ -92,7 +92,7 @@ public class ParameterizedTestUtils implements TestParametersProvider {
     public File getExistingFile(String key) {
         File value = getDefinedFileOrDir(key);
         if (!value.isFile()) {
-            throw new AssertionError(String.format("Configured test file '%s' does not exist", value.getAbsolutePath()));
+            throw new AssertionError(StringUtils.format("Configured test file '%s' does not exist", value.getAbsolutePath()));
         }
         return value;
     }
@@ -101,7 +101,7 @@ public class ParameterizedTestUtils implements TestParametersProvider {
     public File getExistingDir(String key) {
         File value = getDefinedFileOrDir(key);
         if (!value.isDirectory()) {
-            throw new AssertionError(String.format("Configured test directory '%s' does not exist", value.getAbsolutePath()));
+            throw new AssertionError(StringUtils.format("Configured test directory '%s' does not exist", value.getAbsolutePath()));
         }
         return value;
     }
@@ -109,5 +109,17 @@ public class ParameterizedTestUtils implements TestParametersProvider {
     @Override
     public int getOptionalInteger(String key, int defaultValue) {
         return StringUtils.nullSafeParseInt(properties.getProperty(key), defaultValue);
+    }
+
+    @Override
+    public int getExistingInteger(String key) {
+        String value = getNonEmptyString(key);
+        int intValue;
+        try {
+            intValue = Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw new AssertionError(StringUtils.format("Value %s for required test property %s is not an Integer.", key, value));
+        }
+        return intValue;
     }
 }

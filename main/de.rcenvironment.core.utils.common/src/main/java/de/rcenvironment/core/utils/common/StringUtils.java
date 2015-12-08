@@ -13,6 +13,7 @@ import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.IllegalFormatException;
 import java.util.List;
+import java.util.regex.Pattern;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,28 +28,61 @@ import org.apache.commons.logging.LogFactory;
  */
 public final class StringUtils {
 
+    /**
+     * The human-readable error message for a charset violation.
+     */
+    public static final String COMMON_VALID_INPUT_CHARSET_ERROR =
+        "Invalid character: only letters, digits, space, and the characters _.,-+() are allowed";
+
+    /**
+     * The human-readable error message for an invalid first character.
+     */
+    public static final String COMMON_VALID_INPUT_FIRST_CHARACTER_ERROR =
+        "Invalid first character: it must be a letter, a digit, or the underscore (\"_\")";
+
+    /**
+     * The human-readable error message for an invalid last character.
+     */
+    public static final String COMMON_VALID_INPUT_LAST_CHARACTER_ERROR = "Invalid last character";
+
+    /**
+     * A regular expression to check whether a given string fits the "common valid input" charset. Empty strings are accepted by this
+     * regexp.
+     */
+    protected static final Pattern COMMON_VALID_INPUT_CHARSET_REGEXP = Pattern.compile("^[a-zA-Z0-9 _\\.,\\-\\+\\(\\)]*$");
+
+    /**
+     * A regular expression to check whether a given first character fits the "common valid input" rules.
+     */
+    protected static final Pattern COMMON_VALID_INPUT_FIRST_CHARACTER_REGEXP = Pattern.compile("^[a-zA-Z0-9_].*");
+
+    /**
+     * A regular expression to check whether a given last character fits the "common valid input" rules.
+     */
+    protected static final Pattern COMMON_VALID_INPUT_LAST_CHARACTER_REGEXP = Pattern.compile(".*[^ ]$"); // "^ " = no space
+
     /** Separator used to separate two semantically different Strings put into an single one. */
-    public static final String SEPARATOR = ":";
+    protected static final String SEPARATOR = ":";
 
     /** Character used to escape the separator. */
-    public static final String ESCAPE_CHARACTER = "\\";
+    protected static final String ESCAPE_CHARACTER = "\\";
 
     /** Separator used to separate format string and values to be used for a readable fall back message. */
-    public static final String FORMAT_SEPARATOR = ", ";
+    protected static final String FORMAT_SEPARATOR = ", ";
 
     /**
      * Represents an empty array after concatenization.
      * 
      * TODO use "\[]" for better readability? "\" could still be parsed for compatibility - misc_ro
      */
-    private static final String EMPTY_ARRAY_PLACEHOLDER = ESCAPE_CHARACTER;
+    protected static final String EMPTY_ARRAY_PLACEHOLDER = ESCAPE_CHARACTER;
 
     /**
      * Represents a null string as part of a serialized and concatenated array.
      */
-    private static final String NULL_STRING_PLACEHOLDER = ESCAPE_CHARACTER + "0"; // "\0"
+    protected static final String NULL_STRING_PLACEHOLDER = ESCAPE_CHARACTER + "0"; // "\0"
 
-    private static final Log LOG = LogFactory.getLog(StringUtils.class);
+    private static final Log sharedLog = LogFactory.getLog(StringUtils.class);
 
     private StringUtils() {}
 
@@ -184,6 +218,46 @@ public final class StringUtils {
     }
 
     /**
+     * Escapes the given string so it can be directly embedded into a JSON file as a string value.
+     * 
+     * @param input the input string
+     * @param addDoubleQuotes whether the returned value should be enclosed in double quotes; if false, the returned content MUST be placed
+     *        between existing double quotes!
+     * @return the escaped string
+     */
+    public static String escapeAsJsonStringContent(String input, boolean addDoubleQuotes) {
+        String escaped = input.replace("\\", "\\\\").replace("\"", "\\\"");
+        if (addDoubleQuotes) {
+            return format("\"%s\"", escaped);
+        } else {
+            return escaped;
+        }
+    }
+
+    /**
+     * Checks whether the given string is either empty, or is comprised only of characters from the "common valid input set" (see
+     * {@link #COMMON_VALID_INPUT_CHARSET_ERROR} for a human-readable description).
+     * 
+     * @param input the input string to test
+     * @return null if successful, or a human-readable error message on violations
+     */
+    public static String checkAgainstCommonInputRules(String input) {
+        if (input.isEmpty()) {
+            return null;
+        }
+        if (!COMMON_VALID_INPUT_CHARSET_REGEXP.matcher(input).matches()) {
+            return COMMON_VALID_INPUT_CHARSET_ERROR;
+        }
+        if (!COMMON_VALID_INPUT_FIRST_CHARACTER_REGEXP.matcher(input).matches()) {
+            return COMMON_VALID_INPUT_FIRST_CHARACTER_ERROR;
+        }
+        if (!COMMON_VALID_INPUT_LAST_CHARACTER_REGEXP.matcher(input).matches()) {
+            return COMMON_VALID_INPUT_LAST_CHARACTER_ERROR;
+        }
+        return null; // passed
+    }
+
+    /**
      * Returns the given string instance as a non-null reference as result. If the given string reference is a null reference an empty
      * string "" will be returned.
      * 
@@ -292,20 +366,28 @@ public final class StringUtils {
             String values = "";
             for (int i = 0; i < args.length; i++) {
                 if (i == 0) {
-                    values = values.concat(args[i].toString());
+                    values = values.concat(String.valueOf(args[i]));
                 } else {
-                    values = values.concat(FORMAT_SEPARATOR + args[i].toString());
+                    values = values.concat(FORMAT_SEPARATOR + String.valueOf(args[i]));
                 }
             }
             result = format;
             if (!values.isEmpty()) {
                 result = result.concat(FORMAT_SEPARATOR + values);
             }
-            LOG.warn(StringUtils.format(
+            sharedLog.warn(StringUtils.format(
                 "Format error. Review the format string and the number of values.\n Format String: %s" + FORMAT_SEPARATOR
                     + "Values: %s", format, values));
         }
         return result;
+    }
+
+    /**
+     * @param input the string to test
+     * @return true if the string is null or empty
+     */
+    public static boolean isNullorEmpty(String input) {
+        return input == null || input.isEmpty();
     }
 
 }

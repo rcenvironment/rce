@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.components.optimizer.common;
 
 import java.io.Serializable;
@@ -13,7 +13,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
-
 
 /**
  * Defining the structure of the values containing to one study.
@@ -27,7 +26,7 @@ public class ResultStructure implements Serializable {
     private final Set<Dimension> dimensions = new HashSet<Dimension>();
 
     private final Set<Measure> measures = new HashSet<Measure>();
-    
+
     /**
      * @return the defined {@link Dimension}s.
      */
@@ -67,14 +66,14 @@ public class ResultStructure implements Serializable {
         }
         return null;
     }
-    
+
     /**
      * @param dimension {@link Dimension} to add.
      */
     public void addDimension(final Dimension dimension) {
         dimensions.add(dimension);
     }
-    
+
     /**
      * @param measure {@link Measure} to add.
      */

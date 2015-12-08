@@ -26,6 +26,8 @@ import com.jcraft.jsch.Session;
  */
 public final class JschFileTransfer {
 
+    private static final String SLASH = "/";
+
     /**
      * Arbitrary "short wait" for remote-to-remote copy operations.
      */
@@ -40,12 +42,16 @@ public final class JschFileTransfer {
      * 
      * @param session an established JSch session
      * @param localFile the local {@link File} to upload
-     * @param remotePath the remote target path of the file to copy, using a relative path to the
-     *        initial SSH "home" directory if necessary
+     * @param remotePath the remote target path of the file to copy, using a relative path to the initial SSH "home" directory if necessary
      * @throws JSchException on general SSH errors
      * @throws IOException on SCP operation failure
      */
     public static void uploadFile(Session session, File localFile, String remotePath) throws IOException, JSchException {
+        // Remote path must start with "/"
+        if (!remotePath.startsWith(SLASH)) {
+            remotePath = SLASH + remotePath;
+        }
+
         ScpToMessage message = new ScpToMessage(session, localFile, remotePath);
         message.execute();
     }
@@ -89,32 +95,61 @@ public final class JschFileTransfer {
     }
 
     /**
+     * Uploads directories with SCP. Expects that parent directories (if not existing) will be created by the server.
+     * 
+     * @param session an established JSch session
+     * @param directory the local directory to upload
+     * @param remotePath the remote target path of the directory to copy, using a relative path to the initial SSH "home" directory if
+     *        necessary
+     * @throws JSchException on general SSH errors
+     * @throws IOException on SCP operation failure
+     * @throws InterruptedException if creating directory failed
+     */
+    public static void uploadDirectoryToRCEInstance(Session session, File directory, String remotePath)
+        throws IOException, JSchException, InterruptedException {
+
+        for (File file : directory.listFiles()) {
+            if (file.isDirectory()) {
+                uploadDirectoryToRCEInstance(session, file, remotePath + SLASH + file.getName());
+            } else {
+                uploadFile(session, file, remotePath + SLASH + file.getName());
+            }
+        }
+    }
+
+    /**
      * Downloads a file with SCP.
      * 
      * @param session an established JSch session
      * @param localFile the local {@link File} to download to
-     * @param remotePath the remote source path of the file to copy, using a relative path to the
-     *        initial SSH "home" directory if necessary
+     * @param remotePath the remote source path of the file to copy, using a relative path to the initial SSH "home" directory if necessary
      * @throws JSchException on general SSH errors
      * @throws IOException on SCP operation failure
      */
     public static void downloadFile(Session session, String remotePath, File localFile) throws IOException, JSchException {
+        if (!remotePath.startsWith(SLASH)) {
+            remotePath = SLASH + remotePath;
+        }
+        
         // "false" = not recursive
         ScpFromMessage message = new ScpFromMessage(session, remotePath, localFile, false);
         message.execute();
     }
-    
+
     /**
      * Downloads a directory with SCP.
      * 
      * @param session an established JSch session
      * @param localDir the local directory ({@link File}) to download to
-     * @param remotePath the remote source path of the file to copy, using a relative path to the
-     *        initial SSH "home" directory if necessary
+     * @param remotePath the remote source path of the file to copy, using a relative path to the initial SSH "home" directory if necessary
      * @throws JSchException on general SSH errors
      * @throws IOException on SCP operation failure
      */
     public static void downloadDirectory(Session session, String remotePath, File localDir) throws IOException, JSchException {
+        if (!remotePath.startsWith(SLASH)) {
+            remotePath = SLASH + remotePath;
+        }
+        
         // "true" = recursive
         ScpFromMessage message = new ScpFromMessage(session, remotePath, localDir, true);
         message.execute();
@@ -123,28 +158,26 @@ public final class JschFileTransfer {
     /**
      * Performs a file copy operation on the remove host through an existing SSH connection.
      * 
-     * IMPORTANT: This method uses the standard "mkdir" and "cp" shell commands on the remote
-     * system, and will therefore not work on standard Windows hosts.
+     * IMPORTANT: This method uses the standard "mkdir" and "cp" shell commands on the remote system, and will therefore not work on
+     * standard Windows hosts.
      * 
      * @param jschSession an established JSch session
-     * @param source the source path of the file to copy, using a relative path to the initial SSH
-     *        "home" directory if necessary. IMPORTANT: this path is expected to work without shell
-     *        escaping; in particular, it should not contain spaces or reserved shell characters.
-     * @param target the target path of the file to copy, using a relative path to the initial SSH
-     *        "home" directory if necessary; if the containing directory does not exist, it will be
-     *        created. IMPORTANT: this path is expected to work without shell escaping; in
+     * @param source the source path of the file to copy, using a relative path to the initial SSH "home" directory if necessary. IMPORTANT:
+     *        this path is expected to work without shell escaping; in particular, it should not contain spaces or reserved shell
+     *        characters.
+     * @param target the target path of the file to copy, using a relative path to the initial SSH "home" directory if necessary; if the
+     *        containing directory does not exist, it will be created. IMPORTANT: this path is expected to work without shell escaping; in
      *        particular, it should not contain spaces or reserved shell characters.
      * @throws JSchException on general SSH exceptions
      * @throws IOException if the remote copy operation returned a non-zero exit code
-     * @throws InterruptedException if the thread is interrupted while waiting for the copy to
-     *         complete
+     * @throws InterruptedException if the thread is interrupted while waiting for the copy to complete
      */
     public static void remoteToRemoteCopy(Session jschSession, String source, String target) throws JSchException, IOException,
         InterruptedException {
 
         // generate a "mkdir" command for the target directory, if present
         String mkdirCommandPrefix = "";
-        int separatorPos = target.lastIndexOf("/");
+        int separatorPos = target.lastIndexOf(SLASH);
         if (separatorPos >= 0) {
             // contains slash -> has directory part
             String directoryPart = target.substring(0, separatorPos);

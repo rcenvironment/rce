@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.channel;
 
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
  * Indicates the overall state of a {@link MessageChannel}.

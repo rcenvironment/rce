@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.api;
 
 import java.io.Serializable;
@@ -14,6 +14,7 @@ import java.io.Serializable;
  * Represents an edge in the workflow graph.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class WorkflowGraphEdge implements Serializable {
 
@@ -27,12 +28,18 @@ public class WorkflowGraphEdge implements Serializable {
 
     private final String inputIdentifier;
 
-    public WorkflowGraphEdge(String sourceExecutionIdentifier, String outputIdentifier,
-        String targetExecutionIdentifier, String inputIdentifier) {
+    private final String outputEndpointType;
+
+    private final String inputEndpointType;
+
+    public WorkflowGraphEdge(String sourceExecutionIdentifier, String outputIdentifier, String outputEndpointType,
+        String targetExecutionIdentifier, String inputIdentifier, String inputEndpointType) {
         this.sourceExecutionIdentifier = sourceExecutionIdentifier;
         this.outputIdentifier = outputIdentifier;
+        this.outputEndpointType = outputEndpointType;
         this.targetExecutionIdentifier = targetExecutionIdentifier;
         this.inputIdentifier = inputIdentifier;
+        this.inputEndpointType = inputEndpointType;
     }
 
     public String getSourceExecutionIdentifier() {
@@ -49,6 +56,14 @@ public class WorkflowGraphEdge implements Serializable {
 
     public String getInputIdentifier() {
         return inputIdentifier;
+    }
+
+    public String getOutputEndpointType() {
+        return outputEndpointType;
+    }
+
+    public String getInputEndpointType() {
+        return inputEndpointType;
     }
 
 }

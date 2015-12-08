@@ -1,8 +1,8 @@
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Headless Workflow Execution Service">
 
-	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.HeadlessWorkflowExecutionServiceImpl"/>
+	<implementation class="de.rcenvironment.core.component.workflow.execution.headless.internal.HeadlessWorkflowExecutionServiceImpl"/>
 	<service>
-		<provide interface="de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService"/>
+		<provide interface="de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService"/>
 	</service>
 	
 	<reference name="Distributed Notification Service"
@@ -23,22 +23,16 @@
 		cardinality="1..1"
 		policy="dynamic"
 		/>
-	<reference name="Workflow Host Service"
-		interface="de.rcenvironment.core.communication.management.WorkflowHostService"
-		bind="bindWorkflowHostService"
-		cardinality="1..1"
-		policy="dynamic"
-		/>
 	<reference name="Platform Service"
 		interface="de.rcenvironment.core.communication.api.PlatformService"
 		cardinality="1..1"
 		bind="bindPlatformService"
 		policy="dynamic"
 	/>
-	<reference name="Persistent Workflow Description Update Service"
-		interface="de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService"
-		bind="bindWorkflowDescriptionUpdateService"
-		cardinality="1..1"
-		policy="dynamic"
-	/>
+	<reference
+ 		name="MetaDataService"
+ 		interface="de.rcenvironment.core.datamanagement.MetaDataService"
+ 		bind="bindMetaDataService"
+ 		policy="dynamic"
+ 	/>
 </scr:component>

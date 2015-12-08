@@ -8,7 +8,6 @@
 
 package de.rcenvironment.components.script.common.registry;
 
-import java.io.File;
 import java.io.Writer;
 import java.util.Map;
 
@@ -31,8 +30,9 @@ public interface ScriptExecutor {
      * 
      * @param componentContext current {@link ComponentContext}
      * @return true, if preparing was successful.
+     * @throws ComponentException if preparing was not successful
      */
-    boolean prepareExecutor(ComponentContext componentContext);
+    boolean prepareExecutor(ComponentContext componentContext) throws ComponentException;
 
     /**
      * This method is called each time before the runScript method. It is for preparing the next
@@ -99,13 +99,6 @@ public interface ScriptExecutor {
     void setStateMap(Map<String, Object> stateMap);
 
     /**
-     * 
-     * 
-     * @param stdoutLogFile .
-     */
-    void setStdoutLogFile(File stdoutLogFile);
-
-    /**
      * @param stdoutWriter .
      */
     void setStdoutWriter(Writer stdoutWriter);
@@ -122,9 +115,4 @@ public interface ScriptExecutor {
      */
     void setWorkingPath(String path);
 
-    /**
-     * 
-     * @param stderrLogFile .
-     */
-    void setStderrLogFile(File stderrLogFile);
 }

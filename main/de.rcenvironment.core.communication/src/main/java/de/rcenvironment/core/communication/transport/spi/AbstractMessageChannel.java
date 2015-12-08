@@ -13,7 +13,6 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
@@ -168,7 +167,7 @@ public abstract class AbstractMessageChannel implements MessageChannel {
         SharedThreadPool.getInstance().execute(new Runnable() {
 
             @Override
-            @TaskDescription("Asynchronous handling of connection breakdown")
+            @TaskDescription("Communication Layer: Asynchronous handling of connection breakdown")
             public void run() {
                 onClosedOrBroken();
             }

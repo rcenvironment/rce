@@ -35,6 +35,12 @@ public class EndpointDefinitionsProviderImpl implements Serializable, EndpointDe
 
     private Map<String, EndpointDefinition> dynamicEndpointDefinitions = new HashMap<>();
     
+    private Set<EndpointGroupDefinitionImpl> endpointGroupDefinitions = new HashSet<>();
+    
+    private Map<String, EndpointGroupDefinition> staticEndpointGroupDefinitions = new HashMap<>();
+    
+    private Map<String, EndpointGroupDefinition> dynamicEndpointGroupDefinitions = new HashMap<>();
+    
     private Map<String, EndpointGroupDefinition> endpointGroups = new HashMap<>();
 
     @JsonIgnore
@@ -61,28 +67,48 @@ public class EndpointDefinitionsProviderImpl implements Serializable, EndpointDe
         return dynamicEndpointDefinitions.get(id);
     }
     
+    @JsonIgnore
     @Override
-    public Set<EndpointGroupDefinition> getEndpointGroups() {
-        return new HashSet<>(endpointGroups.values());
-    }
-    
-    /**
-     * @param endpointGroups set of {@link EndpointGroupDefinitionImpl} to set
-     */
-    public void setEndpointGroups(Set<EndpointGroupDefinitionImpl> endpointGroups) {
-        for (EndpointGroupDefinitionImpl endpointGroup : endpointGroups) {
-            this.endpointGroups.put(endpointGroup.getIdentifier(), endpointGroup);
-        }
+    public Set<EndpointGroupDefinition> getDynamicEndpointGroupDefinitions() {
+        return new HashSet<EndpointGroupDefinition>(dynamicEndpointGroupDefinitions.values());
     }
 
     @JsonIgnore
     @Override
-    public EndpointGroupDefinition getEndpointGroup(String groupName) {
-        return endpointGroups.get(groupName);
+    public Set<EndpointGroupDefinition> getStaticEndpointGroupDefinitions() {
+        return new HashSet<EndpointGroupDefinition>(staticEndpointGroupDefinitions.values());
+    }
+
+    @JsonIgnore
+    @Override
+    public EndpointGroupDefinition getDynamicEndpointGroupDefinition(String id) {
+        return dynamicEndpointGroupDefinitions.get(id);
+    }
+    
+    public Set<EndpointGroupDefinition> getEndpointGroupDefinitions() {
+        return new HashSet<EndpointGroupDefinition>(endpointGroupDefinitions);
     }
 
     public Set<EndpointDefinition> getEndpointDefinitions() {
         return new HashSet<EndpointDefinition>(endpointDefinitions);
+    }
+    
+    /**
+     * Assumes that at most one {@link EndpointGroupDefinition} with name "*" is given. If there is more than
+     * one given the very last one is set as the dynamic one.
+     * 
+     * @param endpointGroupDefinitionImpls all {@link EndpointGroupDefinition}s (static and at most one
+     *        dynamic)
+     */
+    public void setEndpointGroupDefinitions(Set<EndpointGroupDefinitionImpl> endpointGroupDefinitionImpls) {
+        endpointGroupDefinitions = endpointGroupDefinitionImpls;
+        for (EndpointGroupDefinition endpointDefinition : endpointGroupDefinitionImpls) {
+            if (endpointDefinition.getIdentifier() != null) {
+                dynamicEndpointGroupDefinitions.put(endpointDefinition.getIdentifier(), endpointDefinition);
+            } else {
+                staticEndpointGroupDefinitions.put(endpointDefinition.getName(), endpointDefinition);
+            }
+        }
     }
 
     /**
@@ -100,6 +126,19 @@ public class EndpointDefinitionsProviderImpl implements Serializable, EndpointDe
             } else {
                 staticEndpointDefinitions.put(endpointInterface.getName(), endpointInterface);
             }
+        }
+    }
+    
+    public Set<EndpointGroupDefinition> getEndpointGroups() {
+        return new HashSet<>(endpointGroups.values());
+    }
+    
+    /**
+     * @param endpointGroups set of {@link EndpointGroupDefinitionImpl} to set
+     */
+    public void setEndpointGroups(Set<EndpointGroupDefinitionImpl> endpointGroups) {
+        for (EndpointGroupDefinitionImpl endpointGroup : endpointGroups) {
+            this.endpointGroups.put(endpointGroup.getIdentifier(), endpointGroup);
         }
     }
 

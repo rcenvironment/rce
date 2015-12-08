@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.viewers.CellEditor;
@@ -38,7 +39,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  */
 final class TargetNodeEditingSupport extends EditingSupport {
 
-    private final WorkflowExecutionConfigurationHelper helper;
+    private static final int ERROR = -1;
+
+    private final NodeIdentifierConfigurationHelper nodeIdConfigHelper;
 
     private final int column;
 
@@ -46,22 +49,30 @@ final class TargetNodeEditingSupport extends EditingSupport {
 
     private final NodeIdentifier localNode;
 
+    private Map<String, List<String>> values = new HashMap<String, List<String>>();
+
     /** Backing {@link NodeIdentifier}s sorted as the are displayed in the combo box. */
-    private final Map<String, List<NodeIdentifier>> nodes = new HashMap<String, List<NodeIdentifier>>();
+    private Map<String, List<NodeIdentifier>> nodes = new HashMap<String, List<NodeIdentifier>>();
 
-    private final DistributedComponentKnowledge compKnowledge;
+    private DistributedComponentKnowledge compKnowledge;
 
-    private final Map<String, Map<NodeIdentifier, Integer>> matchingNodeInfo = new HashMap<String, Map<NodeIdentifier, Integer>>();
+    private final ServiceRegistryAccess serviceRegistryAccess;
 
-    public TargetNodeEditingSupport(final WorkflowExecutionConfigurationHelper helper, final NodeIdentifier localNode,
+    private Map<String, Map<NodeIdentifier, Integer>> matchingNodeInfo = new HashMap<String, Map<NodeIdentifier, Integer>>();
+
+    private Map<WorkflowNode, Boolean> hasVersionErrorMap = new HashMap<WorkflowNode, Boolean>();
+
+    private Map<WorkflowNode, ComponentDescription> initialComponentDescriptions = new HashMap<WorkflowNode, ComponentDescription>();
+
+    public TargetNodeEditingSupport(final NodeIdentifierConfigurationHelper nodeIdConfigHelper, final NodeIdentifier localNode,
         final ColumnViewer viewer, final int column) {
         super(viewer);
-        this.helper = helper;
+        this.nodeIdConfigHelper = nodeIdConfigHelper;
         this.column = column;
         this.viewer = viewer;
         this.localNode = localNode;
 
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class).getCurrentComponentKnowledge();
     }
 
@@ -95,9 +106,8 @@ final class TargetNodeEditingSupport extends EditingSupport {
     /**
      * {@inheritDoc}.
      * <p>
-     * The returned value is preferably the one specified in the {@link ComponentDescription}, but
-     * if this platform is not able to execute this type of node, another valid platform is chosen
-     * (which would be indicated by a return value of 'true' through
+     * The returned value is preferably the one specified in the {@link ComponentDescription}, but if this platform is not able to execute
+     * this type of node, another valid platform is chosen (which would be indicated by a return value of 'true' through
      * {@link #isValueSuggestion(WorkflowNode)}).
      * </p>
      * 
@@ -121,12 +131,16 @@ final class TargetNodeEditingSupport extends EditingSupport {
             }
         } else {
             for (NodeIdentifier p : nodes.get(((WorkflowNode) element).getIdentifier())) {
-                if (isNodeExactMatchRegardingComponentVersion((WorkflowNode) element, p)) {
+                // if (isNodeExactMatchRegardingComponentVersion((WorkflowNode) element, p)) {
+                // result = nodes.get(((WorkflowNode) element).getIdentifier()).indexOf(p);
+                if (node.equals(p)) {
                     result = nodes.get(((WorkflowNode) element).getIdentifier()).indexOf(p);
-                    break;
                 }
+
+                break;
             }
         }
+
         if (result == null && !nodes.isEmpty()) {
             result = 0;
         }
@@ -157,24 +171,93 @@ final class TargetNodeEditingSupport extends EditingSupport {
     }
 
     /**
+     * Sets a remote instance (random in list) for the WorkflowNode.
+     */
+    public int setRemoteValue(WorkflowNode node) {
+        ComponentInstallation installation = null;
+        int comboindex = ERROR;
+
+        List<NodeIdentifier> nodeIdentifierList = nodes.get(node.getIdentifier());
+        List<Integer> remoteIndexList = new ArrayList<Integer>();
+
+        for (int i = 0; i < nodeIdentifierList.size(); i++) {
+
+            if (nodes.get(node.getIdentifier()).get(i) != null) {
+
+                if (!(nodes.get(node.getIdentifier()).get(i).equals(localNode))) {
+
+                    if (isNodeExactMatchRegardingComponentVersion(node, nodes
+                        .get(node.getIdentifier()).get(i)) && isNodeExactMatchRegardingComponentVersion(node)) {
+
+                        remoteIndexList.add(i);
+                    }
+                }
+            }
+        }
+
+        if (!remoteIndexList.isEmpty()) {
+
+            Random random = new Random();
+            int randomIndex = remoteIndexList.get(random.nextInt(remoteIndexList.size()));
+
+            installation = ComponentUtils.getComponentInstallationForNode(
+                node.getComponentDescription().getIdentifier(),
+                compKnowledge.getPublishedInstallationsOnNode(
+                    nodes.get(node.getIdentifier()).get(randomIndex)),
+                nodes.get(node.getIdentifier()).get(randomIndex));
+            comboindex = randomIndex;
+
+            setValue(node, randomIndex);
+        }
+        if (installation != null) {
+            node.getComponentDescription().setComponentInstallationAndUpdateConfiguration(installation);
+        }
+
+        return comboindex;
+    }
+
+    /**
      * Builds and returns the list of available platforms for the given {@link WorkflowNode}.
      * 
      * @param wfNode The {@link WorkflowNode}.
-     * @return The list of strings representing the available platforms for the given
-     *         {@link WorkflowNode}.
+     * @return The list of strings representing the available platforms for the given {@link WorkflowNode}.
      */
     protected List<String> getValues(WorkflowNode wfNode) {
+
+        compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class).getCurrentComponentKnowledge();
+
+        if (!wfNode.isInit()) {
+            initialComponentDescriptions.put(wfNode, wfNode.getComponentDescription().clone());
+            wfNode.setInit(true);
+        }
+
+        boolean hasVersionError = false;
+        if (hasVersionErrorMap.containsKey(wfNode)) {
+            if (hasVersionErrorMap.get(wfNode).equals(true)) {
+                // return values.get(wfNode.getIdentifier());
+                hasVersionError = true;
+            }
+        }
         synchronized (nodes) {
             if (!nodes.containsKey((wfNode.getIdentifier()))) {
                 nodes.put(wfNode.getIdentifier(), new ArrayList<NodeIdentifier>());
             }
             nodes.get(wfNode.getIdentifier()).clear();
         }
-        matchingNodeInfo.put(wfNode.getIdentifier(), helper.getTargetPlatformsForComponent(wfNode.getComponentDescription()));
 
+        // Nodes don't get refreshed at the moment when the selected node has a version error.
+        if (!hasVersionError) {
+            matchingNodeInfo.put(wfNode.getIdentifier(),
+                nodeIdConfigHelper.getTargetPlatformsForComponent(wfNode.getComponentDescription()));
+
+        } else {
+            matchingNodeInfo.put(wfNode.getIdentifier(),
+                nodeIdConfigHelper.getTargetPlatformsForComponent(initialComponentDescriptions.get(wfNode)));
+
+        }
         List<NodeIdentifier> sortedTargetNodes = new ArrayList<NodeIdentifier>(matchingNodeInfo.get(wfNode.getIdentifier()).keySet());
 
-        helper.sortNodes(sortedTargetNodes);
+        nodeIdConfigHelper.sortNodes(sortedTargetNodes);
 
         List<String> nodeValues = new ArrayList<String>(nodes.size());
         // add the *local* option as the topmost one, if the local node supports the component
@@ -196,6 +279,8 @@ final class TargetNodeEditingSupport extends EditingSupport {
             }
         }
 
+        values.put(wfNode.getIdentifier(), nodeValues);
+
         return nodeValues;
     }
 
@@ -206,6 +291,10 @@ final class TargetNodeEditingSupport extends EditingSupport {
             nodeName = nodeName + " " + Messages.newer;
         }
         return nodeName;
+    }
+
+    public Map<WorkflowNode, Boolean> getHasVersionErrorMap() {
+        return hasVersionErrorMap;
     }
 
 }

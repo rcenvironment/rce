@@ -40,6 +40,9 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 
 /**
@@ -49,14 +52,13 @@ import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
  */
 public abstract class OptimizerAlgorithmExecutor implements Runnable {
 
-    /***/
     protected static final Log LOGGER = LogFactory.getLog(OptimizerAlgorithmExecutor.class);
 
     protected static final int SLEEPTIME = 10;
 
-    protected static TypedDatumFactory typedDatumFactory;
-
     private static final int SOCKET_TIMEOUT = 0;
+
+    protected TypedDatumFactory typedDatumFactory;
 
     protected File workingDir;
 
@@ -76,11 +78,13 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
 
     protected Exception startFailedException = null;
 
+    protected Map<Integer, Map<String, Double>> iterationData;
+
     private LocalApacheCommandLineExecutor executor;
 
     private Boolean stop;
 
-    private Thread serverThread;
+    private Runnable serverThread;
 
     private String outputFilename;
 
@@ -90,30 +94,31 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
 
     private boolean initializationLoop;
 
+    private final Object lockObject = new Object();
+
     public OptimizerAlgorithmExecutor() {
 
     }
 
-    public OptimizerAlgorithmExecutor(ComponentContext ci, String newInputFileName, String outputFilename) {
-        try {
-            stop = false;
+    public OptimizerAlgorithmExecutor(ComponentContext ci, String newInputFileName, String outputFilename) throws ComponentException {
+
+        stop = false;
+        inputFileName = newInputFileName;
+        this.outputFilename = outputFilename;
+        this.compContext = ci;
+
+        // the fragment bundle with the binaries should not have this executor bundle as host
+        // because of the build process. Instead, the Optimizer.common bundle is host and so
+        // the classpath of common + fragment are merged. For getting the resources stream a
+        // class from the common bundle (here the CommonBundleClasspathStub) is needed.
+        try (InputStream jarInput = OptimizerAlgorithmExecutor.class.getResourceAsStream(
+            "/resources/de.rcenvironment.components.optimizer.simulator.jar")) {
             workingDir = TempFileServiceAccess.getInstance().createManagedTempDir();
-            inputFileName = newInputFileName;
-            this.outputFilename = outputFilename;
-            this.compContext = ci;
-
-            // the fragment bundle with the binaries should not have this executor bundle as host
-            // because of the build process. Instead, the Optimizer.common bundle is host and so
-            // the classpath of common + fragment are merged. For getting the resources stream a
-            // class from the common bundle (here the CommonBundleClasspathStub) is needed.
-            InputStream jarInput = OptimizerAlgorithmExecutor.class.getResourceAsStream(
-                "/resources/de.rcenvironment.components.optimizer.simulator.jar");
-
             File jar = new File(workingDir.getAbsolutePath() + File.separator + "de.rcenvironment.components.optimizer.simulator.jar");
             FileUtils.copyInputStreamToFile(jarInput, jar);
             jar.setExecutable(true);
         } catch (IOException e) {
-            LOGGER.error("Error in constructor", e);
+            throw new ComponentException("Failed to setup optimizer", e);
         }
     }
 
@@ -135,21 +140,23 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
     /**
      * Returns the optimum for the last optimization run, if the run was successful.
      * 
-     * @return the double values for all design variable outputs from the optimum
+     * @return the evaluation run number of the optimal design
+     * @throws ComponentException if evaluation run number could not be figured out
      */
-    public abstract Map<String, Double> getOptimalDesignVariables();
+    public abstract int getOptimalRunNumber() throws ComponentException;
 
     @Override
+    @TaskDescription("Optimizer Algorithm Executor")
     public abstract void run();
 
-    private void writePortFile() {
+    private void writePortFile() throws ComponentException {
         try {
             File portFile = new File(workingDir.getAbsolutePath() + File.separator + inputFileName + ".port");
             List<String> lines = new LinkedList<String>();
             lines.add("" + port);
             FileUtils.writeLines(portFile, lines, System.getProperty("line.separator"));
         } catch (IOException e) {
-            LOGGER.error("Could not write port file", e);
+            throw new ComponentException("Failed to setup optimizer (failed to write port file)", e);
         }
     }
 
@@ -167,9 +174,10 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 runNewServer();
                 while (client == null) {
                     try {
+                        // TODO what is the reason to wait arbitrary? 10 msec here?
                         Thread.sleep(SLEEPTIME);
                     } catch (InterruptedException e) {
-                        LOGGER.error("Error in blocker ", e);
+                        LOGGER.error("Failed to wait for optimizer to finish setup", e);
                     }
                     if (initFailed.get()) {
                         throw (ComponentException) startFailedException;
@@ -183,7 +191,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error("", e);
+            throw new ComponentException("Failed to setup optimizer", e);
         }
 
         initializationLoop = false;
@@ -226,24 +234,22 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                     command = executionCommand + inputFileName;
                 } else {
                     command =
-                        previousCommand + " " + workingDir.getAbsolutePath() + File.separator + executionCommand + inputFileName;
+                        previousCommand + " " + workingDir.getAbsolutePath() + File.separator + executionCommand + " " + inputFileName;
                 }
             } else if (previousCommand == null || previousCommand.equalsIgnoreCase("")) {
                 command = executionCommand + inputFileName;
             } else {
-                command = previousCommand + " " + executionCommand + inputFileName;
+                command = previousCommand + " " + executionCommand;
             }
             executor = new LocalApacheCommandLineExecutor(new File(workingDir.getAbsolutePath() + File.separator));
             executor.start(command);
             executor.setEnv("PATH", System.getenv("PATH") + File.pathSeparator + javaHome);
             File consoleStdOutput = new File(workingDir, "consoleStdOutput.txt");
             File consoleErrOutput = new File(workingDir, "consoleErrOutput.txt");
-            ConsoleRowUtils.logToWorkflowConsole(compContext, executor.getStdout(), ConsoleRow.Type.STDOUT,
-                consoleStdOutput,
-                false);
-            ConsoleRowUtils.logToWorkflowConsole(compContext, executor.getStderr(), ConsoleRow.Type.STDERR,
-                consoleErrOutput,
-                false);
+            TextStreamWatcher stdOutWatcher = ConsoleRowUtils.logToWorkflowConsole(compContext.getLog(), executor.getStdout(),
+                ConsoleRow.Type.TOOL_OUT, consoleStdOutput, false);
+            TextStreamWatcher stdErrWatcher = ConsoleRowUtils.logToWorkflowConsole(compContext.getLog(), executor.getStderr(),
+                ConsoleRow.Type.TOOL_ERROR, consoleErrOutput, false);
             try {
                 int exitCode = executor.waitForTermination();
                 if (exitCode != 0) {
@@ -251,21 +257,16 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                         startFailed.set(true);
                         startFailedException = new ComponentException("Optimizer exited with a non zero exit code. "
                             + "Optimizer exit code = " + exitCode);
-                        throw new ComponentException("Optimizer exited with a non zero exit code. "
-                            + "Optimizer exit code = " + exitCode);
                     }
                 }
+                stdOutWatcher.waitForTermination();
+                stdErrWatcher.waitForTermination();
                 stop();
             } catch (InterruptedException e) {
-                LOGGER.info("Optimizer closed while sleeping");
+                LOGGER.info("Failed to wait for optimizer to wake up (optimizer ended abruptly).", e);
             }
         } catch (IOException e) {
-            LOGGER.error("ProgramBlocker: IOException " + e.getMessage());
-        }
-        try {
-            Thread.sleep(SLEEPTIME);
-        } catch (InterruptedException e) {
-            LOGGER.info("ProgramBlocker: InterruptedException " + e.getMessage());
+            throw new ComponentException("Failed to start optimizer", e);
         }
     }
 
@@ -277,34 +278,26 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
      * @param constraintVariables : all constraints
      * @param constraintVariablesGradients : all gradients for the constraints
      * @param outputValues : all design variables
+     * @throws ComponentException on unexpected errors
      */
     public void runStep(Map<String, Double> inputVariables, Map<String, Double> inputVariablesGradients,
         Map<String, Double> constraintVariables, Map<String, Double> constraintVariablesGradients,
-        Map<String, TypedDatum> outputValues) {
+        Map<String, TypedDatum> outputValues) throws ComponentException {
         try {
             if (!isStopped()) {
                 if (messageFromClient != null) {
                     writeInputFileforExternalProgram(inputVariables, inputVariablesGradients,
                         constraintVariables, outputFilename);
                     sendMessageToClient("Close");
-                    try {
-                        serverThread = null;
-                        serverThread = runNewServer();
-                        // Wait for client to connect or termination of program thread
-                        while (client == null && !isStopped()) {
-                            try {
-                                Thread.sleep(SLEEPTIME);
-                            } catch (InterruptedException e) {
-                                LOGGER.error("Error in blocker ", e);
-                            }
+                    serverThread = runNewServer();
+                    // Wait for client to connect or termination of program thread
+                    while (client == null && !isStopped()) {
+                        try {
+                            // TODO what is the reason to wait arbitrary? 10 msec here?
+                            Thread.sleep(SLEEPTIME);
+                        } catch (InterruptedException e) {
+                            LOGGER.error("Failed to wait for optimizer to finish running optimization step", e);
                         }
-                        if (serverThread != null) {
-                            synchronized (serverThread) {
-                                serverThread.interrupt();
-                            }
-                        }
-                    } catch (IOException e) {
-                        LOGGER.error("Error in blocker", e);
                     }
                     if (!stop) {
                         if (readMessageFromClient()) {
@@ -314,7 +307,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 }
             }
         } catch (IOException e) {
-            LOGGER.error("Error in blocker", e);
+            throw new ComponentException("Failed to run optimization step", e);
         }
     }
 
@@ -348,7 +341,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
         return false;
     }
 
-    private void startServer() {
+    private void startServer() throws ComponentException {
         if (!stop) {
             try {
                 if (port == null || port.equals("")) {
@@ -360,18 +353,19 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 serverSocket.setSoTimeout(SOCKET_TIMEOUT);
                 writePortFile();
             } catch (IOException e) {
-                LOGGER.error("Could not start server", e);
+                throw new ComponentException("Failed to start the server needed to run the optimizer", e);
             }
         }
     }
 
-    private Thread runNewServer() throws IOException {
+    private Runnable runNewServer() throws ComponentException {
         if (serverSocket == null) {
             startServer();
         }
-        Thread newServerThread = new Thread() {
+        Runnable newServerThread = new Runnable() {
 
             @Override
+            @TaskDescription("Optimizer Server Socket")
             public void run() {
                 try {
                     if (serverSocket != null) {
@@ -380,11 +374,16 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 } catch (IOException e) {
                     if (isStopped()) {
                         LOGGER.debug("Socket closed because program finished");
+                    } else {
+                        // TODO review error handling; I expect an exception to be thrown here
+                        // added at least logging, but only logging the error might not sufficient
+                        // here
+                        LOGGER.error("Failed to run the server needed to run the optimizer", e);
                     }
                 }
             }
         };
-        newServerThread.start();
+        SharedThreadPool.getInstance().execute(newServerThread);
         return newServerThread;
     }
 
@@ -392,13 +391,13 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
      * Stops everything.
      */
     public void stop() {
-        synchronized (stop) {
+        synchronized (lockObject) {
             stop = true;
         }
         try {
             if (serverThread != null) {
                 synchronized (serverThread) {
-                    if (port != null && serverSocket != null && serverThread.isAlive()) {
+                    if (port != null && serverSocket != null) {
                         Socket server = new Socket("localhost", Integer.parseInt(port));
                         PrintWriter printWriter =
                             new PrintWriter(
@@ -413,7 +412,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 startFailed.set(true);
             }
         } catch (IOException e) {
-            LOGGER.debug("Stopping optimizer failed", e);
+            LOGGER.warn("Optimizer connection reset (maybe because of through canceling the workflow).");
         }
 
     }
@@ -428,9 +427,9 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 executor.waitForTermination();
             }
         } catch (IOException e) {
-            LOGGER.debug("Socket closed because program terminated");
+            LOGGER.error("Error on shutting down the optimizer", e);
         } catch (InterruptedException e) {
-            LOGGER.debug("Socket closed because program terminated");
+            LOGGER.error("Error on shutting down the optimizer", e);
         }
     }
 
@@ -445,16 +444,13 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
             if (this.serverSocket != null) {
                 this.serverSocket.close();
             }
-            if (serverThread != null) {
-                serverThread.interrupt();
-            }
             if (executor != null) {
                 executor.waitForTermination();
             }
         } catch (IOException e) {
-            LOGGER.warn("Failed to dispose blocker tempfiles", e);
+            LOGGER.error("Failed to dispose blocker files", e);
         } catch (InterruptedException e) {
-            LOGGER.warn("Failed to dispose blocker tempfiles", e);
+            LOGGER.error("Failed to dispose blocker files", e);
         }
     }
 
@@ -467,7 +463,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
      * @return true, if optimizer is stopped
      */
     public boolean isStopped() {
-        synchronized (stop) {
+        synchronized (lockObject) {
             return stop;
         }
     }
@@ -575,5 +571,13 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
 
     public void setWorkingDir(File workingDir) {
         this.workingDir = workingDir;
+    }
+
+    public void setIterationData(Map<Integer, Map<String, Double>> iterationData) {
+        this.iterationData = iterationData;
+    }
+
+    public Throwable getStartFailedException() {
+        return startFailedException;
     }
 }

@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Component Execution Controller">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Component Execution Controller">
 
 	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutionControllerImpl"/>
 
@@ -10,10 +10,10 @@
         policy="dynamic"
     />
     
-	<reference name="Endpoint Datum Sender"
-		interface="de.rcenvironment.core.component.execution.internal.EndpointDatumSender"
+	<reference name="Endpoint Datum Dispatcher"
+		interface="de.rcenvironment.core.component.execution.internal.EndpointDatumDispatcher"
 		cardinality="1..1"
-		bind="bindEndpointDatumSender"
+		bind="bindEndpointDatumDispatcher"
 		policy="dynamic"
 	/>
 	
@@ -24,11 +24,19 @@
         bind="bindTypedDatumService"
         policy="dynamic"
     />
+    
+    <reference
+        name="Configuration Service"
+        interface="de.rcenvironment.core.configuration.ConfigurationService"
+        cardinality="1..1"
+        bind="bindConfigurationService"
+        policy="dynamic"
+    />
 
-	<reference name="Distributed Meta Data Service"
-		interface="de.rcenvironment.core.datamanagement.DistributedMetaDataService"
+	<reference name="Meta Data Service"
+		interface="de.rcenvironment.core.datamanagement.MetaDataService"
 		cardinality="1..1"
-		bind="bindDistributedMetaDataService"
+		bind="bindMetaDataService"
 		policy="dynamic"
 	/>
 	
@@ -38,5 +46,13 @@
 		bind="bindEndpointDatumSerializer"
 		policy="dynamic"
 	/>
+	
+	<reference name="Component Execution Stats Service"
+		interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionStatsService"
+		bind="bindComponentExecutionStatsService"
+		cardinality="1..1"
+		policy="dynamic"
+	/>
+	
 	
 </scr:component>

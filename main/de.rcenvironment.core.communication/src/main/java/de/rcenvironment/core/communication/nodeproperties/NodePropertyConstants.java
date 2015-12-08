@@ -28,7 +28,8 @@ public final class NodePropertyConstants {
     public static final String KEY_DISPLAY_NAME = "displayName";
 
     /**
-     * Property key for the millisecond timestamp (as returned by System.currentTimeMillis()) of this node's startup time.
+     * Property key for the millisecond timestamp (as returned by System.currentTimeMillis()) of
+     * this node's startup time.
      */
     public static final String KEY_SESSION_START_TIME = "sessionStartTime";
 

@@ -149,6 +149,10 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
         }
 
         logger.debug("Final SCP mapped path: " + rewrittenPath);
+        
+        //Create necessary parent directories, if not existing
+        File rewrittenPathParentDir = new File(rewrittenPath).getParentFile();
+        rewrittenPathParentDir.mkdirs();
 
         return originalCommandStart + rewrittenPath;
     }

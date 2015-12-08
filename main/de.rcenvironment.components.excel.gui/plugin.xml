@@ -74,7 +74,7 @@
          <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
+               label="Workflow Data"
                afterTab="workflow.editor.tab.excel.Macros">
          </propertyTab>
       </propertyTabs>

@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -41,16 +42,18 @@ import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.ui.part.ViewPart;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
+import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotificationSubscriber;
-import de.rcenvironment.core.component.workflow.execution.spi.WorkflowStateChangeListener;
+import de.rcenvironment.core.component.workflow.execution.spi.MultipleWorkflowsStateChangeListener;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.gui.workflow.view.OpenReadOnlyWorkflowRunEditorAction;
 import de.rcenvironment.core.notification.SimpleNotificationService;
@@ -61,6 +64,7 @@ import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProces
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
@@ -72,7 +76,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Robert Mischke
  * @author Doreen Seider
  */
-public class WorkflowListView extends ViewPart implements WorkflowStateChangeListener {
+public class WorkflowListView extends ViewPart implements MultipleWorkflowsStateChangeListener {
 
     // the maximum number of ConsoleRows to aggregate to a single batch
     // NOTE: arbitrary value; adjust when useful/necessary
@@ -202,7 +206,7 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
         viewer.setSorter(columnSorter);
 
         String[] titles = {
-            Messages.name, Messages.status, "Controller", "Start", "Started From", "Additional Information" };
+            Messages.name, Messages.status, "Controller", "Start", "Started From", "Comment" };
         final int width = 150;
 
         for (int i = 0; i < titles.length; i++) {
@@ -280,7 +284,7 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
                     // subscribe to all state notifications of the local node
                     try {
                         sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + ".*", workflowStateChangeListener, null);
-                    } catch (CommunicationException e) {
+                    } catch (RemoteOperationException e) {
                         LogFactory.getLog(getClass()).error(
                             "Failed to set up remote subscriptions; the workflow list will not update properly: " + e.getMessage());
                         // TODO review: anything else that can be done except continuing with broken updates? - misc_ro, April 2015
@@ -367,12 +371,7 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
                         public Void call() throws Exception {
                             sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + executionId,
                                 workflowStateChangeListener, wi.getNodeId());
-
-                            WorkflowState workflowState = workflowExecutionService.getWorkflowState(executionId, wi.getNodeId());
-                            if (workflowState != null) {
-                                WorkflowStateModel.getInstance().setState(wi.getExecutionIdentifier(),
-                                    workflowState);
-                            }
+                            WorkflowStateModel.getInstance().setState(wi.getExecutionIdentifier(), wi.getWorkflowState());
 
                             return null;
                         }
@@ -403,7 +402,8 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
             .getDescriptor(WorkflowState.PAUSED.name())) {
 
             @Override
-            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws CommunicationException {
+            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
+                RemoteOperationException {
                 workflowExecutionService.pause(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
             }
 
@@ -418,7 +418,8 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
             .getDescriptor(WorkflowState.RESUMING.name())) {
 
             @Override
-            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws CommunicationException {
+            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
+                RemoteOperationException {
                 workflowExecutionService.resume(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
             }
 
@@ -432,7 +433,8 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
             .getDescriptor(WorkflowState.CANCELLED.name())) {
 
             @Override
-            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws CommunicationException {
+            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
+                RemoteOperationException {
                 workflowExecutionService.cancel(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
             }
 
@@ -442,11 +444,12 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
             }
         };
 
-        disposeAction = new WorflowLifeCycleAction(Messages.dispose, Activator.getInstance().getImageRegistry()
-            .getDescriptor(WorkflowState.DISPOSED.name())) {
+        disposeAction = new WorflowLifeCycleAction(Messages.dispose, ImageDescriptor.createFromImage(
+            ImageManager.getInstance().getSharedImage(StandardImages.REMOVE_16))) {
 
             @Override
-            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws CommunicationException {
+            protected void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
+                RemoteOperationException {
                 workflowExecutionService.dispose(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
             }
 
@@ -461,7 +464,7 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
 
     /**
      * Abstract class for lifecylce actions.
-     *
+     * 
      * @author Doreen Seider
      */
     private abstract class WorflowLifeCycleAction extends Action {
@@ -482,7 +485,7 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
                         WorkflowExecutionInformation wfExeInfo = (WorkflowExecutionInformation) o;
                         try {
                             performAction(wfExeInfo);
-                        } catch (CommunicationException e) {
+                        } catch (ExecutionControllerException | RemoteOperationException e) {
                             LogFactory.getLog(WorkflowListView.class).error(
                                 StringUtils.format("%s workflow failed", getActionAsString()), e);
                         }
@@ -515,7 +518,8 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
             job.schedule();
         }
 
-        protected abstract void performAction(WorkflowExecutionInformation wfExeInfo) throws CommunicationException;
+        protected abstract void performAction(WorkflowExecutionInformation wfExeInfo) throws ExecutionControllerException,
+            RemoteOperationException;
 
         protected abstract String getActionAsString();
     }
@@ -544,8 +548,15 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
 
                 @Override
                 public void onAsyncException(Exception e) {
-                    LogFactory.getLog(getClass()).error(
-                        "Asynchronous exception during parallel subscriptions for newly created workflow notifications", e);
+                    final Log log = LogFactory.getLog(getClass());
+                    if (e.getCause() == null) {
+                        // log a compressed message; this includes RemoteOperationExceptions, which (by design) never have a "cause"
+                        log.warn("Asynchronous exception during parallel subscriptions for newly created workflow notifications: "
+                            + e.toString());
+                    } else {
+                        // on unexpected errors, log the full stacktrace
+                        log.warn("Asynchronous exception during parallel subscriptions for newly created workflow notifications", e);
+                    }
                 }
             });
             nodesSubscribedForNewWorkflows.retainAll(nodesAdded);
@@ -589,9 +600,9 @@ public class WorkflowListView extends ViewPart implements WorkflowStateChangeLis
     }
 
     @Override
-    public void onNewWorkflowState(String workflowIdentifier, WorkflowState newState) {
+    public void onWorkflowStateChanged(String wfExecutionId, WorkflowState newState) {
         if (newState != null) {
-            WorkflowStateModel.getInstance().setState(workflowIdentifier, newState);
+            WorkflowStateModel.getInstance().setState(wfExecutionId, newState);
         }
         synchronized (syncUpdateLock) {
             final Set<WorkflowExecutionInformation> wis = updateWorkflowInformations();

@@ -56,7 +56,7 @@ public class JoinerEditDynamicEndpointCommand extends WorkflowNodeCommand {
         for (int i = 1; i <= inputCount; i++) {
             EndpointDescription oldInput = getWorkflowNode().getInputDescriptionsManager()
                 .getEndpointDescription(JoinerComponentConstants.INPUT_NAME + getString(i));
-            EndpointDescription newInput = oldInput.clone();
+            EndpointDescription newInput = EndpointDescription.copy(oldInput);
             newInput.setDataType(newDataType);
             getWorkflowNode().getInputDescriptionsManager()
                 .editDynamicEndpointDescription(oldInput.getName(), oldInput.getName(), newInput.getDataType(), newInput.getMetaData());
@@ -64,7 +64,7 @@ public class JoinerEditDynamicEndpointCommand extends WorkflowNodeCommand {
 
         EndpointDescription oldOutput = getWorkflowNode().getOutputDescriptionsManager()
             .getEndpointDescription(JoinerComponentConstants.OUTPUT_NAME);
-        EndpointDescription newOutput = oldOutput.clone();
+        EndpointDescription newOutput = EndpointDescription.copy(oldOutput);
         newOutput.setDataType(newDataType);
         getWorkflowNode().getOutputDescriptionsManager()
             .editStaticEndpointDescription(oldOutput.getName(), newOutput.getDataType(), newOutput.getMetaData());
@@ -77,7 +77,7 @@ public class JoinerEditDynamicEndpointCommand extends WorkflowNodeCommand {
         for (int i = 1; i <= inputCount; i++) {
             EndpointDescription oldInput = getWorkflowNode().getInputDescriptionsManager()
                 .getEndpointDescription(JoinerComponentConstants.INPUT_NAME + getString(i));
-            EndpointDescription newInput = oldInput.clone();
+            EndpointDescription newInput = EndpointDescription.copy(oldInput);
             newInput.setDataType(oldDataType);
             getWorkflowNode().getInputDescriptionsManager()
                 .editDynamicEndpointDescription(oldInput.getName(), oldInput.getName(), newInput.getDataType(), newInput.getMetaData());
@@ -85,7 +85,7 @@ public class JoinerEditDynamicEndpointCommand extends WorkflowNodeCommand {
 
         EndpointDescription oldOutput = getWorkflowNode().getOutputDescriptionsManager()
             .getEndpointDescription(JoinerComponentConstants.OUTPUT_NAME);
-        EndpointDescription newOutput = oldOutput.clone();
+        EndpointDescription newOutput = EndpointDescription.copy(oldOutput);
         newOutput.setDataType(oldDataType);
         getWorkflowNode().getOutputDescriptionsManager()
             .editStaticEndpointDescription(newOutput.getName(), newOutput.getDataType(), newOutput.getMetaData());

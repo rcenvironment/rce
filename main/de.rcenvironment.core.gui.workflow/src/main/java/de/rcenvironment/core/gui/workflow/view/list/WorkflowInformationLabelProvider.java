@@ -16,6 +16,7 @@ import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
+import de.rcenvironment.core.gui.workflow.Activator;
 
 /**
  * LabelProvider for WorkflowInformation objects.
@@ -52,7 +53,14 @@ public class WorkflowInformationLabelProvider extends LabelProvider implements I
     }
 
     @Override
-    public Image getColumnImage(Object arg0, int arg1) {
+    public Image getColumnImage(Object element, int column) {
+        if (element instanceof WorkflowExecutionInformation) {
+            if (column == 0) {
+                final WorkflowState state = WorkflowStateModel.getInstance().getState(((WorkflowExecutionInformation) element)
+                    .getExecutionIdentifier());
+                return Activator.getInstance().getImageRegistry().get(state.name());
+            }
+        }
         return null;
     }
 }

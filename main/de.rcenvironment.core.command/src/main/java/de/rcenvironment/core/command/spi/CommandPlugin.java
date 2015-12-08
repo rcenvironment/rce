@@ -21,4 +21,5 @@ public interface CommandPlugin extends SingleCommandHandler {
      * @return a list of this plugin's contributions to the "help" command output
      */
     Collection<CommandDescription> getCommandDescriptions();
+
 }

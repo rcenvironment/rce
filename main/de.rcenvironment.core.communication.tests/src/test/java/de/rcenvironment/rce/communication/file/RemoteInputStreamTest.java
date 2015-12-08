@@ -23,7 +23,6 @@ import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteInputStream;
 import de.rcenvironment.core.communication.fileaccess.internal.RemoteFileConnectionSupport;
@@ -37,8 +36,6 @@ import de.rcenvironment.core.communication.fileaccess.spi.RemoteFileConnectionFa
  */
 public class RemoteInputStreamTest {
 
-    private User user = EasyMock.createNiceMock(User.class);
-
     /**
      * Set up.
      * 
@@ -49,7 +46,7 @@ public class RemoteInputStreamTest {
         ServiceReference ref = EasyMock.createNiceMock(ServiceReference.class);
 
         RemoteFileConnectionFactory factoryMock = EasyMock.createNiceMock(RemoteFileConnectionFactory.class);
-        EasyMock.expect(factoryMock.createRemoteFileConnection(user, new URI(URI))).andReturn(new DummyRemoteFileConnection());
+        EasyMock.expect(factoryMock.createRemoteFileConnection(new URI(URI))).andReturn(new DummyRemoteFileConnection());
         EasyMock.replay(factoryMock);
 
         BundleContext contextMock = EasyMock.createNiceMock(BundleContext.class);
@@ -70,7 +67,7 @@ public class RemoteInputStreamTest {
      * */
     @Test
     public void test() throws Exception {
-        RemoteInputStream remoteStream = new RemoteInputStream(user, new URI(URI));
+        RemoteInputStream remoteStream = new RemoteInputStream(new URI(URI));
         try {
             remoteStream.read();
             fail();

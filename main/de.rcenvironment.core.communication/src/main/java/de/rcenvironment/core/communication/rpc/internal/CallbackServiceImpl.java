@@ -11,6 +11,7 @@ package de.rcenvironment.core.communication.rpc.internal;
 import java.io.Serializable;
 import java.lang.ref.WeakReference;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Proxy;
 import java.util.Collections;
 import java.util.Date;
@@ -22,20 +23,21 @@ import java.util.UUID;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
+import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheckHasAnnotation;
 
 /**
- * Implementation of {@link CallbackService}.
+ * Implementation of {@link CallbackService} (including {@link RemotableCallbackService}).
  * 
  * @author Doreen Seider
  */
-public class CallbackServiceImpl implements CallbackService {
+public class CallbackServiceImpl implements CallbackService, RemotableCallbackService {
 
     // the callback that verifies the presence of @AllowRemoteAccess annotations
     private static final MethodPermissionCheck METHOD_PERMISSION_CHECK = new MethodPermissionCheckHasAnnotation(AllowRemoteAccess.class);
@@ -97,7 +99,7 @@ public class CallbackServiceImpl implements CallbackService {
     @Override
     @AllowRemoteAccess
     public Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters)
-        throws CommunicationException {
+        throws RemoteOperationException {
 
         WeakReference<Object> weakRef = objects.get(objectIdentifier);
         if (weakRef != null) {
@@ -105,10 +107,15 @@ public class CallbackServiceImpl implements CallbackService {
             if (objectToCall != null) {
                 // LOGGER.debug("Received method call: " + methodName + "@" +
                 // objectToCall.toString());
-                return MethodCaller.callMethod(objectToCall, methodName, parameters, METHOD_PERMISSION_CHECK);
+                try {
+                    return MethodCaller.callMethod(objectToCall, methodName, parameters, METHOD_PERMISSION_CHECK);
+                } catch (InvocationTargetException e) {
+                    // FIXME 7.0.0: review
+                    throw new RemoteOperationException("Callback method threw an exception: " + e.toString());
+                }
             }
         }
-        throw new CommunicationException("The object to call back is not reachable anymore. (method to call: " + methodName + ")");
+        throw new RemoteOperationException("The object to call back is not reachable anymore, requested method: " + methodName + "(...)");
     }
 
     @Override

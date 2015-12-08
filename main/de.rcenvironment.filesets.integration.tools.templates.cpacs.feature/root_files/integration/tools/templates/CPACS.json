@@ -20,7 +20,8 @@
   "toolspecificInputdataFilename" : "ToolSpecificInputData.xml",
   "cpacsResultFilename" : "cpacsResult.xml",
   "mappingOutputFilename" :  "mappingOutput.xml",
-  "toolOutputFilename" : "ToolOutput/toolOutput.xml", 
+  "toolOutputFilename" : "ToolOutput/toolOutput.xml",
+  "imitationToolOutputFilename" : "ImitationMode/dummyOutput.xml",  
   "copyToolBehavior" : "once",
   "deleteWorkingDirectoriesAfterWorkflowExecution" : true,
   "outputs" : [ {

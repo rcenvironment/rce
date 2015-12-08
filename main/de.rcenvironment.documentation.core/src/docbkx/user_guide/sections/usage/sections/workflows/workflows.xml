@@ -1,0 +1,496 @@
+<!DOCTYPE sect1 PUBLIC "-//OASIS//DTD DocBook XML V4.4//EN" "http://www.oasis-open.org/docbook/xml/4.4/docbookx.dtd">
+<sect1 id="usage_components">
+	<title>Workflows</title>
+	<para>This section describes the basics of workflows in RCE.</para>
+	<sect2>
+		<title>Rationale</title>
+		<para>RCE is designed to execute automated, distributed workflows. Workflows consist of so called workflow components which can be coupled among each other. Loops (even multi-nested ones) are supported.</para>
+	</sect2>
+	<sect2>
+		<title>Getting Started</title>
+		<para>To get started with workflows in RCE it is recommended to both read the following sections about workflows and walk through the example workflows provided in RCE. The sections here refer to the workflow examples if useful and vice versa.</para>
+		<para>Workflows in RCE are encapsulated in so called projects. To create the workflow examples project go to: File->New->Workflow Examples Project. A dialog appears. Give the project a name of your choice and confirm by clicking 'Ok'. In the 'Project Explorer' on the left-hand side, the newly created project is shown. The example workflows are grouped in sub folders. It is recommended to walk through the workflows following the prefix starting with '01_01_Hello_World.wf'.</para>
+	</sect2>
+	<sect2>
+		<title>Workflow Components</title>
+		<para>Workflow components are either tools that are integrated by users or are provided by RCE supplying multi-purpose functionality. Workflow components provided by RCE grouped by purpose (workflows components are left out that are deprecated (i.e., they are removed soon) or that are not recommended to use anymore):</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">Data:</emphasis>Database</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Data Flow:</emphasis>Input Provider, Output Writer, Joiner, Switch</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Evaluation:</emphasis>Optimizer, Design of Experiments, Parametric Study, Converger, Evaluation Memory</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Execution:</emphasis>Script, Cluster, Excel</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">XML:</emphasis>XML Merger</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">CPACS:</emphasis>TiGL Viewer, VAMPzero Initializer</para>
+				</listitem>
+			</itemizedlist>
+		<para>The example workflows in sub folder '02_Component Groups' introduce some of the workflow
+			components provided. Additionally, there is a documentation for each workflow component
+			available in RCE. Press 'F1'. A help view opens on the right-hand side. Select a
+			workflow component to show the documentation in the help view.</para>
+	</sect2>
+	<sect2>
+		<title>Coupling Workflow Components</title>
+		<para>A workflow component can send data to other workflow components. Therefore, a so called
+			connection needs to be created between the sending workflow component and the receiving
+			one. For that purpose, workflow components can have so called inputs and outputs. A
+			connection is always created between an output and an input. You can think of a
+			connection as a directed data channel. Data is sent as atomic packages which are not
+			related to each other (there is no data streaming between workflow components).
+			Supported data types are:</para>
+		<para>Primitive data types:</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">Short Text:</emphasis>A short text (up to 140 characters)</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Integer:</emphasis>Integer number</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Float:</emphasis>Floating point number</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Boolean:</emphasis>Boolean value (true or false)</para>
+				</listitem>
+			</itemizedlist>
+			<para>Referenced data types (The actual data is stored in RCE's data management and only a reference is transfered):</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">File:</emphasis>File</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Directory:</emphasis>Directory</para>
+				</listitem>
+			</itemizedlist>
+			<para>Other data types</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">Vector:</emphasis>one-dimensional "Small Table" (one column) restricted to values of type Float</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Matrix:</emphasis>Small Table restricted to values of type Float</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Small Table:</emphasis>Table restricted to values of type Short Text, Integer, Float, Boolean (primitive data types) (up to 100.000 cells)</para>
+				</listitem>
+			</itemizedlist>
+			<para>Not all of the workflow components support all of the data types listed. A connection can be created between an output and an input if:</para>
+			<itemizedlist>
+				<listitem>
+					<para>The data type of the output is convertible to the data type of the input.</para>
+				</listitem>
+				<listitem>
+					<para>The input is not already connected to another output.</para>
+				</listitem>
+			</itemizedlist>
+	</sect2>
+	<sect2>
+		<title>Execution Scheduling of Workflow Components</title>
+		<para>The execution of workflows is data-driven. As soon as all of the desired input data is
+			available, a workflow component will be executed. Which input data is desired, is defined by the
+			component developer (RCE workflow components), the tool integrator,
+			and/or the workflow creator. The workflow component developer and tool integrator decide which
+			options are allowed for a particular workflow component. The workflow creator can choose between
+			those options at workflow design time. The following options exist: </para>
+		<para>Input handling:</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">Constant:</emphasis> The value won't be consumed during
+					execution and will be reused in the next iteration (if there is any loop in the
+					workflow). The workflow will fail if there is more than one value received, except
+					for nested loops: All inputs of type <emphasis role="italic">Constant</emphasis>
+					are resetted within nested loops, after the nested loop has been
+					finished.</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Single (Consumed):</emphasis> The input value will be
+					consumed during execution and won't be reused in the next iteration (if there is
+					any loop in the workflow). Queuing of input values is not allowed. If another
+					value is received before the current one was consumed, the workflow will fail.
+					This can guard against workflow design errors. E.g., an optimizer must not
+					receive more than one value at one single input within one iteration.</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Queue (Consumed):</emphasis> The input value will be
+					consumed during execution and won't be reused in the next iteration (if there is
+					any loop in the workflow). Queuing of input values is allowed.</para>
+				</listitem>
+			</itemizedlist>
+			<para>Execution constraint:</para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">Required:</emphasis> The input value is required for
+					execution. Thus, the input must be connected to an output.</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Required if connected:</emphasis> The input value is not
+					required for execution (e.g., if a default value will be used as fall back
+					within the component). Thus, the input doesn't need to be connected to an
+					output. But if it is connected to an output, it will be handled as an input of
+					type <emphasis role="italic">Required</emphasis>.</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Not required:</emphasis> The input value is not required
+					for execution. Thus, the input doesn't need to be connected to an output. If it
+					is connected to an output, the input value will be passed to the component if
+					there is a value available at the time of execution. Values at inputs of type
+						<emphasis role="italic">Not required</emphasis> cannot trigger component
+					execution except if it is the only input defined for a component. Note: With
+					this option, non-deterministic workflows can be easily created. Use this option
+					carefully. If in doubt, leave it out.</para>
+				</listitem>
+			</itemizedlist>
+			<para>Note: With RCE 6.0.0 the scheduling options changed. Below is the migration path: </para>
+			<itemizedlist>
+				<listitem>
+					<para>
+					<emphasis role="italic">Initial</emphasis> was migrated to <emphasis
+						role="italic">Constant</emphasis> and <emphasis role="italic"
+						>Required</emphasis>.</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Required</emphasis> was migrated to <emphasis
+						role="italic">Single (Consumed)</emphasis> and <emphasis role="italic"
+						>Required</emphasis>.</para>
+				</listitem>
+				<listitem>
+					<para>
+					<emphasis role="italic">Optional</emphasis> was migrated to <emphasis
+						role="italic">Single (Consumed)</emphasis> and <emphasis role="italic"
+						>Required if connected</emphasis>.</para>
+				</listitem>
+			</itemizedlist>
+			<para>If you encounter any problems with workflows created before RCE 6.0.0, it is likely, that
+			it affects the migration to <emphasis role="italic">Single (Consumed)</emphasis> instead
+			of to <emphasis role="italic">Queue (Consumed)</emphasis>. We decided to migrate
+			conservatively to not hide any existing workflow design errors. So, if queuing of input
+			values is allowed for an input, just change the input handling option to <emphasis
+				role="italic">Queue (Consumed)</emphasis> after the workflow was updated. Another
+			issue can affect the migration of <emphasis role="italic">Optional</emphasis>. If it
+			affects an input of the script component, check the option, which let the script
+			component execute on each new value at any of its inputs. Also check <emphasis
+				role="italic">Not required</emphasis> as an alternative execution constraint
+			option.</para>
+	</sect2>
+	<sect2>
+		<title>(Nested) Loops</title>
+		<para>Workflow components can be coupled to loops. A loop must always contain a so called driver
+			workflow component. Driver workflow components (group "Evaluation") are: Optimizer,
+			Design of Experiments, Parametric Study, Converger (see the example workflow
+			"02_02_Evaluation_Drivers"). The responsibilities of a driver workflow component in a
+			loop are:</para>
+			<itemizedlist>
+				<listitem>
+					<para>Send values to the loop and receive the result values.</para>
+				</listitem>
+				<listitem>
+					<para>Finish the loop based on some certain criteria.</para>
+				</listitem>
+			</itemizedlist>
+		<para>If a loop contains another loop, we speak of the later one as a nested loop. A nested loop
+			can contain again another loop and so on. To create workflows with nested loops (see
+			example workflows in "03_Workflow_Logic"), some certain concepts behind nested loops
+			must be understood first:</para>
+					<itemizedlist>
+				<listitem>
+					<para>Outer loop, inner loop: If a loop contains another loop, this loop is considered as inner loop. From the point of the inner loop, the other loop is considered as outer loop.</para>
+				</listitem>
+				<listitem>
+					<para>Data from outer to inner loops and vice versa are only allowed to be exchanged via the workflow driver component. Thereby, only certain inputs and outputs are allowed to be connected to the outer loop, certain ones to the inner loop and certain ones to the loop itself (self loop). For example, if a 'self loop' output is connected to an outer loop, the workflow won't succeed and might even get stucked. Below you find tables of inputs and outputs for each driver workflow components and whether they are allowed to be connected to an inner loop, outer loop or the loop itself.</para>
+				</listitem>
+			</itemizedlist>
+			<table frame="all">
+				<title>Inputs of Optimizer</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Input</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+					<row>
+						<entry>* - lower bounds - start value</entry>
+						<entry>Outer loop</entry>
+					</row>
+					<row>
+						<entry>* - upper bounds - start value</entry>
+						<entry>Outer loop</entry>
+					</row>
+					<row>
+						<entry>* - start value</entry>
+						<entry>Outer loop</entry>
+					</row>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>* (Objective functions)</entry>
+							<entry>Self loop</entry>
+						</row>
+					<row>
+						<entry>* (Constraints)</entry>
+						<entry>Self loop</entry>
+					</row>
+					<row>
+						<entry>∂*.∂* (Gradients)</entry>
+						<entry>Self loop</entry>
+					</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Outputs of Optimizer</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Output</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+					<row>
+						<entry>*_optimal</entry>
+						<entry>Outer loop</entry>
+					</row>
+					<row>
+						<entry>Done</entry>
+						<entry>Outer loop</entry>
+					</row>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>* (Design variables)</entry>
+							<entry>Self loop</entry>
+						</row>
+					<row>
+						<entry>Gradient request</entry>
+						<entry>Self loop</entry>
+					</row>
+					<row>
+						<entry>Iteration</entry>
+						<entry>Self loop</entry>
+					</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Inputs of Design of Experiments</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Input</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>*_start</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>*</entry>
+							<entry>Self loop</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Outputs of Design of Experiments</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Outputs</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>Done</entry>
+							<entry>Self loop</entry>
+						</row>
+						<row>
+							<entry>*</entry>
+							<entry>Self loop</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Inputs of Parametric Study</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Input</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>*_start</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>*</entry>
+							<entry>Self loop</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Outputs of Parametric Study</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Output</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>Done</entry>
+							<entry>Self loop</entry>
+						</row>
+						<row>
+							<entry>*</entry>
+							<entry>Self loop</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Inputs of Converger</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Input</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>*_start</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>*</entry>
+							<entry>Self loop</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+			<table frame="all">
+				<title>Outputs of Converger</title>
+				<tgroup cols="2">
+					<colspec colname="Input" colnum="1" colwidth="2.98*"/>
+					<colspec colname="Type" colnum="2" colwidth="1*" align="center"/>
+					<thead>
+						<row>
+							<entry>Output</entry>
+							<entry align="left">Type</entry>
+						</row>
+					</thead>
+					<tbody>
+						<row>
+							<entry>Converged</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>Converged absolute</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>Converged relative</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>*_converged</entry>
+							<entry>Outer loop</entry>
+						</row>
+						<row>
+							<entry>Outer loop done</entry>
+							<entry>Inner loop</entry>
+						</row>
+						<row>
+							<entry>Done</entry>
+							<entry>Self loop</entry>
+						</row>
+
+						<row>
+							<entry>*</entry>
+							<entry>Self loop</entry>
+						</row>
+					</tbody>
+				</tgroup>
+			</table>
+	</sect2>
+</sect1>

@@ -28,8 +28,10 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandlerMap;
+import de.rcenvironment.core.communication.messaging.direct.api.DirectMessagingSender;
+import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
+import de.rcenvironment.core.communication.messaging.internal.NetworkRequestUtils;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
@@ -39,6 +41,7 @@ import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -75,21 +78,22 @@ public class LinkStateRoutingProtocolManager {
      * 
      * @author Robert Mischke
      */
-    private static class LSARequestHandler implements NetworkRequestHandler {
+    private static class LSANetworkRequestHandler implements NetworkRequestHandler {
 
         private LinkStateRoutingProtocolManager protocolManager;
 
-        public LSARequestHandler(LinkStateRoutingProtocolManager protocolManager) {
+        public LSANetworkRequestHandler(LinkStateRoutingProtocolManager protocolManager) {
             this.protocolManager = protocolManager;
         }
 
         @Override
-        public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier sourceId) throws SerializationException {
-            Serializable messageContent = request.getDeserializedContent();
+        public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier sourceId) throws InternalMessagingException {
+            Serializable messageContent = NetworkRequestUtils.deserializeWithExceptionHandling(request);
             Serializable responseBody;
             if (messageContent instanceof LinkStateAdvertisementBatch) {
                 responseBody = protocolManager.handleReceivedInitialLSABatch(messageContent);
             } else {
+                // TODO @7.0 should not be in use anymore; remove
                 responseBody = protocolManager.handleSingleLinkStateAdvertisement(messageContent, request.accessRawMetaData());
             }
             byte[] responseBodyBytes = MessageUtils.serializeSafeObject(responseBody);
@@ -118,7 +122,7 @@ public class LinkStateRoutingProtocolManager {
 
     private final NodeIdentifier ownNodeId;
 
-    private final MessageChannelService connectionService;
+    private final DirectMessagingSender directMessagingSender;
 
     private NetworkTopologyChangeListener topologyChangeListener;
 
@@ -142,16 +146,16 @@ public class LinkStateRoutingProtocolManager {
     public LinkStateRoutingProtocolManager(TopologyMap topologyMap, MessageChannelService connectionService,
         NetworkTopologyChangeListener changeListener) {
         this.topologyMap = topologyMap;
-        this.networkRequestHandler = new LSARequestHandler(this);
+        this.networkRequestHandler = new LSANetworkRequestHandler(this);
         this.ownNodeInformation = topologyMap.getLocalNodeInformation();
         this.ownNodeId = ownNodeInformation.getNodeId();
-        this.connectionService = connectionService;
+        this.directMessagingSender = connectionService;
         this.networkStats = new NetworkStats();
         connectionService.addChannelLifecycleListener(new MessageChannelLifecycleHandler());
         // initialize topology with self
         TopologyNode ownNode = topologyMap.addNode(ownNodeId);
         ownNode.setDisplayName(ownNodeInformation.getDisplayName());
-        ownNode.setIsWorkflowHost(ownNodeInformation.getIsWorkflowHost());
+        ownNode.setIsWorkflowHost(false); // not used anymore
         // initialize own sequence number
         ownNode.invalidateSequenceNumber();
         this.topologyChangeListener = changeListener;
@@ -397,7 +401,7 @@ public class LinkStateRoutingProtocolManager {
             NetworkRequest request =
                 NetworkRequestFactory.createNetworkRequest(lsaBytes, ProtocolConstants.VALUE_MESSAGE_TYPE_LSA, ownNodeId, null);
             final String channelId = link.getConnectionId();
-            connectionService.sendRequest(request, connectionsById.get(channelId), new NetworkResponseHandler() {
+            directMessagingSender.sendDirectMessageAsync(request, connectionsById.get(channelId), new NetworkResponseHandler() {
 
                 @Override
                 public void onResponseAvailable(NetworkResponse response) {
@@ -481,7 +485,7 @@ public class LinkStateRoutingProtocolManager {
                 NetworkRequest lsaRequest =
                     NetworkRequestFactory.createNetworkRequest(lsaBytes, ProtocolConstants.VALUE_MESSAGE_TYPE_LSA, ownNodeId,
                         connection.getRemoteNodeInformation().getNodeId());
-                connectionService.sendRequest(lsaRequest, connection, new NetworkResponseHandler() {
+                directMessagingSender.sendDirectMessageAsync(lsaRequest, connection, new NetworkResponseHandler() {
 
                     @Override
                     public void onResponseAvailable(NetworkResponse response) {

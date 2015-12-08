@@ -11,8 +11,10 @@ package de.rcenvironment.core.configuration.testutils;
 import java.io.File;
 import java.util.Map;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 
 /**
  * Common test/mock implementations of {@link ConfigurationService}. These can be used directly, or can as superclasses for custom mock
@@ -49,6 +51,16 @@ public abstract class MockConfigurationService implements ConfigurationService {
 
         @Override
         public ConfigurationSegment getConfigurationSegment(String relativePath) {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public WritableConfigurationSegment getOrCreateWritableConfigurationSegment(String string) {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public void writeConfigurationChanges() throws ConfigurationException {
             throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
         }
 
@@ -125,6 +137,39 @@ public abstract class MockConfigurationService implements ConfigurationService {
         @Override
         public File getInstallationDir() {
             throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public double[] getLocationCoordinates() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+        }
+
+        @Override
+        public String getLocationName() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+
+        }
+
+        @Override
+        public String getInstanceContact() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+
+        }
+
+        @Override
+        public String getInstanceAdditionalInformation() {
+            throw new UnsupportedOperationException(MOCK_INSTANCE_INVOCATION_MESSAGE);
+
+        }
+
+        @Override
+        public boolean hasIntendedProfileDirectoryValidVersion() {
+            return false;
+        }
+
+        @Override
+        public boolean isIntendedProfileDirectorySuccessfullyLocked() {
+            return false;
         }
     }
 }

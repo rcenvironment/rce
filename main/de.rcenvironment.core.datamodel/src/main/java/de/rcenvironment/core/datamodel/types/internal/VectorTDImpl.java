@@ -119,7 +119,6 @@ public class VectorTDImpl extends AbstractTypedDatum implements VectorTD {
 
     @Override
     public String toLengthLimitedString(int maxLength) {
-        int dimensions = 0;
         String text = "[";
         String formattedLabel = "";
 
@@ -128,6 +127,9 @@ public class VectorTDImpl extends AbstractTypedDatum implements VectorTD {
             String floatValue = toPrettyString(f.getFloatValue());
             text += floatValue;
             text += COMMA;
+            if (text.length() > maxLength) {
+                break;
+            }
         }
         // remove last comma
         text = text.substring(0, text.length() - 1);
@@ -140,7 +142,7 @@ public class VectorTDImpl extends AbstractTypedDatum implements VectorTD {
         }
         text += "]";
         formattedLabel += text;
-        String dimensionsText = " (" + dimensions + "-dim)";
+        String dimensionsText = " (" + getRowDimension() + "-dim)";
         formattedLabel += dimensionsText;
         
         return formattedLabel;

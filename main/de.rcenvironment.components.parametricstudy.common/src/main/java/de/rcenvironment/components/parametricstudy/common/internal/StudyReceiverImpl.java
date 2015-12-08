@@ -15,11 +15,11 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.components.parametricstudy.common.Study;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyReceiver;
-import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link StudyReceiver}.
@@ -64,7 +64,7 @@ public final class StudyReceiverImpl implements StudyReceiver {
         try {
             missedNumber = notificationService.subscribe(
                 notificationId, notificationSubscriber, platform).get(notificationId);
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             LogFactory.getLog(getClass()).error("Failed to subscribe for Parametric Study data source: " + e.getMessage());
             return; // preserve the "old" RTE behavior for now
         }
@@ -77,8 +77,11 @@ public final class StudyReceiverImpl implements StudyReceiver {
                 .getNotifications(notificationId, platform)
                 .get(notificationId)
                 .subList(0, missedNumber.intValue() + 1);
-            // note: passing the list of missed notifications as a single batch since 5.0.0 - misc_ro
-            notificationSubscriber.receiveBatchedNotifications(missedNotifications);
+            try {
+                notificationSubscriber.receiveBatchedNotifications(missedNotifications);
+            } catch (RemoteOperationException e) {
+                LogFactory.getLog(getClass()).warn("Failed to send notifications: " + e.toString());
+            }
         }
     }
 

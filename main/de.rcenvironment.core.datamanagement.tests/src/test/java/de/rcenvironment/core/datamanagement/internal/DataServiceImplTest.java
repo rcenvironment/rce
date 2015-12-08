@@ -20,15 +20,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
-import de.rcenvironment.core.datamanagement.FileDataService;
-import de.rcenvironment.core.datamanagement.MetaDataService;
+import de.rcenvironment.core.datamanagement.RemotableFileDataService;
+import de.rcenvironment.core.datamanagement.RemotableMetaDataService;
 import de.rcenvironment.core.datamanagement.backend.DataBackend;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
@@ -43,13 +42,11 @@ import de.rcenvironment.core.datamodel.api.CompressionFormat;
  */
 public class DataServiceImplTest {
 
-    private User certificate;
-
     private NodeIdentifier pi;
 
     private UUID drId;
 
-    private FileDataServiceImpl fileDataService;
+    private RemotableFileDataServiceImpl fileDataService;
 
     private DataReference dr;
 
@@ -61,10 +58,6 @@ public class DataServiceImplTest {
         pi = NodeIdentifierFactory.fromNodeId("na klar:6");
         drId = UUID.randomUUID();
 
-        certificate = EasyMock.createNiceMock(User.class);
-        EasyMock.expect(certificate.isValid()).andReturn(true).anyTimes();
-        EasyMock.replay(certificate);
-
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
 
@@ -73,8 +66,7 @@ public class DataServiceImplTest {
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
         newestDr = new DataReference(UUID.randomUUID().toString(), pi, birefs);
 
-        fileDataService = new FileDataServiceImpl();
-        fileDataService.bindCommunicationService(new DummyCommunicationService());
+        fileDataService = new RemotableFileDataServiceImpl();
         fileDataService.bindPlatformService(new PlatformServiceDefaultStub());
         fileDataService.activate(EasyMock.createNiceMock(BundleContext.class));
 
@@ -98,13 +90,13 @@ public class DataServiceImplTest {
     private class DummyCommunicationService extends CommunicationServiceDefaultStub {
 
         @Override
-        public Object getService(Class<?> iface, NodeIdentifier nodeId, BundleContext bundleContext)
+        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
             throws IllegalStateException {
-            Object service = null;
-            if (iface.equals(MetaDataService.class)) {
-                service = EasyMock.createNiceMock(MetaDataService.class);
-            } else if (iface.equals(FileDataService.class)) {
-                service = new DummyFileDataService();
+            T service = null;
+            if (iface.equals(RemotableMetaDataService.class)) {
+                service = (T) EasyMock.createNiceMock(RemotableMetaDataService.class);
+            } else if (iface.equals(RemotableFileDataService.class)) {
+                service = (T) new DummyFileDataService();
             }
             return service;
         }
@@ -112,16 +104,16 @@ public class DataServiceImplTest {
     }
 
     /**
-     * Test implementation of the {@link FileDataService}.
+     * Test implementation of the {@link RemotableFileDataService}.
      * 
      * @author Doreen Seider
      */
     private class DummyFileDataService extends FileDataServiceDefaultStub {
 
         @Override
-        public InputStream getStreamFromDataReference(User proxyCertificate, DataReference dataReference, Boolean calledFromRemote)
+        public InputStream getStreamFromDataReference(DataReference dataReference, Boolean calledFromRemote)
             throws AuthorizationException {
-            if (proxyCertificate == certificate && dataReference.equals(newestDr)) {
+            if (dataReference.equals(newestDr)) {
                 return new InputStream() {
 
                     @Override

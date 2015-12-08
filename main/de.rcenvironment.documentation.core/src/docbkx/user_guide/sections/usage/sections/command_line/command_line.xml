@@ -274,8 +274,8 @@
 							<entry>Cancels a running or paused workflow.</entry>
 						</row>
 						<row>
-							<entry>wf dispose &lt;workflow execution id></entry>
-							<entry>Disposes a finished, cancelled or failed workflow.</entry>
+							<entry>wf delete &lt;workflow execution id></entry>
+							<entry>Deletes a finished, cancelled or failed workflow from the data management and disposes it.</entry>
 						</row>
 						<row>
 							<entry>wf pause &lt;workflow execution id></entry>
@@ -286,18 +286,17 @@
 							<entry>Resume a paused workflow.</entry>
 						</row>
 						<row>
-							<entry>wf run [--dispose &lt;onfinished|always|never>] [--compact-output] [-p &lt;placeholder
+							<entry>wf run [--delete &lt;onfinished|always|never>] [--compact-output] [-p &lt;placeholder
 								value file>] &lt;workflow file></entry>
 							<entry>
 								<para>Executes the given workflow file and waits until it has
 									completed. Workflow file paths containing spaces must be
 									enclosed in double quotes ("...").</para>
-								<para>The "--dispose" option defines the disposal behavior after workflow completion.
-									Disposing a workflow releases certain resources that may or may
-									not be used after it has finished, for example data to be
-									visualized in components' runtime views. Data that is stored in
-									the data management is not affected by disposal. The default of
-									this setting is "onfinished": The workflow is disposed if it
+								<para>The "--delete" option defines the deletion behavior after workflow completion.
+									Deleting a workflow deletes all files in the data management of it and
+									releases certain resources that may or may not be used after it has finished, 
+									for example data to be visualized in components' runtime views. 
+									The default of this setting is "onfinished": The workflow is deleted if it
 									terminates in state "Finished" (which means normal completion
 									without errors), otherwise it is left unchanged for
 									inspection.</para>
@@ -315,7 +314,7 @@
 							</entry>
 						</row>
 						<row>
-							<entry>wf verify [--dispose &lt;onfinished|always|never>] [--pr
+							<entry>wf verify [--delete &lt;onfinished|always|never>] [--pr
 								&lt;parallel runs>] [--sr &lt;serial runs>] [-p &lt;placeholder
 								value file>] --basedir &lt;directory> &lt;workflow file>
 								[&lt;workflow file> ...]</entry>
@@ -326,7 +325,7 @@
 									workflow three times with five in parallel. If "*" is used with
 									the "--basedir" option or multiple workflow filenames are
 									passed, "--pr" and "--sr" are applied for each of the
-									workflows.</para><para>For the "--dispose" and "-p" options
+									workflows.</para><para>For the "--delete" and "-p" options
 									refer to "wf run" above.</para><para>The "--basedir
 									&lt;directory>" parameter specifies the directory containing the
 									workflow files. File paths containing spaces must be enclosed in

@@ -156,6 +156,12 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
                         loadConfigurationFromFile(configJson);
                     }
                     setPageComplete(true);
+                    if (pageType.equals(ToolIntegrationConstants.EDIT_WIZRAD_COMMON)) {
+
+                        ToolIntegrationWizard wiz = (ToolIntegrationWizard) getWizard();
+                        wiz.updateAllPages();
+
+                    }
                 }
             }
 

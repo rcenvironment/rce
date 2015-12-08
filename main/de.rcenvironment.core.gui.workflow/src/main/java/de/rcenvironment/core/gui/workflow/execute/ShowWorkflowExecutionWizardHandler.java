@@ -52,6 +52,7 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.wizard.Wizard;
 import org.eclipse.jface.wizard.WizardDialog;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
@@ -65,21 +66,25 @@ import org.eclipse.ui.handlers.HandlerUtil;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
-import de.rcenvironment.core.gui.workflow.LoadingWorkflowDescriptionHelper;
+import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Opens the {@link WorkflowExecutionWizard}.
  * 
  * @author Christian Weiss
  * @author Sascha Zur
+ * @author Doreen Seider
  */
 public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
 
     private static final String DUPLICATE_ID_WARNING_MSG = "Could not determine duplicate WF ids";
-    
+
     private static final String GETTING_ATTR_WARNING_MSG = " - failed to get file attributes for: ";
 
     private static final String NODES = "nodes";
@@ -91,92 +96,189 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
     private static final Log LOGGER = LogFactory.getLog(ShowWorkflowExecutionWizardHandler.class);
 
     private final ObjectMapper mapper = new ObjectMapper();
-    
-    private boolean confirm;
+
+    private WorkflowExecutionService workflowExecutionService;
+
+    public ShowWorkflowExecutionWizardHandler() {
+        workflowExecutionService = ServiceRegistry.createPublisherAccessFor(this).getService(WorkflowExecutionService.class);
+    }
 
     @Override
     public Object execute(final ExecutionEvent event) throws ExecutionException {
 
-        // retrieve the WorkflowDescription
-        final WorkflowDescription displayedWorkflowDescription = getDisplayedWorkflowDescription();
-        boolean fromFile = true;
-        IFile workflowFile = getFirstSelectedWorkflowFile(event);
-        confirm = true;
+        final boolean wfFileOpenedInEditor;
 
-        if (workflowFile == null) {
-            workflowFile = getDisplayedWorkflowFile();
-            fromFile = false;
+        IFile wfFile = tryToGetWorkflowFileFromProjectExplorer(event);
+
+        if (wfFile == null) {
+            wfFile = tryToGetWorkflowFileFromWorkflowEditor();
+            if (wfFile == null) {
+                return null;
+            } else {
+                wfFileOpenedInEditor = true;
+            }
+        } else if (!checkForOpenRelatedDirtyWorkflowEditor(wfFile)) {
+            return null;
+        } else {
+            wfFileOpenedInEditor = false;
         }
-        if (workflowFile != null) {
 
-            // Compares the project explorer selection with dirty editors and triggers saveChangesDialog if selection is dirty
-            IEditorReference[] currentEditors = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getEditorReferences();
-            for (IEditorReference editor : currentEditors) {
-                IEditorPart editorPart = (IEditorPart) editor.getPart(true);
-                if (editorPart instanceof WorkflowEditor) {
-                    WorkflowEditor workflowEditor = (WorkflowEditor) editorPart;
-                    IFile editorFile = ((FileEditorInput) workflowEditor.getEditorInput()).getFile();
-                    if (workflowFile.getProject().equals(editorFile.getProject())) {
-                        if (workflowFile.getName().equals(editorPart.getTitle()) && editorPart.isDirty()) {
-                            saveChangesDialog(editorPart);
-                            break;
+        searchAndReplaceDuplicateIDs(wfFile);
+
+        if (wfFileOpenedInEditor) {
+            openWorkflowExecutionWizardWithWfFileFromEditor(wfFile);
+        } else {
+            openWorkflowExecutionWizardWithWfFileFromProjectExplorer(wfFile);
+        }
+        return null;
+    }
+
+    private void openWorkflowExecutionWizardWithWfFileFromEditor(IFile wfFile) {
+        WorkflowDescription wfDescription = null;
+        try {
+            File wfFile2 = new File(wfFile.getRawLocation().toOSString());
+            if (wfFile2.exists()) {
+                wfDescription = workflowExecutionService.loadWorkflowDescriptionFromFile(
+                    wfFile2, new GUIWorkflowDescriptionLoaderCallback());
+            }
+        } catch (RuntimeException | WorkflowFileException e) {
+            // caught and only logged as an error dialog already pops up if an error occur
+            LogFactory.getLog(getClass()).error("Failed to load workflow: " + wfFile.getRawLocation().toOSString(), e);
+            return;
+        }
+        if (wfDescription != null) {
+            openWorkflowExecutionWizard(wfFile, wfDescription);
+        } else {
+            MessageDialog.open(MessageDialog.WARNING, null, "Error Loading Workflow",
+                "The workflow file could not be found.\nMaybe it was renamed?", SWT.NONE);
+        }
+    }
+
+    private void openWorkflowExecutionWizardWithWfFileFromProjectExplorer(IFile wfFile) {
+        final IFile finalWfFile = wfFile;
+        Job job = new Job("Executing workflow") {
+
+            @Override
+            protected IStatus run(IProgressMonitor monitor) {
+                try {
+                    monitor.beginTask("Loading workflow components", 2);
+                    monitor.worked(1);
+                    final WorkflowDescription wfDescription = workflowExecutionService
+                        .loadWorkflowDescriptionFromFileConsideringUpdates(
+                            new File(finalWfFile.getRawLocation().toOSString()), new GUIWorkflowDescriptionLoaderCallback());
+                    monitor.worked(1);
+                    Display.getDefault().asyncExec(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            openWorkflowExecutionWizard(finalWfFile, wfDescription);
                         }
+                    });
+                } catch (final WorkflowFileException e) {
+                    // caught and only logged as an error dialog already pops up if an error occur
+                    LogFactory.getLog(getClass()).error("Failed to load workflow: " + finalWfFile.getRawLocation().toOSString(), e);
+                    Display.getDefault().asyncExec(new Runnable() {
+
+                        @Override
+                        public void run() {
+                            // do not use Display.getDefault().getActiveShell() as this might return
+                            // the progress monitor dialog
+                            MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+                                "Workflow File Error", e.getMessage());
+                        }
+                    });
+                } finally {
+                    monitor.done();
+                }
+                return Status.OK_STATUS;
+            };
+
+        };
+        job.setUser(true);
+        job.schedule();
+    }
+
+    private void openWorkflowExecutionWizard(IFile wfFile, WorkflowDescription wfDescription) {
+        final Wizard wfExecutionWizard = new WorkflowExecutionWizard(wfFile, wfDescription);
+        // do not use Display.getDefault().getActiveShell() as this might return the progress
+        // monitor dialog
+        final WorkflowWizardDialog wizardDialog = new WorkflowWizardDialog(
+            PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), wfExecutionWizard);
+        wizardDialog.setBlockOnOpen(false);
+        wizardDialog.open();
+    }
+
+    private boolean checkForOpenRelatedDirtyWorkflowEditor(IFile wfFile) {
+        // Compares the project explorer selection with dirty editors and triggers saveChangesDialog
+        // if selection is dirty
+        IEditorReference[] currentEditors = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getEditorReferences();
+        for (IEditorReference editor : currentEditors) {
+            IEditorPart editorPart = (IEditorPart) editor.getPart(true);
+            if (editorPart instanceof WorkflowEditor) {
+                WorkflowEditor workflowEditor = (WorkflowEditor) editorPart;
+                IFile editorFile = ((FileEditorInput) workflowEditor.getEditorInput()).getFile();
+                if (wfFile.getProject().equals(editorFile.getProject())) {
+                    if (wfFile.getName().equals(editorPart.getTitle()) && editorPart.isDirty()) {
+                        return saveChangesDialog(editorPart);
                     }
                 }
             }
-        
-            // Exit execute method when saving changes has been canceled
-            if (!confirm) {
-                return null;
-            }
-        
-            searchAndReplaceDuplicateIDs(workflowFile);
-            
-            final IFile finalWorkflowFile = workflowFile;
-            final boolean finalFromFile = fromFile;
-            Job job = new Job("Executing workflow") {
+        }
+        return true;
+    }
 
-                @Override
-                protected IStatus run(IProgressMonitor monitor) {
-                    try {
-                        monitor.beginTask("Loading components", 2);
-                        monitor.worked(1);
-                        WorkflowDescription workflowDescription = displayedWorkflowDescription;
-                        if (finalFromFile) {
-                            workflowDescription = LoadingWorkflowDescriptionHelper
-                                .loadWorkflowDescription(null, finalWorkflowFile, finalFromFile);
-                        }
-                        monitor.worked(1);
-                        if (workflowDescription != null) {
-                            final WorkflowDescription finalWorkflowDescription = workflowDescription;
-                            Display.getDefault().asyncExec(new Runnable() {
-
-                                @Override
-                                public void run() {
-                                    // instantiate the WorkflowExecutionWizard with the WorkflowDescription
-                                    final Wizard workflowExecutionWizard = new WorkflowExecutionWizard(finalWorkflowFile,
-                                        finalWorkflowDescription, finalFromFile);
-                                    final WorkflowWizardDialog wizardDialog =
-                                        new WorkflowWizardDialog(Display.getDefault().getActiveShell(), workflowExecutionWizard);
-                                    wizardDialog.setBlockOnOpen(false);
-                                    wizardDialog.open();
-                                }
-                            });
-                        }
-                    } catch (RuntimeException e) {
-                        // caught and only logged as an error dialog already pops up if an error occur
-                        LogFactory.getLog(getClass()).error("Loading workflow failed", e);
-                    } finally {
-                        monitor.done();
+    private IFile tryToGetWorkflowFileFromWorkflowEditor() {
+        final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+        if (part instanceof IEditorPart) {
+            IEditorPart editor = (IEditorPart) part;
+            if (editor instanceof WorkflowEditor) {
+                WorkflowEditor workflowEditor = (WorkflowEditor) editor;
+                IEditorInput input = workflowEditor.getEditorInput();
+                if (input instanceof FileEditorInput) {
+                    if (!workflowEditor.isDirty() || saveChangesDialog(workflowEditor)) {
+                        return ((FileEditorInput) input).getFile();
                     }
-                    return Status.OK_STATUS;
-                };
-                
-            };
-            job.setUser(true);
-            job.schedule();
+                } else if (input instanceof FileStoreEditorInput) {
+                    MessageDialog.openInformation(part.getSite().getShell(), "Workflow Run",
+                        "Workflow file can not be executed. Please put the workflow into a project of your workspace first.\n\n"
+                            + "Drag the workflow from the file system into the project explorer to a project of your choice. "
+                            + "You can decide to either copy or only link it.\n\nIf you don't have a project yet, "
+                            + "create one first via File->New->Project->General.");
+                }
+            }
         }
         return null;
+    }
+
+    private IFile tryToGetWorkflowFileFromProjectExplorer(final ExecutionEvent event) {
+        final ISelection selection = HandlerUtil.getCurrentSelection(event);
+        if (selection instanceof IStructuredSelection) {
+            final IStructuredSelection structuredSelection = (IStructuredSelection) selection;
+            for (Iterator<?> iter = structuredSelection.iterator(); iter.hasNext();) {
+                Object next = iter.next();
+                if (!(next instanceof IFile)) {
+                    continue;
+                }
+                final IFile file = (IFile) next;
+                String filename = file.getName();
+                if (!WORKFLOW_FILENAME_PATTERN.matcher(filename).matches()) {
+                    continue;
+                }
+                return file;
+            }
+        }
+        return null;
+    }
+
+    private boolean saveChangesDialog(IEditorPart editor) {
+        final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
+        if (MessageDialog.openConfirm(part.getSite().getShell(), Messages.askToSaveUnsavedEditorChangesTitle,
+            StringUtils.format(Messages.askToSaveUnsavedEditorChangesMessage, editor.getTitle()))) {
+            editor.doSave(null);
+            return true;
+        }
+        return false;
+
     }
 
     private void searchAndReplaceDuplicateIDs(IFile workflowFile) {
@@ -222,82 +324,12 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
         }
     }
 
-    private IFile getDisplayedWorkflowFile() {
-        final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-        if (part instanceof IEditorPart) {
-            final IEditorPart editor = (IEditorPart) part;
-            if (editor instanceof WorkflowEditor) {
-                WorkflowEditor workflowEditor = (WorkflowEditor) editor;
-                IEditorInput input = workflowEditor.getEditorInput();
-                if (input instanceof FileEditorInput) {
-                    return ((FileEditorInput) input).getFile();
-                } else if (input instanceof FileStoreEditorInput) {
-                    MessageDialog.openInformation(part.getSite().getShell(), "Workflow Run",
-                        "Please put the workflow into a project of your workspace first.\n\n"
-                        + "Drag the workflow from the file system into the project explorer to a project of your choice. "
-                        + "You can decide to either copy or only link it.\n\nIf you don't have a project yet, "
-                        + "create one first via File->New->Project->General.");
-                }
-            }
-            if (editor.isDirty()) {
-                saveChangesDialog(editor);
-            }
-        }
-        return null;
-    }
-
-
-    // Dialog for saving changes in dirty editors
-    private void saveChangesDialog(IEditorPart editor) {
-        final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-        confirm = MessageDialog.openConfirm(part.getSite().getShell(), Messages.askToSaveUnsavedEditorChangesTitle,
-            StringUtils.format(Messages.askToSaveUnsavedEditorChangesMessage, editor.getTitle()));
-        if (confirm) {
-            editor.doSave(null);
-        } 
-
-    }
-
-    private WorkflowDescription getDisplayedWorkflowDescription() {
-        final IWorkbenchPart part = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().getActiveEditor();
-        if (part instanceof IEditorPart) {
-            final IEditorPart editor = (IEditorPart) part;
-            if (editor instanceof WorkflowEditor) {
-                WorkflowEditor workflowEditor = (WorkflowEditor) editor;
-                return workflowEditor.getWorkflowDescription();
-            }
-        }
-        return null;
-        
-    }
-
-    private IFile getFirstSelectedWorkflowFile(final ExecutionEvent event) {
-        final ISelection selection = HandlerUtil.getCurrentSelection(event);
-        if (selection instanceof IStructuredSelection) {
-            final IStructuredSelection structuredSelection = (IStructuredSelection) selection;
-            for (Iterator<?> iter = structuredSelection.iterator(); iter.hasNext();) {
-                Object next = iter.next();
-                if (!(next instanceof IFile)) {
-                    continue;
-                }
-                final IFile file = (IFile) next;
-                String filename = file.getName();
-                if (!WORKFLOW_FILENAME_PATTERN.matcher(filename).matches()) {
-                    continue;
-                }
-                return file;
-            }
-        }
-        return null;
-    }
-
     @SuppressWarnings("unchecked")
     private void replaceIdentifierInWorkflowFile(String filePath) {
 
         try {
             File wfToEdit = new File(filePath);
-            Map<String, Object> wfContent =
-                mapper.readValue(wfToEdit, new HashMap<String, Object>().getClass());
+            Map<String, Object> wfContent = mapper.readValue(wfToEdit, new HashMap<String, Object>().getClass());
 
             String wfContentString = FileUtils.readFileToString(wfToEdit);
 
@@ -321,31 +353,34 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
         IWorkspaceRoot root = workspace.getRoot();
         Set<IResource> duplicates = new HashSet<IResource>();
         try {
-            @SuppressWarnings("unchecked") Map<String, Object> wfContent =
-                mapper.readValue(new File(absoluteFilePath), new HashMap<String, Object>().getClass());
+            File file = new File(absoluteFilePath);
+            if (file.exists()) {
+                @SuppressWarnings("unchecked") Map<String, Object> wfContent =
+                    mapper.readValue(file, new HashMap<String, Object>().getClass());
 
-            for (IProject p : root.getProjects()) {
-                if (p.isOpen()) {
-                    try {
-                        for (IResource res : p.members()) {
-                            if (res instanceof IFile && WORKFLOW_FILENAME_PATTERN
-                                .matcher(((IFile) res).getName()).matches()) {
-                                IResource possibleDuplicate = checkFileForDuplicateID(wfContent, absoluteFilePath, res);
-                                if (possibleDuplicate != null && !absoluteFilePath.equals(possibleDuplicate.getLocation().toString())) {
-                                    duplicates.add(possibleDuplicate);
+                for (IProject p : root.getProjects()) {
+                    if (p.isOpen()) {
+                        try {
+                            for (IResource res : p.members()) {
+                                if (res instanceof IFile && WORKFLOW_FILENAME_PATTERN
+                                    .matcher(((IFile) res).getName()).matches()) {
+                                    IResource possibleDuplicate = checkFileForDuplicateID(wfContent, absoluteFilePath, res);
+                                    if (possibleDuplicate != null && !absoluteFilePath.equals(possibleDuplicate.getLocation().toString())) {
+                                        duplicates.add(possibleDuplicate);
+                                    }
+                                }
+                                if (res instanceof IFolder) {
+                                    Set<IResource> possibleDuplicate = checkFolderForDuplicateId(wfContent, absoluteFilePath, res);
+                                    if (possibleDuplicate != null) {
+                                        duplicates.addAll(possibleDuplicate);
+                                    }
                                 }
                             }
-                            if (res instanceof IFolder) {
-                                Set<IResource> possibleDuplicate = checkFolderForDuplicateId(wfContent, absoluteFilePath, res);
-                                if (possibleDuplicate != null) {
-                                    duplicates.addAll(possibleDuplicate);
-                                }
-                            }
+                        } catch (CoreException e) {
+                            LOGGER.warn(DUPLICATE_ID_WARNING_MSG, e);
+                        } catch (IOException e) {
+                            LOGGER.warn(DUPLICATE_ID_WARNING_MSG, e);
                         }
-                    } catch (CoreException e) {
-                        LOGGER.warn(DUPLICATE_ID_WARNING_MSG, e);
-                    } catch (IOException e) {
-                        LOGGER.warn(DUPLICATE_ID_WARNING_MSG, e);
                     }
                 }
             }
@@ -381,14 +416,17 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
         JsonParseException,
         JsonMappingException {
         try {
-            Map<String, Object> wfContentExisting =
-                mapper.readValue(new File(res.getLocation().toString()), new HashMap<String, Object>().getClass());
-            if (!absoluteFilePath.equals(res.getLocation().toString())
-                && wfContent.get(IDENTIFIER).equals(wfContentExisting.get(IDENTIFIER))) {
-                return res;
+            File file = new File(res.getLocation().toString());
+            if (file.exists()) {
+                Map<String, Object> wfContentExisting =
+                    mapper.readValue(file, new HashMap<String, Object>().getClass());
+                if (!absoluteFilePath.equals(res.getLocation().toString())
+                    && wfContent.get(IDENTIFIER).equals(wfContentExisting.get(IDENTIFIER))) {
+                    return res;
+                }
             }
         } catch (JsonParseException e) {
-            LOGGER.debug("Skipped corrupt wf file: \n" + e.getMessage());
+            LOGGER.debug("Skipped corrupted wf file: " + e.getMessage());
         }
         return null;
     }

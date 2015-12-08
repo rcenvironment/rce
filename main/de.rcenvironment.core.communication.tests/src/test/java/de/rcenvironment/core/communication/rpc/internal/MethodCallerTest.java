@@ -8,12 +8,15 @@
 
 package de.rcenvironment.core.communication.rpc.internal;
 
+import static de.rcenvironment.core.communication.rpc.internal.MethodCallTestInterface.DEFAULT_RESULT_OR_MESSAGE_STRING;
+
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
-import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheckHasAnnotation;
@@ -23,7 +26,7 @@ import de.rcenvironment.core.utils.common.security.MethodPermissionCheckHasAnnot
  * 
  * @author Heinrich Wendel
  * @author Doreen Seider
- * @author Robert Mischke (added MethodPermissionCheck test)
+ * @author Robert Mischke
  */
 public class MethodCallerTest extends TestCase {
 
@@ -35,11 +38,11 @@ public class MethodCallerTest extends TestCase {
     /**
      * Test object for calling methods.
      */
-    private MethodCallerTestMethods myTestObject;
+    private MethodCallTestInterface myTestObject;
 
     @Override
     public void setUp() throws Exception {
-        myTestObject = new MethodCallerTestMethodsImpl();
+        myTestObject = new MethodCallTestInterfaceImpl();
     }
 
     @Override
@@ -63,8 +66,8 @@ public class MethodCallerTest extends TestCase {
      * @throws Exception if the test fails.
      */
     public void testCallWithReturnValue() throws Exception {
-        Object result = MethodCaller.callMethod(myTestObject, "getValue", null);
-        assertEquals(result, "Hallo Welt");
+        Object result = MethodCaller.callMethod(myTestObject, "getString", null);
+        assertEquals(result, DEFAULT_RESULT_OR_MESSAGE_STRING);
     }
 
     /**
@@ -97,10 +100,10 @@ public class MethodCallerTest extends TestCase {
      * @throws Exception if the test fails.
      */
     public void testCallWithObject() throws Exception {
-        Object object = MethodCaller.callMethod(myTestObject, "getInstance", null);
+        Object object = MethodCaller.callMethod(myTestObject, "createInstance", null);
         assertNotNull(object);
         Object result = MethodCaller.callMethod(myTestObject, "objectFunction", null);
-        assertEquals(result, "yeah");
+        assertEquals(result, DEFAULT_RESULT_OR_MESSAGE_STRING);
 
     }
 
@@ -110,9 +113,13 @@ public class MethodCallerTest extends TestCase {
      * @throws Exception if the test fails.
      */
     public void testCallWithException() throws Exception {
-        Object result = MethodCaller.callMethod(myTestObject, "exceptionFunction", null);
-        assertEquals(result.getClass(), IOException.class);
-
+        try {
+            // note: behavior was changed in 7.0.0
+            MethodCaller.callMethod(myTestObject, "ioExceptionThrower", null);
+            fail("Exception expected");
+        } catch (InvocationTargetException e) {
+            assertEquals(e.getCause().getClass(), IOException.class);
+        }
     }
 
     /**
@@ -121,22 +128,27 @@ public class MethodCallerTest extends TestCase {
      * @throws Exception if the test fails.
      */
     public void testCallWithRuntimeException() throws Exception {
-        Object result = MethodCaller.callMethod(myTestObject, "runtimeExceptionFunction", null);
-        assertEquals(result.getClass(), RuntimeException.class);
-
+        try {
+            // note: behavior was changed in 7.0.0
+            MethodCaller.callMethod(myTestObject, "runtimeExceptionThrower", null);
+            fail("Exception expected");
+        } catch (InvocationTargetException e) {
+            assertEquals(e.getCause().getClass(), RuntimeException.class);
+        }
     }
 
     /**
      * Test for failure.
      * 
+     * @throws InvocationTargetException on unexpected method exception throws
      */
-    public void testCallForFailure() {
+    public void testCallForFailure() throws InvocationTargetException {
 
         // No method found
         try {
             MethodCaller.callMethod(myTestObject, "uio", null);
             fail();
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
 
@@ -146,7 +158,7 @@ public class MethodCallerTest extends TestCase {
         try {
             MethodCaller.callMethod(myTestObject, DUMMY_METHOD, parameterList);
             fail();
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
 
@@ -154,7 +166,7 @@ public class MethodCallerTest extends TestCase {
         try {
             MethodCaller.callMethod(myTestObject, "privateFunction", null);
             fail();
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
     }
@@ -170,8 +182,7 @@ public class MethodCallerTest extends TestCase {
         params.add(new String("2"));
 
         Object result = MethodCaller.callMethod(myTestObject, "superclass", params);
-        assertEquals(result, "hallo2");
-
+        assertEquals("hallo2", result);
     }
 
     /**
@@ -184,7 +195,7 @@ public class MethodCallerTest extends TestCase {
         params.add(new ArrayList<String>());
 
         Object result = MethodCaller.callMethod(myTestObject, "list", params);
-        assertEquals(result, "list");
+        assertEquals(DEFAULT_RESULT_OR_MESSAGE_STRING, result);
 
     }
 
@@ -204,8 +215,10 @@ public class MethodCallerTest extends TestCase {
     /**
      * Test for failure.
      * 
+     * @throws InvocationTargetException on unexpected method exception throws
+     * 
      */
-    public void testCallAmbiguous() {
+    public void testCallAmbiguous() throws InvocationTargetException {
         List<String> params = new ArrayList<String>();
         params.add(new String());
         params.add(new String());
@@ -213,7 +226,7 @@ public class MethodCallerTest extends TestCase {
         try {
             MethodCaller.callMethod(myTestObject, "ambiguous", params);
             fail();
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
     }
@@ -221,12 +234,13 @@ public class MethodCallerTest extends TestCase {
     /**
      * Tests the permission check callback.
      * 
-     * @throws CommunicationException on unexpected exceptions
+     * @throws RemoteOperationException on unexpected exceptions
+     * @throws InvocationTargetException on unexpected method exception throws
      */
-    public void testMethodPermission() throws CommunicationException {
+    public void testMethodPermission() throws RemoteOperationException, InvocationTargetException {
         // define test methods with and without annotation
-        String unmarkedMethodName = "getValue";
-        String markedMethodName = "remoteCallAllowed";
+        String unmarkedMethodName = "methodWithoutRemoteAccessPermission";
+        String markedMethodName = "getString";
 
         List<String> params = new ArrayList<String>();
         // default: should work
@@ -241,7 +255,7 @@ public class MethodCallerTest extends TestCase {
         try {
             MethodCaller.callMethod(myTestObject, unmarkedMethodName, params, permissionCheck);
             fail();
-        } catch (CommunicationException e) {
+        } catch (RemoteOperationException e) {
             assertTrue(true);
         }
 

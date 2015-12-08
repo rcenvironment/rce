@@ -50,5 +50,18 @@
             ],
             "defaultDataType": "Matrix"
         }
+    ],
+    "staticInputGroups":[
+        {
+            "name":"myOrInputGroup",
+            "type": "Or"
+        }
+    ],
+    "dynamicInputGroups":[
+        {
+            "identifier":"myAndInputGroup",
+            "type": "And",
+            "group": "myOrInputGroup"
+        }
     ]
 }

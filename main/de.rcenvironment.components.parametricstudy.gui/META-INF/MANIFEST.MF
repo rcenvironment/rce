@@ -3,9 +3,10 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Parametric Study Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.gui;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.endpoint.api,
@@ -35,4 +36,4 @@ Require-Bundle: org.eclipse.ui.views.properties.tabbed,
  org.eclipse.gef
 Export-Package: de.rcenvironment.components.parametricstudy.gui.view
 Bundle-ClassPath: .
-Bundle-ActivationPolicy: lazy
+RCE-Component: true

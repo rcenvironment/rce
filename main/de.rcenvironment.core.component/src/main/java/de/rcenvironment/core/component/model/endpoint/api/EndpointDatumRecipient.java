@@ -8,16 +8,14 @@
  
 package de.rcenvironment.core.component.model.endpoint.api;
 
-import java.io.Serializable;
-
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 
 /**
- * Describes the target input for a {@link EndpointDatum}.
+ * Describes the recipient for an {@link EndpointDatum}.
  * 
  * @author Doreen Seider
  */
-public interface EndpointDatumRecipient extends Serializable {
+public interface EndpointDatumRecipient {
 
     /**
      * @return name of the target input
@@ -25,9 +23,14 @@ public interface EndpointDatumRecipient extends Serializable {
     String getInputName();
     
     /**
-     * @return inputIdentifier target input identifier (is the name of the input)
+     * @return component execution identifier of target component
      */
-    String getInputComponentExecutionIdentifier();
+    String getInputsComponentExecutionIdentifier();
+    
+    /**
+     * @return instance name of target component (used for logging purposes)
+     */
+    String getInputsComponentInstanceName();
     
     /**
      * @return {@link NodeIdentifier} of the target node

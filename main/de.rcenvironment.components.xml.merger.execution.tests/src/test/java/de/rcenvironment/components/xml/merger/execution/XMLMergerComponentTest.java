@@ -27,9 +27,9 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.incubator.xml.api.XMLMapperService;
-import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
-import de.rcenvironment.core.utils.incubator.xml.impl.XMLSupportServiceImpl;
+import de.rcenvironment.core.utils.common.xml.api.XMLMapperService;
+import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
+import de.rcenvironment.core.utils.common.xml.impl.XMLSupportServiceImpl;
 
 
 /**

@@ -13,11 +13,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
+import de.rcenvironment.core.component.model.api.Deprecated;
+
 /**
  * Component to execute commands in a SQL database.
  * 
  * @author Christian Weiss
  */
+@Deprecated
 public class SQLCommandComponent extends AbstractSQLComponent {
 
     @Override

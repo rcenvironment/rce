@@ -18,10 +18,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.file.service.legacy.api.RemotableFileStreamAccessService;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 
@@ -38,8 +38,6 @@ public class ServiceRemoteFileConnectionFactoryTest {
     private final String nodeIdString = "node-id";
 
     private final String uri = "rce://" + nodeIdString + "/" + dmUuid + "/7";
-
-    private User user = EasyMock.createNiceMock(User.class);
 
     private ServiceRemoteFileConnectionFactory factory;
 
@@ -62,7 +60,7 @@ public class ServiceRemoteFileConnectionFactoryTest {
      */
     @Test
     public void test() throws Exception {
-        RemoteFileConnection conncetion = factory.createRemoteFileConnection(user, new URI(uri));
+        RemoteFileConnection conncetion = factory.createRemoteFileConnection(new URI(uri));
         assertNotNull(conncetion);
 
     }
@@ -74,12 +72,12 @@ public class ServiceRemoteFileConnectionFactoryTest {
      */
     private class DummyCommunicationService extends CommunicationServiceDefaultStub {
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Object getService(Class<?> iface, NodeIdentifier nodeId2, BundleContext bundleContext)
-            throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId2) throws IllegalStateException {
             // TODO 3.0: recheck nodeId condition; changed during PlatformIdentifier elimination
-            if (nodeId2.equals(NodeIdentifierFactory.fromNodeId(nodeIdString)) && iface == FileService.class) {
-                return EasyMock.createNiceMock(FileService.class);
+            if (nodeId2.equals(NodeIdentifierFactory.fromNodeId(nodeIdString)) && iface == RemotableFileStreamAccessService.class) {
+                return (T) EasyMock.createNiceMock(RemotableFileStreamAccessService.class);
             }
             return null;
         }

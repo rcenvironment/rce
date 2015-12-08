@@ -11,15 +11,40 @@
 	<reference name="Component Execution Service"
 		interface="de.rcenvironment.core.component.execution.api.ComponentExecutionService"
 		cardinality="1..1"
-		bind="bindDistributedComponentControllerService"
+		bind="bindComponentExecutionService"
 		policy="dynamic"
 	/>
 	
 	<reference name="Meta Data Service"
-		interface="de.rcenvironment.core.datamanagement.MetaDataService"
+		interface="de.rcenvironment.core.datamanagement.backend.MetaDataBackendService"
 		cardinality="1..1"
 		bind="bindMetaDataService"
 		policy="dynamic"
 	/>
+	
+	<reference name="Component Console Log File Writer Factory Service"
+		interface="de.rcenvironment.core.component.workflow.execution.internal.ComponentConsoleLogFileWriterFactoryService"
+		cardinality="1..1"
+		bind="bindComponentConsoleLogFileWriterFactoryService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Workflow Execution Stats Service"
+		interface="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionStatsService"
+		bind="bindWorkflowExecutionStatsService"
+		cardinality="1..1"
+		policy="dynamic"
+	/>
+	
+	<reference name="Communication Service"
+		interface="de.rcenvironment.core.communication.api.CommunicationService"
+		cardinality="1..1"
+		bind="bindCommunicationService"
+		policy="dynamic"
+	/>
+	
+	
+ <reference bind="bindDataManagementService" cardinality="1..1" interface="de.rcenvironment.core.datamanagement.DataManagementService" name="DataManagementService" policy="dynamic"/>
+ <reference bind="bindTypedDatumService" cardinality="1..1" interface="de.rcenvironment.core.datamodel.api.TypedDatumService" name="TypedDatumService" policy="dynamic"/>
 		
 </scr:component>

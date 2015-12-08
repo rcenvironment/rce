@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<?pde version="3.8"?><target includeMode="feature" name="dev_7.x_testing.all_platforms" sequenceNumber="59">
+<locations>
+<location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="6.1.0.0201508040839_SNAPSHOT"/>
+<unit id="de.rcenvironment.thirdparty.nu.psnet.quickimage.feature.feature.group" version="6.1.0.0201508040839_SNAPSHOT"/>
+<repository location="http://software.dlr.de/updates/rce/6.x/repositories/platform/snapshots/dev_7.x_testing"/>
+</location>
+</locations>
+</target>

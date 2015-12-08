@@ -17,10 +17,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Abstract base implementation of a {@link WorkflowNodeValidator}.
@@ -83,21 +86,48 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
         messages.clear();
         final Collection<WorkflowNodeValidationMessage> validateMessages;
         if (onWorkflowStart) {
-            List<WorkflowNodeValidationMessage> retrieveValidatonMessages =
+            List<WorkflowNodeValidationMessage> retrievedValidationMessages =
                 validatonStore.retrieveValidatonMessages(workflowNode.getIdentifier());
-            if (retrieveValidatonMessages != null) {
-                messages.addAll(retrieveValidatonMessages);
+            if (retrievedValidationMessages != null) {
+                messages.addAll(retrievedValidationMessages);
             }
             validateMessages = validateOnStart();
         } else {
             validateMessages = validate();
         }
-        if (validateMessages != null) {
-            addValidationMessages(validateMessages);
+        Collection<WorkflowNodeValidationMessage> validateInputMessages = validateInputsExecutionConstraints();
+        if (validateMessages != null || !validateInputMessages.isEmpty()) {
+            if (validateMessages != null) {
+                addValidationMessages(validateMessages);
+            }
+            if (!validateInputMessages.isEmpty()) {
+                addValidationMessages(validateInputMessages);
+            }            
             if (!onWorkflowStart) {
                 validatonStore.addValidatonMessages(workflowNode.getIdentifier(), messages);
             }
         }
+    }
+    
+    private Collection<WorkflowNodeValidationMessage> validateInputsExecutionConstraints() {
+        
+        List<WorkflowNodeValidationMessage> m = new LinkedList<WorkflowNodeValidationMessage>();
+        
+        for (EndpointDescription inputEp : getInputs()) {
+            EndpointDefinition.InputExecutionContraint exeConstraint = inputEp.getEndpointDefinition()
+                .getDefaultInputExecutionConstraint(); 
+            if (inputEp.getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null) {
+                exeConstraint = EndpointDefinition.InputExecutionContraint.valueOf(
+                    inputEp.getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT));
+            }
+            if (exeConstraint.equals(EndpointDefinition.InputExecutionContraint.Required) && !inputEp.isConnected()) {
+                m.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR,
+                    "", StringUtils.format("Connect input '%s' to an output as it is required", inputEp.getName()),
+                    StringUtils.format("Input '%s' is required but not connected to an output", inputEp.getName())));
+            }
+        }
+        
+        return m;
     }
 
     private void addValidationMessages(Collection<WorkflowNodeValidationMessage> validateMessages) {

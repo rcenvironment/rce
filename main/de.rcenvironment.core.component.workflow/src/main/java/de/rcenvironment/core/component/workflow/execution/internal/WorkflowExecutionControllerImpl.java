@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.component.workflow.execution.internal;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -26,19 +27,25 @@ import java.util.concurrent.TimeoutException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.api.ComponentUtils;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopBehaviorInCaseOfFailure;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContextBuilder;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionService;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
+import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.ConsoleRowBuilder;
-import de.rcenvironment.core.component.execution.api.WorkflowExecutionControllerCallback;
+import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphEdge;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphNode;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipientFactory;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
@@ -46,21 +53,25 @@ import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionController;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.datamanagement.MetaDataService;
+import de.rcenvironment.core.datamanagement.DataManagementService;
+import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
+import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
-import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
@@ -70,23 +81,36 @@ import de.rcenvironment.core.utils.incubator.StateChangeException;
  * Implementation of {@link WorkflowExecutionController}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
-public class WorkflowExecutionControllerImpl implements WorkflowExecutionController, WorkflowExecutionControllerCallback {
+public class WorkflowExecutionControllerImpl implements WorkflowExecutionController {
+
+    private static final String CAUSE_WAITING_TIME_ELAPSED = " ;cause: waiting time elapsed";
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionControllerImpl.class);
-    
+
     private static final boolean VERBOSE_LOGGING = DebugSettings.getVerboseLoggingEnabled(WorkflowExecutionControllerImpl.class);
 
     /**
      * After 140 seconds without heartbeat from component, the workflow will fail.
      */
     private static final int MAX_HEARTBEAT_INTERVAL_MSEC = 140 * 1000;
-    
-    private static MetaDataService metaDataService;
-    
+
+    private static CommunicationService communicationService;
+
+    private static MetaDataBackendService metaDataService;
+
+    private static DataManagementService dataManagementService;
+
+    private static TypedDatumService typedDatumService;
+
     private static DistributedNotificationService notificationService;
 
     private static ComponentExecutionService componentExecutionService;
+
+    private static WorkflowExecutionStatsService wfExeStatsService;
+
+    private static ComponentConsoleLogFileWriterFactoryService logFileWriterFactoryService;
 
     private static final WorkflowState[][] VALID_WORKFLOW_STATE_TRANSITIONS = new WorkflowState[][] {
 
@@ -125,22 +149,27 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     };
 
     private final ThreadPool threadPool = SharedThreadPool.getInstance();
-    
+
     private ScheduledFuture<?> heartbeatFuture;
-    
+
     private Map<String, Long> componentHeartbeatTimestamps = Collections.synchronizedMap(new HashMap<String, Long>());
-    
+
     private WorkflowExecutionStorageBridge wfDataManagementStorage;
-    
+
     private WorkflowStateMachine stateMachine = new WorkflowStateMachine();
-    
+
     private WorkflowExecutionContext wfExeCtx;
 
+    private WorkflowDescription fullWorkflowDescription;
+
     private Map<String, String> executionAuthTokens;
-    
-    private final Map<String, NodeIdentifier> componentExecutionIds = Collections
+
+    private final Map<String, NodeIdentifier> componentNodeIds = Collections
         .synchronizedMap(new HashMap<String, NodeIdentifier>());
-    
+
+    private final Map<String, String> componentInstanceNames = Collections
+        .synchronizedMap(new HashMap<String, String>());
+
     private final Map<String, Boolean> disposeComponentImmediately = Collections
         .synchronizedMap(new HashMap<String, Boolean>());
 
@@ -150,7 +179,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
     private CountDownLatch resumedComonentStateLatch = new CountDownLatch(1);
 
-    private final CountDownLatch disposedComonentStateLatch = new CountDownLatch(1);
+    private final CountDownLatch disposedComponentStateLatch = new CountDownLatch(1);
 
     private final PreparedComponentStateListener preparedComponentStateListener = new PreparedComponentStateListener();
 
@@ -166,7 +195,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
     private final LastConsoleRowListener lastConsoleRowListener = new LastConsoleRowListener();
 
+    private ComponentsConsoleLogFileWriter compConsoleLogFileWriter;
+
     private Runnable componentHeartbeatRunnable = new Runnable() {
+
         @Override
         @TaskDescription("Check heartbeats of components")
         public void run() {
@@ -181,16 +213,19 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                     if (currentTimestamp - componentHeartbeatTimestamps.get(compExeId) > MAX_HEARTBEAT_INTERVAL_MSEC
                         && !finalComponentStateListener.hasComponent(compExeId)) {
                         compExeIdsLost.add(compExeId);
+                        finalComponentStateListener.addComponent(compExeId);
+                        lastConsoleRowListener.addComponent(compExeId);
                     }
                 }
             }
             if (!compExeIdsLost.isEmpty()) {
                 stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.COMPONENT_HEARTBEAT_LOST,
-                    new WorkflowExecutionException("Component(s) not reachable (anymore): " + compExeIdsLost)));
+                    new WorkflowExecutionException(StringUtils.format("Component(s) not reachable (anymore): "
+                        + createMessageListingComponents(compExeIdsLost)))));
             }
         }
     };
-    
+
     /**
      * Available event types for the {@link WorkflowStateMachine}.
      * 
@@ -234,8 +269,12 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     public WorkflowExecutionControllerImpl() {}
 
     public WorkflowExecutionControllerImpl(WorkflowExecutionContext wfContext) {
+        this.fullWorkflowDescription = wfContext.getWorkflowDescription().clone();
+        WorkflowExecutionUtils.removeDisabledWorkflowNodesWithoutNotify(wfContext.getWorkflowDescription());
         this.wfExeCtx = wfContext;
-        this.wfDataManagementStorage = new WorkflowExecutionStorageBridge(wfContext, metaDataService);
+        this.wfDataManagementStorage =
+            new WorkflowExecutionStorageBridge(wfContext, metaDataService, dataManagementService, typedDatumService);
+        compConsoleLogFileWriter = logFileWriterFactoryService.createComponentConsoleLogFileWriter(wfDataManagementStorage);
     }
 
     @Override
@@ -278,6 +317,11 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         return stateMachine.getState();
     }
 
+    @Override
+    public Long getDataManagementId() {
+        return wfDataManagementStorage.getWorkflowInstanceDataManamagementId();
+    }
+
     /**
      * Events the {@link WorkflowStateMachine} can process.
      * 
@@ -289,13 +333,34 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
         private final Throwable throwable;
 
+        private final String errorId;
+
+        private final String errorMessage;
+
+        private final String compExeId;
+
         public WorkflowStateMachineEvent(WorkflowStateMachineEventType type) {
-            this(type, null);
+            this.type = type;
+            this.throwable = null;
+            this.errorId = null;
+            this.errorMessage = null;
+            this.compExeId = null;
         }
 
         public WorkflowStateMachineEvent(WorkflowStateMachineEventType type, Throwable throwable) {
             this.type = type;
             this.throwable = throwable;
+            this.errorId = null;
+            this.errorMessage = null;
+            this.compExeId = null;
+        }
+
+        public WorkflowStateMachineEvent(WorkflowStateMachineEventType type, String errorId, String errorMessage, String compExeId) {
+            this.type = type;
+            this.throwable = null;
+            this.errorId = errorId;
+            this.errorMessage = errorMessage;
+            this.compExeId = compExeId;
         }
 
         public WorkflowStateMachineEventType getType() {
@@ -306,11 +371,35 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             return throwable;
         }
 
+        public String getErrorId() {
+            return errorId;
+        }
+
+        public String getErrorMessage() {
+            return errorMessage;
+        }
+
+        public String getComponentExecutionId() {
+            return compExeId;
+        }
+
         @Override
         public String toString() {
             return type.name();
         }
 
+    }
+
+    private String createMessageListingComponents(Set<String> compExeIds) {
+        String message = "";
+        for (String compExeId : compExeIds) {
+            if (!message.isEmpty()) {
+                message += ", ";
+            }
+            message += StringUtils.format("'%s' (%s) at %s", componentInstanceNames.get(compExeId),
+                compExeId, componentNodeIds.get(compExeId));
+        }
+        return message;
     }
 
     /**
@@ -394,10 +483,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             case CANCEL_AFTER_FAILED_REQUESTED:
                 if (checkStateChange(currentState, WorkflowState.CANCELING_AFTER_FAILED)) {
                     state = WorkflowState.CANCELING_AFTER_FAILED;
-                    if (event.getThrowable() != null) {
-                        LOG.error(StringUtils.format("Workflow '%s' (%s) will be cancelled as a component failed",
-                            wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()), event.getThrowable());
-                    }
+                    handleFailure(event);
                     if (currentState != WorkflowState.CANCELING) {
                         cancelAsync();
                     }
@@ -445,7 +531,13 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             case PROCESS_COMPONENT_TIMELINE_EVENTS_FAILED:
             case COMPONENT_HEARTBEAT_LOST:
                 currentFuture = null;
-                postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED, event.getThrowable()));
+                if (event.getThrowable() != null) {
+                    postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED,
+                        event.getThrowable()));
+                } else {
+                    postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED,
+                        event.getErrorId(), event.getErrorMessage(), event.getComponentExecutionId()));
+                }
                 break;
             case CANCEL_ATTEMPT_FAILED:
                 if (checkStateChange(currentState, WorkflowState.FAILED)) {
@@ -462,6 +554,29 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             return state;
         }
 
+        private void handleFailure(WorkflowStateMachineEvent event) {
+            if (event.getThrowable() != null) {
+                String errorMessagePrefix = StringUtils.format("Workflow '%s' (%s) failed and will be cancelled",
+                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
+                String errorId = LogUtils.logExceptionAsSingleLineAndAssignUniqueMarker(LOG, errorMessagePrefix, event.getThrowable());
+                String errorMessage = ComponentUtils.createErrorLogMessage(event.getThrowable(), errorId);
+                storeAndSendErrorLogMessage(ConsoleRow.Type.WORKFLOW_ERROR, errorMessage, "", "");
+            } else {
+                final NodeIdentifier componentNode = componentNodeIds.get(event.getComponentExecutionId());
+                final String componentName = componentInstanceNames.get(event.getComponentExecutionId());
+                String errorMessagePrefix = StringUtils.format(
+                    "Workflow '%s' (%s) will be cancelled because component '%s' on %s failed",
+                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(), componentName, componentNode);
+                if (event.getErrorMessage() != null) {
+                    String errorMessage = ComponentUtils.createErrorLogMessage(event.getErrorMessage(), event.getErrorId());
+                    storeAndSendErrorLogMessage(ConsoleRow.Type.COMPONENT_ERROR, errorMessage, event.getComponentExecutionId(),
+                        componentName);
+                }
+                LOG.error(StringUtils.format("%s: for more information, look for the error marker %s in the log files of %s",
+                    errorMessagePrefix, event.getErrorId(), componentNode));
+            }
+        }
+
         private void logInvalidStateChangeRequest(WorkflowState currentState, WorkflowState requestedState) {
             LOG.debug(StringUtils.format("Ignored workflow state change request for workflow '%s' (%s) as it will cause an invalid"
                 + " state transition: %s -> %s", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(),
@@ -476,6 +591,15 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeCtx.getExecutionIdentifier(), newState.name());
             if (newState == WorkflowState.DISPOSED) {
                 disposeNotificationBuffers();
+            }
+            if (newState.equals(WorkflowState.FINISHED) || newState.equals(WorkflowState.CANCELLED)
+                || newState.equals(WorkflowState.FAILED)) {
+                wfExeStatsService.addStatsAtWorkflowTermination(wfExeCtx, newState);
+                synchronized (finalComponentStateListener) {
+                    if (heartbeatFuture != null && !heartbeatFuture.isCancelled()) {
+                        heartbeatFuture.cancel(false);
+                    }
+                }
             }
         }
 
@@ -494,7 +618,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         }
 
         void cancelAsync() {
-            threadPool.submit(new AsyncCancelTask());
+            threadPool.submit(new AsyncCancelTask(currentFuture));
         }
 
         void pauseAsync() {
@@ -524,23 +648,35 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             @TaskDescription("Prepare workflow")
             public void run() {
 
+                wfExeStatsService.addStatsAtWorkflowStart(wfExeCtx);
+
                 notificationService.send(WorkflowConstants.NEW_WORKFLOW_NOTIFICATION_ID, wfExeCtx.getExecutionIdentifier());
                 initializeNotificationBuffers();
 
+                initializeConsoleLogWriting();
+
                 try {
-                    wfDataManagementStorage.addWorkflowExecution(wfExeCtx);
+                    wfDataManagementStorage.addWorkflowExecution(wfExeCtx, fullWorkflowDescription);
+                } catch (WorkflowExecutionException e) {
+                    postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED, e));
+                    return;
+                } finally {
+                    fullWorkflowDescription = null;
+                }
+
+                if (wfExeCtx.getWorkflowDescription().getWorkflowNodes().isEmpty()) {
+                    preparedComponentStateListener.onComponentStatesChangedEntirely();
+                }
+
+                final Map<String, ComponentExecutionContext> compExeCtxts = createComponentExecutionContexts();
+
+                try {
+                    validateComponentNodesReachable(compExeCtxts);
                 } catch (WorkflowExecutionException e) {
                     postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED, e));
                     return;
                 }
 
-                if (wfExeCtx.getWorkflowDescription().getWorkflowNodes().isEmpty()) {
-                    setWorkflowExecutionFinishedAndPostFinishedEvent();
-                    return;
-                }
-                
-                final Map<String, ComponentExecutionContext> compExeCtxts = createComponentExecutionContexts();
-                
                 CallablesGroup<Throwable> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Throwable.class);
 
                 final Long referenceTimestamp = System.currentTimeMillis();
@@ -556,14 +692,14 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                             try {
                                 String compExeId = componentExecutionService.init(compExeCtx,
                                     executionAuthTokens.get(finalWfNode.getIdentifier()), referenceTimestamp);
-                                componentExecutionIds.put(compExeId, compExeCtx.getNodeId());
+                                componentNodeIds.put(compExeId, compExeCtx.getNodeId());
+                                componentInstanceNames.put(compExeId, compExeCtx.getInstanceName());
                                 disposeComponentImmediately.put(compExeId, !compExeCtx.getComponentDescription().performLazyDisposal());
-                                componentExecutionService.prepare(compExeId,
-                                    compExeCtx.getNodeId());
-                                LOG.debug(StringUtils.format("Created component '%s' (%s) on node '%s' (%s)",
-                                    compExeCtx.getInstanceName(), compExeId, compExeCtx.getNodeId().getAssociatedDisplayName(),
-                                    compExeCtx.getNodeId().getIdString()));
-                            } catch (CommunicationException | RuntimeException e) {
+                                initializeComponentConsoleLogWriting(compExeId);
+                                componentExecutionService.prepare(compExeId, compExeCtx.getNodeId());
+                                LOG.debug(StringUtils.format("Created component '%s' (%s) on node %s",
+                                    compExeCtx.getInstanceName(), compExeId, compExeCtx.getNodeId()));
+                            } catch (RemoteOperationException | RuntimeException e) {
                                 return e;
                             }
                             return null;
@@ -581,20 +717,62 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
                 for (Throwable t : throwables) {
                     if (t != null) {
-                        LOG.error(StringUtils.format("Preparing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
+                        LOG.error(StringUtils.format("Failed to prepare workflow '%s' (%s)", wfExeCtx.getInstanceName(),
                             wfExeCtx.getExecutionIdentifier()), t);
                     }
                 }
 
                 for (Throwable t : throwables) {
                     if (t != null) {
-                        postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED, t));
+                        postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED,
+                            new Throwable("Failed to prepare workflow", t)));
                         return;
                     }
                 }
-                
+
                 LOG.debug(StringUtils.format("Workflow '%s' (%s) is prepared (%d component(s))",
                     wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(), compExeCtxts.size()));
+            }
+        }
+
+        private void validateComponentNodesReachable(Map<String, ComponentExecutionContext> compExeCtxts)
+            throws WorkflowExecutionException {
+
+            Map<String, ComponentExecutionContext> notReachableCompExeIds = new HashMap<>();
+
+            Set<NodeIdentifier> reachableNodes = communicationService.getReachableNodes();
+            for (ComponentExecutionContext compExeCtx : compExeCtxts.values()) {
+                if (!reachableNodes.contains(compExeCtx.getNodeId())) {
+                    notReachableCompExeIds.put(compExeCtx.getExecutionIdentifier(), compExeCtx);
+                }
+            }
+
+            if (!notReachableCompExeIds.isEmpty()) {
+                // TODO review if moving/merging with other code path; currently just done for logging purposes
+                for (ComponentExecutionContext compExeCtx : notReachableCompExeIds.values()) {
+                    componentInstanceNames.put(compExeCtx.getExecutionIdentifier(), compExeCtx.getInstanceName());
+                    componentNodeIds.put(compExeCtx.getExecutionIdentifier(), compExeCtx.getNodeId());
+                }
+                throw new WorkflowExecutionException("Failed to execute workflow, because component node(s) not reachable: "
+                    + createMessageListingComponents(notReachableCompExeIds.keySet()));
+            }
+        }
+
+        private void initializeComponentConsoleLogWriting(String compExeId) {
+            try {
+                compConsoleLogFileWriter.initializeComponentLogFile(compExeId);
+            } catch (IOException e) {
+                LOG.error(StringUtils.format("Failed to initialize console log file writers for workflow '%s' (%s)",
+                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()), e);
+            }
+        }
+
+        private void initializeConsoleLogWriting() {
+            try {
+                compConsoleLogFileWriter.initializeWorkflowLogFile();
+            } catch (IOException e) {
+                LOG.error(StringUtils.format("Failed to initialize console log file writer for workflow '%s' (%s)",
+                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()), e);
             }
         }
 
@@ -642,14 +820,14 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 String compExeId = wfExeCtx.getCompExeIdByWfNodeId(wn.getIdentifier());
                 workflowGraphNodes.put(compExeId, new WorkflowGraphNode(compExeId, inputIds, outputIds, endpointNames,
                     wn.getComponentDescription().getComponentInstallation().getComponentRevision()
-                        .getComponentInterface().getIsResetSink()));
+                        .getComponentInterface().getIsLoopDriver(), isDrivingFaultTolerantNode(wn)));
             }
             for (Connection cn : workflowDescription.getConnections()) {
                 WorkflowGraphEdge edge = new WorkflowGraphEdge(
                     wfExeCtx.getCompExeIdByWfNodeId(cn.getSourceNode().getIdentifier()),
-                    cn.getOutput().getIdentifier(),
+                    cn.getOutput().getIdentifier(), cn.getOutput().getMetaDataValue(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE),
                     wfExeCtx.getCompExeIdByWfNodeId(cn.getTargetNode().getIdentifier()),
-                    cn.getInput().getIdentifier());
+                    cn.getInput().getIdentifier(), cn.getInput().getMetaDataValue(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE));
                 String edgeKey = WorkflowGraph.createEdgeKey(edge);
                 if (!workflowGraphEdges.containsKey(edgeKey)) {
                     workflowGraphEdges.put(edgeKey, new HashSet<WorkflowGraphEdge>());
@@ -657,6 +835,15 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 workflowGraphEdges.get(edgeKey).add(edge);
             }
             return new WorkflowGraph(workflowGraphNodes, workflowGraphEdges);
+        }
+
+        private boolean isDrivingFaultTolerantNode(WorkflowNode wn) {
+            ConfigurationDescription configDesc = wn.getComponentDescription().getConfigurationDescription();
+            LoopBehaviorInCaseOfFailure behavior = LoopBehaviorInCaseOfFailure
+                .fromString(configDesc.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE));
+            return !behavior.equals(LoopBehaviorInCaseOfFailure.Fail)
+                || (behavior.equals(LoopBehaviorInCaseOfFailure.Fail)
+                && Boolean.valueOf(configDesc.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_FAIL_LOOP)));
         }
 
         private ComponentExecutionContext createComponentExecutionContext(WorkflowNode wfNode, WorkflowGraph workflowGraph) {
@@ -678,9 +865,9 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             for (Connection cn : workflowDescription.getConnections()) {
                 if (cn.getSourceNode().getIdentifier().equals(wfNode.getIdentifier())) {
                     EndpointDatumRecipient endpointDatumRecipient = EndpointDatumRecipientFactory
-                            .createEndpointDatumRecipient(cn.getInput().getName(),
-                                wfExeCtx.getCompExeIdByWfNodeId(cn.getTargetNode().getIdentifier()),
-                                cn.getTargetNode().getComponentDescription().getNode());
+                        .createEndpointDatumRecipient(cn.getInput().getName(),
+                            wfExeCtx.getCompExeIdByWfNodeId(cn.getTargetNode().getIdentifier()),
+                            cn.getTargetNode().getName(), cn.getTargetNode().getComponentDescription().getNode());
                     if (!endpointDatumRecipients.containsKey(cn.getOutput().getName())) {
                         endpointDatumRecipients.put(cn.getOutput().getName(), new ArrayList<EndpointDatumRecipient>());
                     }
@@ -713,31 +900,38 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 sendLifeCycleEventAsConsoleRow(ConsoleRow.WorkflowLifecyleEventType.WORKFLOW_STARTING);
 
                 Throwable throwable = new ParallelComponentCaller() {
-                        @Override
-                        public void logError(Throwable t) {
-                            LOG.error(StringUtils.format("Preparing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
-                                wfExeCtx.getExecutionIdentifier()), t);
-                        }
-                        @Override
-                        public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
-                            setComponentStateToFailed(compExeId);
-                        }
-                        @Override
-                        public void callSingleComponent(String compExeId) throws CommunicationException {
-                            componentExecutionService.start(compExeId, componentExecutionIds.get(compExeId));
-                            onComponentHeartbeatReceived(compExeId);
-                        }
-                        @Override
-                        public String getMethodToCallAsString() {
-                            return "start";
-                        }
-                    }.callParallelAndWait();
+
+                    @Override
+                    public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
+                        setComponentStateToFailed(compExeId);
+                    }
+
+                    @Override
+                    public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
+                        componentExecutionService.start(compExeId, componentNodeIds.get(compExeId));
+                        onComponentHeartbeatReceived(compExeId);
+                    }
+
+                    @Override
+                    public String getMethodToCallAsString() {
+                        return "start";
+                    }
+                }.callParallelAndWait();
 
                 if (throwable == null) {
-                    heartbeatFuture = threadPool.scheduleAtFixedRate(componentHeartbeatRunnable, MAX_HEARTBEAT_INTERVAL_MSEC);
+                    synchronized (finalComponentStateListener) {
+                        heartbeatFuture = threadPool.scheduleAtFixedRate(componentHeartbeatRunnable, MAX_HEARTBEAT_INTERVAL_MSEC);
+                    }
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.START_ATTEMPT_SUCCESSFUL));
                 } else {
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.START_ATTEMPT_FAILED, throwable));
+                }
+
+                if (wfExeCtx.getWorkflowDescription().getWorkflowNodes().isEmpty()) {
+                    finishedComponentStateListener.onComponentStatesChangedEntirely();
+                    finalComponentStateListener.onComponentStatesChangedEntirely();
+                    lastConsoleRowListener.onComponentStatesChangedEntirely();
+                    disposedComponentStateLatch.countDown();
                 }
             }
         }
@@ -754,28 +948,32 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             public void run() {
 
                 Throwable throwable = new ParallelComponentCaller(true, true) {
-                        @Override
-                        public void logError(Throwable t) {
-                            LOG.error(StringUtils.format("Pausing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
-                                wfExeCtx.getExecutionIdentifier()), t);
-                        }
-                        @Override
-                        public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
-                            pausedComonentStateLatch.countDown();
-                            setComponentStateToFailed(compExeId);
-                        }
-                        @Override
-                        public void callSingleComponent(String compExeId) throws CommunicationException {
-                            componentExecutionService.pause(compExeId, componentExecutionIds.get(compExeId));
-                        }
-                        @Override
-                        public String getMethodToCallAsString() {
-                            return "pause";
-                        }
-                    }.callParallelAndWait();
+
+                    @Override
+                    public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
+                        pausedComonentStateLatch.countDown();
+                        setComponentStateToFailed(compExeId);
+                    }
+
+                    @Override
+                    public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
+                        componentExecutionService.pause(compExeId, componentNodeIds.get(compExeId));
+                    }
+
+                    @Override
+                    public String getMethodToCallAsString() {
+                        return "pause";
+                    }
+                }.callParallelAndWait();
 
                 try {
-                    pausedComonentStateLatch.await();
+                    // waiting time will be reduced if component runs can be interrupted
+                    boolean timeNotElapsed = pausedComonentStateLatch.await(6, TimeUnit.HOURS);
+                    if (!timeNotElapsed) {
+                        stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PAUSE_ATTEMPT_FAILED,
+                            new WorkflowExecutionException(StringUtils.format("Waiting for workflow '%s' (%s) to pause failed",
+                                wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()) + CAUSE_WAITING_TIME_ELAPSED)));
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
                     LOG.debug(StringUtils.format("Waiting for components to pause (workflow '%s' (%s)) was interrupted",
@@ -802,31 +1000,34 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             @TaskDescription("Resume workflow")
             public void run() {
                 Throwable throwable = new ParallelComponentCaller(true, true) {
-                        @Override
-                        public void logError(Throwable t) {
-                            LOG.error(StringUtils.format("Resuming workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
-                                wfExeCtx.getExecutionIdentifier()), t);
-                        }
-                        @Override
-                        public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
-                            resumedComonentStateLatch.countDown();
-                            setComponentStateToFailed(compExeId);
-                        }
-                        @Override
-                        public void callSingleComponent(String compExeId) throws CommunicationException {
-                            componentExecutionService.resume(compExeId, componentExecutionIds.get(compExeId));
-                        }
-                        @Override
-                        public String getMethodToCallAsString() {
-                            return "resume";
-                        }
-                    }.callParallelAndWait();
+
+                    @Override
+                    public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
+                        resumedComonentStateLatch.countDown();
+                        setComponentStateToFailed(compExeId);
+                    }
+
+                    @Override
+                    public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
+                        componentExecutionService.resume(compExeId, componentNodeIds.get(compExeId));
+                    }
+
+                    @Override
+                    public String getMethodToCallAsString() {
+                        return "resume";
+                    }
+                }.callParallelAndWait();
 
                 try {
-                    resumedComonentStateLatch.await();
+                    boolean timeNotElapsed = resumedComonentStateLatch.await(5, TimeUnit.MINUTES);
+                    if (!timeNotElapsed) {
+                        stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.RESUME_ATTEMPT_FAILED,
+                            new WorkflowExecutionException(StringUtils.format("Waiting for workflow '%s' (%s) to resume failed",
+                                wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()) + CAUSE_WAITING_TIME_ELAPSED)));
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    LOG.debug(StringUtils.format("Waiting for components to pause (workflow '%s' (%s)) was interrupted",
+                    LOG.debug(StringUtils.format("Waiting for components to resume (workflow '%s' (%s)) was interrupted",
                         wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.RESUME_ATTEMPT_FAILED, e));
                     return;
@@ -846,12 +1047,18 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
          */
         private final class AsyncCancelTask implements Runnable {
 
+            private final Future<?> future;
+
+            public AsyncCancelTask(Future<?> future) {
+                this.future = future;
+            }
+
             @Override
             @TaskDescription("Cancel workflow")
             public void run() {
-                if (currentFuture != null) {
+                if (future != null) {
                     try {
-                        currentFuture.get(3, TimeUnit.MINUTES);
+                        future.get(3, TimeUnit.MINUTES);
                     } catch (ExecutionException | TimeoutException e) {
                         stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_ATTEMPT_FAILED, e));
                         return;
@@ -862,47 +1069,50 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                 }
 
                 Throwable throwable = null;
-                if (!componentExecutionIds.isEmpty()) {
+                if (!componentNodeIds.isEmpty()) {
                     throwable = new ParallelComponentCaller(true, true) {
-    
-                            @Override
-                            public void callSingleComponent(String compExeId) throws CommunicationException {
-                                componentExecutionService.cancel(compExeId, componentExecutionIds.get(compExeId));
-                            }
-                            @Override
-                            public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
-                                finalComponentStateListener.addComponent(compExeId);
-                                lastConsoleRowListener.addComponent(compExeId);
-                                setComponentStateToFailed(compExeId);
-                            }
-                            @Override
-                            public void logError(Throwable t) {
-                                LOG.error(StringUtils.format("Cancelling workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
-                                    wfExeCtx.getExecutionIdentifier()), t);
-                            }
-                            @Override
-                            public String getMethodToCallAsString() {
-                                return "cancel";
-                            }
-                        }.callParallelAndWait();
-    
-                    int compsNotInitCount = wfExeCtx.getWorkflowDescription().getWorkflowNodes().size() - componentExecutionIds.size();
+
+                        @Override
+                        public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
+                            componentExecutionService.cancel(compExeId, componentNodeIds.get(compExeId));
+                        }
+
+                        @Override
+                        public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
+                            finalComponentStateListener.addComponent(compExeId);
+                            lastConsoleRowListener.addComponent(compExeId);
+                            setComponentStateToFailed(compExeId);
+                        }
+
+                        @Override
+                        public String getMethodToCallAsString() {
+                            return "cancel";
+                        }
+                    }.callParallelAndWait();
+
+                    int compsNotInitCount = wfExeCtx.getWorkflowDescription().getWorkflowNodes().size() - componentNodeIds.size();
                     for (int i = 0; i < compsNotInitCount; i++) {
                         String pseudoCompExeId = String.valueOf(i);
                         finalComponentStateListener.addComponent(pseudoCompExeId);
                         lastConsoleRowListener.addComponent(pseudoCompExeId);
                     }
                     try {
-                        workflowTerminatedLatch.await();
+                        // waiting time will be reduced if component runs can be interrupted
+                        boolean timeNotElapsed = workflowTerminatedLatch.await(6, TimeUnit.HOURS);
+                        if (!timeNotElapsed) {
+                            stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_ATTEMPT_FAILED,
+                                new WorkflowExecutionException(StringUtils.format("Waiting for workflow '%s' (%s) to cancel failed",
+                                    wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()) + CAUSE_WAITING_TIME_ELAPSED)));
+                        }
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         LOG.debug(StringUtils.format("Waiting for components to cancel (workflow '%s' (%s)) was interrupted",
                             wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
                         stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_ATTEMPT_FAILED, e));
-                        return;
                     }
                 }
                 try {
+                    flushAndDisposeComponentLogFiles();
                     if (getState() == WorkflowState.CANCELING_AFTER_FAILED || throwable != null) {
                         wfDataManagementStorage.setWorkflowExecutionFinished(FinalWorkflowState.FAILED);
                     } else if (getState() == WorkflowState.CANCELING) {
@@ -931,23 +1141,38 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             @TaskDescription("Wait for workflow to finish")
             public void run() {
                 try {
-                    workflowTerminatedLatch.await();
-                    setWorkflowExecutionFinishedAndPostFinishedEvent();
+                    boolean timeNotElapsed = workflowTerminatedLatch.await(5, TimeUnit.MINUTES);
+                    if (timeNotElapsed) {
+                        workflowExecutionFinished();
+                    } else {
+                        stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISH_ATTEMPT_FAILED,
+                            new WorkflowExecutionException(StringUtils.format("Waiting for workflow '%s' (%s) to finish failed",
+                                wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()) + "cause: waiting time elapsed")));
+                    }
                 } catch (InterruptedException e) {
                     LOG.error(StringUtils.format("Waiting for workflow '%s' (%s) to finish failed", wfExeCtx.getInstanceName(),
-                        wfExeCtx.getExecutionIdentifier()), e);
-                    stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FAILED, e));
+                        wfExeCtx.getExecutionIdentifier()) + "cause: waiting interrupted", e);
+                    stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISH_ATTEMPT_FAILED, e));
                 }
             }
         }
-        
-        private void setWorkflowExecutionFinishedAndPostFinishedEvent() {
+
+        private void workflowExecutionFinished() {
+            if (!wfExeCtx.getWorkflowDescription().getWorkflowNodes().isEmpty()) {
+                flushAndDisposeComponentLogFiles();
+            }
             try {
                 wfDataManagementStorage.setWorkflowExecutionFinished(FinalWorkflowState.FINISHED);
-                stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISHED));                
+                stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISHED));
             } catch (WorkflowExecutionException e) {
                 stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.FINISH_ATTEMPT_FAILED, e));
             }
+        }
+
+        private void flushAndDisposeComponentLogFiles() {
+            compConsoleLogFileWriter.addWorkflowConsoleRow(createConsoleRowForWorkflowLifeCycleEvent(
+                WorkflowLifecyleEventType.WORKFLOW_LOG_FINISHED.name()));
+            compConsoleLogFileWriter.disposeLogFiles();
         }
 
         /**
@@ -962,30 +1187,34 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             public void run() {
                 notificationService.send(WorkflowConstants.STATE_DISPOSED_NOTIFICATION_ID, wfExeCtx.getExecutionIdentifier());
                 Throwable throwable = new ParallelComponentCaller(true, false) {
-                        @Override
-                        public void logError(Throwable t) {
-                            LOG.error(StringUtils.format("Disposing workflow '%s' (%s) failed", wfExeCtx.getInstanceName(),
-                                wfExeCtx.getExecutionIdentifier()), t);
-                        }
-                        @Override
-                        public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
-                            disposedComonentStateLatch.countDown();
-                        }
-                        @Override
-                        public void callSingleComponent(String compExeId) throws CommunicationException {
-                            componentExecutionService.dispose(compExeId, componentExecutionIds.get(compExeId));
-                        }
-                        @Override
-                        public String getMethodToCallAsString() {
-                            return "dispose";
-                        }
-                    }.callParallelAndWait();
+
+                    @Override
+                    public void onErrorInSingleComponentCall(String compExeId, Throwable t) {
+                        disposedComponentStateListener.addComponent(compExeId);
+                    }
+
+                    @Override
+                    public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
+                        componentExecutionService.dispose(compExeId, componentNodeIds.get(compExeId));
+                    }
+
+                    @Override
+                    public String getMethodToCallAsString() {
+                        return "dispose";
+                    }
+                }.callParallelAndWait();
 
                 try {
-                    disposedComonentStateLatch.await();
+                    boolean timeNotElapsed = disposedComponentStateLatch.await(5, TimeUnit.MINUTES);
+                    if (!timeNotElapsed) {
+                        stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.DISPOSE_ATTEMPT_FAILED,
+                            new WorkflowExecutionException(StringUtils.format("Waiting for workflow '%s' (%s) to dispose failed",
+                                wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()) + CAUSE_WAITING_TIME_ELAPSED)));
+                    }
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    LOG.debug("Waiting for components to dispose was interrupted");
+                    LOG.debug(StringUtils.format("Waiting for components to dispose (workflow '%s' (%s)) was interrupted",
+                        wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()));
                     stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.DISPOSE_ATTEMPT_FAILED, e));
                     return;
                 }
@@ -1032,7 +1261,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
             public Throwable callParallelAndWait() {
                 CallablesGroup<Throwable> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Throwable.class);
-                for (String executionId : componentExecutionIds.keySet()) {
+                for (String executionId : componentNodeIds.keySet()) {
                     final String finalExecutionId = executionId;
                     callablesGroup.add(new Callable<Throwable>() {
 
@@ -1040,17 +1269,17 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
                         @TaskDescription("Call method of workflow component")
                         public Throwable call() throws Exception {
                             try {
-                                if (!ignoreDisposedComponents || !disposedComponentStateListener.hasComponent(finalExecutionId)
-                                    && !ignoreComponentsInFinalState || !finalComponentStateListener.hasComponent(finalExecutionId)) {
+                                if ((!ignoreDisposedComponents || !disposedComponentStateListener.hasComponent(finalExecutionId))
+                                    && (!ignoreComponentsInFinalState || !finalComponentStateListener.hasComponent(finalExecutionId))) {
                                     callSingleComponent(finalExecutionId);
                                 }
-                            } catch (CommunicationException | RuntimeException e) {
+                            } catch (RemoteOperationException | RuntimeException e) {
                                 onErrorInSingleComponentCall(finalExecutionId, e);
                                 return e;
                             }
                             return null;
                         }
-                    }, String.format("Call component ('%s'): ", finalExecutionId, getMethodToCallAsString()));
+                    }, StringUtils.format("Call component ('%s'): ", finalExecutionId, getMethodToCallAsString()));
                 }
 
                 List<Throwable> throwables = callablesGroup.executeParallel(new AsyncExceptionListener() {
@@ -1069,38 +1298,66 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
                 for (Throwable t : throwables) {
                     if (t != null) {
-                        return t;
+                        return new Throwable(StringUtils.format("Failed to %s component(s)", getMethodToCallAsString()), t);
                     }
                 }
                 return null;
             }
 
-            public abstract void callSingleComponent(String compExeId) throws CommunicationException;
-            
+            public abstract void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException;
+
             public abstract String getMethodToCallAsString();
 
             public void onErrorInSingleComponentCall(String compExeId, Throwable t) {}
-            
-            public void logError(Throwable t) {}
 
+            public void logError(Throwable t) {
+                if (t instanceof RemoteOperationException) {
+                    LOG.error(StringUtils.format("Failed to %s component(s) of workflow '%s' (%s); cause: %s", getMethodToCallAsString(),
+                        wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier(), t.toString()));
+                } else {
+                    LOG.error(StringUtils.format("Failed to %s component(s) of workflow '%s' (%s)", getMethodToCallAsString(),
+                        wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier()), t);
+                }
+            }
         }
     }
 
     private void setComponentStateToFailed(String compExeId) {
         notificationService.send(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, ComponentState.FAILED.name());
     }
-    
+
     @Override
-    @AllowRemoteAccess
-    public void onComponentStateChanged(String compExeId, ComponentState oldState, ComponentState newState,
+    public void onComponentStateChanged(String compExeId, ComponentState newState,
         Integer executionCount, String executionCountOnResets) {
-        onComponentStateChanged(compExeId, oldState, newState, executionCount, executionCountOnResets, null);
+        onComponentStateChanged(compExeId, newState, executionCount, executionCountOnResets, null, null);
+    }
+
+    private ConsoleRow createConsoleRow(Type type, String payload, String compExeId, String compInstanceName) {
+        ConsoleRowBuilder consoleRowBuilder = new ConsoleRowBuilder();
+        consoleRowBuilder.setExecutionIdentifiers(wfExeCtx.getExecutionIdentifier(), compExeId)
+            .setInstanceNames(wfExeCtx.getInstanceName(), compInstanceName)
+            .setType(type)
+            .setPayload(payload);
+        return consoleRowBuilder.build();
+    }
+
+    private void storeAndSendErrorLogMessage(Type type, String message, String compExeId, String compInstanceName) {
+        ConsoleRow consoleRow = createConsoleRow(type, message, compExeId, compInstanceName);
+        compConsoleLogFileWriter.addWorkflowConsoleRow(consoleRow);
+        notificationService.send(wfExeCtx.getExecutionIdentifier() + wfExeCtx.getNodeId().getIdString()
+            + ConsoleRow.NOTIFICATION_SUFFIX, consoleRow);
     }
 
     @Override
-    @AllowRemoteAccess
-    public synchronized void onComponentStateChanged(final String compExeId, ComponentState oldState, ComponentState newState,
-        Integer executionCount, String executionCountOnResets, Throwable t) {
+    public void onComponentStateChanged(String compExeId, ComponentState newState, Integer executionCount, String executionCountOnResets,
+        String errorId) {
+        onComponentStateChanged(compExeId, newState, executionCount, executionCountOnResets, errorId, null);
+    }
+
+    @Override
+    public synchronized void onComponentStateChanged(final String compExeId, ComponentState newState,
+        Integer executionCount, String executionCountOnResets, String errorId, String errorMessage) {
+
         notificationService.send(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, newState.name());
         if (resumedStateListener != null) {
             resumedStateListener.addComponent(compExeId);
@@ -1120,7 +1377,8 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             disposedComponentStateListener.addComponent(compExeId);
             break;
         case FAILED:
-            stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED, t));
+            stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED,
+                errorId, errorMessage, compExeId));
             break;
         default:
             break;
@@ -1131,14 +1389,14 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             pausedComponentStateListener.addComponent(compExeId);
             if (disposeComponentImmediately.get(compExeId)) {
                 threadPool.execute(new Runnable() {
-                    
+
                     @Override
                     @TaskDescription("Dispose component")
                     public void run() {
                         try {
-                            componentExecutionService.dispose(compExeId, componentExecutionIds.get(compExeId));
-                        } catch (CommunicationException e) {
-                            LOG.error(StringUtils.format("Failed to dispose component %s", compExeId), e);
+                            componentExecutionService.dispose(compExeId, componentNodeIds.get(compExeId));
+                        } catch (ExecutionControllerException | RemoteOperationException e) {
+                            LOG.error(StringUtils.format("Failed to dispose component %s; cause: %s", compExeId, e.toString()));
                         }
                     }
                 });
@@ -1149,7 +1407,6 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     }
 
     @Override
-    @AllowRemoteAccess
     public void onInputProcessed(String serializedEndpointDatum) {
         notificationService.send(wfExeCtx.getExecutionIdentifier()
             + wfExeCtx.getNodeId().getIdString()
@@ -1157,23 +1414,23 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     }
 
     @Override
-    @AllowRemoteAccess
     public void processConsoleRows(ConsoleRow[] consoleRows) {
-        for (ConsoleRow row : consoleRows) {
+        for (ConsoleRow consoleRow : consoleRows) {
             notificationService.send(wfExeCtx.getExecutionIdentifier() + wfExeCtx.getNodeId().getIdString()
-                + ConsoleRow.NOTIFICATION_SUFFIX, row);
+                + ConsoleRow.NOTIFICATION_SUFFIX, consoleRow);
             try {
-                checkForLifecycleToolRunConsoleRow(row);
+                checkForLifecycleToolRunConsoleRow(consoleRow);
             } catch (WorkflowExecutionException e) {
                 stateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType
                     .PROCESS_COMPONENT_TIMELINE_EVENTS_FAILED, e));
             }
-            checkForLifecycleInfoEndConsoleRow(row);
+            compConsoleLogFileWriter.addComponentConsoleRow(consoleRow);
+
+            checkForLifecycleInfoEndConsoleRow(consoleRow);
         }
     }
-    
+
     @Override
-    @AllowRemoteAccess
     public void onComponentHeartbeatReceived(String executionIdentifier) {
         if (VERBOSE_LOGGING) {
             LOG.debug(StringUtils.format("Received hearbeat from component (%s) for workflow '%s' (%s)",
@@ -1188,7 +1445,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             lastConsoleRowListener.addComponent(row.getComponentIdentifier());
         }
     }
-    
+
     private void checkForLifecycleToolRunConsoleRow(ConsoleRow row) throws WorkflowExecutionException {
         if (row.getType() == ConsoleRow.Type.LIFE_CYCLE_EVENT) {
             if (row.getPayload().startsWith(ConsoleRow.WorkflowLifecyleEventType.TOOL_STARTING.name())) {
@@ -1202,29 +1459,28 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     }
 
     private void sendLifeCycleEventAsConsoleRow(ConsoleRow.WorkflowLifecyleEventType type) {
-        sendConsoleRowAsNotification(type.name());
+        ConsoleRow consoleRow = createConsoleRowForWorkflowLifeCycleEvent(type.name());
+        sendConsoleRowAsNotification(consoleRow);
     }
 
     private void sendNewWorkflowStateAsConsoleRow(WorkflowState newState) {
         // send a LIFE_CYCLE_EVENT of subtype NEW_STATE with the new state's enum name attached
         String payload = StringUtils.escapeAndConcat(ConsoleRow.WorkflowLifecyleEventType.NEW_STATE.name(), newState.name());
-        sendConsoleRowAsNotification(payload);
+        sendConsoleRowAsNotification(createConsoleRowForWorkflowLifeCycleEvent(payload));
     }
 
-    private void sendConsoleRowAsNotification(String payload) {
-        ConsoleRowBuilder consoleRowBuilder = new ConsoleRowBuilder();
-        consoleRowBuilder.setExecutionIdentifiers(wfExeCtx.getExecutionIdentifier(), "")
-            .setInstanceNames(wfExeCtx.getInstanceName(), "")
-            .setType(ConsoleRow.Type.LIFE_CYCLE_EVENT)
-            .setPayload(payload);
+    private void sendConsoleRowAsNotification(ConsoleRow consoleRow) {
         notificationService.send(wfExeCtx.getExecutionIdentifier() + wfExeCtx.getNodeId().getIdString()
-            + ConsoleRow.NOTIFICATION_SUFFIX, consoleRowBuilder.build());
+            + ConsoleRow.NOTIFICATION_SUFFIX, consoleRow);
+    }
+
+    private ConsoleRow createConsoleRowForWorkflowLifeCycleEvent(String payload) {
+        return createConsoleRow(ConsoleRow.Type.LIFE_CYCLE_EVENT, payload, "", "");
     }
 
     /**
-     * Abstract implementation of specific component state change listeners. It accepts component
-     * execution identifiers and adds them to an underlying set. If the size of the set is equal to
-     * the component amount of the workflow the
+     * Abstract implementation of specific component state change listeners. It accepts component execution identifiers and adds them to an
+     * underlying set. If the size of the set is equal to the component amount of the workflow the
      * {@link ComponentEventListener#onComponentStatesChangedEntirely()} is called.
      * 
      * @author Doreen Seider
@@ -1306,8 +1562,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     }
 
     /**
-     * {@link ComponentEventListener} listening to all states a component can have after it was
-     * paused.
+     * {@link ComponentEventListener} listening to all states a component can have after it was paused.
      * 
      * @author Doreen Seider
      */
@@ -1332,8 +1587,10 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
         @Override
         void onComponentStatesChangedEntirely() {
-            if (heartbeatFuture != null) {
-                heartbeatFuture.cancel(false);                
+            synchronized (finalComponentStateListener) {
+                if (heartbeatFuture != null && !heartbeatFuture.isCancelled()) {
+                    heartbeatFuture.cancel(false);
+                }
             }
             workflowTerminatedLatch.countDown();
         }
@@ -1348,7 +1605,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
         @Override
         void onComponentStatesChangedEntirely() {
-            disposedComonentStateLatch.countDown();
+            disposedComponentStateLatch.countDown();
         }
     }
 
@@ -1365,17 +1622,37 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
             workflowTerminatedLatch.countDown();
         }
     }
-    
+
     protected void bindDistributedNotificationService(DistributedNotificationService newService) {
         notificationService = newService;
     }
-    
-    protected void bindDistributedComponentControllerService(ComponentExecutionService newService) {
+
+    protected void bindCommunicationService(CommunicationService newService) {
+        communicationService = newService;
+    }
+
+    protected void bindComponentExecutionService(ComponentExecutionService newService) {
         componentExecutionService = newService;
     }
-    
-    protected void bindMetaDataService(MetaDataService newService) {
+
+    protected void bindMetaDataService(MetaDataBackendService newService) {
         metaDataService = newService;
+    }
+
+    protected void bindDataManagementService(DataManagementService newService) {
+        dataManagementService = newService;
+    }
+
+    protected void bindTypedDatumService(TypedDatumService newService) {
+        typedDatumService = newService;
+    }
+
+    protected void bindComponentConsoleLogFileWriterFactoryService(ComponentConsoleLogFileWriterFactoryService newService) {
+        logFileWriterFactoryService = newService;
+    }
+
+    protected void bindWorkflowExecutionStatsService(WorkflowExecutionStatsService newService) {
+        wfExeStatsService = newService;
     }
 
 }

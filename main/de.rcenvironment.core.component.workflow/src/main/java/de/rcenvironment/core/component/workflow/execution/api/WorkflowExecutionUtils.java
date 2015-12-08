@@ -10,11 +10,20 @@ package de.rcenvironment.core.component.workflow.execution.api;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.component.api.ComponentUtils;
+import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
+import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -51,17 +60,45 @@ public final class WorkflowExecutionUtils {
      * @return the generated default name including the timestamp
      */
     public static String generateDefaultNameforExecutingWorkflow(String filename, WorkflowDescription workflowDescription) {
-        // determine the clean "root" name for the workflow
-        String storedWorkflowName = workflowDescription.getName();
-        if (storedWorkflowName == null || storedWorkflowName.isEmpty()) {
-            // if no previous name was stored, use the name of workflow file without ".wf" extension
-            storedWorkflowName = filename;
-            if (storedWorkflowName.toLowerCase().endsWith(".wf")) {
-                storedWorkflowName = storedWorkflowName.substring(0, storedWorkflowName.length() - 3);
+
+        if (workflowDescription.getName() == null) {
+            return generateWorkflowName(filename);
+        }
+
+        if (workflowDescription.getName().contains("_20")) {
+
+            int index = workflowDescription.getName().indexOf("_20");
+
+            try {
+                String dateAndNumber = workflowDescription.getName().substring(index + 1);
+
+                if (dateAndNumber.contains("_")) {
+
+                    int indexOfunderLine = dateAndNumber.lastIndexOf("_");
+                    String dateOnly = dateAndNumber.substring(0, indexOfunderLine);
+                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+                    dateFormat.setLenient(false);
+                    dateFormat.parse(dateOnly);
+
+                }
+
+                return generateWorkflowName(filename);
+
+            } catch (ParseException e) {
+                return workflowDescription.getName();
             }
-        } else {
-            // if a previous name was stored, clean it of any previous timestamp
-            storedWorkflowName = storedWorkflowName.replaceFirst("^(.*)_\\d+-\\d+-\\d+_\\d+:\\d+:\\d+(_\\d+)?$", "$1");
+
+        }
+
+        return workflowDescription.getName();
+
+    }
+
+    private static String generateWorkflowName(String filename) {
+
+        String storedWorkflowName = filename;
+        if (storedWorkflowName.toLowerCase().endsWith(".wf")) {
+            storedWorkflowName = storedWorkflowName.substring(0, storedWorkflowName.length() - 3);
         }
 
         // make the last two digits sequentially increasing to reduce the likelihood of timestamp collisions
@@ -94,4 +131,65 @@ public final class WorkflowExecutionUtils {
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
         return dateFormat.format(new Date());
     }
+
+    /**
+     * Replaces null {@link NodeIdentifier} for controller and components with local {@link NodeIdentifier}.
+     * 
+     * @param wfDescription {@link WorkflowDescription}
+     * @param localNodeId local {@link NodeIdentifier}
+     * @param compKnowledge latest {@link DistributedComponentKnowledge}
+     * @throws WorkflowExecutionException if a component affected is not installed locally
+     */
+    public static void replaceNullNodeIdentifiersWithActualNodeIdentifier(WorkflowDescription wfDescription,
+        NodeIdentifier localNodeId, DistributedComponentKnowledge compKnowledge)
+        throws WorkflowExecutionException {
+
+        for (WorkflowNode node : wfDescription.getWorkflowNodes()) {
+            // replace null (representing localhost) with the actual host name
+            if (node.getComponentDescription().getNode() == null) {
+                Collection<ComponentInstallation> installations = compKnowledge.getLocalInstallations();
+                ComponentInstallation installation = ComponentUtils.getExactMatchingComponentInstallationForNode(
+                    node.getComponentDescription().getIdentifier(), installations, localNodeId);
+                if (installation == null) {
+                    throw new WorkflowExecutionException(StringUtils.format("Component '%s' not installed on node %s "
+                        + node.getName(), node.getComponentDescription().getNode()));
+                }
+                node.getComponentDescription().setComponentInstallationAndUpdateConfiguration(installation);
+                node.getComponentDescription().setIsNodeIdTransient(true);
+            }
+        }
+
+        if (wfDescription.getControllerNode() == null) {
+            wfDescription.setControllerNode(localNodeId);
+            wfDescription.setIsControllerNodeIdTransient(true);
+        }
+    }
+    
+    /**
+     * Removed disabled workflow nodes from given {@link WorkflowDescription}.
+     * 
+     * @param workflowDescription to remove the disabled {@link WorkflowNode}s from
+     * @return {@link WorkflowDescription} without disabled {@link WorkflowNode}s
+     */
+    public static WorkflowDescription removeDisabledWorkflowNodesWithoutNotify(WorkflowDescription workflowDescription) {
+        workflowDescription.removeWorkflowNodesAndRelatedConnectionsWithoutNotify(getDisabledWorkflowNodes(workflowDescription));
+        return workflowDescription;
+    }
+    
+    /**
+     * Returns the workflow nodes that are disabled from given {@link WorkflowDescription}.
+     * 
+     * @param workflowDescription to remove the disabled {@link WorkflowNode}s from
+     * @return list of {@link WorkflowNode}s disabled
+     */
+    public static List<WorkflowNode> getDisabledWorkflowNodes(WorkflowDescription workflowDescription) {
+        List<WorkflowNode> nodes = new ArrayList<>();
+        for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
+            if (!node.isEnabled()) {
+                nodes.add(node);
+            }
+        }
+        return nodes;
+    }
+
 }

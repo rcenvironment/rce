@@ -57,6 +57,7 @@ import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
  */
 public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
         IPageChangingListener {
+  
 
     /** Workflow name shared among wizard.   */
     public static String sharedWorkflowName;
@@ -107,6 +108,7 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
     public void init(IWorkbench workbench, IStructuredSelection currentSelection) {
         // For access via extension point
         initialize(currentSelection);
+
     }
 
     @Override
@@ -115,7 +117,7 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
         projectPage = new ProjectSelectionPage(this, getWorkbenchSelection());
         addPage(workflowPage);
         addPage(projectPage);
-
+        
         WizardDialog dialog = (WizardDialog) getContainer();
         if (dialog != null) {
             dialog.addPageChangingListener(this);

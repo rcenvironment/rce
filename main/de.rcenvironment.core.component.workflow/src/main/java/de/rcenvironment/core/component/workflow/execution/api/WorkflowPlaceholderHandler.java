@@ -182,7 +182,6 @@ public class WorkflowPlaceholderHandler implements Serializable {
      * @param componentUUID : the instance ID of the component
      */
     public void addPlaceholder(String placeholder, String componentID, String componentUUID) {
-
         Matcher matcher = ComponentUtils.getMatcherForPlaceholder(placeholder);
         if (matcher.matches()) {
             // Add component instance to list for component group

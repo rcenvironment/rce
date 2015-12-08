@@ -12,13 +12,16 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
+import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
@@ -27,8 +30,8 @@ import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
+import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelTrafficListener;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
@@ -37,6 +40,8 @@ import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
+import de.rcenvironment.core.communication.routing.internal.NetworkRoutingServiceImpl;
+import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -64,6 +69,8 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     private NodeConfigurationService nodeConfigurationService;
 
     private VirtualCommunicationBundle virtualCommunicationBundle;
+
+    private CommunicationService communicationService;
 
     /**
      * Creates a virtual instance with the same string as its id and log/display name, and its "relay" flag set to "true".
@@ -110,6 +117,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         networkRoutingService = virtualCommunicationBundle.getService(NetworkRoutingService.class);
         messageRoutingService = virtualCommunicationBundle.getService(MessageRoutingService.class);
         managementService = virtualCommunicationBundle.getService(CommunicationManagementService.class);
+        communicationService = virtualCommunicationBundle.getService(CommunicationService.class);
 
         // register custom test message type
         messageChannelService.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_TEST,
@@ -121,18 +129,18 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     }
 
     /**
-     * Convenience method to send a payload to another node.
+     * Convenience method to send a payload to another node, using the default request timeout.
      * 
      * @param messageContent the request payload
      * @param messageType the message type to send; see {@link ProtocolConstants}
      * @param targetNodeId the id of the destination node
-     * @return a {@link Future} providing the response
+     * @return the response
      * @throws CommunicationException on messaging errors
      * @throws InterruptedException on interruption
      * @throws ExecutionException on internal errors
      * @throws SerializationException on serialization failure
      */
-    public Future<NetworkResponse> performRoutedRequest(Serializable messageContent, String messageType, NodeIdentifier targetNodeId)
+    public NetworkResponse performRoutedRequest(Serializable messageContent, String messageType, NodeIdentifier targetNodeId)
         throws CommunicationException, InterruptedException, ExecutionException, SerializationException {
         byte[] serializedBody = MessageUtils.serializeObject(messageContent);
         return messageRoutingService.performRoutedRequest(serializedBody, messageType, targetNodeId);
@@ -154,8 +162,8 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      */
     public NetworkResponse performRoutedRequest(Serializable messageContent, NodeIdentifier targetNodeId, int timeoutMsec)
         throws CommunicationException, InterruptedException, ExecutionException, TimeoutException, SerializationException {
-        return performRoutedRequest(messageContent, ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, targetNodeId).get(timeoutMsec,
-            TimeUnit.MILLISECONDS);
+        // FIXME review: after API changes, the given timeout is ignored/overruled by the low-level messaging timeout here
+        return performRoutedRequest(messageContent, ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, targetNodeId);
     }
 
     @Override
@@ -164,7 +172,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     }
 
     @Override
-    public void addNetworkTrafficListener(RawMessageChannelTrafficListener listener) {
+    public void addNetworkTrafficListener(MessageChannelTrafficListener listener) {
         getMessageChannelService().addTrafficListener(listener);
     }
 
@@ -187,8 +195,9 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      * Adds and connects to a {@link NetworkContactPoint}.
      * 
      * @param contactPoint the {@link NetworkContactPoint} to add and connect to
+     * @return the new {@link ConnectionSetup}
      */
-    public synchronized void connectAsync(NetworkContactPoint contactPoint) {
+    public synchronized ConnectionSetup connectAsync(NetworkContactPoint contactPoint) {
         if (getCurrentState() != VirtualInstanceState.STARTED) {
             throw new IllegalStateException("Runtime peers can only be added in the STARTED state (is " + getCurrentState() + ")");
         }
@@ -198,6 +207,81 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         }
         ConnectionSetup connectionSetup = connectionSetupService.createConnectionSetup(contactPoint, null, true);
         connectionSetup.signalStartIntent();
+        return connectionSetup;
+    }
+
+    /**
+     * Initiates a connection to the given {@link NetworkContactPoint} and then waits until it is in the
+     * {@link ConnectionSetupState#CONNECTED} state or the timeout is reached, whichever comes first.
+     * 
+     * @param contactPoint the {@link NetworkContactPoint} to connect to
+     * @param timeoutMsec the maximum time to wait return the new {@link ConnectionSetup}
+     * @return the new {@link ConnectionSetup}
+     * @throws TimeoutException on timeout
+     * @throws InterruptedException on thread interruption
+     */
+    public ConnectionSetup connectAndWait(NetworkContactPoint contactPoint, int timeoutMsec) throws TimeoutException, InterruptedException {
+        ConnectionSetup connection = connectAsync(contactPoint);
+        connection.awaitState(ConnectionSetupState.CONNECTED, timeoutMsec);
+        return connection;
+    }
+
+    /**
+     * Blocks until the given node is part of this instance's reachable network topology, or until the timeout is reached.
+     * 
+     * @param targetNodeId the node to wait for
+     * @param timeout the maximum time to wait
+     * @throws InterruptedException on interruption
+     * @throws TimeoutException on timeout
+     */
+    public void waitUntilContainsInReachableNodes(final NodeIdentifier targetNodeId, int timeout) throws InterruptedException,
+        TimeoutException {
+        if (containsInReachableNodes(targetNodeId)) {
+            return;
+        }
+
+        final CountDownLatch latch = new CountDownLatch(1);
+        NetworkRoutingServiceImpl networkRoutingServiceImpl = (NetworkRoutingServiceImpl) networkRoutingService;
+        NetworkTopologyChangeListenerAdapter topologyChangeListener = new NetworkTopologyChangeListenerAdapter() {
+
+            @Override
+            public void onReachableNodesChanged(Set<NodeIdentifier> reachableNodes, Set<NodeIdentifier> addedNodes,
+                Set<NodeIdentifier> removedNodes) {
+                // log.debug("Reachable nodes for " + getNodeId() + " have changed: " + Arrays.toString(reachableNodes.toArray()));
+                if (reachableNodes.contains(targetNodeId)) {
+                    latch.countDown();
+                }
+            }
+        };
+        try {
+            networkRoutingServiceImpl.addNetworkTopologyChangeListener(topologyChangeListener);
+
+            // after registering the listener, check again to prevent race conditions
+            if (containsInReachableNodes(targetNodeId)) {
+                return;
+            }
+
+            long startTime = System.currentTimeMillis();
+            if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
+                throw new TimeoutException();
+            }
+            log.debug(StringUtils.format("Node %s became reachable for node %s after waiting for %,d msec", targetNodeId, getNodeId(),
+                System.currentTimeMillis() - startTime));
+        } finally {
+            networkRoutingServiceImpl.removeNetworkTopologyChangeListener(topologyChangeListener);
+        }
+    }
+
+    /**
+     * Returns whether the given node is part of this instance's reachable network topology.
+     * 
+     * @param targetNodeId the node to check for
+     * @return true if the given node is reachable via the current network
+     */
+    public boolean containsInReachableNodes(NodeIdentifier targetNodeId) {
+        Set<NodeIdentifier> reachable = networkRoutingService.getReachableNetworkGraph().getNodeIds();
+        // log.debug("Current reachable nodes for " + getNodeId() + ": " + Arrays.toString(reachable.toArray()));
+        return reachable.contains(targetNodeId);
     }
 
     @Deprecated
@@ -317,6 +401,17 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         return virtualCommunicationBundle.getService(clazz);
     }
 
+    /**
+     * Allows injection of service instances; useful for remote service call testing.
+     * 
+     * @param <T> the service interface class
+     * @param clazz the service interface class
+     * @param implementation the service instance
+     */
+    public <T> void injectService(Class<T> clazz, T implementation) {
+        virtualCommunicationBundle.injectService(clazz, implementation);
+    }
+
     public VirtualCommunicationBundle getVirtualCommunicationBundle() {
         return virtualCommunicationBundle;
     }
@@ -328,6 +423,15 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      */
     public CommunicationManagementService getManagementService() {
         return managementService;
+    }
+
+    /**
+     * Provide unit/integration test access to the routing service.
+     * 
+     * @return The communication service.
+     */
+    public CommunicationService getCommunicationService() {
+        return communicationService;
     }
 
     /**
@@ -402,4 +506,5 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         }
         return serverContactPoints.get(0);
     }
+
 }

@@ -10,9 +10,9 @@ package de.rcenvironment.core.component.datamanagement.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.MessageFormat;
 
-import de.rcenvironment.core.authentication.SingleUser;
-import de.rcenvironment.core.authentication.User;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementUtil;
@@ -55,9 +55,9 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         }
 
         try {
-            return dataManagementService.createReferenceFromLocalFile(createUser(), file, mds,
+            return dataManagementService.createReferenceFromLocalFile(file, mds,
                 componentContext.getDefaultStorageNodeId());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
         }
@@ -69,9 +69,9 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
 
         try {
-            return dataManagementService.createReferenceFromString(createUser(), stringValue, mds,
+            return dataManagementService.createReferenceFromString(stringValue, mds,
                 componentContext.getDefaultStorageNodeId());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
         }
@@ -79,12 +79,24 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
 
     @Override
     public void copyReferenceToLocalFile(String reference, File targetFile, NodeIdentifier nodeId) throws IOException {
-        dataManagementService.copyReferenceToLocalFile(createUser(), reference, targetFile, nodeId);
+        try {
+            dataManagementService.copyReferenceToLocalFile(reference, targetFile, nodeId);
+        } catch (CommunicationException e) {
+            throw new RuntimeException(MessageFormat.format("Failed to copy data reference from remote node @{0} to local file: ",
+                nodeId)
+                + e.getMessage(), e);
+        }
     }
 
     @Override
     public String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException {
-        return dataManagementService.retrieveStringFromReference(createUser(), reference, nodeId);
+        try {
+            return dataManagementService.retrieveStringFromReference(reference, nodeId);
+        } catch (CommunicationException e) {
+            throw new RuntimeException(MessageFormat.format("Failed to retrieve string from data reference from remote node @{0}: ",
+                nodeId)
+                + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -97,9 +109,9 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         try {
             MetaDataSet mds = new MetaDataSet();
             ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
-            reference = dataManagementService.createReferenceFromLocalFile(createUser(), file, mds,
+            reference = dataManagementService.createReferenceFromLocalFile(file, mds,
                 componentContext.getDefaultStorageNodeId());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
         }
@@ -119,9 +131,9 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         try {
             MetaDataSet mds = new MetaDataSet();
             ComponentDataManagementUtil.setComponentMetaData(mds, componentContext);
-            reference = dataManagementService.createReferenceFromLocalDirectory(createUser(), dir, mds,
+            reference = dataManagementService.createReferenceFromLocalDirectory(dir, mds,
                 componentContext.getDefaultStorageNodeId());
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | CommunicationException e) {
             // reduce exception types
             throw new IOException(e);
         }
@@ -137,20 +149,28 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     @Override
     public void copyDirectoryReferenceTDToLocalDirectory(ComponentContext componentContext, DirectoryReferenceTD dirReference,
         File targetDir) throws IOException {
-        dataManagementService.copyReferenceToLocalDirectory(createUser(), dirReference.getDirectoryReference(), targetDir,
-            componentContext.getDefaultStorageNodeId());
+        try {
+            dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir,
+                componentContext.getDefaultStorageNodeId());
+        } catch (CommunicationException e) {
+            throw new RuntimeException(MessageFormat.format(
+                "Failed to copy directory reference from remote node @{0} to local directory: ",
+                componentContext.getNodeId())
+                + e.getMessage(), e);
+        }
     }
 
     @Override
     public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NodeIdentifier node)
         throws IOException {
-        dataManagementService.copyReferenceToLocalDirectory(createUser(), dirReference.getDirectoryReference(), targetDir, node);
-    }
-
-    // bridge code
-    private User createUser() {
-        final int validityInDays = 9999;
-        return new SingleUser(validityInDays);
+        try {
+            dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir, node);
+        } catch (CommunicationException e) {
+            throw new RuntimeException(MessageFormat.format(
+                "Failed to copy directory reference from remote node @{0} to local directory: ",
+                node)
+                + e.getMessage(), e);
+        }
     }
 
     protected void bindTypedDatumService(TypedDatumService typedDatumService) {

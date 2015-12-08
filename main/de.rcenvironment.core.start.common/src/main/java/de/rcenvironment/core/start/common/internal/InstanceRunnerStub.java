@@ -9,10 +9,10 @@
 package de.rcenvironment.core.start.common.internal;
 
 import org.apache.commons.logging.LogFactory;
-import org.osgi.service.cm.ConfigurationAdmin;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.start.common.InstanceRunner;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationService;
 
 /**
  * A stub to inject a {@link CommandExecutionService} into the static field.
@@ -31,13 +31,13 @@ public class InstanceRunnerStub extends InstanceRunner {
     }
     
     @Override
-    public void bindConfigurationAdmin(ConfigurationAdmin newService) {
-        LogFactory.getLog(getClass()).debug("Injecting shared ConfigurationAdmin");
-        super.bindConfigurationAdmin(newService);
+    public void bindInstanceValidationService(InstanceValidationService newService) {
+        LogFactory.getLog(getClass()).debug("Injecting shared InstanceStartupValidationService");
+        super.bindInstanceValidationService(newService);
     }
-
+    
     @Override
-    public int run() throws Exception {
+    public int performRun() throws Exception {
         throw new UnsupportedOperationException("This method should never be called");
     }
 

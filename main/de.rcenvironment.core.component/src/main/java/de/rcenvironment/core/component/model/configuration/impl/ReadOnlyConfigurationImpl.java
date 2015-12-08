@@ -22,6 +22,8 @@ import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfigura
  */
 public class ReadOnlyConfigurationImpl implements ReadOnlyConfiguration, Serializable {
 
+    private static final long serialVersionUID = 60339704245897514L;
+
     private Map<String, String> configuration = new HashMap<String, String>();
     
     @Override

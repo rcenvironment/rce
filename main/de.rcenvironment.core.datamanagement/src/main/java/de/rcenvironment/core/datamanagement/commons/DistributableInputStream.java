@@ -14,7 +14,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteInputStream;
 
@@ -29,14 +28,11 @@ public class DistributableInputStream extends InputStream implements Serializabl
 
     private transient InputStream inputStream;
 
-    private User cert;
-
     private URI uriToInputStream;
 
     private RemoteInputStream remoteInputStream;
 
-    public DistributableInputStream(User user, DataReference dataRef, InputStream inputStream) {
-        this.cert = user;
+    public DistributableInputStream(DataReference dataRef, InputStream inputStream) {
         this.inputStream = inputStream;
         try {
             NodeIdentifier nodeId = dataRef.getNodeIdentifier();
@@ -53,7 +49,7 @@ public class DistributableInputStream extends InputStream implements Serializabl
             return inputStream.read(b, off, len);
         } else {
             if (remoteInputStream == null) {
-                remoteInputStream = new RemoteInputStream(cert, uriToInputStream);
+                remoteInputStream = new RemoteInputStream(uriToInputStream);
             }
             return remoteInputStream.read(b, off, len);
         }
@@ -65,7 +61,7 @@ public class DistributableInputStream extends InputStream implements Serializabl
             return inputStream.read();
         } else {
             if (remoteInputStream == null) {
-                remoteInputStream = new RemoteInputStream(cert, uriToInputStream);
+                remoteInputStream = new RemoteInputStream(uriToInputStream);
             }
             return remoteInputStream.read();
         }
@@ -77,7 +73,7 @@ public class DistributableInputStream extends InputStream implements Serializabl
             return inputStream.skip(n);
         } else {
             if (remoteInputStream == null) {
-                remoteInputStream = new RemoteInputStream(cert, uriToInputStream);
+                remoteInputStream = new RemoteInputStream(uriToInputStream);
             }
             return remoteInputStream.skip(n);
         }
@@ -90,7 +86,7 @@ public class DistributableInputStream extends InputStream implements Serializabl
         } else {
             // TODO review: what is this for? - misc_ro
             if (remoteInputStream == null) {
-                remoteInputStream = new RemoteInputStream(cert, uriToInputStream);
+                remoteInputStream = new RemoteInputStream(uriToInputStream);
             }
             remoteInputStream.close();
         }

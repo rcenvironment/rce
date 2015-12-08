@@ -25,6 +25,20 @@
 		policy="dynamic"
 	/>
 	
+	<reference name="Persistent WorkflowDescription Update Service"
+		interface="de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService"
+		cardinality="1..1"
+		bind="bindPersistentWorkflowDescriptionUpdateService"
+		policy="dynamic"
+	/>
+	
+	<reference name="Workflow Execution Controller Service"
+		interface="de.rcenvironment.core.component.workflow.execution.api.RemotableWorkflowExecutionControllerService"
+		cardinality="1..1"
+		bind="bindWorkflowExecutionControllerService"
+		policy="dynamic"
+	/>
+	
 	<reference name="Workflow Host Service"
 		bind="bindWorkflowHostService"
  		cardinality="1..1"
@@ -38,5 +52,12 @@
 		bind="bindNotificationService"
 		policy="dynamic"
 	/>
+	
+	<reference name="Distributed Component Knowledge Service"
+		interface="de.rcenvironment.core.component.api.DistributedComponentKnowledgeService"
+		bind="bindDistributedComponentKnowledgeService"
+		cardinality="1..1"
+		policy="dynamic"
+		/>
 	
 </scr:component>

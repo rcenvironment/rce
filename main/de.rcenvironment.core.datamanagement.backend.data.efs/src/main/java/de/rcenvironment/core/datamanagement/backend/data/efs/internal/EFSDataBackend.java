@@ -177,11 +177,13 @@ public class EFSDataBackend implements DataBackend {
             }
             fileStore = encapsulatedEFSService.getStore(fileToGet.toURI());
 
+            InputStream storageInputStream;
             // get buffered storage file stream
-            InputStream storageInputStream = new BufferedInputStream(fileStore.openInputStream(EFS.NONE, null), STREAM_BUFFER_SIZE);
-
             if (isZipped) {
-                storageInputStream = new BufferedInputStream(new GzipCompressorInputStream(storageInputStream), STREAM_BUFFER_SIZE);
+                storageInputStream =
+                    new BufferedInputStream(new GzipCompressorInputStream(fileStore.openInputStream(EFS.NONE, null)), STREAM_BUFFER_SIZE);
+            } else {
+                storageInputStream = new BufferedInputStream(fileStore.openInputStream(EFS.NONE, null), STREAM_BUFFER_SIZE);
             }
             return storageInputStream;
         } catch (CoreException e) {
@@ -234,11 +236,14 @@ public class EFSDataBackend implements DataBackend {
                     parent.mkdir(0, null);
                 }
 
-                // get buffered storage file stream for writing
-                storageOutputStream = new BufferedOutputStream(fileStore.openOutputStream(EFS.NONE, null), STREAM_BUFFER_SIZE);
 
+                // get buffered storage file stream for writing
                 if (useGZipCompression) {
-                    storageOutputStream = new BufferedOutputStream(new GzipCompressorOutputStream(storageOutputStream), STREAM_BUFFER_SIZE);
+                    storageOutputStream =
+                        new BufferedOutputStream(new GzipCompressorOutputStream(fileStore.openOutputStream(EFS.NONE, null)),
+                            STREAM_BUFFER_SIZE);
+                } else {
+                    storageOutputStream = new BufferedOutputStream(fileStore.openOutputStream(EFS.NONE, null), STREAM_BUFFER_SIZE);
                 }
             } catch (CoreException e) {
                 // TODO review: RTEs should only be thrown when unavoidable; change method API to

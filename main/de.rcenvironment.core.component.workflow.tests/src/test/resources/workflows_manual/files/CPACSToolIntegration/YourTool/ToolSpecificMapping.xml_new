@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+	<map:mapping>
+		<map:source>/specialIn/in</map:source>
+		<map:target>/toolInput/data/var2</map:target>
+	</map:mapping>
+	
+</map:mappings>

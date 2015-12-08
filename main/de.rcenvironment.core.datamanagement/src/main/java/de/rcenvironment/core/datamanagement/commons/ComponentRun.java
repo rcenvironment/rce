@@ -9,6 +9,7 @@
 package de.rcenvironment.core.datamanagement.commons;
 
 import java.io.Serializable;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -37,9 +38,11 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
     private final Boolean referencesDeleted;
 
     private Set<EndpointData> endpointData;
+    
+    private final Map<String, String> metaData;
 
     public ComponentRun(Long componentRunID, Long componentInstanceID, String nodeID, Integer runCounter, Long startTime, Long endtime,
-        String historyDataItem, Boolean referencesDeleted) {
+        String historyDataItem, Boolean referencesDeleted, Map<String, String> metaData) {
         this.componentRunID = componentRunID;
         this.componentInstanceID = componentInstanceID;
         this.nodeID = nodeID;
@@ -49,10 +52,11 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
         this.historyDataItem = historyDataItem;
         this.referencesDeleted = referencesDeleted;
         this.endpointData = null;
+        this.metaData = metaData;
     }
 
     public ComponentRun(Long componentRunId, String nodeID, Integer runCounter, Long startTime, Long endtime,
-        String historyDataItem, Boolean referencesDeleted) {
+        String historyDataItem, Boolean referencesDeleted, Map<String, String> metaData) {
         this.componentRunID = componentRunId;
         this.componentInstanceID = null;
         this.nodeID = nodeID;
@@ -62,6 +66,7 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
         this.historyDataItem = historyDataItem;
         this.referencesDeleted = referencesDeleted;
         this.endpointData = null;
+        this.metaData = metaData;
     }
 
     public Long getEndTime() {
@@ -78,6 +83,10 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
 
     public Integer getRunCounter() {
         return runCounter;
+    }
+    
+    public Map<String, String> getMetaData() {
+        return metaData;
     }
 
     public Long getStartTime() {
@@ -102,6 +111,20 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
 
     public Boolean isReferencesDeleted() {
         return referencesDeleted;
+    }
+    
+    /**
+     * @return the reference to the log file, if available, otherwise <code>null</code>
+     */
+    public String getLogFile() {
+        return metaData.get(PropertiesKeys.COMPONENT_LOG_FILE);
+    }
+    
+    /**
+     * @return the reference to the error log file, if available, otherwise <code>null</code>
+     */
+    public String getErrorLogFile() {
+        return metaData.get(PropertiesKeys.COMPONENT_LOG_ERROR_FILE);
     }
 
     @Override

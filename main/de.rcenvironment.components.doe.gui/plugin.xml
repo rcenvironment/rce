@@ -20,6 +20,20 @@
                filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
                enablesFor="1">
          </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.parametricstudy.NestedLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
+               id="workflow.editor.tab.Properties.Section.NestedLoop"
+               filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.doe.FaultTolerantLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.LoopBehaviorInCaseOfFailureSection"
+               id="workflow.editor.tab.Properties.Section.FaultTolerantLoop"
+               filter="de.rcenvironment.components.doe.gui.properties.DOEComponentFilter"
+               enablesFor="1">
+         </propertySection>
     <propertySection
 		       class="de.rcenvironment.core.gui.workflow.editor.properties.ComponentHistoryDataSection"
 		       enablesFor="1"
@@ -27,6 +41,7 @@
 		       id="workflow.editor.tab.HistoryData.Section"
 		       tab="workflow.editor.tab.HistoryData">
          </propertySection>
+         
       </propertySections>
    </extension>
    
@@ -45,11 +60,23 @@
                category="default"
                id="workflow.editor.tab.doe.InputsOutputs">
          </propertyTab>
+          <propertyTab
+               label="Nested Loop"
+               category="default"
+               afterTab="workflow.editor.tab.doe.InputsOutputs"
+               id="workflow.editor.tab.parametricstudy.NestedLoop">
+         </propertyTab>
+         <propertyTab
+               label="Fault Tolerance"
+               category="default"
+               afterTab="workflow.editor.tab.parametricstudy.NestedLoop"
+               id="workflow.editor.tab.doe.FaultTolerantLoop">
+         </propertyTab>
            <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
-               afterTab="workflow.editor.tab.doe.InputsOutputs">
+               label="Workflow Data"
+               afterTab="workflow.editor.tab.doe.FaultTolerantLoop">
          </propertyTab>
      </propertyTabs>
    </extension>

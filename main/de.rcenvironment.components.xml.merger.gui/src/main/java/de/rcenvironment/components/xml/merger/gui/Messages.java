@@ -35,6 +35,18 @@ public class Messages extends NLS {
     /** Constant. */
     public static String actuallyLoadedLabel = null;
 
+    /** Constant. */
+    public static String cannotReadContentFromFile;
+
+    /** Constant. */
+    public static String refreshProjectExplorer;
+
+    /** Constant. */
+    public static String logReadFromFileError;
+
+    /** Constant. */
+    public static String dialogMessageReadFromFileError;
+
     /** Validation message. */
     public static String noXmlFileLoaded;
 

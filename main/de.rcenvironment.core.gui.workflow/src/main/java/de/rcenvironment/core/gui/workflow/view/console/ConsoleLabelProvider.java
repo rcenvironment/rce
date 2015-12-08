@@ -16,6 +16,9 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -23,17 +26,20 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Enrico Tappert
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class ConsoleLabelProvider extends LabelProvider implements ITableLabelProvider {
 
-    private Image stdErrImage = ImageDescriptor.createFromURL(
-        ConsoleView.class.getResource("/resources/icons/stderr16.gif")).createImage(); //$NON-NLS-1$
+    private static final int MAXIMUM_LENGTH_OF_DISPLAYED_CONSOLEROW = 180;
 
-    private Image stdOutImage = ImageDescriptor.createFromURL(
-        ConsoleView.class.getResource("/resources/icons/stdout16.gif")).createImage(); //$NON-NLS-1$
+    private Image errImage = ImageManager.getInstance().getSharedImage(StandardImages.ERROR_16);
 
-    private Image metaInfoImage = ImageDescriptor.createFromURL(
-        ConsoleView.class.getResource("/resources/icons/metainfo16.gif")).createImage(); //$NON-NLS-1$
+    private Image warningImage = ImageManager.getInstance().getSharedImage(StandardImages.WARNING_16);
+
+    private Image infoImage = ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16);
+
+    private Image outImage = ImageDescriptor.createFromURL(
+        ConsoleView.class.getResource("/resources/icons/stdout16.gif")).createImage();
 
     private SimpleDateFormat timestampDateFormat;
 
@@ -54,13 +60,18 @@ public class ConsoleLabelProvider extends LabelProvider implements ITableLabelPr
 
             if (0 == columnIndex) {
                 // level column
-                if (ConsoleRow.Type.STDERR == consoleRow.getType()) {
-                    result = stdErrImage;
-                } else if (ConsoleRow.Type.STDOUT == consoleRow.getType()) {
-                    result = stdOutImage;
-                } else if (ConsoleRow.Type.COMPONENT_OUTPUT == consoleRow.getType()
+                if (ConsoleRow.Type.WORKFLOW_ERROR == consoleRow.getType()
+                    || ConsoleRow.Type.COMPONENT_ERROR == consoleRow.getType()
+                    || ConsoleRow.Type.TOOL_ERROR == consoleRow.getType()) {
+                    result = errImage;
+                } else if (ConsoleRow.Type.COMPONENT_WARN == consoleRow.getType()) {
+                    result = warningImage;
+                } else if (ConsoleRow.Type.TOOL_OUT == consoleRow.getType()
+                    || ConsoleRow.Type.COMPONENT_INFO == consoleRow.getType()
                     || ConsoleRow.Type.LIFE_CYCLE_EVENT == consoleRow.getType()) {
-                    result = metaInfoImage;
+                    result = outImage;
+                } else if (ConsoleRow.Type.LIFE_CYCLE_EVENT == consoleRow.getType()) {
+                    result = infoImage;
                 }
             }
         }
@@ -76,19 +87,31 @@ public class ConsoleLabelProvider extends LabelProvider implements ITableLabelPr
             ConsoleRow row = (ConsoleRow) element;
 
             switch (columnIndex) {
+            case 0:
+                if (row.getType() == Type.TOOL_OUT || row.getType() == Type.TOOL_ERROR) {
+                    returnValue = "Tool";
+                } else if (row.getType() == Type.WORKFLOW_ERROR) {
+                    returnValue = "Workflow";
+                } else {
+                    returnValue = "Component";
+                }
+                break;
             // date and time
             case 1:
                 returnValue = timestampDateFormat.format(row.getTimestamp());
                 break;
             // text
             case 2:
-                if (row.getType() != ConsoleRow.Type.LIFE_CYCLE_EVENT) {
-                    returnValue = row.getPayload();
-                } else if (ConsoleRow.WorkflowLifecyleEventType.valueOf(row.getPayload())
-                    == ConsoleRow.WorkflowLifecyleEventType.COMPONENT_TERMINATED) {
+                if (row.getType() == ConsoleRow.Type.LIFE_CYCLE_EVENT
+                    && ConsoleRow.WorkflowLifecyleEventType
+                        .valueOf(row.getPayload()) == ConsoleRow.WorkflowLifecyleEventType.COMPONENT_TERMINATED) {
                     returnValue = StringUtils.format("------ End of component '%s' ------", row.getComponentName());
                 } else {
-                    returnValue = row.getPayload();                    
+                    returnValue = row.getPayload();
+                }
+                if (returnValue.length() > MAXIMUM_LENGTH_OF_DISPLAYED_CONSOLEROW) {
+                    returnValue = returnValue.substring(0, MAXIMUM_LENGTH_OF_DISPLAYED_CONSOLEROW);
+                    returnValue += " ... (line is cut, it is too long; copy and paste it to get it at full length)";
                 }
                 break;
             // component
@@ -110,11 +133,6 @@ public class ConsoleLabelProvider extends LabelProvider implements ITableLabelPr
 
     @Override
     public void dispose() {
-        stdOutImage.dispose();
-        stdOutImage = null;
-        stdErrImage.dispose();
-        stdErrImage = null;
-        metaInfoImage.dispose();
-        metaInfoImage = null;
+        outImage.dispose();
     }
 }

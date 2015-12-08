@@ -59,36 +59,6 @@ public class EndpointLabelProvider extends LabelProvider {
     private ImageDescriptor inputRequiredDecorationIcon = ImageDescriptor.createFromURL(
         EndpointLabelProvider.class.getResource("/resources/icons/inputDecorationAsteriks.gif"));
 
-    private Image booleanIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/boolean.gif")).createImage();
-
-    private Image integerIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/integer.gif")).createImage();
-
-    private Image floatIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/float.gif")).createImage();
-
-    private Image vectorIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/vector.gif")).createImage();
-
-    private Image matrixIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/matrix.gif")).createImage();
-
-    private Image smallTableIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/smallTable.gif")).createImage();
-
-    private Image shortTextIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/shortText.gif")).createImage();
-
-    private Image fileReferenceIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/file.gif")).createImage();
-
-    private Image dateTimeIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/dateTime.gif")).createImage();
-
-    private Image directoryReferenceIcon = ImageDescriptor.createFromURL(
-        EndpointLabelProvider.class.getResource("/resources/icons/datatypes/directory.gif")).createImage();
-
     private Map<String, Image> componentImages = new HashMap<String, Image>();
 
     private EndpointType type;
@@ -139,27 +109,27 @@ public class EndpointLabelProvider extends LabelProvider {
                 image = outputImage;
             }
             if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.ShortText) {
-                image = shortTextIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_SHORTTEXT_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.Boolean) {
-                image = booleanIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_BOOLEAN_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.Integer) {
-                image = integerIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_INTEGER_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.Float) {
-                image = floatIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_FLOAT_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.Vector) {
-                image = vectorIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_VECTOR_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.Matrix) {
-                image = matrixIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_MATRIX_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.SmallTable) {
-                image = smallTableIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_SMALLTABLE_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.DateTime) {
-                image = dateTimeIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_DATETIME_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.FileReference) {
-                image = fileReferenceIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_FILE_16);
             } else if (((EndpointContentProvider.Endpoint) element).getEndpointDescription().getDataType() == DataType.DirectoryReference) {
-                image = directoryReferenceIcon;
+                image = ImageManager.getInstance().getSharedImage(StandardImages.DATATYPE_DIRECTORY_16);
             }
-            
+
             image = checkForDecorators(((EndpointContentProvider.Endpoint) element).getEndpointDescription(), image);
 
         }
@@ -172,16 +142,16 @@ public class EndpointLabelProvider extends LabelProvider {
     private Image checkForDecorators(EndpointDescription endpointDescription, Image image) {
         boolean inputRequired = false;
         boolean inputConnected = false;
-        
+
         if (type == EndpointType.INPUT & endpointDescription.isConnected()) {
             inputConnected = true;
         }
         if (type == EndpointType.INPUT & endpointDescription.isRequired()) {
             inputRequired = true;
         }
-        
+
         // Required and not connected
-        if (inputRequired && !inputConnected){
+        if (inputRequired && !inputConnected) {
             if (requiredDecoratorCache.keySet().contains(image)) {
                 image = requiredDecoratorCache.get(image);
             } else {
@@ -191,22 +161,21 @@ public class EndpointLabelProvider extends LabelProvider {
                 image = createDecoratedImage(originalImage, decorations);
                 requiredDecoratorCache.put(originalImage, image);
             }
-        // Connected
+            // Connected
         } else if (inputConnected) {
             if (connectedDecoratorCache.keySet().contains(image)) {
                 image = connectedDecoratorCache.get(image);
             } else {
                 ImageDescriptor[] decorations = new ImageDescriptor[5];
                 decorations[INPUT_CONNECTED_DECORATOR_LOCATION] = inputConnectedDecorationIcon;
-                Image originalImage = image;
+                final Image originalImage = image;
                 image = createDecoratedImage(originalImage, decorations);
                 connectedDecoratorCache.put(originalImage, image);
             }
         }
         return image;
     }
-    
-    
+
     private Image createDecoratedImage(Image originalImage, ImageDescriptor[] decorations) {
         DecorationOverlayIcon decorationOverlayIcon =
             new DecorationOverlayIcon(originalImage, decorations, new Point(ICON_SIZE, ICON_SIZE));
@@ -216,16 +185,7 @@ public class EndpointLabelProvider extends LabelProvider {
 
     @Override
     public void dispose() {
-        shortTextIcon.dispose();
-        booleanIcon.dispose();
-        integerIcon.dispose();
-        floatIcon.dispose();
-        vectorIcon.dispose();
-        matrixIcon.dispose();
-        smallTableIcon.dispose();
-        dateTimeIcon.dispose();
-        fileReferenceIcon.dispose();
-        directoryReferenceIcon.dispose();
+
         for (Image image : componentImages.values()) {
             image.dispose();
         }

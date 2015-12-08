@@ -59,7 +59,7 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.datamanagement.DistributedMetaDataService;
+import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.datamanagement.commons.ComponentRunInterval;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
@@ -120,7 +120,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     private int currentZoomValue = defaultMaximumZoomValue;
 
-    private DistributedMetaDataService metaDataService;
+    private MetaDataService metaDataService;
 
     private Long workflowDmId;
 
@@ -135,7 +135,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     private Label refreshLabel;
     
     public TimelineView() {
-        metaDataService = ServiceRegistry.createAccessFor(this).getService(DistributedMetaDataService.class);
+        metaDataService = ServiceRegistry.createAccessFor(this).getService(MetaDataService.class);
     }
 
     @Override

@@ -10,8 +10,8 @@ package de.rcenvironment.core.communication.channel;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.configuration.ConnectionFilter;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -25,7 +25,7 @@ public class ServerContactPoint {
 
     private NetworkContactPoint networkContactPoint;
 
-    private RawMessageChannelEndpointHandler endpointHandler;
+    private MessageChannelEndpointHandler endpointHandler;
 
     private NetworkTransportProvider transportProvider;
 
@@ -36,7 +36,7 @@ public class ServerContactPoint {
     private volatile boolean simulatingBreakdown;
 
     public ServerContactPoint(NetworkTransportProvider transportProvider, NetworkContactPoint ncp,
-        RawMessageChannelEndpointHandler endpointHandler, ConnectionFilter connectionFilter) {
+        MessageChannelEndpointHandler endpointHandler, ConnectionFilter connectionFilter) {
         this.transportProvider = transportProvider;
         this.networkContactPoint = ncp;
         this.endpointHandler = endpointHandler;
@@ -51,11 +51,11 @@ public class ServerContactPoint {
         this.networkContactPoint = contactPoint;
     }
 
-    public RawMessageChannelEndpointHandler getEndpointHandler() {
+    public MessageChannelEndpointHandler getEndpointHandler() {
         return endpointHandler;
     }
 
-    public void setEndpointHandler(RawMessageChannelEndpointHandler endpointHandler) {
+    public void setEndpointHandler(MessageChannelEndpointHandler endpointHandler) {
         this.endpointHandler = endpointHandler;
     }
 

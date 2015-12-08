@@ -16,9 +16,9 @@ import org.w3c.dom.Node;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Component;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Discipline;
 import de.rcenvironment.components.cpacs.vampzeroinitializer.gui.model.Parameter;
+import de.rcenvironment.core.utils.common.xml.XMLException;
+import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
-import de.rcenvironment.core.utils.incubator.xml.XMLException;
-import de.rcenvironment.core.utils.incubator.xml.api.XMLSupportService;
 
 /**
  * Write the XML that describes the toolspecific VampZero input.

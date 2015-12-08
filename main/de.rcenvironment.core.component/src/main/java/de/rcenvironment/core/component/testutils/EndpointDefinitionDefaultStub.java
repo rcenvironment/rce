@@ -94,7 +94,12 @@ public class EndpointDefinitionDefaultStub implements EndpointDefinition {
     }
 
     @Override
-    public String getGroupName() {
+    public String getParentGroupName() {
+        return null;
+    }
+
+    @Override
+    public LogicOperation getLogicOperation() {
         return null;
     }
 

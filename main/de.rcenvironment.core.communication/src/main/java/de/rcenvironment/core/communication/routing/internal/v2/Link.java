@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.routing.internal.v2;
 
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**

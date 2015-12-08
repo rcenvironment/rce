@@ -8,46 +8,44 @@
 
 package de.rcenvironment.core.start.common;
 
-import java.io.IOException;
 import java.io.PrintStream;
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.osgi.service.cm.Configuration;
-import org.osgi.service.cm.ConfigurationAdmin;
+import org.eclipse.equinox.app.IApplication;
 
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.command.common.CommandException;
-import de.rcenvironment.core.start.common.validation.PlatformMessage;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
+import de.rcenvironment.core.start.common.validation.api.InstanceValidationService;
+import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.VersionUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
  * Abstract base class for "instance runners". A single implementation is invoked by the main application to perform startup steps that are
  * specific to either GUI or headless mode.
  * 
- * The concrete implementation is injected into {@link Platform} by specific launcher bundles. This avoids dependencies from the main
+ * The concrete implementation is injected into {@link Instance} by specific launcher bundles. This avoids dependencies from the main
  * application to GUI code, which would trigger GUI bundles to start in headless mode.
  * 
  * @author Robert Mischke
+ * @author Doreen Seider
  */
 public abstract class InstanceRunner {
 
-    protected static final String ERROR_MESSAGE_INCORRECT_LOGGING_CONFIG = "Failed to initialize background logging properly."
-        + " Most likely, because RCE was started from another directory than its installation directory. "
-        + "(The installation directory is the directory, which contains the 'rce' executable.) ";
-    
-    protected static final String INFO_MESSAGE_INCORRECT_LOGGING_CONFIG = "RCE will be shutdown. "
-        + "Start it again from its installation directory.";
-    
+    protected static volatile InstanceValidationService instanceValidationService;
+
     private static volatile CommandExecutionService commandExecutionService;
 
-    private static volatile ConfigurationAdmin configurationAdmin;
-    
     protected final Log log = LogFactory.getLog(getClass());
 
     /**
@@ -58,14 +56,14 @@ public abstract class InstanceRunner {
     public void bindCommandExecutionService(CommandExecutionService newService) {
         InstanceRunner.commandExecutionService = newService;
     }
-    
+
     /**
-     * Injects the {@link ConfigurationAdmin} instance to check configuration of pax logging.
+     * Injects the {@link InstanceValidationService} instance to validate the RCE instance on startup.
      * 
      * @param newService the new instance
      */
-    public void bindConfigurationAdmin(ConfigurationAdmin newService) {
-        configurationAdmin = newService;
+    public void bindInstanceValidationService(InstanceValidationService newService) {
+        InstanceRunner.instanceValidationService = newService;
     }
 
     /**
@@ -74,26 +72,92 @@ public abstract class InstanceRunner {
      * @return the return code for the main application.
      * @throws Exception on uncaught exceptions
      */
-    public abstract int run() throws Exception;
+    public int run() throws Exception {
+        // Write versions to log file
+        log.debug("Core version: " + VersionUtils.getVersionOfCoreBundles());
+        log.debug("Product version: " + VersionUtils.getVersionOfProduct());
+
+        log.debug("Command line arguments passed: " + System.getProperty("sun.java.command"));
+
+        RuntimeMXBean runtime = ManagementFactory.getRuntimeMXBean();
+
+        for (String vmArg : runtime.getInputArguments()) {
+            log.debug("JVM argument passed: " + vmArg);
+        }
+
+        if (!validateInstance()) {
+            return IApplication.EXIT_OK;
+        } else {
+            return performRun();
+        }
+    }
+
+    private boolean validateInstance() {
+        Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults = instanceValidationService.validateInstance();
+        int passed = validationResults.get(InstanceValidationResultType.PASSED).size();
+        int failedWithProceedingAllowed = validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size();
+        int failedWithShutdownRequired = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size();
+
+        log.debug(StringUtils.format("Instance validation results [%d in total]: %d passed, %d failed with proceeding allowed, "
+            + "%d failed with shutdown required", passed + failedWithProceedingAllowed + failedWithShutdownRequired,
+            passed, failedWithProceedingAllowed, failedWithShutdownRequired));
+
+        if (validationResults.containsKey(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
+            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
+                log.error(StringUtils.format("Instance validation '%s' failed: %s", result.getValidationDisplayName(),
+                    result.getLogMessage()));
+            }
+        }
+
+        if (validationResults.containsKey(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED)) {
+            for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED)) {
+                log.error(StringUtils.format("Instance validation '%s' failed: %s. RCE is shutting down",
+                    result.getValidationDisplayName(), result.getLogMessage()));
+            }
+        }
+
+        if (failedWithProceedingAllowed > 0 || failedWithShutdownRequired > 0) {
+            return onInstanceValidationFailures(validationResults);
+        }
+        return true;
+    }
 
     /**
-     * May (optionally) present user feedback about startup validation errors.
+     * Runs the instance. Subclasses need to implement. Common run logic goes into {@link #run()}.
      * 
-     * @param messages the messages describing the validation failures.
-     * @return
+     * @return the return code for the main application.
+     * @throws Exception on uncaught exceptions
+     */
+    public abstract int performRun() throws Exception;
+
+    /**
+     * May (optionally) present user feedback about startup instance validation failures.
+     * 
+     * @param validationResults result of the instance validation
+     * @return <code>false</code> if instance validation failed and RCE must be shut down, otherwise <code>false</code>
      */
     // TODO refactor to avoid validation-specific parameter?
-    public void onValidationErrors(List<PlatformMessage> messages) {}
+    public boolean onInstanceValidationFailures(Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults) {
+        if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
+            return false;
+        }
+        return true;
+    }
 
     /**
-     * Custom hook that is fired before the common code of {@link Platform#awaitShutdown()}.
+     * Custom hook that is fired before the common code of {@link Instance#awaitShutdown()}.
      */
     public void beforeAwaitShutdown() {}
 
     /**
-     * Performs custom actions when {@link Platform#shutdown()} is called.
+     * Performs custom actions when {@link Instance#shutdown()} is called.
      */
     public void triggerShutdown() {}
+
+    /**
+     * Restarts RCE.
+     */
+    public void triggerRestart() {}
 
     protected Future<CommandExecutionResult> initiateAsyncCommandExecution(final String[] execCommandTokens, final String taskDescription,
         final boolean isBatchMode) {
@@ -101,7 +165,8 @@ public abstract class InstanceRunner {
             log.error("Command execution service not available; ignoring provided command(s) " + execCommandTokens);
             return null;
         }
-        final String taskDescriptionWithTokens = taskDescription + " (\"" + StringUtils.join(execCommandTokens, " ") + "\")";
+        final String taskDescriptionWithTokens = taskDescription + " (\""
+            + org.apache.commons.lang3.StringUtils.join(execCommandTokens, " ") + "\")";
 
         final PrintStream stdout = System.out;
         TextOutputReceiver outputReceiver = new TextOutputReceiver() {
@@ -137,36 +202,6 @@ public abstract class InstanceRunner {
             }
         };
         return commandExecutionService.asyncExecMultiCommand(Arrays.asList(execCommandTokens), outputReceiver, taskDescription);
-    }
-
-    /**
-     * Restarts RCE.
-     */
-    public void triggerRestart() {
-
-    }
-    
-    protected boolean isLoggingConfiguredProperly() {
-        
-        boolean isConfiguredProperly = false;
-        Configuration paxLoggingConfiguration = null;
-        try {
-            String paxLoggingPid = "org.ops4j.pax.logging";
-            paxLoggingConfiguration = configurationAdmin.getConfiguration(paxLoggingPid);
-        } catch (IOException e) {
-            log.error("Failed to get configuration of pax logging from the configuration admin service. "
-                + "Most likely, logging is not configured properly.", e);
-            // as there is nothing to do from a user's perspective, the error is just logged and not provided to the user
-            return false;
-        }
-        String nonDefaultPaxConfigKey = "log4j.appender.DEBUG_LOG";
-        isConfiguredProperly = paxLoggingConfiguration.getProperties() != null
-            && paxLoggingConfiguration.getProperties().get(nonDefaultPaxConfigKey) != null;            
-        if (!isConfiguredProperly) {
-            log.error(ERROR_MESSAGE_INCORRECT_LOGGING_CONFIG);
-        }
-
-        return isConfiguredProperly;
     }
 
 }

@@ -30,18 +30,20 @@ import org.apache.sshd.server.command.ScpCommandFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.ssh.jsch.DummyCommand;
 import de.rcenvironment.core.utils.ssh.jsch.DummyPasswordAuthenticator;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
-import de.rcenvironment.core.utils.ssh.jsch.Utils;
+import de.rcenvironment.core.utils.ssh.jsch.SshTestUtils;
 
 /**
  * Test case for {@link JSchCommandLineExecutor}.
@@ -64,16 +66,27 @@ public class JSchCommandLineExecutorTest {
 
     private File remoteWorkdir;
 
+    private TempFileService tempFileService = TempFileServiceAccess.getInstance();
+    
+    /**
+     * Initial set up of test environment.
+     * 
+     * @throws IOException on unexpected error
+     */
+    @BeforeClass
+    public static void initialSetUp() throws IOException {
+        TempFileServiceAccess.setupUnitTestEnvironment();
+    }
+
     /**
      * Set up test environment.
      * 
-     * @throws IOException on error
+     * @throws IOException on unexpected error
      **/
     @SuppressWarnings("serial")
     @Before
     public void setUp() throws IOException {
-        TempFileServiceAccess.setupUnitTestEnvironment();
-        port = Utils.getRandomPortNumber();
+        port = SshTestUtils.getRandomPortNumber();
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
@@ -85,40 +98,22 @@ public class JSchCommandLineExecutorTest {
         });
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
         sshServer.start();
-    }
-
-    /**
-     * Set up work dir.
-     * 
-     * @throws IOException on error
-     **/
-    @Before
-    public void createWorkDir() throws IOException {
-        remoteWorkdir = new File(DummyCommand.WORKDIR_REMOTE);
-        remoteWorkdir.mkdir();
-        localWorkdir = new File(DummyCommand.WORKDIR_LOCAL);
-        localWorkdir.mkdir();
+        
+        remoteWorkdir = tempFileService.createManagedTempDir();
+        localWorkdir = tempFileService.createManagedTempDir();
     }
 
     /**
      * Tear down test environment.
      * 
      * @throws InterruptedException on error when stopping the server
+     * @throws IOException on unexpected error
      **/
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws InterruptedException, IOException {
         sshServer.stop();
-    }
-
-    /**
-     * Delete work dir.
-     * 
-     * @throws IOException on error
-     **/
-    @After
-    public void deleteWorkDir() throws IOException {
-        FileUtils.deleteQuietly(localWorkdir);
-        FileUtils.deleteQuietly(remoteWorkdir);
+        tempFileService.disposeManagedTempDirOrFile(remoteWorkdir);
+        tempFileService.disposeManagedTempDirOrFile(localWorkdir);
     }
 
     /**
@@ -129,7 +124,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      **/
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testStdout() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String out = "console standard output";
@@ -139,7 +134,7 @@ public class JSchCommandLineExecutorTest {
 
             @Override
             public Command createCommand(String commandString) {
-                if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, DummyCommand.WORKDIR_REMOTE, commandStdout))) {
+                if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, remoteWorkdir.getAbsolutePath(), commandStdout))) {
                     return new DummyCommand(out, null, 0);
                 } else {
                     throw new IllegalArgumentException(WRONG_COMMAND + commandString);
@@ -149,7 +144,7 @@ public class JSchCommandLineExecutorTest {
 
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
         executor.start(commandStdout);
         try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
@@ -168,7 +163,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testStdoutStderrResult() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String out = "console standard output";
@@ -179,7 +174,7 @@ public class JSchCommandLineExecutorTest {
 
             @Override
             public Command createCommand(String commandString) {
-                if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, DummyCommand.WORKDIR_REMOTE, commandStdoutStderr))) {
+                if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, remoteWorkdir.getAbsolutePath(), commandStdoutStderr))) {
                     return new DummyCommand(out, err, 0);
                 } else {
                     throw new IllegalArgumentException(WRONG_COMMAND + commandString);
@@ -189,7 +184,7 @@ public class JSchCommandLineExecutorTest {
 
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
         executor.start(commandStdoutStderr);
         try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
@@ -208,7 +203,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testStderrResult() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String err = "console standard error";
@@ -218,7 +213,7 @@ public class JSchCommandLineExecutorTest {
 
             @Override
             public Command createCommand(String commandString) {
-                if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, DummyCommand.WORKDIR_REMOTE, commandStderr))) {
+                if (commandString.equals(StringUtils.format(FULL_COMMAND_TEMPLATE, remoteWorkdir.getAbsolutePath(), commandStderr))) {
                     return new DummyCommand(null, err, 1);
                 } else {
                     throw new IllegalArgumentException(WRONG_COMMAND + commandString);
@@ -228,7 +223,7 @@ public class JSchCommandLineExecutorTest {
 
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
         executor.start(commandStderr);
         try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
@@ -247,12 +242,12 @@ public class JSchCommandLineExecutorTest {
      * @throws JSchException on error
      * @throws SshParameterException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testGetRemoteWorkDir() throws JSchException, SshParameterException {
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
-        assertTrue(executor.getWorkDirPath().contains(DummyCommand.WORKDIR_REMOTE));
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
+        assertTrue(executor.getWorkDirPath().contains(remoteWorkdir.getAbsolutePath()));
     }
 
     /**
@@ -263,16 +258,17 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testDownloadWorkdir() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String fileContent = RandomStringUtils.randomAlphabetic(6);
 
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
-        Utils.createFileOnServerSidesWorkDir(sshServer, session, RandomStringUtils.randomAlphabetic(6), fileContent, executor);
+        SshTestUtils.createFileOnServerSide(sshServer, session, remoteWorkdir.getAbsolutePath() + RandomStringUtils.randomAlphabetic(6),
+            fileContent, executor);
 
         sshServer.setCommandFactory(new ScpCommandFactory());
 
@@ -291,7 +287,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testUploadDownloadFileToFromWorkdir() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String srcFilename = RandomStringUtils.randomAlphabetic(5);
@@ -304,7 +300,7 @@ public class JSchCommandLineExecutorTest {
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
 
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
         File srcFile = new File(localWorkdir, srcFilename);
         FileUtils.write(srcFile, fileContent);
@@ -328,7 +324,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testUploadDownloadDirToFromWorkdir() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String srcFilename = RandomStringUtils.randomAlphabetic(5);
@@ -339,7 +335,7 @@ public class JSchCommandLineExecutorTest {
 
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
         sshServer.setCommandFactory(new ScpCommandFactory() {
 
@@ -354,7 +350,7 @@ public class JSchCommandLineExecutorTest {
             }
         });
 
-        File srcDir = new File(DummyCommand.WORKDIR_LOCAL, srcDirname);
+        File srcDir = new File(localWorkdir.getAbsolutePath(), srcDirname);
         srcDir.mkdirs();
         File srcFile = new File(srcDir, srcFilename);
         FileUtils.write(srcFile, fileContent);
@@ -364,7 +360,7 @@ public class JSchCommandLineExecutorTest {
         executor.uploadDirectoryToWorkdir(srcDir, targetDirname);
         FileUtils.deleteQuietly(srcDir);
 
-        File targetDir = new File(DummyCommand.WORKDIR_LOCAL, RandomStringUtils.randomAlphabetic(5));
+        File targetDir = new File(localWorkdir.getAbsolutePath(), RandomStringUtils.randomAlphabetic(5));
         targetDir.mkdirs();
 
         executor.downloadDirectoryFromWorkdir(targetDirname + "/" + srcDir.getName(), targetDir);
@@ -382,7 +378,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testUploadDownloadFile() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String srcFilename = RandomStringUtils.randomAlphabetic(5);
@@ -397,15 +393,15 @@ public class JSchCommandLineExecutorTest {
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
 
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
         File srcFile = new File(localWorkdir, srcFilename);
         FileUtils.write(srcFile, fileContent);
-        executor.uploadFile(srcFile, DummyCommand.WORKDIR_REMOTE + remotePath);
+        executor.uploadFile(srcFile, remoteWorkdir.getAbsolutePath() + remotePath);
         FileUtils.deleteQuietly(srcFile);
 
         File localTargetFile = new File(localWorkdir, targetFilename);
-        executor.downloadFile(DummyCommand.WORKDIR_REMOTE + remotePath, localTargetFile);
+        executor.downloadFile(remoteWorkdir.getAbsolutePath() + remotePath, localTargetFile);
         assertEquals(fileContent, FileUtils.readFileToString(localTargetFile));
         FileUtils.deleteQuietly(localTargetFile);
     }
@@ -418,7 +414,7 @@ public class JSchCommandLineExecutorTest {
      * @throws IOException on error
      * @throws InterruptedException on error
      */
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testUploadDownloadDirectory() throws JSchException, SshParameterException, IOException, InterruptedException {
 
         final String srcFilename = RandomStringUtils.randomAlphabetic(5);
@@ -444,22 +440,22 @@ public class JSchCommandLineExecutorTest {
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
 
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
 
-        File srcDir = new File(DummyCommand.WORKDIR_LOCAL, srcDirname);
+        File srcDir = new File(remoteWorkdir.getAbsolutePath(), srcDirname);
         srcDir.mkdirs();
         File srcFile = new File(srcDir, srcFilename);
         FileUtils.write(srcFile, fileContent);
         assertEquals(1, srcDir.listFiles().length);
         assertEquals(srcFilename, srcDir.listFiles()[0].getName());
 
-        executor.uploadDirectory(srcDir, DummyCommand.WORKDIR_REMOTE + remoteDirpath);
+        executor.uploadDirectory(srcDir, remoteWorkdir.getAbsolutePath() + remoteDirpath);
         FileUtils.deleteQuietly(srcDir);
 
-        File targetDir = new File(DummyCommand.WORKDIR_LOCAL, RandomStringUtils.randomAlphabetic(5));
+        File targetDir = new File(localWorkdir.getAbsolutePath(), RandomStringUtils.randomAlphabetic(5));
         targetDir.mkdirs();
 
-        executor.downloadDirectory(DummyCommand.WORKDIR_REMOTE + remoteDirpath + "/" + srcDir.getName(), targetDir);
+        executor.downloadDirectory(remoteWorkdir.getAbsolutePath() + remoteDirpath + "/" + srcDir.getName(), targetDir);
         assertEquals(1, targetDir.listFiles().length);
         assertEquals(srcFilename, targetDir.listFiles()[0].listFiles()[0].getName());
         assertEquals(fileContent, FileUtils.readFileToString(targetDir.listFiles()[0].listFiles()[0]));
@@ -475,7 +471,7 @@ public class JSchCommandLineExecutorTest {
      * @throws InterruptedException on error
      */
     // TODO combine test: upload, remote copy, download - seid_do
-    @Test(timeout = Utils.TIMEOUT)
+    @Test(timeout = SshTestUtils.TIMEOUT)
     public void testRemoteCopy() throws JSchException, SshParameterException, IOException, InterruptedException {
         String src = "src";
         String target = "target";
@@ -483,11 +479,11 @@ public class JSchCommandLineExecutorTest {
         final String cpCommand = "cp " + src + " " + target;
         final String failingCpCommand = "cp " + target + " " + src;
 
-        sshServer.setCommandFactory(Utils.createDummyCommandFactory(cpCommand, "stdout", failingCpCommand, "stderr"));
+        sshServer.setCommandFactory(SshTestUtils.createDummyCommandFactory(cpCommand, "stdout", failingCpCommand, "stderr"));
 
         Session session = JschSessionFactory.setupSession(LOCALHOST, port, DummyPasswordAuthenticator.USERNAME,
             null, DummyPasswordAuthenticator.PASSWORD, null);
-        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, DummyCommand.WORKDIR_REMOTE);
+        JSchCommandLineExecutor executor = new JSchCommandLineExecutor(session, remoteWorkdir.getAbsolutePath());
         executor.remoteCopy(src, target);
         try {
             executor.remoteCopy(target, src);

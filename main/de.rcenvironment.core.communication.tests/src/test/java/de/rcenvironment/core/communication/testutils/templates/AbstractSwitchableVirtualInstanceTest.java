@@ -86,6 +86,13 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         testSize = TEST_SIZE;
     }
 
+    @Override
+    protected void setupInstances(int numNodes, boolean useDuplexTransport, boolean startInstances) throws InterruptedException {
+        super.setupInstances(numNodes, useDuplexTransport, startInstances);
+        // this causes all connect() calls to explicitly create a connection for each direction by default
+        testTopology.setConnectBothDirectionsByDefaultFlag(!usingDuplexTransport);
+    }
+
     /**
      * @throws Exception on uncaught exceptions
      */
@@ -97,18 +104,16 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         VirtualInstance client = testTopology.getInstance(0);
         VirtualInstance server = testTopology.getInstance(1);
         prepareWaitForNextMessage();
-        testTopology.connect(0, 1, !usingDuplexTransport);
+        testTopology.connect(0, 1);
         waitForNextMessage();
         waitForNetworkSilence();
 
-        NetworkResponse serverResponse =
-            client.performRoutedRequest("c2s", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, server.getNodeId()).get();
+        NetworkResponse serverResponse = client.performRoutedRequest("c2s", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, server.getNodeId());
         assertNotNull("C2S communication failed", serverResponse);
         assertTrue("C2S communication failed: " + NetworkFormatter.networkResponseToString(serverResponse), serverResponse.isSuccess());
         assertEquals(TestNetworkRequestHandler.getTestResponse("c2s", server.getNodeId()),
             serverResponse.getDeserializedContent());
-        NetworkResponse clientResponse =
-            server.performRoutedRequest("s2c", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, client.getNodeId()).get();
+        NetworkResponse clientResponse = server.performRoutedRequest("s2c", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, client.getNodeId());
         assertNotNull("S2C communication failed", clientResponse);
         assertTrue("S2C communication failed", clientResponse.isSuccess());
         assertEquals(TestNetworkRequestHandler.getTestResponse("s2c", client.getNodeId()),
@@ -136,7 +141,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
             int newInstanceIndex = i + 1;
 
             prepareWaitForNextMessage();
-            testTopology.connect(i, newInstanceIndex, !usingDuplexTransport);
+            testTopology.connect(i, newInstanceIndex);
             waitForNextMessage();
             waitForNetworkSilence();
 
@@ -156,7 +161,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
 
         prepareWaitForNextMessage();
         for (int i = 0; i < allInstances.length - 1; i++) {
-            testTopology.connect(i, i + 1, !usingDuplexTransport);
+            testTopology.connect(i, i + 1);
         }
         waitForNextMessage();
         waitForNetworkSilence();
@@ -178,7 +183,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
             int newInstanceIndex = i + 1;
             int connectedInstanceIndex = random.nextInt(newInstanceIndex); // 0..newInstanceIndex-1
             prepareWaitForNextMessage();
-            testTopology.connect(connectedInstanceIndex, newInstanceIndex, !usingDuplexTransport);
+            testTopology.connect(connectedInstanceIndex, newInstanceIndex);
             waitForNextMessage();
             waitForNetworkSilence();
 
@@ -202,7 +207,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
             int newInstanceIndex = i + 1;
             int connectedInstanceIndex1 = random.nextInt(newInstanceIndex); // 0..newInstanceIndex-1
             prepareWaitForNextMessage();
-            testTopology.connect(connectedInstanceIndex1, newInstanceIndex, !usingDuplexTransport);
+            testTopology.connect(connectedInstanceIndex1, newInstanceIndex);
             // connect to two existing nodes per iteration to create cycles
             if (i >= 3) {
                 // do not start at i=2, otherwise the starting graph will always be the same
@@ -210,7 +215,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
                 do {
                     connectedInstanceIndex2 = random.nextInt(newInstanceIndex); // 0..i
                 } while (connectedInstanceIndex2 == connectedInstanceIndex1);
-                testTopology.connect(connectedInstanceIndex2, newInstanceIndex, !usingDuplexTransport);
+                testTopology.connect(connectedInstanceIndex2, newInstanceIndex);
             }
             waitForNextMessage();
             waitForNetworkSilence();
@@ -235,7 +240,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
             logIteration(i);
             int newInstanceIndex = i + 1;
             int connectedInstanceIndex = random.nextInt(newInstanceIndex); // 0..i
-            testTopology.connect(connectedInstanceIndex, newInstanceIndex, !usingDuplexTransport);
+            testTopology.connect(connectedInstanceIndex, newInstanceIndex);
         }
         waitForNextMessage();
         waitForNetworkSilence();
@@ -256,7 +261,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
             logIteration(i);
             int newInstanceIndex = i + 1;
             int connectedInstanceIndex1 = random.nextInt(newInstanceIndex); // 0..i
-            testTopology.connect(connectedInstanceIndex1, newInstanceIndex, !usingDuplexTransport);
+            testTopology.connect(connectedInstanceIndex1, newInstanceIndex);
             // connect to two existing nodes per iteration to create cycles
             if (i >= 3) {
                 // do not start at i=2, otherwise the starting graph will always be the same
@@ -264,7 +269,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
                 do {
                     connectedInstanceIndex2 = random.nextInt(newInstanceIndex); // 0..i
                 } while (connectedInstanceIndex2 == connectedInstanceIndex1);
-                testTopology.connect(connectedInstanceIndex2, newInstanceIndex, !usingDuplexTransport);
+                testTopology.connect(connectedInstanceIndex2, newInstanceIndex);
             }
         }
         waitForNextMessage();
@@ -286,7 +291,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
             logIteration(i);
             int newInstanceIndex = i + 1;
             int connectedInstanceIndex = random.nextInt(newInstanceIndex); // 0..i
-            testTopology.connect(connectedInstanceIndex, newInstanceIndex, !usingDuplexTransport);
+            testTopology.connect(connectedInstanceIndex, newInstanceIndex);
         }
         waitForNextMessage();
         waitForNetworkSilence();
@@ -527,14 +532,15 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         allNodes.registerNetworkTransportProvider(transportProvider);
         allNodes.addNetworkTrafficListener(getGlobalTrafficListener());
         testTopology = new VirtualTopology(allInstances);
+        testTopology.setConnectBothDirectionsByDefaultFlag(!usingDuplexTransport);
         allNodes.start();
 
         // connect to an "M" shape
         prepareWaitForNextMessage();
-        testTopology.connect(0, 3, !usingDuplexTransport); // c1-s1
-        testTopology.connect(1, 3, !usingDuplexTransport); // c2-s1
-        testTopology.connect(1, 4, !usingDuplexTransport); // c2-s2
-        testTopology.connect(2, 4, !usingDuplexTransport); // c3-s2
+        testTopology.connect(0, 3); // c1-s1
+        testTopology.connect(1, 3); // c2-s1
+        testTopology.connect(1, 4); // c2-s2
+        testTopology.connect(2, 4); // c3-s2
         waitForNextMessage();
         waitForNetworkSilence();
 
@@ -606,8 +612,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
                 // the "negative" (forbidden) paths are not really tested as the network graph should simply not contain
                 // the target node, which was already tested above - misc_ro
                 // TODO add test that non-relays actually refuse to forward requests
-                NetworkResponse response =
-                    i1.performRoutedRequest("test", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, i2.getNodeId()).get();
+                NetworkResponse response = i1.performRoutedRequest("test", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, i2.getNodeId());
                 boolean success = response.isSuccess();
                 assertEquals("Messaging result: " + i1.getNodeId() + " ->" + i2.getNodeId(), expected, success);
             }

@@ -34,6 +34,7 @@ import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.utils.common.StatsCounter;
 import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
 import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProcessor;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
 /**
@@ -44,6 +45,8 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  * @author Robert Mischke
  */
 public class NotificationServiceImpl implements NotificationService {
+
+    private static final boolean TOPIC_STATISTICS_ENABLED = false;
 
     /**
      * Helper class to hold local information about subscribers. This includes a set of the subscribed topics, and a {@link BatchAggregator}
@@ -185,8 +188,12 @@ public class NotificationServiceImpl implements NotificationService {
     @Override
     public synchronized <T extends Serializable> void send(String notificationId, T notificationBody) {
 
-        StatsCounter.count("Notification Ids", notificationId);
-        StatsCounter.countClass("Notification Body Types", notificationBody);
+        if (TOPIC_STATISTICS_ENABLED) {
+            if (StatsCounter.isEnabled()) {
+                StatsCounter.count("Notification Ids", notificationId);
+                StatsCounter.countClass("Notification Body Types", notificationBody);
+            }
+        }
 
         if (getNotificationTopic(notificationId) == null) {
             registerNotificationTopic(notificationId);
@@ -211,7 +218,11 @@ public class NotificationServiceImpl implements NotificationService {
 
         for (NotificationTopic matchingTopic : getMatchingNotificationTopics(notificationId)) {
             for (NotificationSubscriber subscriber : matchingTopic.getSubscribers()) {
-                StatsCounter.count("Notifications enqueued by type", notificationId);
+                if (TOPIC_STATISTICS_ENABLED) {
+                    if (StatsCounter.isEnabled()) {
+                        StatsCounter.count("Notifications enqueued by type", notificationId);
+                    }
+                }
                 sendNotificationToSubscriber(notification, subscriber);
             }
         }
@@ -236,7 +247,11 @@ public class NotificationServiceImpl implements NotificationService {
             topic = getNotificationTopic(notificationId);
             if (topic == null) {
                 topic = registerNotificationTopic(notificationId);
-                StatsCounter.count("Register Topic", notificationId);
+                if (TOPIC_STATISTICS_ENABLED) {
+                    if (StatsCounter.isEnabled()) {
+                        StatsCounter.count("Register Topic", notificationId);
+                    }
+                }
             }
         }
         topic.add(subscriber);
@@ -326,14 +341,20 @@ public class NotificationServiceImpl implements NotificationService {
      */
     private void sendNotificationsToSubscriber(NotificationSubscriber subscriber, List<Notification> notifications) {
         try {
-            subscriber.receiveBatchedNotifications(notifications);
-        } catch (RuntimeException e) {
+            try {
+                subscriber.receiveBatchedNotifications(notifications);
+            } catch (RuntimeException e) {
+                // TODO 8.0.0: safeguard code added in 7.0.0 transition; remove if never observed in 7.x cycle
+                LOGGER.error("Unexpected RTE thrown from receiveBatchedNotifications()", e);
+                throw new RemoteOperationException(e.toString());
+            }
+        } catch (RemoteOperationException e) {
             // not much information available, so use identity to tell subscribers apart in log
             int subscriberIdentity = System.identityHashCode(subscriber);
             Collection<NotificationTopic> subscribedTopics = getLocalSubscriberMetaData(subscriber).getSubscribedTopics();
             if (subscribedTopics.isEmpty()) {
                 LOGGER.debug("Tried to remove subscriber " + subscriberIdentity
-                    + " after a callback failure (" + e.toString() + "), but it had no (or no more) topics to unsubscribe from");
+                    + " after a callback failure but it had no (or no more) topics to unsubscribe from; triggering error: " + e.toString());
             } else {
                 for (NotificationTopic topic : subscribedTopics) {
                     unsubscribe(topic.getName(), subscriber);
@@ -348,7 +369,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         NotificationTopic topic = new NotificationTopic(notificationId);
         synchronized (topics) {
-            topics.put(topic.getName(), topic);            
+            topics.put(topic.getName(), topic);
         }
         currentNumbers.put(notificationId, new Long(NO_MISSED));
         return topic;
@@ -365,7 +386,7 @@ public class NotificationServiceImpl implements NotificationService {
                 }
             }
         }
-        
+
         return topic;
 
     }

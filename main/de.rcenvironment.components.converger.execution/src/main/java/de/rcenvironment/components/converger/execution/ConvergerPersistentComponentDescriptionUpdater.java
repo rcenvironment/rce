@@ -27,7 +27,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
-import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
@@ -43,6 +43,12 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
  */
 public class ConvergerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
+    private static final String LOOP_ENDPOINT_TYPE = "loopEndpointType_5e0ed1cd";
+    
+    private static final String OUTER_LOOP_ENDPOINT = "OuterLoopEndpoint";
+
+    private static final String METADATA = "metadata";
+    
     private static final String BOOLEAN = "Boolean";
 
     private static final String IDENTIFIER = "identifier";
@@ -74,8 +80,10 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
     private static final String V3_2 = "3.2";
     
     private static final String V4_0 = "4.0";
+
+    private static final String V4_1 = "4.1";
     
-    private static final String CURRENT_VERSION = V4_0;
+    private static final String V5 = "5";
     
     private static TypedDatumService typedDatumService;
 
@@ -99,9 +107,14 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
             && persistentComponentDescriptionVersion.compareTo(V3_0) < 0) {
             versions = versions | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
         }
-        // Update 3 : 3.0 -> latest
+        // Update 3 non-silent : 3.0 -> latest
         if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(CURRENT_VERSION) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V5) < 0) {
+            versions = versions | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+        }
+        // Update 3 silent : 3.0 -> latest
+        if (silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V4_1) < 0) {
             versions = versions | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         return versions;
@@ -118,17 +131,92 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                 description = secondUpdate(description);
                 description.setComponentVersion(V3_0);
             } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
-                if (description.getComponentVersion().compareTo(V3_1) < 0) {
+                switch (description.getComponentVersion()) {
+                case V3_0:
                     description = updateFrom30To31(description);
-                }
-                if (description.getComponentVersion().compareTo(V3_2) < 0) {
+                case V3_1:
                     description = updateFrom31To32(description);
-                }
-                if (description.getComponentVersion().compareTo(V4_0) < 0) {
+                case V3_2:
                     description = updateFrom32To40(description);
+                case V4_0:
+                case V4_1:
+                    description = updateFrom40To41(description);
+                    description = updateFrom41To5(description);
+                default:
+                    // nothing to do here
+                }
+            }
+        } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
+            && description.getComponentVersion().equals(V4_0)) {
+            description = updateFrom40To41(description);
+        }
+        return description;
+    }
+    
+    private PersistentComponentDescription updateFrom41To5(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode staticOutputs = node.get(STATIC_OUTPUTS);
+        if (staticOutputs != null) {
+            for (JsonNode outputEndpoint : staticOutputs) {
+                ObjectNode metaData;
+                if (outputEndpoint.has(METADATA)) {
+                    metaData = (ObjectNode) outputEndpoint.get(METADATA);
+                } else {
+                    metaData = mapper.createObjectNode();
+                }
+                if (outputEndpoint.get(NAME).getTextValue().equals("Outer loop done")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, "InnerLoopEndpoint");
+                } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged absolute")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged relative")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                }
+                ((ObjectNode) outputEndpoint).put(METADATA, metaData);
+            }
+        }
+        JsonNode dynamicOutputs = node.get(DYNAMIC_OUTPUTS);
+        if (dynamicOutputs != null) {
+            for (JsonNode outputEndpoint : dynamicOutputs) {
+                if (outputEndpoint.get(NAME).getTextValue().endsWith("_converged")) {
+                    ObjectNode metaData;
+                    if (outputEndpoint.has(METADATA)) {
+                        metaData = (ObjectNode) outputEndpoint.get(METADATA);
+                    } else {
+                        metaData = mapper.createObjectNode();
+                    }
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                    ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
             }
         }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
+        newdesc.setComponentVersion(V5);
+        return newdesc;
+    }
+
+    private PersistentComponentDescription updateFrom40To41(PersistentComponentDescription description) throws IOException {
+        
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode dynOutputsNode = node.get(DYNAMIC_OUTPUTS);
+        
+        if (dynOutputsNode != null) {
+            Iterator<JsonNode> nodeIterator = dynOutputsNode.getElements();
+            while (nodeIterator.hasNext()) {
+                ObjectNode dynOutputNode = (ObjectNode) nodeIterator.next();
+                if (dynOutputNode.get(EP_IDENTIFIER).asText().equals("convergedValue")) {
+                    dynOutputNode.put(EP_IDENTIFIER, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE);
+                }
+            }
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+        description.setComponentVersion(V4_1);
         return description;
     }
 
@@ -156,21 +244,20 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         
-        JsonNode dynInputsNode = node.get("dynamicInputs");
+        JsonNode dynInputsNode = node.get(DYNAMIC_INPUTS);
         
         if (dynInputsNode != null) {
             Iterator<JsonNode> nodeIterator = dynInputsNode.getElements();
             while (nodeIterator.hasNext()) {
                 JsonNode dynInputNode = nodeIterator.next();
-                ObjectNode jsonNode = (ObjectNode) dynInputNode.get("metadata");
+                ObjectNode jsonNode = (ObjectNode) dynInputNode.get(METADATA);
                 JsonNode hasStartValueJsonNode = jsonNode.get("hasStartValue");
                 if (hasStartValueJsonNode != null) {
                     String hasStartValue = hasStartValueJsonNode.getTextValue();
                     if (hasStartValue.equals("true")) {
                         FloatTD floatValue = typedDatumService.getFactory()
                             .createFloat(Double.valueOf(jsonNode.get("startValue").getTextValue()));
-                        jsonNode.put(ComponentConstants.INPUT_METADATA_KEY_INIT_VALUE,
-                            typedDatumService.getSerializer().serialize(floatValue));
+                        jsonNode.put("initValue_dca67e34", typedDatumService.getSerializer().serialize(floatValue));
                     }
                 }
             }
@@ -209,9 +296,10 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                 if (inputEndpoint.get(EP_IDENTIFIER).isNull()) {
                     ((ObjectNode) inputEndpoint).remove(EP_IDENTIFIER);
                     if (inputEndpoint.get(DATATYPE).getTextValue().equals("Float")) {
-                        ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(ConvergerComponentConstants.ID_VALUE_TO_CONVERGE));
+                        ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(
+                            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE));
                     } else {
-                        ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(ComponentConstants.OUPUT_ID_OUTERLOOP_DONE));
+                        ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(LoopComponentConstants.INPUT_ID_OUTER_LOOP_DONE));
                     }
                 }
             }
@@ -222,7 +310,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
             for (JsonNode outputEndpoint : dynOutputs) {
                 ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
                 if (outputEndpoint.get(EP_IDENTIFIER) == null) {
-                    ((ObjectNode) outputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(ConvergerComponentConstants.ID_CONVERGED_VALUE));
+                    ((ObjectNode) outputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE));
                 }
             }
         }
@@ -259,7 +347,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
             inputEndpoint.put("readonly", "true");
             ObjectNode metadata = JsonNodeFactory.instance.objectNode();
             metadata.put("usage", "optional");
-            inputEndpoint.put("metadata", metadata);
+            inputEndpoint.put(METADATA, metadata);
             statInputs.add(inputEndpoint);
 
         }
@@ -269,7 +357,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
         description =
             PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier("dynamicOutputs",
-                ConvergerComponentConstants.ID_CONVERGED_VALUE, description);
+                ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, description);
         return description;
     }
 

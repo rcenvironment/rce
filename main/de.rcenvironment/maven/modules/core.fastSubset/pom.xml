@@ -16,6 +16,8 @@
 	<modules>
 		<module>${projects-root}/de.rcenvironment.core.utils.common</module>
 		<module>${projects-root}/de.rcenvironment.core.utils.common.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.executor</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.incubator</module>
 		<module>${projects-root}/de.rcenvironment.core.utils.testing</module>
 	</modules>
 

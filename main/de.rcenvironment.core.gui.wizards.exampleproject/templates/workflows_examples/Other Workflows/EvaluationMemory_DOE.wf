@@ -1,0 +1,277 @@
+{
+  "identifier" : "396114dd-6068-4b5b-ac57-d692b69badec",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "name" : "Evaluation Memory",
+    "location" : "136:134",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.evaluationmemory",
+      "version" : "1.0",
+      "name" : "Evaluation Memory"
+    },
+    "configuration" : {
+      "mem_file" : "",
+      "mem_file_wf_start" : "${memory_file}",
+      "select_at_wf_start" : "true"
+    },
+    "staticInputs" : [ {
+      "identifier" : "50c8d72d-5063-435b-9626-e3a5226a440f",
+      "name" : "Loop done",
+      "epIdentifier" : null,
+      "group" : "root",
+      "datatype" : "Boolean"
+    } ],
+    "dynamicInputs" : [ {
+      "identifier" : "f8f2abc5-5a2a-493f-bb2d-64fde6fcde3a",
+      "name" : "x1",
+      "epIdentifier" : "to_evaluate",
+      "group" : "to_evaluate",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "83630628-7f01-45cb-a598-65ecabd32727",
+      "name" : "x2",
+      "epIdentifier" : "to_evaluate",
+      "group" : "to_evaluate",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "e7019eec-2797-4a68-9095-0e9ea2105b4f",
+      "name" : "x3",
+      "epIdentifier" : "to_evaluate",
+      "group" : "to_evaluate",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "12beff8f-d3f9-4e05-a68c-98ec61b89677",
+      "name" : "y",
+      "epIdentifier" : "evaluation_results",
+      "group" : "evaluation_results",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "012ba433-dc39-461e-b825-1d377e8698fc",
+      "name" : "x1",
+      "epIdentifier" : "to_evaluate",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "96494917-3b6f-4269-a587-7aff9efa7e54",
+      "name" : "x2",
+      "epIdentifier" : "to_evaluate",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "1ca83c6d-5ce4-4e9a-b703-a32cd4ed548a",
+      "name" : "x3",
+      "epIdentifier" : "to_evaluate",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "9d1d9c4a-e738-4974-8b7c-7cbec8aa6e67",
+      "name" : "y",
+      "epIdentifier" : "evaluation_results",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
+    "name" : "doe",
+    "location" : "20:115",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.doe.v2",
+      "version" : "3.3",
+      "name" : "Design of Experiments"
+    },
+    "configuration" : {
+      "behaviourFailedRun" : "Skip sample and continue",
+      "endSample" : "0",
+      "method" : "Full factorial design",
+      "runNumber" : "2",
+      "seedNumber" : "0",
+      "startSample" : "0",
+      "table" : ""
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "807b6c16-ad7d-4e32-9df5-b43491117ae8",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "1e1cfa3f-8fbc-4779-887e-5b25cbd6ed1c",
+      "name" : "Done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+      }
+    }, {
+      "identifier" : "c65d7f5d-6fcd-4668-9267-a7f4d0c617e7",
+      "name" : "Outer loop done",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "8de596cf-2841-4712-8368-cb6f18920fb1",
+      "name" : "x1",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    }, {
+      "identifier" : "e7e33760-326f-408b-98a8-de0538d26673",
+      "name" : "x2",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    }, {
+      "identifier" : "9c5fe0d1-ddb4-4376-b981-f083fad078ab",
+      "name" : "x3",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
+        "lower" : "-1",
+        "upper" : "1"
+      }
+    } ]
+  }, {
+    "identifier" : "57bdce33-eab2-4c53-ad26-5e144474e57e",
+    "name" : "eval",
+    "location" : "291:115",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "x1 = RCE.read_input(\"x1\")\nx2 = RCE.read_input(\"x2\")\nx3 = RCE.read_input(\"x3\")\n\nx1s, x2s, x3s = [0.7, -0.5, 0.3]\n\ny = 10.0 * (x1 - x1s)**2 + 1.0 * (x2 - x2s)**4 + 0.1 * (x3 - x3s)**6\nprint(\"Evaluation:  x1=%.8f  x2=%.8f  x3=%.8f  y=%.8f\" % (x1, x2, x3, y))\n\nRCE.write_output(\"y\", y)\n",
+      "scriptLanguage" : "Python",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d29bd46b-1189-4136-aa49-60e3eb7456a0",
+      "name" : "x1",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "1658d507-da4a-4080-a798-bb8ec8139319",
+      "name" : "x2",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "4e6341b7-2133-4e24-b33b-08765cae8bd0",
+      "name" : "x3",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "d3d73165-b4a1-44a1-9d39-f1063493f797",
+      "name" : "y",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "output" : "012ba433-dc39-461e-b825-1d377e8698fc",
+    "target" : "57bdce33-eab2-4c53-ad26-5e144474e57e",
+    "input" : "d29bd46b-1189-4136-aa49-60e3eb7456a0"
+  }, {
+    "source" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "output" : "96494917-3b6f-4269-a587-7aff9efa7e54",
+    "target" : "57bdce33-eab2-4c53-ad26-5e144474e57e",
+    "input" : "1658d507-da4a-4080-a798-bb8ec8139319"
+  }, {
+    "source" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "output" : "1ca83c6d-5ce4-4e9a-b703-a32cd4ed548a",
+    "target" : "57bdce33-eab2-4c53-ad26-5e144474e57e",
+    "input" : "4e6341b7-2133-4e24-b33b-08765cae8bd0"
+  }, {
+    "source" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "output" : "9d1d9c4a-e738-4974-8b7c-7cbec8aa6e67",
+    "target" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
+    "input" : "807b6c16-ad7d-4e32-9df5-b43491117ae8"
+  }, {
+    "source" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
+    "output" : "c65d7f5d-6fcd-4668-9267-a7f4d0c617e7",
+    "target" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "input" : "50c8d72d-5063-435b-9626-e3a5226a440f"
+  }, {
+    "source" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
+    "output" : "8de596cf-2841-4712-8368-cb6f18920fb1",
+    "target" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "input" : "f8f2abc5-5a2a-493f-bb2d-64fde6fcde3a"
+  }, {
+    "source" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
+    "output" : "e7e33760-326f-408b-98a8-de0538d26673",
+    "target" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "input" : "83630628-7f01-45cb-a598-65ecabd32727"
+  }, {
+    "source" : "69329e71-bd72-4566-93a7-ff22d7fbc687",
+    "output" : "9c5fe0d1-ddb4-4376-b981-f083fad078ab",
+    "target" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "input" : "e7019eec-2797-4a68-9095-0e9ea2105b4f"
+  }, {
+    "source" : "57bdce33-eab2-4c53-ad26-5e144474e57e",
+    "output" : "d3d73165-b4a1-44a1-9d39-f1063493f797",
+    "target" : "5b8a1613-b27a-4e9b-ad5b-82a11ef157fc",
+    "input" : "12beff8f-d3f9-4e05-a68c-98ec61b89677"
+  } ]
+}

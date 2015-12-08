@@ -5,7 +5,7 @@
 	<service>
 		<provide interface="de.rcenvironment.core.communication.routing.NetworkRoutingService"/>
 		<provide interface="de.rcenvironment.core.communication.routing.MessageRoutingService"/>
-		<provide interface="de.rcenvironment.core.utils.incubator.ListenerProvider"/>
+		<provide interface="de.rcenvironment.core.utils.common.service.AdditionalServicesProvider"/>
 	</service>
 	
 	<reference

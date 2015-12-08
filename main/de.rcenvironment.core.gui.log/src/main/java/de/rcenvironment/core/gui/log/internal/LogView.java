@@ -8,18 +8,15 @@
 
 package de.rcenvironment.core.gui.log.internal;
 
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.commons.lang3.text.WordUtils;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.MenuManager;
 import org.eclipse.jface.resource.ImageDescriptor;
-import org.eclipse.jface.resource.ImageRegistry;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
@@ -61,6 +58,8 @@ import org.eclipse.ui.part.ViewPart;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.log.SerializableLogEntry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
@@ -78,13 +77,9 @@ public class LogView extends ViewPart {
     /** Identifier used to find the this view within the workbench. */
     public static final String ID = "de.rcenvironment.rce.gui.log.view"; //$NON-NLS-1$
 
-    private static final String KEY_SCROLL_LOCK_DISABLED = "scrollLock_disabled";
-
-    private static final String KEY_SCROLL_LOCK_ENABLED = "scrollLock_enabled";
-
     private static LogView myInstance;
 
-    private static final boolean DEBUG_PRESELECTED = false;
+    private static final int TEXT_AREA_WORD_WRAP_WIDTH = 180;
 
     private static final boolean ERROR_PRESELECTED = true;
 
@@ -107,8 +102,6 @@ public class LogView extends ViewPart {
     private static final int PLATFORM_WIDTH = 250;
 
     private static final int TEXT_WIDTH = PLATFORM_WIDTH;
-
-    private Button myCheckboxDebug;
 
     private Button myCheckboxError;
 
@@ -142,19 +135,6 @@ public class LogView extends ViewPart {
 
     private Action scrollLockAction = null;
 
-    private final ImageRegistry imageRegistry = new ImageRegistry();
-
-    {
-        URL url;
-        ImageDescriptor imageDescriptor;
-        url = LogView.class.getResource("/resources/icons/scrollLock_enabled.gif");
-        imageDescriptor = ImageDescriptor.createFromURL(url);
-        imageRegistry.put(KEY_SCROLL_LOCK_ENABLED, imageDescriptor);
-        url = LogView.class.getResource("/resources/icons/scrollLock_disabled.gif");
-        imageDescriptor = ImageDescriptor.createFromURL(url);
-        imageRegistry.put(KEY_SCROLL_LOCK_DISABLED, imageDescriptor);
-    }
-
     private final LogModel.Listener listener = new LogModel.Listener() {
 
         @Override
@@ -166,7 +146,7 @@ public class LogView extends ViewPart {
                     @Override
                     public void run() {
                         if (!myLogEntryTableViewer.getTable().isDisposed()) {
-                            if (logEntry.getPlatformIdentifer().getAssociatedDisplayName().equals(getPlatform())) {
+                            if (logEntry.getPlatformIdentifer().equals(getPlatform())) {
                                 myLogEntryTableViewer.add(logEntry);
                                 if (!LogView.this.isScrollLocked()) {
                                     myLogEntryTableViewer.reveal(logEntry);
@@ -181,8 +161,8 @@ public class LogView extends ViewPart {
         @Override
         public void handleLogEntryRemoved(final SerializableLogEntry logEntry) {
             /*
-             * Log entries are also removed, because otherwise upon a resort the log entries would
-             * just vanish ... removing them thus implements the principle of least astonishment.
+             * Log entries are also removed, because otherwise upon a resort the log entries would just vanish ... removing them thus
+             * implements the principle of least astonishment.
              */
             myLogEntryTableViewer.getTable().getDisplay().asyncExec(new Runnable() {
 
@@ -261,7 +241,6 @@ public class LogView extends ViewPart {
 
         mySearchTextField.addKeyListener(myListenerAndFilter);
 
-        myCheckboxDebug.addSelectionListener(myListenerAndFilter);
         myCheckboxError.addSelectionListener(myListenerAndFilter);
         myCheckboxInfo.addSelectionListener(myListenerAndFilter);
         myCheckboxWarn.addSelectionListener(myListenerAndFilter);
@@ -313,7 +292,7 @@ public class LogView extends ViewPart {
             public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
                 Set<NodeIdentifier> removedWfHosts) {
 
-                final String[] nodeIds = LogModel.getInstance().getNodeIdsOfLogSources();
+                final List<NodeIdentifier> nodeIds = LogModel.getInstance().updateListOfLogSources();
                 display.asyncExec(new Runnable() {
 
                     @Override
@@ -327,12 +306,11 @@ public class LogView extends ViewPart {
     }
 
     /**
-     * Triggers asynchronous refresh (worker thread calls UI thread) of the view only for the given
-     * platform.
+     * Triggers asynchronous refresh (worker thread calls UI thread) of the view only for the given platform.
      * 
      * @param platform Current selected platform.
      */
-    private void asyncRefresh(final String platform) {
+    private void asyncRefresh(final NodeIdentifier platform) {
         myLogEntryTableViewer.getTable().getDisplay().asyncExec(new Runnable() {
 
             @Override
@@ -355,10 +333,6 @@ public class LogView extends ViewPart {
         });
     }
 
-    public boolean getDebugSelection() {
-        return myCheckboxDebug.getSelection();
-    }
-
     public boolean getErrorSelection() {
         return myCheckboxError.getSelection();
     }
@@ -371,8 +345,8 @@ public class LogView extends ViewPart {
         return myCheckboxWarn.getSelection();
     }
 
-    public String getPlatform() {
-        return myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex());
+    public NodeIdentifier getPlatform() {
+        return (NodeIdentifier) myPlatformCombo.getData(myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex()));
     }
 
     /**
@@ -456,11 +430,6 @@ public class LogView extends ViewPart {
         myCheckboxInfo.setText(Messages.info);
         myCheckboxInfo.setSelection(INFO_PRESELECTED);
 
-        // DEBUG checkbox
-        myCheckboxDebug = new Button(filterComposite, SWT.CHECK);
-        myCheckboxDebug.setText(Messages.debug);
-        myCheckboxDebug.setSelection(DEBUG_PRESELECTED);
-
     }
 
     /**
@@ -476,11 +445,16 @@ public class LogView extends ViewPart {
 
         // platform listing combo box
         myPlatformCombo = new Combo(platformComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
-        myPlatformCombo.setItems(LogModel.getInstance().getNodeIdsOfLogSources());
+        for (NodeIdentifier nodeId : LogModel.getInstance().updateListOfLogSources()) {
+            myPlatformCombo.add(nodeId.getAssociatedDisplayName());
+            myPlatformCombo.setData(nodeId.getAssociatedDisplayName(), nodeId);
+        }
+        
         myPlatformCombo.select(0);
         myPlatformCombo.setLayoutData(new RowData(PLATFORM_WIDTH, SWT.DEFAULT));
 
-        LogModel.getInstance().setCurrentPlatform(myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex()));
+        LogModel.getInstance().setSelectedLogSource((NodeIdentifier) myPlatformCombo.getData(
+            myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex())));
     }
 
     /**
@@ -602,7 +576,7 @@ public class LogView extends ViewPart {
                 }
             }
         });
-        
+
         myLogEntryTableViewer.addSelectionChangedListener(new ISelectionChangedListener() {
 
             @Override
@@ -633,18 +607,28 @@ public class LogView extends ViewPart {
     }
 
     protected void displayLogEntry(final SerializableLogEntry logEntry) {
-        StringBuffer message = new StringBuffer();
+        StringBuffer buffer = new StringBuffer();
         if (logEntry != null) {
-            message.append(logEntry.getMessage().replaceAll(SerializableLogEntry.RCE_SEPARATOR, "\n"));
+            buffer.append(logEntry.getMessage().replaceAll(SerializableLogEntry.RCE_SEPARATOR, "\n"));
             if (logEntry.getException() != null) {
-                message.append("\n\n");
-                StringWriter sw = new StringWriter();
-                PrintWriter pw = new PrintWriter(sw);
-                logEntry.getException().printStackTrace(pw);
-                message.append(sw.toString());
+                if (buffer.length() == 0) {
+                    buffer.append("(no message)");
+                }
+                if (logEntry.getException() != null && !logEntry.getException().isEmpty()) {
+                    // note: there were line breaks added here before, but that doesn't make sense with compacted exceptions anymore
+                    if (buffer.charAt(buffer.length() - 1) == ':') {
+                        // avoid double colons
+                        buffer.append(" ");
+                    } else {
+                        buffer.append(": ");
+                    }
+                    buffer.append(logEntry.getException());
+                }
             }
         }
-        myMessageTextArea.setText(message.toString());
+        String text = buffer.toString();
+        text = WordUtils.wrap(text, TEXT_AREA_WORD_WRAP_WIDTH, "\n", false);
+        myMessageTextArea.setText(text);
         displayedLogEntry = logEntry;
     }
 
@@ -694,21 +678,26 @@ public class LogView extends ViewPart {
     protected ImageDescriptor getScrollLockImageDescriptor() {
         final ImageDescriptor result;
         if (isScrollLocked()) {
-            result = imageRegistry.getDescriptor(KEY_SCROLL_LOCK_ENABLED);
+            result = ImageManager.getInstance().getImageDescriptor(StandardImages.SCROLLOCK_ENABLED);
         } else {
-            result = imageRegistry.getDescriptor(KEY_SCROLL_LOCK_DISABLED);
+            result = ImageManager.getInstance().getImageDescriptor(StandardImages.SCROLLOCK_DISABLED);
         }
         return result;
     }
 
-    private void refreshPlatformCombo(String[] nodeIds) {
-        myPlatformCombo.setItems(nodeIds);
+    private void refreshPlatformCombo(List<NodeIdentifier> nodeIds) {
+        myPlatformCombo.removeAll();
+        for (NodeIdentifier nodeId : nodeIds) {
+            myPlatformCombo.add(nodeId.getAssociatedDisplayName());
+            myPlatformCombo.setData(nodeId.getAssociatedDisplayName(), nodeId);
+        }
+        
         // select platform (previously selected)
-        String currentPlatform = LogModel.getInstance().getCurrentPlatform();
+        NodeIdentifier currentPlatform = LogModel.getInstance().getCurrentLogSource();
         if (currentPlatform != null) {
             String[] items = myPlatformCombo.getItems();
             for (int i = 0; i < items.length; i++) {
-                if (items[i].equals(currentPlatform)) {
+                if (myPlatformCombo.getData(items[i]).equals(currentPlatform)) {
                     myPlatformCombo.select(i);
                     return;
                 }

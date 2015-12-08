@@ -17,6 +17,7 @@ instructions.configure=\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:MaxPermSize=256m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:+HeapDumpOnOutOfMemoryError);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-XX:ErrorFile=rce_error%p.log);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dorg.eclipse.swt.browser.DefaultType=mozilla);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-clean);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:--launcher.XXMaxPermSize);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:256m);\
@@ -41,6 +42,12 @@ requires.2.filter=(&(osgi.os=win32) (osgi.arch=x86))
 requires.2.range=[$version$,$version$]
 requires.2.greedy=true
 
+requires.3.namespace=org.eclipse.equinox.p2.iu
+requires.3.name=de.rcenvironment.products.rce.default.browser.mozilla
+requires.3.filter=(osgi.os=linux)
+requires.3.range=[$version$,$version$]
+requires.3.greedy=true
+
 units.1.id=de.rcenvironment.products.rce.default.maxheap.2gb
 units.1.version=$version$
 units.1.provides.1.namespace=org.eclipse.equinox.p2.iu
@@ -54,3 +61,11 @@ units.2.provides.1.namespace=org.eclipse.equinox.p2.iu
 units.2.provides.1.name=de.rcenvironment.products.rce.default.maxheap.1gb
 units.2.provides.1.version=$version$
 units.2.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Xmx1280m);
+
+units.3.id=de.rcenvironment.products.rce.default.browser.mozilla
+units.3.version=$version$
+units.3.provides.1.namespace=org.eclipse.equinox.p2.iu
+units.3.provides.1.name=de.rcenvironment.products.rce.default.browser.mozilla
+units.3.provides.1.version=$version$
+units.3.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dorg.eclipse.swt.browser.DefaultType=mozilla);
+

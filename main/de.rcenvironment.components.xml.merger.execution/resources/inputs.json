@@ -27,7 +27,8 @@
                     "guiGroup": "XML values",
 					"visibility" : "shown",
 					"defaultValue" : "",
-					"validation" : "required"
+					"validation" : "required",
+					"persistent" : "true"
                 }
             }
         }

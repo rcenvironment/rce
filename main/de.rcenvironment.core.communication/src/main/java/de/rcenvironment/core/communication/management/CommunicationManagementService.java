@@ -9,8 +9,8 @@
 package de.rcenvironment.core.communication.management;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
  * Top-level service that coordinates actions like starting or stopping the whole communication

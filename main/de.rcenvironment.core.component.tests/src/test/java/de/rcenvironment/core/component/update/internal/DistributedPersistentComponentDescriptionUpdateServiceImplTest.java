@@ -18,14 +18,13 @@ import java.util.List;
 
 import org.easymock.EasyMock;
 import org.junit.Test;
-import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
-import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
+import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
 
 /**
@@ -79,12 +78,11 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
     class TestCommunicationService extends CommunicationServiceDefaultStub {
      
         @Override
-        public Object getService(Class<?> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-            throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
             if (nodeId == null) {
-                return new LocalPersistentComponentDescriptionUpdateService();
+                return (T) new LocalComponentDescriptionUpdateService();
             } else if (nodeId.getIdString().equals(NODEID_WITH_UPDATE)) {
-                return new RemotePersistentComponentDescriptionUpdateService();
+                return (T) new RemoteComponentDescriptionUpdateService();
             }
             return null;
         }
@@ -94,7 +92,7 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
      * Dummy implementation of {@link PersistentComponentDescriptionUpdater}.
      * @author Doreen Seider
      */
-    class LocalPersistentComponentDescriptionUpdateService implements PersistentComponentDescriptionUpdateService  {
+    class LocalComponentDescriptionUpdateService implements RemotablePersistentComponentDescriptionUpdateService  {
 
         @Override
         public int getFormatVersionsAffectedByUpdate(List<PersistentComponentDescription> descriptions, Boolean silent) {
@@ -113,7 +111,7 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImplTest {
      * Dummy implementation of {@link PersistentComponentDescriptionUpdater}.
      * @author Doreen Seider
      */
-    class RemotePersistentComponentDescriptionUpdateService implements PersistentComponentDescriptionUpdateService  {
+    class RemoteComponentDescriptionUpdateService implements RemotablePersistentComponentDescriptionUpdateService  {
 
         @Override
         public int getFormatVersionsAffectedByUpdate(List<PersistentComponentDescription> descriptions, Boolean silent) {

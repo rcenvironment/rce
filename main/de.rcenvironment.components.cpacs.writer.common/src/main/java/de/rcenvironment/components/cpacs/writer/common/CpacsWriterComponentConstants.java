@@ -27,6 +27,12 @@ public final class CpacsWriterComponentConstants {
 
     /** Constant. */
     public static final String OUTPUT_NAME_CPACS = "CPACS";
+    
+    /** Constant. */
+    public static final String INPUT_NAME_CPACS = "CPACS";
+    
+    /** Constant. */
+    public static final String CPACS_FILENAME = "cpacs.xml";
 
     // configuration properties
     /** Constant. */

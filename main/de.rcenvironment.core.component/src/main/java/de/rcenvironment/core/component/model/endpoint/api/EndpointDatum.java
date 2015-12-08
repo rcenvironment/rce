@@ -16,7 +16,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  * 
  * @author Doreen Seider
  */
-public interface EndpointDatum extends EndpointDatumRecipient {
+public interface EndpointDatum extends EndpointDatumAddressor, EndpointDatumRecipient {
     
     /**
      * @return {@link TypedDatum} of the {@link EndpointDatum}. It is the payload.
@@ -37,4 +37,9 @@ public interface EndpointDatum extends EndpointDatumRecipient {
      * @return node the associated workflow (controller)
      */
     Long getDataManagementId();
+    
+    /**
+     * @return recipient information of this {@link EndpointDatum}.
+     */
+    EndpointDatumRecipient getEndpointDatumRecipient();
 }

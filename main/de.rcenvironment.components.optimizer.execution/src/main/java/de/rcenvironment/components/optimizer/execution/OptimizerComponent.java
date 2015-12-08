@@ -8,19 +8,22 @@
 package de.rcenvironment.components.optimizer.execution;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
@@ -35,17 +38,21 @@ import de.rcenvironment.components.optimizer.common.execution.OptimizerAlgorithm
 import de.rcenvironment.components.optimizer.execution.algorithms.registry.OptimizerAlgorithmExecutorFactoryRegistry;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
-import de.rcenvironment.core.component.execution.api.ThreadHandler;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
+import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.model.api.LazyDisposal;
 import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
  * Optimizer implementation of {@link Component}.
@@ -54,6 +61,10 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 @LazyDisposal
 public class OptimizerComponent extends AbstractNestedLoopComponent {
+
+    private static final String INPUT_PREFIX_CONSTANT = "f81ec917-2221-4bcd-ac17-1c1cef6e08a5_input:";
+
+    private static final String ITERATION = "Iteration";
 
     private static final double CONST_1E99 = 1E99;
 
@@ -78,15 +89,11 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private Map<String, TypedDatum> outputValues;
 
-    private Map<String, TypedDatum> runtimeViewValues = new HashMap<String, TypedDatum>();
-
     private OptimizerResultSet dataset = null;
 
     private String algorithm;
 
     private OptimizerAlgorithmExecutor optimizer;
-
-    private Thread programThread;
 
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -94,7 +101,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private Map<String, Double> startValues;
 
-    private int iterationCount = 0;
+    private Integer iterationCount = 0;
 
     private Map<String, Double> lowerBoundsStartValues;
 
@@ -106,8 +113,13 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private OptimizerComponentHistoryDataItem historyDataItem;
 
-    private void prepareExternalProgram() throws IOException, ComponentException {
-        LOGGER.debug("Preparing external program.");
+    private Map<String, TypedDatum> runtimeViewValues = new HashMap<String, TypedDatum>();
+
+    private Map<Integer, Map<String, Double>> iterationData;
+
+    private Map<Integer, Map<String, TypedDatum>> dataForwarded = new HashMap<>();
+
+    private void prepareExternalProgram() throws ComponentException {
         Map<String, Map<String, Double>> boundMaps = new HashMap<String, Map<String, Double>>();
         boundMaps.put("lower", lowerBoundsStartValues);
         boundMaps.put("upper", upperBoundsStartValues);
@@ -115,19 +127,21 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             methodConfigurations.get(algorithm.split(COMMA)[0]).getOptimizerPackage(),
             algorithm, methodConfigurations, outputValues, input, componentContext, boundMaps);
         programThreadInterrupted = false;
-        programThread = new Thread(optimizer);
-        programThread.start();
-        if (!programThread.isAlive() || optimizer.isInitFailed()) {
-            throw new ComponentException("External program could not be started. ");
+
+        SharedThreadPool.getInstance().execute(optimizer);
+        if (optimizer.isInitFailed()) {
+            throw new ComponentException("Failed to prepare optimizer", optimizer.getStartFailedException());
         }
-        LOGGER.debug("External program prepared");
     }
 
     private void manageNewInput(Map<String, Double> inputVariables, Map<String, Double> inputVariablesGradients,
         Map<String, Double> constraintVariables, Map<String, Double> constraintVariablesGradients) {
         Set<String> inputValues = componentContext.getInputsWithDatum();
+        Map<String, Double> iteration = iterationData.get(iterationCount);
+        boolean gotRealInput = false;
         for (String e : input) {
             if (inputValues.contains(e)) {
+                gotRealInput = true;
                 if (componentContext.getInputDataType(e) == DataType.Vector) {
                     if (componentContext.readInput(e).getDataType() == DataType.NotAValue) {
                         for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(
@@ -135,62 +149,172 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                             OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
                             convertValue(inputVariables, inputVariablesGradients, constraintVariables, e
                                 + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                                componentContext.readInput(e));
+                                componentContext.readInput(e), iteration);
                         }
                     } else {
                         VectorTD vector = (VectorTD) componentContext.readInput(e);
                         for (int i = 0; i < vector.getRowDimension(); i++) {
                             convertValue(inputVariables, inputVariablesGradients, constraintVariables, e
                                 + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                                vector.getFloatTDOfElement(i));
+                                vector.getFloatTDOfElement(i), iteration);
                         }
                     }
                 } else {
                     convertValue(inputVariables, inputVariablesGradients, constraintVariables, e,
-                        componentContext.readInput(e));
+                        componentContext.readInput(e), iteration);
+                }
+            }
+        }
+        if (gotRealInput) {
+            createNewResultfile(iteration);
+
+            fillRuntimeView(inputVariables, inputVariablesGradients, constraintVariables);
+        }
+    }
+
+    private void createNewResultfile(Map<String, Double> iteration) {
+        iterationData.put(iterationCount, iteration);
+        if (!componentContext.getInputsWithDatum().isEmpty() && historyDataItem != null) {
+            File resultFile;
+            try {
+                List<String> outputs = (new LinkedList<String>(componentContext.getOutputs()));
+                Collections.sort(outputs);
+                resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("OptimizerResultFile*.csv");
+                writeResultToCSVFile(resultFile.getAbsolutePath());
+                FileReferenceTD resultFileReference =
+                    componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
+                        resultFile, "Result.csv");
+
+                historyDataItem.setResultFileReference(resultFileReference.getFileReference());
+            } catch (IOException e) {
+                String errorMessage = "Failed to store result file into the data management"
+                    + "; it is not available in the workflow data browser";
+                String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(LOGGER, errorMessage, e);
+                componentLog.componentError(errorMessage, e, errorId);
+
+            }
+        }
+    }
+
+    private void writeResultToCSVFile(String path) throws IOException {
+
+        if (path != null && !iterationData.isEmpty()) {
+            List<String> orderedOutputs = new LinkedList<>(output);
+            List<String> orderedInputs = new LinkedList<>(input);
+
+            List<String> insert = new LinkedList<String>();
+            List<String> remove = new LinkedList<String>();
+            for (String outputName : orderedOutputs) {
+                if (componentContext.getOutputDataType(outputName) == DataType.Vector) {
+                    remove.add(outputName);
+                    for (int i = 0; i < Integer.parseInt(
+                        componentContext.getOutputMetaDataValue(outputName, OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                        insert.add(outputName + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i);
+                    }
+                }
+            }
+            for (String toRemove : remove) {
+                orderedOutputs.remove(toRemove);
+            }
+            for (String toInsert : insert) {
+                orderedOutputs.add(toInsert);
+            }
+
+            insert = new LinkedList<String>();
+            remove = new LinkedList<String>();
+            for (String inputName : orderedInputs) {
+                if (componentContext.getInputDataType(inputName) == DataType.Vector) {
+                    int vectorSize = 0;
+                    if (inputName.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
+                        String outputName =
+                            inputName.substring(inputName.lastIndexOf(OptimizerComponentConstants.GRADIENT_DELTA) + 1);
+                        vectorSize = Integer.parseInt(
+                            componentContext.getOutputMetaDataValue(outputName, OptimizerComponentConstants.METADATA_VECTOR_SIZE));
+                    } else {
+                        vectorSize = Integer.parseInt(
+                            componentContext.getInputMetaDataValue(inputName, OptimizerComponentConstants.METADATA_VECTOR_SIZE));
+                    }
+
+                    remove.add(inputName);
+                    for (int i = 0; i < vectorSize; i++) {
+                        insert.add(inputName + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i);
+                    }
+                }
+            }
+            for (String toRemove : remove) {
+                orderedInputs.remove(toRemove);
+            }
+            for (String toInsert : insert) {
+                orderedInputs.add(toInsert);
+            }
+
+            Collections.sort(orderedOutputs);
+            Collections.sort(orderedInputs);
+            try (FileWriter fw = new FileWriter(new File(path));
+                CSVPrinter printer = CSVFormat.newFormat(';').withIgnoreSurroundingSpaces()
+                    .withAllowMissingColumnNames().withRecordSeparator("\n").print(fw)) {
+                printer.print(ITERATION);
+                for (String outputName : orderedOutputs) {
+                    printer.print(outputName);
+                }
+                for (String inputName : orderedInputs) {
+                    printer.print(inputName);
+                }
+                printer.println();
+                // Iteration start at 1.
+                for (Integer i = 1; i < iterationData.keySet().size() + 1; i++) {
+                    Map<String, Double> iteration = iterationData.get(i);
+                    printer.print(i);
+                    for (String out : orderedOutputs) {
+                        printer.print(iteration.get(out));
+                    }
+                    for (String in : orderedInputs) {
+                        printer.print(iteration.get(INPUT_PREFIX_CONSTANT + in));
+                    }
+                    printer.println();
+                    printer.flush();
                 }
             }
         }
 
-        fillRuntimeView(inputVariables, inputVariablesGradients, constraintVariables);
     }
 
     private void fillRuntimeView(Map<String, Double> inputVariables, Map<String, Double> inputVariablesGradients,
         Map<String, Double> constraintVariables) {
         for (String key : inputVariables.keySet()) {
-            if (inputVariables.get(key).isInfinite()) {
+            if (inputVariables.get(key).isNaN()) {
                 runtimeViewValues.put(key, typedDatumFactory.createFloat(CONST_1E99));
             } else {
                 runtimeViewValues.put(key, typedDatumFactory.createFloat(inputVariables.get(key)));
             }
         }
         for (String key : inputVariablesGradients.keySet()) {
-            if (inputVariablesGradients.get(key).isInfinite()) {
+            if (inputVariablesGradients.get(key).isNaN()) {
                 runtimeViewValues.put(key, typedDatumFactory.createFloat(CONST_1E99));
             } else {
                 runtimeViewValues.put(key, typedDatumFactory.createFloat(inputVariablesGradients.get(key)));
             }
         }
         for (String key : constraintVariables.keySet()) {
-            if (constraintVariables.get(key).isInfinite()) {
+            if (constraintVariables.get(key).isNaN()) {
                 runtimeViewValues.put(key, typedDatumFactory.createFloat(CONST_1E99));
             } else {
                 runtimeViewValues.put(key, typedDatumFactory.createFloat(constraintVariables.get(key)));
             }
         }
-        runtimeViewValues.put("Iteration", typedDatumFactory.createInteger(iterationCount));
+        runtimeViewValues.put(ITERATION, typedDatumFactory.createInteger(iterationCount));
         dataset = new OptimizerResultSet(runtimeViewValues, componentContext.getExecutionIdentifier());
         resultPublisher.add(dataset);
         runtimeViewValues = new HashMap<String, TypedDatum>();
     }
 
     private void convertValue(Map<String, Double> inputVariables, Map<String, Double> inputVariablesGradients,
-        Map<String, Double> constraintVariables, String variableName, TypedDatum value) {
+        Map<String, Double> constraintVariables, String variableName, TypedDatum value, Map<String, Double> iteration) {
         double inputField;
         if (value.getDataType() != DataType.NotAValue) {
             inputField = ((FloatTD) value).getFloatValue();
         } else {
-            inputField = Double.POSITIVE_INFINITY;
+            inputField = Double.NaN;
         }
         if (variableName.contains(OptimizerComponentConstants.GRADIENT_DELTA)) {
             inputVariablesGradients.put(variableName, inputField);
@@ -211,6 +335,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                 constraintVariables.put(variableName, inputField);
             }
         }
+        iteration.put(INPUT_PREFIX_CONSTANT + variableName, inputField);
     }
 
     private void terminateExecutor() {
@@ -218,14 +343,13 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             optimizer.closeConnection();
             programThreadInterrupted = true;
             optimizer.stop();
-            programThread.interrupt();
             File workDir = optimizer.getWorkingDir();
             optimizer.dispose();
             optimizer = null;
             try {
                 TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(workDir);
             } catch (IOException e) {
-                LOGGER.error("Optimizer: ", e);
+                LOGGER.error("Failed to delete temorary directory", e);
             }
         }
 
@@ -257,7 +381,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         }
         final de.rcenvironment.components.optimizer.common.Dimension dimension =
             new de.rcenvironment.components.optimizer.common.Dimension(
-                "Iteration", //
+                ITERATION, //
                 DataType.Integer.getDisplayName(), //
                 true);
         structure.addDimension(dimension);
@@ -292,7 +416,8 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
     public boolean treatStartAsComponentRun() {
         boolean runInitial = true;
         for (String e : componentContext.getInputs()) {
-            if (e.endsWith(OptimizerComponentConstants.STARTVALUE_SIGNATURE)) {
+            if (e.endsWith(OptimizerComponentConstants.STARTVALUE_SIGNATURE)
+                || e.endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
                 runInitial = false;
             }
         }
@@ -301,11 +426,12 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     @SuppressWarnings("unchecked")
     @Override
-    protected void startHook() throws ComponentException {
+    protected void startNestedComponentSpecific() throws ComponentException {
 
         optimizerResultService = componentContext.getService(OptimizerResultService.class);
         optimizerAlgorithmExecutorFactoryRegistry = componentContext.getService(OptimizerAlgorithmExecutorFactoryRegistry.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
+        iterationData = new TreeMap<>();
         output = new HashSet<String>();
         output.addAll(componentContext.getOutputs());
         List<String> toRemove = new LinkedList<String>();
@@ -314,7 +440,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             if (e.endsWith(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
                 toRemove.add(e);
             }
-            if (e.endsWith(OptimizerComponentConstants.OPTIMIZER_FINISHED_OUTPUT)) {
+            if (e.endsWith(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE)) {
                 toRemove.add(e);
             }
             if (e.endsWith(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME)) {
@@ -323,31 +449,31 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             if (e.endsWith(OptimizerComponentConstants.DERIVATIVES_NEEDED)) {
                 toRemove.add(e);
             }
-            if (e.endsWith(ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
+            if (e.endsWith(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
+                toRemove.add(e);
+            }
+            if (componentContext.isDynamicInput(e)
+                && componentContext.getDynamicInputIdentifier(e).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
                 toRemove.add(e);
             }
         }
         for (String e : toRemove) {
             output.remove(e);
         }
+
         input = new HashSet<String>();
-        input.addAll(componentContext.getInputs());
-        for (String e : input) {
-            if (e.endsWith(OptimizerComponentConstants.STARTVALUE_SIGNATURE)) {
-                toRemove.add(e);
+        for (String inputName : componentContext.getInputs()) {
+            if (componentContext.getDynamicInputIdentifier(inputName).equals(OptimizerComponentConstants.ID_OBJECTIVE)
+                || componentContext.getDynamicInputIdentifier(inputName).equals(OptimizerComponentConstants.ID_CONSTRAINT)
+                || componentContext.getDynamicInputIdentifier(inputName).equals(OptimizerComponentConstants.ID_GRADIENTS)) {
+                input.add(inputName);
             }
-            if (e.endsWith(ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
-                toRemove.add(e);
-            }
-        }
-        for (String e : toRemove) {
-            input.remove(e);
         }
         algorithm = componentContext.getConfigurationValue(OptimizerComponentConstants.ALGORITHMS);
         String configurations = componentContext.getConfigurationValue(
             OptimizerComponentConstants.METHODCONFIGURATIONS);
         if (output.isEmpty() || input.isEmpty()) {
-            throw new ComponentException("Design Variables or Target Functions not defined!");
+            throw new ComponentException("Design variables or target functions not configured");
         }
         try {
             if (configurations != null && !configurations.equals("")) {
@@ -358,24 +484,19 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             } else {
                 methodConfigurations = OptimizerFileLoader.getAllMethodDescriptions("optimizer");
             }
-        } catch (JsonParseException e) {
-            LOGGER.error("Could not parse method file ", e);
-        } catch (JsonMappingException e) {
-            LOGGER.error("Could not map method file ", e);
         } catch (IOException e) {
-            LOGGER.error("Could not load method file ", e);
+            throw new ComponentException("Failed to load or parse method file", e);
         }
         String[] splittedAlgorithms = algorithm.split(",");
         for (String alg : splittedAlgorithms) {
             if (!methodConfigurations.containsKey(alg)) {
-                throw new ComponentException("Algorithm " + alg + " could not be loaded");
+                throw new ComponentException("Failed to load algorithm '" + alg + "'; not found");
             }
         }
         resultPublisher = optimizerResultService.createPublisher(
             componentContext.getExecutionIdentifier(),
             componentContext.getInstanceName(),
             createStructure());
-        LOGGER.debug("Optimizer Component prepared");
         optimizerStarted = false;
         boolean runInitial = treatStartAsComponentRun();
         if (runInitial) {
@@ -384,12 +505,14 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
     }
 
     @Override
-    protected void processInputsHook() throws ComponentException {
+    protected void processInputsNestedComponentSpecific() throws ComponentException {
         initializeNewHistoryDataItem();
         if (!optimizerStarted) {
             firstRun();
         } else {
             if (!initFailed) {
+                storeDataForwarded();
+
                 Map<String, Double> inputVariables = new HashMap<String, Double>();
                 Map<String, Double> constraintVariables = new HashMap<String, Double>();
                 Map<String, Double> inputVariablesGradients = new HashMap<String, Double>();
@@ -408,18 +531,34 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                 if (optimizer != null) {
                     terminateExecutor();
                 }
-                throw new ComponentException("Initialization for optimizer failed");
+                throw new ComponentException("Failed to initialize optimizer");
             }
-            if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
+            if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))
+                && optimizer != null) {
                 optimizer.writeHistoryDataItem(historyDataItem);
                 writeFinalHistoryDataItem();
             }
         }
+
         iterationCount++;
 
     }
 
+    private void storeDataForwarded() {
+        Integer iteration = iterationCount;
+        for (String inputName : componentContext.getInputsWithDatum()) {
+            if (componentContext.isDynamicInput(inputName)
+                && componentContext.getDynamicInputIdentifier(inputName).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
+                if (!dataForwarded.containsKey(iteration)) {
+                    dataForwarded.put(iterationCount, new HashMap<String, TypedDatum>());
+                }
+                dataForwarded.get(iteration).put(inputName, componentContext.readInput(inputName));
+            }
+        }
+    }
+
     private void firstRun() throws ComponentException {
+        final String errorMessage = "Failed to start optimizer";
         outputValues = new HashMap<String, TypedDatum>();
         startValues = new HashMap<String, Double>();
         lowerBoundsStartValues = new HashMap<String, Double>();
@@ -516,60 +655,66 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         for (String e : startValues.keySet()) {
             outputValues.put(e, typedDatumFactory.createFloat(startValues.get(e)));
         }
-        try {
-            prepareExternalProgram();
-        } catch (IOException e) {
-            LOGGER.error("Error preparing external program", e);
-        }
+        prepareExternalProgram();
         if (optimizer != null && !optimizer.isInitFailed() && !(optimizer.getStartFailed().get())) {
             try {
                 if (optimizer.initializationLoop()) {
                     optimizer.readOutputFileFromExternalProgram(outputValues);
-                    sendValuesHook();
+                    sendValuesNestedComponentSpecific();
                 } else {
-                    sendFinalValues();
-                    componentContext.closeAllOutputs();
+                    if (!optimizer.getStartFailed().get()) {
+                        sendFinalValues();
+                        componentContext.closeAllOutputs();
+                    } else {
+                        throw new ComponentException("Could not start optimizer. Maybe binaries are missing or not compatible with system.",
+                            optimizer.getStartFailedException());
+                    }
                 }
                 optimizerStarted = true;
-            } catch (IOException e1) {
+            } catch (IOException e) {
+                componentContext.getLog().componentError("Failed to initialize optimizer: " + e.getMessage());
+                LOGGER.error("Failed to initialize optimizer", e);
                 initFailed = true;
             }
         } else {
-            throw new ComponentException("Could not start optimizer.");
+            throw new ComponentException(errorMessage);
         }
     }
 
     @Override
-    protected void sendValuesHook() {
-        if (optimizerStarted && !optimizer.isStopped()) {
+    protected void sendValuesNestedComponentSpecific() {
+        if (optimizerStarted && optimizer != null && !optimizer.isStopped()) {
+            Map<String, Double> iteration = new HashMap<>();
             for (String e : output) {
-                componentContext.writeOutput(e, outputValues.get(e));
+                writeOutput(e, outputValues.get(e));
                 if (componentContext.getOutputDataType(e) == DataType.Vector) {
                     for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(e,
                         OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
-                        runtimeViewValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                        runtimeViewValues.put("Output: " + e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
                             ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i));
+                        iteration.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                            ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i).getFloatValue());
                     }
                 } else {
-                    runtimeViewValues.put(e, outputValues.get(e));
+                    runtimeViewValues.put("Output: " + e, outputValues.get(e));
+                    iteration.put(e, ((FloatTD) outputValues.get(e)).getFloatValue());
                 }
             }
-            componentContext.writeOutput(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME,
+            writeOutput(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME,
                 typedDatumFactory.createInteger(iterationCount));
-            componentContext.writeOutput(OptimizerComponentConstants.OPTIMIZER_FINISHED_OUTPUT, typedDatumFactory.createBoolean(false));
             if (optimizer != null) {
-                componentContext.writeOutput(OptimizerComponentConstants.DERIVATIVES_NEEDED,
+                writeOutput(OptimizerComponentConstants.DERIVATIVES_NEEDED,
                     typedDatumFactory.createBoolean(optimizer.getDerivativedNeeded()));
             }
+            iterationData.put(iterationCount, iteration);
         }
     }
 
     @Override
-    protected void resetInnerLoopHook() {
+    protected void resetNestedComponentSpecific() {
         programThreadInterrupted = false;
         outputValues.clear();
         runtimeViewValues.clear();
-        programThread = null;
         startValues = new HashMap<String, Double>();
         lowerBoundsStartValues = new HashMap<String, Double>();
         upperBoundsStartValues = new HashMap<String, Double>();
@@ -578,48 +723,59 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
     }
 
     @Override
-    protected void finishLoopHook() {
+    protected void finishLoopNestedComponentSpecific() {
         writeFinalHistoryDataItem();
     }
 
     @Override
-    protected String getLoopFinishedEndpointName() {
-        return ComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE;
-    }
-
-    @Override
-    protected boolean isFinished() {
+    protected boolean isDoneNestedComponentSpecific() {
         return optimizerStarted && (programThreadInterrupted || optimizer == null || optimizer.isStopped());
     }
 
     @Override
     protected void sendFinalValues() throws ComponentException {
         if (optimizer != null) {
-            Map<String, Double> optimum = optimizer.getOptimalDesignVariables();
-            if (optimum != null && !optimum.isEmpty()) {
+            optimizer.setIterationData(iterationData);
+            int optimalRunNumber = optimizer.getOptimalRunNumber();
+            Map<String, Double> optimum = iterationData.get(optimalRunNumber);
+            if (optimalRunNumber != Integer.MIN_VALUE && optimum != null) {
                 for (String e : output) {
                     if (componentContext.getOutputDataType(e) == DataType.Vector) {
-                        VectorTD optimumVector = typedDatumFactory.createVector(Integer.parseInt(componentContext.getOutputMetaDataValue(e,
-                            OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
+                        VectorTD optimumVector =
+                            typedDatumFactory.createVector(Integer.parseInt(componentContext.getOutputMetaDataValue(e,
+                                OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
                         for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(e,
                             OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
                             runtimeViewValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
                                 ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i));
                             optimumVector.setFloatTDForElement(((VectorTD) outputValues.get(e)).getFloatTDOfElement(i), i);
                         }
-                        componentContext.writeOutput(e + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX, optimumVector);
+                        writeOutput(e + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX, optimumVector);
                     } else {
-                        componentContext.writeOutput(e + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
+                        writeOutput(e + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
                             typedDatumFactory.createFloat(optimum.get(e)));
                     }
                 }
-                componentContext.writeOutput(OptimizerComponentConstants.OPTIMIZER_FINISHED_OUTPUT, typedDatumFactory.createBoolean(true));
+                sendFinalValuesForwarded(optimalRunNumber);
             } else {
-                componentContext.printConsoleLine("Could not read optimal design variables", Type.STDERR);
-                throw new ComponentException("Could not read optimal design variables");
+                throw new ComponentException("Failed to read optimal design variables");
             }
         }
         terminateExecutor();
+    }
+
+    private void sendFinalValuesForwarded(Integer optimalRunNumber) {
+        if (optimalRunNumber == null || optimalRunNumber == Integer.MIN_VALUE) {
+            componentContext.getLog().componentError("Internal error: iteration of optimal design variable cannot be determined");
+            // should not happen
+            return;
+        }
+        if (!dataForwarded.isEmpty()) {
+            for (String inputName : dataForwarded.get(optimalRunNumber).keySet()) {
+                writeOutput(inputName + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
+                    dataForwarded.get(optimalRunNumber).get(inputName));
+            }
+        }
     }
 
     private void initializeNewHistoryDataItem() {
@@ -632,28 +788,6 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             componentContext.writeFinalHistoryDataItem(historyDataItem);
         }
-    }
-
-    @Override
-    protected void sendReset() {
-        for (String outputs : output) {
-            componentContext.resetOutput(outputs);
-        }
-    }
-
-    @Override
-    public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
-        super.onProcessInputsInterrupted(executingThreadHandler);
-        if (optimizer != null) {
-            optimizer.dispose();
-        }
-        terminateExecutor();
-    }
-
-    @Override
-    public void onStartInterrupted(ThreadHandler executingThreadHandler) {
-        super.onStartInterrupted(executingThreadHandler);
-        terminateExecutor();
     }
 
     @Override

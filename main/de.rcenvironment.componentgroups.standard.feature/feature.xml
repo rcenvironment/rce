@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.componentgroups.standard.feature"
       label="RCE Standard Components Feature"
-      version="6.3.0.qualifier"
+      version="7.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -196,6 +196,28 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.database.gui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.database.execution"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.database.common"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
    <plugin
          id="de.rcenvironment.components.doe.gui"
          download-size="0"
@@ -279,19 +301,22 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
    <plugin
          id="de.rcenvironment.components.script.execution.python"
          download-size="0"
          install-size="0"
          version="0.0.0"
-         fragment="true"
+
          unpack="false"/>
-  <plugin
+
+   <plugin
          id="de.rcenvironment.components.script.execution.python.fragment"
          download-size="0"
          install-size="0"
          version="0.0.0"
-         unpack="false"/>
+         fragment="true"
+         unpack="true"/>
 
    <plugin
          id="de.rcenvironment.components.script.execution.jython"
@@ -299,6 +324,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
    <plugin
          id="de.rcenvironment.components.switch.common"
          download-size="0"
@@ -319,6 +345,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
+
    <plugin
          id="de.rcenvironment.components.optimizer.gui"
          download-size="0"
@@ -396,6 +423,76 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          fragment="true"
+         unpack="false"/>
+  <plugin
+         id="de.rcenvironment.components.optimizer.generic.execution"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         fragment="true"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.xml.loader.common"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.xml.loader.execution"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.xml.loader.gui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.xml.merger.common"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.xml.merger.execution"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.xml.merger.gui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.evaluationmemory.common"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.evaluationmemory.execution"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.components.evaluationmemory.gui"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
          unpack="false"/>
 
 </feature>

@@ -12,6 +12,7 @@ import java.util.List;
 
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.communication.spi.CallbackObject;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Objects that implement this interface can be registered as subscribers with the notification service. The described method is called when
@@ -29,17 +30,9 @@ public interface NotificationSubscriber extends CallbackObject {
      * Called by the notification service to transfer a batch of notifications. Usually implemented by the RCE framework.
      * 
      * @param notifications the list of {@link Notification}s.
+     * @throws RemoteOperationException standard remote operation exception
      */
     @CallbackMethod
-    void receiveBatchedNotifications(List<Notification> notifications);
+    void receiveBatchedNotifications(List<Notification> notifications) throws RemoteOperationException;
 
-    /**
-     * Actual handler method for a single {@link Notification}. Usually implemented by the concrete subscriber code.
-     * 
-     * @param notification the {@link Notification} to process
-     */
-    @CallbackMethod
-    @Deprecated
-    // TODO 5.0.0: remove completely? - misc_ro
-    void receiveNotification(Notification notification);
 }

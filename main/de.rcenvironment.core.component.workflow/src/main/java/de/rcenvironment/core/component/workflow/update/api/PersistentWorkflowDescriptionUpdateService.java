@@ -12,8 +12,6 @@ import java.io.IOException;
 
 import org.codehaus.jackson.JsonParseException;
 
-import de.rcenvironment.core.authentication.User;
-
 
 /**
  * Is responsible for persistent workflow description updates. 
@@ -41,12 +39,11 @@ public interface PersistentWorkflowDescriptionUpdateService {
     /**
      * Creates a {@link PersistentWorkflowDescription} object.
      * @param persistentWorkflowDescription persistent workflow description in JSON format
-     * @param user user representation
      * @return {@link PersistentWorkflowDescription} object created on base of given JSON string
      * @throws JsonParseException if given description is corrupt
      * @throws IOException if given description is corrupt
      */
-    PersistentWorkflowDescription createPersistentWorkflowDescription(String persistentWorkflowDescription, User user)
+    PersistentWorkflowDescription createPersistentWorkflowDescription(String persistentWorkflowDescription)
         throws JsonParseException, IOException;
 
 }

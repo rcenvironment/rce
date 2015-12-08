@@ -37,9 +37,13 @@ public class OptimizerComponentHistoryDataItem extends CommonComponentHistoryDat
 
     private static final String RESTART_FILE_REFERENCE = "RestartFile";
 
+    private static final String RESULT_FILE_REFERENCE = "ResultFile";
+
     private String inputFileReference;
 
     private String restartFileReference;
+
+    private String resultFileReference;
 
     @Override
     public String getFormatVersion() {
@@ -64,23 +68,8 @@ public class OptimizerComponentHistoryDataItem extends CommonComponentHistoryDat
         }
         ((ObjectNode) rootNode).put(INPUT_FILE_REFERENCE, inputFileReference);
         ((ObjectNode) rootNode).put(RESTART_FILE_REFERENCE, restartFileReference);
+        ((ObjectNode) rootNode).put(RESULT_FILE_REFERENCE, resultFileReference);
         return rootNode.toString();
-    }
-
-    public String getRestartFileReference() {
-        return restartFileReference;
-    }
-
-    public void setRestartFileReference(String restartFileReference) {
-        this.restartFileReference = restartFileReference;
-    }
-
-    public void setInputFileReference(String inputFileReference) {
-        this.inputFileReference = inputFileReference;
-    }
-
-    public String getInputFileReference() {
-        return inputFileReference;
     }
 
     /**
@@ -97,6 +86,8 @@ public class OptimizerComponentHistoryDataItem extends CommonComponentHistoryDat
         historyDataItem.inputFileReference = OptimizerComponentHistoryDataItem.readFileReferenceFromString(INPUT_FILE_REFERENCE,
             historyData, historyDataItem);
         historyDataItem.restartFileReference = OptimizerComponentHistoryDataItem.readFileReferenceFromString(RESTART_FILE_REFERENCE,
+            historyData, historyDataItem);
+        historyDataItem.resultFileReference = OptimizerComponentHistoryDataItem.readFileReferenceFromString(RESULT_FILE_REFERENCE,
             historyData, historyDataItem);
         return historyDataItem;
     }
@@ -115,5 +106,29 @@ public class OptimizerComponentHistoryDataItem extends CommonComponentHistoryDat
             return ((ObjectNode) rootNode).get(referenceName).getTextValue();
         }
         return null;
+    }
+
+    public void setResultFileReference(String fileReference) {
+        resultFileReference = fileReference;
+    }
+
+    public String getResultFileReference() {
+        return resultFileReference;
+    }
+
+    public String getRestartFileReference() {
+        return restartFileReference;
+    }
+
+    public void setRestartFileReference(String restartFileReference) {
+        this.restartFileReference = restartFileReference;
+    }
+
+    public void setInputFileReference(String inputFileReference) {
+        this.inputFileReference = inputFileReference;
+    }
+
+    public String getInputFileReference() {
+        return inputFileReference;
     }
 }

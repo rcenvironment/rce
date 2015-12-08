@@ -1,0 +1,16 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE SSH Tool Access Tests
+Bundle-SymbolicName: de.rcenvironment.core.component.sshremoteaccess.tests
+Bundle-Version: 7.0.0.qualifier
+Bundle-Vendor: DLR
+Fragment-Host: de.rcenvironment.core.component.sshremoteaccess;bundle-version="7.0.0"
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Import-Package: org.apache.sshd;version="0.14.0",
+ org.apache.sshd.common;version="0.14.0",
+ org.apache.sshd.server;version="0.14.0",
+ org.apache.sshd.server.auth;version="0.14.0",
+ org.apache.sshd.server.keyprovider;version="0.14.0",
+ org.apache.sshd.server.session;version="0.14.0",
+ org.easymock;version="5.0.0",
+ org.junit;version="4.8.2"

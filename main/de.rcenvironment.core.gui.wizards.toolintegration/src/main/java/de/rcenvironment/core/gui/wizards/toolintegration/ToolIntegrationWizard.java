@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
@@ -28,13 +29,14 @@ import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.TrayDialog;
 import org.eclipse.jface.wizard.IWizardPage;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.swt.SWT;
+import org.eclipse.swt.widgets.MessageBox;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.integration.IntegrationWatcher;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
@@ -45,6 +47,7 @@ import de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPa
 import de.rcenvironment.core.gui.wizards.toolintegration.api.IntegrationWizardPageContributorRegistry;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -56,6 +59,12 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 public class ToolIntegrationWizard extends Wizard {
 
     protected static ToolIntegrationService integrationService;
+
+    private static final int MINIMUM_HEIGHT = 250;
+
+    private static final int MINIMUM_WIDTH = 500;
+
+    private static final Log LOGGER = LogFactory.getLog(ToolIntegrationWizard.class);
 
     protected ToolIntegrationContextRegistry integrationContextRegistry;
 
@@ -88,6 +97,10 @@ public class ToolIntegrationWizard extends Wizard {
     private boolean configOK;
 
     private Map<String, Object> previousConfiguration;
+
+    private File toolDocuTarget;
+
+    private File iconTarget;
 
     /**
      * Constructor for Wizard.
@@ -146,6 +159,8 @@ public class ToolIntegrationWizard extends Wizard {
         addPage(propertyPage);
         addPage(toolPage);
         addPage(scriptPage);
+
+        this.getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
 
         IntegrationWizardPageContributorRegistry contributorRegistry =
             serviceRegistryAccess.getService(IntegrationWizardPageContributorRegistry.class);
@@ -239,47 +254,71 @@ public class ToolIntegrationWizard extends Wizard {
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
                     if (checkConfiguration(configurationMap)) {
-                        IntegrationWatcher.setWatcherActive(false);
                         determineIntegrationContext();
+                        integrationService.setFileWatcherActive(false);
                         configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, true);
-                        if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) {
-                            File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
-                            if (!icon.isAbsolute()) {
-                                File toolConfigFile =
-                                    new File(integrationContext.getRootPathToToolIntegrationDirectory(),
-                                        integrationContext.getNameOfToolIntegrationDirectory()
-                                            + File.separator
-                                            + integrationContext.getToolDirectoryPrefix()
-                                            + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
-                                icon = new File(toolConfigFile, icon.getName());
-                            }
-                            if (icon.exists() && icon.isFile()) {
-                                configurationMap.put(ToolIntegrationConstants.KEY_TOOL_ICON_PATH, icon.getAbsolutePath());
-                            }
-                        }
+                        handleIcon();
 
                         Boolean publish = (Boolean) configurationMap.get(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
-                        String toolPath = integrationContext.getRootPathToToolIntegrationDirectory() + File.separator
-                            + integrationContext.getNameOfToolIntegrationDirectory() + File.separator
-                            + integrationContext.getToolDirectoryPrefix()
-                            + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+                        File toolPath = new File(new File(new File(integrationContext.getRootPathToToolIntegrationDirectory(),
+                            integrationContext.getNameOfToolIntegrationDirectory()), integrationContext.getToolDirectoryPrefix()),
+                            (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+                        if (toolDocuTarget != null && configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH) != null
+                            && !((String) configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH)).isEmpty()) {
+                            try {
+                                FileUtils.copyDirectory(toolDocuTarget, new File(toolPath, ToolIntegrationConstants.DOCS_DIR_NAME));
+                                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(toolDocuTarget);
+                            } catch (IOException e) {
+                                LOGGER.error("Could not copy icon from temporary tool directory.", e);
+                            }
+                        }
                         if (publish != null && publish) {
-                            integrationService.addPublishedTool(toolPath);
+                            integrationService.addPublishedTool(toolPath.getAbsolutePath());
                             configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
                         } else {
-                            integrationService.unpublishTool(toolPath);
+                            integrationService.unpublishTool(toolPath.getAbsolutePath());
                         }
                         integrationService.savePublishedComponents(integrationContext);
                         integrationService.updatePublishedComponents(integrationContext);
 
-                        integrationService.writeToolIntegrationFile(configurationMap, integrationContext);
+                        try {
+                            integrationService.writeToolIntegrationFile(configurationMap, integrationContext);
+                        } catch (IOException e) {
+                            return Status.CANCEL_STATUS;
+                        }
                         if (!integrationService.isToolIntegrated(configurationMap, integrationContext)) {
                             integrationService.integrateTool(configurationMap, integrationContext);
                         }
-                        IntegrationWatcher.setWatcherActive(true);
+                        integrationService.setFileWatcherActive(true);
+                        integrationService.registerRecursive((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME),
+                            integrationContext);
+
                         return Status.OK_STATUS;
                     }
                     return Status.CANCEL_STATUS;
+                }
+
+                private void handleIcon() {
+                    if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH) != null) {
+                        File icon = new File((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH));
+                        if (!icon.isAbsolute() && iconTarget != null) {
+                            File toolConfigFile =
+                                new File(integrationContext.getRootPathToToolIntegrationDirectory(),
+                                    integrationContext.getNameOfToolIntegrationDirectory()
+                                        + File.separator
+                                        + integrationContext.getToolDirectoryPrefix()
+                                        + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+                            icon = new File(toolConfigFile, icon.getName());
+                            try {
+                                FileUtils.copyFile(iconTarget, icon);
+                                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(iconTarget);
+                                icon = new File(icon.getName());
+                            } catch (IOException e) {
+                                LOGGER.error("Could not copy icon from temporary tool directory.", e);
+                            }
+                        }
+
+                    }
                 }
 
             };
@@ -330,7 +369,34 @@ public class ToolIntegrationWizard extends Wizard {
      */
     public void performSaveAs(String folderPath) {
         determineIntegrationContext();
-        integrationService.writeToolIntegrationFileToSpecifiedFolder(folderPath, configurationMap, integrationContext);
+        File toolConfigFile =
+            new File(folderPath, integrationContext.getNameOfToolIntegrationDirectory() + File.separator
+                + integrationContext.getToolDirectoryPrefix() + configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
+        try {
+            integrationService.writeToolIntegrationFileToSpecifiedFolder(folderPath, configurationMap, integrationContext);
+            MessageBox infoDialog = new MessageBox(getShell(), SWT.ICON_INFORMATION | SWT.OK);
+            if (toolConfigFile.exists()) {
+                infoDialog.setText("Tool saved");
+                infoDialog
+                    .setMessage(StringUtils.format("Successfully saved tool: %s\nLocation: " + toolConfigFile.getAbsolutePath(),
+                        configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+            } else {
+                infoDialog.setText("Saving failed");
+                infoDialog
+                    .setMessage(StringUtils.format("Could not save tool: %s\nLocation tried: " + toolConfigFile.getAbsolutePath(),
+                        configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+            }
+            infoDialog.open();
+        } catch (IOException e) {
+            MessageBox errorDialog = new MessageBox(getShell(), SWT.ICON_ERROR | SWT.OK);
+            errorDialog.setText("Saving failed");
+            errorDialog.setMessage(
+                StringUtils.format(
+                    "Failed to save tool configuration to: " + toolConfigFile.getAbsolutePath() + "\nCause: " + e.getMessage(),
+                    configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+            errorDialog.open();
+
+        }
     }
 
     protected void bindIntegrationService(ToolIntegrationService newIntegrationService) {
@@ -352,7 +418,6 @@ public class ToolIntegrationWizard extends Wizard {
         for (IWizardPage page : this.getPages()) {
             ((ToolIntegrationWizardPage) page).setConfigMap(configurationMap);
         }
-
     }
 
     /**
@@ -416,23 +481,69 @@ public class ToolIntegrationWizard extends Wizard {
      */
 
     public void removeOldIntegration() {
+        integrationService.setFileWatcherActive(false);
         String previousToolName = "";
         String toolName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+        File previousToolDir = null;
         if (previousConfiguration != null) {
             previousToolName = (String) previousConfiguration.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+            previousToolDir = new File(new File(integrationContext.getRootPathToToolIntegrationDirectory(),
+                integrationContext.getNameOfToolIntegrationDirectory()), previousToolName);
         } else {
             previousToolName = toolName;
         }
+        if (previousToolDir != null) {
+            storeIconAndDocuInTempDir(previousToolDir);
+        }
+        integrationService.unregisterIntegration(previousToolName, integrationContext);
         integrationService.removeTool(previousToolName, integrationContext);
         if (!previousToolName.equals(toolName)) {
-            File delete = new File(new File(integrationContext.getRootPathToToolIntegrationDirectory(),
-                integrationContext.getNameOfToolIntegrationDirectory()), previousToolName);
+
+            File delete = previousToolDir;
             try {
                 FileUtils.forceDelete(delete);
             } catch (IOException e) {
                 LogFactory.getLog(ToolIntegrationWizard.class).error(e);
             }
+        } else {
+            if (configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH) == null
+                || ((String) configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH)).isEmpty()) {
+                File docDir = new File(previousToolDir, ToolIntegrationConstants.DOCS_DIR_NAME);
+                if (docDir.listFiles() != null) {
+                    for (File f : docDir.listFiles()) {
+                        try {
+                            FileUtils.forceDelete(f);
+                        } catch (IOException e) {
+                            LOGGER.error("Could not delete file in tool docs directory: ", e);
+                        }
+                    }
+                }
+            }
         }
+        integrationService.setFileWatcherActive(true);
+    }
+
+    private void storeIconAndDocuInTempDir(File previousToolDir) {
+        try {
+            File tempToolDir = TempFileServiceAccess.getInstance().createManagedTempDir();
+            toolDocuTarget = null;
+            if (new File(previousToolDir, ToolIntegrationConstants.DOCS_DIR_NAME).exists()) {
+                toolDocuTarget = new File(tempToolDir, ToolIntegrationConstants.DOCS_DIR_NAME);
+                FileUtils.copyDirectory(new File(previousToolDir, ToolIntegrationConstants.DOCS_DIR_NAME), toolDocuTarget);
+            }
+
+            iconTarget = null;
+            String iconPath = (String) previousConfiguration.get(ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
+            if (iconPath != null && !iconPath.isEmpty() && !new File(iconPath).isAbsolute()) {
+                if (new File(previousToolDir, iconPath).exists()) {
+                    iconTarget = new File(tempToolDir, iconPath);
+                    FileUtils.copyFile(new File(previousToolDir, iconPath), iconTarget);
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.warn("Could not create temporiary tool dir.", e);
+        }
+
     }
 
     public String getIntegrationType() {

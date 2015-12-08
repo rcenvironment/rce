@@ -37,7 +37,7 @@ public final class ConsoleRowUtils {
      * waitForTermination() method of the executor, the waitForTermination() from the watcher must
      * be called.
      * 
-     * @param componentContext componentContext {@link ComponentContext} of the calling component
+     * @param componentLog {@link ComponentLog} instance of the calling component
      * @param inputStream contains text to send
      * @param consoleType stderr or stdour
      * @param logFile optional file to log to as well, <code>null</code> for no file logging
@@ -45,7 +45,7 @@ public final class ConsoleRowUtils {
      *        true; otherwise overwrite file
      * @return the created {@link TextStreamWatcher} for calling the waitForTermination method
      */
-    public static TextStreamWatcher logToWorkflowConsole(final ComponentContext componentContext, final InputStream inputStream,
+    public static TextStreamWatcher logToWorkflowConsole(final ComponentLog componentLog, final InputStream inputStream,
         final Type consoleType, final File logFile, boolean append) {
 
         
@@ -61,7 +61,16 @@ public final class ConsoleRowUtils {
 
             @Override
             public void addOutput(String line) {
-                componentContext.printConsoleLine(line, consoleType);
+                switch (consoleType) {
+                case TOOL_OUT:
+                    componentLog.toolStdout(line);
+                    break;
+                case TOOL_ERROR:
+                    componentLog.toolStderr(line);
+                    break;
+                default:
+                    throw new IllegalArgumentException("Console row type not supported: " + consoleType);
+                }
             }
 
             @Override

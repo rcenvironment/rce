@@ -10,6 +10,7 @@ package de.rcenvironment.core.component.testutils;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
 /**
@@ -19,15 +20,13 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  */
 public class EndpointDatumDefaultStub implements EndpointDatum {
 
-    private static final long serialVersionUID = 9197713563968264677L;
-
     @Override
     public String getInputName() {
         return null;
     }
 
     @Override
-    public String getInputComponentExecutionIdentifier() {
+    public String getInputsComponentExecutionIdentifier() {
         return null;
     }
 
@@ -38,6 +37,11 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
 
     @Override
     public TypedDatum getValue() {
+        return null;
+    }
+    
+    @Override
+    public String getOutputsComponentExecutionIdentifier() {
         return null;
     }
 
@@ -53,6 +57,21 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
 
     @Override
     public Long getDataManagementId() {
+        return null;
+    }
+
+    @Override
+    public String getInputsComponentInstanceName() {
+        return null;
+    }
+
+    @Override
+    public NodeIdentifier getOutputsNodeId() {
+        return null;
+    }
+
+    @Override
+    public EndpointDatumRecipient getEndpointDatumRecipient() {
         return null;
     }
 

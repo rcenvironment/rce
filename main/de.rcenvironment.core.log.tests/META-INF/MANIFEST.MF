@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Log Tests
 Bundle-SymbolicName: de.rcenvironment.core.log.tests
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.log
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing

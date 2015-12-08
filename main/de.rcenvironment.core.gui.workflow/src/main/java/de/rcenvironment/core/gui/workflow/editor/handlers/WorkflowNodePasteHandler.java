@@ -37,6 +37,7 @@ import org.eclipse.gef.EditPart;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentSize;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDescription;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
@@ -51,8 +52,8 @@ import de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 
 /**
- * Pasting {@link WorkflowNode}s, {@link Connection}s, {@link EndpointDescription}s and {@link WorkflowLabel}s to the {@link WorkflowEditor}
- * .
+ * Pasting {@link WorkflowNode}s, {@link Connection}s, {@link EndpointDescription}s and
+ * {@link WorkflowLabel}s to the {@link WorkflowEditor} .
  * 
  * 
  * @author Doreen Seider
@@ -99,12 +100,12 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
 
     @Override
     void edit() {
-        
+
         nameMapping.clear();
         nodeConstraintPositionCounter = 0;
         hasConnections = false;
         labelConstraintPositionCounter = 0;
-        
+
         List<WorkflowNode> workflowNodesToCreate = new LinkedList<>();
         List<WorkflowNodePart> pastedWorkflowNodeParts = new LinkedList<>();
         List<WorkflowLabel> workflowLabelsToCreate = new LinkedList<>();
@@ -112,7 +113,8 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         List<Rectangle> nodeConstraintsToCreate = new LinkedList<>();
         List<Rectangle> labelConstraintsToCreate = new LinkedList<>();
 
-        // determines whether the pasting was triggered via hotkey ctrl+v or via mouse (i.e. editor's context menu)
+        // determines whether the pasting was triggered via hotkey ctrl+v or via mouse (i.e.
+        // editor's context menu)
         if (viewer.getContextMenu().isDirty()) {
             pasteTriggeredByMouse = false;
         } else {
@@ -192,7 +194,8 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                     nameMapping.put(node.getIdentifier(), newNode.getIdentifier());
                     nodeMapping.put(node, newNode);
 
-                    // mapping to store new nodes determined location without altering the node itself
+                    // mapping to store new nodes determined location without altering the node
+                    // itself
                     newNodeAndLocationMapping.put(newNode, nodeConstraintsToCreate.get(nodeConstraintPositionCounter));
 
                     nodeConstraintPositionCounter++;
@@ -344,10 +347,10 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
 
     private void addNewLabelPosition(List<Rectangle> labelConstraintsToCreate, WorkflowLabel label) {
         if (!viewer.getContextMenu().isDirty()) {
-            findFreeSpotForLabel(editor.getMouseX(), editor.getMouseY(), label.getSize(),
+            findFreeSpotForLabel(editor.getMouseX(), editor.getMouseY(), new Dimension(label.getWidth(), label.getHeight()),
                 labelConstraintsToCreate);
         } else if (viewer.getContextMenu().isDirty()) {
-            findFreeSpotForLabel(label.getX(), label.getY(), label.getSize(), labelConstraintsToCreate);
+            findFreeSpotForLabel(label.getX(), label.getY(), new Dimension(label.getWidth(), label.getHeight()), labelConstraintsToCreate);
         }
     }
 
@@ -413,7 +416,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
             if (WorkflowDescriptionPersistenceHandler.NODES.equals(fieldname)) {
                 jp.nextToken();
                 // parsing content to WorkflowNode
-                parseNodes = descriptionHandler.parseNodes(jp, null);
+                parseNodes = descriptionHandler.parseNodes(jp);
                 for (String key : parseNodes.keySet()) {
                     // creating WorkflowNodePart
                     EditPart createEditPart = factory.createEditPart(null, parseNodes.get(key));
@@ -515,7 +518,8 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     }
 
     /**
-     * Copies {@link WorkflowLabel} but doesn't clone it. The identifier needs to remain unique for every label.
+     * Copies {@link WorkflowLabel} but doesn't clone it. The identifier needs to remain unique for
+     * every label.
      * 
      * @param origin {@link WorkflowLabel} to copy.
      * @return copied {@link WorkflowLabel}
@@ -525,7 +529,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         copied.setAlpha(origin.getAlphaDisplay());
         copied.setColorBackground(origin.getColorBackground());
         copied.setColorText(origin.getColorText());
-        copied.setSize(origin.getSize());
+        copied.setSize(origin.getWidth(), origin.getHeight());
         copied.setAlignmentType(origin.getAlignmentType());
         copied.setHasBorder(origin.hasBorder());
         copied.setTextSize(origin.getTextSize());
@@ -535,29 +539,35 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     }
 
     /**
-     * Copies {@link ComponentDescription} but doesn't clone it. It is needed that identifiers of endpoints are not part of the new
-     * {@link ComponentDescription}. It it would, the endpoints of the copied {@link ComponentDescription} will be related to existing
-     * connections as well.
+     * Copies {@link ComponentDescription} but doesn't clone it. It is needed that identifiers of
+     * endpoints are not part of the new {@link ComponentDescription}. It it would, the endpoints of
+     * the copied {@link ComponentDescription} will be related to existing connections as well.
      * 
      * @param origin {@link ComponentDescription} to copy.
      * @return copied {@link ComponentDescription}
      */
     private ComponentDescription copyComponentDescription(ComponentDescription origin) {
         ComponentDescription copied = new ComponentDescription(origin.getComponentInstallation());
-        copied.setIsNodeTransient(origin.getIsNodeTransient());
+        copied.setIsNodeIdTransient(origin.getIsNodeIdTransient());
         for (EndpointDescription ep : origin.getInputDescriptionsManager().getDynamicEndpointDescriptions()) {
             copied.getInputDescriptionsManager().addDynamicEndpointDescription(ep.getDynamicEndpointIdentifier(),
-                ep.getName(), ep.getDataType(), ep.getMetaData(), false);
+                ep.getName(), ep.getDataType(), ep.getMetaData(), ep.getIdentifier(), ep.getParentGroupName(), false);
         }
         for (EndpointDescription ep : origin.getInputDescriptionsManager().getStaticEndpointDescriptions()) {
-            copied.getInputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(), false);
+            copied.getInputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(),
+                false);
         }
         for (EndpointDescription ep : origin.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
             copied.getOutputDescriptionsManager().addDynamicEndpointDescription(ep.getDynamicEndpointIdentifier(),
-                ep.getName(), ep.getDataType(), ep.getMetaData(), false);
+                ep.getName(), ep.getDataType(), ep.getMetaData(), ep.getIdentifier(), ep.getParentGroupName(), false);
         }
         for (EndpointDescription ep : origin.getOutputDescriptionsManager().getStaticEndpointDescriptions()) {
-            copied.getOutputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(), false);
+            copied.getOutputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(),
+                false);
+        }
+        for (EndpointGroupDescription epG : origin.getInputDescriptionsManager().getDynamicEndpointGroupDescriptions()) {
+            copied.getInputDescriptionsManager().addDynamicEndpointGroupDescription(epG.getDynamicEndpointIdentifier(), epG.getName(),
+                false);
         }
         copied.getConfigurationDescription().setConfiguration(new HashMap<>(origin.getConfigurationDescription().getConfiguration()));
         return copied;

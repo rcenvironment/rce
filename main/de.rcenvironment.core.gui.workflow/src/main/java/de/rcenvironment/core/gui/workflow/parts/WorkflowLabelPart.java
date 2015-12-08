@@ -18,6 +18,7 @@ import org.eclipse.draw2d.Graphics;
 import org.eclipse.draw2d.IFigure;
 import org.eclipse.draw2d.Label;
 import org.eclipse.draw2d.LineBorder;
+import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.draw2d.text.AbstractFlowBorder;
@@ -104,7 +105,7 @@ public class WorkflowLabelPart extends AbstractGraphicalEditPart implements Prop
 
     @Override
     protected IFigure createFigure() {
-        TranparentLabel labelFigure = new TranparentLabel("", (WorkflowLabel) getModel());
+        TransparentLabel labelFigure = new TransparentLabel("", (WorkflowLabel) getModel());
         setupLabel((WorkflowLabel) getModel(), labelFigure);
         return labelFigure;
     }
@@ -158,7 +159,8 @@ public class WorkflowLabelPart extends AbstractGraphicalEditPart implements Prop
         setupLabel(label, labelFigure);
         Point loc = new Point(label.getX(), label.getY());
         labelFigure.setLocation(loc);
-        ((GraphicalEditPart) getParent()).setLayoutConstraint(this, labelFigure, new Rectangle(loc, label.getSize()));
+        ((GraphicalEditPart) getParent()).setLayoutConstraint(this, labelFigure, 
+            new Rectangle(loc, new Dimension(label.getWidth(), label.getHeight())));
         figure.repaint();
     }
 
@@ -167,13 +169,13 @@ public class WorkflowLabelPart extends AbstractGraphicalEditPart implements Prop
      * 
      * @author Sascha Zur
      */
-    private class TranparentLabel extends Label {
+    protected class TransparentLabel extends Label {
 
         private static final int ROUNDED_RECTANGLE_SIZE = 10;
 
         private final WorkflowLabel label;
 
-        public TranparentLabel(String text, WorkflowLabel label) {
+        public TransparentLabel(String text, WorkflowLabel label) {
             super(text);
             this.label = label;
         }

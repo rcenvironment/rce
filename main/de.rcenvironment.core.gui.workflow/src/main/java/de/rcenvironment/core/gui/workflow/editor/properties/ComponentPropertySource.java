@@ -62,7 +62,7 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
 
         return descriptors.toArray(new IPropertyDescriptor[] {});
     }
-    
+
     @Override
     public boolean isPropertyResettable(final Object key) {
         return false;
@@ -123,7 +123,7 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
         private final String propertyValue;
 
         private String undoValue;
-        
+
         private ConfigurationDescription config;
 
         public SetValueCommand(String label, WorkflowNode node, String id, String value) {
@@ -156,7 +156,7 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
     public void removePropertyChangeListener(PropertyChangeListener listener) {
         node.removePropertyChangeListener(listener);
     }
-    
+
     @Override
     public EndpointDescriptionsManager getInputDescriptionsManager() {
         return node.getInputDescriptionsManager();
@@ -169,8 +169,13 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
 
     @Override
     public ConfigurationDescription getConfigurationDescription() {
+        node.getComponentDescription().getComponentInterface().getIdentifier();
         return node.getConfigurationDescription();
     }
 
+    @Override
+    public String getComponentIdentifierWithVersion() {
+        return node.getComponentDescription().getIdentifier();
+    }
 
 }

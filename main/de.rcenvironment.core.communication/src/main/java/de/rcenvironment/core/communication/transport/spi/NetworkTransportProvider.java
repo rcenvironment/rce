@@ -11,9 +11,6 @@ package de.rcenvironment.core.communication.transport.spi;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
-import de.rcenvironment.core.communication.model.BrokenMessageChannelListener;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 
@@ -37,13 +34,13 @@ public interface NetworkTransportProvider {
      * After this call returns, it is expected that the created {@link MessageChannel} contains
      * the {@link InitialNodeInformation} of the remote node. This is usually achieved by performing
      * a transport-native handshake where the remote node delegates to an implementation of
-     * {@link RawMessageChannelEndpointHandler#exchangeNodeInformation(InitialNodeInformation)}.
+     * {@link MessageChannelEndpointHandler#exchangeNodeInformation(InitialNodeInformation)}.
      * 
      * @param ncp the contact information for the remote server
      * @param ownNodeInformation the network-level information of the local node
      * @param allowInverseConnection whether to allow the remote node to use the same physical link
      *        to initiate network messages to the local node
-     * @param connectionEndpointHandler the {@link RawMessageChannelEndpointHandler} to use for
+     * @param connectionEndpointHandler the {@link MessageChannelEndpointHandler} to use for
      *        remote-initiated connections from the perspective of the connection target; may be
      *        null if <code>allowInverseConnections</code> is false
      * @param brokenConnectionListener listener for unexpected connection failure
@@ -52,7 +49,7 @@ public interface NetworkTransportProvider {
      */
     // TODO boolean parameter is redundant; remove -- misc_ro
     MessageChannel connect(NetworkContactPoint ncp, InitialNodeInformation ownNodeInformation, boolean allowInverseConnection,
-        RawMessageChannelEndpointHandler connectionEndpointHandler, BrokenMessageChannelListener brokenConnectionListener)
+        MessageChannelEndpointHandler connectionEndpointHandler, BrokenMessageChannelListener brokenConnectionListener)
         throws CommunicationException;
 
     /**

@@ -29,7 +29,8 @@ import de.rcenvironment.core.scripting.python.PythonOutputWriter;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Tests the execution behavior of the Python script engine. Especially, during parallel script execution.
+ * Tests the execution behavior of the Python script engine. Especially, during parallel script
+ * execution.
  * 
  * @author Doreen Seider
  */
@@ -42,7 +43,7 @@ public class PythonScriptEngineTest {
 
     private static final String OUTPUT_PREFIX_STDERR = "stderr ";
 
-    private static final int TEST_TIMEOUT = 65000;
+    private static final int TEST_TIMEOUT = 120000;
 
     private final AtomicInteger stdoutCloseCount = new AtomicInteger(0);
 
@@ -51,7 +52,8 @@ public class PythonScriptEngineTest {
     private final AtomicInteger wrongOutputCount = new AtomicInteger(0);
 
     /**
-     * Tests correct output handling of multiple scripts are executed in parallel threads but synchronized.
+     * Tests correct output handling of multiple scripts are executed in parallel threads but
+     * synchronized.
      * 
      * @throws InterruptedException on error
      */
@@ -63,9 +65,9 @@ public class PythonScriptEngineTest {
 
     private void testFetchingStdoutErrDuringParallelExecution(final boolean isSynchronized) throws InterruptedException {
 
-        final int waitInterval = 60;
+        final int waitInterval = 90;
 
-        final int scriptEvalCount = 1000;
+        final int scriptEvalCount = 800;
 
         final CountDownLatch iterationFinishedLatch = new CountDownLatch(scriptEvalCount);
 
@@ -120,7 +122,8 @@ public class PythonScriptEngineTest {
     }
 
     /**
-     * Stub implementation of {@link PythonOutputWriter} used by the Jython script engine for stdout and stderr.
+     * Stub implementation of {@link PythonOutputWriter} used by the Jython script engine for stdout
+     * and stderr.
      * 
      * @author Doreen Seider
      */

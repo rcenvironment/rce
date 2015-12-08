@@ -1,0 +1,483 @@
+{
+  "identifier" : "a4bff332-114c-47cf-ac44-f2db4886da04",
+  "workflowVersion" : "4",
+  "name" : "Python_Jython API_read_input_2015-10-29_10:05:58_08",
+  "nodes" : [ {
+    "identifier" : "0e78320e-0f9f-46fe-927d-1e6bfdf5b92d",
+    "name" : "xOr",
+    "location" : "299:203",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "xor" : "true",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"xOr, There : Next value should be 0\"\r\nprint RCE.read_input(\"xT\")\r\nif (RCE.read_input(\"xT\") != 0):\r\n\tRCE.fail(\"x or with value not working\")\r\n\r\nprint \"xOr, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xT\", 1)\r\nif (RCE.read_input(\"xT\") != 0):\r\n\tRCE.fail(\"x or with value and default not working\")\r\n\r\ntry: \r\n\tprint \"xOr, Connected, Not There: Next value should be an Error\"\r\n\tprint RCE.read_input(\"xNT\")\r\n\tRCE.fail(\"x or without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\nprint \"xOr, Connected, Not There, Default: Next value should be 1\"\r\nprint RCE.read_input(\"xNT\", 1)\r\nif (RCE.read_input(\"xNT\", 1) != 1):\r\n\tRCE.fail(\"x or without value and default not working\")",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d444c997-9ec0-4dd8-b045-5e31e46d164a",
+      "name" : "xT",
+      "epIdentifier" : "or",
+      "group" : "orGroup",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "8adc3a0d-48c2-44e4-8c5f-7110270977e1",
+      "name" : "xNT",
+      "epIdentifier" : "or",
+      "group" : "orGroup",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "3be7de41-9488-44a3-8810-a527744a4ffe",
+    "name" : "Cases",
+    "location" : "456:56",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Req, There : Next value should be 0\"\r\nprint RCE.read_input(\"xReq\")\r\nif (RCE.read_input(\"xReq\") != 0):\r\n\tRCE.fail(\"read input with value not working\")\r\n\r\nprint \"Req, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xReq\", 1)\r\nif (RCE.read_input(\"xReq\") != 0):\r\n\tRCE.fail(\"read input with value and default not working\")\r\n\r\nprint \"Not Required, Connected, There: Next value should be 0\"\r\nprint RCE.read_input(\"xNRCT\")\r\nif (RCE.read_input(\"xNRCT\") != 0):\r\n\tRCE.fail(\"read input for not required but connected with value not working\")\r\n\r\nprint \"Not Required, Connected, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xNRCT\", 1)\r\nif (RCE.read_input(\"xNRCT\") != 0):\r\n\tRCE.fail(\"read input for not required but connected with value and default not working\")\r\n\r\ntry: \r\n\tprint \"Not Required, Connected, Not There: Next value should be an Error\"\r\n\tprint RCE.read_input(\"xNRCNT\")\r\n\tRCE.fail(\"read input for not required but connected without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\nprint \"Not Required, Connected, Not There, Default: Next value should be 1\"\r\nprint RCE.read_input(\"xNRCNT\", 1)\r\nif (RCE.read_input(\"xNRCNT\", 1) != 1):\r\n\tRCE.fail(\"read input for not required but connected without value and default not working\")\r\n\r\ntry: \r\n\tprint \"Not Required, Not Connected, Not There: Next value should be an Error\"\r\n\tprint RCE.read_input(\"xNRNCNT\")\r\n\tRCE.fail(\"read input for not required and not connected without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\n\r\nprint \"Not Required, Not Connected, Not There, Default: Next value should be 1\"\r\nprint RCE.read_input(\"xNRNCNT\", 1)\r\nprint RCE.read_input(\"xNRNCNT\", 1)\r\nif (RCE.read_input(\"xNRNCNT\", 1) != 1):\r\n\tRCE.fail(\"read input for not required and not connected without value and default not working\")\r\n\r\nprint \"Req. if connected, connected, There: Next value should be 0\"\r\nprint RCE.read_input(\"xRICC\")\r\nif (RCE.read_input(\"xRICC\") != 0):\r\n\tRCE.fail(\"read input for req if connected and connected with value not working\")\r\n\r\nprint \"Req. if connected, connected, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xRICC\", 1)\r\nif (RCE.read_input(\"xRICC\") != 0):\r\n\tRCE.fail(\"read input for req if connected and connected with value and default not working\")\r\n\r\ntry: \r\n\tprint \"Req. if connected, Not connected, not There : Next value should be an Error\"\r\n\tprint RCE.read_input(\"xRICNCNT\")\r\n\tRCE.fail(\"read input for req if connected and not connected without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\n\r\nprint \"Req. if connected, Not connected, not There, default: Next value should be 1\"\r\nprint RCE.read_input(\"xRICNCNT\", 1)\r\nif (RCE.read_input(\"xRICNCNT\", 1) != 1):\r\n\tRCE.fail(\"read input for req if connected and not connected without value and default not working\")\r\n\r\n",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d69e3beb-2d8c-4641-bcec-b1ddb6448347",
+      "name" : "xNRCNT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "NotRequired",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "cc5a768a-3e04-489c-9b98-6bdb829022a0",
+      "name" : "timer",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "a6210695-f1da-4315-8975-b4466eece0bc",
+      "name" : "xNRCT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "NotRequired",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "7aa12d40-2001-4b77-afae-069843eb2d90",
+      "name" : "xReq",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "8e19f712-83fe-49fe-8c3e-978c163fcd59",
+      "name" : "xRICNCNT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "a5ab18b5-2536-499a-980b-96bcd9581e86",
+      "name" : "xRICC",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "d11db3f2-96c3-48cc-aaed-6e7eecac5712",
+      "name" : "xNRNCNT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "NotRequired",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "47d07b74-9e92-4837-be1a-bd2710f40e56",
+    "name" : "State_Var",
+    "location" : "299:299",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Next should be None\"\r\nprint RCE.read_state_variable(\"y\")\r\nif not (RCE.read_state_variable(\"y\") is None):\r\n    RCE.fail(\"Read state variable not working\")\r\nprint \"Next should be 1\"\r\nprint RCE.read_state_variable(\"y\", 1)\r\nif RCE.read_state_variable(\"y\", 1) != 1:\r\n    RCE.fail(\"Read state variable with default not working\")\r\nprint \"Next should be 1\"\r\nprint RCE.read_state_variable(\"y\")\r\nif RCE.read_state_variable(\"y\", 1) != 1:\r\n    RCE.fail(\"Read state variable with default set not working\")",
+      "scriptLanguage" : "Jython"
+    }
+  }, {
+    "identifier" : "f14ca11c-a00c-4bf1-a2eb-806b02998df2",
+    "name" : "Cases Python",
+    "location" : "923:56",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Req, There : Next value should be 0\"\r\nprint RCE.read_input(\"xReq\")\r\nif (RCE.read_input(\"xReq\") != 0):\r\n\tRCE.fail(\"read input with value not working\")\r\n\r\nprint \"Req, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xReq\", 1)\r\nif (RCE.read_input(\"xReq\") != 0):\r\n\tRCE.fail(\"read input with value and default not working\")\r\n\r\nprint \"Not Required, Connected, There: Next value should be 0\"\r\nprint RCE.read_input(\"xNRCT\")\r\nif (RCE.read_input(\"xNRCT\") != 0):\r\n\tRCE.fail(\"read input for not required but connected with value not working\")\r\n\r\nprint \"Not Required, Connected, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xNRCT\", 1)\r\nif (RCE.read_input(\"xNRCT\") != 0):\r\n\tRCE.fail(\"read input for not required but connected with value and default not working\")\r\n\r\ntry: \r\n\tprint \"Not Required, Connected, Not There: Next value should be an Error\"\r\n\tprint RCE.read_input(\"xNRCNT\")\r\n\tRCE.fail(\"read input for not required but connected without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\nprint \"Not Required, Connected, Not There, Default: Next value should be 1\"\r\nprint RCE.read_input(\"xNRCNT\", 1)\r\nif (RCE.read_input(\"xNRCNT\", 1) != 1):\r\n\tRCE.fail(\"read input for not required but connected without value and default not working\")\r\n\r\ntry: \r\n\tprint \"Not Required, Not Connected, Not There: Next value should be an Error\"\r\n\tprint RCE.read_input(\"xNRNCNT\")\r\n\tRCE.fail(\"read input for not required and not connected without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\n\r\nprint \"Not Required, Not Connected, Not There, Default: Next value should be 1\"\r\nprint RCE.read_input(\"xNRNCNT\", 1)\r\nprint RCE.read_input(\"xNRNCNT\", 1)\r\nif (RCE.read_input(\"xNRNCNT\", 1) != 1):\r\n\tRCE.fail(\"read input for not required and not connected without value and default not working\")\r\n\r\nprint \"Req. if connected, connected, There: Next value should be 0\"\r\nprint RCE.read_input(\"xRICC\")\r\nif (RCE.read_input(\"xRICC\") != 0):\r\n\tRCE.fail(\"read input for req if connected and connected with value not working\")\r\n\r\nprint \"Req. if connected, connected, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xRICC\", 1)\r\nif (RCE.read_input(\"xRICC\") != 0):\r\n\tRCE.fail(\"read input for req if connected and connected with value and default not working\")\r\n\r\ntry: \r\n\tprint \"Req. if connected, Not connected, not There : Next value should be an Error\"\r\n\tprint RCE.read_input(\"xRICNCNT\")\r\n\tRCE.fail(\"read input for req if connected and not connected without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\n\r\nprint \"Req. if connected, Not connected, not There, default: Next value should be 1\"\r\nprint RCE.read_input(\"xRICNCNT\", 1)\r\nif (RCE.read_input(\"xRICNCNT\", 1) != 1):\r\n\tRCE.fail(\"read input for req if connected and not connected without value and default not working\")\r\n\r\n",
+      "scriptLanguage" : "Python"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "0b18a7d8-3acd-4a47-8a77-d4f9dc2e9d78",
+      "name" : "xRICNCNT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "25c9c22f-dc3d-40b2-9a02-49effd9cb6fb",
+      "name" : "timer",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "343d891f-481e-4fac-9ca1-e5428025fbee",
+      "name" : "xNRCT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "NotRequired",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "4673d74e-ba41-430f-900c-bbe170a8a49f",
+      "name" : "xNRNCNT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "NotRequired",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "d281c7bc-1ae7-4460-a60f-76d6a424b36c",
+      "name" : "xNRCNT",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "NotRequired",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "95738d51-4474-402f-98b6-7a34848862cc",
+      "name" : "xRICC",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "36f8f01c-0345-4b7c-b019-f8a259c3bd1c",
+      "name" : "xReq",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "b723373a-d52f-4c8a-8573-cd51c5eca011",
+    "name" : "Timer Python",
+    "location" : "766:96",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "import time\r\ntime.sleep(1)\r\nRCE.write_output(\"timer\", 5)",
+      "scriptLanguage" : "Python"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "1a070488-11d3-4078-a946-193e25c51850",
+      "name" : "timer",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "ba92b546-a43d-4d6b-9fdf-4d3e98ed3393",
+      "name" : "not there",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "1f7fd839-186b-493d-9b17-1e8a8a7cedc6",
+      "name" : "timer",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "c2f851d0-149f-4d25-97fc-91030d081125",
+    "name" : "xOr Python",
+    "location" : "766:203",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "xor" : "true",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"xOr, There : Next value should be 0\"\r\nprint RCE.read_input(\"xT\")\r\nif (RCE.read_input(\"xT\") != 0):\r\n\tRCE.fail(\"x or with value not working\")\r\n\r\nprint \"xOr, There, Default: Next value should be 0\"\r\nprint RCE.read_input(\"xT\", 1)\r\nif (RCE.read_input(\"xT\") != 0):\r\n\tRCE.fail(\"x or with value and default not working\")\r\n\r\ntry: \r\n\tprint \"xOr, Connected, Not There: Next value should be an Error\"\r\n\tprint RCE.read_input(\"xNT\")\r\n\tRCE.fail(\"x or without value not working\")\r\nexcept ValueError:\r\n    print \"ValueError\"\r\n\r\nprint \"xOr, Connected, Not There, Default: Next value should be 1\"\r\nprint RCE.read_input(\"xNT\", 1)\r\nif (RCE.read_input(\"xNT\", 1) != 1):\r\n\tRCE.fail(\"x or without value and default not working\")",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "2aa816c3-bf8c-489d-81eb-4b9486a016dd",
+      "name" : "xT",
+      "epIdentifier" : "or",
+      "group" : "orGroup",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "96c8c315-0374-4b5f-b92f-4c7d3fec5812",
+      "name" : "xNT",
+      "epIdentifier" : "or",
+      "group" : "orGroup",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "6645ef1c-00b1-4307-a852-2de803eb3052",
+    "name" : "Timer",
+    "location" : "299:96",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "import time\r\ntime.sleep(1)\r\nRCE.write_output(\"timer\", 5)",
+      "scriptLanguage" : "Python"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "c06e902e-eb76-43f2-bf4e-79e33a8abd9d",
+      "name" : "timer",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "70fa4c2e-7e25-4b87-90d2-0cd31e75a83f",
+      "name" : "not there",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "b0d652d9-b64d-4e2e-94bf-49baadf399e4",
+      "name" : "timer",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "d8fa972a-5087-4618-aa19-9ccfe187399c",
+    "name" : "Copy of Input Provider",
+    "location" : "668:75",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "74c11e0d-1954-4819-a839-ed9858160f4f",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "0"
+      }
+    } ]
+  }, {
+    "identifier" : "3b70b4ee-d53a-4b8c-96bb-e2860efcd94e",
+    "name" : "State_Var Python",
+    "location" : "766:299",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "print \"Next should be None\"\r\nprint RCE.read_state_variable(\"y\")\r\nif not (RCE.read_state_variable(\"y\") is None):\r\n    RCE.fail(\"Read state variable not working\")\r\nprint \"Next should be 1\"\r\nprint RCE.read_state_variable(\"y\", 1)\r\nif RCE.read_state_variable(\"y\", 1) != 1:\r\n    RCE.fail(\"Read state variable with default not working\")\r\nprint \"Next should be 1\"\r\nprint RCE.read_state_variable(\"y\")\r\nif RCE.read_state_variable(\"y\", 1) != 1:\r\n    RCE.fail(\"Read state variable with default set not working\")",
+      "scriptLanguage" : "Python"
+    }
+  }, {
+    "identifier" : "a0442c5c-8b7d-48db-af18-bf18da70dff7",
+    "name" : "Input Provider",
+    "location" : "201:75",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "8b777431-f2f3-4faa-a794-d9bf09507f5e",
+      "name" : "x",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "0"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "a0442c5c-8b7d-48db-af18-bf18da70dff7",
+    "output" : "8b777431-f2f3-4faa-a794-d9bf09507f5e",
+    "target" : "3be7de41-9488-44a3-8810-a527744a4ffe",
+    "input" : "a6210695-f1da-4315-8975-b4466eece0bc"
+  }, {
+    "source" : "a0442c5c-8b7d-48db-af18-bf18da70dff7",
+    "output" : "8b777431-f2f3-4faa-a794-d9bf09507f5e",
+    "target" : "3be7de41-9488-44a3-8810-a527744a4ffe",
+    "input" : "a5ab18b5-2536-499a-980b-96bcd9581e86"
+  }, {
+    "source" : "d8fa972a-5087-4618-aa19-9ccfe187399c",
+    "output" : "74c11e0d-1954-4819-a839-ed9858160f4f",
+    "target" : "b723373a-d52f-4c8a-8573-cd51c5eca011",
+    "input" : "1a070488-11d3-4078-a946-193e25c51850"
+  }, {
+    "source" : "d8fa972a-5087-4618-aa19-9ccfe187399c",
+    "output" : "74c11e0d-1954-4819-a839-ed9858160f4f",
+    "target" : "f14ca11c-a00c-4bf1-a2eb-806b02998df2",
+    "input" : "95738d51-4474-402f-98b6-7a34848862cc"
+  }, {
+    "source" : "d8fa972a-5087-4618-aa19-9ccfe187399c",
+    "output" : "74c11e0d-1954-4819-a839-ed9858160f4f",
+    "target" : "f14ca11c-a00c-4bf1-a2eb-806b02998df2",
+    "input" : "343d891f-481e-4fac-9ca1-e5428025fbee"
+  }, {
+    "source" : "a0442c5c-8b7d-48db-af18-bf18da70dff7",
+    "output" : "8b777431-f2f3-4faa-a794-d9bf09507f5e",
+    "target" : "6645ef1c-00b1-4307-a852-2de803eb3052",
+    "input" : "c06e902e-eb76-43f2-bf4e-79e33a8abd9d"
+  }, {
+    "source" : "a0442c5c-8b7d-48db-af18-bf18da70dff7",
+    "output" : "8b777431-f2f3-4faa-a794-d9bf09507f5e",
+    "target" : "0e78320e-0f9f-46fe-927d-1e6bfdf5b92d",
+    "input" : "d444c997-9ec0-4dd8-b045-5e31e46d164a"
+  }, {
+    "source" : "6645ef1c-00b1-4307-a852-2de803eb3052",
+    "output" : "70fa4c2e-7e25-4b87-90d2-0cd31e75a83f",
+    "target" : "3be7de41-9488-44a3-8810-a527744a4ffe",
+    "input" : "d69e3beb-2d8c-4641-bcec-b1ddb6448347"
+  }, {
+    "source" : "d8fa972a-5087-4618-aa19-9ccfe187399c",
+    "output" : "74c11e0d-1954-4819-a839-ed9858160f4f",
+    "target" : "c2f851d0-149f-4d25-97fc-91030d081125",
+    "input" : "2aa816c3-bf8c-489d-81eb-4b9486a016dd"
+  }, {
+    "source" : "d8fa972a-5087-4618-aa19-9ccfe187399c",
+    "output" : "74c11e0d-1954-4819-a839-ed9858160f4f",
+    "target" : "f14ca11c-a00c-4bf1-a2eb-806b02998df2",
+    "input" : "36f8f01c-0345-4b7c-b019-f8a259c3bd1c"
+  }, {
+    "source" : "6645ef1c-00b1-4307-a852-2de803eb3052",
+    "output" : "b0d652d9-b64d-4e2e-94bf-49baadf399e4",
+    "target" : "3be7de41-9488-44a3-8810-a527744a4ffe",
+    "input" : "cc5a768a-3e04-489c-9b98-6bdb829022a0"
+  }, {
+    "source" : "b723373a-d52f-4c8a-8573-cd51c5eca011",
+    "output" : "1f7fd839-186b-493d-9b17-1e8a8a7cedc6",
+    "target" : "f14ca11c-a00c-4bf1-a2eb-806b02998df2",
+    "input" : "25c9c22f-dc3d-40b2-9a02-49effd9cb6fb"
+  }, {
+    "source" : "a0442c5c-8b7d-48db-af18-bf18da70dff7",
+    "output" : "8b777431-f2f3-4faa-a794-d9bf09507f5e",
+    "target" : "3be7de41-9488-44a3-8810-a527744a4ffe",
+    "input" : "7aa12d40-2001-4b77-afae-069843eb2d90"
+  }, {
+    "source" : "b723373a-d52f-4c8a-8573-cd51c5eca011",
+    "output" : "ba92b546-a43d-4d6b-9fdf-4d3e98ed3393",
+    "target" : "f14ca11c-a00c-4bf1-a2eb-806b02998df2",
+    "input" : "d281c7bc-1ae7-4460-a60f-76d6a424b36c"
+  } ]
+}

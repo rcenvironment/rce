@@ -15,11 +15,11 @@ import de.rcenvironment.core.communication.channel.MessageChannelIdFactory;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
-import de.rcenvironment.core.communication.model.BrokenMessageChannelListener;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 
 /**
@@ -37,8 +37,8 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
     private Map<NetworkContactPoint, ServerContactPoint> virtualServices =
         new HashMap<NetworkContactPoint, ServerContactPoint>();
 
-    private Map<NodeIdentifier, RawMessageChannelEndpointHandler> remoteInitiatedConnectionEndpointHandlerMap =
-        new HashMap<NodeIdentifier, RawMessageChannelEndpointHandler>();
+    private Map<NodeIdentifier, MessageChannelEndpointHandler> remoteInitiatedConnectionEndpointHandlerMap =
+        new HashMap<NodeIdentifier, MessageChannelEndpointHandler>();
 
     private boolean supportRemoteInitiatedConnections;
 
@@ -62,7 +62,7 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
 
     @Override
     public synchronized MessageChannel connect(NetworkContactPoint ncp, InitialNodeInformation initiatingNodeInformation,
-        boolean allowDuplex, RawMessageChannelEndpointHandler initiatingEndpointHandler,
+        boolean allowDuplex, MessageChannelEndpointHandler initiatingEndpointHandler,
         BrokenMessageChannelListener brokenConnectionListener)
         throws CommunicationException {
         // FIXME handle case of no matching server instance; causes a NPE in current implementation
@@ -74,7 +74,7 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
             // remote server (in integration tests) is simulating a crash
             throw new CommunicationException("Failed to open connection: " + receivingSCP + " is simulating breakdown");
         }
-        RawMessageChannelEndpointHandler receivingEndpointHandler = receivingSCP.getEndpointHandler();
+        MessageChannelEndpointHandler receivingEndpointHandler = receivingSCP.getEndpointHandler();
 
         MessageChannel newChannel =
             new VirtualNetworkMessageChannel(initiatingNodeInformation, receivingEndpointHandler, receivingSCP);

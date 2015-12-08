@@ -10,6 +10,8 @@ package de.rcenvironment.core.gui.log;
 
 import java.io.Serializable;
 
+import org.osgi.service.log.LogService;
+
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.gui.log.internal.LogModel;
@@ -36,8 +38,10 @@ public class LogListener implements SerializableLogListener {
     @Override
     @AllowRemoteAccess
     public void logged(SerializableLogEntry logEntry) {
-        logEntry.setPlatformIdentifer(platformId);
-        LogModel.getInstance().addLogEntry(logEntry);
+        if (logEntry.getLevel() != LogService.LOG_DEBUG) {
+            logEntry.setPlatformIdentifer(platformId);
+            LogModel.getInstance().addLogEntry(logEntry);
+        }
     }
     
     @Override

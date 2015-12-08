@@ -21,9 +21,11 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.configuration.CommunicationConfiguration;
 import de.rcenvironment.core.communication.configuration.CommunicationIPFilterConfiguration;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
+import de.rcenvironment.core.communication.configuration.SshConnectionsConfiguration;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
+import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -35,6 +37,7 @@ import de.rcenvironment.core.utils.incubator.IdGenerator;
  * Default {@link NodeConfigurationService} implementation.
  * 
  * @author Robert Mischke
+ * @author Sascha Zur
  */
 public class NodeConfigurationServiceImpl implements NodeConfigurationService {
 
@@ -53,6 +56,8 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
     private InitialNodeInformationImpl localNodeInformation;
 
     private CommunicationConfiguration configuration;
+
+    private SshConnectionsConfiguration sshConfiguration;
 
     private ConfigurationService configurationService;
 
@@ -114,7 +119,7 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
     }
 
     @Override
-    public long getForwardingTimeoutMsec() {
+    public int getForwardingTimeoutMsec() {
         return configuration.getForwardingTimeoutMsec();
     }
 
@@ -151,6 +156,9 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
         parseNetworkConfiguration();
         localNodeIsRelay = configurationService.getIsRelay();
         log.info("Local 'isRelay' setting: " + isRelay());
+
+        ConfigurationSegment sshConfigurationSegment = configurationService.getConfigurationSegment("sshRemoteAccess");
+        sshConfiguration = new SshConnectionsConfiguration(sshConfigurationSegment);
     }
 
     /**
@@ -200,11 +208,10 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
         }
 
         String instanceName = configurationService.getInstanceName();
-        boolean isWorkflowHost = configurationService.getIsWorkflowHost();
 
         localNodeInformation = new InitialNodeInformationImpl(nodeId);
         localNodeInformation.setDisplayName(instanceName);
-        localNodeInformation.setIsWorkflowHost(isWorkflowHost);
+
     }
 
     private void parseNetworkConfiguration() {
@@ -234,6 +241,31 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
                 log.error("Unable to parse contact point definition: " + contactPointDef);
             }
         }
+    }
+
+    @Override
+    public List<InitialSshConnectionConfig> getInitialSSHConnectionConfigs() {
+        return sshConfiguration.getProvidedConnectionConfigs();
+    }
+
+    @Override
+    public double[] getLocationCoordinates() {
+        return configurationService.getLocationCoordinates();
+    }
+
+    @Override
+    public String getLocationName() {
+        return configurationService.getLocationName();
+    }
+
+    @Override
+    public String getInstanceContact() {
+        return configurationService.getInstanceContact();
+    }
+
+    @Override
+    public String getInstanceAdditionalInformation() {
+        return configurationService.getInstanceAdditionalInformation();
     }
 
 }

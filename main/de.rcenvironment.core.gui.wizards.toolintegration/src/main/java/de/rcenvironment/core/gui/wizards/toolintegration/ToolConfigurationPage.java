@@ -19,6 +19,8 @@ import org.eclipse.jface.dialogs.DialogPage;
 import org.eclipse.jface.layout.TableColumnLayout;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.KeyAdapter;
+import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -40,6 +42,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -255,7 +258,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                     if (deleteTempDirAlwaysCheckbox.getSelection() && !((Button) arg0.getSource()).getSelection()) {
                         deleteTempDirAlwaysCheckbox.setSelection(false);
                         deleteTempDirNotOnErrorIterationCheckbox.setSelection(false);
-
+                        configurationMap.put(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS, false);
                     }
                     copyAlwaysButton.setEnabled(((Button) arg0.getSource()).getSelection());
                     deleteTempDirAlwaysCheckbox.setEnabled(((Button) arg0.getSource()).getSelection());
@@ -314,6 +317,8 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         tableButtonRemove.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
         tableButtonRemove.addSelectionListener(new ButtonSelectionListener(tableButtonRemove, toolConfigTable));
 
+        fillContextMenu(toolConfigTable);
+
         toolConfigTable.addSelectionListener(new SelectionAdapter() {
 
             @Override
@@ -334,8 +339,25 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
                 TableItem[] selection = toolConfigTable.getSelection();
 
-                btnButtonSelectionListener.editSelection(selection);
+                editSelection(selection);
 
+            }
+        });
+
+        toolConfigTable.addKeyListener(new KeyAdapter() {
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+
+                if (e.keyCode == SWT.DEL) {
+
+                    TableItem[] selection = toolConfigTable.getSelection();
+                    removeSelection(selection);
+
+                    updateTable();
+                    updateButtonActivation();
+
+                }
             }
         });
 
@@ -344,9 +366,11 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
     @SuppressWarnings("unchecked")
     private void updatePageComplete() {
         String errorMessage = "";
+
         boolean isPageComplete = true;
-        if (!(((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS))
-            != null && ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).size() != 0)) {
+
+        if (!(((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)) != null
+            && ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).size() != 0)) {
             errorMessage += Messages.toolExecutionConfigurationNeeded + "\n";
             isPageComplete &= false;
         } else if (!deleteTempDirAlwaysCheckbox.getSelection() && !deleteTempDirNeverCheckbox.getSelection()
@@ -359,7 +383,12 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             setMessage(errorMessage, DialogPage.ERROR);
         } else {
             if (toolConfigTable.getItemCount() > 0) {
-                setMessage("Currently, only one launch setting is possible", DialogPage.WARNING);
+                String error = StringUtils.checkAgainstCommonInputRules(toolConfigTable.getItem(0).getText(2));
+                if (error != null) {
+                    setMessage("Version not correct to use as a Remote Access Tool:\n  " + error, DialogPage.WARNING);
+                } else {
+                    setMessage("Currently, only one launch setting is possible", DialogPage.WARNING);
+                }
             } else {
                 setMessage(errorMessage, DialogPage.NONE);
             }
@@ -505,7 +534,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                 item.setText(2, currentConfig.get(ToolIntegrationConstants.KEY_VERSION));
                 String rootDir = currentConfig.get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY);
                 if (rootDir == null || rootDir.isEmpty()) {
-                    item.setText(3, Messages.rceTempUsed);
+                    item.setText(3, "RCE temp directory");
                 } else {
                     item.setText(3, currentConfig.get(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY));
                 }
@@ -521,6 +550,9 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             (toolConfigTable.getSelection() != null && toolConfigTable.getSelectionCount() > 0 && toolConfigTable.getItemCount() != 0);
         tableButtonEdit.setEnabled(enabled);
         tableButtonRemove.setEnabled(enabled);
+        itemAdd.setEnabled(!hasOneConfig);
+        itemEdit.setEnabled(enabled);
+        itemRemove.setEnabled(enabled);
     }
 
     /**
@@ -545,76 +577,27 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
         }
 
-        @SuppressWarnings("unchecked")
         @Override
         public void widgetSelected(SelectionEvent arg0) {
             TableItem[] selection = table.getSelection();
-            if (button.equals(tableButtonAdd)) {
-                List<Map<String, String>> configs = new LinkedList<Map<String, String>>();
-                if (configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS) != null) {
-                    configs = (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
-                } else {
-                    configurationMap.put(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS, configs);
-                }
-                WizardToolConfigurationDialog wtcd =
-                    new WizardToolConfigurationDialog(null, Messages.add + " "
-                        + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), configs,
-                        ((ToolIntegrationWizard) getWizard()).getCurrentContext());
 
-                int exit = wtcd.open();
-                if (exit == 0) {
-                    configs.add(wtcd.getConfig());
-                }
+            if (button.equals(tableButtonAdd)) {
+
+                addSelection();
+
             } else if (button.equals(tableButtonEdit)) {
 
                 editSelection(selection);
 
             } else if (button.equals(tableButtonRemove)) {
-                if (selection != null && selection.length > 0) {
 
-                    List<Map<String, String>> configs =
-                        (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
-                    Map<String, String> selectedConfig = null;
-                    for (Map<String, String> currentConfig : configs) {
-                        if (currentConfig.get(ToolIntegrationConstants.KEY_HOST).equals(selection[0].getText(0))
-                            && currentConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(selection[0].getText(1))) {
-                            selectedConfig = currentConfig;
-                        }
-                    }
-                    configs.remove(selectedConfig);
-                }
+                removeSelection(selection);
+
             }
             updateTable();
             updateButtonActivation();
         }
 
-        private void editSelection(TableItem[] selection) {
-
-            if (selection != null && selection.length > 0) {
-                @SuppressWarnings("unchecked") List<Map<String, String>> configs =
-                    (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
-                Map<String, String> selectedConfig = null;
-                for (Map<String, String> currentConfig : configs) {
-                    if (currentConfig.get(ToolIntegrationConstants.KEY_HOST).equals(selection[0].getText(0))
-                        && currentConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(selection[0].getText(1))) {
-                        selectedConfig = currentConfig;
-                    }
-                }
-                Map<String, String> selectedConfigCopy = new HashMap<String, String>();
-                selectedConfigCopy.putAll(selectedConfig);
-                WizardToolConfigurationDialog wtcd =
-                    new WizardToolConfigurationDialog(null, Messages.edit + " "
-                        + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), selectedConfigCopy, configs,
-                        ((ToolIntegrationWizard) getWizard()).getCurrentContext(),
-                        true);
-                int exit = wtcd.open();
-                if (exit == 0) {
-                    configs.remove(selectedConfig);
-                    configs.add(wtcd.getConfig());
-                }
-            }
-
-        }
     }
 
     /**
@@ -650,6 +633,102 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_launchsettings");
     }
 
+    @SuppressWarnings("unchecked")
+    private void addSelection() {
+
+        List<Map<String, String>> configs = new LinkedList<Map<String, String>>();
+        if (configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS) != null) {
+            configs = (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
+        } else {
+            configurationMap.put(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS, configs);
+        }
+        WizardToolConfigurationDialog wtcd =
+            new WizardToolConfigurationDialog(null, Messages.add + " "
+                + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), configs,
+                ((ToolIntegrationWizard) getWizard()).getCurrentContext());
+
+        int exit = wtcd.open();
+        if (exit == 0) {
+            configs.add(wtcd.getConfig());
+
+        }
+
+    }
+
+    private void editSelection(TableItem[] selection) {
+
+        if (selection != null && selection.length > 0) {
+            @SuppressWarnings("unchecked") List<Map<String, String>> configs =
+                (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
+            Map<String, String> selectedConfig = null;
+            for (Map<String, String> currentConfig : configs) {
+                if (currentConfig.get(ToolIntegrationConstants.KEY_HOST).equals(selection[0].getText(0))
+                    && currentConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(selection[0].getText(1))) {
+                    selectedConfig = currentConfig;
+                }
+            }
+            Map<String, String> selectedConfigCopy = new HashMap<String, String>();
+            selectedConfigCopy.putAll(selectedConfig);
+            WizardToolConfigurationDialog wtcd =
+                new WizardToolConfigurationDialog(null, Messages.edit + " "
+                    + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), selectedConfigCopy, configs,
+                    ((ToolIntegrationWizard) getWizard()).getCurrentContext(),
+                    true);
+            int exit = wtcd.open();
+            if (exit == 0) {
+                configs.remove(selectedConfig);
+                configs.add(wtcd.getConfig());
+                configurationMap.remove(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
+                configurationMap.put(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS, configs);
+                updateTable();
+            }
+        }
+
+    }
+
+    @SuppressWarnings("unchecked")
+    private void removeSelection(TableItem[] selection) {
+        if (selection != null && selection.length > 0) {
+
+            List<Map<String, String>> configs =
+                (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS);
+            Map<String, String> selectedConfig = null;
+            for (Map<String, String> currentConfig : configs) {
+                if (currentConfig.get(ToolIntegrationConstants.KEY_HOST).equals(selection[0].getText(0))
+                    && currentConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(selection[0].getText(1))) {
+                    selectedConfig = currentConfig;
+                }
+            }
+            configs.remove(selectedConfig);
+        }
+
+    }
+
     @Override
     public void updatePage() {}
+
+    @Override
+    protected void onAddClicked() {
+        addSelection();
+        updateTable();
+        updateButtonActivation();
+    }
+
+    @Override
+    protected void onEditClicked() {
+        TableItem[] selection = toolConfigTable.getSelection();
+        editSelection(selection);
+        updateTable();
+        updateButtonActivation();
+
+    }
+
+    @Override
+    protected void onRemoveClicked() {
+
+        TableItem[] selection = toolConfigTable.getSelection();
+        removeSelection(selection);
+        updateTable();
+        updateButtonActivation();
+    }
 }

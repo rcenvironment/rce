@@ -17,25 +17,33 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Text;
 
 /**
- * The wizard GUI page. The only input element is a field for choosing a project
- * name.
+ * The wizard GUI page. The only input element is a field for choosing a project name.
  * 
  * @author Robert Mischke
  * @author Sascha Zur
  */
 public class NewExampleProjectWizardPage extends WizardPage {
 
+    private static final int MINIMUM_HEIGHT = 250;
+
+    private static final int MINIMUM_WIDTH = 500;
+
     private Text textFieldProjectName;
 
     private NewExampleProjectWizard newExampleProjectWizard;
+
+    private Button createExampleIntegratedToolButton;
+
     /**
      * Constructor for SampleNewWizardPage.
-     * @param newExampleProjectWizard 
+     * 
+     * @param newExampleProjectWizard
      * 
      * @param pageName
      */
@@ -48,14 +56,14 @@ public class NewExampleProjectWizardPage extends WizardPage {
 
     /**
      * @see IDialogPage#createControl(Composite)
-     * @param parent : 
+     * @param parent :
      */
     @Override
     public void createControl(Composite parent) {
         Composite container = new Composite(parent, SWT.NULL);
         GridLayout layout = new GridLayout();
         container.setLayout(layout);
-        layout.numColumns = 3;
+        layout.numColumns = 2;
         layout.verticalSpacing = 9;
         Label label = new Label(container, SWT.NULL);
         label.setText("Project &Name:");
@@ -64,15 +72,22 @@ public class NewExampleProjectWizardPage extends WizardPage {
         GridData gd = new GridData(GridData.FILL_HORIZONTAL);
         textFieldProjectName.setLayoutData(gd);
         textFieldProjectName.addModifyListener(new ModifyListener() {
+
             @Override
             public void modifyText(ModifyEvent e) {
                 dialogChanged();
             }
         });
+        createExampleIntegratedToolButton = new Button(container, SWT.CHECK);
+        createExampleIntegratedToolButton.setText("Integrate example tool");
+        GridData gd2 = new GridData(GridData.FILL_HORIZONTAL);
+        gd2.horizontalSpan = 2;
+        createExampleIntegratedToolButton.setLayoutData(gd2);
 
         initialize();
         dialogChanged();
         setControl(container);
+        getShell().setMinimumSize(MINIMUM_WIDTH, MINIMUM_HEIGHT);
     }
 
     private void initialize() {
@@ -91,7 +106,7 @@ public class NewExampleProjectWizardPage extends WizardPage {
         }
 
         IProject existingProject = ResourcesPlugin.getWorkspace().getRoot()
-                .getProject(newProjectName);
+            .getProject(newProjectName);
         if (existingProject != null && existingProject.exists()) {
             updateStatus("This project name is already in use");
             return;
@@ -109,6 +124,10 @@ public class NewExampleProjectWizardPage extends WizardPage {
 
     public String getNewProjectName() {
         return textFieldProjectName.getText();
+    }
+
+    public boolean getCreateTIExample() {
+        return createExampleIntegratedToolButton.getSelection();
     }
 
 }

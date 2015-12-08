@@ -10,16 +10,17 @@ package de.rcenvironment.core.component.model.endpoint.api;
 
 /**
  * Describes an input group which can contain inputs and other input groups.
+ * 
  * @author Doreen Seider
  */
 public interface EndpointGroupDefinition {
 
     /**
-     * Scheduling type.
+     * Logic operation.
      * 
      * @author Doreen Seider
      */
-    enum Type {
+    enum LogicOperation {
         
         Or,
         
@@ -27,18 +28,23 @@ public interface EndpointGroupDefinition {
     }
     
     /**
-     * @return identifier of the group
+     * @return endpoint group name or <code>null</code> if it is a dynamic endpoint group
+     */
+    String getName();
+
+    /**
+     * @return endpoint group identifier or <code>null</code> if it is a static endpoint group
      */
     String getIdentifier();
+    
+    /**
+     * @return logic operation
+     */
+    LogicOperation getLogicOperation();
 
     /**
-     * @return scheduling type
+     * @return name of the parent group or <code>null</code> if it has none
      */
-    Type getType();
-
-    /**
-     * @return gat name of the group
-     */
-    String getGroupName();
+    String getParentGroupName();
 
 }

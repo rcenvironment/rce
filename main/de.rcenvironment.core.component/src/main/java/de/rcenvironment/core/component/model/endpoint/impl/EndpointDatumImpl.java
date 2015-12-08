@@ -12,6 +12,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link EndpointDatum}.
@@ -20,21 +21,19 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  */
 public class EndpointDatumImpl implements EndpointDatum {
 
-    private static final long serialVersionUID = -6636084678450015668L;
-
-    private String inputName;
-    
-    private String inputsComponentExecutionIdentifier;
-    
-    private NodeIdentifier inputsNode;
-    
     private NodeIdentifier workflowNode;
     
+    private String componentExecutionIdentifier;
+
+    private NodeIdentifier outputsNodeId;
+
     private String workflowExecutionIdentifier;
     
     private Long dataManagementId;
     
     private TypedDatum value;
+    
+    private EndpointDatumRecipient endpointDatumRecipient;
 
     @Override
     public TypedDatum getValue() {
@@ -43,19 +42,34 @@ public class EndpointDatumImpl implements EndpointDatum {
     
     @Override
     public String getInputName() {
-        return inputName;
+        return endpointDatumRecipient.getInputName();
     }
 
     @Override
-    public String getInputComponentExecutionIdentifier() {
-        return inputsComponentExecutionIdentifier;
+    public String getInputsComponentExecutionIdentifier() {
+        return endpointDatumRecipient.getInputsComponentExecutionIdentifier();
+    }
+    
+    @Override
+    public String getInputsComponentInstanceName() {
+        return endpointDatumRecipient.getInputsComponentInstanceName();
     }
 
     @Override
     public NodeIdentifier getInputsNodeId() {
-        return inputsNode;
+        return endpointDatumRecipient.getInputsNodeId();
     }
     
+    @Override
+    public String getOutputsComponentExecutionIdentifier() {
+        return componentExecutionIdentifier;
+    }
+
+    @Override
+    public NodeIdentifier getOutputsNodeId() {
+        return outputsNodeId;
+    }
+
     @Override
     public String getWorkflowExecutionIdentifier() {
         return workflowExecutionIdentifier;
@@ -70,25 +84,26 @@ public class EndpointDatumImpl implements EndpointDatum {
     public Long getDataManagementId() {
         return dataManagementId;
     }
-
-    public void setInputName(String inputName) {
-        this.inputName = inputName;
+    
+    @Override
+    public EndpointDatumRecipient getEndpointDatumRecipient() {
+        return endpointDatumRecipient;
     }
 
     public void setValue(TypedDatum value) {
         this.value = value;
     }
+    
+    public void setOutputsComponentExecutionIdentifier(String compExeIdentifier) {
+        this.componentExecutionIdentifier = compExeIdentifier;
+    }
+
+    public void setOutputsNodeId(NodeIdentifier outputsNodeId) {
+        this.outputsNodeId = outputsNodeId;
+    }
 
     public void setWorkflowExecutionIdentifier(String wfExeIdentifier) {
         this.workflowExecutionIdentifier = wfExeIdentifier;
-    }
-    
-    public void setInputsComponentExecutionIdentifier(String inputsCompExeIdentifier) {
-        this.inputsComponentExecutionIdentifier = inputsCompExeIdentifier;
-    }
-
-    public void setInputsNode(NodeIdentifier node) {
-        this.inputsNode = node;
     }
     
     public void setWorkfowNodeId(NodeIdentifier node) {
@@ -99,20 +114,15 @@ public class EndpointDatumImpl implements EndpointDatum {
         this.dataManagementId = dataManagementId;
     }
     
-    /**
-     * Sets information about the {@link EndpointDatumRecipient}.
-     * 
-     * @param endpointDatumRecipient {@link EndpointDatumRecipient} to fetch information from
-     */
     public void setEndpointDatumRecipient(EndpointDatumRecipient endpointDatumRecipient) {
-        setInputName(endpointDatumRecipient.getInputName());
-        setInputsComponentExecutionIdentifier(endpointDatumRecipient.getInputComponentExecutionIdentifier());
-        setInputsNode(endpointDatumRecipient.getInputsNodeId());
+        this.endpointDatumRecipient = endpointDatumRecipient;
     }
     
     @Override
     public String toString() {
-        return getValue().toString() + "@" + inputName;
+        return StringUtils.format("'%s' (%s @ %s -> %s @ %s (%s) at %s)", getValue().toString(), 
+            getOutputsComponentExecutionIdentifier(), getOutputsNodeId(),
+            getInputName(), getInputsComponentInstanceName(), getInputsComponentExecutionIdentifier(), getInputsNodeId());
     }
 
 }

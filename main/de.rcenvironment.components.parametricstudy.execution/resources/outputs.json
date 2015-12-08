@@ -1,7 +1,7 @@
 {
     "staticOutputs":[
         {
-            "name":"Design Variable",
+            "name":"Design variable",
             "dataTypes":[
                 "Float"
             ],
@@ -31,7 +31,6 @@
                     "defaultValue":"10",
                     "validation": "required"
                 },
-                
                 "fitStepSizeToBounds":{
                     "guiName":"Fit step size to bounds",
                     "guiPosition":"3",
@@ -44,15 +43,64 @@
                     "guiName":"Step size",
                     "guiPosition":"2",
                     "guiGroup":"Range",
-                    "dataType":"float",
+                    "dataType":"float_greater_zero",
                     "possibleValues":[
                         "*"
                     ],
                     "visibility":"shown",
                     "defaultValue":"1",
                     "validation": "required"
+                },
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "SelfLoopEndpoint"
+                }
+            }
+        },
+        {
+            "identifier":"toForward",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "readOnly": "true"
+        },
+        {
+            "name":"Done",
+            "dataTypes":[
+                "Boolean"
+            ],
+            "defaultDataType":"Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            }
+        },
+        {
+            "name":"Outer loop done",
+            "dataTypes":[
+                "Boolean"
+            ],
+            "defaultDataType":"Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "InnerLoopEndpoint"
                 }
             }
         }
+        
     ]
 }

@@ -2,6 +2,7 @@
 	<implementation class="de.rcenvironment.core.communication.rpc.internal.CallbackServiceImpl" />
 	<service>
     	<provide interface="de.rcenvironment.core.communication.rpc.api.CallbackService"/>
+    	<provide interface="de.rcenvironment.core.communication.rpc.api.RemotableCallbackService"/>
 	</service>
  	<reference
  		name="Platform Service"

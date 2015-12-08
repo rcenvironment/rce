@@ -21,6 +21,27 @@ public final class Messages extends NLS {
      * Constant.
      */
     public static String workflowPageName;
+    
+    /**
+     * Constant.
+     */
+    public static String bracket;
+    
+    
+    /**
+     * Constant.
+     */
+    public static String applyTargetInstance;
+    
+    /**
+     * Constant.
+     */
+    public static String anyRemote;
+
+    /**
+     * Constant.
+     */
+    public static String combomultiple;
 
     /**
      * Constant.
@@ -31,6 +52,11 @@ public final class Messages extends NLS {
      * Constant.
      */
     public static String workflowColon;
+    
+    /**
+     * Constant.
+     */
+    public static String configure;
 
     /**
      * Constant.
@@ -121,36 +147,36 @@ public final class Messages extends NLS {
      * Constant.
      */
     public static String illegalConfigMessage;
-    
+
     /**
      * Constant.
      */
     public static String illegalConfigReason;
-    
+
     /** Constant. */
     public static String settingUpWorkflow;
-    
+
     /** Constant. */
     public static String placeholderInformationHeader;
-    
+
     /** Constant. */
     public static String clear;
-    
+
     /** Constant. */
     public static String clearHistoryDialogTitle;
-    
+
     /** Constant. */
     public static String clearHistoryButton;
-    
+
     /** Constant. */
     public static String applyToAll;
-    
+
     /** Constant. */
     public static String older;
-    
+
     /** Constant. */
     public static String newer;
-    
+
     /** Constant. */
     public static String selectExcatMatchtingPlatform;
 
@@ -159,7 +185,7 @@ public final class Messages extends NLS {
 
     /** Constant. */
     public static String validationMessage;
-
+    
     /** Constant. */
     public static String proceedButton;
 

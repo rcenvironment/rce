@@ -12,7 +12,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.model.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**

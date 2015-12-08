@@ -10,13 +10,16 @@ package de.rcenvironment.core.configuration.testutils;
 import java.io.File;
 import java.util.Map;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 
 /**
  * Default test stub for {@link ConfigurationService}. Returns the Java default field values for all methods with a return value.
  * 
  * @author Robert Mischke
+ * @author Sascha Zur
  */
 public class ConfigurationServiceDefaultStub implements ConfigurationService {
 
@@ -32,6 +35,14 @@ public class ConfigurationServiceDefaultStub implements ConfigurationService {
     public ConfigurationSegment getConfigurationSegment(String relativePath) {
         return null;
     }
+
+    @Override
+    public WritableConfigurationSegment getOrCreateWritableConfigurationSegment(String string) {
+        return null;
+    }
+
+    @Override
+    public void writeConfigurationChanges() throws ConfigurationException {}
 
     @Override
     public void reloadConfiguration() {}
@@ -104,5 +115,35 @@ public class ConfigurationServiceDefaultStub implements ConfigurationService {
     @Override
     public File getInstallationDir() {
         return null;
+    }
+
+    @Override
+    public double[] getLocationCoordinates() {
+        return null;
+    }
+
+    @Override
+    public String getLocationName() {
+        return null;
+    }
+
+    @Override
+    public String getInstanceContact() {
+        return null;
+    }
+
+    @Override
+    public String getInstanceAdditionalInformation() {
+        return null;
+    }
+
+    @Override
+    public boolean hasIntendedProfileDirectoryValidVersion() {
+        return false;
+    }
+
+    @Override
+    public boolean isIntendedProfileDirectorySuccessfullyLocked() {
+        return false;
     }
 }

@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.regex.Pattern;
 
+import de.rcenvironment.core.component.model.api.Deprecated;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -21,6 +22,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Christian Weiss
  */
+@Deprecated
 public class SQLReaderComponent extends AbstractSQLComponent {
 
     private static final Pattern[] ALLOWED_PATTERNS = new Pattern[] {

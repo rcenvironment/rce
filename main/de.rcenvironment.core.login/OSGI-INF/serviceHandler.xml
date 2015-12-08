@@ -17,7 +17,7 @@
 	<reference bind="bindNotificationService"
 		unbind="unbindNotificationService"
 		cardinality="1..1"
-		interface="de.rcenvironment.core.notification.NotificationService"
+		interface="de.rcenvironment.core.notification.DistributedNotificationService"
 		name="Notification Service"
 		policy="dynamic"
 	/>

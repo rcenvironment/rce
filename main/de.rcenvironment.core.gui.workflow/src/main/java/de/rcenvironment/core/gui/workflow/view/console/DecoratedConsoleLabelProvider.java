@@ -28,6 +28,8 @@ public class DecoratedConsoleLabelProvider extends DecoratingLabelProvider imple
 
     private final Color red = Display.getDefault().getSystemColor(SWT.COLOR_RED);
     
+    private final Color yellow = Display.getDefault().getSystemColor(SWT.COLOR_DARK_YELLOW);
+
     private final Color black = Display.getDefault().getSystemColor(SWT.COLOR_BLACK);
     
     private final Color gray = Display.getDefault().getSystemColor(SWT.COLOR_GRAY);
@@ -75,8 +77,13 @@ public class DecoratedConsoleLabelProvider extends DecoratingLabelProvider imple
             ConsoleRow consoleRow = (ConsoleRow) element;
 
             switch (consoleRow.getType()) {
-            case STDERR:
+            case WORKFLOW_ERROR:
+            case COMPONENT_ERROR:
+            case TOOL_ERROR:
                 result = red;
+                break;
+            case COMPONENT_WARN:
+                result = yellow;
                 break;
             case LIFE_CYCLE_EVENT:
                 result = gray;

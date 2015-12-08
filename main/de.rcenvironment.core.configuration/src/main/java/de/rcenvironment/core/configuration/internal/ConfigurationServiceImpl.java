@@ -29,11 +29,13 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.osgi.framework.BundleContext;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessage;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEvent;
 import de.rcenvironment.core.configuration.ConfigurationServiceMessageEventListener;
+import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
@@ -41,7 +43,6 @@ import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
  * Implementation of the {@link ConfigurationService} using JSON as file format.
@@ -49,7 +50,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
  * @author Heinrich Wendel
  * @author Tobias Menden
  * @author Robert Mischke
- * @author Christian Weiß
+ * @author Christian Weiss
+ * @author Doreen Seider
  */
 public class ConfigurationServiceImpl implements ConfigurationService {
 
@@ -66,6 +68,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     protected static final boolean PROPERTY_SUBSTITUTION_MECHANISM_ENABLED = false;
 
     protected static final String MAIN_CONFIGURATION_FILENAME = "configuration.json";
+    
+    protected static final String JDBC_SUBDIRECTORY_PATH = "extras/database_connectors";
 
     // debug option that writes/exports the active configuration to the profile's output folder
     private static final boolean AUTO_EXPORT_CONFIGURATION_ON_STARTUP = false;
@@ -102,7 +106,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     private File profileDirectory;
 
-    private boolean originalProfileDirectoryLockAcquired;
+    private boolean isUsingIntendedProfileDirectory;
 
     private BootstrapConfiguration bootstrapSettings;
 
@@ -131,11 +135,6 @@ public class ConfigurationServiceImpl implements ConfigurationService {
      * @param context the bundle context
      */
     public void activate(BundleContext context) {
-
-        // define the global ServiceRegistryAccessFactory for components and GUI code
-        // TODO initialize from another location?
-        ServiceRegistry.setAccessFactory(new OsgiServiceRegistryAccessFactory(context));
-
         bootstrapSettings = BootstrapConfiguration.getInstance();
 
         initializeProfileDirFromBootstrapSettings();
@@ -220,12 +219,23 @@ public class ConfigurationServiceImpl implements ConfigurationService {
 
     @Override
     public boolean isUsingIntendedProfileDirectory() {
-        return originalProfileDirectoryLockAcquired;
+        return isUsingIntendedProfileDirectory;
+    }
+    
+    @Override
+    public boolean isIntendedProfileDirectorySuccessfullyLocked() {
+        return bootstrapSettings.isIntendedProfileDirectorySuccessfullyLocked();
+    }
+    
+    @Override
+    public boolean hasIntendedProfileDirectoryValidVersion() {
+        return bootstrapSettings.hasIntendedProfileDirectoryValidVersion();
     }
 
     private void initializeProfileDirFromBootstrapSettings() {
         profileDirectory = bootstrapSettings.getProfileDirectory();
-        originalProfileDirectoryLockAcquired = bootstrapSettings.isUsingIntendedProfileDirectory();
+        isUsingIntendedProfileDirectory = bootstrapSettings.isIntendedProfileDirectorySuccessfullyLocked()
+            && bootstrapSettings.hasIntendedProfileDirectoryValidVersion();
         // initializeInstanceDataDirectory();
     }
 
@@ -305,6 +315,16 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     }
 
     @Override
+    public WritableConfigurationSegment getOrCreateWritableConfigurationSegment(String path) throws ConfigurationException {
+        return currentRootConfiguration.getOrCreateWritableSubSegment(path);
+    }
+
+    @Override
+    public void writeConfigurationChanges() throws ConfigurationException, IOException {
+        configurationStore.update(currentRootConfiguration);
+    }
+
+    @Override
     public void reloadConfiguration() {
         loadRootConfiguration(true);
     }
@@ -336,7 +356,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     @Override
     public String resolveBundleConfigurationPath(String identifier, String path) {
         final String absolutePath;
-        // TODO 5.0 review: should this accept absolute paths at all? what is the use case? - misc_ro
+        // TODO 5.0 review: should this accept absolute paths at all? what is the use case? -
+        // misc_ro
         if (new File(path).isAbsolute()) {
             absolutePath = path;
         } else {
@@ -479,7 +500,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
                 if (!parentTempDir.isDirectory()) {
                     log.warn("Failed to initialize custom temp directory " + parentTempDir.getAbsolutePath()
                         + " - trying default directory");
-                    // clear the field to use same code path as when no custom root dir was given in the first place
+                    // clear the field to use same code path as when no custom root dir was given in
+                    // the first place
                     parentTempDir = null;
                 }
             }
@@ -547,7 +569,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         } catch (IOException e) {
             throw new IllegalStateException(
                 "Failed to initialize the temporary file manager after the parent root directory was successfully initialized; prefix="
-                    + instanceTempDirectoryPrefix, e);
+                    + instanceTempDirectoryPrefix,
+                e);
         }
         // TODO log instance root dir?
     }
@@ -575,21 +598,28 @@ public class ConfigurationServiceImpl implements ConfigurationService {
         configurablePathMap.put(ConfigurablePathId.PROFILE_ROOT, profileDirectory);
 
         // profile subdirectories
-        // initializeRelativeProfilePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA, CONFIGURATION_SUBDIRECTORY_PATH);
+        // initializeRelativeProfilePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA,
+        // CONFIGURATION_SUBDIRECTORY_PATH);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_INTEGRATION_DATA, INTEGRATION_SUBDIRECTORY_PATH);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_OUTPUT, RELATIVE_PATH_TO_OUTPUT_ROOT);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_DATA_MANAGEMENT, RELATIVE_PATH_TO_STORAGE_ROOT);
         initializeRelativeProfilePath(ConfigurablePathId.PROFILE_INTERNAL_DATA, RELATIVE_PATH_TO_INTERNAL_DATA_ROOT);
 
-        // definePathAlias(ConfigurablePathId.DEFAULT_WRITEABLE_CONFIGURATION_ROOT, ConfigurablePathId.PROFILE_CONFIGURATION_DATA);
+        // definePathAlias(ConfigurablePathId.DEFAULT_WRITEABLE_CONFIGURATION_ROOT,
+        // ConfigurablePathId.PROFILE_CONFIGURATION_DATA);
         definePathAlias(ConfigurablePathId.DEFAULT_WRITEABLE_INTEGRATION_ROOT, ConfigurablePathId.PROFILE_INTEGRATION_DATA);
 
         readableConfigurationDirs = new ArrayList<>();
         addDirectoryIfPresent(readableConfigurationDirs, new File(installationDataRoot, CONFIGURATION_SUBDIRECTORY_PATH));
         // TODO add system settings
         // TODO add user settings
-        // addDirectoryIfPresent(readableConfigurationDirs, getConfigurablePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA));
+        // addDirectoryIfPresent(readableConfigurationDirs,
+        // getConfigurablePath(ConfigurablePathId.PROFILE_CONFIGURATION_DATA));
         configurablePathListMap.put(ConfigurablePathListId.READABLE_CONFIGURATION_DIRS, readableConfigurationDirs);
+        
+        List<File> jdbcDriverDirs = new ArrayList<>();
+        addDirectoryIfPresent(jdbcDriverDirs, new File(installationDataRoot, JDBC_SUBDIRECTORY_PATH));
+        configurablePathListMap.put(ConfigurablePathListId.JDBC_DRIVER_DIRS, jdbcDriverDirs);
 
         List<File> readableIntegrationDirs = new ArrayList<>();
         addDirectoryIfPresent(readableIntegrationDirs, new File(installationDataRoot, INTEGRATION_SUBDIRECTORY_PATH));
@@ -652,7 +682,8 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private void initializePropertySubstitution() {
         // TODO >6.0.0: review, then remove or rework
         // add "platformProperties" as substitution values with a "platform:" prefix
-        // this.addSubstitutionProperties("platform", instanceConfiguration.getPlatformProperties());
+        // this.addSubstitutionProperties("platform",
+        // instanceConfiguration.getPlatformProperties());
 
         // load the discovery configuration (may use "platform:" substitutions internally);
         // bootstrapping this from the "outside" is necessary to prevent a cyclic dependency
@@ -710,4 +741,25 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     public boolean isUsingDefaultConfigurationValues() {
         return usingDefaultConfigurationValues;
     }
+
+    @Override
+    public double[] getLocationCoordinates() {
+        return generalSettings.getLocation();
+    }
+
+    @Override
+    public String getLocationName() {
+        return generalSettings.getLocationName();
+    }
+
+    @Override
+    public String getInstanceContact() {
+        return generalSettings.getContact();
+    }
+
+    @Override
+    public String getInstanceAdditionalInformation() {
+        return generalSettings.getAdditionalInformation();
+    }
+
 }

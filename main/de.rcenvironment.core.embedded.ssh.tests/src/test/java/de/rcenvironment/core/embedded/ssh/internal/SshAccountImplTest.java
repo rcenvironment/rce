@@ -40,9 +40,9 @@ public class SshAccountImplTest extends TestCase {
     @Test
     public void testValidationUsername() {
         SshAccountImpl user = SshTestUtils.getValidUser();
-        user.setUsername(null);
+        user.setLoginName(null);
         assertFalse("SshUser.validateUser() returned true but false was expected", user.validate(SshTestUtils.getValidRoles(), logger));
-        user.setUsername("");
+        user.setLoginName("");
         assertFalse("SshUser.validateUser() returned true but false was expected", user.validate(SshTestUtils.getValidRoles(), logger));
     }
 

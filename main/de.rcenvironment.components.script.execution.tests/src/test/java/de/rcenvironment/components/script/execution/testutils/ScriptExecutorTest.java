@@ -24,9 +24,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptException;
 
-import junit.framework.Assert;
-
-import org.apache.commons.io.FileUtils;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -44,17 +41,23 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
+import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.ScriptingUtils;
 import de.rcenvironment.core.scripting.python.PythonOutputWriter;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
+import junit.framework.Assert;
 
 /**
- * Abstract class for testing the implementations of {@link ScriptExecutor} since all should have
- * the same results with the same configurations.
+ * Abstract class for testing the implementations of {@link ScriptExecutor} since all should have the same results with the same
+ * configurations.
  * 
  * @author Sascha Zur
  */
@@ -66,7 +69,7 @@ public abstract class ScriptExecutorTest {
         { "float", DataType.Float, 1d },
         { "shorttext", DataType.ShortText, "testWert" },
         { "boolean", DataType.Boolean, true },
-        { "integer", DataType.Integer, 1 },
+        { "integer", DataType.Integer, 1L },
         { "file", DataType.FileReference, "" },
         { "dir", DataType.DirectoryReference, "" },
         { "vec", DataType.Vector, null }
@@ -86,8 +89,8 @@ public abstract class ScriptExecutorTest {
     @Test
     public void testExecutorLifecycle() throws ComponentException, ScriptException {
         ScriptEngine scriptEngine = getScriptingEngine();
-        WorkflowConsoleForwardingWriter stdOutWriter = new WorkflowConsoleForwardingWriter(new Object(), context, Type.STDOUT);
-        WorkflowConsoleForwardingWriter stdErrWriter = new WorkflowConsoleForwardingWriter(new Object(), context, Type.STDERR);
+        WorkflowConsoleForwardingWriter stdOutWriter = new WorkflowConsoleForwardingWriter(new Object(), context.getLog(), Type.TOOL_OUT);
+        WorkflowConsoleForwardingWriter stdErrWriter = new WorkflowConsoleForwardingWriter(new Object(), context.getLog(), Type.TOOL_ERROR);
 
         ScriptContext cont = EasyMock.createNiceMock(ScriptContext.class);
         EasyMock.expect(cont.getWriter()).andReturn(stdOutWriter).anyTimes();
@@ -171,13 +174,6 @@ public abstract class ScriptExecutorTest {
         executor.setWorkingPath("");
         executor.setStdoutWriter(EasyMock.createNiceMock(Writer.class));
         executor.setStderrWriter(EasyMock.createNiceMock(Writer.class));
-        TempFileServiceAccess.setupUnitTestEnvironment();
-        File stdOutTemp = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("testStdOut.log");
-        FileUtils.writeStringToFile(stdOutTemp, "test StdOut");
-        executor.setStdoutLogFile(stdOutTemp);
-        File stdErrTemp = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("testErrOut.log");
-        FileUtils.writeStringToFile(stdErrTemp, "test StdERR");
-        executor.setStderrLogFile(stdErrTemp);
         executor.postRun();
 
         for (Object[] dataInput : dataInputs) {
@@ -215,19 +211,28 @@ public abstract class ScriptExecutorTest {
 
     private void prepareScriptingUtilsAndContext() throws IOException {
         ScriptingUtils su = new ScriptingUtils();
-        TypedDatumService tds = EasyMock.createNiceMock(TypedDatumService.class);
-        TypedDatumFactory tdf = EasyMock.createNiceMock(TypedDatumFactory.class);
+        TypedDatumService tds = EasyMock.createMock(TypedDatumService.class);
+        TypedDatumFactory tdf = EasyMock.createMock(TypedDatumFactory.class);
         EasyMock.expect(tds.getFactory()).andReturn(tdf);
         EasyMock.replay(tds);
+        addMocksToFactory(tdf);
         EasyMock.replay(tdf);
         su.bindTypedDatumService(tds);
         ComponentDataManagementService cdms = EasyMock.createNiceMock(ComponentDataManagementService.class);
+        DirectoryReferenceTD directoryMock = EasyMock.createNiceMock(DirectoryReferenceTD.class);
+        EasyMock.expect(directoryMock.getDataType()).andReturn(DataType.DirectoryReference).anyTimes();
+        EasyMock.replay(directoryMock);
         EasyMock.expect(
             cdms.createDirectoryReferenceTDFromLocalDirectory(EasyMock.anyObject(ComponentContext.class), EasyMock.anyObject(File.class),
-                EasyMock.anyObject(String.class))).andReturn(EasyMock.createNiceMock(DirectoryReferenceTD.class));
+                EasyMock.anyObject(String.class)))
+            .andReturn(directoryMock);
+        FileReferenceTD fileMock = EasyMock.createNiceMock(FileReferenceTD.class);
+        EasyMock.expect(fileMock.getDataType()).andReturn(DataType.FileReference).anyTimes();
+        EasyMock.replay(fileMock);
         EasyMock.expect(
             cdms.createFileReferenceTDFromLocalFile(EasyMock.anyObject(ComponentContext.class), EasyMock.anyObject(File.class),
-                EasyMock.anyObject(String.class))).andReturn(EasyMock.createNiceMock(FileReferenceTD.class));
+                EasyMock.anyObject(String.class)))
+            .andReturn(fileMock);
         EasyMock.replay(cdms);
         context.addService(ComponentDataManagementService.class, cdms);
         su.bindComponentDataManagementService(cdms);
@@ -235,6 +240,34 @@ public abstract class ScriptExecutorTest {
         EasyMock.expect(configs.getParentTempDirectoryRoot()).andReturn(new File("")).anyTimes();
         EasyMock.replay(configs);
         context.addService(ConfigurationService.class, configs);
+
+    }
+
+    private void addMocksToFactory(TypedDatumFactory tdf) {
+        BooleanTD booleanMock = EasyMock.createMock(BooleanTD.class);
+        EasyMock.expect(booleanMock.getDataType()).andReturn(DataType.Boolean);
+        EasyMock.replay(booleanMock);
+        EasyMock.expect(tdf.createBoolean(EasyMock.anyBoolean())).andReturn(booleanMock);
+
+        FloatTD floatMock = EasyMock.createMock(FloatTD.class);
+        EasyMock.expect(floatMock.getDataType()).andReturn(DataType.Float);
+        EasyMock.replay(floatMock);
+        EasyMock.expect(tdf.createFloat(EasyMock.anyDouble())).andReturn(floatMock);
+
+        IntegerTD intMock = EasyMock.createMock(IntegerTD.class);
+        EasyMock.expect(intMock.getDataType()).andReturn(DataType.Integer);
+        EasyMock.replay(intMock);
+        EasyMock.expect(tdf.createInteger(EasyMock.anyLong())).andReturn(intMock);
+
+        ShortTextTD textMock = EasyMock.createMock(ShortTextTD.class);
+        EasyMock.expect(textMock.getDataType()).andReturn(DataType.ShortText);
+        EasyMock.replay(textMock);
+        EasyMock.expect(tdf.createShortText(EasyMock.anyObject(String.class))).andReturn(textMock);
+
+        VectorTD vectorMock = EasyMock.createMock(VectorTD.class);
+        EasyMock.expect(vectorMock.getDataType()).andReturn(DataType.Vector);
+        EasyMock.replay(vectorMock);
+        EasyMock.expect(tdf.createVector(EasyMock.anyInt())).andReturn(vectorMock);
 
     }
 }

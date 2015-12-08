@@ -11,9 +11,6 @@ package de.rcenvironment.core.component.workflow.model.api;
 import java.io.Serializable;
 import java.util.UUID;
 
-import org.eclipse.draw2d.PositionConstants;
-import org.eclipse.draw2d.geometry.Dimension;
-
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -24,7 +21,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Marc Stammerjohann
  * @author Doreen Seider
  */
-public class WorkflowLabel extends PropertiesChangeSupport implements Serializable {
+public class WorkflowLabel extends PropertiesChangeSupport implements Serializable, Comparable<WorkflowLabel> {
 
     /** Constant for the palette name entry. */
     public static final String PALETTE_ENTRY_NAME = "Add Label";
@@ -57,18 +54,18 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     public static final String COMMAND_CHANGE = "de.rcenvironment.rce.component.workflow.WorkflowLabelCommand";
 
     private static final int INT_255 = 255;
+    
+    private static final int CENTER_LABEL_ALIGNMENT = 2; // = org.eclipse.draw2d.PositionConstants.CENTER;
 
-    private static final int CENTER_LABEL_ALIGNMENT = PositionConstants.CENTER;
+    private static final int LEFT_LABEL_ALIGNMENT = 1; // = org.eclipse.draw2d.PositionConstants.LEFT;
 
-    private static final int LEFT_LABEL_ALIGNMENT = PositionConstants.LEFT;
+    private static final int RIGHT_LABEL_ALIGNMENT = 4; // = org.eclipse.draw2d.PositionConstants.RIGHT;
 
-    private static final int RIGHT_LABEL_ALIGNMENT = PositionConstants.RIGHT;
+    private static final int CENTER_TEXT_ALIGNMENT = 2; // = org.eclipse.draw2d.PositionConstants.CENTER;
 
-    private static final int CENTER_TEXT_ALIGNMENT = PositionConstants.CENTER;
+    private static final int TOP_TEXT_ALIGNMENT = 8; // = org.eclipse.draw2d.PositionConstants.TOP;
 
-    private static final int TOP_TEXT_ALIGNMENT = PositionConstants.TOP;
-
-    private static final int BOTTOM_TEXT_ALIGNMENT = PositionConstants.BOTTOM;
+    private static final int BOTTOM_TEXT_ALIGNMENT = 32; // = org.eclipse.draw2d.PositionConstants.BOTTOM;
 
     private static final long serialVersionUID = 3420597804308218542L;
 
@@ -78,7 +75,9 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
 
     private int y;
 
-    private Dimension size;
+    private int width;
+    
+    private int height;
 
     private int alpha = STANDARD_ALPHA;
 
@@ -136,18 +135,30 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     public void setY(int y) {
         this.y = y;
     }
+    
+    public int getHeight() {
+        return height;
+    }
 
-    public Dimension getSize() {
-        return size;
+    public int getWidth() {
+        return width;
+    }
+
+    public void setHeight(int height) {
+        this.height = height;
+    }
+    
+    public void setWidth(int width) {
+        this.width = width;
     }
 
     /**
-     * Resizes the label and throws a property change event.
-     * 
-     * @param size new size
+     * @param newHeight the new height
+     * @param newWidth the new width
      */
-    public void setSize(Dimension size) {
-        this.size = size;
+    public void setSize(int newWidth, int newHeight) {
+        setWidth(newWidth);
+        setHeight(newHeight);
     }
 
     public String getIdentifier() {
@@ -237,9 +248,14 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
 
     @Override
     public String toString() {
-        return StringUtils.format("'%s' (x=%d, y=%d, size=%s, alpha=%d, color=%d %d %d, background=%d %d %d, border=%b, font size=%d)", 
-            text, x, y, size.toString(), alpha, colorText[0], colorText[1], colorText[2], colorBackground[0], colorBackground[1],
-            colorBackground[2], hasBorder, textSize);
+        return StringUtils.format("'%s' (x=%d, y=%d, height=%d, width=%d alpha=%d, color=%d %d %d, background=%d %d %d, border=%b,"
+            + " font size=%d)", text, x, y, height, width, alpha, colorText[0], colorText[1], colorText[2], colorBackground[0], 
+            colorBackground[1], colorBackground[2], hasBorder, textSize);
+    }
+    
+    @Override
+    public int compareTo(WorkflowLabel o) {
+        return getIdentifier().compareTo(o.getIdentifier());
     }
 
     /**

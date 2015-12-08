@@ -18,6 +18,8 @@ import de.rcenvironment.core.datamodel.api.DataType;
  */
 public class InitialDynamicEndpointDefinitionImpl implements InitialDynamicEndpointDefinition {
 
+    private static final long serialVersionUID = -6493471587070176889L;
+
     private String name;
     
     private DataType dataType;

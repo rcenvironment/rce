@@ -17,6 +17,7 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.impl.NetworkResponseImpl;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants.ResultCode;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Convenience factory for {@link NetworkResponse}s.
@@ -35,9 +36,7 @@ public final class NetworkResponseFactory {
      * @return the generated response
      */
     public static NetworkResponse generateSuccessResponse(NetworkRequest request, byte[] responseBody) {
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(responseBody, request.getRequestId(), ProtocolConstants.ResultCode.SUCCESS);
-        return response;
+        return new NetworkResponseImpl(responseBody, request.getRequestId(), ProtocolConstants.ResultCode.SUCCESS);
     }
 
     /**
@@ -50,9 +49,7 @@ public final class NetworkResponseFactory {
      */
     public static NetworkResponse generateSuccessResponse(NetworkRequest request, Serializable responseBody) throws SerializationException {
         byte[] contentBytes = MessageUtils.serializeObject(responseBody);
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(contentBytes, request.getRequestId(), ProtocolConstants.ResultCode.SUCCESS);
-        return response;
+        return new NetworkResponseImpl(contentBytes, request.getRequestId(), ProtocolConstants.ResultCode.SUCCESS);
     }
 
     /**
@@ -76,10 +73,7 @@ public final class NetworkResponseFactory {
      * @return the generated response
      */
     public static NetworkResponse generateResponseForNoRouteWhileForwarding(NetworkRequest request, NodeIdentifier localNodeId) {
-        // TODO actually store the local node id
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(null, request.getRequestId(), ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_WHILE_FORWARDING);
-        return response;
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_WHILE_FORWARDING, localNodeId, null);
     }
 
     /**
@@ -90,25 +84,19 @@ public final class NetworkResponseFactory {
      * @return the generated response
      */
     public static NetworkResponse generateResponseForNoRouteAtSender(NetworkRequest request, NodeIdentifier localNodeId) {
-        // TODO actually store the local node id
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(null, request.getRequestId(), ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_AT_SENDER);
-        return response;
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_AT_SENDER, localNodeId, null);
     }
 
     /**
      * Generates a {@link NetworkResponse} indicating that an exception has occurred at the final destination of the request.
      * 
      * @param request the request
-     * @param cause the exception
+     * @param errorId the exception
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForExceptionAtDestination(NetworkRequest request, Throwable cause) {
-        // note: this assumes that all locally-generated exceptions are safe for serialization
-        byte[] contentBytes = MessageUtils.serializeSafeObject(cause);
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(contentBytes, request.getRequestId(), ProtocolConstants.ResultCode.EXCEPTION_AT_DESTINATION);
-        return response;
+    public static NetworkResponse generateResponseForInternalErrorAtRecipient(NetworkRequest request, String errorId) {
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.EXCEPTION_AT_DESTINATION, request.accessMetaData()
+            .getFinalRecipient(), errorId);
     }
 
     /**
@@ -117,16 +105,43 @@ public final class NetworkResponseFactory {
      * 
      * @param request the request
      * @param eventNodeId the id of the node where the exception occured
-     * @param cause the exception
+     * @param errorId an (optional) error id
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForExceptionWhileRouting(NetworkRequest request, String eventNodeId, Throwable cause) {
-        // note: this assumes that all locally-generated exceptions are safe for serialization
-        byte[] contentBytes = MessageUtils.serializeSafeObject(cause);
-        // TODO actually set event node id
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(contentBytes, request.getRequestId(), ProtocolConstants.ResultCode.EXCEPTION_WHILE_FORWARDING);
-        return response;
+    public static NetworkResponse generateResponseForErrorDuringDelivery(NetworkRequest request, NodeIdentifier eventNodeId,
+        String errorId) {
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.EXCEPTION_DURING_DELIVERY, eventNodeId, errorId);
+    }
+
+    /**
+     * Generates a {@link NetworkResponse} indicating that message forwarding/routing failed because one of the channels along the route has
+     * been marked as broken, but was not removed from the routing topology yet when the channel was selected (e.g. because of asynchronous
+     * queueing).
+     * 
+     * @param request the request
+     * @param eventNodeId the id of the node where the exception occured
+     * @param errorId an (optional) error id
+     * @return the generated response
+     */
+    public static NetworkResponse generateResponseForCloseOrBrokenChannelDuringRequestDelivery(NetworkRequest request,
+        NodeIdentifier eventNodeId, String errorId) {
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.CHANNEL_CLOSED_OR_BROKEN_BEFORE_SENDING_REQUEST, eventNodeId,
+            errorId);
+    }
+
+    /**
+     * Generates a {@link NetworkResponse} indicating that the request was successfully sent or forwarded, but that the local message
+     * channel was closed while waiting for the reponse.
+     * 
+     * @param request the request
+     * @param eventNodeId the id of the node where the exception occured
+     * @param errorId an (optional) error id
+     * @return the generated response
+     */
+    public static NetworkResponse generateResponseForChannelCloseWhileWaitingForResponse(NetworkRequest request,
+        NodeIdentifier eventNodeId, String errorId) {
+        return generateErrorResponse(request,
+            ProtocolConstants.ResultCode.CHANNEL_OR_RESPONSE_LISTENER_SHUT_DOWN_WHILE_WAITING_FOR_RESPONSE, eventNodeId, errorId);
     }
 
     /**
@@ -134,30 +149,27 @@ public final class NetworkResponseFactory {
      * the next hop.
      * 
      * @param request the request
-     * @param eventNodeId the id of the node where the exception occured
-     * @param cause the exception
+     * @param eventNodeId the id of the node where the timeout occurred
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForTimeoutWaitingForResponse(NetworkRequest request,
-        String eventNodeId, Throwable cause) {
-        // note: this assumes that all locally-generated exceptions are safe for serialization
-        byte[] contentBytes = MessageUtils.serializeSafeObject(cause);
-        // TODO actually set the event node id
-        NetworkResponseImpl response =
-            new NetworkResponseImpl(contentBytes, request.getRequestId(), ProtocolConstants.ResultCode.TIMEOUT_WAITING_FOR_RESPONSE);
-        return response;
+    public static NetworkResponse generateResponseForTimeoutWaitingForResponse(NetworkRequest request, NodeIdentifier eventNodeId) {
+        return generateErrorResponse(request, ProtocolConstants.ResultCode.TIMEOUT_WAITING_FOR_RESPONSE, eventNodeId, null);
     }
 
-    /**
-     * Generates a {@link NetworkResponse} indicating that a channel could not be used for sending as it has been closed or merked as
-     * broken.
-     * 
-     * @param request the request
-     * @return the generated response
-     */
-    public static NetworkResponse generateResponseForChannelClosedOrBroken(NetworkRequest request) {
-        NetworkResponseImpl response = new NetworkResponseImpl(null, request.getRequestId(), ProtocolConstants.ResultCode.CHANNEL_CLOSED);
-        return response;
+    private static NetworkResponse generateErrorResponse(NetworkRequest request, ResultCode resultCode, NodeIdentifier reporterNodeId,
+        String errorId) {
+        errorId = StringUtils.nullSafe(errorId);
+        String nodeIdString = StringUtils.nullSafe(reporterNodeId.getIdString());
+        // wrap into pre-defined format string
+        String errorInfoPayload = StringUtils.escapeAndConcat(errorId, nodeIdString);
+        // generate response
+        return new NetworkResponseImpl(MessageUtils.serializeSafeObject(errorInfoPayload), request.getRequestId(), resultCode);
+    }
+
+    private static String representErrorLocationAsString(NodeIdentifier localNodeId) {
+        // note: there is a minimal information leak here by revealing what name the intermediate node assigns to itself; it's
+        // very unlikely that this a secret, yet the sender is allowed to route across this node, though - misc_ro
+        return localNodeId.toString();
     }
 
 }

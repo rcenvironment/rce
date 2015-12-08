@@ -14,7 +14,7 @@
 	<!-- Verbatim text formatting (programlistings) -->
 	<xsl:attribute-set name="monospace.verbatim.properties">
 		<xsl:attribute name="font-size">
-			<xsl:text>8pt</xsl:text>
+			<xsl:text>6.5pt</xsl:text>
 		</xsl:attribute>
 	</xsl:attribute-set>
 	<xsl:attribute-set name="verbatim.properties">
@@ -90,6 +90,10 @@
 		          end-indent="0.25in"
 		          border-top="0.5pt solid black"
 		          border-bottom="0.5pt solid black"
+		          margin-left="3.0em"
+		          margin-right="0.0em"
+		          padding-left="0.5em"
+		          padding-right="0.5em"
 		          padding-top="4pt"
 		          padding-bottom="4pt"
 		          id="{$id}">

@@ -32,6 +32,13 @@
                filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerCommonComponentFilter"
                enablesFor="1">
          </propertySection>
+         <propertySection
+               tab="workflow.editor.tab.optimizer.FaultTolerantLoop"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.LoopBehaviorInCaseOfFailureSection"
+               id="workflow.editor.tab.Properties.Section.FaultTolerantLoop"
+               filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerCommonComponentFilter"
+               enablesFor="1">
+         </propertySection>
            <propertySection
                tab="workflow.editor.tab.optimizer.NestedLoop"
                class="de.rcenvironment.core.gui.workflow.editor.properties.NestedLoopSection"
@@ -64,16 +71,22 @@
                afterTab="workflow.editor.tab.optimizer.Algorithm"
                id="workflow.editor.tab.optimizer.InputsOutputs">
          </propertyTab>
+         <propertyTab
+               label="Fault Tolerance"
+               category="default"
+               afterTab="workflow.editor.tab.optimizer.Algorithm"
+               id="workflow.editor.tab.optimizer.FaultTolerantLoop">
+         </propertyTab>
           <propertyTab
                label="%nestedLoop"
                category="default"
-               afterTab="workflow.editor.tab.optimizer.Parameters"
+               afterTab="workflow.editor.tab.optimizer.FaultTolerantLoop"
                id="workflow.editor.tab.optimizer.NestedLoop">
          </propertyTab>
          <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
+               label="Workflow Data"
                afterTab="workflow.editor.tab.optimizer.NestedLoop">
          </propertyTab>
      </propertyTabs>
@@ -92,16 +105,6 @@
             class="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
             id="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
             name="Optimizer"
-            restorable="false">
-      </view>
-   </extension>
-      	<extension
-         point="org.eclipse.ui.views">
-      <view icon="resources/doe_64.png"
-            allowMultiple="true"
-            class="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
-            id="de.rcenvironment.components.optimizer.gui.view.OptimizerView"
-            name="DOE"
             restorable="false">
       </view>
    </extension>

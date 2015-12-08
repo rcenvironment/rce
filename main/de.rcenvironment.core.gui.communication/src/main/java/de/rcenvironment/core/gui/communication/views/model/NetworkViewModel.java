@@ -17,11 +17,13 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.gui.communication.views.NetworkView;
+import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
 
 /**
  * The complete model that the {@link NetworkView} is filled from.
  * 
  * @author Robert Mischke
+ * @author David Scholz
  */
 public class NetworkViewModel {
 
@@ -50,12 +52,19 @@ public class NetworkViewModel {
      */
     public NetworkGraphWithProperties networkGraphWithProperties;
 
+    /**
+     * The map of {@link SystemMonitoringDataSnapshot}.
+     */
+    public Map<NodeIdentifier, SystemMonitoringDataSnapshot> monitoringDataModelMap;
+
     public NetworkViewModel(NetworkGraph networkGraph, DistributedComponentKnowledge componentKnowledge,
-        Collection<ConnectionSetup> connectionSetups, Map<NodeIdentifier, Map<String, String>> nodeProperties) {
+        Collection<ConnectionSetup> connectionSetups, Map<NodeIdentifier, Map<String, String>> nodeProperties,
+        Map<NodeIdentifier, SystemMonitoringDataSnapshot> monitoringDataModelMap) {
         this.networkGraph = networkGraph;
         this.nodeProperties = nodeProperties;
         this.componentKnowledge = componentKnowledge;
         this.connectionSetups = connectionSetups;
+        this.monitoringDataModelMap = monitoringDataModelMap;
         updateGraphWithProperties();
     }
 
@@ -73,6 +82,10 @@ public class NetworkViewModel {
 
     public Map<NodeIdentifier, Map<String, String>> getNodeProperties() {
         return nodeProperties;
+    }
+    
+    public Map<NodeIdentifier, SystemMonitoringDataSnapshot> getMonitoringDataModelMap() {
+        return monitoringDataModelMap;
     }
 
     /**

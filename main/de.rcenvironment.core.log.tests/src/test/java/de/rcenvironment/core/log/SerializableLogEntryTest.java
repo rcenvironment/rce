@@ -31,9 +31,9 @@ public class SerializableLogEntryTest {
         final int level = 7;
         final String message = "sesamstrasse";
         final long time = 11;
-        final Throwable exception = new Exception();
+        final String exception = new Exception().toString();
         
-        SerializableLogEntry entry = new SerializableLogEntry(name, level, message, time, exception);
+        SerializableLogEntry entry = new SerializableLogEntry(name, level, message, time, exception.toString());
         
         assertEquals(name, entry.getBundleName());
         assertEquals(level, entry.getLevel());
@@ -46,13 +46,13 @@ public class SerializableLogEntryTest {
         assertEquals(pi, entry.getPlatformIdentifer());
         
         entry.toString();
-        new SerializableLogEntry(name, LogService.LOG_DEBUG, message, time, exception).toString();
-        new SerializableLogEntry(name, LogService.LOG_INFO, message, time, exception).toString();
-        new SerializableLogEntry(name, LogService.LOG_WARNING, message, time, exception).toString();
-        new SerializableLogEntry(name, LogService.LOG_ERROR, message, time, exception).toString();
+        new SerializableLogEntry(name, LogService.LOG_DEBUG, message, time, exception.toString()).toString();
+        new SerializableLogEntry(name, LogService.LOG_INFO, message, time, exception.toString()).toString();
+        new SerializableLogEntry(name, LogService.LOG_WARNING, message, time, exception.toString()).toString();
+        new SerializableLogEntry(name, LogService.LOG_ERROR, message, time, exception.toString()).toString();
         
         final long laterTime = 43;
-        SerializableLogEntry laterEntry = new SerializableLogEntry(name, level, message, laterTime, exception);
+        SerializableLogEntry laterEntry = new SerializableLogEntry(name, level, message, laterTime, exception.toString());
         
         final int lower = -1;
         assertEquals(0, entry.compareTo(entry));

@@ -18,9 +18,9 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
@@ -79,19 +79,19 @@ public class ScriptComponent extends DefaultComponent {
                 try {
                     scriptFileRef = componentContext.getService(ComponentDataManagementService.class).
                         createTaggedReferenceFromString(componentContext, script);
+                    historyDataItem.setScriptFileReference(scriptFileRef);
                 } catch (IOException e) {
-                    LogFactory.getLog(ScriptComponent.class).error("Error writing script to data management: ", e);
+                    String errorMessage = "Failed to store Python script into the data management"
+                        + "; it will not be available in the workflow data browser";
+                    String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(LogFactory.getLog(ScriptComponent.class),
+                        errorMessage, e);
+                    componentContext.getLog().componentError(errorMessage, e, errorId);
+
                 }
             }
-            historyDataItem.setScriptFileReference(scriptFileRef);
         }
         executor.runScript();
-        try {
-            executor.postRun();
-        } catch (ComponentException e) {
-            componentContext.printConsoleLine("Could not parse script output. " + e.getMessage(), Type.STDERR);
-            throw e;
-        }
+        executor.postRun();
         executor.deleteTempFiles();
         writeFinalHistoryDataItem();
     }
@@ -101,13 +101,14 @@ public class ScriptComponent extends DefaultComponent {
     }
 
     @Override
+    public void completeStartOrProcessInputsAfterFailure() throws ComponentException {
+        writeFinalHistoryDataItem();
+    }
+
+    @Override
     public void tearDown(FinalComponentState state) {
         if (executor != null) {
             executor.deleteTempFiles();
-        }
-
-        if (state.equals(FinalComponentState.FAILED)) {
-            writeFinalHistoryDataItem();
         }
     }
 

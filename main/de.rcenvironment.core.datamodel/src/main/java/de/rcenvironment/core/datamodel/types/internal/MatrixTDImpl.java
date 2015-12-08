@@ -131,17 +131,16 @@ public class MatrixTDImpl extends AbstractTypedDatum implements MatrixTD {
 
     @Override
     public String toLengthLimitedString(int maxLength) {
-        int rows = 0;
-        int columns = 0;
         String text = "[";
         String formattedLabel = "";
 
         VectorTD firstRow = getRowVector(0);
-        rows = getRowDimension();
-        columns = getColumnDimension();
         for (FloatTD f : firstRow.toArray()) {
             text += f.toString();
             text += ",";
+            if (text.length() > maxLength) {
+                break;
+            }
         }
             // remove last comma
         text = text.substring(0, text.length() - 1);
@@ -151,7 +150,7 @@ public class MatrixTDImpl extends AbstractTypedDatum implements MatrixTD {
         text += "]";
         text += "...";
         formattedLabel += text;
-        String dimensionsText = " (" + columns + "x" + rows + ")";
+        String dimensionsText = " (" + getColumnDimension() + "x" + getRowDimension() + ")";
         formattedLabel += dimensionsText;
         return formattedLabel;
     }
@@ -172,7 +171,7 @@ public class MatrixTDImpl extends AbstractTypedDatum implements MatrixTD {
             fullContent = fullContent.substring(0, fullContent.length() - 2);
             fullContent += "\r\n";
         }
-
+        
         return fullContent;
     }
 

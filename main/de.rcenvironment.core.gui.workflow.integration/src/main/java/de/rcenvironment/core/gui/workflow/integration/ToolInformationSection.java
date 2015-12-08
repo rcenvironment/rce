@@ -9,8 +9,11 @@
 package de.rcenvironment.core.gui.workflow.integration;
 
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.Section;
@@ -19,6 +22,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
+import de.rcenvironment.core.gui.workflow.editor.documentation.ToolIntegrationDocumentationGUIHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
 /**
@@ -36,11 +40,13 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
 
     private Label toolDescriptionLabel;
 
+    private Composite infoComposite;
+
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
         Section infoSection = PropertyTabGuiHelper.createSingleColumnSectionComposite(parent, getWidgetFactory(),
             Messages.infoSection);
-        Composite infoComposite = getWidgetFactory().createFlatFormComposite(infoSection);
+        infoComposite = getWidgetFactory().createFlatFormComposite(infoSection);
         infoComposite.setLayout(new GridLayout(2, false));
         new Label(infoComposite, SWT.NONE).setText(Messages.toolNameLabel);
         toolNameLabel = new Label(infoComposite, SWT.NONE);
@@ -60,6 +66,27 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
 
         toolDescriptionLabel = new Label(infoComposite, SWT.NONE);
 
+        Button toolDocumentationButton = new Button(infoComposite, SWT.PUSH);
+        GridData docuData = new GridData();
+        docuData.horizontalSpan = 2;
+        toolDocumentationButton.setLayoutData(docuData);
+        toolDocumentationButton.setText("Open Documentation");
+
+        toolDocumentationButton.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                String identifier = getConfiguration().getComponentIdentifierWithVersion();
+                ToolIntegrationDocumentationGUIHelper.getInstance().showComponentDocumentation(identifier);
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+
+        });
+
         infoSection.setClient(infoComposite);
 
     }
@@ -68,6 +95,7 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
     public void aboutToBeShown() {
         super.aboutToBeShown();
         updateLabel();
+        infoComposite.layout();
     }
 
     @Override
@@ -83,6 +111,8 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
         toolDescriptionLabel.setText("");
         ReadOnlyConfiguration readOnlyconfig = getConfiguration().getConfigurationDescription()
             .getComponentConfigurationDefinition().getReadOnlyConfiguration();
+        readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_NAME);
+
         if (readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_NAME) != null) {
             toolNameLabel.setText(readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_NAME));
         }
@@ -96,4 +126,5 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
             toolDescriptionLabel.setText(readOnlyconfig.getValue(ToolIntegrationConstants.KEY_TOOL_DESCRIPTION));
         }
     }
+
 }

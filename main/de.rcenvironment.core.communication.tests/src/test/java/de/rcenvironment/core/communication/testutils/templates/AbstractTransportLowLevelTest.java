@@ -19,27 +19,30 @@ import org.easymock.Capture;
 import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.Timeout;
 
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.configuration.IPWhitelistConnectionFilter;
-import de.rcenvironment.core.communication.messaging.RawMessageChannelEndpointHandler;
-import de.rcenvironment.core.communication.model.BrokenMessageChannelListener;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
-import de.rcenvironment.core.communication.model.RawNetworkResponseHandler;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.model.impl.NetworkResponseImpl;
 import de.rcenvironment.core.communication.protocol.MessageMetaData;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.testutils.AbstractTransportBasedTest;
+import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
+import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
  * A common base class that defines common tests to verify proper transport operation. Subclasses implement
@@ -52,6 +55,12 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
     private static final int DEFAULT_REQUEST_TIMEOUT = 1000;
 
     private static final long WAIT_FOR_INBOUND_CHANNEL_CLOSING_EVENT_MSEC = 1000;
+
+    /**
+     * This sets a conservative timeout for all derived tests; individual test may set stricter timeouts. - misc_ro
+     */
+    @Rule
+    public Timeout globalTimeout = new Timeout(DEFAULT_SAFEGUARD_TEST_TIMEOUT);
 
     /**
      * This test verifies the basic functions of a network transport. It covers {@link ServerContactPoint} startup, connection initiation,
@@ -69,7 +78,7 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         InitialNodeInformationImpl mockServerNodeInformation = new InitialNodeInformationImpl("serverId");
         mockServerNodeInformation.setDisplayName("Mock Server");
         // configure mock endpoint handler
-        RawMessageChannelEndpointHandler serverEndpointHandler = EasyMock.createMock(RawMessageChannelEndpointHandler.class);
+        MessageChannelEndpointHandler serverEndpointHandler = EasyMock.createMock(MessageChannelEndpointHandler.class);
         // configure handshake response
         EasyMock.expect(serverEndpointHandler.exchangeNodeInformation(EasyMock.anyObject(InitialNodeInformation.class))).andReturn(
             mockServerNodeInformation);
@@ -110,6 +119,8 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         assertNotNull(channel.getRemoteNodeInformation());
         assertEquals(mockServerNodeInformation, channel.getRemoteNodeInformation());
 
+        logThreadPoolState("after connecting");
+
         // define server response behavior
         final String requestString = "Hi world";
         final String responseSuffix = "#response"; // arbitrary
@@ -133,7 +144,7 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         }).times(messageRepetitions);
 
         // set up mock client response handler
-        RawNetworkResponseHandler responseHandler = EasyMock.createMock(RawNetworkResponseHandler.class);
+        MessageChannelResponseHandler responseHandler = EasyMock.createMock(MessageChannelResponseHandler.class);
         // define expected callback
         Capture<NetworkResponse> responseCapture = new Capture<NetworkResponse>(CaptureType.ALL);
         responseHandler.onResponseAvailable(EasyMock.capture(responseCapture));
@@ -175,6 +186,12 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
 
         scp.shutDown();
         assertFalse(scp.isAcceptingMessages());
+
+        logThreadPoolState("after server shutdown");
+    }
+
+    private void logThreadPoolState(String timeDescription) {
+        log.debug("Thread pool state " + timeDescription + ":\n" + SharedThreadPool.getInstance().getFormattedStatistics(true));
     }
 
 }

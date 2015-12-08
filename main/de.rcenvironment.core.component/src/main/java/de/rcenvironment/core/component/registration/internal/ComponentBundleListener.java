@@ -18,10 +18,13 @@ import org.osgi.framework.BundleException;
 import org.osgi.framework.BundleListener;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.execution.api.Component;
+import de.rcenvironment.core.configuration.CommandLineArguments;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * {@link BundleListener} to regognize when new {@link Bundle}s providing a {@link Component} are
- * installed in oder to start this {@link Bundle}.
+ * {@link BundleListener} to recognize when new {@link Bundle}s providing a {@link Component} are installed in oder to start this
+ * {@link Bundle}.
  * 
  * @author Doreen Seider
  */
@@ -38,20 +41,22 @@ public class ComponentBundleListener implements BundleListener {
     }
 
     /**
-     * Checks the given {@link Bundle} if it provides a {@link Component} and declare that in its
-     * Manifest and starts it if it does.
+     * Checks the given {@link Bundle} if it provides a {@link Component} and declare that in its Manifest and starts it if it does.
      * 
      * @param bundle The given bundle to check and possibly to start.
      */
     public static void handleBundle(Bundle bundle) {
-        Dictionary<String, String> headers = bundle.getHeaders();
-        String componentEntry = headers.get(ComponentConstants.MANIFEST_ENTRY_RCE_COMPONENT);
-        if (componentEntry != null && Boolean.valueOf(componentEntry)) {
-            if (bundle.getState() == Bundle.RESOLVED) {
-                try {
-                    bundle.start();
-                } catch (BundleException e) {
-                    LOGGER.error("Starting a Bundle providng an integrated Component failed: " + bundle.getSymbolicName());
+        if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
+            Dictionary<String, String> headers = bundle.getHeaders();
+            String componentEntry = headers.get(ComponentConstants.MANIFEST_ENTRY_RCE_COMPONENT);
+            if (componentEntry != null && Boolean.valueOf(componentEntry)) {
+                if (bundle.getState() == Bundle.RESOLVED) {
+                    try {
+                        bundle.start();
+                    } catch (BundleException e) {
+                        LOGGER.error(StringUtils.format("Failed to start bundle '%s' that provides a workflow component",
+                            bundle.getSymbolicName()), e);
+                    }
                 }
             }
         }

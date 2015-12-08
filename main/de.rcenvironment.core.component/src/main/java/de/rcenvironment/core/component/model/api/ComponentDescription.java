@@ -20,12 +20,13 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
+import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Class holding information about an installed {@link Component}.
@@ -60,7 +61,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
 
     private ConfigurationDescription configurationDescription;
 
-    private boolean isNodeTransient = false;
+    private boolean isNodeIdTransient = false;
 
     public ComponentDescription(ComponentInstallation componentInstallation) {
 
@@ -84,6 +85,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     public void initializeWithDefaults() {
         inputDescriptionsManager.addInitialDynamicEndpointDescriptions();
         outputDescriptionsManager.addInitialDynamicEndpointDescriptions();
+        configurationDescription.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM, String.valueOf(true));
     }
 
     public String getIdentifier() {
@@ -113,12 +115,12 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
         return componentInterface.getSize();
     }
 
-    public boolean getIsNodeTransient() {
-        return isNodeTransient;
+    public boolean getIsNodeIdTransient() {
+        return isNodeIdTransient;
     }
 
-    public void setIsNodeTransient(boolean isNodeTransient) {
-        this.isNodeTransient = isNodeTransient;
+    public void setIsNodeIdTransient(boolean isNodeTransient) {
+        this.isNodeIdTransient = isNodeTransient;
     }
 
     public EndpointDescriptionsManager getInputDescriptionsManager() {
@@ -219,7 +221,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     
     @Override
     public String toString() {
-        return getNode() + StringUtils.SEPARATOR + componentInterface.getIdentifier();
+        return getNode() + ":" + componentInterface.getIdentifier();
     }
 
     @Override
@@ -249,6 +251,10 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     @Override
     public int compareTo(ComponentDescription o) {
         return this.getName().compareTo(o.getName());
+    }
+
+    public ComponentInterface getComponentInterface() {
+        return componentInterface;
     }
 
 }

@@ -7,36 +7,27 @@
  */
 package de.rcenvironment.core.gui.communication.views;
 
-import java.io.ByteArrayInputStream;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
-import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
-import de.rcenvironment.core.communication.connection.api.DisconnectReason;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.gui.communication.views.internal.AnchorPoints;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
+import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNode;
+import de.rcenvironment.core.gui.communication.views.spi.SelfRenderingNetworkViewNode;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * The {@link LabelProvider} for the network view.
  * 
  * @author Robert Mischke
+ * @author David Scholz (added resource monitoring folder)
  */
 public class NetworkViewLabelProvider extends LabelProvider {
 
-    private Image rceImage;
-    
     private Image nodeImage;
 
     private Image folderImage;
@@ -49,14 +40,9 @@ public class NetworkViewLabelProvider extends LabelProvider {
 
     private Image disconnectImage;
 
-    private Image componentFallbackImage;
-
-    private final Map<String, Image> componentIconCache;
-
     private boolean optionNodeIdsVisible;
 
     public NetworkViewLabelProvider() {
-        componentIconCache = new HashMap<String, Image>();
         createImages();
     }
 
@@ -67,10 +53,17 @@ public class NetworkViewLabelProvider extends LabelProvider {
     @Override
     public String getText(Object element) {
         String result;
-        if (element == NetworkViewContentProvider.NETWORK_ROOT_NODE) {
+        if (element instanceof SelfRenderingNetworkViewNode) {
+            return ((SelfRenderingNetworkViewNode) element).getText();
+        } else if (element instanceof ContributedNetworkViewNode && ((ContributedNetworkViewNode) element).getContributor() != null) {
+            // TODO second "if" clause can be removed after full transition
+            return ((ContributedNetworkViewNode) element).getContributor().getText(element);
+        } else if (element == AnchorPoints.INSTANCES_PARENT_NODE) {
             return "Instances";
-        } else if (element == NetworkViewContentProvider.CONNECTIONS_ROOT_NODE) {
-            return "Connections";
+        } else if (element == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE) {
+            return "RCE Network";
+        } else if (element == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE) {
+            return "SSH Remote Access";
         } else if (element instanceof NetworkGraphNodeWithContext) {
             NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) element;
             // switch by node context
@@ -88,23 +81,6 @@ public class NetworkViewLabelProvider extends LabelProvider {
                     result += " <Self>";
                 }
                 return result;
-            case PUBLISHED_COMPONENTS_FOLDER:
-                return "Published Components";
-            case LOCAL_COMPONENTS_FOLDER:
-                return "Local Components";
-            case COMPONENT_INSTALLATION:
-                ComponentInterface componentInterface = typedNode.getComponentInstallation().getComponentRevision().getComponentInterface();
-                // Should be improved because using plain ids here is weird.
-                // Plain ids are used to not introduce a new dependency to core.component.integration as this is not good from a (kind of)
-                // communication bundle. But as the network view is not showing only communication stuff anymore, this dependency thing is
-                // probably obsolete -- seid_do, Aug 2014
-                if (componentInterface.getVersion() != null
-                    && componentInterface.getIdentifier().startsWith("de.rcenvironment.integration.common.")
-                    || componentInterface.getIdentifier().startsWith("de.rcenvironment.integration.cpacs.")) {
-                    return StringUtils.format("%s (%s)", componentInterface.getDisplayName(), componentInterface.getVersion());
-                } else {
-                    return StringUtils.format("%s", componentInterface.getDisplayName());
-                }
             case RAW_NODE_PROPERTIES_FOLDER:
                 return "Raw Node Properties";
             case RAW_NODE_PROPERTY:
@@ -112,16 +88,6 @@ public class NetworkViewLabelProvider extends LabelProvider {
             default:
                 return "<error>";
             }
-        } else if (element instanceof ConnectionSetup) {
-            final ConnectionSetup typedElement = (ConnectionSetup) element;
-            String subState = "";
-            ConnectionSetupState connectionState = typedElement.getState();
-            DisconnectReason disconnectReason = typedElement.getDisconnectReason();
-            if ((connectionState == ConnectionSetupState.DISCONNECTED || connectionState == ConnectionSetupState.DISCONNECTING)
-                && (disconnectReason != null)) {
-                subState = ": " + disconnectReason.getDisplayText();
-            }
-            result = StringUtils.format("%s (%s%s)", typedElement.getDisplayName(), connectionState.getDisplayText(), subState);
         } else if (element instanceof NetworkGraphLink) {
             result = ((NetworkGraphLink) element).getLinkId(); // TODO
         } else {
@@ -133,10 +99,11 @@ public class NetworkViewLabelProvider extends LabelProvider {
     @Override
     public Image getImage(Object element) {
         Image result = null;
-        if (element == NetworkViewContentProvider.NETWORK_ROOT_NODE) {
-            result = networkImage;
-        } else if (element == NetworkViewContentProvider.CONNECTIONS_ROOT_NODE) {
-            result = disconnectImage;
+        if (element instanceof SelfRenderingNetworkViewNode) {
+            return ((SelfRenderingNetworkViewNode) element).getImage();
+        } else if (element instanceof ContributedNetworkViewNode && ((ContributedNetworkViewNode) element).getContributor() != null) {
+            // TODO second "if" clause can be removed after full transition
+            return ((ContributedNetworkViewNode) element).getContributor().getImage(element);
         } else if (element instanceof NetworkGraphNodeWithContext) {
             NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) element;
             // switch by node context
@@ -144,31 +111,9 @@ public class NetworkViewLabelProvider extends LabelProvider {
             case ROOT:
                 result = nodeImage;
                 break;
-            case PUBLISHED_COMPONENTS_FOLDER:
-            case LOCAL_COMPONENTS_FOLDER:
+            case RESOURCE_MONITORING_FOLDER:
             case RAW_NODE_PROPERTIES_FOLDER:
                 result = folderImage;
-                break;
-            case COMPONENT_INSTALLATION:
-                ComponentInstallation installation = typedNode.getComponentInstallation();
-                if (installation != null) {
-                    // FIXME improve caching key; temporary
-                    String cacheKey = installation.getInstallationId();
-                    Image image = componentIconCache.get(cacheKey);
-                    if (image == null) {
-                        try {
-                            byte[] iconData = installation.getComponentRevision().getComponentInterface().getIcon16();
-                            // TODO review: dispose Image instance? or cache Image instance instead?
-                            ImageDescriptor iDescr =
-                                ImageDescriptor.createFromImage(new Image(Display.getCurrent(), new ByteArrayInputStream(iconData)));
-                            image = iDescr.createImage();
-                        } catch (RuntimeException e) {
-                            image = rceImage; // set fallback in case of errors
-                        }
-                        componentIconCache.put(cacheKey, image);
-                    }
-                    result = image;
-                }
                 break;
             case RAW_NODE_PROPERTY:
                 result = infoImage;
@@ -176,15 +121,14 @@ public class NetworkViewLabelProvider extends LabelProvider {
             default:
                 result = null;
             }
-        } else if (element instanceof ConnectionSetup) {
-            ConnectionSetup typedNode = (ConnectionSetup) element;
-            if (typedNode.getState() == ConnectionSetupState.CONNECTED) {
-                result = connectionImage;
-            } else {
-                result = disconnectImage;
-            }
         } else if (element instanceof NetworkGraphLink) {
             result = connectionImage;
+        } else if (element == AnchorPoints.INSTANCES_PARENT_NODE) {
+            result = nodeImage;
+        } else if (element == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE) {
+            result = networkImage;
+        } else if (element == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE) {
+            result = networkImage;
         }
         if (result == null) {
             // FIXME proper error/placeholder image?
@@ -196,30 +140,20 @@ public class NetworkViewLabelProvider extends LabelProvider {
     @Override
     public void dispose() {
         disposeImages();
-        // dispose cached component resources/icons
-        for (Image image : componentIconCache.values()) {
-            if (image != componentFallbackImage) {
-                image.dispose();
-            }
-        }
     }
 
     private void createImages() {
         ImageManager imageManager = ImageManager.getInstance();
-        rceImage = imageManager.getSharedImage(StandardImages.RCE_LOGO_16);
         folderImage = imageManager.getSharedImage(StandardImages.FOLDER_16);
         infoImage = imageManager.getSharedImage(StandardImages.INFORMATION_16);
         nodeImage = ImageDescriptor.createFromURL(
             getClass().getResource("/resources/icons/node.png")).createImage(); //$NON-NLS-1$
         networkImage = ImageDescriptor.createFromURL(
-            getClass().getResource("/resources/icons/instances.gif")).createImage(); //$NON-NLS-1$
+            getClass().getResource("/resources/icons/network.gif")).createImage(); //$NON-NLS-1$
         connectionImage = ImageDescriptor.createFromURL(
             getClass().getResource("/resources/icons/connect.png")).createImage(); //$NON-NLS-1$
         disconnectImage = ImageDescriptor.createFromURL(
             getClass().getResource("/resources/icons/disconnect.png")).createImage(); //$NON-NLS-1$
-
-        // reused resources/icons; do not dispose again
-        componentFallbackImage = infoImage;
     }
 
     private void disposeImages() {

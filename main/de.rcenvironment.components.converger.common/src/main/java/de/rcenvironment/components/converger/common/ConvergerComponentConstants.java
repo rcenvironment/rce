@@ -58,10 +58,7 @@ public final class ConvergerComponentConstants {
     public static final String CONVERGED_RELATIVE = "Converged relative";
 
     /** Constant. */
-    public static final String ID_CONVERGED_VALUE = "convergedValue";
-
-    /** Constant. */
-    public static final String ID_VALUE_TO_CONVERGE = "valueToConverge";
+    public static final String ENDPOINT_ID_TO_CONVERGE = "valueToConverge";
 
     private ConvergerComponentConstants() {
 

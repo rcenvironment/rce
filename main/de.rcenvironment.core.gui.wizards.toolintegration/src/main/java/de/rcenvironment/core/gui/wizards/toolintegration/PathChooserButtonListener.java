@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.gui.wizards.toolintegration;
 
+import java.io.File;
+
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.widgets.Shell;
@@ -24,11 +26,15 @@ import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
  */
 public class PathChooserButtonListener implements SelectionListener {
 
+    private static final String OPEN_PATH = "Open path...";
+
     private Text linkedTextfield;
 
     private Shell shell;
 
     private boolean directoryDialog;
+
+    private File openPath = null;
 
     public PathChooserButtonListener(Text linkedTextfield, boolean isDirectoryDialog, Shell shell) {
         this.linkedTextfield = linkedTextfield;
@@ -40,10 +46,15 @@ public class PathChooserButtonListener implements SelectionListener {
     public void widgetSelected(SelectionEvent arg0) {
         String selectedPath;
         if (!directoryDialog) {
-            selectedPath = PropertyTabGuiHelper.selectFileFromFileSystem(shell,
-                new String[] { "*.*" }, "Open path...");
+            if (openPath != null) {
+                selectedPath = PropertyTabGuiHelper.selectFileFromFileSystem(shell,
+                    new String[] { "*.*" }, OPEN_PATH, openPath.getAbsolutePath());
+            } else {
+                selectedPath = PropertyTabGuiHelper.selectFileFromFileSystem(shell,
+                    new String[] { "*.*" }, OPEN_PATH);
+            }
         } else {
-            selectedPath = PropertyTabGuiHelper.selectDirectoryFromFileSystem(shell, "Open path...");
+            selectedPath = PropertyTabGuiHelper.selectDirectoryFromFileSystem(shell, OPEN_PATH);
         }
         if (selectedPath != null) {
             linkedTextfield.setText(selectedPath);
@@ -54,5 +65,9 @@ public class PathChooserButtonListener implements SelectionListener {
     public void widgetDefaultSelected(SelectionEvent arg0) {
         widgetSelected(arg0);
 
+    }
+
+    public void setOpenPath(File path) {
+        openPath = path;
     }
 }

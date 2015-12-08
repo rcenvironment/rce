@@ -8,19 +8,22 @@
 
 package de.rcenvironment.core.configuration.bootstrap;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
-
-import de.rcenvironment.core.configuration.bootstrap.internal.LaunchParameters;
+import java.nio.channels.OverlappingFileLockException;
+import java.nio.file.Files;
 
 /**
  * Helper class that chooses the profile directory and related paths to use, based on command-line or .ini file parameters.
  * 
  * @author Robert Mischke
+ * @author Oliver Seebach
  */
 public final class BootstrapConfiguration {
 
@@ -45,6 +48,14 @@ public final class BootstrapConfiguration {
      * allow sending shutdown signals to external instances.
      */
     public static final String PROFILE_SHUTDOWN_DATA_SUBDIR = "internal";
+
+    /**
+     * The current profile's version number. Needs to be updated manually whenever changed in the profile require an update.
+     */
+    public static final Integer PROFILE_VERSION_NUMBER = 1;
+
+    /** The name of the file containing the profile version. */
+    public static final String PROFILE_VERSION_FILE_NAME = "profile.version";
 
     /**
      * The name of the lock file to signal that the containing profile is in use.
@@ -76,7 +87,9 @@ public final class BootstrapConfiguration {
 
     private final File originalProfileDirectory;
 
-    private final boolean acquiredIntendedProfileDirectory;
+    private final boolean intendedProfileDirectoryLocked;
+    
+    private final boolean hasIntendedProfileDirectoryValidVersion;
 
     private final File finalProfileDirectory;
 
@@ -94,7 +107,7 @@ public final class BootstrapConfiguration {
     private final File profilesRootDirectory;
 
     private final boolean fallbackProfileDisabled;
-
+    
     /**
      * Performs the bootstrap profile initialization.
      * 
@@ -105,19 +118,36 @@ public final class BootstrapConfiguration {
         PrintStream stdOut = System.out;
         PrintStream stdErr = System.err;
 
-        final LaunchParameters launchParams = new LaunchParameters();
+        LaunchParameters launchParameters = LaunchParameters.getInstance();
 
         profilesRootDirectory = determineProfilesParentDirectory();
 
-        originalProfileDirectory = determineOriginalProfileDir(launchParams);
+        originalProfileDirectory = determineOriginalProfileDir(launchParameters);
         File preliminaryProfileDir = originalProfileDirectory;
 
-        shutdownRequested = launchParams.containsToken("--shutdown");
+        shutdownRequested = launchParameters.containsToken("--shutdown");
 
         // For headless mode, fallback profile is automatically disabled.
         fallbackProfileDisabled =
-            System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParams.containsToken("--headless")
-                || launchParams.containsToken("--batch");
+            System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
+                || launchParameters.containsToken("--batch");
+
+        // check profile version number. In case of error either start in fallback profile or don't start
+        hasIntendedProfileDirectoryValidVersion = validateProfileDirectoryVersionNumber(preliminaryProfileDir, stdErr);
+        if (!hasIntendedProfileDirectoryValidVersion) {
+            // fail if fallback profile disabled
+            if (fallbackProfileDisabled) {
+                String errorMessage = "The required version of the profile directory is " + BootstrapConfiguration.PROFILE_VERSION_NUMBER
+                    + " but the profile directory's current version is newer. Most likely, because it was used with a newer RCE version"
+                    + " before. As downgrade is not supported, the configured profile directory cannot be used with this RCE version."
+                    + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
+                stdErr.println(errorMessage + " Fallback profile is disabled, shutting down.");
+                System.exit(1);
+            } else {
+                // else go on in the process with the fallback profile; instance validator will inform the user and force shutdown
+                preliminaryProfileDir = determineFallbackProfileDirectory(originalProfileDirectory);
+            }
+        }
 
         // FIXME 6.0.0 - in case of a profile dir collision, the fallback profile will still use this for shutdown data - misc_ro
         shutdownProfileDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR + "/shutdown");
@@ -133,8 +163,8 @@ public final class BootstrapConfiguration {
             introText = "Using shutdown profile directory";
         }
 
-        acquiredIntendedProfileDirectory = attemptToLockProfileDirectory(preliminaryProfileDir);
-        if (acquiredIntendedProfileDirectory) {
+        intendedProfileDirectoryLocked = attemptToLockProfileDirectory(preliminaryProfileDir);
+        if (intendedProfileDirectoryLocked) {
             finalProfileDirectory = preliminaryProfileDir;
             introText = "Using profile directory";
         } else {
@@ -158,9 +188,12 @@ public final class BootstrapConfiguration {
         finalProfileDirectoryPath = finalProfileDirectory.getAbsolutePath();
 
         internalDataDirectory = new File(finalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR);
-        internalDataDirectory.mkdirs();
-        if (!internalDataDirectory.isDirectory()) {
-            throw new IOException("Failed to initialize internal data directory " + internalDataDirectory.getAbsolutePath());
+        // create internal data directory only if it was not already created by profile version checking procedure
+        if (!internalDataDirectory.exists()){
+            internalDataDirectory.mkdirs();
+            if (!internalDataDirectory.isDirectory()) {
+                throw new IOException("Failed to initialize internal data directory " + internalDataDirectory.getAbsolutePath());
+            }
         }
 
         // circumvent CheckStyle rule to generate basic output before the log system is initialized
@@ -170,7 +203,7 @@ public final class BootstrapConfiguration {
         setLoggingParameters();
 
         // TODO/NOTE: this does not take full effect; apparently, the setting has already been read and applied
-//         setOsgiStorageLocation();
+        // setOsgiStorageLocation();
     }
 
     /**
@@ -186,6 +219,10 @@ public final class BootstrapConfiguration {
      * @return the singleton instance
      */
     public static BootstrapConfiguration getInstance() {
+        if (instance == null) {
+            throw new IllegalStateException("No " + BootstrapConfiguration.class.getSimpleName()
+                + " instance available - most likely, its containing bundle has not been properly initialized");
+        }
         return instance;
     }
 
@@ -215,8 +252,15 @@ public final class BootstrapConfiguration {
         return shutdownDataDirectory;
     }
 
-    public boolean isUsingIntendedProfileDirectory() {
-        return acquiredIntendedProfileDirectory;
+    public boolean isIntendedProfileDirectorySuccessfullyLocked() {
+        return intendedProfileDirectoryLocked;
+    }
+    
+    /**
+     * @return <code>true</code> if profile directory has valid version (<= current one)
+     */
+    public boolean hasIntendedProfileDirectoryValidVersion() {
+        return hasIntendedProfileDirectoryValidVersion;
     }
 
     public File getProfilesRootDirectory() {
@@ -338,12 +382,61 @@ public final class BootstrapConfiguration {
         // try to get a lock on this file
         try {
             lock = new RandomAccessFile(lockfile, "rw").getChannel().tryLock();
-        } catch (IOException e) {
+        } catch (IOException | OverlappingFileLockException e) {
             throw new IOException("Unexpected error when trying to acquire a file lock on " + lockfile, e);
         }
         // NOTE: It is not necessary to release the lock on the file, this is automatically done
         // by the Java VM or in case of an abnormal end by the operating system
         return lock != null;
+    }
+
+    /**
+     * Validates profile directory version number.
+     *
+     * @param profileFolder the profile folder
+     * @param stdErr the std err
+     * @return true, if successful
+     * @throws IOException Signals that an I/O exception has occurred.
+     */
+    private boolean validateProfileDirectoryVersionNumber(File profileFolder, PrintStream stdErr) throws IOException {
+        File versionFile = new File(new File(profileFolder, PROFILE_INTERNAL_DATA_SUBDIR), PROFILE_VERSION_FILE_NAME);
+        if (versionFile.isFile() && versionFile.exists()) {
+            try {
+                String content = new String(Files.readAllBytes(versionFile.toPath()));
+                int currentProfilesVersionNumber = Integer.parseInt(content);
+                if (currentProfilesVersionNumber > PROFILE_VERSION_NUMBER) {
+                    // if RCE started although the profile version was higher, something when wrong
+                    return false;
+                } else if (currentProfilesVersionNumber < PROFILE_VERSION_NUMBER) {
+                    // else update version number
+                    writeProfileVersionNumberToProfile(versionFile, PROFILE_VERSION_NUMBER);
+                }
+            } catch (NumberFormatException e) {
+                stdErr.println("Failed to read version of profile directory; considered as invalid: " + e.getMessage());
+                // if profile could not be read, return false
+                return false;
+            }
+        } else {
+            // if version number file does not exist: create it
+            writeProfileVersionNumberToProfile(versionFile, PROFILE_VERSION_NUMBER);
+        }
+        return true;
+    }
+
+    private void writeProfileVersionNumberToProfile(File versionFile, int versionNumber) throws IOException {
+        // if version file's parent folder does not exist, create it
+        if (!versionFile.getParentFile().exists()){
+            versionFile.getParentFile().mkdirs();
+        }
+        // if file does not exist, create it
+        if (!versionFile.exists()) {
+            versionFile.createNewFile();
+        }
+        // don't append but overwrite file's content
+        FileWriter fw = new FileWriter(versionFile, false);
+        BufferedWriter bw = new BufferedWriter(fw);
+        bw.write(String.valueOf(versionNumber));
+        bw.close();
     }
 
 }

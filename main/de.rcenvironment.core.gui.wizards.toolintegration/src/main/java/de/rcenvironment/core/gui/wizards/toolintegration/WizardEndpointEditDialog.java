@@ -61,8 +61,12 @@ public class WizardEndpointEditDialog extends Dialog {
     private Combo dataTypeCombo;
 
     private Button[] inputDatumHandlingButtons = new Button[3];
+    
+    private Combo defaultInputDatumHandlingCombo;
 
     private Button[] inputExecutionConstraintButtons = new Button[3];
+    
+    private Combo defaultInputExecutionConstraintCombo;
 
     private Text filenameText;
 
@@ -146,32 +150,33 @@ public class WizardEndpointEditDialog extends Dialog {
         if (type.equals(InOutputConfigurationPage.INPUTS)) {
             if (config.containsKey(InOutputConfigurationPage.HANDLING)) {
                 for (String handling : StringUtils.splitAndUnescape(config.get(InOutputConfigurationPage.HANDLING))) {
-                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.valueOf(
-                        handling))].setSelection(true);
+                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.valueOf(handling))]
+                        .setSelection(true);
                 }
             } else if (config.containsKey(InOutputConfigurationPage.USAGE)) {
                 if (config.get(InOutputConfigurationPage.USAGE).equals("initial")) {
                     inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.Constant)]
                         .setSelection(true);
                 } else {
-                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(
-                        EndpointDefinition.InputDatumHandling.Single)].setSelection(true);
+                    inputDatumHandlingButtons[inputDatumHandlings.indexOf(EndpointDefinition.InputDatumHandling.Single)].setSelection(true);
                 }
             }
+            fillInputHandlingComboForDefaultSelection(true);
             if (config.containsKey(InOutputConfigurationPage.CONSTRAINT)) {
                 for (String constraint : StringUtils.splitAndUnescape(config.get(InOutputConfigurationPage.CONSTRAINT))) {
-                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(
-                        EndpointDefinition.InputExecutionContraint.valueOf(constraint))].setSelection(true);
+                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition.InputExecutionContraint
+                            .valueOf(constraint))].setSelection(true);
                 }
             } else if (config.containsKey(InOutputConfigurationPage.USAGE)) {
                 if (config.get(InOutputConfigurationPage.USAGE).equals("optional")) {
-                    inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(
-                        EndpointDefinition.InputExecutionContraint.NotRequired)].setSelection(true);
+                    inputExecutionConstraintButtons[inputExecutionConstraints
+                        .indexOf(EndpointDefinition.InputExecutionContraint.NotRequired)].setSelection(true);
                 } else {
                     inputExecutionConstraintButtons[inputExecutionConstraints.indexOf(EndpointDefinition.InputExecutionContraint.Required)]
                         .setSelection(true);
                 }
             }
+            fillInputExecutionConstraintsComboForDefaultSelection(true);
         }
         if (config.get(InOutputConfigurationPage.FILENAME) != null && filenameText != null) {
             filenameText.setText(config.get(InOutputConfigurationPage.FILENAME));
@@ -223,6 +228,11 @@ public class WizardEndpointEditDialog extends Dialog {
             inputDatumHandlingButtons[2] = new Button(propertyContainer, SWT.CHECK);
             inputDatumHandlingButtons[2].setText(inputDatumHandlings.get(2).getDisplayName());
 
+            new Label(propertyContainer, SWT.NONE).setText(Messages.defaultInputHandlingColon);
+            defaultInputDatumHandlingCombo = new Combo(propertyContainer, SWT.READ_ONLY);
+            dataTypeData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+            defaultInputDatumHandlingCombo.setLayoutData(dataTypeData);
+            
             new Label(propertyContainer, SWT.NONE).setText(Messages.inputExecutionConstraintColon);
             inputExecutionConstraintButtons[0] = new Button(propertyContainer, SWT.CHECK);
             inputExecutionConstraintButtons[0].setText(inputExecutionConstraints.get(0).getDisplayName());
@@ -232,6 +242,12 @@ public class WizardEndpointEditDialog extends Dialog {
             new Label(propertyContainer, SWT.NONE);
             inputExecutionConstraintButtons[2] = new Button(propertyContainer, SWT.CHECK);
             inputExecutionConstraintButtons[2].setText(inputExecutionConstraints.get(2).getDisplayName());
+            
+            new Label(propertyContainer, SWT.NONE).setText(Messages.defaultInputExecutionConstraintColon);
+            defaultInputExecutionConstraintCombo = new Combo(propertyContainer, SWT.READ_ONLY);
+            dataTypeData = new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL);
+            defaultInputExecutionConstraintCombo.setLayoutData(dataTypeData);
+            
             filenameText = null;
             /**
              * Commented out because of bug with renaming file / dir
@@ -249,6 +265,34 @@ public class WizardEndpointEditDialog extends Dialog {
         }
 
     }
+    
+    private int getIndexFromSelectionIndexForInputHandling(int selectionIndex) {
+        final int minusOne = -1;
+        int count = minusOne;
+        for (int i = 0; i < inputDatumHandlingButtons.length; i++) {
+            if (inputDatumHandlingButtons[i].getSelection()) {
+                count++;
+                if (count == selectionIndex) {
+                    return i;
+                }
+            }
+        }
+        return minusOne;
+    }
+    
+    private int getIndexFromSelectionIndexForExecutionConstraint(int selectionIndex) {
+        final int minusOne = -1;
+        int count = minusOne;
+        for (int i = 0; i < inputExecutionConstraintButtons.length; i++) {
+            if (inputExecutionConstraintButtons[i].getSelection()) {
+                count++;
+                if (count == selectionIndex) {
+                    return i;
+                }
+            }
+        }
+        return minusOne;
+    }
 
     private void saveAllConfig() {
         config.put(InOutputConfigurationPage.NAME, nameText.getText());
@@ -262,6 +306,10 @@ public class WizardEndpointEditDialog extends Dialog {
                 i++;
             }
             config.put(InOutputConfigurationPage.HANDLING, StringUtils.escapeAndConcat(parts));
+            if (defaultInputDatumHandlingCombo.getSelectionIndex() >= 0) {
+                config.put(InOutputConfigurationPage.DEFAULT_HANDLING, inputDatumHandlings.get(
+                    getIndexFromSelectionIndexForInputHandling(defaultInputDatumHandlingCombo.getSelectionIndex())).name());
+            }
             parts = new ArrayList<>();
             i = 0;
             for (Button b : inputExecutionConstraintButtons) {
@@ -271,6 +319,10 @@ public class WizardEndpointEditDialog extends Dialog {
                 i++;
             }
             config.put(InOutputConfigurationPage.CONSTRAINT, StringUtils.escapeAndConcat(parts));
+            if (defaultInputExecutionConstraintCombo.getSelectionIndex() >= 0) {
+                config.put(InOutputConfigurationPage.DEFAULT_CONSTRAINT, inputExecutionConstraints.get(
+                    getIndexFromSelectionIndexForExecutionConstraint(defaultInputExecutionConstraintCombo.getSelectionIndex())).name());
+            }
         } else {
             config.put(InOutputConfigurationPage.HANDLING, "-");
             config.put(InOutputConfigurationPage.CONSTRAINT, "-");
@@ -290,9 +342,6 @@ public class WizardEndpointEditDialog extends Dialog {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void create() {
         super.create();
@@ -302,30 +351,66 @@ public class WizardEndpointEditDialog extends Dialog {
         installModifyListeners();
     }
 
+    private void fillInputHandlingComboForDefaultSelection(boolean init) {
+        String itemSelected = null;
+        if (init && config.containsKey(InOutputConfigurationPage.DEFAULT_HANDLING)) {
+            itemSelected = EndpointDefinition.InputDatumHandling.valueOf(config.get(InOutputConfigurationPage.DEFAULT_HANDLING))
+                .getDisplayName();
+        } else if (defaultInputDatumHandlingCombo.getItemCount() > 0) {
+            itemSelected = defaultInputDatumHandlingCombo.getItem(defaultInputDatumHandlingCombo.getSelectionIndex());
+        }
+        List<String> items = new ArrayList<>();
+        for (int i = 0; i < inputDatumHandlings.size(); i++) {
+            if (inputDatumHandlingButtons[i].getSelection()) {
+                items.add(inputDatumHandlings.get(i).getDisplayName());
+            }
+        }
+        defaultInputDatumHandlingCombo.setItems(items.toArray(new String[items.size()]));
+        if (items.contains(itemSelected)) {
+            defaultInputDatumHandlingCombo.select(items.indexOf(itemSelected));
+        } else {
+            defaultInputDatumHandlingCombo.select(0);
+        }
+    }
+    
+    private void fillInputExecutionConstraintsComboForDefaultSelection(boolean init) {
+        String itemSelected = null;
+        if (init && config.containsKey(InOutputConfigurationPage.DEFAULT_CONSTRAINT)) {
+            itemSelected = EndpointDefinition.InputExecutionContraint.valueOf(config.get(InOutputConfigurationPage.DEFAULT_CONSTRAINT))
+                .getDisplayName();
+        } else if (defaultInputExecutionConstraintCombo.getItemCount() > 0) {
+            itemSelected = defaultInputExecutionConstraintCombo.getItem(defaultInputExecutionConstraintCombo.getSelectionIndex());
+        }
+        List<String> items = new ArrayList<>();
+        for (int i = 0; i < inputExecutionConstraints.size(); i++) {
+            if (inputExecutionConstraintButtons[i].getSelection()) {
+                items.add(inputExecutionConstraints.get(i).getDisplayName());
+            }
+        }
+        defaultInputExecutionConstraintCombo.setItems(items.toArray(new String[items.size()]));
+        if (items.contains(itemSelected)) {
+            defaultInputExecutionConstraintCombo.select(items.indexOf(itemSelected));
+        } else {
+            defaultInputExecutionConstraintCombo.select(0);
+        }
+    }
+    
     private void installModifyListeners() {
-        SelectionListener sl = new SelectionListener() {
+        SelectionListener defaultSl = new SelectionListener() {
 
             @Override
-            public void widgetDefaultSelected(SelectionEvent arg0) {
-                widgetSelected(arg0);
+            public void widgetDefaultSelected(SelectionEvent event) {
+                widgetSelected(event);
             }
 
             @Override
-            public void widgetSelected(SelectionEvent arg0) {
+            public void widgetSelected(SelectionEvent event) {
                 saveAllConfig();
                 validateInput();
             }
 
         };
-        dataTypeCombo.addSelectionListener(sl);
-        if (type.equals(InOutputConfigurationPage.INPUTS)) {
-            for (Button b : inputDatumHandlingButtons) {
-                b.addSelectionListener(sl);
-            }
-            for (Button b : inputExecutionConstraintButtons) {
-                b.addSelectionListener(sl);
-            }
-        }
+        dataTypeCombo.addSelectionListener(defaultSl);
         ModifyListener ml = new ModifyListener() {
 
             @Override
@@ -334,10 +419,38 @@ public class WizardEndpointEditDialog extends Dialog {
                 validateInput();
             }
         };
-
         nameText.addModifyListener(ml);
         if (filenameText != null) {
             filenameText.addModifyListener(ml);
+        }
+        
+        if (type.equals(InOutputConfigurationPage.INPUTS)) {
+            SelectionListener buttonSl = new SelectionListener() {
+    
+                @Override
+                public void widgetDefaultSelected(SelectionEvent event) {
+                    widgetSelected(event);
+                }
+    
+                @Override
+                public void widgetSelected(SelectionEvent event) {
+                    fillInputExecutionConstraintsComboForDefaultSelection(false);
+                    fillInputHandlingComboForDefaultSelection(false);
+                    saveAllConfig();
+                    validateInput();
+                }
+    
+            };
+            defaultInputDatumHandlingCombo.addSelectionListener(defaultSl);
+            defaultInputExecutionConstraintCombo.addSelectionListener(defaultSl);
+            if (type.equals(InOutputConfigurationPage.INPUTS)) {
+                for (Button b : inputDatumHandlingButtons) {
+                    b.addSelectionListener(buttonSl);
+                }
+                for (Button b : inputExecutionConstraintButtons) {
+                    b.addSelectionListener(buttonSl);
+                }
+            }
         }
 
     }

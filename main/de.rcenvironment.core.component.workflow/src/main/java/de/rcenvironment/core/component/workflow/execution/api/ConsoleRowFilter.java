@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.workflow.execution.api;
 import java.util.regex.Pattern;
 
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 
 /**
  * Acceptance filter for {@link ConsoleRow}s. Use {@link #accept(ConsoleRow)} to apply the filter criteria. This class is mutable; use the
@@ -30,7 +31,7 @@ public class ConsoleRowFilter implements Cloneable {
     private boolean includeLifecycleEvents;
 
     // include "meta info" type rows?
-    private boolean includeMetaInfo;
+    private boolean includeComponentLog;
 
     // include "stdout" type rows?
     private boolean includeStdout;
@@ -46,7 +47,7 @@ public class ConsoleRowFilter implements Cloneable {
      */
     public ConsoleRowFilter() {
         includeLifecycleEvents = true;
-        includeMetaInfo = true;
+        includeComponentLog = true;
         includeStderr = true;
         includeStdout = true;
     }
@@ -75,7 +76,7 @@ public class ConsoleRowFilter implements Cloneable {
      * @param includeMeta The includeMeta to set.
      */
     public void setIncludeMetaInfo(boolean includeMeta) {
-        this.includeMetaInfo = includeMeta;
+        this.includeComponentLog = includeMeta;
     }
     
     /**
@@ -134,14 +135,17 @@ public class ConsoleRowFilter implements Cloneable {
 
         // check type
         switch (row.getType()) {
-        case STDOUT:
+        case TOOL_OUT:
             accept = includeStdout;
             break;
-        case STDERR:
+        case TOOL_ERROR:
             accept = includeStderr;
             break;
-        case COMPONENT_OUTPUT:
-            accept = includeMetaInfo;
+        case COMPONENT_INFO:
+        case COMPONENT_WARN:
+        case COMPONENT_ERROR:
+        case WORKFLOW_ERROR:
+            accept = includeComponentLog;
             break;
         case LIFE_CYCLE_EVENT:
             // TODO not an elegant solution; improve? - misc_ro
@@ -162,10 +166,16 @@ public class ConsoleRowFilter implements Cloneable {
             // workflow filter is set but did not match
             accept = false;
         }
-        // check component
-        if (accept && component != null && !component.equals(row.getComponentName())) {
-            // component filter is set but did not match
-            accept = false;
+        if (row.getType() == Type.WORKFLOW_ERROR) {
+            if (accept && (component != null && !component.isEmpty())) {
+                accept = false;
+            }
+        } else {
+            // check component
+            if (accept && component != null && !component.equals(row.getComponentName())) {
+                // component filter is set but did not match
+                accept = false;
+            }            
         }
         // check search pattern if set
         if (accept && searchTermPattern != null) {
@@ -182,7 +192,7 @@ public class ConsoleRowFilter implements Cloneable {
         ConsoleRowFilter clone = new ConsoleRowFilter();
         clone.component = component;
         clone.workflow = workflow;
-        clone.includeMetaInfo = includeMetaInfo;
+        clone.includeComponentLog = includeComponentLog;
         clone.includeLifecycleEvents = includeLifecycleEvents;
         clone.includeStderr = includeStderr;
         clone.includeStdout = includeStdout;

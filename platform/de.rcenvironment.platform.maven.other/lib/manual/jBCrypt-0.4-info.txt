@@ -1,0 +1,5 @@
+This is the 0.4 release of jBCRypt, downloaded from http://www.mindrot.org/projects/jBCrypt/.
+"jBCrypt-0.4.jar" is a local build of the sources in jBCrypt-0.4.zip, generated with the 
+author-provided Ant script.
+
+- Robert Mischke, Oct 2015

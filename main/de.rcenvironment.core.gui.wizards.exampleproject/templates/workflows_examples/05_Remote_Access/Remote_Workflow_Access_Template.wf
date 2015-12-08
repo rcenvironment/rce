@@ -1,0 +1,125 @@
+{
+  "identifier" : "1b5103aa-eceb-48ba-98ef-d64d07060c0d",
+  "workflowVersion" : "4",
+  "name" : "Remote_Workflow_Access_Template",
+  "nodes" : [ {
+    "identifier" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
+    "name" : "Input Provider",
+    "location" : "147:156",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "d9ed6235-973d-4778-ae61-b9ea9888cd98",
+      "name" : "input",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "DirectoryReference",
+      "metadata" : {
+        "startValue" : "##RUNTIME_INPUT_DIRECTORY##"
+      }
+    }, {
+      "identifier" : "445f656e-4c5e-4e80-96f7-f937884eadb5",
+      "name" : "parameters",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "ShortText",
+      "metadata" : {
+        "startValue" : "##RUNTIME_PARAMETERS##"
+      }
+    } ]
+  }, {
+    "identifier" : "4a9b049a-8e58-4d16-9ded-bb7347b0c81b",
+    "name" : "Output Writer",
+    "location" : "522:156",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.outputwriter",
+      "version" : "2.0",
+      "name" : "Output Writer"
+    },
+    "configuration" : {
+      "OWWritePath" : "${targetRootFolder}",
+      "SelectRootOnWorkflowStart" : "false",
+      "SelectedRoot" : "##RUNTIME_OUTPUT_DIRECTORY##"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "8d50cce8-af3e-4567-8bfd-7f842e2bbca0",
+      "name" : "output",
+      "epIdentifier" : "default",
+      "group" : "write",
+      "datatype" : "DirectoryReference",
+      "metadata" : {
+        "filename" : "output",
+        "folderForSaving" : "[root]",
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "name" : "Placeholder",
+    "location" : "320:137",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "# This is a placeholder for your actual workflow logic. Delete this script component,\r\n# and add your components in its place. Do not change the values of the predefined \r\n# Input Provider and Output Writer components. The Input Provider sends the directory \r\n# of files and the (optional) parameter string into the workflow. After your workflow\r\n# logic has completed, send a directory of your output files to the Output Provider.\r\n\r\n# As a simple example, these lines copy all input files to the output directory \r\n# without modification.\r\n\r\nimport os\r\nimport shutil\r\n\r\ninput_files_dir = RCE.read_input(\"inputFiles\")\r\noutput_files_dir = \"output\"\r\nshutil.copytree(input_files_dir, output_files_dir)\r\nRCE.write_output(\"outputFiles\", os.path.abspath(output_files_dir))\r\n\r\n# Print the received parameters (which may be empty)\r\n\r\nprint \"Received Parameters: \" + RCE.read_input(\"parameters\")\r\n",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "false",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "5b5f83c1-6848-4eb4-992e-565faadb97a7",
+      "name" : "inputFiles",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "DirectoryReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "a890f1cf-a1c8-4d36-b93c-b2bb893d9202",
+      "name" : "parameters",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "ShortText",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "19dc0a85-175b-4e34-9a1c-c77674d5bc9f",
+      "name" : "outputFiles",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "DirectoryReference"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
+    "output" : "d9ed6235-973d-4778-ae61-b9ea9888cd98",
+    "target" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "input" : "5b5f83c1-6848-4eb4-992e-565faadb97a7"
+  }, {
+    "source" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
+    "output" : "445f656e-4c5e-4e80-96f7-f937884eadb5",
+    "target" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "input" : "a890f1cf-a1c8-4d36-b93c-b2bb893d9202"
+  }, {
+    "source" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
+    "output" : "19dc0a85-175b-4e34-9a1c-c77674d5bc9f",
+    "target" : "4a9b049a-8e58-4d16-9ded-bb7347b0c81b",
+    "input" : "8d50cce8-af3e-4567-8bfd-7f842e2bbca0"
+  } ],
+  "labels" : "[{\"identifier\":\"16a7a643-6484-4be2-a41d-6c288fb18793\",\"text\":\"Example workflow: 'Remote Access'\\r\\n\\r\\nThis workflow is a template for the Remote Access feature. See the user guide for usage and details.\\r\\n\\r\\n\",\"location\":\"56:19\",\"size\":\"603:94\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"}]"
+}

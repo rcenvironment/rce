@@ -76,10 +76,10 @@
 		<cypher><![CDATA[
 			MATCH
 				(caller:TYPE)-[:DECLARES]->(callerMethod:METHOD)-[:INVOKES]->
-                (targetMethod:METHOD)<-[:DECLARES]-(target:TYPE)
+				(targetMethod:METHOD)<-[:DECLARES]-(target:TYPE)
 			WHERE
-            	(target.FQN = "java.util.concurrent.ExecutorService" 
-                OR target.FQN = "java.util.concurrent.Executors")
+				(target.FQN = "java.util.concurrent.ExecutorService" 
+				OR target.FQN = "java.util.concurrent.Executors")
 				AND caller.FQN =~ "de\\.rcenvironment\\..*"
 				AND NOT caller.FQN =~ "de.rcenvironment.core.utils.common.concurrent.SharedThreadPool.*"
 				AND NOT caller.NAME =~ ".*Test"
@@ -90,12 +90,73 @@
 		]]></cypher>
 	</constraint>
 	
-	<group id="default">
-		<includeConstraint refId="rce:TestClassNamesMustEndWithTestOrTests" />
-		<includeConstraint refId="rce:TestClassesShouldBeInATestBundle" />
-		<includeConstraint refId="rce:PackageNamesShouldStartWithTheBundleName" />
-		<includeConstraint refId="rce:OnlyTheThreadPoolShouldCallThreadConstructors" />
-		<includeConstraint refId="rce:OnlyTheThreadPoolAndTestsShouldHandleExecutors" />
-	</group>
+	<!-- added: misc_ro, 2015-07-31 -->
+	<!-- last modified: misc_ro, 2015-07-31 -->
+	<constraint id="rce:DoNotCallStringFormatDirectly">
+		<description>Verifies that no code (except StringUtils itself, plus the earliest bootstrap code) calls 
+			java.lang.String.format() directly. All existing calls should be changed to our StringUtils.format()
+			method; this prevents unusable log output due to format string errors.</description>
+		<cypher><![CDATA[
+			MATCH
+				(callerClass:TYPE)-[:DECLARES]->(callerMethod:METHOD)-[:INVOKES]->
+				(formatMethod:METHOD)<-[:DECLARES]-(stringClass:TYPE)
+			WHERE
+				stringClass.FQN = "java.lang.String"
+				AND formatMethod.SIGNATURE =~ "java.lang.String format\\(.*"
+				AND callerClass.FQN <> "de.rcenvironment.core.utils.common.StringUtils"
+				AND callerClass.FQN <> "de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration"
+			RETURN
+				callerClass.FQN + "#" + callerMethod.NAME + "()" as Calling_Method
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+	<!-- added: misc_ro, 2015-07-31 -->
+	<!-- last modified: misc_ro, 2015-07-31 -->
+	<constraint id="rce:NoCallsFromNonGuiCodeToGuiClasses">
+		<description>Verifies that no classes outside of *.gui.* or *.textui.* packages call methods in *.gui.*, *.ui.*, *.swt.* or *.jface.* packages.</description>
+		<cypher><![CDATA[
+			MATCH
+				(caller:TYPE)-[:DECLARES]->(callerMethod:METHOD)-[:INVOKES]->
+				(targetMethod:METHOD)<-[:DECLARES]-(target:TYPE)
+			WHERE
+				target.FQN =~ ".*\\.(gui|ui|swt|jface)\\..*" 
+				AND NOT (caller.FQN =~ ".*\\.(gui|textui)\\..*")
+			RETURN DISTINCT
+				caller.FQN + "#" + callerMethod.NAME + "()" as Calling_Method,
+				target.FQN as Target
+			ORDER BY
+				Calling_Method
+		]]></cypher>
+	</constraint>
+	
+<!-- added: seid_do, 2015-08-12 -->
+	<!-- last modified: seid_do, 2015-08-12 -->
+	<constraint id="rce:NoSimpleServicesExist">
+	<description>Verifies that no simple services (classes with name 'Simple..Service') exist. Simple services are a
+		deprecated approach to hide the OSGi API from certain client code like GUI Code. (Approaches to be used instead:
+		RegistryAccess for GUI code and OSGi-DS for non-GUI code)
+	</description>
+		<cypher><![CDATA[
+			MATCH
+				(simpleServiceClass:TYPE:CLASS)
+			WHERE
+				simpleServiceClass.FQN =~ ".*\\.Simple.*Service"
+			RETURN DISTINCT
+				simpleServiceClass.FQN
+		]]></cypher>
+	</constraint>
+	
+ 	<group id="default">
+ 		<includeConstraint refId="rce:TestClassNamesMustEndWithTestOrTests" />
+ 		<includeConstraint refId="rce:TestClassesShouldBeInATestBundle" />
+ 		<includeConstraint refId="rce:PackageNamesShouldStartWithTheBundleName" />
+ 		<includeConstraint refId="rce:OnlyTheThreadPoolShouldCallThreadConstructors" />
+ 		<includeConstraint refId="rce:OnlyTheThreadPoolAndTestsShouldHandleExecutors" />
+		<includeConstraint refId="rce:DoNotCallStringFormatDirectly" />
+		<includeConstraint refId="rce:NoCallsFromNonGuiCodeToGuiClasses" />
+		<includeConstraint refId="rce:NoSimpleServicesExist" />
+ 	</group>
 
 </jqa:jqassistant-rules>

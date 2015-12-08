@@ -47,8 +47,9 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
         Composite content = new LayoutComposite(parent);
 
         endpointsComposite = toolkit.createFlatFormComposite(content);
+        GridLayout layout = new GridLayout(columns, true);
+        endpointsComposite.setLayout(layout);
 
-        endpointsComposite.setLayout(new GridLayout(columns, true));
         GridData layoutData;
 
         for (EndpointSelectionPane pane : panes) {
@@ -60,6 +61,7 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
 
     @Override
     public void refreshSection() {
+
         super.refreshSection();
         final ComponentInstanceProperties configuration = getConfiguration();
         for (EndpointSelectionPane pane : panes) {
@@ -80,7 +82,8 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
             } else {
                 endpointsComposite.setSize(parentComposite.getSize().x, endpointsComposite.getSize().y);
             }
-            endpointsComposite.layout();
+            parentComposite.getParent().layout(endpointsComposite.getChildren()); 
+
         }
     }
 

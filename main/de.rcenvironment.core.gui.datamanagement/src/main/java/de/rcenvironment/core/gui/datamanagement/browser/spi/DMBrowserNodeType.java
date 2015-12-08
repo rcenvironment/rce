@@ -160,5 +160,15 @@ public enum DMBrowserNodeType {
     /**
      * Node type for condition folder nodes.
      */
-    Custom;
+    Custom,
+
+    /**
+     * Node type for host information of components.
+     */
+    ComponentHostInformation,
+
+    /**
+     * .... 
+     */
+    SqlFolder;
 }

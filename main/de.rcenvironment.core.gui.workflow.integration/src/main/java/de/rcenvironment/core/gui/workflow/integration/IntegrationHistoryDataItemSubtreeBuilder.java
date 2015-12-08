@@ -31,6 +31,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryDataItemSubtreeBuilder;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
+import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeConstants;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -72,10 +73,9 @@ public class IntegrationHistoryDataItemSubtreeBuilder implements ComponentHistor
             CommonHistoryDataItemSubtreeBuilderUtils.buildCommonHistoryDataItemSubtrees(historyData, parent);
             if (historyData.getWorkingDirectory() != null) {
                 for (DMBrowserNode node : parent.getChildren()) {
-                    if (node.toString().equals(CommonHistoryDataItemSubtreeBuilderUtils.EXECUTION_LOG_FOLDER_NODE_TITLE)) {
+                    if (node.getTitle().equals(DMBrowserNodeConstants.NODE_NAME_EXECUTION_LOG)) {
                         DMBrowserNode.addNewLeafNode("Working directory: " + historyData.getWorkingDirectory(),
-                            DMBrowserNodeType.InformationText,
-                            node);
+                            DMBrowserNodeType.InformationText, node);
                     }
                 }
             }

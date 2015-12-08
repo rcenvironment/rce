@@ -44,8 +44,8 @@ public class SshAuthenticationManagerTest extends TestCase {
         List<SshAccountImpl> users = configuration.getAccounts();
         for (SshAccount user : users) {
             if (user.getPassword() != null && !user.getPassword().isEmpty()) {
-                assertTrue("User " + user.getUsername() + " was not accepted.",
-                    authenticationManager.authenticate(user.getUsername(), user.getPassword(), null));
+                assertTrue("User " + user.getLoginName() + " was not accepted.",
+                    authenticationManager.authenticate(user.getLoginName(), user.getPassword(), null));
             }
         }
     }
@@ -76,7 +76,7 @@ public class SshAuthenticationManagerTest extends TestCase {
         String password = "kjdfskjdshjbne";
         assertFalse("Authenticator accepted a existing user with incorrect password. (Note: Do not define a test user with the password "
             + password + ")",
-            authenticationManager.authenticate(user.getUsername(), password, null));
+            authenticationManager.authenticate(user.getLoginName(), password, null));
     }
 
     /**
@@ -104,7 +104,7 @@ public class SshAuthenticationManagerTest extends TestCase {
         for (SshAccount user : users) {
             if (user.getPublicKey() != null && !user.getPublicKey().isEmpty()) {
                 assertFalse("Authenticator accepted user that does not have a password.",
-                    authenticationManager.authenticate(user.getUsername(), user.getPassword(), null));
+                    authenticationManager.authenticate(user.getLoginName(), user.getPassword(), null));
             }
         }
     }
@@ -116,8 +116,8 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testRoleManagement() {
-        SshAccount admin = configuration.getAccountByName("admin");
-        SshAccount user = configuration.getAccountByName("user");
+        SshAccount admin = configuration.getAccountByName("admin", false);
+        SshAccount user = configuration.getAccountByName("user", false);
         assertNotNull("No user with name admin foud (should have a role, which allowes the execution of all commands)", admin);
         assertNotNull("No user with name user foud (should have a role, which allowes the execution of the command: stats, task, net)",
             user);
@@ -140,7 +140,7 @@ public class SshAuthenticationManagerTest extends TestCase {
      */
     @Test
     public void testRoMaForbidden() {
-        SshAccount user = configuration.getAccountByName("user");
+        SshAccount user = configuration.getAccountByName("user", false);
         assertNotNull("No user with name user foud (should have a role, which allowes the execution of the command: stats, task, net)",
             user);
         testRoleManagement(user, "wf", false);
@@ -163,7 +163,7 @@ public class SshAuthenticationManagerTest extends TestCase {
     }
 
     private void testRoleManagement(SshAccount user, String command, boolean expected) {
-        assertEquals("User (name=" + user.getUsername() + ") is not allowed to execut COMMAND", expected,
-            authenticationManager.isAllowedToExecuteConsoleCommand(user.getUsername(), command));
+        assertEquals("User (name=" + user.getLoginName() + ") is not allowed to execut COMMAND", expected,
+            authenticationManager.isAllowedToExecuteConsoleCommand(user.getLoginName(), command));
     }
 }

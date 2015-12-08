@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Endpoint Datum Serializer">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Endpoint Datum Serializer">
 
 	<implementation class="de.rcenvironment.core.component.execution.internal.EndpointDatumSerializerImpl"/>
 	<service>

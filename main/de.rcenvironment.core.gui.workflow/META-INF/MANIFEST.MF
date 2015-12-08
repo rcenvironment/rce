@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
@@ -48,6 +48,7 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.common.concurrent,
+ de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.incubator,
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.collections4;version="4.0.0",
@@ -60,6 +61,7 @@ Import-Package: de.rcenvironment.core.authentication,
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.node;version="1.9.13",
  org.codehaus.jackson.util;version="1.9.13",
+ org.eclipse.core.filesystem,
  org.eclipse.core.resources,
  org.eclipse.ui,
  org.eclipse.ui.dialogs,
@@ -68,6 +70,7 @@ Import-Package: de.rcenvironment.core.authentication,
 Export-Package: de.rcenvironment.core.gui.workflow,
  de.rcenvironment.core.gui.workflow.editor,
  de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
+ de.rcenvironment.core.gui.workflow.editor.documentation,
  de.rcenvironment.core.gui.workflow.editor.properties,
  de.rcenvironment.core.gui.workflow.editor.validator,
  de.rcenvironment.core.gui.workflow.execute,

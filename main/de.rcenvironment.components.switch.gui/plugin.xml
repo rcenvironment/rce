@@ -69,7 +69,7 @@
          <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data">
+               label="Workflow Data">
          </propertyTab>
       </propertyTabs>
    </extension>

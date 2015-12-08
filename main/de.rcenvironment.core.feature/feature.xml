@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.feature"
       label="RCE Core  Feature"
-      version="6.3.0.qualifier"
+      version="7.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -128,25 +128,16 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <import plugin="org.junit" version="4.8.2" match="greaterOrEqual"/>
       <import plugin="de.rcenvironment.platform.maven.testing"/>
       <import plugin="org.eclipse.draw2d"/>
-      <import plugin="org.eclipse.ui"/>
-      <import plugin="org.eclipse.ui.navigator.resources"/>
-      <import plugin="org.eclipse.ui.ide"/>
-      <import plugin="de.rcenvironment.core.gui.resources"/>
-      <import plugin="org.eclipse.jface"/>
-      <import plugin="org.eclipse.swt"/>
-      <import plugin="org.eclipse.ui.workbench"/>
-      <import plugin="org.eclipse.ui.navigator"/>
-      <import plugin="org.eclipse.equinox.app"/>
-      <import plugin="de.rcenvironment.platform.maven.ssh.server"/>
-      <import plugin="org.eclipse.ui.views.properties.tabbed"/>
-      <import plugin="de.rcenvironment.core.gui.utils.common"/>
-      <import plugin="de.rcenvironment.core.gui.workflow"/>
-      <import plugin="de.rcenvironment.platform.maven.jms"/>
-      <import plugin="org.eclipse.core.runtime" version="3.6.0" match="greaterOrEqual"/>
-      <import plugin="org.eclipse.ui.forms"/>
-      <import plugin="com.jcraft.jsch"/>
       <import plugin="org.eclipse.equinox.preferences"/>
       <import plugin="javax.mail"/>
+      <import plugin="org.eclipse.equinox.app"/>
+      <import plugin="de.rcenvironment.platform.maven.ssh.server"/>
+      <import plugin="de.rcenvironment.platform.maven.jms"/>
+      <import plugin="org.eclipse.core.runtime" version="3.6.0" match="greaterOrEqual"/>
+      <import plugin="org.apache.servicemix.bundles.saxon"/>
+      <import plugin="de.rcenvironment.platform.maven.auth"/>
+      <import plugin="de.rcenvironment.core.datamodel"/>
+      <import plugin="de.rcenvironment.platform.maven.native.common"/>
    </requires>
 
    <plugin
@@ -360,13 +351,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
          unpack="false"/>
 
    <plugin
-         id="de.rcenvironment.core.start.gui"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
          id="de.rcenvironment.core.start.headless"
          download-size="0"
          install-size="0"
@@ -382,13 +366,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <plugin
          id="de.rcenvironment.core.utils.ssh"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.core.gui.cluster"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -416,21 +393,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
          unpack="false"/>
 
    <plugin
-         id="de.rcenvironment.core.component.toolaccess"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.core.gui.workflow.executor"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.core.communication.transport.activemq"
+         id="de.rcenvironment.core.communication.transport.jms"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -438,13 +401,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
 
    <plugin
          id="de.rcenvironment.core.command"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.core.gui.utils.incubator"
          download-size="0"
          install-size="0"
          version="0.0.0"
@@ -472,7 +428,21 @@ This Agreement is governed by the laws of the State of New York and the intellec
          unpack="false"/>
 
    <plugin
+         id="de.rcenvironment.core.remoteaccess"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
          id="de.rcenvironment.core.instancemanagement"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.monitoring"
          download-size="0"
          install-size="0"
          version="0.0.0"

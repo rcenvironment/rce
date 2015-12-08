@@ -1,0 +1,156 @@
+{
+  "identifier" : "2694d5ca-5972-4b96-849e-3aedecff2fe9",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "284d8c90-0c1c-4e5f-85a6-e95d07c6d732",
+    "name" : "Input Provider",
+    "location" : "124:173",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "input" : "${input}",
+      "input_datatype_799ef365" : "float"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "32fcbdaa-1802-4cea-b3d9-51fe1cc6e49b",
+      "name" : "input",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "fileSourceType" : "atWorkflowStart",
+        "startValue" : "${input}"
+      }
+    } ]
+  }, {
+    "identifier" : "15661626-10c5-47cb-ba9c-f2ea73c6741d",
+    "name" : "Joiner",
+    "location" : "676:173",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Float",
+      "inputCount" : "2"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "2acb0573-224d-46d6-8ee7-1a01badf3268",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "5b361f0d-d898-4a49-aaff-fd39c9e6e4d4",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "659f10f3-977f-4300-bee6-16e8a42bd32a",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "ff4b4954-deb8-4263-9cd5-b3f1bf38c416",
+    "name" : "Output Writer",
+    "location" : "959:173",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.outputwriter",
+      "version" : "2.0",
+      "name" : "Output Writer"
+    },
+    "configuration" : {
+      "OWWritePath" : "${targetRootFolder}",
+      "SelectRootOnWorkflowStart" : "true",
+      "SelectedRoot" : "",
+      "outputLocations" : "{\"outputs\":[{\"identifier\":\"8215aa2d-dae5-4328-8080-5a751c74ef6c\",\"filename\":\"[Workflow name] - [Timestamp at workflow start]\",\"folderForSaving\":\"[root]\",\"header\":\"Output value\",\"formatString\":\"[output]\",\"handleExistingFile\":\"APPEND\",\"inputs\":[\"output\"]}]}"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "da5ca372-ca26-4068-8cb6-990d03f944a7",
+      "name" : "output",
+      "epIdentifier" : "default",
+      "group" : "8215aa2d-dae5-4328-8080-5a751c74ef6c",
+      "datatype" : "Float",
+      "metadata" : {
+        "filename" : "-",
+        "folderForSaving" : "[root]",
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicInputGroups" : [ {
+      "name" : "8215aa2d-dae5-4328-8080-5a751c74ef6c",
+      "epIdentifier" : "dynamicAndGroup"
+    } ]
+  }, {
+    "identifier" : "7120835e-48aa-42bd-806d-c9de2a662a2b",
+    "name" : "Switch",
+    "location" : "400:173",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.switchcmp",
+      "version" : "1.1",
+      "name" : "Switch"
+    },
+    "configuration" : {
+      "closeOutputsOnFalse" : "false",
+      "closeOutputsOnTrue" : "false",
+      "conditionKey" : "To_forward < 5",
+      "neverCloseOutputs" : "true",
+      "scriptErrorMessage" : ""
+    },
+    "staticInputs" : [ {
+      "identifier" : "bd9bc1a0-32fa-4843-948e-eece18d81a2e",
+      "name" : "To_forward",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "1da87ca8-3923-4b2a-96ac-e550d92da590",
+      "name" : "False",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    }, {
+      "identifier" : "710b828b-aeef-45f1-9b64-5f025a1f5064",
+      "name" : "True",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "284d8c90-0c1c-4e5f-85a6-e95d07c6d732",
+    "output" : "32fcbdaa-1802-4cea-b3d9-51fe1cc6e49b",
+    "target" : "7120835e-48aa-42bd-806d-c9de2a662a2b",
+    "input" : "bd9bc1a0-32fa-4843-948e-eece18d81a2e"
+  }, {
+    "source" : "15661626-10c5-47cb-ba9c-f2ea73c6741d",
+    "output" : "659f10f3-977f-4300-bee6-16e8a42bd32a",
+    "target" : "ff4b4954-deb8-4263-9cd5-b3f1bf38c416",
+    "input" : "da5ca372-ca26-4068-8cb6-990d03f944a7"
+  }, {
+    "source" : "7120835e-48aa-42bd-806d-c9de2a662a2b",
+    "output" : "1da87ca8-3923-4b2a-96ac-e550d92da590",
+    "target" : "15661626-10c5-47cb-ba9c-f2ea73c6741d",
+    "input" : "5b361f0d-d898-4a49-aaff-fd39c9e6e4d4"
+  }, {
+    "source" : "7120835e-48aa-42bd-806d-c9de2a662a2b",
+    "output" : "710b828b-aeef-45f1-9b64-5f025a1f5064",
+    "target" : "15661626-10c5-47cb-ba9c-f2ea73c6741d",
+    "input" : "2acb0573-224d-46d6-8ee7-1a01badf3268"
+  } ],
+  "labels" : "[{\"identifier\":\"7a62fd40-a82d-458a-883a-c48d79a24604\",\"text\":\"                      Joiner\\r\\n\\r\\nThe Joiner joins multiple connections\\r\\ninto one. Data received at its inputs\\r\\nis forwarded to one single output.\\r\\nThereby, data isn't merged. This is\\r\\nespecially useful, if you like to\\r\\nconnect an input with multiple outputs.\\r\\nIt is not allowed to do that directly,\\r\\nbut with the Joiner it can be achieved\\r\\nthough.\\r\\n\",\"location\":\"583:239\",\"size\":\"223:272\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"},{\"identifier\":\"83b082bc-a146-431b-b63f-b2678567a7d6\",\"text\":\"Example workflow: 'Data Flow'\\r\\nObjective: Introduce workflow components of the group 'Data Flow'\\r\\n\\r\\nWorkflow components of the group \\\"Data Flow\\\" redirect, load or save data in a workflow.\",\"location\":\"30:13\",\"size\":\"548:103\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"},{\"identifier\":\"84ed7697-b0e3-4248-93fc-bd3ff66711cb\",\"text\":\"\\t       Switch\\r\\n\\r\\nThe Switch directs data in a work-\\r\\nflow to one of two outputs based on\\r\\na condition (boolean expression).\\r\\nIt has an input \\\"to_forward\\\". Data\\r\\nreceived here are either forwarded\\r\\nto the output 'True' if the condit-\\r\\nion is 'true', otherwise to 'False'.\\r\\nIn the condition, input values (of\\r\\nprimitive data types) can be used\\r\\nthat are received at 'to_forward'\\r\\nor at any other input added.\",\"location\":\"307:239\",\"size\":\"223:272\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"},{\"identifier\":\"b5a98dbf-9c12-492a-a73f-a181e0abdafd\",\"text\":\"\\t Input Provider\\r\\n\\r\\nThe Input Provider generates input\\r\\nvalues. It can send data of dif-\\r\\nferent data types. In many cases,\\r\\nit marks the start of a workflow.\\r\\nYou can either define the values\\r\\nto send in the workflow component's\\r\\nproperties or define them at\\r\\nworkflows start. The latter option\\r\\nis used here. In the workflow\\r\\nexecution dialog, go to the second \\r\\npage and define the value \\r\\n(in this case of type Float).\",\"location\":\"31:239\",\"size\":\"224:272\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"},{\"identifier\":\"d0342990-028a-48d8-9d8b-2b0028e97b85\",\"text\":\"                Output Writer\\r\\n\\r\\nThe Output Writer writes files or dir-\\r\\nectories received from other workflow\\r\\ncomponents to the filesystem. If,\\r\\nlike in this example workflow, your\\r\\nworkflow components produce output\\r\\nvalues of primitive data types (like\\r\\nFloat or Short Text), you can use the\\r\\nOutput Writer to write one or multiple\\r\\noutput values into one single file.\\r\\nThe format of the file is defined in\\r\\nthe 'Targets' table in the Output\\r\\nWriter properties tab.\",\"location\":\"866:239\",\"size\":\"223:272\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"}]"
+}

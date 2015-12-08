@@ -65,7 +65,7 @@ public class TiglViewerRuntimeView extends TiglViewerView {
                         public void run() {
                             try {
                                 if (OS.isFamilyWindows()) {
-                                    page.showView("de.rcenvironment.cpacs.gui.tiglviewer.views.TIGLViewer",
+                                    page.showView("de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer",
                                         secondId, IWorkbenchPage.VIEW_ACTIVATE);
                                 }
                             } catch (PartInitException e) {

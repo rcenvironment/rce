@@ -234,6 +234,10 @@ public final class SharedThreadPool implements ThreadPool {
                 long duration = System.nanoTime() - startTime;
                 statisticsEntry.afterExecution(taskId, duration, exception);
             }
+            if (Thread.interrupted()) {
+                log.debug(StringUtils.format("Thread %s was interrupted after running task '%s', resetting flag", Thread
+                    .currentThread().getName(), statisticsEntry.getTaskName()));
+            }
             return result;
         }
 
@@ -272,6 +276,10 @@ public final class SharedThreadPool implements ThreadPool {
                 long duration = System.nanoTime() - startTime;
                 statisticsEntry.afterExecution(taskId, duration, exception);
             }
+            if (Thread.interrupted()) {
+                log.debug(StringUtils.format("Thread %s was interrupted after running task '%s', resetting flag", Thread
+                    .currentThread().getName(), statisticsEntry.getTaskName()));
+            }
         }
     }
 
@@ -287,6 +295,7 @@ public final class SharedThreadPool implements ThreadPool {
             add(new Callable<RuntimeException>() {
 
                 @Override
+                @TaskDescription("Internal RunnablesGroup task delegate")
                 public RuntimeException call() throws Exception {
                     // CHECKSTYLE:DISABLE (IllegalCatch) - Throwables should not slip through, e.g. for unit assertion tests
                     try {
@@ -468,7 +477,7 @@ public final class SharedThreadPool implements ThreadPool {
     public ScheduledFuture<?> scheduleAtFixedRate(Runnable runnable, long repetitionDelayMsec) {
         return scheduleAtFixedRateAfterDelay(runnable, repetitionDelayMsec, repetitionDelayMsec);
     }
-    
+
     @Override
     public ScheduledFuture<?> scheduleAtFixedRateAfterDelay(Runnable runnable, long initialDelayMsec, long repetitionDelayMsec) {
         return schedulerService.scheduleAtFixedRate(new WrappedRunnable(runnable, null), initialDelayMsec, repetitionDelayMsec,
@@ -509,7 +518,20 @@ public final class SharedThreadPool implements ThreadPool {
      * 
      * @return a String representation of the collected statistics
      */
-    public String getFormattedStatistics(boolean addTaskIds) {
+    public String getFormattedStatistics(final boolean addTaskIds) {
+        // backwards compatibility: included inactive tasks by default
+        return getFormattedStatistics(addTaskIds, true);
+    }
+
+    /**
+     * Returns a human-readable String representation of the collected statistics.
+     * 
+     * @param addTaskIds true if the ids of tasks that provide them should be included
+     * @param includeInactive if tasks with a zero "active" count should be included
+     * 
+     * @return a String representation of the collected statistics
+     */
+    public String getFormattedStatistics(final boolean addTaskIds, final boolean includeInactive) {
         StringBuilder sb = new StringBuilder();
         sb.append("Asynchronous tasks:\n");
         Map<String, StatisticsEntry> sortedMap = new TreeMap<String, StatisticsEntry>();
@@ -517,7 +539,9 @@ public final class SharedThreadPool implements ThreadPool {
             // TODO change to values()? - misc_ro
             for (Entry<Class<?>, StatisticsEntry> entry : statisticsMap.entrySet()) {
                 StatisticsEntry statisticsEntry = entry.getValue();
-                sortedMap.put(statisticsEntry.getTaskName(), statisticsEntry);
+                if (statisticsEntry.activeTasks != 0 || includeInactive) {
+                    sortedMap.put(statisticsEntry.getTaskName(), statisticsEntry);
+                }
             }
         }
         for (Entry<String, StatisticsEntry> entry : sortedMap.entrySet()) {

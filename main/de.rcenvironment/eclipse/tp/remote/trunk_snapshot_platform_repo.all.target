@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<?pde version="3.8"?><target includeMode="feature" name="trunk_snapshot_platform_repo.all" sequenceNumber="57">
+<?pde version="3.8"?><target includeMode="feature" name="trunk_snapshot_platform_repo.all" sequenceNumber="60">
 <locations>
 <location includeAllPlatforms="false" includeConfigurePhase="true" includeMode="planner" includeSource="true" type="InstallableUnit">
-<unit id="de.rcenvironment.thirdparty.nu.psnet.quickimage.feature.feature.group" version="6.0.0.0201503181538_SNAPSHOT"/>
-<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="6.0.0.0201503181538_SNAPSHOT"/>
-<repository location="http://software.dlr.de/updates/rce/6.x/repositories/platform/snapshots/trunk"/>
+<unit id="nu.psnet.quickimage.feature.group" version="1.0.3.2"/>
+<unit id="de.vonloesch.pdf4eclipse.feature.group" version="1.1.0"/>
+<unit id="de.rcenvironment.platform.combined.feature.feature.group" version="7.0.0.0201511231010_SNAPSHOT"/>
+<repository location="http://software.dlr.de/updates/rce/7.x/repositories/platform/snapshots/trunk"/>
 </location>
 </locations>
 </target>

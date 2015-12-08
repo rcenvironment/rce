@@ -46,7 +46,12 @@ public class CommandPluginDispatcher implements SingleCommandHandler {
             plugin = pluginsByTopLevelCommand.get(topLevelCommand);
         }
         if (plugin != null) {
-            plugin.execute(context);
+            try {
+                plugin.execute(context);
+            } catch (RuntimeException e) {
+                LogFactory.getLog(getClass()).error("Uncaught exception in command handler", e);
+                throw CommandException.executionError("Uncaught exception in command handler: " + e.toString(), context);
+            }
         } else {
             // no command recognized
             throw CommandException.unknownCommand(context);

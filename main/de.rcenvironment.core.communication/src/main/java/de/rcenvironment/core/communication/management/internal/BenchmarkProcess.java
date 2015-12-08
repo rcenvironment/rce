@@ -20,10 +20,11 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.management.BenchmarkService;
 import de.rcenvironment.core.communication.management.BenchmarkSetup;
+import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -50,26 +51,25 @@ public class BenchmarkProcess implements Runnable {
 
         private BenchmarkSubtaskImpl subtask;
 
-        private BenchmarkService remoteService;
+        private RemoteBenchmarkService remoteService;
 
         public SenderTask(BenchmarkSubtaskImpl subtask, NodeIdentifier nodeId, AtomicInteger messageCounter) {
             this.targetNode = nodeId;
             this.messageCounter = messageCounter;
             this.subtask = subtask;
-            this.remoteService = (BenchmarkService) communicationService.getService(BenchmarkService.class,
-                (NodeIdentifier) targetNode, bundleContext);
+            this.remoteService = communicationService.getRemotableService(RemoteBenchmarkService.class, targetNode);
         }
 
         @Override
-        @TaskDescription("Communication layer benchmark: sender task")
+        @TaskDescription("Communication Layer: benchmark sender task")
         public void run() {
             // this ensures that all threads perform the predefined number of requests
             while (messageCounter.decrementAndGet() >= 0) {
                 long startTime = System.nanoTime();
-                RuntimeException error = null;
+                RemoteOperationException error = null;
                 try {
                     performRequest();
-                } catch (RuntimeException e) {
+                } catch (RemoteOperationException e) {
                     // optional logging of connection errors is left to the calling code
                     error = e;
                 }
@@ -78,7 +78,7 @@ public class BenchmarkProcess implements Runnable {
             }
         }
 
-        private void performRequest() {
+        private void performRequest() throws RemoteOperationException {
             Serializable response = remoteService.respond(new byte[subtask.getRequestSize()], subtask.getResponseSize(),
                 subtask.getResponseDelay());
             // basic verification of response: is the payload a byte array of expected size?
@@ -95,8 +95,6 @@ public class BenchmarkProcess implements Runnable {
 
     private CommunicationService communicationService;
 
-    private BundleContext bundleContext;
-
     @SuppressWarnings("unchecked")
     public BenchmarkProcess(BenchmarkSetup setup, TextOutputReceiver outputReceiver, CommunicationService communicationService,
         BundleContext context) {
@@ -105,11 +103,10 @@ public class BenchmarkProcess implements Runnable {
         subtasks.addAll((Collection<? extends BenchmarkSubtaskImpl>) setup.getSubtasks());
         this.communicationService = communicationService;
         this.outputReceiver = outputReceiver;
-        this.bundleContext = context;
     }
 
     @Override
-    @TaskDescription("Communication layer benchmark: main task")
+    @TaskDescription("Communication Layer: benchmark main task")
     public void run() {
         outputReceiver.onStart();
 

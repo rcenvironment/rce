@@ -15,12 +15,10 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ExecutionException;
@@ -40,12 +38,15 @@ import de.rcenvironment.core.component.execution.internal.ExecutionScheduler.Sta
 import de.rcenvironment.core.component.execution.internal.InternalTDImpl.InternalTDType;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipientFactory;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinition;
 import de.rcenvironment.core.component.testutils.ComponentExecutionContextMock;
 import de.rcenvironment.core.component.testutils.EndpointDatumDefaultStub;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.testutils.TypedDatumFactoryDefaultStub;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 
 /**
@@ -462,7 +463,7 @@ public class ExecutionSchedulerTest {
             executionScheduler.getSchedulingState();
             fail(ComponentExecutionException.class.getSimpleName() + EXPECTED);
         } catch (ComponentExecutionException e) {
-            assertTrue(e.getMessage().contains("is not the latest recipient"));
+            assertTrue(e.getMessage().contains("is not the final recipient"));
             assertTrue(true);
         }
     }
@@ -487,8 +488,8 @@ public class ExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required, OR_GROUP, CONNECTED));
         
         List<InputGroupMockInformation> inputGroupMockInfos = new ArrayList<>();
-        inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.Type.Or));
-        inputGroupMockInfos.add(new InputGroupMockInformation(AND_GROUP, EndpointGroupDefinition.Type.And, OR_GROUP));
+        inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.LogicOperation.Or));
+        inputGroupMockInfos.add(new InputGroupMockInformation(AND_GROUP, EndpointGroupDefinition.LogicOperation.And, OR_GROUP));
         
         final BlockingDeque<EndpointDatum> endpointDatumsReceived = new LinkedBlockingDeque<>();
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
@@ -499,11 +500,12 @@ public class ExecutionSchedulerTest {
         sendAndCheckSendingDataToLoopDriverComponent(executionScheduler, endpointDatumsReceived);
         
         executionScheduler.getEndpointDatums();
-        Set<String> identifiers = new HashSet<>();
+        List<String> identifiers = new ArrayList<>();
         identifiers.add(UUID.randomUUID().toString());
         identifiers.add(UUID.randomUUID().toString());
         assertFalse(executionScheduler.isLoopResetRequested());
-        executionScheduler.addResetDataIdsSent(identifiers);
+        executionScheduler.addResetDataIdSent(identifiers.get(0));
+        executionScheduler.addResetDataIdSent(identifiers.get(1));
         assertTrue(executionScheduler.isLoopResetRequested());
 
         Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
@@ -575,9 +577,8 @@ public class ExecutionSchedulerTest {
         String executionId = UUID.randomUUID().toString();
         ExecutionScheduler executionScheduler = setUpExecutionScheduler(inputMockInfos, endpointDatumsReceived, capturedEvent, executionId);
 
-        Set<String> identifiers = new HashSet<>();
-        identifiers.add(UUID.randomUUID().toString());
-        
+        String id = UUID.randomUUID().toString();
+        executionScheduler.addResetDataIdSent(id);
         List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
 
         Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
@@ -586,14 +587,10 @@ public class ExecutionSchedulerTest {
         EasyMock.replay(workflowGraphHopMock);
         resetCycleHops.add(workflowGraphHopMock);
         
-        for (String id : identifiers) {
-            endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2,
-                new InternalTDImpl(InternalTDType.NestedLoopReset, id, resetCycleHops)));
-        }
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2,
+            new InternalTDImpl(InternalTDType.NestedLoopReset, id, resetCycleHops)));
         
-        String secondId = UUID.randomUUID().toString();
-        identifiers.add(secondId);
-        executionScheduler.addResetDataIdsSent(identifiers);
+        executionScheduler.addResetDataIdSent(UUID.randomUUID().toString());
         
         endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2,
             new InternalTDImpl(InternalTDType.NestedLoopReset, UUID.randomUUID().toString(), resetCycleHops)));
@@ -608,6 +605,90 @@ public class ExecutionSchedulerTest {
             assertTrue(true);
         }
         
+    }
+    
+    /**
+     * Set up: two inputs (constant, single; both required); failure value received at one of the inputs.
+     * 
+     * Expected: {@link State#FAILURE_FORWARD} 1) after failure values were received
+     * 
+     * @throws Exception on test failure
+     */
+    @Test(timeout = TEST_TIMEOUT_MSEC)
+    public void testFailureValueAtComponentForSuccess() throws Exception {
+        List<InputMockInformation> inputMockInfos = new ArrayList<>();
+        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
+            EndpointDefinition.InputExecutionContraint.Required));
+        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required));
+        final BlockingDeque<EndpointDatum> endpointDatumsReceived = new LinkedBlockingDeque<>();
+        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
+        String executionId = UUID.randomUUID().toString();
+        ExecutionScheduler executionScheduler = setUpExecutionScheduler(inputMockInfos, endpointDatumsReceived, capturedEvent, executionId);
+
+        List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
+
+        Queue<WorkflowGraphHop> hopsToTraverse = new LinkedList<>();
+        WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
+        EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier()).andReturn(executionId).anyTimes();
+        EasyMock.replay(workflowGraphHopMock);
+        hopsToTraverse.add(workflowGraphHopMock);
+        InternalTDImpl failureTD1 = new InternalTDImpl(InternalTDType.FailureInLoop, hopsToTraverse);
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, failureTD1));
+        InternalTDImpl failureTD2 = new InternalTDImpl(InternalTDType.FailureInLoop, hopsToTraverse);
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, failureTD2));
+
+        sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
+
+        assertEquals(State.FAILURE_FORWARD, executionScheduler.getSchedulingState());
+        assertEquals(failureTD1, executionScheduler.getFailureDatum());
+        assertEquals(State.FAILURE_FORWARD, executionScheduler.getSchedulingState());
+        assertEquals(failureTD2, executionScheduler.getFailureDatum());
+
+        checkForStateMachineEvents(capturedEvent);
+        tearDownExecutionScheduler(executionScheduler);
+    }
+    
+    /**
+     * Set up: two inputs (constant, single; both required); failure value received at one of the inputs.
+     * 
+     * Expected: {@link State#FAILURE_FORWARD} 1) after failure values were received
+     * 
+     * @throws Exception on test failure
+     */
+    @Test(timeout = TEST_TIMEOUT_MSEC)
+    public void testFailureValueAtLoopDriverForSuccess() throws Exception {
+        List<InputMockInformation> inputMockInfos = new ArrayList<>();
+        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
+            EndpointDefinition.InputExecutionContraint.Required));
+        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required));
+        final BlockingDeque<EndpointDatum> endpointDatumsReceived = new LinkedBlockingDeque<>();
+        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
+        String executionId = UUID.randomUUID().toString();
+        ExecutionScheduler executionScheduler = setUpExecutionScheduler(inputMockInfos, endpointDatumsReceived, capturedEvent, executionId);
+        executionScheduler.setTypedDatumFactory(new TypedDatumFactoryDefaultStub());
+        List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
+
+        Queue<WorkflowGraphHop> hopsToTraverse = new LinkedList<>();
+        InternalTDImpl failureTD1 = new InternalTDImpl(InternalTDType.FailureInLoop, "id-1", hopsToTraverse, "11");
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, failureTD1));
+        InternalTDImpl failureTD2 = new InternalTDImpl(InternalTDType.FailureInLoop, "id-2", hopsToTraverse, "21");
+        endpointDatumsToSend.add(new EndpointDatumMock(INPUT_2, failureTD2));
+
+        sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
+
+        assertEquals(State.IDLING, executionScheduler.getSchedulingState());
+        assertEquals(State.PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA, executionScheduler.getSchedulingState());
+        Map<String, EndpointDatum> endpointDatumsReturned = executionScheduler.getEndpointDatums();
+        assertEquals(2, endpointDatumsReturned.size());
+        assertTrue(endpointDatumsReturned.get(INPUT_1).getValue() instanceof NotAValueTD);
+        assertEquals("id-1", ((NotAValueTD) endpointDatumsReturned.get(INPUT_1).getValue()).getIdentifier());
+        assertTrue(endpointDatumsReturned.get(INPUT_2).getValue() instanceof NotAValueTD);
+        assertEquals("id-2", ((NotAValueTD) endpointDatumsReturned.get(INPUT_2).getValue()).getIdentifier());
+
+        checkForStateMachineEvents(capturedEvent);
+        tearDownExecutionScheduler(executionScheduler);
     }
     
     /**
@@ -627,7 +708,7 @@ public class ExecutionSchedulerTest {
             EndpointDefinition.InputExecutionContraint.Required, OR_GROUP, CONNECTED));
         
         List<InputGroupMockInformation> inputGroupMockInfos = new ArrayList<>();
-        inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.Type.Or));
+        inputGroupMockInfos.add(new InputGroupMockInformation(OR_GROUP, EndpointGroupDefinition.LogicOperation.Or));
         
         final BlockingDeque<EndpointDatum> endpointDatumsReceived = new LinkedBlockingDeque<>();
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
@@ -655,12 +736,12 @@ public class ExecutionSchedulerTest {
     /**
      * Set up: one input (queue; required); 'not a value' datum received.
      * 
-     * Expected: {@link State#PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA} after value was received
+     * Expected: {@link State#PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA} after value was received
      * 
      * @throws Exception on test failure
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
-    public void testIndefiniteDataForSuccess() throws Exception {
+    public void testNotAValueDataForSuccess() throws Exception {
         
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Queue,
@@ -673,7 +754,7 @@ public class ExecutionSchedulerTest {
         endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, new NotAValueTDMock()));
         sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
 
-        assertEquals(State.PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA, executionScheduler.getSchedulingState());
+        assertEquals(State.PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA, executionScheduler.getSchedulingState());
         checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(0));
 
         checkForStateMachineEvents(capturedEvent);
@@ -688,7 +769,7 @@ public class ExecutionSchedulerTest {
      * @throws Exception on test failure
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
-    public void testIndefiniteDataForFailure() throws Exception {
+    public void testNotAValueDataForFailure() throws Exception {
         
         List<InputMockInformation> inputMockInfos = new ArrayList<>();
         inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Queue,
@@ -700,7 +781,7 @@ public class ExecutionSchedulerTest {
         List<EndpointDatum> endpointDatumsToSend = new ArrayList<>();
         String id = UUID.randomUUID().toString();
         endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, new NotAValueTDMock(id)));
-        executionScheduler.addIndefiniteDatumSent(id);
+        executionScheduler.addNotAValueDatumSent(id);
         sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
 
         try {
@@ -717,7 +798,7 @@ public class ExecutionSchedulerTest {
         endpointDatumsToSend.add(new EndpointDatumMock(INPUT_1, new NotAValueTDMock(id)));
         sendValuesToExecutionScheduler(endpointDatumsReceived, endpointDatumsToSend);
         
-        assertEquals(State.PROCESS_INPUT_DATA_WITH_INDEFINITE_DATA, executionScheduler.getSchedulingState());
+        assertEquals(State.PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA, executionScheduler.getSchedulingState());
         checkEndpointDatums(executionScheduler.getEndpointDatums(), endpointDatumsToSend.get(0));
         
         try {
@@ -852,8 +933,6 @@ public class ExecutionSchedulerTest {
      */
     private final class EndpointDatumMock extends EndpointDatumDefaultStub {
 
-        private static final long serialVersionUID = 6789481824148504556L;
-
         private final String inputName;
 
         private final TypedDatum value;
@@ -871,6 +950,11 @@ public class ExecutionSchedulerTest {
         @Override
         public TypedDatum getValue() {
             return value;
+        }
+        
+        @Override
+        public EndpointDatumRecipient getEndpointDatumRecipient() {
+            return EndpointDatumRecipientFactory.createEndpointDatumRecipient(inputName, null, null, null);
         }
 
     }

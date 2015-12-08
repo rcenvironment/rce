@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.thirdparty.nu.psnet.quickimage.feature"
       label="RCE Third-Party Artifacts - QuickImage 1.0.3.2 Feature"
-      version="6.1.0.qualifier"
+      version="7.0.0.qualifier"
       provider-name="psnet.nu">
 
    <description url="http://www.psnet.nu/eclipse">

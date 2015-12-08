@@ -2,6 +2,7 @@
     "dynamicInputs": [
         {
             "identifier": "parameters",
+            "group": "parameters",
             "dataTypes": [
                 "Integer",
                 "Float"
@@ -15,7 +16,62 @@
                 "Required",
                 "RequiredIfConnected"
             ],
+            "defaultInputExecutionConstraint":"Required",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "SelfLoopEndpoint"
+                }
+            }
+        },
+        {
+            "identifier":"toForward",
+            "group": "parameters",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required"
+            ],
             "defaultInputExecutionConstraint":"Required"
+        },
+        {
+            "identifier": "outerLoopDone",
+            "group": "orGroup",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "readOnly": "true",
+            "defaultDataType": "Boolean"
+        }
+    ],
+    "dynamicInputGroups": [
+        {
+            "name": "parameters",
+            "type": "And",
+            "group": "orGroup"
+        },
+        {
+            "name": "startValues",
+            "type": "And",
+            "group": "orGroup"
+        },
+        {
+            "name": "orGroup",
+            "type": "Or"
         }
     ]
 }

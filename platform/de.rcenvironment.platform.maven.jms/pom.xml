@@ -4,6 +4,7 @@
 
 	<artifactId>de.rcenvironment.platform.maven.jms</artifactId>
 	<name>RCE Platform - Maven Plain Java Libraries - JMS</name>
+	<version>7.0.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>
@@ -16,8 +17,8 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-core</artifactId>
-			<version>5.7.0</version>
+			<artifactId>activemq-broker</artifactId>
+			<version>5.12.1</version>
 			<exclusions>
 				<exclusion>
 					<groupId>org.springframework</groupId>
@@ -43,5 +44,4 @@
 		</dependency>
 	</dependencies>
 
-	<version>6.1.0.qualifier</version>
 </project>

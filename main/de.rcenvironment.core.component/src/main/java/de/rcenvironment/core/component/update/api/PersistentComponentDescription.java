@@ -69,9 +69,11 @@ public class PersistentComponentDescription implements Serializable {
 
         // parse information for convenient access via getter
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescription);
-        ObjectMapper mapper = new ObjectMapper();
-        JsonNode node = mapper.readTree(jsonParser);
+        JsonNode node;
+        try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescription)) {
+            ObjectMapper mapper = new ObjectMapper();
+            node = mapper.readTree(jsonParser);
+        }
 
         componentIdentifier = node.get(COMPONENT).get(IDENTIFIER).getTextValue();
 
@@ -104,9 +106,7 @@ public class PersistentComponentDescription implements Serializable {
 
     private void setComponentValueInDescription(String componentKey, String value) {
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser;
-        try {
-            jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString);
+        try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString)) {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
             JsonNode componentNode = node.get(COMPONENT);
@@ -130,9 +130,7 @@ public class PersistentComponentDescription implements Serializable {
     public void setNodeIdentifier(NodeIdentifier nodeId) {
         this.componentNodeIdentifier = nodeId;
         JsonFactory jsonFactory = new JsonFactory();
-        JsonParser jsonParser;
-        try {
-            jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString);
+        try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString)) {
             ObjectMapper mapper = new ObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
             ((ObjectNode) node).remove(PLATFORM);

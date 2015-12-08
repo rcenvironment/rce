@@ -39,6 +39,14 @@ public interface SmallTableTD extends TypedDatum {
     void setTypedDatumForCell(TypedDatum typedDatum, int rowIndex, int columnIndex);
 
     /**
+     * Returns whether the given {@link TypedDatum} is allowed as cell type.
+     * 
+     * @param typedDatum The given {@link TypedDatum} to check.
+     * @return true, if the {@link TypedDatum}s data type is allowed as cell type, otherwise false.
+     */
+    boolean isAllowedAsCellType(TypedDatum typedDatum);
+    
+    /**
      * @return number of rows of the table
      */
     int getRowCount();

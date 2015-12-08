@@ -1,0 +1,207 @@
+{
+  "identifier" : "a1fbc2bc-25ba-4d75-b7bb-fbbe03bed70e",
+  "workflowVersion" : "4",
+  "name" : "blob_store_2015-10-23_22:33:06_57",
+  "nodes" : [ {
+    "identifier" : "40fc2835-adae-4ad1-9a03-ba0be55a8991",
+    "name" : "Switch",
+    "location" : "342:151",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.switchcmp",
+      "version" : "1.1",
+      "name" : "Switch"
+    },
+    "configuration" : {
+      "closeOutputsOnTrue" : "true",
+      "conditionKey" : "count > 100",
+      "closeOutputsOnFalse" : "false",
+      "scriptErrorMessage" : "",
+      "neverCloseOutputs" : "false"
+    },
+    "staticInputs" : [ {
+      "identifier" : "51b484dd-1f88-45d7-bb21-e345e9effcb4",
+      "name" : "To_forward",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "FileReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "dynamicInputs" : [ {
+      "identifier" : "25a82537-cbca-4cb2-9108-43484e6b2ca0",
+      "name" : "count",
+      "epIdentifier" : "conditionToInput",
+      "group" : "null",
+      "datatype" : "Integer",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "7c5cb646-d9d4-4415-b9ec-f51f93b96329",
+      "name" : "True",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "FileReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    }, {
+      "identifier" : "3604310b-5dc9-4839-bc3c-62f9507ff9f3",
+      "name" : "False",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "FileReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ]
+  }, {
+    "identifier" : "18a259ae-749d-4b84-9d3c-990f7a172959",
+    "name" : "Input Provider",
+    "location" : "129:151",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "f" : "${f}",
+      "f_datatype_799ef365" : "file"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "28755d9f-4dd5-446c-b382-4064b505c375",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "FileReference",
+      "metadata" : {
+        "startValue" : "-",
+        "fileSourceType" : "atWorkflowStart"
+      }
+    } ]
+  }, {
+    "identifier" : "e9f4ab2d-7cba-4f98-95e4-5727a85bfdef",
+    "name" : "Compare",
+    "location" : "218:216",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "usageOfScript" : "NEW",
+      "storeComponentHistoryData" : "false",
+      "script" : "file_ref = RCE.read_input('f_ref')\r\nfile = RCE.read_input('f')\r\n\r\nimport filecmp\r\nif not filecmp.cmp(file_ref, file):\r\n   raise ValueError('Files were expected to be equal')\r\n\r\nRCE.write_output('f', file)\r\nRCE.write_output('count', RCE.get_execution_count())\r\n\r\n",
+      "scriptLanguage" : "Jython"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "0c4f2d44-3b03-441b-abe4-646de1931427",
+      "name" : "f_ref",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "FileReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Constant"
+      }
+    }, {
+      "identifier" : "762e58c1-6684-4045-be29-b632b0777505",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "FileReference",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "493f0c14-cf73-4b7e-81f2-85ecad087b44",
+      "name" : "f",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "FileReference"
+    }, {
+      "identifier" : "88ffed49-d7c3-438b-8e3e-84cdf9a1bf6f",
+      "name" : "count",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Integer"
+    } ]
+  }, {
+    "identifier" : "7ceca887-b408-489e-a480-07d2e0401b78",
+    "name" : "Joiner",
+    "location" : "237:151",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "FileReference",
+      "inputCount" : "2"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f758b374-dfaa-423d-99d4-81e9d9bacb48",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "FileReference"
+    }, {
+      "identifier" : "c3939bd7-0381-428d-99b5-8ecd3d71f53b",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "FileReference"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "e2925b28-9b05-49cb-85bf-9b7736d01cc4",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "FileReference"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "18a259ae-749d-4b84-9d3c-990f7a172959",
+    "output" : "28755d9f-4dd5-446c-b382-4064b505c375",
+    "target" : "7ceca887-b408-489e-a480-07d2e0401b78",
+    "input" : "f758b374-dfaa-423d-99d4-81e9d9bacb48"
+  }, {
+    "source" : "e9f4ab2d-7cba-4f98-95e4-5727a85bfdef",
+    "output" : "493f0c14-cf73-4b7e-81f2-85ecad087b44",
+    "target" : "40fc2835-adae-4ad1-9a03-ba0be55a8991",
+    "input" : "51b484dd-1f88-45d7-bb21-e345e9effcb4"
+  }, {
+    "source" : "40fc2835-adae-4ad1-9a03-ba0be55a8991",
+    "output" : "3604310b-5dc9-4839-bc3c-62f9507ff9f3",
+    "target" : "7ceca887-b408-489e-a480-07d2e0401b78",
+    "input" : "c3939bd7-0381-428d-99b5-8ecd3d71f53b"
+  }, {
+    "source" : "18a259ae-749d-4b84-9d3c-990f7a172959",
+    "output" : "28755d9f-4dd5-446c-b382-4064b505c375",
+    "target" : "e9f4ab2d-7cba-4f98-95e4-5727a85bfdef",
+    "input" : "0c4f2d44-3b03-441b-abe4-646de1931427"
+  }, {
+    "source" : "7ceca887-b408-489e-a480-07d2e0401b78",
+    "output" : "e2925b28-9b05-49cb-85bf-9b7736d01cc4",
+    "target" : "e9f4ab2d-7cba-4f98-95e4-5727a85bfdef",
+    "input" : "762e58c1-6684-4045-be29-b632b0777505"
+  }, {
+    "source" : "e9f4ab2d-7cba-4f98-95e4-5727a85bfdef",
+    "output" : "88ffed49-d7c3-438b-8e3e-84cdf9a1bf6f",
+    "target" : "40fc2835-adae-4ad1-9a03-ba0be55a8991",
+    "input" : "25a82537-cbca-4cb2-9108-43484e6b2ca0"
+  } ]
+}

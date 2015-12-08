@@ -49,7 +49,7 @@
          <propertyTab
                category="history"
                id="workflow.editor.tab.HistoryData"
-               label="History Data"
+               label="Workflow Data"
                afterTab="workflow.editor.tab.writer.XPathChooser">
          </propertyTab>
       </propertyTabs>
@@ -71,7 +71,7 @@
          point="de.rcenvironment.core.gui.workflow.editorActions">
       <action
             class="de.rcenvironment.components.script.gui.EditScriptWorkflowEditorAction"
-            component="de.rcenvironment.components.script.execution.ScriptComponent.*"
+            component="de.rcenvironment.script.*"
             default="true"
             id="de.rcenvironment.components.script.EditAction"
             label="Edit Script">

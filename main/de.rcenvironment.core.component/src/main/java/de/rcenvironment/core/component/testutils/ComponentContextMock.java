@@ -25,13 +25,13 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumServiceDefaultStub;
 import de.rcenvironment.core.utils.common.AutoCreationMap;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Placeholder implementation of {@link ComponentContext} for writing {@link Component} integration
- * tests.
+ * Placeholder implementation of {@link ComponentContext} for writing {@link Component} integration tests.
  * 
- * Individual tests may subclass it to add additional featured. Code that can be useful for other
- * tests should be merged into this base class.
+ * Individual tests may subclass it to add additional featured. Code that can be useful for other tests should be merged into this base
+ * class.
  * 
  * @author Robert Mischke
  * @author Doreen Seider
@@ -43,7 +43,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     private final Map<String, String> testConfig = new HashMap<>();
 
     private final Map<String, SimulatedEndpoint> simulatedInputs = new HashMap<>();
- 
+
     private final Map<String, SimulatedEndpoint> simulatedOutputs = new HashMap<>();
 
     private Map<String, TypedDatum> inputValues;
@@ -119,8 +119,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Utility class that automatically creates a List<TypedDatum> for every new output id to
-     * contain the captured {@link TypedDatum}s.
+     * Utility class that automatically creates a List<TypedDatum> for every new output id to contain the captured {@link TypedDatum}s.
      * 
      * @author Robert Mischke
      */
@@ -227,6 +226,15 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
     @Override
     public void writeOutput(String outputName, TypedDatum value) {
+        if (simulatedOutputs.get(outputName) == null) {
+            throw new RuntimeException(StringUtils.format("Output \"%s\" is not defined.", outputName));
+        }
+        if (value.getDataType() != simulatedOutputs.get(outputName).getDataType()
+            && !typedDatumService.getConverter().isConvertibleTo(value, simulatedOutputs.get(outputName).getDataType())) {
+            throw new RuntimeException(StringUtils.format("DataType %s of given value not convertable to defined output DataType %s",
+                value.getDataType(), simulatedOutputs.get(outputName).getDataType()));
+        }
+
         capturedOutputValues.get(outputName).add(value);
     }
 
@@ -256,8 +264,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Adds a key/value pair to the component's configuration. Should be called only before starting
-     * the component.
+     * Adds a key/value pair to the component's configuration. Should be called only before starting the component.
      * 
      * @param key entry key
      * @param value entry value
@@ -267,8 +274,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Defines/adds a simulated input endpoint for the component. Should be called only before
-     * starting the component.
+     * Defines/adds a simulated input endpoint for the component. Should be called only before starting the component.
      * 
      * @param name the name of the input (as visible to the user in actual workflows)
      * @param endpointId the internal endpoint ID
@@ -276,14 +282,12 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
      * @param isDynamic true for a dynamic input, false for a static one
      * @param metaData the metadata map of the intput; can be null as a shortcut for an empty map
      */
-    public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData)
-    {
+    public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
         simulatedInputs.put(name, new SimulatedEndpoint(name, endpointId, dataType, isDynamic, metaData));
     }
 
     /**
-     * Defines/adds a simulated output endpoint for the component. Should be called only before
-     * starting the component.
+     * Defines/adds a simulated output endpoint for the component. Should be called only before starting the component.
      * 
      * @param name the name of the output (as visible to the user in actual workflows)
      * @param endpointId the internal endpoint ID
@@ -291,8 +295,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
      * @param isDynamic true for a dynamic output, false for a static one
      * @param metaData the metadata map of the output; can be null as a shortcut for an empty map
      */
-    public void addSimulatedOutput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData)
-    {
+    public void addSimulatedOutput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
         simulatedOutputs.put(name, new SimulatedEndpoint(name, endpointId, dataType, isDynamic, metaData));
     }
 
@@ -308,8 +311,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Sets an input value for future consumption by the component. Only one input can be set per
-     * input; existing values are overwritten.
+     * Sets an input value for future consumption by the component. Only one input can be set per input; existing values are overwritten.
      * 
      * @param inputName the name of the input
      * @param datum the TypedDatum to "send"
@@ -319,8 +321,8 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Returns a list of all captured {@link TypedDatum}s sent to the given output by the component.
-     * If no output was generated, an empty list is returned.
+     * Returns a list of all captured {@link TypedDatum}s sent to the given output by the component. If no output was generated, an empty
+     * list is returned.
      * 
      * @param outputName the name if the output
      * @return a list of the captured outputs; may be empty, but not null
@@ -330,22 +332,18 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     /**
-     * Returns a list of all output names, which were closed. If no output was closed, an empty list
-     * is returned.
+     * Returns a list of all output names, which were closed. If no output was closed, an empty list is returned.
      * 
-     * @return a list of the captured outputs, which were closed; may be empty, but not
-     *         <code>null</code>
+     * @return a list of the captured outputs, which were closed; may be empty, but not <code>null</code>
      */
     public List<String> getCapturedOutputClosings() {
         return capturedOutputClosings;
     }
 
     /**
-     * Returns a list of all output names, which were reset. If no output was reset, an empty list
-     * is returned.
+     * Returns a list of all output names, which were reset. If no output was reset, an empty list is returned.
      * 
-     * @return a list of the captured outputs, which were reset; may be empty, but not
-     *         <code>null</code>
+     * @return a list of the captured outputs, which were reset; may be empty, but not <code>null</code>
      */
     public List<String> getCapturedOutputResets() {
         return capturedOutputResets;
@@ -394,22 +392,24 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     public ComponentHistoryDataItem getHistoryDataItem() {
         return historyDataItem;
     }
-    
+
     @Override
     public boolean isDynamicOutput(String outputName) {
         return simulatedOutputs.get(outputName).isDynamic();
     }
-    
+
     @Override
     public Set<String> getInputsNotConnected() {
         return inputsNotConnected;
     }
+
     /**
      * Adds an input that should not be connected.
+     * 
      * @param name of input
      */
-    public void addInputNotConnected(String name){
+    public void addInputNotConnected(String name) {
         inputsNotConnected.add(name);
     }
-    
+
 }

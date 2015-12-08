@@ -22,7 +22,6 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
-import de.rcenvironment.cpacs.utils.common.components.PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -94,18 +93,18 @@ public class CpacsWriterPersistentComponentDescriptionUpdater implements Persist
 
         
         // StaticOutput CPACS=FileReference, Static Input CPACS=FileReference
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticInput(description, "CPACS"); 
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.addStaticOutputCPACS(description);
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticInput(description, "CPACS"); 
+        description = PersistentComponentDescriptionUpdaterUtils.addStaticOutput(description, "CPACS");
 
         
         // if ConfigValue consumeCPACS==true; CPACS  StaticInputs = required
         // else StaticInput CPACS=initialized
         // Delete ConfigValue consumeCPACS
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.updateConsumeCPACSFlag(description);
+        description = PersistentComponentDescriptionUpdaterUtils.updateConsumeCPACSFlag(description);
  
         
         // Sets all dynamic incoming channels usage to "optional."
-        description = PersistentCpacsComponentDescriptionUpdaterUtilsForVersionThree.updateDynamicInputsOptional(description);
+        description = PersistentComponentDescriptionUpdaterUtils.updateDynamicInputsOptional(description);
         
         
         // Savemode is now boolean

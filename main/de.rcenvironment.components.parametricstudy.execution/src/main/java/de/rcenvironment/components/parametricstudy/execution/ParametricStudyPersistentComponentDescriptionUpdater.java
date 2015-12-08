@@ -37,17 +37,21 @@ import de.rcenvironment.core.component.update.spi.PersistentComponentDescription
  */
 public class ParametricStudyPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
+    private static final String DESIGN_VARIABLE = "Design Variable";
+
     private static final String V1_0 = "1.0";
 
     private static final String V3_0 = "3.0";
+
+    private static final String V3_1 = "3.1";
+
+    private static final String V3_2 = "3.2";
 
     private static final String OUTPUT_NAME = "name";
 
     private static final String STATIC_OUTPUTS = "staticOutputs";
 
     private static final String EP_IDENTIFIER = "epIdentifier";
-
-    private final String currentVersion = "3.1";
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -59,16 +63,21 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
 
         int versionsToUpdate = PersistentDescriptionFormatVersion.NONE;
         
-        if (!silent && (persistentComponentDescriptionVersion == null
-            || persistentComponentDescriptionVersion.compareTo(V1_0) < 0)) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE;
-        }
-        if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V3_0) < 0) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
-        }
-        if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(currentVersion) < 0) {
+        if (!silent) {
+            if (persistentComponentDescriptionVersion == null
+                || persistentComponentDescriptionVersion.compareTo(V1_0) < 0) {
+                versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE;
+            }
+            if (persistentComponentDescriptionVersion != null) {
+                if (persistentComponentDescriptionVersion.compareTo(V3_0) < 0) {
+                    versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
+                }
+                if (persistentComponentDescriptionVersion.compareTo(V3_1) < 0) {
+                    versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+                }
+            }
+        } else if (persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V3_2) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         return versionsToUpdate;
@@ -81,19 +90,49 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
         
         if (!silent) {
             if (formatVersion == PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE) {
-                return firstUpdate(description);
+                return updateToV10(description);
             }
             if (formatVersion == PersistentDescriptionFormatVersion.FOR_VERSION_THREE) {
-                return secondUpdate(description);
+                return updateFrom10To30(description);
             }
             if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
-                return thirdUpdate(description);
+                if (description.getComponentVersion().equals(V3_0)) {
+                    description = updateFrom30To31(description);
+                    description = updateFrom31To32(description);
+                    return description;
+                }
+            }
+        } else {
+            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+                if (description.getComponentVersion().equals(V3_1)) {
+                    return updateFrom31To32(description);
+                }
             }
         }
         return description;
     }
 
-    private PersistentComponentDescription thirdUpdate(PersistentComponentDescription description) throws JsonProcessingException,
+
+    private PersistentComponentDescription updateFrom31To32(PersistentComponentDescription description) throws JsonProcessingException,
+        IOException {
+        
+        ObjectMapper mapper = new ObjectMapper();
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode staticOutputs = node.get(STATIC_OUTPUTS);
+        for (JsonNode outputEndpoint : staticOutputs) {
+            ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
+            if (outputEndpoint.get(OUTPUT_NAME).getTextValue().equals(DESIGN_VARIABLE)) {
+                ((ObjectNode) outputEndpoint).put(OUTPUT_NAME, ParametricStudyComponentConstants.OUTPUT_NAME_DV);
+            }
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
+        newdesc.setComponentVersion(V3_2);
+        return newdesc;
+
+    }
+
+    private PersistentComponentDescription updateFrom30To31(PersistentComponentDescription description) throws JsonProcessingException,
         IOException {
         ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
@@ -103,7 +142,7 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
             for (JsonNode outputEndpoint : staticOutputs) {
                 ((ObjectNode) outputEndpoint).remove(EP_IDENTIFIER);
                 if (outputEndpoint.get(OUTPUT_NAME).getTextValue().equals("DesignVariable")) {
-                    ((ObjectNode) outputEndpoint).put(OUTPUT_NAME, "Design Variable");
+                    ((ObjectNode) outputEndpoint).put(OUTPUT_NAME, DESIGN_VARIABLE);
                     ObjectNode metadata = createStaticOutputMetaData(node);
                     ((ObjectNode) outputEndpoint).put("metadata", metadata);
                     ((ObjectNode) outputEndpoint).put("datatype", "Float");
@@ -117,7 +156,7 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
             output.put("identifier",
                 TextNode.valueOf(UUID.randomUUID().toString()));
             output.put(OUTPUT_NAME,
-                TextNode.valueOf("Design Variable"));
+                TextNode.valueOf(DESIGN_VARIABLE));
             output.put("datatype", TextNode.valueOf("Float"));
             ObjectNode metadata = createStaticOutputMetaData(node);
             output.put("metadata", metadata);
@@ -127,10 +166,10 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
-        newdesc.setComponentVersion(currentVersion);
+        newdesc.setComponentVersion(V3_1);
         return newdesc;
     }
-
+    
     private ObjectNode createStaticOutputMetaData(JsonNode node) {
         ObjectNode metadata = JsonNodeFactory.instance.objectNode();
         ObjectNode config = (ObjectNode) node.get("configuration");
@@ -140,7 +179,7 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
         return metadata;
     }
 
-    private PersistentComponentDescription secondUpdate(PersistentComponentDescription description) throws JsonProcessingException,
+    private PersistentComponentDescription updateFrom10To30(PersistentComponentDescription description) throws JsonProcessingException,
         IOException {
 
         description =
@@ -163,17 +202,18 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
         return newdesc;
     }
 
-    private PersistentComponentDescription firstUpdate(PersistentComponentDescription description) throws JsonParseException, IOException {
+    private PersistentComponentDescription updateToV10(PersistentComponentDescription description) throws JsonParseException, IOException {
         JsonFactory jsonFactory = new JsonFactory();
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
         ObjectMapper mapper = new ObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
+        jsonParser.close();
         JsonNode dynamicInputsNode = rootNode.findPath(STATIC_OUTPUTS);
         Iterator<JsonNode> it = dynamicInputsNode.getElements();
         while (it.hasNext()) {
             JsonNode inputNode = it.next();
             ((ObjectNode) inputNode).remove(OUTPUT_NAME);
-            ((ObjectNode) inputNode).put(OUTPUT_NAME, TextNode.valueOf(ParametricStudyComponentConstants.OUTPUT_NAME));
+            ((ObjectNode) inputNode).put(OUTPUT_NAME, TextNode.valueOf(ParametricStudyComponentConstants.OUTPUT_NAME_DV));
         }
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(rootNode));

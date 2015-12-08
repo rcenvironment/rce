@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" factory="de.rcenvironment.rce.component" name="Cluster">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" factory="de.rcenvironment.rce.component" name="Cluster">
 
 	<implementation class="de.rcenvironment.components.cluster.execution.ClusterComponent"/>
 	<service>

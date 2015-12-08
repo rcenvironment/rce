@@ -8,8 +8,12 @@
 	
 	<reference
  		name="WorkflowExecutionService"
- 		interface="de.rcenvironment.core.component.workflow.execution.api.HeadlessWorkflowExecutionService"
+ 		interface="de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService"
  		bind="bindWorkflowExecutionService"
  	/>
- 		
+ 	<reference
+ 		name="MetaDataService"
+ 		interface="de.rcenvironment.core.datamanagement.MetaDataService"
+ 		bind="bindMetaDataService"
+ 	/>
 </scr:component>

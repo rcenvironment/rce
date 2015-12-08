@@ -2,12 +2,19 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication Tests
 Bundle-SymbolicName: de.rcenvironment.core.communication.tests
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.communication
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing
 Import-Package: de.rcenvironment.core.communication.model,
  de.rcenvironment.core.configuration.testutils,
- de.rcenvironment.core.utils.common.security
+ de.rcenvironment.core.utils.common.security,
+ de.rcenvironment.core.utils.ssh.jsch,
+ org.apache.sshd;version="0.14.0",
+ org.apache.sshd.common;version="0.14.0",
+ org.apache.sshd.server;version="0.14.0",
+ org.apache.sshd.server.auth;version="0.14.0",
+ org.apache.sshd.server.keyprovider;version="0.14.0",
+ org.apache.sshd.server.session;version="0.14.0"
 Export-Package: de.rcenvironment.core.communication.testutils.templates
 Bundle-Vendor: DLR

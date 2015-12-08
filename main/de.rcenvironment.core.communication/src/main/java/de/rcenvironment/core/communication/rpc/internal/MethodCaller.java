@@ -18,7 +18,7 @@ import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
 
 /**
@@ -32,11 +32,11 @@ import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
  * 
  * @author Heinrich Wendel
  * @author Doreen Seider
- * @author Robert Mischke (added MethodPermissionCheck)
+ * @author Robert Mischke
  */
 public final class MethodCaller {
 
-    private static final String ERROR_METHOD_CALL_FAILED = "Could not call method: ";
+    private static final String ERROR_METHOD_CALL_FAILED = "Method call failed or refused: ";
 
     private static Map<String, Method> cache = new HashMap<String, Method>();
 
@@ -49,10 +49,11 @@ public final class MethodCaller {
      * @param methodName The name of method to call.
      * @param parameters The parameters of the method.
      * @return the return object of the call.
-     * @throws CommunicationException if calling the method failed.
+     * @throws RemoteOperationException on errors invoking the method
+     * @throws InvocationTargetException if the invoked method throws an exception
      */
     public static Object callMethod(Object service, String methodName, List<? extends Serializable> parameters)
-        throws CommunicationException {
+        throws RemoteOperationException, InvocationTargetException {
         // delegate without using a MethodPermissionCheck; maintains old behavior
         return callMethod(service, methodName, parameters, null);
     }
@@ -66,12 +67,12 @@ public final class MethodCaller {
      * @param parameters The parameters of the method.
      * @param permissionCheck an optional permission check, or null to disable
      * @return the return object of the call.
-     * @throws CommunicationException if calling the method failed.
+     * @throws RemoteOperationException on errors invoking the method
+     * @throws InvocationTargetException if the invoked method throws an exception
      */
     @SuppressWarnings("unchecked")
     public static Object callMethod(Object service, String methodName, List<? extends Serializable> parameters,
-        MethodPermissionCheck permissionCheck)
-        throws CommunicationException {
+        MethodPermissionCheck permissionCheck) throws RemoteOperationException, InvocationTargetException {
 
         // Extract parameters
         Class<? extends Serializable>[] parameterTypes = null;
@@ -104,7 +105,7 @@ public final class MethodCaller {
 
             method = lookupMethod(service.getClass(), methodName, parameterTypes);
             if (method == null) {
-                throw new CommunicationException(ERROR_METHOD_CALL_FAILED + uid + " - it could not be not found.");
+                throw new RemoteOperationException(ERROR_METHOD_CALL_FAILED + uid + " - the method could not be not found");
             }
 
             // Add to cache
@@ -115,18 +116,16 @@ public final class MethodCaller {
             if (!permissionCheck.checkPermission(method)) {
                 LogFactory.getLog(MethodCaller.class).error("RPC permission check failed for method " + method
                     + " of service " + service.getClass() + " - aborting request");
-                throw new CommunicationException(ERROR_METHOD_CALL_FAILED + uid + " - permission denied");
+                throw new RemoteOperationException(ERROR_METHOD_CALL_FAILED + uid + " - permission denied");
             }
         }
 
         try {
             return method.invoke(service, parameterList);
         } catch (IllegalArgumentException e) {
-            throw new CommunicationException(ERROR_METHOD_CALL_FAILED + uid + " - invalid arguments.");
+            throw new RemoteOperationException(ERROR_METHOD_CALL_FAILED + uid + " - invalid arguments.");
         } catch (IllegalAccessException e) {
-            throw new CommunicationException(ERROR_METHOD_CALL_FAILED + uid + " - it could not be not accessed.");
-        } catch (InvocationTargetException e) {
-            return e.getCause();
+            throw new RemoteOperationException(ERROR_METHOD_CALL_FAILED + uid + " - it could not be not accessed.");
         }
     }
 

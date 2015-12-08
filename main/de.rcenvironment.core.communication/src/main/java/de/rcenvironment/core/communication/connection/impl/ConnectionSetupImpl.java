@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -42,8 +43,8 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupListener;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
 import de.rcenvironment.core.communication.connection.api.DisconnectReason;
-import de.rcenvironment.core.communication.model.MessageChannel;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
+import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -84,6 +85,8 @@ public class ConnectionSetupImpl implements ConnectionSetup {
         // message channel closed without active disconnect
         { CONNECTED, DISCONNECTED }
     };
+
+    private static final int STATE_WAITING_POLLING_INTERVAL = 25;
 
     private NetworkContactPoint ncp;
 
@@ -208,7 +211,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             }
 
             @Override
-            @TaskDescription("Connection setup connecting")
+            @TaskDescription("Communication Layer: ConnectionSetup connecting")
             public void run() {
                 try {
                     future = channelService.connect(ncp, true);
@@ -225,12 +228,20 @@ public class ConnectionSetupImpl implements ConnectionSetup {
                     }
                 } catch (CommunicationException e) {
                     // TODO reduce number of stacktrace layers by unwrapping or changing source behaviour - misc_ro
-                    if (isAutoRetry) {
-                        log.info(StringUtils.format("Failed to auto-reconnect to \"%s\" (Reason: %s, Connection details: %s)",
-                            displayName, e.toString(), getNetworkContactPointString()));
+                    final String exceptionString;
+                    if (e.getCause() == null) {
+                        // typical case: only use message
+                        exceptionString = e.getMessage();
                     } else {
-                        log.warn(StringUtils.format("Failed to connect to \"%s\"  (Reason: %s, Connection details: %s)",
-                            displayName, e.toString(), getNetworkContactPointString()));
+                        // rare/unexpected case: add whole cause chain
+                        exceptionString = e.toString();
+                    }
+                    if (isAutoRetry) {
+                        log.info(StringUtils.format("Failed to auto-reconnect to \"%s\": %s (Connection details: %s)",
+                            displayName, exceptionString, getNetworkContactPointString()));
+                    } else {
+                        log.warn(StringUtils.format("Failed to connect to \"%s\": %s (Connection details: %s)",
+                            displayName, exceptionString, getNetworkContactPointString()));
                     }
                     postEvent(new StateMachineEvent(CONNECT_ATTEMPT_FAILED, null, taskId));
                 } catch (CancellationException e) {
@@ -272,7 +283,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             }
 
             @Override
-            @TaskDescription("Connection setup disconnecting")
+            @TaskDescription("Communication Layer: ConnectionSetup disconnecting")
             public void run() {
                 channelService.closeOutgoingChannel(channel);
             }
@@ -292,7 +303,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
             }
 
             @Override
-            @TaskDescription("Connection setup auto-reconnect timer")
+            @TaskDescription("Communication Layer: ConnectionSetup auto-reconnect timer")
             public void run() {
                 postEvent(new StateMachineEvent(AUTO_RETRY_DELAY_EXPIRED, null, taskId));
             }
@@ -600,6 +611,23 @@ public class ConnectionSetupImpl implements ConnectionSetup {
     @Override
     public void signalStopIntent() {
         stateMachine.postEvent(new StateMachineEvent(STOP_REQUESTED));
+    }
+
+    @Override
+    public void awaitState(ConnectionSetupState targetState, int timeoutMsec) throws TimeoutException, InterruptedException {
+        if (stateMachine.getState() == targetState) {
+            return;
+        }
+        int timeRemaining = timeoutMsec;
+        while (timeRemaining > 0) {
+            int waitTime = Math.min(STATE_WAITING_POLLING_INTERVAL, timeRemaining);
+            Thread.sleep(waitTime);
+            if (stateMachine.getState() == targetState) {
+                return;
+            }
+            timeRemaining -= STATE_WAITING_POLLING_INTERVAL;
+        }
+        throw new TimeoutException();
     }
 
     @Override

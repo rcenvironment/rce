@@ -19,17 +19,17 @@ public final class InputGroupMockInformation {
 
     protected final String name;
 
-    protected final EndpointGroupDefinition.Type type;
+    protected final EndpointGroupDefinition.LogicOperation type;
 
     protected final String parentGroup;
 
-    public InputGroupMockInformation(String name, EndpointGroupDefinition.Type type, String parentGroup) {
+    public InputGroupMockInformation(String name, EndpointGroupDefinition.LogicOperation type, String parentGroup) {
         this.name = name;
         this.type = type;
         this.parentGroup = parentGroup;
     }
 
-    public InputGroupMockInformation(String name, EndpointGroupDefinition.Type type) {
+    public InputGroupMockInformation(String name, EndpointGroupDefinition.LogicOperation type) {
         this(name, type, null);
     }
 }

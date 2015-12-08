@@ -10,7 +10,6 @@ package de.rcenvironment.core.gui.communication.views;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -22,29 +21,29 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
-import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.gui.communication.views.internal.AnchorPoints;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext.Context;
 import de.rcenvironment.core.gui.communication.views.model.NetworkViewModel;
+import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNode;
+import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNodeWithParent;
+import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
+import de.rcenvironment.core.gui.communication.views.spi.SelfRenderingNetworkViewNode;
+import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
 
 /**
  * The network view content provider.
  * 
  * @author Robert Mischke
+ * @author David Scholz
  */
-public class NetworkViewContentProvider implements IStructuredContentProvider,
-    ITreeContentProvider {
+public class NetworkViewContentProvider implements IStructuredContentProvider, ITreeContentProvider {
 
     /**
      * The object representing the network root; added to avoid creating a class without an actual purpose.
      */
-    public static final Object NETWORK_ROOT_NODE = new Object();
-
-    /**
-     * The object representing the parent of the connection entries.
-     */
-    public static final Object CONNECTIONS_ROOT_NODE = new Object();
+    private static final String COLON = ": ";
 
     private static final Object[] EMPTY_ARRAY = new Object[0];
 
@@ -52,7 +51,19 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
 
     private boolean optionRawPropertiesVisible = false;
 
+    private final List<NetworkViewContributor> rootContributors;
+
+    private final List<NetworkViewContributor> instanceDataContributors;
+
+    private final List<Object> firstLevelNodes = new ArrayList<>();
+
     private Log log = LogFactory.getLog(getClass());
+
+    public NetworkViewContentProvider(List<NetworkViewContributor> rootContributors,
+        List<NetworkViewContributor> instanceDataContributors) {
+        this.rootContributors = rootContributors;
+        this.instanceDataContributors = instanceDataContributors;
+    }
 
     @Override
     public void inputChanged(Viewer v, Object oldInput, Object newInput) {
@@ -60,6 +71,7 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
             // ignore empty input
             return;
         }
+
         model = (NetworkViewModel) newInput;
     }
 
@@ -68,12 +80,18 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
 
     @Override
     public Object[] getElements(Object parent) {
-        return new Object[] { NETWORK_ROOT_NODE, CONNECTIONS_ROOT_NODE };
+        // keep top-level nodes in a set to recognize them in getParent()
+        firstLevelNodes.clear();
+        firstLevelNodes.add(AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE);
+        firstLevelNodes.add(AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE);
+
+        return firstLevelNodes.toArray();
     }
 
     @Override
     public Object[] getChildren(Object parentNode) {
-        if (parentNode == NETWORK_ROOT_NODE) {
+
+        if (parentNode == AnchorPoints.INSTANCES_PARENT_NODE) {
             if (model.networkGraphWithProperties == null) {
                 return EMPTY_ARRAY;
             }
@@ -81,7 +99,7 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
             int i = 0;
             Object[] result = new Object[nodes.size()];
             for (NetworkGraphNode node : nodes) {
-                NetworkGraphNodeWithContext nodeWithContext = new NetworkGraphNodeWithContext(node, Context.ROOT);
+                NetworkGraphNodeWithContext nodeWithContext = new NetworkGraphNodeWithContext(node, Context.ROOT, null);
                 nodeWithContext.setAttachedNodeProperties(model.getNodeProperties().get(node.getNodeId()));
                 result[i++] = nodeWithContext;
             }
@@ -89,68 +107,87 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
             return result;
         }
 
-        if (parentNode == CONNECTIONS_ROOT_NODE) {
-            if (model.connectionSetups == null) {
-                return EMPTY_ARRAY;
-            }
-            final ConnectionSetup[] setups = model.connectionSetups.toArray(new ConnectionSetup[model.connectionSetups.size()]);
-            Arrays.sort(setups, new Comparator<ConnectionSetup>() {
-
-                @Override
-                public int compare(ConnectionSetup o1, ConnectionSetup o2) {
-                    return o1.getDisplayName().compareTo(o2.getDisplayName());
+        if (parentNode instanceof ContributedNetworkViewNode) {
+            if (parentNode instanceof SelfRenderingNetworkViewNode) {
+                SelfRenderingNetworkViewNode typedParentNode = (SelfRenderingNetworkViewNode) parentNode;
+                // TODO somewhat weird; rework? - misc_ro
+                if (!typedParentNode.getHasChildren()) {
+                    return EMPTY_ARRAY;
+                } else {
+                    return typedParentNode.getContributor().getChildren(typedParentNode);
                 }
-            });
-            return setups;
+            } else {
+                ContributedNetworkViewNode typedParentNode = (ContributedNetworkViewNode) parentNode;
+                // if clause to separate old and new approach nodes; fall-through in "null" case for old approach
+                if (typedParentNode.getContributor() != null) {
+                    return typedParentNode.getContributor().getChildren(typedParentNode);
+                }
+            }
+        }
+
+        if (parentNode == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE
+            || parentNode == AnchorPoints.SSH_REMOTE_ACCESS_SECTION_PARENT_NODE) {
+            List<Object> result = new ArrayList<>();
+            if (parentNode == AnchorPoints.MAIN_NETWORK_SECTION_PARENT_NODE) {
+                // old code - hard-coded element
+                result.add(AnchorPoints.INSTANCES_PARENT_NODE);
+            }
+            // new code - contributors
+            for (NetworkViewContributor contributor : rootContributors) {
+                Object[] contributedNodes = contributor.getTopLevelElements(parentNode);
+                if (contributedNodes != null) {
+                    for (Object element : contributedNodes) {
+                        result.add(element);
+                    }
+                }
+            }
+            return result.toArray();
         }
 
         NetworkGraphNodeWithContext typedParentNode = (NetworkGraphNodeWithContext) parentNode;
 
         // switch by parent node context
         Object[] result;
-        int i = 0;
         switch (typedParentNode.getContext()) {
         case ROOT:
-            result = new Object[3];
-            if (model.componentKnowledge != null) {
-                // only show the "published" folder when there are published components
-                Collection<ComponentInstallation> publishedInstallations =
-                    model.componentKnowledge.getPublishedInstallationsOnNode(typedParentNode.getNode().getNodeId());
-                if (publishedInstallations != null && publishedInstallations.size() != 0) {
-                    result[i++] = new NetworkGraphNodeWithContext(typedParentNode, Context.PUBLISHED_COMPONENTS_FOLDER);
-                }
-                if (typedParentNode.isLocalNode()) {
-                    result[i++] = new NetworkGraphNodeWithContext(typedParentNode, Context.LOCAL_COMPONENTS_FOLDER);
+            List<Object> contribList = new ArrayList<>();
+            // new approach
+            for (NetworkViewContributor contributor : instanceDataContributors) {
+                for (Object contrib : contributor.getChildrenForNetworkInstanceNode(typedParentNode)) {
+                    contribList.add(contrib);
                 }
             }
+            // old approach
             if (optionRawPropertiesVisible) {
-                result[i++] = new NetworkGraphNodeWithContext(typedParentNode, Context.RAW_NODE_PROPERTIES_FOLDER);
+                contribList.add(new NetworkGraphNodeWithContext(typedParentNode, Context.RAW_NODE_PROPERTIES_FOLDER, null));
             }
             // trim to actual length
-            result = Arrays.copyOfRange(result, 0, i);
+            result = contribList.toArray();
             break;
-        case LOCAL_COMPONENTS_FOLDER:
-            Collection<ComponentInstallation> localInstallations = determineLocalComponents(typedParentNode);
-            result = createNodesForComponentInstallations(typedParentNode, localInstallations);
-            break;
-        case PUBLISHED_COMPONENTS_FOLDER:
-            Collection<ComponentInstallation> publishedInstallations =
-                model.componentKnowledge.getPublishedInstallationsOnNode(typedParentNode.getNode().getNodeId());
-            // note: the parent node is only created if the list is defined and not empty
-            result = createNodesForComponentInstallations(typedParentNode, publishedInstallations);
+        case RESOURCE_MONITORING_FOLDER:
+            SystemMonitoringDataSnapshot monitoringDataModel = model.getMonitoringDataModelMap().get(typedParentNode.getNode().getNodeId());
+            if (monitoringDataModel != null) {
+                result =
+                    createNodeSystemResources(monitoringDataModel, typedParentNode
+                        .getNode().getNodeId());
+            } else {
+                result = new Object[1];
+                result[0] = "Fetching monitoring data...";
+            }
             break;
         case RAW_NODE_PROPERTIES_FOLDER:
             List<NetworkGraphNodeWithContext> children = new ArrayList<NetworkGraphNodeWithContext>();
             Map<String, String> propertyValueMap = typedParentNode.getAttachedNodeProperties();
             if (propertyValueMap != null) {
                 for (Entry<String, String> property : propertyValueMap.entrySet()) {
-                    NetworkGraphNodeWithContext newChild = new NetworkGraphNodeWithContext(typedParentNode, Context.RAW_NODE_PROPERTY);
-                    newChild.setDisplayText(property.getKey() + ": " + property.getValue());
+                    NetworkGraphNodeWithContext newChild =
+                        new NetworkGraphNodeWithContext(typedParentNode, Context.RAW_NODE_PROPERTY, null);
+                    newChild.setDisplayText(property.getKey() + COLON + property.getValue());
                     children.add(newChild);
                 }
             } else {
                 // add placeholder
-                NetworkGraphNodeWithContext newChild = new NetworkGraphNodeWithContext(typedParentNode, Context.RAW_NODE_PROPERTY);
+                NetworkGraphNodeWithContext newChild = new NetworkGraphNodeWithContext(typedParentNode, Context.RAW_NODE_PROPERTY, null);
                 newChild.setDisplayText("<unknown>");
                 children.add(newChild);
             }
@@ -163,62 +200,82 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
         return result;
     }
 
+    private Object[] createNodeSystemResources(SystemMonitoringDataSnapshot monitoringDataModel, NodeIdentifier nodeId) {
+        return null;
+    }
+
     @Override
     public boolean hasChildren(Object parent) {
-        if (parent == NETWORK_ROOT_NODE) {
-            return true;
-        } else if (parent == CONNECTIONS_ROOT_NODE) {
-            return model.connectionSetups != null && !model.connectionSetups.isEmpty();
+        if (parent instanceof SelfRenderingNetworkViewNode) {
+            SelfRenderingNetworkViewNode typedParentNode = (SelfRenderingNetworkViewNode) parent;
+            return typedParentNode.getHasChildren();
+        } else if (parent instanceof ContributedNetworkViewNode && ((ContributedNetworkViewNode) parent).getContributor() != null) {
+            // TODO second "if" clause can be removed after full transition
+            return ((ContributedNetworkViewNode) parent).getContributor().hasChildren(parent);
         } else if (parent instanceof NetworkGraphNodeWithContext) {
             NetworkGraphNodeWithContext typedParentNode = (NetworkGraphNodeWithContext) parent;
+            if (typedParentNode.getContributor() != null) {
+                // new approach
+                return typedParentNode.getContributor().hasChildren(parent);
+            }
+
             switch (typedParentNode.getContext()) {
             case ROOT:
-                if (optionRawPropertiesVisible || typedParentNode.isLocalNode()) {
-                    // this assumes that every client node has at least one local component
-                    return true;
-                } else {
-                    if (model.componentKnowledge == null) {
-                        return false;
-                    }
-                    Collection<ComponentInstallation> publishedInstallations =
-                        model.componentKnowledge.getPublishedInstallationsOnNode(typedParentNode.getNode().getNodeId());
-                    return publishedInstallations != null && !publishedInstallations.isEmpty();
-                }
+                // always true now, as each instance's folder contains at least the monitoring data folder
+                return true;
             case RAW_NODE_PROPERTIES_FOLDER:
+            case RESOURCE_MONITORING_FOLDER:
                 return true; // always has entries or a placeholder
-            case LOCAL_COMPONENTS_FOLDER:
-                Collection<ComponentInstallation> localInstallations = determineLocalComponents(typedParentNode);
-                return !localInstallations.isEmpty();
-            case PUBLISHED_COMPONENTS_FOLDER:
-                Collection<ComponentInstallation> publishedInstallations =
-                    model.componentKnowledge.getPublishedInstallationsOnNode(typedParentNode.getNode().getNodeId());
-                return publishedInstallations != null && !publishedInstallations.isEmpty();
             case RAW_NODE_PROPERTY:
-            case COMPONENT_INSTALLATION:
                 return false;
             default:
                 return true;
             }
+        } else if (firstLevelNodes.contains(parent) || parent == AnchorPoints.INSTANCES_PARENT_NODE) {
+            return true;
         }
         return false;
     }
 
     @Override
-    public Object getParent(Object child) {
-        if (child == NETWORK_ROOT_NODE || child == CONNECTIONS_ROOT_NODE) {
-            return model;
-        }
-        if (child instanceof NetworkGraphNodeWithContext) {
-            NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) child;
-            NetworkGraphNodeWithContext parent = typedNode.getParent();
+    public Object getParent(Object node) {
+
+        if (node instanceof NetworkGraphNodeWithContext) {
+            final NetworkGraphNodeWithContext typedNode = (NetworkGraphNodeWithContext) node;
+            final NetworkGraphNodeWithContext parent = typedNode.getParent();
             if (parent != null) {
                 return parent;
             } else {
-                return NETWORK_ROOT_NODE;
+                return AnchorPoints.INSTANCES_PARENT_NODE;
             }
         }
-        // TODO handle connections setups
-        log.warn("getParent() fall-through; returning null");
+
+        if (node instanceof ContributedNetworkViewNodeWithParent) {
+            return ((ContributedNetworkViewNodeWithParent) node).getParentNode();
+        }
+
+        if (node instanceof ContributedNetworkViewNode) {
+            final ContributedNetworkViewNode typedNode = (ContributedNetworkViewNode) node;
+            final NetworkViewContributor contributor = typedNode.getContributor();
+            if (contributor == null) {
+                log.warn("getParent() called on contributed node without a contributor: " + node.toString());
+                return null;
+            }
+            Object parent = contributor.getParent(typedNode);
+            if (parent == null) {
+                log.warn("Contributor returned a null parent for " + node.toString());
+            } else if (parent == AnchorPoints.SYMBOLIC_ROOT_NODE) {
+                return model; // the actual root node
+            } else {
+                return parent;
+            }
+        }
+
+        if (firstLevelNodes.contains(node)) {
+            return model;
+        }
+
+        log.warn("getParent() fall-through; returning null for node " + node.toString());
         return null;
     }
 
@@ -226,32 +283,4 @@ public class NetworkViewContentProvider implements IStructuredContentProvider,
         this.optionRawPropertiesVisible = value;
     }
 
-    private Collection<ComponentInstallation> determineLocalComponents(NetworkGraphNodeWithContext typedParentNode) {
-        Collection<ComponentInstallation> localInstallations = model.componentKnowledge.getLocalInstallations();
-        // hide all published local components from "local components" list
-        Collection<ComponentInstallation> publishedLocalInstallations =
-            model.componentKnowledge.getPublishedInstallationsOnNode(typedParentNode.getNode().getNodeId());
-        if (publishedLocalInstallations != null) {
-            localInstallations = new ArrayList<ComponentInstallation>(localInstallations);
-            localInstallations.removeAll(publishedLocalInstallations);
-        }
-        return localInstallations;
-    }
-
-    private Object[] createNodesForComponentInstallations(NetworkGraphNodeWithContext node,
-        Collection<ComponentInstallation> installations) {
-        Object[] result = new Object[installations.size()];
-        int i = 0;
-        for (ComponentInstallation installation : installations) {
-            if (installation == null) {
-                log.warn("Skipping 'null' component installation for node " + node.getNode().getNodeId());
-                continue;
-            }
-            NetworkGraphNodeWithContext newChild = new NetworkGraphNodeWithContext(node, Context.COMPONENT_INSTALLATION);
-            newChild.setComponentInstallation(installation);
-            result[i++] = newChild;
-        }
-        Arrays.sort(result);
-        return result;
-    }
 }

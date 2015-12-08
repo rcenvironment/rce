@@ -12,9 +12,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.communication.model.NodeIdentityInformation;
 import de.rcenvironment.core.communication.model.NodeInformation;
 import de.rcenvironment.core.communication.model.NodeInformationRegistry;
-import de.rcenvironment.core.communication.model.NodeIdentityInformation;
 
 /**
  * Central registry for information gathered about nodes.
@@ -43,8 +43,8 @@ public class NodeInformationRegistryImpl implements NodeInformationRegistry {
     }
 
     /**
-     * Provides direct, write-enabled access to {@link NodeInformationHolder}s. Not part of the
-     * {@link NodeInformationRegistry} interface as it is intended for bundle-internal use only.
+     * Provides direct, write-enabled access to {@link NodeInformationHolder}s. Not part of the {@link NodeInformationRegistry} interface as
+     * it is intended for bundle-internal use only.
      * 
      * @param id the id of the relevant node
      * @return the writable {@link NodeInformationHolder}
@@ -61,8 +61,7 @@ public class NodeInformationRegistryImpl implements NodeInformationRegistry {
     }
 
     /**
-     * Updates the associated information for a node from a received or locally-generated
-     * {@link InitialNodeInformation} object.
+     * Updates the associated information for a node from a received or locally-generated {@link InitialNodeInformation} object.
      * 
      * @param remoteNodeInformation the object to update from
      */
@@ -70,12 +69,10 @@ public class NodeInformationRegistryImpl implements NodeInformationRegistry {
         String nodeId = remoteNodeInformation.getNodeId().getIdString();
         NodeInformationHolder writableNodeInformation = getWritableNodeInformation(nodeId);
         writableNodeInformation.setDisplayName(remoteNodeInformation.getDisplayName());
-        writableNodeInformation.setIsWorkflowHost(remoteNodeInformation.getIsWorkflowHost());
     }
 
     /**
-     * Updates the associated information for a node from a received or locally-generated
-     * {@link NodeIdentityInformation} object.
+     * Updates the associated information for a node from a received or locally-generated {@link NodeIdentityInformation} object.
      * 
      * @param identityInformation the object to update from
      */
@@ -83,7 +80,6 @@ public class NodeInformationRegistryImpl implements NodeInformationRegistry {
         String nodeId = identityInformation.getPersistentNodeId();
         NodeInformationHolder writableNodeInformation = getWritableNodeInformation(nodeId);
         writableNodeInformation.setDisplayName(identityInformation.getDisplayName());
-        writableNodeInformation.setIsWorkflowHost(identityInformation.getIsWorkflowHost());
     }
 
 }

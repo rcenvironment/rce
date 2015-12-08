@@ -15,17 +15,12 @@ import java.util.List;
 
 import javax.script.ScriptException;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
 import de.rcenvironment.components.script.execution.DefaultScriptExecutor;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
-import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -53,12 +48,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
 
     private static final String OS = "os";
 
-    private static final Log LOGGER = LogFactory.getLog(PythonScriptExecutor.class);
-
     private PythonScriptContext scriptContext;
 
     @Override
-    public boolean prepareExecutor(ComponentContext compCtx) {
+    public boolean prepareExecutor(ComponentContext compCtx) throws ComponentException {
         super.prepareExecutor(compCtx);
         componentContext = compCtx;
         String pythonInstallation = componentContext.getConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION);
@@ -82,7 +75,7 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         scriptEngine = scriptingService.createScriptEngine(scriptLanguage);
         wrappingScript = userScript;
         if (wrappingScript == null || wrappingScript.length() == 0) {
-            throw new ComponentException("No Python script provided");
+            throw new ComponentException("No Python script configured");
         }
         scriptEngine.setContext(scriptContext);
         scriptContext.removeAttribute(PythonComponentConstants.STATE_MAP, 0);
@@ -98,16 +91,15 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         int exitCode = 0;
         try {
             // Executing script here
-            componentContext.printConsoleLine(WorkflowLifecyleEventType.TOOL_STARTING.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
+            componentContext.announceExternalProgramStart();
             exitCode = (Integer) scriptEngine.eval(wrappingScript);
-            componentContext.printConsoleLine(WorkflowLifecyleEventType.TOOL_FINISHED.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
+            componentContext.announceExternalProgramTermination();
         } catch (ScriptException e) {
-            throw new ComponentException("Could not run Python script. Maybe the script has errors? \n\n: " + e.toString());
+            throw new ComponentException("Failed to execute script", e);
         }
 
         if (exitCode != 0) {
-            throw new ComponentException("Could not run Python script. Exit Code: " + exitCode + "\n"
-                + (((PythonScriptEngine) scriptEngine)).getStderrAsString());
+            throw new ComponentException("Failed to execute script; exit code: " + exitCode);
         }
     }
 
@@ -133,16 +125,16 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             try {
                                 outputValue = factory.createFloat(Double.parseDouble(String.valueOf(o)));
                             } catch (NumberFormatException e) {
-                                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Float", o.toString()));
-                                throw new ComponentException(e);
+                                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float",
+                                    o.toString()), e);
                             }
                             break;
                         case Integer:
                             try {
                                 outputValue = factory.createInteger(Long.parseLong(String.valueOf(o)));
                             } catch (NumberFormatException e) {
-                                LOGGER.error(StringUtils.format("Output %s could not be parsed to data type Integer", o.toString()));
-                                throw new ComponentException(e);
+                                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Integer",
+                                    o.toString()), e);
                             }
                             break;
                         case FileReference:
@@ -245,13 +237,12 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                 }
             } else {
                 throw new ComponentException(StringUtils.format(
-                    "Could not write %s for output \"%s\" because it does not exist: %s", type, outputName,
-                    file.getAbsolutePath()));
+                    "Failed to write %s to output '%s' as it does not exist: %s", type, outputName, file.getAbsolutePath()));
             }
         } catch (IOException e) {
             throw new ComponentException(StringUtils.format(
-                "Storing directory in the data management failed. No directory is written to output '%s'",
-                outputName), e);
+                "Failed to store %s into the data management - "
+                    + "if it is not stored in the data management, it can not be sent as output value", type), e);
         }
         return outputValue;
     }

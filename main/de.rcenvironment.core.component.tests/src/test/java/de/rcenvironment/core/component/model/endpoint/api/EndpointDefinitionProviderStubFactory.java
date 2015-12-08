@@ -17,6 +17,7 @@ import java.util.Set;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionImpl;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionsProviderImpl;
+import de.rcenvironment.core.component.model.endpoint.impl.EndpointGroupDefinitionImpl;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 
 /**
@@ -49,19 +50,30 @@ public final class EndpointDefinitionProviderStubFactory {
      * @throws IOException on error
      */
     public static EndpointDefinitionsProviderImpl createInputDefinitionsProviderFromTestFile() throws IOException {
+        final String inputFile = "/inputs.json";
         List<InputStream> staticInputStreams = new ArrayList<>();
         staticInputStreams.add(EndpointDefinitionProviderStubFactory.class.getResourceAsStream("/inputs_meta_data_ext.json"));
-        Set<EndpointDefinitionImpl> outputDescriptions = ComponentUtils
-            .extractStaticEndpointDefinition(EndpointDefinitionProviderStubFactory.class.getResourceAsStream("/inputs.json"),
+        Set<EndpointDefinitionImpl> inputDefinitions = ComponentUtils
+            .extractStaticEndpointDefinition(EndpointDefinitionProviderStubFactory.class.getResourceAsStream(inputFile),
                 staticInputStreams, EndpointType.INPUT);
+
         List<InputStream> dynamicInputStreams = new ArrayList<>();
         dynamicInputStreams.add(EndpointDefinitionProviderStubFactory.class.getResourceAsStream("/inputs_meta_data_ext.json"));
-        outputDescriptions.addAll(ComponentUtils
-            .extractDynamicEndpointDefinition(EndpointDefinitionProviderStubFactory.class.getResourceAsStream("/inputs.json"),
+        inputDefinitions.addAll(ComponentUtils
+            .extractDynamicEndpointDefinition(EndpointDefinitionProviderStubFactory.class.getResourceAsStream(inputFile),
                 dynamicInputStreams, EndpointType.INPUT));
 
         EndpointDefinitionsProviderImpl inputProvider = new EndpointDefinitionsProviderImpl();
-        inputProvider.setEndpointDefinitions(outputDescriptions);
+        inputProvider.setEndpointDefinitions(inputDefinitions);
+        
+        Set<EndpointGroupDefinitionImpl> inputGroupDefinitions;
+        inputGroupDefinitions = ComponentUtils.extractStaticInputGroupDefinitions(
+            EndpointDefinitionProviderStubFactory.class.getResourceAsStream(inputFile));
+        inputGroupDefinitions.addAll(ComponentUtils.extractDynamicInputGroupDefinitions(
+            EndpointDefinitionProviderStubFactory.class.getResourceAsStream(inputFile)));
+
+        inputProvider.setEndpointGroupDefinitions(inputGroupDefinitions);
+        
         return inputProvider;
     }
     

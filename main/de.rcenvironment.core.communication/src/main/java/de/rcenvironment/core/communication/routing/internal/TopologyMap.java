@@ -143,7 +143,7 @@ public final class TopologyMap {
             node.setLastSequenceNumber(lsa.getSequenceNumber());
             node.setLastGraphHashCode(lsa.getGraphHashCode());
             node.setDisplayName(lsa.getDisplayName());
-            node.setIsWorkflowHost(lsa.getIsWorkflowHost());
+            node.setIsWorkflowHost(false); // not used anymore
 
             // add links (and remote nodes)
             for (TopologyLink link : lsa.getLinks()) {
@@ -285,8 +285,7 @@ public final class TopologyMap {
         myself.setLastGraphHashCode(hashCode());
         return LinkStateAdvertisement.createShutDownLsa(
             getLocalNodeId(), localNodeInformation.getDisplayName(),
-            localNodeInformation.getIsWorkflowHost(),
-            myself.invalidateSequenceNumber());
+            false, myself.invalidateSequenceNumber());
     }
 
     /**
@@ -299,8 +298,7 @@ public final class TopologyMap {
         myself.setLastGraphHashCode(hashCode());
         return LinkStateAdvertisement.createStartUpLsa(
             getLocalNodeId(), localNodeInformation.getDisplayName(),
-            localNodeInformation.getIsWorkflowHost(),
-            myself.invalidateSequenceNumber(),
+            false, myself.invalidateSequenceNumber(),
             myself.isRouting(),
             networkModel.getOutEdges(myself));
     }

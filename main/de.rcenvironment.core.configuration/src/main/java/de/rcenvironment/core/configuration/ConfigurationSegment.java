@@ -21,7 +21,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 public interface ConfigurationSegment {
 
     /**
-     * Fetches the part of the current configuration segment, as defined by the relative path argument. For example, if the current segment
+     * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment
      * is "network", calling this method with "ipFilter" will result the segment for the "network/ipFilter" path. Multiple path levels can
      * be concatenated with slashes.
      * <p>
@@ -32,6 +32,21 @@ public interface ConfigurationSegment {
      * @return the requested {@link ConfigurationSegment}
      */
     ConfigurationSegment getSubSegment(String relativePath);
+
+    /**
+     * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment
+     * is "network", calling this method with "ipFilter" will result the segment for the "network/ipFilter" path. Multiple path levels can
+     * be concatenated with slashes.
+     * <p>
+     * If no entry/segment exists at the given path, this method will create the missing elements as needed. The returned
+     * {@link WritableConfigurationSegment} can then be used to edit the properties or elements of that segment. Note that the current
+     * segment must already exist; otherwise, an {@link IOException} is thrown.
+     * 
+     * @param relativePath the path relative to the current one to fetch
+     * @return the requested {@link ConfigurationSegment}
+     * @throws ConfigurationException if the current segment does not actually exist, or if an error occurs while adding the elements
+     */
+    WritableConfigurationSegment getOrCreateWritableSubSegment(String relativePath) throws ConfigurationException;
 
     /**
      * @param relativePath the value's relative path to the current segment

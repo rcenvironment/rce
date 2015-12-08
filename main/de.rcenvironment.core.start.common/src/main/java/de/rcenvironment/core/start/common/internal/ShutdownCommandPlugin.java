@@ -15,7 +15,7 @@ import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
-import de.rcenvironment.core.start.common.Platform;
+import de.rcenvironment.core.start.common.Instance;
 
 /**
  * Provides the (synonymous) "stop" and "shutdown" console commands.
@@ -55,7 +55,7 @@ public class ShutdownCommandPlugin implements CommandPlugin {
      */
     private void performStop(CommandContext context) {
         context.println("Shutting down; if you are on an interactive OSGi console, type 'exit' to close it");
-        Platform.shutdown();
+        Instance.shutdown();
     }
-
+    
 }

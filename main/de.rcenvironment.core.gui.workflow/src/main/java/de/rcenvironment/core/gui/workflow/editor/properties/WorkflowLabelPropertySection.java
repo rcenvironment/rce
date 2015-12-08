@@ -90,7 +90,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
     private AlignmentType[] values;
 
     private Label textColorPreviewLabel;
-    
+
     private Spinner textSizeSpinner;
 
     private Label bgColorPreviewLabel;
@@ -98,13 +98,13 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
     private Scale bgAlphaScale;
 
     private Text bgAlphaValueText;
-    
+
     private Button bgBorderButton;
 
     private EditValueCommand editTextCommand;
 
     private EditValueCommand editTransparencyCommand;
-    
+
     private final Updater updater = createUpdater();
 
     private final Synchronizer synchronizer = createSynchronizer();
@@ -158,12 +158,12 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
     @Override
     public void createControls(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
         parent.setLayout(new FillLayout(SWT.VERTICAL));
-        
+
         createTextSection(aTabbedPropertySheetPage, parent);
         createBackgroundSection(aTabbedPropertySheetPage, parent);
-        
+
     }
-    
+
     private void createTextSection(TabbedPropertySheetPage aTabbedPropertySheetPage, Composite parent) {
         final Section textPropertiesSection = PropertyTabGuiHelper.createSingleColumnSectionComposite(parent,
             aTabbedPropertySheetPage.getWidgetFactory(), "Text");
@@ -185,12 +185,16 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
                 String oldValue = label.getText();
                 String newValue = textfield.getText();
                 if (!newValue.equals(oldValue)) {
+
+                    int position = textfield.getCaretOffset();
                     if (editTextCommand == null) {
                         editTextCommand =
                             editProperty(new Value(Value.ValueType.TEXT, oldValue), new Value(Value.ValueType.TEXT, newValue));
                     } else {
                         editTextCommand.setNewValue(new Value(Value.ValueType.TEXT, newValue));
                     }
+
+                    textfield.setCaretOffset(position);
                 }
             }
         });
@@ -220,7 +224,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         Composite textColorComposite = new Composite(textColorSizePropertiesComposite, SWT.NONE);
         textColorComposite.setLayout(new GridLayout(2, false));
         textColorComposite.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         Label textColorLabel = new Label(textColorComposite, SWT.NONE);
         textColorLabel.setText("Color:");
         textColorLabel.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
@@ -228,21 +232,21 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         textColorPreviewLabel = new Label(textColorComposite, SWT.BORDER);
         textColorPreviewLabel.setText(TABS);
         textColorPreviewLabel.addMouseListener(new ColorMouseListener(Value.ValueType.COLOR_TEXT));
-        
+
         Composite textSizeComposite = new Composite(textColorSizePropertiesComposite, SWT.NONE);
         textSizeComposite.setLayout(new GridLayout(2, false));
         textSizeComposite.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         Label textSizeLabel = new Label(textSizeComposite, SWT.NONE);
         textSizeLabel.setText("Size:");
         textSizeLabel.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         textSizeSpinner = new Spinner(textSizeComposite, SWT.BORDER);
         textSizeSpinner.setMinimum(1);
         final int maxFontSize = 99;
         textSizeSpinner.setMaximum(maxFontSize);
         textSizeSpinner.addSelectionListener(new SelectionListener() {
-            
+
             @Override
             public void widgetSelected(SelectionEvent event) {
                 int oldValue = label.getTextSize();
@@ -251,14 +255,14 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
                     editProperty(new Value(Value.ValueType.TEXT_SIZE, oldValue), new Value(Value.ValueType.TEXT_SIZE, newValue));
                 }
             }
-            
+
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {
                 widgetSelected(event);
             }
         });
     }
-    
+
     private void createBackgroundSection(TabbedPropertySheetPage aTabbedPropertySheetPage, Composite parent) {
         final Section bgPropertiesSection = PropertyTabGuiHelper.createSingleColumnSectionComposite(parent,
             aTabbedPropertySheetPage.getWidgetFactory(), "Background");
@@ -270,15 +274,15 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         bgPropertiesComposite.setLayoutData(
             new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL | SWT.BORDER));
         bgPropertiesSection.setClient(bgPropertiesComposite);
-        
+
         Composite bgColorComposite = new Composite(bgPropertiesComposite, SWT.NONE);
         bgColorComposite.setLayout(new GridLayout(2, false));
         bgColorComposite.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         Label bgColorLabel = new Label(bgColorComposite, SWT.NONE);
         bgColorLabel.setText("Color:");
         bgColorLabel.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         bgColorPreviewLabel = new Label(bgColorComposite, SWT.BORDER);
         bgColorPreviewLabel.setText(TABS);
         bgColorPreviewLabel.addMouseListener(new ColorMouseListener(Value.ValueType.COLOR_BACKGROUND));
@@ -286,7 +290,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         Composite bgAlphaComposite = new Composite(bgPropertiesComposite, SWT.NONE);
         bgAlphaComposite.setLayout(new GridLayout(3, false));
         bgAlphaComposite.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         Label bgAlphaLabel = new Label(bgAlphaComposite, SWT.NONE);
         bgAlphaLabel.setText("Transparancy:");
         bgAlphaLabel.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
@@ -315,11 +319,11 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         alphaData.widthHint = ALPHA_TEXT_WIDTH;
         bgAlphaValueText.setLayoutData(alphaData);
         bgAlphaValueText.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WHITE));
-        
+
         bgBorderButton = new Button(bgPropertiesComposite, SWT.CHECK);
         bgBorderButton.setText("Border");
         bgBorderButton.addSelectionListener(new SelectionListener() {
-            
+
             @Override
             public void widgetSelected(SelectionEvent event) {
                 boolean oldValue = label.hasBorder();
@@ -328,7 +332,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
                     editProperty(new Value(Value.ValueType.BORDER, oldValue), new Value(Value.ValueType.BORDER, newValue));
                 }
             }
-            
+
             @Override
             public void widgetDefaultSelected(SelectionEvent event) {
                 widgetSelected(event);
@@ -510,12 +514,15 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         }
 
         @Override
-        public void mouseUp(MouseEvent event) { // Create own shell to place the color selector where desired.
+        public void mouseUp(MouseEvent event) { // Create own shell to place the color selector
+                                                // where desired.
             int[] oldValue = null;
             if (type.equals(Value.ValueType.COLOR_BACKGROUND)) {
                 oldValue = label.getColorBackground();
             } else if (type.equals(Value.ValueType.COLOR_TEXT)) {
                 oldValue = label.getColorText();
+            } else {
+                oldValue = new int[] { 0, 0, 0 };
             }
             int displayWidth = event.display.getBounds().width;
             int displayHeight = event.display.getBounds().height;
@@ -581,7 +588,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         private EditValueCommand(final Value oldValue, Value newValue) {
             this.oldValue = oldValue;
             this.newValue = newValue;
-        } 
+        }
 
         public Value getOldValue() {
             return oldValue;
@@ -675,22 +682,22 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         private int transparencyValue;
 
         private AlignmentType alignmentValue;
-        
+
         private boolean hasBorder;
-        
+
         private int textSize;
 
         public Value(final ValueType type, final String value) {
             this.type = type;
             if (type == ValueType.TEXT) {
-                this.textValue = value;                
+                this.textValue = value;
             }
         }
 
         public Value(final ValueType type, final int[] colorValues) {
             this.type = type;
             if (type == ValueType.COLOR_BACKGROUND || type == ValueType.COLOR_TEXT) {
-                this.colorValues = colorValues;                
+                this.colorValues = colorValues;
             }
         }
 
@@ -707,14 +714,14 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
             this.type = ValueType.ALIGNMENT;
             this.alignmentValue = alignmentValue;
         }
-        
+
         public Value(final ValueType type, boolean border) {
             this.type = type;
             if (type == ValueType.BORDER) {
-                this.hasBorder = border;                
+                this.hasBorder = border;
             }
         }
-        
+
         public int[] getColorValues() {
             return colorValues;
         }
@@ -730,11 +737,11 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         public AlignmentType getAlignmentValue() {
             return alignmentValue;
         }
-        
+
         public boolean getHasBorder() {
             return hasBorder;
         }
-        
+
         public int getTextSize() {
             return textSize;
         }
@@ -771,7 +778,8 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
     }
 
     /**
-     * Adapter to listen to events in the backing model and translate it to events in the {@link Synchronizer}.
+     * Adapter to listen to events in the backing model and translate it to events in the
+     * {@link Synchronizer}.
      * 
      * @author Christian Weiss
      * @author Marc Stammerjohann
@@ -787,24 +795,25 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
         }
 
     }
-    
-    
+
     /**
      * Listener class responsible for keeping the GUI in sync with the model.
      * 
      * <p>
-     * The <code>Synchronizer</code> gets registered at the model to listen to change events (properties & channels) and executes
-     * appropriate actions to reflect those changes in the GUI.
+     * The <code>Synchronizer</code> gets registered at the model to listen to change events
+     * (properties & channels) and executes appropriate actions to reflect those changes in the GUI.
      * </p>
      * 
      * <p>
      * The integration of a <code>Synchronizer</code> is as follows:
      * <ul>
-     * <li>A {@link SynchronizerAdapter} gets registered to the backing model (a {@link WorkflowLabel}. This adapter filters events and
-     * converts the non-filtered to invocations of the {@link Synchronizer} instance created via
+     * <li>A {@link SynchronizerAdapter} gets registered to the backing model (a
+     * {@link WorkflowLabel}. This adapter filters events and converts the non-filtered to
+     * invocations of the {@link Synchronizer} instance created via
      * {@link WorkflowLabelPropertySection#createSynchronizer()}.</li>
-     * <li>The {@link Synchronizer} receives those filtered events via its custom interface and reacts through updating the GUI
-     * appropriately. The default implementation {@link DefaultSynchronizer} forwards updates to the {@link Updater} instance created via
+     * <li>The {@link Synchronizer} receives those filtered events via its custom interface and
+     * reacts through updating the GUI appropriately. The default implementation
+     * {@link DefaultSynchronizer} forwards updates to the {@link Updater} instance created via
      * {@link WorkflowLabelPropertySection#createUpdater()}.</li>
      * </ul>
      * </p>
@@ -824,10 +833,12 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
     }
 
     /**
-     * Default implementation of a {@link Synchronizer}, forwarding all updates to the {@link Updater}.
+     * Default implementation of a {@link Synchronizer}, forwarding all updates to the
+     * {@link Updater}.
      * 
      * <p>
-     * It is adviced to derive from this class and call the super class implementation as the very first thing in overwritten methods.
+     * It is adviced to derive from this class and call the super class implementation as the very
+     * first thing in overwritten methods.
      * </p>
      * 
      * @author Christian Weiss

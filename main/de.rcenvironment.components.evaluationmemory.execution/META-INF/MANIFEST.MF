@@ -1,0 +1,20 @@
+Manifest-Version: 1.0
+Bundle-ManifestVersion: 2
+Bundle-Name: RCE Components Evaluation Memory Execution
+Bundle-SymbolicName: de.rcenvironment.components.evaluationmemory.execution
+Bundle-Version: 7.0.0.qualifier
+Bundle-Vendor: DLR
+Bundle-RequiredExecutionEnvironment: JavaSE-1.7
+Service-Component: OSGI-INF/*.xml
+RCE-Component: true
+Export-Package: de.rcenvironment.components.evaluationmemory.execution
+Import-Package: de.rcenvironment.components.evaluationmemory.common,
+ de.rcenvironment.core.component.api,
+ de.rcenvironment.core.component.datamanagement.api,
+ de.rcenvironment.core.component.execution.api,
+ de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.utils.common,
+ org.apache.commons.io;version="2.0.1",
+ org.apache.commons.logging;version="1.1.1"

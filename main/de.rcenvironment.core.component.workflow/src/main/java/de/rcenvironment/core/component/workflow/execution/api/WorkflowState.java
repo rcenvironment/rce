@@ -72,21 +72,30 @@ public enum WorkflowState {
     private WorkflowState(String displayName) {
         this.displayName = displayName;
     }
+    
     /**
-     * @param state text to check
+     * @param workflowState text to check
      * @return <code>true</code> if given text represents a valid {@link WorkflowState}, otherwise <code>false</code>
      */
-    public static boolean isWorkflowStateValidAndUserReadable(String state) {
-        return isWorkflowStateValid(state) && !state.equals(IS_ALIVE.name());
+    public static boolean isWorkflowStateValidAndUserReadable(String workflowState) {
+        return isWorkflowStateValid(workflowState) && !workflowState.equals(IS_ALIVE.name());
     }
     
     /**
-     * @param state text to check
+     * @param workflowState {@link WorkflowState} to check
      * @return <code>true</code> if given text represents a valid {@link WorkflowState}, otherwise <code>false</code>
      */
-    public static boolean isWorkflowStateValid(String state) {
+    public static boolean isWorkflowStateUserReadable(WorkflowState workflowState) {
+        return !workflowState.equals(IS_ALIVE);
+    }
+    
+    /**
+     * @param workflowState text to check
+     * @return <code>true</code> if given text represents a valid {@link WorkflowState}, otherwise <code>false</code>
+     */
+    public static boolean isWorkflowStateValid(String workflowState) {
         try {
-            valueOf(state);
+            valueOf(workflowState);
             return true;
         } catch (IllegalArgumentException e) {
             return false;

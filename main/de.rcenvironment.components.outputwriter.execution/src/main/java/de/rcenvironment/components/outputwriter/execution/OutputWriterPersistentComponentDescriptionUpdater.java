@@ -30,8 +30,10 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPer
 public class OutputWriterPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
     private static final String V1_1 = "1.1";
+    
+    private static final String V2_0 = "2.0";
 
-    private static final String CURRENT_VERSION = V1_1;
+    private static final String CURRENT_VERSION = V2_0;
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -56,6 +58,9 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
             case PersistentDescriptionFormatVersion.AFTER_VERSION_THREE:
                 if (description.getComponentVersion().compareTo(V1_1) < 0) {
                     description = updateFromV10ToV11(description);
+                }
+                if (description.getComponentVersion().compareTo(V2_0) < 0) {
+                    description = updateFromV11ToV20(description);
                 }
                 break;
             default:
@@ -82,6 +87,16 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
 
         description.setComponentVersion(V1_1);
+
+        return description;
+    }
+    
+    
+    private PersistentComponentDescription updateFromV11ToV20(PersistentComponentDescription description)
+        throws JsonParseException, IOException {
+        
+        //No update required, just update version
+        description.setComponentVersion(V2_0);
 
         return description;
     }

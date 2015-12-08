@@ -19,9 +19,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.junit.AfterClass;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
@@ -29,7 +34,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
-import de.rcenvironment.core.datamanagement.DistributedMetaDataService;
+import de.rcenvironment.core.datamanagement.MetaDataService;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 
 /**
@@ -39,6 +44,10 @@ import de.rcenvironment.core.datamodel.api.FinalComponentState;
  *
  */
 public class ComponentExecutionStorageBridgeTest {
+
+    private static final String OUTPUT = "output";
+
+    private static final String HISTORY = "history";
 
     private static final NodeIdentifier STORAGE_NODE_ID = NodeIdentifierFactory.fromNodeId("storage-node");
     
@@ -55,7 +64,23 @@ public class ComponentExecutionStorageBridgeTest {
     private static final Long OUTPUT_INSTANCE_DM_ID = Long.valueOf(9);
 
     private static final String FAIL_MESSAGE = "Exception expected";
-    
+
+    /**
+     * Set up before any of the test cases run.
+     */
+    @BeforeClass
+    public static void setUp() {
+        ComponentExecutionUtils.waitUntilRetryMsec = 1;
+    }
+
+    /**
+     * Set up after all of the test cases run.
+     */
+    @AfterClass
+    public static void tearDown() {
+        ComponentExecutionUtils.waitUntilRetryMsec = ComponentExecutionUtils.WAIT_UNIL_RETRY_MSEC;
+    }
+
     /**
      * Tests if parameters are passed correctly  to underlying data management service when adding a new component execution record.
      * 
@@ -68,7 +93,7 @@ public class ComponentExecutionStorageBridgeTest {
         Long compExeDmId = Long.valueOf(2);
         Integer exeCount = Integer.valueOf(3);
         
-        DistributedMetaDataService metaDataServiceMock = EasyMock.createStrictMock(DistributedMetaDataService.class);
+        MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
         Capture<Long> instanceDmIdCapture = new Capture<>();
         Capture<String> nodeIdStringCapture = new Capture<>();
@@ -111,16 +136,54 @@ public class ComponentExecutionStorageBridgeTest {
     }
     
     /**
-     * Tests if component execution data management id is correctly initiated and set to null and if methods, which requires an id fail, if
+     * Tests if component run dm id is correctly initiated and set to null and if methods fail that requires an id and 
      * no one was initiated yet.
-     * @throws CommunicationException 
+     * @throws ComponentExecutionException on unexpected errors
+     */
+    @Ignore // as long as retrying is disabled
+    @Test
+    public void testHandlingOfRetriesOnFailure() throws ComponentExecutionException {
+        final AtomicInteger failureCount = new AtomicInteger(0);
+        // simple test, doesn't capture actual number of retries
+        MetaDataService metaDataServiceStub = (MetaDataService) Proxy.newProxyInstance(
+            MetaDataService.class.getClassLoader(), new Class<?>[] { MetaDataService.class },
+            new InvocationHandler() {
+                @Override
+                public Object invoke(Object proxy, Method method, Object[] parameters) throws Throwable {
+                    if (failureCount.getAndIncrement() < 3) {
+                        throw new CommunicationException("");                        
+                    } else {
+                        return new Random().nextLong(); // run dm id or output dm id
+                    }
+                }
+            });
+        
+        ComponentExecutionContext componentExecutionContextMock = createComponentExecutionContextMock();
+        ComponentExecutionStorageBridge storageBridge = new ComponentExecutionStorageBridge(metaDataServiceStub,
+            componentExecutionContextMock, 0);
+        
+        storageBridge.addComponentExecution(componentExecutionContextMock, 0);
+        failureCount.set(0);
+        storageBridge.addInput(INPUT_NAME, Long.valueOf(0));
+        failureCount.set(0);
+        storageBridge.addOutput(OUTPUT_NAME, OUTPUT);
+        failureCount.set(0);
+        storageBridge.setFinalComponentState(FinalComponentState.CANCELLED);
+        failureCount.set(0);
+        storageBridge.setOrUpdateHistoryDataItem(HISTORY);
+        failureCount.set(0);
+        storageBridge.setComponentExecutionFinished();
+    }
+    
+    /**
+     * Tests if component run dm id is correctly initiated and set to null and if methods fail that requires an id and 
+     * no one was initiated yet.
      */
     @Test
-    public void testHandlingCommunicationExceptions() throws CommunicationException {
+    public void testHandlingCommunicationExceptions() {
         
-        DistributedMetaDataService metaDataServiceStub = (DistributedMetaDataService) Proxy.newProxyInstance(
-            DistributedMetaDataService.class.getClassLoader(),
-            new Class<?>[] { DistributedMetaDataService.class },
+        MetaDataService metaDataServiceStub = (MetaDataService) Proxy.newProxyInstance(
+            MetaDataService.class.getClassLoader(), new Class<?>[] { MetaDataService.class },
             new InvocationHandler() {
                 @Override
                 public Object invoke(Object proxy, Method method, Object[] parameters) throws Throwable {
@@ -148,7 +211,7 @@ public class ComponentExecutionStorageBridgeTest {
         }
         
         try {
-            storageBridge.addOutput(OUTPUT_NAME, "output");
+            storageBridge.addOutput(OUTPUT_NAME, OUTPUT);
             fail(FAIL_MESSAGE);
         } catch (ComponentExecutionException e) {
             assertTrue(true);
@@ -169,7 +232,7 @@ public class ComponentExecutionStorageBridgeTest {
         }
         
         try {
-            storageBridge.setOrUpdateHistoryDataItem("history");
+            storageBridge.setOrUpdateHistoryDataItem(HISTORY);
             fail(FAIL_MESSAGE);
         } catch (ComponentExecutionException e) {
             assertTrue(true);
@@ -188,7 +251,7 @@ public class ComponentExecutionStorageBridgeTest {
     @Test
     public void testIfComponenExecutionDataManagementIdIsInitiatedAndSetToNull()
         throws ComponentExecutionException, CommunicationException {
-        DistributedMetaDataService metaDataServiceMock = EasyMock.createNiceMock(DistributedMetaDataService.class);
+        MetaDataService metaDataServiceMock = EasyMock.createNiceMock(MetaDataService.class);
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
                 EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(Long.valueOf(1));
         EasyMock.replay(metaDataServiceMock);
@@ -250,7 +313,7 @@ public class ComponentExecutionStorageBridgeTest {
         Long typedDatumId1 = Long.valueOf(5);
         Long typedDatumId2 = Long.valueOf(7);
         
-        DistributedMetaDataService metaDataServiceMock = EasyMock.createStrictMock(DistributedMetaDataService.class);
+        MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
             EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(compExeDmId);
@@ -316,7 +379,7 @@ public class ComponentExecutionStorageBridgeTest {
         String outputString1 = "output 1";
         String outputString2 = "output 2";
         
-        DistributedMetaDataService metaDataServiceMock = EasyMock.createStrictMock(DistributedMetaDataService.class);
+        MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
             EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(compExeDmId);
@@ -373,9 +436,9 @@ public class ComponentExecutionStorageBridgeTest {
     public void testSetHistoryItem() throws CommunicationException, ComponentExecutionException {
         
         Long compExeDmId = Long.valueOf(2);
-        String historyDataItem = "history";
+        String historyDataItem = HISTORY;
         
-        DistributedMetaDataService metaDataServiceMock = EasyMock.createStrictMock(DistributedMetaDataService.class);
+        MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
         
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
             EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(compExeDmId);
@@ -413,7 +476,7 @@ public class ComponentExecutionStorageBridgeTest {
         
         FinalComponentState finalState = FinalComponentState.FINISHED;
         
-        DistributedMetaDataService metaDataServiceMock = EasyMock.createStrictMock(DistributedMetaDataService.class);
+        MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
         
         Capture<Long> compInstanceDmIdCapture = new Capture<>();
         Capture<FinalComponentState> finalCompStateCapture = new Capture<>();

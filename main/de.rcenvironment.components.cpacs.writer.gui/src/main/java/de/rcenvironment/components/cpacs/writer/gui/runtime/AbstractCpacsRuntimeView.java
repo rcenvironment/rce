@@ -32,8 +32,7 @@ import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.part.ViewPart;
 
 import de.rcenvironment.components.cpacs.writer.common.CpacsWriterComponentConstants;
-import de.rcenvironment.core.authentication.AuthenticationException;
-import de.rcenvironment.core.authentication.Session;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
@@ -109,17 +108,13 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
             try {
                 cpacsFile = new File(managedTempDir, tempFileReference + ".xml");
                 if (!cpacsFile.exists()) {
-                    try {
-                        // As the file is disposed when the view is disposed, the file will never exist at that point and must be fetched
-                        // anew. As the view won't be re-opened very often and won't be executed an a remote node very often, this behavior
-                        // is acceptable for now. Will be changed if temp file clean up on RCE shutdown is improved -seid_do
-                        dataManagementService.copyReferenceToLocalFile(Session.getInstance().getUser(),
-                            tempFileReference, cpacsFile, componentInstanceDescriptor.getDefaultStorageNodeId());
-                    } catch (final AuthenticationException e) {
-                        throw new IllegalStateException(e);
-                    }
+                    // As the file is disposed when the view is disposed, the file will never exist at that point and must be fetched
+                    // anew. As the view won't be re-opened very often and won't be executed an a remote node very often, this behavior
+                    // is acceptable for now. Will be changed if temp file clean up on RCE shutdown is improved -seid_do
+                    dataManagementService.copyReferenceToLocalFile(
+                        tempFileReference, cpacsFile, componentInstanceDescriptor.getDefaultStorageNodeId());
                 }
-            } catch (final IOException e) {
+            } catch (final IOException | CommunicationException e) {
                 log.error("Fetching CPACS file failed", e);
             }
         }
@@ -127,7 +122,7 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
 
     @Override
     public void initializeView() {
-        if (mappedB != null) { //This button only exists on Windows
+        if (mappedB != null) { // This button only exists on Windows
             mappedB.setEnabled(cpacsFile != null);
         }
         if (cpacsFile != null && cpacsFile.exists()) {

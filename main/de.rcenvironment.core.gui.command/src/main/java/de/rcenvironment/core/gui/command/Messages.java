@@ -44,6 +44,7 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String historyUsedCommand;
+    
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

@@ -27,16 +27,17 @@
 		<module>${projects-root}/de.rcenvironment.core.communication.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.communication.file.service</module>
 		<module>${projects-root}/de.rcenvironment.core.communication.file.service.tests</module>
-		<module>${projects-root}/de.rcenvironment.core.communication.transport.activemq</module>
-		<module>${projects-root}/de.rcenvironment.core.communication.transport.activemq.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.transport.jms</module>
+		<module>${projects-root}/de.rcenvironment.core.communication.transport.jms.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component</module>
 		<module>${projects-root}/de.rcenvironment.core.component.datamanagement</module>
 		<module>${projects-root}/de.rcenvironment.core.component.executor</module>
 		<module>${projects-root}/de.rcenvironment.core.component.executor.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.integration</module>
+		<module>${projects-root}/de.rcenvironment.core.component.integration.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.scripting</module>
+		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.component.tests</module>
-		<module>${projects-root}/de.rcenvironment.core.component.toolaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.wrapper</module>
@@ -68,13 +69,15 @@
 		<module>${projects-root}/de.rcenvironment.core.login.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.mail</module>
 		<module>${projects-root}/de.rcenvironment.core.mail.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.monitoring</module>
+		<module>${projects-root}/de.rcenvironment.core.monitoring.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.notification</module>
 		<module>${projects-root}/de.rcenvironment.core.notification.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.remoteaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.scripting</module>
 		<module>${projects-root}/de.rcenvironment.core.shutdown</module>
 		<module>${projects-root}/de.rcenvironment.core.start</module>
 		<module>${projects-root}/de.rcenvironment.core.start.common</module>
-		<module>${projects-root}/de.rcenvironment.core.start.gui</module>
 		<module>${projects-root}/de.rcenvironment.core.start.headless</module>
 		<module>${projects-root}/de.rcenvironment.core.scripting.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.start.validators</module>
@@ -102,6 +105,7 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.log</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.login</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.resources</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.remoteaccess</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.utils.common</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.utils.incubator</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.utils.ole</module>
@@ -111,7 +115,9 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.executor</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.integration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.scripting</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.xpathchooser</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.feature</module>
+		<module>${projects-root}/de.rcenvironment.core.start.gui</module>
 
 		<!-- core combined feature -->
 		<module>${projects-root}/de.rcenvironment.core.combined.feature</module>

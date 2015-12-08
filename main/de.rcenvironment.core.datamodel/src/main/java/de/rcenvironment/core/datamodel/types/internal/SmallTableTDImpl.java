@@ -13,6 +13,7 @@ import java.util.Arrays;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link SmallTableTD}.
@@ -23,13 +24,17 @@ import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
  * @author Robert Mischke
  * @author Doreen Seider
  * @author Markus Kunde
+ * @author Oliver Seebach
  */
 public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD {
 
     /** Maximum column count. */
-    public static final int MAXIMUM_ENTRY_COUNT = 1000000;
+    public static final int MAXIMUM_ENTRY_COUNT = 100000;
 
     private final TypedDatum[][] tableEntries; // [row][column]
+
+    private DataType[] allowedCellDatatypes = { DataType.Integer, DataType.ShortText, DataType.Float, DataType.Boolean, DataType.DateTime,
+        DataType.Empty };
 
     public SmallTableTDImpl(TypedDatum[][] tableEntries) {
         super(DataType.SmallTable);
@@ -39,7 +44,8 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
             columnCount = tableEntries[0].length;
         }
         if ((rowCount * columnCount) > MAXIMUM_ENTRY_COUNT) {
-            throw new IllegalArgumentException("entries exceeds maximum number of entries: " + MAXIMUM_ENTRY_COUNT + ".");
+            throw new IllegalArgumentException(StringUtils.format("Number of table cells (%d) exceeds the maximum (%d) allowed for %s",
+                rowCount * columnCount, MAXIMUM_ENTRY_COUNT, getDataType()));
         }
         this.tableEntries = tableEntries;
     }
@@ -51,7 +57,12 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
 
     @Override
     public void setTypedDatumForCell(TypedDatum typedDatum, int rowIndex, int columnIndex) {
-        tableEntries[rowIndex][columnIndex] = typedDatum;
+        if (isAllowedAsCellType(typedDatum)) {
+            tableEntries[rowIndex][columnIndex] = typedDatum;
+        } else {
+            throw new IllegalArgumentException("Data type " + typedDatum.getDataType()
+                + " is not allowed in small tables.");
+        }
     }
 
     @Override
@@ -115,7 +126,7 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
         }
         return resultArray;
     }
-    
+
     @Override
     public String toLengthLimitedString(int maxLength) {
         String text = "[";
@@ -126,6 +137,9 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
             TypedDatum datum = tdArray[0][j];
             text += datum.toString();
             text += ",";
+            if (text.length() > maxLength) {
+                break;
+            }
         }
         // remove last comma and whitespace
         text = text.substring(0, text.length() - 1);
@@ -137,9 +151,10 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
         formattedLabel += text;
         String dimensionsText = " (" + "size: " + getRowCount() + "x" + getColumnCount() + ")";
         formattedLabel += dimensionsText;
-        
+
         return formattedLabel;
     }
+
     @Override
     public String toString() {
         String fullContent = "";
@@ -154,5 +169,10 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
             fullContent += "\r\n";
         }
         return fullContent;
+    }
+
+    @Override
+    public boolean isAllowedAsCellType(TypedDatum typedDatum) {
+        return Arrays.asList(allowedCellDatatypes).contains(typedDatum.getDataType());
     }
 }

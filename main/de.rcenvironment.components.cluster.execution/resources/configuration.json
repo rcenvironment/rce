@@ -42,13 +42,16 @@
         {
             "key": "authuser",
             "guiName": "SSH username",
-            "guiPosition": "1"
+            "guiPosition": "1",
+            "dataType": "text"
+            
         },
         {
             "key": "authphrase",
             "guiName": "SSH password",
             "guiPosition": "2",
-            "decode": "true"
+            "decode": "true",
+            "dataType": "text"
         }
     ]
 }

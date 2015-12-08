@@ -38,19 +38,7 @@ public final class DOEConstants {
     public static final String KEY_TABLE = "table";
 
     /** Constant. */
-    public static final String KEY_FAILED_RUN_BEHAVIOUR = "behaviourFailedRun";
-
-    /** Constant. */
     public static final String KEY_METHOD = "method";
-
-    /** Constant. */
-    public static final String KEY_BEHAVIOUR_RERUN = "Rerun sample";
-
-    /** Constant. */
-    public static final String KEY_BEHAVIOUR_SKIP = "Skip sample and continue";
-
-    /** Constant. */
-    public static final String KEY_BEHAVIOUR_ABORT = "Abort";
 
     /** Constant. */
     public static final String KEY_START_SAMPLE = "startSample";
@@ -74,7 +62,7 @@ public final class DOEConstants {
     public static final String TABLE_FILE_EXTENTION = ".csv";
 
     /** Constant. */
-    public static final String OUTPUT_FINISHED_NAME = "Outer loop done";
+    public static final String INPUT_ID_NAME = "default";
 
     private DOEConstants() {
 

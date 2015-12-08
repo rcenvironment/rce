@@ -160,4 +160,5 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
         }
         instanceManagementService.showInstanceManagementInformation(context.getOutputReceiver());    
     }
+    
 }

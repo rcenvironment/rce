@@ -94,14 +94,36 @@
                 "Vector"
             ],
             "defaultDataType": "Float"
+        },
+        {
+            "identifier":"toForward",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "readOnly": "true"
         }
     ],
     "staticOutputs": [
         {
-            "name": "Optimizer is finished",
+            "name": "Done",
             "dataTypes": [
                 "Boolean"
-            ],
+            ]            ,
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            },
             "defaultDataType": "Boolean"
         },
          {
@@ -109,20 +131,39 @@
             "dataTypes": [
                 "Boolean"
             ],
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "InnerLoopEndpoint"
+                }
+            },
             "defaultDataType": "Boolean"
         },
         {
             "name": "Gradient request",
             "dataTypes": [
                 "Boolean"
-            ],
+            ],"metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "SelfLoopEndpoint"
+                }
+            },
             "defaultDataType": "Boolean"
         },
         {
             "name": "Iteration",
             "dataTypes": [
                 "Integer"
-            ],
+            ],"metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "SelfLoopEndpoint"
+                }
+            },
             "defaultDataType": "Integer"
         }
     ]

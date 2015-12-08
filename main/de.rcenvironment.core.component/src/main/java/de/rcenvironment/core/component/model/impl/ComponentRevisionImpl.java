@@ -21,6 +21,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class ComponentRevisionImpl implements ComponentRevision, Serializable {
 
+    private static final long serialVersionUID = 6744720085980362367L;
+
     // Note: Contributes only a few things at this point; will be filled in later
     private ComponentInterfaceImpl componentInterface;
     

@@ -23,7 +23,6 @@ import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.StructuredSelection;
@@ -55,10 +54,13 @@ import org.eclipse.ui.part.ViewPart;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.components.excel.common.GarbageDestroyer;
 import de.rcenvironment.components.excel.common.SimpleExcelService;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.rce.components.excel.commons.ChannelValue;
 
@@ -189,7 +191,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
         createToolbar();
 
         // Not nice, but workbook-object will not released.
-        new Thread(new GarbageDestroyer()).start();
+        ExcelUtils.destroyGarbage();
     }
 
     /**
@@ -347,7 +349,8 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
                 LOGGER.debug("Copy to clipboard...");
             }
         };
-        copyClipboardAction.setImageDescriptor(getImageDescriptor(ExcelViewConstants.ICONNAME_CLIPBOARD));
+
+        copyClipboardAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.COPY_16));
 
         exportToExcel = new Action(Messages.exportExcel) {
 
@@ -384,20 +387,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
                 LOGGER.debug("Export to Excel...");
             }
         };
-        exportToExcel.setImageDescriptor(getImageDescriptor(ExcelViewConstants.ICONNAME_EXCEL_16));
-
-    }
-
-    /**
-     * Returns the image descriptor with the given relative path.
-     * 
-     * @param relativePath relative path to image
-     * @return ImageDescriptor of image
-     */
-    public static ImageDescriptor getImageDescriptor(final String relativePath) {
-        ImageDescriptor id = ImageDescriptor.createFromURL(ExcelView.class.getClassLoader()
-            .getResource(ExcelViewConstants.ICONBASEPATH + relativePath));
-        return id;
+        exportToExcel.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.EXCEL_SMALL));
     }
 
     /**
@@ -405,10 +395,10 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
      */
     private void exportToExcel(final File saveTo) {
         final SimpleExcelService excel = new SimpleExcelService();
-
-        Thread t = new Thread("ExportExcel") {
+        SharedThreadPool.getInstance().execute(new Runnable() {
 
             @Override
+            @TaskDescription("Export values to Excel")
             public void run() {
                 try {
                     // Fill Excel with all input values
@@ -446,8 +436,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
 
                         @Override
                         public void run() {
-                            Image image = new Image(parentComposite.getDisplay(),
-                                getImageDescriptor(ExcelViewConstants.ICONNAME_EXCEL_16).getImageData());
+                            Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_SMALL);
                             MessageDialog md = new MessageDialog(parentComposite.getShell(),
                                 Messages.exportExcel,
                                 image,
@@ -465,8 +454,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
 
                         @Override
                         public void run() {
-                            Image image = new Image(parentComposite.getDisplay(),
-                                getImageDescriptor(ExcelViewConstants.ICONNAME_EXCEL_16).getImageData());
+                            Image image = ImageManager.getInstance().getSharedImage(StandardImages.EXCEL_SMALL);
                             MessageDialog md = new MessageDialog(parentComposite.getShell(),
                                 Messages.exportExcel,
                                 image,
@@ -480,8 +468,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
                     LOGGER.error("Cannot copy origin file to exporting directory.", e);
                 }
             }
-        };
-        t.start();
+        });
     }
 
     /**
@@ -557,9 +544,8 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
     @Override
     public void dispose() {
         super.dispose();
-
         // Not nice, but workbook-object will not released.
-        new Thread(new GarbageDestroyer()).start();
+        ExcelUtils.destroyGarbage();
     }
 
     @Override

@@ -15,8 +15,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.api.BatchedConsoleRowsProcessor;
-import de.rcenvironment.core.component.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
 
 /**

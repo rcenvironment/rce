@@ -20,13 +20,13 @@ import java.util.Observable;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
-import de.rcenvironment.components.excel.common.GarbageDestroyer;
-import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.notification.SimpleNotificationService;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.rce.components.excel.commons.ChannelValue;
 
@@ -71,7 +71,7 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
             try {
                 lastMissedNotifications =
                     sns.subscribe(componentIdentifier + ExcelComponentConstants.NOTIFICATION_SUFFIX, this, publishPlatform);
-            } catch (CommunicationException e) {
+            } catch (RemoteOperationException e) {
                 LogFactory.getLog(getClass()).error("Failed to subscribe to Excel run platform: " + e.getMessage());
                 return;
             }
@@ -117,7 +117,7 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
         notifyObservers();
 
         // Not nice, but workbook-object will not released.
-        new Thread(new GarbageDestroyer()).start();
+        ExcelUtils.destroyGarbage();
     }
 
     /**
@@ -131,7 +131,7 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
         notifyObservers();
 
         // Not nice, but workbook-object will not released.
-        new Thread(new GarbageDestroyer()).start();
+        ExcelUtils.destroyGarbage();
     }
 
     // TODO code copied from DefaultNotificationSubscriber; rework to subclass (create a nested class if necessary)
@@ -149,15 +149,6 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
         }
     }
 
-    // TODO code copied from DefaultNotificationSubscriber; rework to subclass (create a nested class if necessary)
-    @Override
-    @AllowRemoteAccess
-    @Deprecated
-    public void receiveNotification(Notification notification) {
-        LogFactory.getLog(getClass()).warn("Deprecated single-notification method variant called");
-        notify(notification);
-    }
-
     private void notify(Notification notification) {
         if (areNotificationsMissed && lastMissedNotification == NotificationService.NO_MISSED) {
             queuedNotifications.add(notification);
@@ -172,7 +163,7 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
                 notifyObservers();
 
                 // Not nice, but workbook-object will not released.
-                new Thread(new GarbageDestroyer()).start();
+                ExcelUtils.destroyGarbage();
             }
             if (areNotificationsMissed && notification.getHeader().getNumber() == lastMissedNotification) {
 

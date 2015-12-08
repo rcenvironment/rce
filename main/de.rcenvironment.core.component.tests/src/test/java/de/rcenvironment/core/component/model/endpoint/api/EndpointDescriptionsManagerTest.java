@@ -193,6 +193,50 @@ public class EndpointDescriptionsManagerTest {
 
     /** Test. */
     @Test
+    public void testAccessInputGroups() {
+        final String staticInputGroupName = "myOrInputGroup";
+        final String dynamicInputGroupIdentifier = "myAndInputGroup";
+        final String dynamicInputGroupName = "myGroupName1";
+        
+        assertEquals(0, inputManager.getDynamicEndpointGroupDescriptions().size());
+        assertEquals(1, inputManager.getStaticEndpointGroupDescriptions().size());
+        assertEquals(1, inputManager.getEndpointGroupDescriptions().size());
+        
+        assertTrue(inputManager.isValidEndpointGroupName(dynamicInputGroupName));
+        inputManager.addDynamicEndpointGroupDescription(dynamicInputGroupIdentifier, dynamicInputGroupName);
+        assertFalse(inputManager.isValidEndpointGroupName(dynamicInputGroupName));
+        assertEquals(1, inputManager.getDynamicEndpointGroupDescriptions().size());
+        assertEquals(1, inputManager.getStaticEndpointGroupDescriptions().size());
+        assertEquals(2, inputManager.getEndpointGroupDescriptions().size());
+        
+        EndpointGroupDescription description = inputManager.getEndpointGroupDescription(dynamicInputGroupName);
+        assertEquals(dynamicInputGroupIdentifier, description.getDynamicEndpointIdentifier());
+        assertEquals(dynamicInputGroupName, description.getName());
+        assertEquals(staticInputGroupName, description.getParentGroupName());
+        
+        assertNotNull(inputManager.getEndpointGroupDescription(staticInputGroupName));
+        assertNull(inputManager.getEndpointGroupDescription(dynamicInputGroupIdentifier));
+        assertNotNull(inputManager.getEndpointGroupDescription(dynamicInputGroupName));
+        
+        try {
+            inputManager.addDynamicEndpointGroupDescription("myAndInputGroup_unknown", dynamicInputGroupName);
+            fail("group with id passed doesn't exists");
+        } catch (IllegalArgumentException e) {
+            assertTrue(true);
+        }
+        
+        assertNull(inputManager.removeDynamicEndpointGroupDescription("myOrInputGroup"));
+        assertNull(inputManager.removeDynamicEndpointGroupDescription("myAndInputGroup_unknown"));
+        assertFalse(inputManager.isValidEndpointGroupName(dynamicInputGroupName));
+        assertNotNull(inputManager.removeDynamicEndpointGroupDescription(dynamicInputGroupName));
+        assertTrue(inputManager.isValidEndpointGroupName(dynamicInputGroupName));
+        assertEquals(0, inputManager.getDynamicEndpointGroupDescriptions().size());
+        assertEquals(1, inputManager.getStaticEndpointGroupDescriptions().size());
+        assertEquals(1, inputManager.getEndpointGroupDescriptions().size());
+    }
+    
+    /** Test. */
+    @Test
     public void testAddAndRemoveDynamicEndpointDescriptions() {
 
         String inputName1 = "input name 1";
@@ -250,6 +294,7 @@ public class EndpointDescriptionsManagerTest {
 
         String inputName = "input name";
         String newInputName = "new input name";
+        String newParentGroupName = "new parent group";
         DataType inputType = DataType.Float;
         DataType newInputType = DataType.Vector;
         Map<String, String> inputMetaData = new HashMap<String, String>();
@@ -270,6 +315,11 @@ public class EndpointDescriptionsManagerTest {
 
         description = inputManager.editDynamicEndpointDescription(newInputName, newInputName, inputType, inputMetaData);
         assertEquals(inputType, description.getDataType());
+        
+        assertNull(description.getParentGroupName());
+        description = inputManager.editDynamicEndpointDescription(newInputName, newInputName, inputType, inputMetaData,
+            description.getDynamicEndpointIdentifier(), newParentGroupName);
+        assertEquals(newParentGroupName, description.getParentGroupName());
 
         // unknow name
         try {

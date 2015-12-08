@@ -9,12 +9,13 @@
 package de.rcenvironment.components.examples.decrypter.execution;
 
 import java.io.IOException;
+import java.text.MessageFormat;
 
 import de.rcenvironment.components.examples.decrypter.common.DecrypterComponentConstants;
+import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
@@ -25,9 +26,9 @@ import de.rcenvironment.core.utils.encryption.PassphraseBasedEncryption;
 
 /**
  * 
- * Main class for the component logic. In this class the component lifecycle is done. Most of the
- * methods have a default implementation which is done in the {@link DefaultComponent} class. If the
- * component should have an individual behavior, the appropriate methods must be overridden.
+ * Main class for the component logic. In this class the component lifecycle is done. Most of the methods have a default implementation
+ * which is done in the {@link DefaultComponent} class. If the component should have an individual behavior, the appropriate methods must be
+ * overridden.
  * 
  * 
  * @author Sascha Zur
@@ -35,9 +36,9 @@ import de.rcenvironment.core.utils.encryption.PassphraseBasedEncryption;
 public class DecrypterComponent extends DefaultComponent {
 
     private ComponentContext componentContext;
-    
+
     private ComponentDataManagementService dataManagementService;
-    
+
     private TypedDatumFactory typedDatumFactory;
 
     private boolean useDefaultPassphrase;
@@ -50,12 +51,12 @@ public class DecrypterComponent extends DefaultComponent {
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
     }
-    
+
     @Override
     public void start() throws ComponentException {
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
-        
+
         // {@link ComponentContext} is interface to the workflow engine
 
         // Reading the configuration of a component is done via the {@link ComponentContext}
@@ -87,6 +88,10 @@ public class DecrypterComponent extends DefaultComponent {
                 componentContext.getDefaultStorageNodeId());
         } catch (IOException e) {
             encryptedString = null;
+        } catch (CommunicationException e) {
+            throw new RuntimeException(MessageFormat.format("Failed to retrieve string from data reference from remote node @{0}: ",
+                componentContext.getNodeId())
+                + e.getMessage(), e);
         }
         // Now decrypt the String
         if (encryptedString != null) {
@@ -116,7 +121,7 @@ public class DecrypterComponent extends DefaultComponent {
 
                 // After sending the result to the output, it also should appear on the workflow
                 // console
-                componentContext.printConsoleLine(decryptedString, ConsoleRow.Type.STDOUT);
+                componentContext.getLog().componentInfo(decryptedString);
             } else {
                 throw new ComponentException("Could not decrypt file! Wrong password or decrypting algorithm?");
             }

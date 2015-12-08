@@ -9,6 +9,7 @@
 package de.rcenvironment.core.gui.workflow.view;
 
 import java.util.ArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -29,17 +30,20 @@ import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchListener;
+import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertySheetPageContributor;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
-import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotificationSubscriber;
-import de.rcenvironment.core.component.workflow.execution.spi.WorkflowStateChangeListener;
+import de.rcenvironment.core.component.workflow.execution.spi.SingleWorkflowStateChangeListener;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
@@ -49,8 +53,8 @@ import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorHelpContextProvid
 import de.rcenvironment.core.gui.workflow.parts.ReadOnlyEditPartFactory;
 import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
-import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
  * Graphical View for a running workflow instance.
@@ -59,13 +63,14 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Christian Weiss
  * @author Oliver Seebach
  */
-public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbedPropertySheetPageContributor, WorkflowStateChangeListener {
+public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbedPropertySheetPageContributor, 
+    SingleWorkflowStateChangeListener {
 
     private static final Log LOG = LogFactory.getLog(ReadOnlyWorkflowRunEditor.class);
 
     private SimpleNotificationService sns = new SimpleNotificationService();
-
-    private WorkflowStateNotificationSubscriber workflowStateChangeSubscriber = new WorkflowStateNotificationSubscriber(this);
+    
+    private WorkflowStateNotificationSubscriber workflowStateChangeSubscriber;
     
     private TabbedPropertySheetPage tabbedPropertySheetPage;
 
@@ -75,16 +80,32 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
 
     private ZoomManager zoomManager;
     
-    private Boolean initialWorkflowStateSet = false;
+    private AtomicBoolean initialWorkflowStateSet = new AtomicBoolean(false);
 
     public ReadOnlyWorkflowRunEditor() {
         setEditDomain(new DefaultEditDomain(this));
+        registerWorkbenchListener();
+    }
+    
+    private void registerWorkbenchListener() {
+        PlatformUI.getWorkbench().addWorkbenchListener(new IWorkbenchListener() {
+
+            @Override
+            public boolean preShutdown(IWorkbench workbench, boolean arg1) {
+                // Close Workflow Run Editor programmatically on shutdown
+                ReadOnlyWorkflowRunEditor.this.getSite().getPage().closeEditor(ReadOnlyWorkflowRunEditor.this, false);
+                return true;
+            }
+
+            @Override
+            public void postShutdown(IWorkbench workbench) {}
+        });
     }
     
     public boolean isWorkflowExecutionInformationSet() {
         return wfExeInfo != null;
     }
-
+    
     @Override
     protected void configureGraphicalViewer() {
         super.configureGraphicalViewer();
@@ -155,7 +176,9 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
         
         // set the model of the editor
         viewer.setContents(wei);
-
+        workflowStateChangeSubscriber = new WorkflowStateNotificationSubscriber(ReadOnlyWorkflowRunEditor.this,
+            wei.getExecutionIdentifier());
+                        
         Job job = new Job(StringUtils.format("Initializing state of workflow '%s'", wei.getInstanceName())) {
 
             @Override
@@ -163,26 +186,27 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
                 try {
                     sns.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
                         workflowStateChangeSubscriber, wfExeInfo.getNodeId());
-                } catch (CommunicationException e1) {
+                } catch (RemoteOperationException e1) {
                     // TODO review: how to react on this?
                     LOG.error("Failed to subscribe for workflow state changes: " + e1.getMessage());
                     return Status.CANCEL_STATUS; // should be the closest to the "old" RTE behavior for now 
                 }
 
-                if (!initialWorkflowStateSet) {
-                    // TODO set initial state if no new state received yet
-                    ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-                    WorkflowExecutionService executionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
+                if (!initialWorkflowStateSet.get()) {
+                    WorkflowExecutionService wfExecutionService = ServiceRegistry.createAccessFor(ReadOnlyWorkflowRunEditor.this)
+                        .getService(WorkflowExecutionService.class);
                     try {
-                        final WorkflowState state = executionService.getWorkflowState(wfExeInfo.getExecutionIdentifier(),
-                            wei.getNodeId());
-                        synchronized (initialWorkflowStateSet) {
-                            if (!initialWorkflowStateSet) {
-                                onNewWorkflowState(wfExeInfo.getExecutionIdentifier(), state);
+                        WorkflowState workflowState = wfExecutionService.getWorkflowState(
+                            wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
+                        synchronized (ReadOnlyWorkflowRunEditor.this) {
+                            if (!initialWorkflowStateSet.get()) {
+                                onWorkflowStateChanged(workflowState);
                             }
                         }
-                    } catch (CommunicationException e) {
-                        LOG.error(StringUtils.format("Getting state of workflow '%s' failed", wfExeInfo.getInstanceName()));
+                    } catch (ExecutionControllerException | RemoteOperationException e) {
+                        // TODO review: how to react on this?
+                        LOG.error("Failed to subscribe for workflow state changes: " + e.getMessage());
+                        return Status.CANCEL_STATUS; // should be the closest to the "old" RTE behavior for now 
                     }
                 }
                 return Status.OK_STATUS;
@@ -203,7 +227,7 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
                     try {
                         sns.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
                             workflowStateChangeSubscriber, wfExeInfo.getNodeId());
-                    } catch (CommunicationException e) {
+                    } catch (RemoteOperationException e) {
                         LOG.error("Failed to unsubscribe workflow execution view from workflow host: " + e.getMessage());
                         return Status.CANCEL_STATUS;
                     }
@@ -272,8 +296,8 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
     }
 
     @Override
-    public synchronized void onNewWorkflowState(String workflowIdentifier, final WorkflowState newState) {
-        initialWorkflowStateSet = true;
+    public synchronized void onWorkflowStateChanged(final WorkflowState newState) {
+        initialWorkflowStateSet.set(true);
         if (newState == WorkflowState.DISPOSING || newState == WorkflowState.DISPOSED) {
             Display.getDefault().asyncExec(new Runnable() {
                 @Override
@@ -291,6 +315,11 @@ public class ReadOnlyWorkflowRunEditor extends GraphicalEditor implements ITabbe
             });
         }
         
+    }
+
+    @Override
+    public void onWorkflowNotAliveAnymore(String errorMessage) {
+        onWorkflowStateChanged(WorkflowState.UNKNOWN);
     }
 
 }

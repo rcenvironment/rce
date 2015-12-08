@@ -9,12 +9,11 @@
 package de.rcenvironment.components.doe.execution;
 
 import static org.easymock.EasyMock.anyObject;
+import static org.junit.Assert.assertEquals;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-
-import junit.framework.Assert;
 
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -26,6 +25,8 @@ import org.junit.rules.ExpectedException;
 import de.rcenvironment.components.doe.common.DOEConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
@@ -34,10 +35,12 @@ import de.rcenvironment.core.component.testutils.ComponentTestWrapper;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import junit.framework.Assert;
 
 /**
  * Test class for the DOE execution.
@@ -45,6 +48,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Sascha Zur
  */
 public class DOEComponentTest {
+
+    private static final String NUMBER_OF_OUTPUTS_FOR_CHOSEN_METHOD_TOO_FEW = "Number of outputs for chosen method too few";
 
     private static final String MINIMAL_CUSTOM_TABLE = "[[\"1\"],[\"2\"]]";
 
@@ -114,12 +119,15 @@ public class DOEComponentTest {
      */
     @Test
     public void testWithOneInput() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+
+        addStaticOutputs();
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(1));
 
         component.start();
@@ -130,14 +138,18 @@ public class DOEComponentTest {
         final double[] expectedValuesY = { -10, -10, 10, 10 };
         checkOutput(new double[] { expectedValuesX[0] }, X);
         checkOutput(new double[] { expectedValuesY[0] }, Y);
-        for (int i = 1; i < 3; i++) {
+        for (int i = 1; i < 4; i++) {
             component.processInputs();
             context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(1));
             Assert.assertEquals(1, context.getCapturedOutput(X).size());
             Assert.assertEquals(1, context.getCapturedOutput(Y).size());
             checkOutput(new double[] { expectedValuesX[i] }, X);
             checkOutput(new double[] { expectedValuesY[i] }, Y);
+            checkLoopDoneValuesSent(false);
         }
+
+        component.processInputs();
+        checkLoopDoneValuesSent(true, true, true, 2);
 
         component.tearDown(Component.FinalComponentState.FINISHED);
         component.dispose();
@@ -151,12 +163,14 @@ public class DOEComponentTest {
      */
     @Test
     public void testWithOneInvalidInputRerun() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
+        addStaticOutputs();
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
 
         final double[] expectedValuesX = { -1, -1, 1, -1, 1 };
         final double[] expectedValuesY = { -10, -10, -10, 10, 10 };
@@ -173,8 +187,11 @@ public class DOEComponentTest {
             Assert.assertEquals(1, context.getCapturedOutput(Y).size());
             checkOutput(new double[] { expectedValuesX[i] }, X);
             checkOutput(new double[] { expectedValuesY[i] }, Y);
+            checkLoopDoneValuesSent(false);
         }
 
+        component.processInputs();
+        checkLoopDoneValuesSent(true, true, true, 2);
         component.tearDown(Component.FinalComponentState.FINISHED);
         component.dispose();
 
@@ -187,12 +204,14 @@ public class DOEComponentTest {
      */
     @Test
     public void testWithOneInvalidInputAbort() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_ABORT, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.Fail, null);
 
+        addStaticOutputs();
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
 
         component.start();
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createNotAValue());
@@ -200,6 +219,9 @@ public class DOEComponentTest {
         Assert.assertEquals(1, context.getCapturedOutput(Y).size());
         exception.expect(ComponentException.class);
         component.processInputs();
+        checkLoopDoneValuesSent(false);
+        component.processInputs();
+        checkLoopDoneValuesSent(true, true, true, 2);
     }
 
     /**
@@ -209,12 +231,13 @@ public class DOEComponentTest {
      */
     @Test
     public void testWithOneInvalidInputSkip() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_SKIP, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.Discard, null);
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
 
         component.start();
         Assert.assertEquals(1, context.getCapturedOutput(X).size());
@@ -231,6 +254,7 @@ public class DOEComponentTest {
             checkOutput(new double[] { expectedValuesX[i] }, X);
             checkOutput(new double[] { expectedValuesY[i] }, Y);
         }
+
         component.tearDown(Component.FinalComponentState.FINISHED);
         component.dispose();
 
@@ -243,10 +267,11 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmFullFactorialNoOutputs() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
         exception.expect(ComponentException.class);
-        exception.expectMessage(DOEComponent.TOO_FEW_OUTPUTS_EXCEPTION);
+        exception.expectMessage(NUMBER_OF_OUTPUTS_FOR_CHOSEN_METHOD_TOO_FEW);
         component.start();
     }
 
@@ -257,9 +282,10 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmFullFactorialOneOutput() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
         exception.expect(ComponentException.class);
-        exception.expectMessage(DOEComponent.TOO_FEW_OUTPUTS_EXCEPTION);
+        exception.expectMessage(NUMBER_OF_OUTPUTS_FOR_CHOSEN_METHOD_TOO_FEW);
         addNewOutput(X, MINUS_1, ONE);
         component.start();
     }
@@ -271,13 +297,14 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmFullFactorialLevelTooLow() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, ONE, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, ONE, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
         exception.expect(ComponentException.class);
-        exception.expectMessage(DOEComponent.LEVEL_TOO_LOW_EXCEPTION);
+        exception.expectMessage("Level number for full factorial design too low");
 
         component.start();
     }
@@ -289,11 +316,12 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmFullFactorial() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
-
+        addStaticOutputs();
         component.start();
         Assert.assertEquals(4, context.getCapturedOutput(X).size());
         Assert.assertEquals(4, context.getCapturedOutput(Y).size());
@@ -315,12 +343,13 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmFullFactorialWithHistoryData() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
         context.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM, Boolean.toString(true));
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
-
+        addStaticOutputs();
         component.start();
         Assert.assertEquals(4, context.getCapturedOutput(X).size());
         Assert.assertEquals(4, context.getCapturedOutput(Y).size());
@@ -343,10 +372,11 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmLHCNoOutputs() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
         exception.expect(ComponentException.class);
-        exception.expectMessage(DOEComponent.TOO_FEW_OUTPUTS_EXCEPTION);
+        exception.expectMessage(NUMBER_OF_OUTPUTS_FOR_CHOSEN_METHOD_TOO_FEW);
         component.start();
     }
 
@@ -358,10 +388,11 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmLHCOneOutput() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
 
         exception.expect(ComponentException.class);
-        exception.expectMessage(DOEComponent.TOO_FEW_OUTPUTS_EXCEPTION);
+        exception.expectMessage(NUMBER_OF_OUTPUTS_FOR_CHOSEN_METHOD_TOO_FEW);
         component.start();
     }
 
@@ -376,7 +407,9 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ZERO, "3", ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ZERO, "3", ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+        addStaticOutputs();
         component.start();
         Assert.assertEquals(3, context.getCapturedOutput(X).size());
         Assert.assertEquals(3, context.getCapturedOutput(Y).size());
@@ -400,7 +433,9 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ONE, FIVE, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_LHC, ONE, FIVE, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+        addStaticOutputs();
         component.start();
         Assert.assertEquals(5, context.getCapturedOutput(X).size());
         Assert.assertEquals(5, context.getCapturedOutput(Y).size());
@@ -418,7 +453,9 @@ public class DOEComponentTest {
      */
     @Test
     public void testAlgorithmMonteCarloNoOutput() throws ComponentException {
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_MONTE_CARLO, ZERO, TWO, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_MONTE_CARLO, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+        addStaticOutputs();
         component.start();
     }
 
@@ -433,7 +470,9 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_MONTE_CARLO, ZERO, "3", ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_MONTE_CARLO, ZERO, "3", ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+        addStaticOutputs();
         component.start();
         Assert.assertEquals(3, context.getCapturedOutput(X).size());
         Assert.assertEquals(3, context.getCapturedOutput(Y).size());
@@ -457,7 +496,9 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_MONTE_CARLO, ONE, FIVE, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, null);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_MONTE_CARLO, ONE, FIVE, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+        addStaticOutputs();
         component.start();
         Assert.assertEquals(5, context.getCapturedOutput(X).size());
         Assert.assertEquals(5, context.getCapturedOutput(Y).size());
@@ -477,9 +518,10 @@ public class DOEComponentTest {
 
         addNewOutput(X, MINUS_1, ONE);
 
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, "");
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, "");
         exception.expect(ComponentException.class);
-        exception.expectMessage(DOEComponent.TABLE_IS_NULL_OR_EMPTY);
+        exception.expectMessage("No table");
         component.start();
 
     }
@@ -494,9 +536,10 @@ public class DOEComponentTest {
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
-
+        addStaticOutputs();
         final String table = "[[\"1\", \"1\"],[\"2\", \"1\"]]";
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         component.start();
 
         Assert.assertEquals(2, context.getCapturedOutput(X).size());
@@ -519,9 +562,10 @@ public class DOEComponentTest {
     public void testCustomTableTooFewOutputs() throws ComponentException {
 
         addNewOutput(X, MINUS_1, ONE);
-
+        addStaticOutputs();
         final String table = "[[\"1\", \"1\"],[\"2\", \"1\"]]";
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         component.start();
 
         Assert.assertEquals(2, context.getCapturedOutput(X).size());
@@ -544,9 +588,10 @@ public class DOEComponentTest {
         addNewOutput(Y, MINUS_1, ONE);
 
         final String table = MINIMAL_CUSTOM_TABLE;
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         exception.expect(ComponentException.class);
-        exception.expectMessage(StringUtils.format(DOEComponent.NUMBER_OF_VALUES_PER_SAMPLE_LOWER_THAN_THE_NUMBER_OF_OUTPUTS, 1, 2));
+        exception.expectMessage(StringUtils.format("Number of values per sample (%s) is lower than the number of outputs", 1, 2));
         component.start();
     }
 
@@ -562,7 +607,8 @@ public class DOEComponentTest {
         addNewOutput(Y, MINUS_1, ONE);
 
         final String table = MINIMAL_CUSTOM_TABLE;
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ONE, ZERO, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ONE, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         exception.expect(ComponentException.class);
         component.start();
     }
@@ -576,9 +622,10 @@ public class DOEComponentTest {
     public void testCustomTableStartLessZero() throws ComponentException {
 
         addNewOutput(X, MINUS_1, ONE);
-
+        addStaticOutputs();
         final String table = MINIMAL_CUSTOM_TABLE;
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, MINUS_1, TWO, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, MINUS_1, TWO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         component.start();
         Assert.assertEquals(2, context.getCapturedOutput(X).size());
 
@@ -595,9 +642,10 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
 
         final String table = MINIMAL_CUSTOM_TABLE;
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, FIVE, FIVE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, FIVE, FIVE,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         exception.expect(ComponentException.class);
-        exception.expectMessage(StringUtils.format(DOEComponent.START_SAMPLE_VALUE_HIGHER_THAN_THE_NUMBER_OF_SAMPLES, 5, 2));
+        exception.expectMessage(StringUtils.format("Start sample value (%s) is greater than the number of samples (%s)", 5, 2));
         component.start();
 
     }
@@ -613,15 +661,133 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
 
         final String table = "[[\"1\"],[\"null\"]]";
-        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE, DOEConstants.KEY_BEHAVIOUR_RERUN, table);
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE, ONE, FIVE, ZERO, ONE,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, table);
         exception.expect(ComponentException.class);
         component.start();
+    }
+
+    /**
+     * Tests if values are forwarded as expected.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testForwardingValue() throws ComponentException {
+
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+
+        addStaticOutputs();
+
+        addNewOutput(X, MINUS_1, ONE);
+        addNewOutput(Y, MINUS_TEN, TEN);
+
+        context.addSimulatedInput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
+            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedOutput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
+            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+
+        component.start();
+        Assert.assertEquals(1, context.getCapturedOutput(X).size());
+        Assert.assertEquals(1, context.getCapturedOutput(Y).size());
+        Assert.assertEquals(0, context.getCapturedOutput(I).size());
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(1.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+        Assert.assertEquals(1.0, ((FloatTD) context.getCapturedOutput(I).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(7.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+        Assert.assertEquals(7.0, ((FloatTD) context.getCapturedOutput(I).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(5.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+        Assert.assertEquals(5.0, ((FloatTD) context.getCapturedOutput(I).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(5.0));
+        component.processInputs();
+        Assert.assertEquals(0, context.getCapturedOutput(I).size());
+        checkLoopDoneValuesSent(true, true, true, 3);
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
+    /**
+     * Tests if values are forwarded as expected.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testForwardingValueWithStartValues() throws ComponentException {
+
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+
+        addStaticOutputs();
+
+        addNewOutput(X, MINUS_1, ONE);
+        addNewOutput(Y, MINUS_TEN, TEN);
+
+        context.addSimulatedInput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
+            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
+            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+        context.addSimulatedOutput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
+            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+
+        component.start();
+        Assert.assertEquals(0, context.getCapturedOutput(X).size());
+        Assert.assertEquals(0, context.getCapturedOutput(Y).size());
+        Assert.assertEquals(0, context.getCapturedOutput(I).size());
+
+        context.setInputValue(I + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+            context.getService(TypedDatumService.class).getFactory().createFloat(1.0));
+        component.processInputs();
+
+        Assert.assertEquals(1, context.getCapturedOutput(X).size());
+        Assert.assertEquals(1, context.getCapturedOutput(Y).size());
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(1.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+        Assert.assertEquals(1.0, ((FloatTD) context.getCapturedOutput(I).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(7.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+        Assert.assertEquals(7.0, ((FloatTD) context.getCapturedOutput(I).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(5.0));
+        component.processInputs();
+        Assert.assertEquals(1, context.getCapturedOutput(I).size());
+        Assert.assertEquals(5.0, ((FloatTD) context.getCapturedOutput(I).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(5.0));
+        component.processInputs();
+        Assert.assertEquals(0, context.getCapturedOutput(I).size());
+        checkLoopDoneValuesSent(true, true, true, 3);
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
+    private void addStaticOutputs() {
+        context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, "", DataType.Boolean, false,
+            new HashMap<String, String>());
+        context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, "", DataType.Boolean, false,
+            new HashMap<String, String>());
     }
 
     private void addNewOutput(String name, String lower, String upper) {
         Map<String, String> metaDatumX = new HashMap<>();
         metaDatumX.put("lower", lower);
         metaDatumX.put("upper", upper);
+        metaDatumX.putAll(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
         context.addSimulatedOutput(name, "", DataType.Float, true, metaDatumX);
     }
 
@@ -634,13 +800,64 @@ public class DOEComponentTest {
     }
 
     private void setDOEConfiguration(String method, String seed, String runNumber, String startSample, String endSample,
-        String failedRunBehaviour, String table) {
+        LoopComponentConstants.LoopBehaviorInCaseOfFailure behaviour, String table) {
         context.setConfigurationValue(DOEConstants.KEY_METHOD, method);
         context.setConfigurationValue(DOEConstants.KEY_SEED_NUMBER, seed);
         context.setConfigurationValue(DOEConstants.KEY_RUN_NUMBER, runNumber);
         context.setConfigurationValue(DOEConstants.KEY_START_SAMPLE, startSample);
         context.setConfigurationValue(DOEConstants.KEY_END_SAMPLE, endSample);
-        context.setConfigurationValue(DOEConstants.KEY_FAILED_RUN_BEHAVIOUR, failedRunBehaviour);
+        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE, behaviour.toString());
+        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_FAIL, "1");
         context.setConfigurationValue(DOEConstants.KEY_TABLE, table);
     }
+
+    // will be used if reset is tested
+    private void checkLoopDoneValuesSent(boolean done, boolean finallyDone) {
+        checkLoopDoneValuesSent(done, finallyDone, false, 0);
+    }
+
+    private void checkLoopDoneValuesSent(boolean done) {
+        checkLoopDoneValuesSent(done, done, false, 0);
+    }
+
+    private void checkLoopDoneValuesSent(boolean done, boolean finallyDone, boolean outputsClosed, int dynInputCount) {
+        if (done) {
+            checkLoopDoneSent();
+        } else {
+            checkLoopDoneNotSent();
+        }
+        if (finallyDone) {
+            checkOuterLoopDoneSent();
+            if (outputsClosed) {
+                checkClosedOutputs(dynInputCount);
+            }
+        } else {
+            checkOuterLoopDoneNotSent();
+        }
+    }
+
+    private void checkLoopDoneSent() {
+        Assert.assertEquals(1, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
+        Assert.assertEquals(true, ((BooleanTD) context
+            .getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).get(0)).getBooleanValue());
+    }
+
+    private void checkOuterLoopDoneSent() {
+        Assert.assertEquals(1, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
+        Assert.assertEquals(true, ((BooleanTD) context
+            .getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).get(0)).getBooleanValue());
+    }
+
+    private void checkClosedOutputs(int dynInputCount) {
+        assertEquals(2 + dynInputCount, context.getCapturedOutputClosings().size());
+    }
+
+    private void checkLoopDoneNotSent() {
+        Assert.assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
+    }
+
+    private void checkOuterLoopDoneNotSent() {
+        Assert.assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
+    }
+
 }

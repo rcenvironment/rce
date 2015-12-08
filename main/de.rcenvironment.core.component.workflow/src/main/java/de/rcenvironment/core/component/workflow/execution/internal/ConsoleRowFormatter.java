@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.component.workflow.execution.internal;
 
-import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -24,7 +23,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public final class ConsoleRowFormatter {
 
-    private final DateFormat timeFormat = SimpleDateFormat.getDateTimeInstance(); // TODO 5.0: improve format
+    private final SimpleDateFormat timeFormat = new SimpleDateFormat("yyyy-MM-dd-HH:mm:ss,SSS");
 
     /**
      * Returns a log entry to use in log files for a single, specific workflow execution.
@@ -50,5 +49,43 @@ public final class ConsoleRowFormatter {
     public String toCombinedLogFileFormat(ConsoleRow row) {
         return StringUtils.format("[%s] [%s] [%s] [%s] %s%n", new Date(row.getTimestamp()), row.getWorkflowName(), row.getComponentName(),
             row.getType(), row.getPayload());
+    }
+    
+    /**
+     * Returns a log entry to use in an error log file for one single workflow execution.
+     * 
+     * @param row the {@link ConsoleRow} to format
+     * @return the generated log entry
+     */
+    public String toWorkflowErrorLogFileFormat(ConsoleRow row) {
+        if (row.getType().equals(ConsoleRow.Type.WORKFLOW_ERROR)) {
+            return StringUtils.format("%s %s - %s", timeFormat.format(row.getTimestamp()), 
+                row.getType().getDisplayName(), row.getPayload());            
+        } else {
+            return StringUtils.format("%s %s (%s) - %s", timeFormat.format(row.getTimestamp()), 
+                row.getType().getDisplayName(), row.getComponentName(), row.getPayload());
+        }
+    }
+    
+    /**
+     * Returns a log entry to use in a complete log file for one single component execution.
+     * 
+     * @param row the {@link ConsoleRow} to format
+     * @return the generated log entry
+     */
+    public String toComponentCompleteLogFileFormat(ConsoleRow row) {
+        return StringUtils.format("[%d] %s %s: %s", row.getSequenzNumber(), timeFormat.format(row.getTimestamp()), 
+            row.getType().getDisplayName(), row.getPayload());
+    }
+    
+    /**
+     * Returns a log entry to use in a complete log file for one single component execution.
+     * 
+     * @param row the {@link ConsoleRow} to format
+     * @return the generated log entry
+     */
+    public String toComponentErrorLogFileFormat(ConsoleRow row) {
+        return StringUtils.format("%s %s: %s", timeFormat.format(row.getTimestamp()), 
+            row.getType().getDisplayName(), row.getPayload());
     }
 }

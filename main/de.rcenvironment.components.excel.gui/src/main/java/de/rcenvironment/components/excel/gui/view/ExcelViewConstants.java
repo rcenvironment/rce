@@ -22,26 +22,6 @@ public final class ExcelViewConstants {
     public static final int UITHREAD_SLEEPER = 200; 
 
     /**
-     * Base path to icons.
-     */
-    public static final String ICONBASEPATH = "resources/";
-    
-    /**
-     * Filename of excel icon. Size 16.
-     */
-    public static final String ICONNAME_EXCEL_16 = "excel_16.png";
-    
-    /**
-     * Filename of excel icon. Size 64.
-     */
-    public static final String ICONNAME_EXCEL_64 = "excel_64.png";
-    
-    /**
-     * Filename of copy to clipboard icon.
-     */
-    public static final String ICONNAME_CLIPBOARD = "copy_edit_co.png";
-    
-    /**
      * Width of normal column.
      */
     public static final int NORMALCOLUMNWIDTH = 150;

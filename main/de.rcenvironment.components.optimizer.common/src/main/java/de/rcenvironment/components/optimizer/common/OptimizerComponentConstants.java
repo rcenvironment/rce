@@ -166,9 +166,6 @@ public final class OptimizerComponentConstants {
     public static final String ID_OPTIMA = "optima";
 
     /** Constant. */
-    public static final String OPTIMIZER_FINISHED_OUTPUT = "Optimizer is finished";
-
-    /** Constant. */
     public static final String META_HAS_STARTVALUE = "hasStartValue";
 
     /** Constant. */
@@ -181,7 +178,6 @@ public final class OptimizerComponentConstants {
     public static final String ITERATION_COUNT_ENDPOINT_NAME = "Iteration";
 
     /** Constant. */
-
     public static final String META_KEY_HAS_BOUNDS = "hasSingleBounds";
 
     /** Constant. */
@@ -208,6 +204,16 @@ public final class OptimizerComponentConstants {
     /** Constant. */
     public static final String RESTART_FILE_PATH = "preCalcFilePath";
 
+    /** Constant. */
+    public static final String GENERIC_EVALUATION_FILE = "RCEOptimization.py";
+
+    /** Constant. */
+    public static final String GENERIC_ALGORITHMS_FILE = "algorithms.json";
+
+    /** Constant. */
+    public static final String GENERIC_MAIN_FILE = "generic_optimizer.py";
+    /** Constant. */
+    public static final String META_IS_DISCRETE = "isDiscrete";
     /**
      * Hide the constructor.
      */

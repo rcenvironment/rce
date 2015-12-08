@@ -39,15 +39,11 @@ public class ConsoleRowUtilsTest {
 
     private final String consoleLines = firstConsoleLine + "\n" + secondConsoleLine;
 
-    private ComponentContext componentContext;
+    private ComponentLog componentLog;
 
     private Capture<String> firstConsoleLineCapture;
     
     private Capture<String> secondConsoleLineCapture;
-
-    private Capture<ConsoleRow.Type> firstConsoleTypeCapture;
-    
-    private Capture<ConsoleRow.Type> secondConsoleTypeCapture;
 
     /**
      * Set up test objects.
@@ -56,14 +52,13 @@ public class ConsoleRowUtilsTest {
     public void setUp() {
         
         firstConsoleLineCapture = new Capture<String>();
-        firstConsoleTypeCapture = new Capture<ConsoleRow.Type>();
         secondConsoleLineCapture = new Capture<String>();
-        secondConsoleTypeCapture = new Capture<ConsoleRow.Type>();
+
+        componentLog = EasyMock.createStrictMock(ComponentLog.class);
+        componentLog.toolStdout(EasyMock.capture(firstConsoleLineCapture));
+        componentLog.toolStdout(EasyMock.capture(secondConsoleLineCapture));
+        EasyMock.replay(componentLog);
         
-        componentContext = EasyMock.createNiceMock(ComponentContext.class);
-        componentContext.printConsoleLine(EasyMock.capture(firstConsoleLineCapture), EasyMock.capture(firstConsoleTypeCapture));
-        componentContext.printConsoleLine(EasyMock.capture(secondConsoleLineCapture), EasyMock.capture(secondConsoleTypeCapture));
-        EasyMock.replay(componentContext);
     }
 
     /** Test. */
@@ -71,8 +66,8 @@ public class ConsoleRowUtilsTest {
     public void testLogToWorkflowConsole() {
 
         InputStream inputStream = IOUtils.toInputStream(consoleLines);
-        TextStreamWatcher logToWorkflowConsole = ConsoleRowUtils.logToWorkflowConsole(componentContext, inputStream,
-            ConsoleRow.Type.STDOUT, null, false);
+        TextStreamWatcher logToWorkflowConsole = ConsoleRowUtils.logToWorkflowConsole(componentLog, inputStream,
+            ConsoleRow.Type.TOOL_OUT, null, false);
         logToWorkflowConsole.waitForTermination();
         IOUtils.closeQuietly(inputStream);
         
@@ -98,8 +93,8 @@ public class ConsoleRowUtilsTest {
         }
 
         InputStream inputStream = IOUtils.toInputStream(consoleLines);
-        TextStreamWatcher logToWorkflowConsole = ConsoleRowUtils.logToWorkflowConsole(componentContext, inputStream,
-            ConsoleRow.Type.STDOUT, tempFile, false);
+        TextStreamWatcher logToWorkflowConsole = ConsoleRowUtils.logToWorkflowConsole(componentLog, inputStream,
+            ConsoleRow.Type.TOOL_OUT, tempFile, false);
         logToWorkflowConsole.waitForTermination();
         IOUtils.closeQuietly(inputStream);
         

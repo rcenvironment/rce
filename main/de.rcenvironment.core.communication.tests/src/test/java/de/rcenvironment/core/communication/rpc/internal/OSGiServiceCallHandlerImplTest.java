@@ -31,15 +31,18 @@ import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
+import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
+import de.rcenvironment.core.communication.rpc.ServiceCallResultFactory;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Unit test for the {@link OSGiServiceCallHandlerImpl}.
+ * Unit test for {@link ServiceCallHandlerServiceImpl} with an OSGi service resolver.
  * 
  * @author Heinrich Wendel
  * @author Doreen Seider
@@ -48,7 +51,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
 
     private static final String CALLBACK_TEST_METHOD = "callbackTest";
 
-    private static OSGiServiceCallHandlerImpl callHandler;
+    private static ServiceCallHandlerServiceImpl callHandler;
 
     private final String objectID1 = "id1";
 
@@ -60,7 +63,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
 
     private final CallbackObject object = new DummyObject();
 
-    public static OSGiServiceCallHandlerImpl getCallHandler() {
+    public static ServiceCallHandlerServiceImpl getCallHandler() {
         return callHandler;
     }
 
@@ -86,27 +89,28 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
 
         ServiceReference testServiceRef = EasyMock.createNiceMock(ServiceReference.class);
 
-        MethodCallerTestMethods testmethods = new MethodCallerTestMethodsImpl();
+        MethodCallTestInterface testmethods = new MethodCallTestInterfaceImpl();
 
         BundleContext contextMock = EasyMock.createNiceMock(BundleContext.class);
 
         EasyMock.expect(contextMock.getBundles()).andReturn(new Bundle[] { bundleMock }).anyTimes();
 
-        EasyMock.expect(contextMock.getAllServiceReferences(EasyMock.eq(ServiceCallSenderFactory.class.getName()),
-            EasyMock.eq("(" + ServiceCallSenderFactory.PROTOCOL + "=de.rcenvironment.rce.communication.rmi)")))
-            .andReturn(new ServiceReference[] { factoryRefMock }).anyTimes();
-        EasyMock.expect(contextMock.getAllServiceReferences(REQUEST.getService(), REQUEST.getServiceProperties()))
+        EasyMock.expect(contextMock.getServiceReferences(EasyMock.eq(ServiceCallSenderFactory.class.getName()),
+            EasyMock.eq((String) null))).andReturn(new ServiceReference[] { factoryRefMock }).anyTimes();
+        EasyMock.expect(contextMock.getServiceReferences(REQUEST.getServiceName(), null))
             .andReturn(new ServiceReference[] { testServiceRef }).anyTimes();
 
         EasyMock.expect(contextMock.getService(factoryRefMock)).andReturn(factoryMock).anyTimes();
         EasyMock.expect(contextMock.getService(testServiceRef)).andReturn(testmethods).anyTimes();
         EasyMock.replay(contextMock);
 
-        callHandler = new OSGiServiceCallHandlerImpl();
+        callHandler = new ServiceCallHandlerServiceImpl();
         callHandler.bindPlatformService(new DummyPlatformService());
         callHandler.bindCallbackService(new DummyCallbackService());
         callHandler.bindCallbackProxyService(new DummyCallbackProxyService());
-        callHandler.activate(contextMock);
+        OSGiLocalServiceResolver serviceResolver = new OSGiLocalServiceResolver();
+        serviceResolver.activate(contextMock);
+        callHandler.bindLocalServiceResolver(serviceResolver);
     }
 
     /**
@@ -117,7 +121,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
     public void testLocalCall() throws Exception {
 
         ServiceCallResult result = callHandler.handle(REQUEST);
-        assertEquals(result.getReturnValue(), RETURN_VALUE);
+        assertEquals(RETURN_VALUE, result.getReturnValue());
 
         // equal call request to cover cache functionality
         result = callHandler.handle(REQUEST);
@@ -127,7 +131,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         params.add(new DummyProxy(objectID1));
 
         ServiceCallRequest callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
-            MethodCallerTestMethods.class.getCanonicalName(), null, CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
 
@@ -135,7 +139,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         params.add(new DummyProxy(objectID2));
 
         callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
-            MethodCallerTestMethods.class.getCanonicalName(), null, CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
 
@@ -143,7 +147,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         params.add(new DummyProxy(objectID3));
 
         callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
-            MethodCallerTestMethods.class.getCanonicalName(), null, CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
 
@@ -155,7 +159,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         params.add((Serializable) param); // ArrayList
 
         callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
-            MethodCallerTestMethods.class.getCanonicalName(), null, CALLBACK_TEST_METHOD, params);
+            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
     }
@@ -174,7 +178,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
 
         @Override
         public Object callback(String objectIdentifier, String methodName, List<? extends Serializable> parameters)
-            throws CommunicationException {
+            throws RemoteOperationException {
             return null;
         }
 
@@ -317,8 +321,12 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
     private class ServiceCallSenderDummy implements ServiceCallSender {
 
         @Override
-        public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws CommunicationException {
-            return OSGiServiceCallHandlerImplTest.getCallHandler().handle(serviceCallRequest);
+        public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws RemoteOperationException {
+            try {
+                return OSGiServiceCallHandlerImplTest.getCallHandler().handle(serviceCallRequest);
+            } catch (InternalMessagingException e) {
+                return ServiceCallResultFactory.representInternalErrorAtHandler(serviceCallRequest, "Exception in mock handler", e);
+            }
         }
 
         @Override

@@ -30,11 +30,14 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
-            String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-            String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-            long time1 = nullSafeLongValue(val1);
-            long time2 = nullSafeLongValue(val2);
-            return ComparatorUtils.compareLong(time1, time2);
+            if (o1.getMetaData() != null && o2.getMetaData() != null) {
+                String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+                String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+                long time1 = nullSafeLongValue(val1);
+                long time2 = nullSafeLongValue(val2);
+                return ComparatorUtils.compareLong(time1, time2);
+            }
+            return 0;
         }
 
         private long nullSafeLongValue(String val1) {
@@ -52,11 +55,14 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
-            String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-            String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-            long time1 = nullSafeLongValue(val1);
-            long time2 = nullSafeLongValue(val2);
-            return ComparatorUtils.compareLong(time1, time2) * DESC;
+            if (o1.getMetaData() != null && o2.getMetaData() != null) {
+                String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+                String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+                long time1 = nullSafeLongValue(val1);
+                long time2 = nullSafeLongValue(val2);
+                return ComparatorUtils.compareLong(time1, time2) * DESC;
+            }
+            return 0;
         }
 
         private long nullSafeLongValue(String val1) {

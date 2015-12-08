@@ -15,7 +15,7 @@
          <!-- XPathChooserView -->
          <propertySection
                tab="workflow.editor.tab.initialization.XPathChooser"
-               class="de.rcenvironment.cpacs.gui.xpathchooser.XPathChooserPropertyView"
+               class="de.rcenvironment.core.gui.xpathchooser.XPathChooserPropertyView"
                id="workflow.editor.tab.initialization.XPathChooserSection"
                filter="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerComponentFilter">
          </propertySection>

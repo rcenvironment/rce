@@ -18,10 +18,10 @@ import org.easymock.EasyMock;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.file.service.legacy.api.RemotableFileStreamAccessService;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
@@ -40,8 +40,6 @@ public class ServiceRemoteFileConnectionTest extends TestCase {
 
     private final String uri = "rce://" + nodeIdString + "/" + dmUuid + "/7";
 
-    private User user = EasyMock.createNiceMock(User.class);
-
     /**
      * Test.
      * 
@@ -50,7 +48,7 @@ public class ServiceRemoteFileConnectionTest extends TestCase {
     @Test
     public void test() throws Exception {
 
-        RemoteFileConnection connection = new ServiceRemoteFileConnection(user, new URI(uri), new DummyCommunicationService(),
+        RemoteFileConnection connection = new ServiceRemoteFileConnection(new URI(uri), new DummyCommunicationService(),
             EasyMock.createNiceMock(BundleContext.class));
         int read = connection.read();
         final int minusOne = -1;
@@ -69,22 +67,23 @@ public class ServiceRemoteFileConnectionTest extends TestCase {
      */
     private class DummyCommunicationService extends CommunicationServiceDefaultStub {
 
+        @SuppressWarnings("unchecked")
         @Override
-        public Object getService(Class<?> iface, NodeIdentifier nodeId2, BundleContext bundleContext)
-            throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId2) throws IllegalStateException {
             // TODO 3.0: recheck nodeId condition; changed during PlatformIdentifier elimination
-            if (nodeId2.equals(NodeIdentifierFactory.fromNodeId(nodeIdString)) && iface == FileService.class) {
-                return new DummeFileService();
+            if (nodeId2.equals(NodeIdentifierFactory.fromNodeId(nodeIdString)) && iface == RemotableFileStreamAccessService.class) {
+                return (T) new MockRemotableFileStreamAccessService();
             }
             return null;
         }
 
         /**
-         * Dummy {@link FileService} implementation.
+         * Mock {@link RemotableFileStreamAccessService} implementation.
          * 
          * @author Doreen Seider
+         * @author Robert Mischke (adapted for 7.0.0)
          */
-        private class DummeFileService implements FileService {
+        private class MockRemotableFileStreamAccessService implements RemotableFileStreamAccessService {
 
             private final String testUUID = "snoopy";
 
@@ -92,7 +91,7 @@ public class ServiceRemoteFileConnectionTest extends TestCase {
             public void close(String uuid) throws IOException {}
 
             @Override
-            public String open(User certificate, FileType type, String file) throws IOException {
+            public String open(FileType type, String file) throws IOException {
                 return testUUID;
             }
 

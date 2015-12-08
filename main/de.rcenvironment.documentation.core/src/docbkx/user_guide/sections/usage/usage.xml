@@ -3,9 +3,9 @@
 	<title>Usage</title>
 	<para>This chapter describes the main usage concepts.</para>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/gui_overview/gui_overview.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/first_workflow/first_workflow.xml"/>
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/usage_components/usage_components.xml"/>
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/workflows/workflows.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/command_line/command_line.xml"/> 
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/tool_integration/tool_integration.xml"/>
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/remote_access/remote_access.xml"/> 
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="sections/network/network.xml"/> 
 </chapter>

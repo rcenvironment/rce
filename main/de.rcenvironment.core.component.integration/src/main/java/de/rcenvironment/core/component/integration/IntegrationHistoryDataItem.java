@@ -82,7 +82,8 @@ public class IntegrationHistoryDataItem extends CommonComponentHistoryDataItem {
         CommonComponentHistoryDataItem.initializeCommonHistoryDataFromString(historyDataItem, historyData, serializer);
         ObjectMapper mapper = new ObjectMapper();
         try {
-            Map<String, Object> tree = mapper.readValue(historyData, new HashMap<String, Object>().getClass());
+            @SuppressWarnings("unchecked") Map<String, Object> tree =
+                mapper.readValue(historyData, new HashMap<String, Object>().getClass());
             if (tree.get(WORKING_DIRECTORY) != null) {
                 historyDataItem.setWorkingDirectory((String) tree.get(WORKING_DIRECTORY));
             }

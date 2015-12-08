@@ -57,9 +57,9 @@
             "defaultInputExecutionConstraint":"RequiredIfConnected"
         }
     ],
-    "inputGroups":[
+    "staticInputGroups":[
         {
-            "identifier":"all",
+            "name":"all",
             "type":"Or"
         }
     ]

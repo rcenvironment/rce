@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Common
 Bundle-SymbolicName: de.rcenvironment.core.utils.common;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-Version: 7.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
@@ -11,12 +11,16 @@ Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.excel.legacy,
  de.rcenvironment.core.utils.common.legacy,
+ de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
+ de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.common.validation,
  de.rcenvironment.core.utils.common.variables.legacy,
- de.rcenvironment.core.utils.common.xml
+ de.rcenvironment.core.utils.common.xml,
+ de.rcenvironment.core.utils.common.xml.api,
+ de.rcenvironment.core.utils.common.xml.impl
 Import-Package: net.sf.saxon;version="9.4.0.1",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.io.input;version="2.0.1",
@@ -32,6 +36,6 @@ Import-Package: net.sf.saxon;version="9.4.0.1",
  org.codehaus.jackson.util;version="1.9.13",
  org.osgi.framework;version="1.5.0"
 Require-Bundle: org.ops4j.pax.logging.pax-logging-api;bundle-version="1.6.4"
-
+Service-Component: OSGI-INF/*.xml
 
 

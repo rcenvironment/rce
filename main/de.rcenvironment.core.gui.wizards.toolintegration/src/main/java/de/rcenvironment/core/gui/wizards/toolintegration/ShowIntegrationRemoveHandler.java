@@ -21,7 +21,6 @@ import org.eclipse.core.commands.AbstractHandler;
 import org.eclipse.core.commands.ExecutionEvent;
 import org.eclipse.core.commands.ExecutionException;
 
-import de.rcenvironment.core.component.integration.IntegrationWatcher;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
@@ -43,12 +42,11 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         ToolIntegrationService integrationService = serviceRegistryAccess.getService(ToolIntegrationService.class);
         ToolIntegrationContextRegistry registry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
-
         RemoveToolIntegrationDialog dialog =
             new RemoveToolIntegrationDialog(null, integrationService.getActiveComponentIds(), registry.getAllIntegrationContexts());
 
         if (dialog.open() == 0) {
-            IntegrationWatcher.setWatcherActive(false);
+            integrationService.setFileWatcherActive(false);
             for (String selectedTool : dialog.getSelectedTools()) {
                 Map<String, Object> configuration = integrationService.getToolConfiguration(selectedTool);
                 ToolIntegrationContext context = null;
@@ -63,6 +61,7 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                         }
                     }
                     if (context != null) {
+                        integrationService.unregisterIntegration(selectedTool, context);
                         integrationService.removeTool(selectedTool, context);
                         integrationService.unpublishTool(context.getRootPathToToolIntegrationDirectory() + File.separator
                             + context.getNameOfToolIntegrationDirectory() + File.separator + context.getToolDirectoryPrefix()
@@ -89,8 +88,8 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                     }
                 }
             }
-            IntegrationWatcher.setWatcherActive(true);
         }
+        integrationService.setFileWatcherActive(true);
         return null;
     }
 }

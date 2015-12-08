@@ -9,11 +9,9 @@
 package de.rcenvironment.components.converger.gui;
 
 import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
-import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
+import de.rcenvironment.core.gui.workflow.editor.properties.LoopComponentWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -22,11 +20,11 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Sascha Zur
  */
-public class ConvergerWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
+public class ConvergerWorkflowNodeValidator extends LoopComponentWorkflowNodeValidator {
 
     @Override
     protected Collection<WorkflowNodeValidationMessage> validate() {
-        final List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();
+        final Collection<WorkflowNodeValidationMessage> messages = super.validate();
 
         final boolean hasInputs = hasInputs();
 
@@ -44,7 +42,7 @@ public class ConvergerWorkflowNodeValidator extends AbstractWorkflowNodeValidato
         return messages;
     }
 
-    private void checkIfDefined(String key, List<WorkflowNodeValidationMessage> messages) {
+    private void checkIfDefined(String key, Collection<WorkflowNodeValidationMessage> messages) {
         String prop = getProperty(key);
         
         if (prop == null || prop.isEmpty()) {

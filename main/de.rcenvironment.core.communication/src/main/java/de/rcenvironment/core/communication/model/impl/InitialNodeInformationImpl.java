@@ -20,18 +20,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class InitialNodeInformationImpl implements InitialNodeInformation {
 
-    // TODO made Serializable for rapid prototyping; change for production
+    // note: this object is only deserialized *after* protocol version checking, so the serialization is safe
     private static final long serialVersionUID = 6729868652469869965L;
 
     private String nodeIdString;
 
     private String displayName;
-
-    private boolean isWorkflowHost;
-
-    private String softwareVersion;
-
-    private String protocolVersion;
 
     private transient NodeIdentifier wrappedNodeId;
 
@@ -75,33 +69,6 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
     }
 
     @Override
-    public boolean getIsWorkflowHost() {
-        return isWorkflowHost;
-    }
-
-    public void setIsWorkflowHost(boolean isWorkflowHost) {
-        this.isWorkflowHost = isWorkflowHost;
-    }
-
-    @Override
-    public String getSoftwareVersion() {
-        return softwareVersion;
-    }
-
-    public void setSoftwareVersion(String softwareVersion) {
-        this.softwareVersion = softwareVersion;
-    }
-
-    @Override
-    public String getNativeProtocolVersion() {
-        return protocolVersion;
-    }
-
-    public void setProtocolVersion(String protocolVersion) {
-        this.protocolVersion = protocolVersion;
-    }
-
-    @Override
     public synchronized NodeIdentifier getNodeId() {
         // create the wrapped object on-the-fly to support bean-style construction
         if (wrappedNodeId == null) {
@@ -121,12 +88,12 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
 
     // NOTE: only intended for use in unit tests; not for production use!
     private String getInternalFingerprint() {
-        return StringUtils.format("%s#%s#%s#%s", nodeIdString, displayName, softwareVersion, protocolVersion);
+        return StringUtils.format("%s#%s", nodeIdString, displayName);
     }
 
     @Override
     public String toString() {
-        return StringUtils.format("%s/%s/%s/%s", nodeIdString, displayName, softwareVersion, protocolVersion);
+        return StringUtils.format("%s/%s", nodeIdString, displayName);
     }
 
     @Override

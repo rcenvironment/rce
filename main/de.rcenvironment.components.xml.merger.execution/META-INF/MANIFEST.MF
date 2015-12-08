@@ -2,8 +2,8 @@ Manifest-Version: 1.0
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE XML Merger Component Execution
-Bundle-SymbolicName: de.rcenvironment.components.xml.merger.execution;singleton:=true
-Bundle-Version: 6.3.0.qualifier
+Bundle-SymbolicName: de.rcenvironment.components.xml.merger.execution
+Bundle-Version: 7.0.0.qualifier
 Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.authorization,
@@ -29,10 +29,8 @@ Import-Package: de.rcenvironment.components.xml.merger.common,
  de.rcenvironment.core.utils.common.channel.legacy,
  de.rcenvironment.core.utils.common.variables.legacy,
  de.rcenvironment.core.utils.common.xml,
+ de.rcenvironment.core.utils.common.xml.api,
  de.rcenvironment.core.utils.incubator,
- de.rcenvironment.core.utils.incubator.xml,
- de.rcenvironment.core.utils.incubator.xml.api,
- de.rcenvironment.cpacs.utils.common.components,
  net.sf.saxon;version="9.4.0.1",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;provider=paxlogging,
@@ -43,5 +41,4 @@ Service-Component: OSGI-INF/*.xml
 Export-Package: de.rcenvironment.components.xml.merger.execution;version="6.0.0"
 RCE-Component: true
 Bundle-Vendor: DLR
-Bundle-ActivationPolicy: lazy
 Bundle-ClassPath: .

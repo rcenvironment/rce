@@ -34,7 +34,6 @@ import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
-import de.rcenvironment.core.authentication.User;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
@@ -171,7 +170,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
             JsonNode nodes = workflowDescriptionAsTree.get(NODES);
-            return new PersistentWorkflowDescription(createComponentDescriptions(nodes, null),
+            return new PersistentWorkflowDescription(createComponentDescriptions(nodes),
                 writer.writeValueAsString(workflowDescriptionAsTree));
         } catch (JsonProcessingException e) {
             LOGGER.error(e.getStackTrace());
@@ -251,7 +250,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
-        return new PersistentWorkflowDescription(createComponentDescriptions(nodes, null),
+        return new PersistentWorkflowDescription(createComponentDescriptions(nodes),
             writer.writeValueAsString(workflowDescriptionAsTree));
     }
 
@@ -263,8 +262,9 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
         JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
         JsonNode nodes = workflowDescriptionAsTree.get(NODES);
-
-        nodes = updateNodesToVersion3(nodes, jsonFactory);
+        if (nodes != null) {
+            nodes = updateNodesToVersion3(nodes, jsonFactory);
+        }
 
         ((ObjectNode) workflowDescriptionAsTree).remove(NODES);
         ((ObjectNode) workflowDescriptionAsTree).remove(WORKFLOW_VERSION);
@@ -274,7 +274,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         }
 
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
-        return new PersistentWorkflowDescription(createComponentDescriptions(nodes, null),
+        return new PersistentWorkflowDescription(createComponentDescriptions(nodes),
             writer.writeValueAsString(workflowDescriptionAsTree));
     }
 
@@ -448,7 +448,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     }
 
     @Override
-    public PersistentWorkflowDescription createPersistentWorkflowDescription(String persistentWorkflowDescriptionString, User user)
+    public PersistentWorkflowDescription createPersistentWorkflowDescription(String persistentWorkflowDescriptionString)
         throws JsonParseException, IOException {
 
         try (JsonParser jsonParser = new JsonFactory().createJsonParser(persistentWorkflowDescriptionString)) {
@@ -458,7 +458,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             List<PersistentComponentDescription> nodeDescriptionList = new ArrayList<PersistentComponentDescription>();
             JsonNode componentNodes = node.get(NODES);
             if (componentNodes != null) {
-                nodeDescriptionList = createComponentDescriptions(componentNodes, user);
+                nodeDescriptionList = createComponentDescriptions(componentNodes);
             }
 
             ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
@@ -467,7 +467,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         }
     }
 
-    private List<PersistentComponentDescription> createComponentDescriptions(JsonNode nodes, User user)
+    private List<PersistentComponentDescription> createComponentDescriptions(JsonNode nodes)
         throws JsonGenerationException, JsonMappingException, IOException {
 
         List<PersistentComponentDescription> componentDescriptions = new LinkedList<PersistentComponentDescription>();

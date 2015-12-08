@@ -13,13 +13,13 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
-import org.osgi.framework.InvalidSyntaxException;
+import org.osgi.framework.FrameworkUtil;
 import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
@@ -30,13 +30,13 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
-import de.rcenvironment.core.communication.rpc.ServiceProxyFactory;
+import de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
-import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StatsCounter;
-import de.rcenvironment.core.utils.incubator.ListenerDeclaration;
-import de.rcenvironment.core.utils.incubator.ListenerProvider;
+import de.rcenvironment.core.utils.common.rpc.RemotableService;
+import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
+import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 
 /**
  * Implementation of the {@link CommunicationService}.
@@ -44,7 +44,7 @@ import de.rcenvironment.core.utils.incubator.ListenerProvider;
  * @author Doreen Seider
  * @author Robert Mischke
  */
-public class CommunicationServiceImpl implements CommunicationService, ListenerProvider {
+public class CommunicationServiceImpl implements CommunicationService, AdditionalServicesProvider {
 
     private static final String SERVICE_NOT_AVAILABLE_ERROR = "The requested service is not available: ";
 
@@ -66,16 +66,26 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private BundleContext ownBundleContext;
+
     /**
      * OSGi-DS lifecycle method; also called by integration tests.
      */
     public void activate() {
-        localNodeId = platformService.getLocalNodeId();
+        this.localNodeId = platformService.getLocalNodeId();
 
         updateOnReachableNetworkChanged(routingService.getReachableNetworkGraph());
 
         // TODO old code; rework
         // RemoteServiceCallServiceImpl.bindNetworkRoutingService(routingService);
+
+        // TODO currently fetching the local BundleContext here for migration; rework
+        Bundle ownBundle = FrameworkUtil.getBundle(getClass());
+        if (ownBundle != null) {
+            ownBundleContext = ownBundle.getBundleContext();
+        } else {
+            ownBundleContext = null; // for integration tests
+        }
     }
 
     /**
@@ -87,9 +97,9 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
     }
 
     @Override
-    public Collection<ListenerDeclaration> defineListeners() {
-        List<ListenerDeclaration> result = new ArrayList<ListenerDeclaration>();
-        result.add(new ListenerDeclaration(NetworkTopologyChangeListener.class, new NetworkTopologyChangeListenerAdapter() {
+    public Collection<AdditionalServiceDeclaration> defineAdditionalServices() {
+        List<AdditionalServiceDeclaration> result = new ArrayList<AdditionalServiceDeclaration>();
+        result.add(new AdditionalServiceDeclaration(NetworkTopologyChangeListener.class, new NetworkTopologyChangeListenerAdapter() {
 
             @Override
             public void onReachableNodesChanged(Set<NodeIdentifier> reachableNodes, Set<NodeIdentifier> addedNodes,
@@ -156,27 +166,40 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
     }
 
     @Override
-    // TODO apply generics -- misc_ro
-    public Object getService(Class<?> iface, NodeIdentifier nodeId, BundleContext bundleContext) {
-        return getService(iface, null, nodeId, bundleContext);
+    public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
+        if (!iface.isAnnotationPresent(RemotableService.class)) {
+            throw new IllegalArgumentException("The requested interface is not a " + RemotableService.class.getSimpleName() + ": "
+                + iface.getName());
+        }
+
+        StatsCounter.count("CommunicationService.getRemotableService()", iface.getName());
+        // TODO once the annotation check is passed, simply delegate
+        return resolveServiceRequest(iface, nodeId, ownBundleContext);
     }
 
     @Override
-    // TODO apply generics -- misc_ro
-    public Object getService(Class<?> iface, Map<String, String> properties, NodeIdentifier nodeId,
-        BundleContext bundleContext) {
-
+    @Deprecated
+    // only used by own test anymore
+    public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext callerBundleContext) {
         StatsCounter.count("CommunicationService.getService()", iface.getName());
+        return resolveServiceRequest(iface, nodeId, callerBundleContext);
+    }
 
+    @SuppressWarnings("unchecked")
+    private <T> T resolveServiceRequest(Class<T> iface, NodeIdentifier nodeId, BundleContext callerBundleContext) {
         if (nodeId == null || platformService.isLocalNode(nodeId)) {
             if (forceLocalRPCSerialization) {
                 log.debug("Creating service proxy for local service as the 'force RPC serialization' flag is set: " + iface.getName());
-                return remoteServiceHandler.createServiceProxy(nodeId, iface, null, properties);
+                return (T) remoteServiceHandler.createServiceProxy(platformService.getLocalNodeId(), iface, null);
             } else {
-                return getLocalService(iface, properties, bundleContext);
+                T localService = getLocalService(iface, callerBundleContext);
+                if (localService == null) {
+                    throw new IllegalStateException("Unexpected state: There is no local instance of service " + iface.getName());
+                }
+                return localService;
             }
         } else {
-            return remoteServiceHandler.createServiceProxy(nodeId, iface, null, properties);
+            return (T) remoteServiceHandler.createServiceProxy(nodeId, iface, null);
         }
     }
 
@@ -187,30 +210,16 @@ public class CommunicationServiceImpl implements CommunicationService, ListenerP
         // newManagementService.connectToRuntimePeer(NetworkContactPointUtils.parseStringRepresentation(contactPointDefinition));
     }
 
-    protected Object getLocalService(Class<?> iface, Map<String, String> properties, BundleContext bundleContext) {
+    protected <T> T getLocalService(Class<? super T> iface, BundleContext callerBundleContext) {
 
+        // TODO use LocalServiceResolver for consistency instead
         ServiceReference<?> serviceReference;
 
-        if (properties != null && properties.size() > 0) {
-            try {
-                ServiceReference<?>[] serviceReferences = bundleContext.getServiceReferences(iface.getName(),
-                    ServiceUtils.constructFilter(properties));
-                if (serviceReferences != null) {
-                    serviceReference = serviceReferences[0];
-                } else {
-                    throw new IllegalStateException(SERVICE_NOT_AVAILABLE_ERROR + iface.getName());
-                }
-            } catch (InvalidSyntaxException e) {
-                throw new IllegalStateException();
-            } catch (ArrayIndexOutOfBoundsException e) {
-                throw new IllegalStateException(SERVICE_NOT_AVAILABLE_ERROR + iface.getName());
-            }
-        } else {
-            serviceReference = bundleContext.getServiceReference(iface.getName());
-        }
+        // TODO check for uniqueness (as with remote-accessed services?)
+        serviceReference = callerBundleContext.getServiceReference(iface.getName());
 
         if (serviceReference != null) {
-            Object service = bundleContext.getService(serviceReference);
+            T service = (T) callerBundleContext.getService(serviceReference);
             if (service != null) {
                 return service;
             } else {

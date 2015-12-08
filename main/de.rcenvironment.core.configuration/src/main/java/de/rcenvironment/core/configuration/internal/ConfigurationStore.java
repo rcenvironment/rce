@@ -11,6 +11,7 @@ package de.rcenvironment.core.configuration.internal;
 import java.io.File;
 import java.io.IOException;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 
 /**
@@ -40,9 +41,10 @@ public interface ConfigurationStore {
      * Updates the current configuration with a complete snapshot or a sub-segment of one.
      * 
      * @param configuration the part of a previously loaded snapshot to merge and write
+     * @throws ConfigurationException on errors in the configuration data
      * @throws IOException on I/O errors (general disk error or write conflict)
      */
-    void update(ConfigurationSegment configuration) throws IOException;
+    void update(ConfigurationSegment configuration) throws ConfigurationException, IOException;
 
     /**
      * Writes/exports the given {@link ConfigurationSegment} to a separate file.

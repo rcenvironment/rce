@@ -26,11 +26,15 @@ public class WorkflowRun extends WorkflowRunDescription implements Serializable 
     private static final long serialVersionUID = -6595800618979107754L;
 
     private Map<ComponentInstance, Set<ComponentRun>> componentRuns;
+    
+    private String wfFileReference;
 
     public WorkflowRun(Long workflowRunID, String workflowTitle, String controllerID, String datamanagementID, Long startTime,
-        Long endtime, FinalWorkflowState finalState, Boolean hasDataReferences, Boolean markedForDeletion) {
+        Long endtime, FinalWorkflowState finalState, Boolean hasDataReferences, Boolean markedForDeletion, Map<String, String> metaData,
+        String wfFileReference) {
         super(workflowRunID, workflowTitle, controllerID, datamanagementID, startTime, endtime, finalState, hasDataReferences,
-            markedForDeletion);
+            markedForDeletion, metaData);
+        this.wfFileReference = wfFileReference;
         componentRuns = new HashMap<ComponentInstance, Set<ComponentRun>>();
     }
 
@@ -53,5 +57,9 @@ public class WorkflowRun extends WorkflowRunDescription implements Serializable 
 
     public Map<ComponentInstance, Set<ComponentRun>> getComponentRuns() {
         return componentRuns;
+    }
+    
+    public String getWfFileReference() {
+        return wfFileReference;
     }
 }

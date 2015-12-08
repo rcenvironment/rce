@@ -13,13 +13,15 @@ import java.io.Serializable;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
+import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
+import de.rcenvironment.core.communication.messaging.internal.NetworkRequestUtils;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 
 /**
- * A {@link NetworkRequestHandler} for integration tests. It expects String payloads and responds to
- * them with Strings of a certain, predictable pattern.
+ * A {@link NetworkRequestHandler} for integration tests. It expects String payloads and responds to them with Strings of a certain,
+ * predictable pattern.
  * 
  * @author Robert Mischke
  */
@@ -32,17 +34,21 @@ public class TestNetworkRequestHandler implements NetworkRequestHandler {
     }
 
     @Override
-    public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier lastHopNodeId) throws SerializationException {
-        Serializable content = request.getDeserializedContent();
+    public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier lastHopNodeId) throws InternalMessagingException {
+        Serializable content = NetworkRequestUtils.deserializeWithExceptionHandling(request);
         if (!(content instanceof String)) {
             throw new RuntimeException("Test request handler received a non-string request: " + content);
         }
-        return NetworkResponseFactory.generateSuccessResponse(request, getTestResponse((String) content, ownNodeId));
+        try {
+            return NetworkResponseFactory.generateSuccessResponse(request, getTestResponse((String) content, ownNodeId));
+        } catch (SerializationException e) {
+            throw new InternalMessagingException("Failed to serialize the result of  test call " + content, e);
+        }
     }
 
     /**
-     * The generation method for response strings. Tests should call this method to determine the
-     * expected response, instead of using hard-coded strings.
+     * The generation method for response strings. Tests should call this method to determine the expected response, instead of using
+     * hard-coded strings.
      * 
      * @param content the received request content
      * @param respondingNodeId the id of the node generating the response

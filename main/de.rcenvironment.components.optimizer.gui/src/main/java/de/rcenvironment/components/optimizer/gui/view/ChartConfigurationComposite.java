@@ -17,15 +17,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 
-import org.eclipse.nebula.visualization.xygraph.dataprovider.AbstractDataProvider;
-import org.eclipse.nebula.visualization.xygraph.dataprovider.ISample;
-import org.eclipse.nebula.visualization.xygraph.dataprovider.Sample;
-import org.eclipse.nebula.visualization.xygraph.figures.Axis;
-import org.eclipse.nebula.visualization.xygraph.figures.Trace;
-import org.eclipse.nebula.visualization.xygraph.figures.Trace.PointStyle;
-import org.eclipse.nebula.visualization.xygraph.figures.Trace.TraceType;
-import org.eclipse.nebula.visualization.xygraph.figures.XYGraph;
-import org.eclipse.nebula.visualization.xygraph.linearscale.Range;
 import org.eclipse.draw2d.LightweightSystem;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.dialogs.IDialogConstants;
@@ -35,6 +26,15 @@ import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.SelectionChangedEvent;
 import org.eclipse.jface.viewers.StructuredSelection;
+import org.eclipse.nebula.visualization.xygraph.dataprovider.AbstractDataProvider;
+import org.eclipse.nebula.visualization.xygraph.dataprovider.ISample;
+import org.eclipse.nebula.visualization.xygraph.dataprovider.Sample;
+import org.eclipse.nebula.visualization.xygraph.figures.Axis;
+import org.eclipse.nebula.visualization.xygraph.figures.Trace;
+import org.eclipse.nebula.visualization.xygraph.figures.Trace.PointStyle;
+import org.eclipse.nebula.visualization.xygraph.figures.Trace.TraceType;
+import org.eclipse.nebula.visualization.xygraph.figures.XYGraph;
+import org.eclipse.nebula.visualization.xygraph.linearscale.Range;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.SashForm;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -52,11 +52,10 @@ import org.eclipse.swt.widgets.Tree;
 
 import de.rcenvironment.components.optimizer.common.Dimension;
 import de.rcenvironment.components.optimizer.common.Measure;
+import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerResultSet;
 import de.rcenvironment.components.optimizer.gui.properties.Messages;
 import de.rcenvironment.components.optimizer.gui.view.OptimizerDatastore.OptimizerResultSetAddListener;
-import de.rcenvironment.core.datamodel.types.api.FloatTD;
-import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.gui.utils.common.configuration.BeanConfigurationDialog;
 import de.rcenvironment.core.gui.utils.common.configuration.BeanConfigurationSourceAdapter;
 import de.rcenvironment.core.gui.utils.common.configuration.ConfigurationViewer;
@@ -262,19 +261,18 @@ public class ChartConfigurationComposite extends Composite implements
                 dialog.create();
                 // change the title of the shall upon changes of the 'name'
                 // property
-                trace.addPropertyChangeListener("name",
-                    new PropertyChangeListener() {
+                trace.addPropertyChangeListener("name", new PropertyChangeListener() {
 
-                        @Override
-                        public void propertyChange(PropertyChangeEvent evt) {
-                            try {
-                                dialog.getShell().setText(trace.toString());
-                            } catch (RuntimeException e) {
-                                e = null;
-                            }
+                    @Override
+                    public void propertyChange(PropertyChangeEvent evt) {
+                        try {
+                            dialog.getShell().setText(trace.toString());
+                        } catch (RuntimeException e) {
+                            e = null;
                         }
+                    }
 
-                    });
+                });
                 if (dialog.open() == IDialogConstants.OK_ID) {
                     if (trace.getXAxis() != null && trace.getYAxis() != null) {
                         configuration.addTrace(trace);
@@ -484,11 +482,9 @@ public class ChartConfigurationComposite extends Composite implements
                 ChartConfiguration.Trace.PROPERTY_Y_AXIS, axisListener);
             //
             final Dimension dimension = studyDatastore
-                .getStructure().getDimension(
-                    configurationTrace.getXAxis().getTitle());
+                .getStructure().getDimension(configurationTrace.getXAxis().getTitle());
             final Measure measure = studyDatastore
-                .getStructure().getMeasure(
-                    configurationTrace.getYAxis().getTitle());
+                .getStructure().getMeasure(configurationTrace.getYAxis().getTitle());
             final DataProvider dataProvider = new DataProvider(dimension,
                 measure);
             dataProviders.add(dataProvider);
@@ -629,13 +625,12 @@ public class ChartConfigurationComposite extends Composite implements
          */
         private void addDataset(OptimizerResultSet dataset) {
             double xdata = 0;
-            if (dataset.getValue(dimension.getName()) instanceof IntegerTD) {
-                xdata = ((IntegerTD) dataset.getValue(dimension.getName())).getIntValue();
+            if (!dimension.getName().equals(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME)) {
+                xdata = dataset.getValue("Output: " + dimension.getName());
             } else {
-                xdata = ((FloatTD) dataset.getValue(dimension.getName())).getFloatValue();
+                xdata = dataset.getValue(dimension.getName());
             }
-
-            final double ydata = ((FloatTD) dataset.getValue(measure.getName())).getFloatValue();
+            final double ydata = dataset.getValue(measure.getName());
             final Sample sample = new Sample(xdata, ydata);
             addSample(sample);
             Display.getDefault().syncExec(new Runnable() {

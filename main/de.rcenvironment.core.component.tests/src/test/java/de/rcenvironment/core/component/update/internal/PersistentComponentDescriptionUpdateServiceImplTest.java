@@ -22,6 +22,7 @@ import org.junit.Test;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Test cases for {@link PersistentComponentDescriptionUpdateServiceImpl}.
@@ -41,10 +42,11 @@ public class PersistentComponentDescriptionUpdateServiceImplTest {
     
     /** 
      * Test. 
-     * @throws IOException on errors
+     * @throws IOException on unexpected errors
+     * @throws RemoteOperationException on unexpected errors
      **/
     @Test
-    public void test() throws IOException {
+    public void test() throws IOException, RemoteOperationException {
         
         PersistentComponentDescriptionUpdater updater = new Updater();
         PersistentComponentDescriptionUpdater nonUpdater = new NonUpdater();

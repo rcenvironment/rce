@@ -14,14 +14,11 @@
 	</parent>
 
 	<modules>
-		<module>${projects-root}/de.rcenvironment.cpacs.utils.common</module>
+		<module>${projects-root}/de.rcenvironment.core.component.integration.cpacs</module>
 
-		<module>${projects-root}/de.rcenvironment.cpacs.component.integration</module>
-
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.xpathchooser</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.wizards.toolintegration</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.wizards.exampleproject</module>
-		<module>${projects-root}/de.rcenvironment.cpacs.gui.workflow.integration</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.wizards.toolintegration.cpacs</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.wizards.exampleproject.cpacs</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.workflow.integration.cpacs</module>
 
 		<module>${projects-root}/de.rcenvironment.filesets.integration.tools.templates.cpacs.feature</module>
 	</modules>

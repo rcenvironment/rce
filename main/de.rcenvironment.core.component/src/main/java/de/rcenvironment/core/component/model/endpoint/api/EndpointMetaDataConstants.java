@@ -40,6 +40,9 @@ public final class EndpointMetaDataConstants {
 
     /** Type of meta datum. */
     public static final String TYPE_FLOAT = "float";
+    
+    /** Type of meta datum. */
+    public static final String TYPE_FLOAT_GREATER_ZERO = "float_greater_zero";
 
     /** Placeholder for any possible value. */
     public static final String PLACEHOLDER_ANY_POSSIBLE_VALUE = "*";
