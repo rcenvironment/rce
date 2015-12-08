@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Cluster Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.cluster.execution
-Bundle-Version: 7.0.0.qualifier
+Bundle-Version: 7.0.1.qualifier
 Import-Package: de.rcenvironment.components.cluster.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.common,

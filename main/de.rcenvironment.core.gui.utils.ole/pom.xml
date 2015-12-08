@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.utils.ole</artifactId>
 	<name>RCE Core GUI Utils OLE</name>
-	<version>7.0.0.qualifier</version>
+	<version>7.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

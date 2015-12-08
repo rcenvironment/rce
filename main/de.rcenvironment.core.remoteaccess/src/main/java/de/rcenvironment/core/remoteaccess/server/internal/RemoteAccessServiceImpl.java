@@ -640,7 +640,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                         foundParametersSource, outputReceiver);
                 }
             } else if (compId.startsWith("de.rcenvironment.outputwriter/")) {
-                validateEquals("1.1", compVersion, "Invalid component version");
+                validateEquals("2.0", compVersion, "Invalid component version");
                 Map<String, String> compConfig = compDesc.getConfigurationDescription().getConfiguration();
                 String selectedRoot = compConfig.get("SelectedRoot");
                 if (WF_PLACEHOLDER_OUTPUT_PARENT_DIR.equals(selectedRoot)) {

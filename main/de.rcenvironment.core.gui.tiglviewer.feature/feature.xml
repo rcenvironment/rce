@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.gui.tiglviewer.feature"
       label="RCE Core GUI TiGLViewer Feature"
-      version="7.0.0.qualifier"
+      version="7.0.1.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

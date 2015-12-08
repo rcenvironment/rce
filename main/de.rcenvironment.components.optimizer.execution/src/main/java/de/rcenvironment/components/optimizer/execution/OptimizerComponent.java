@@ -349,7 +349,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             try {
                 TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(workDir);
             } catch (IOException e) {
-                LOGGER.error("Failed to delete temorary directory", e);
+                LOGGER.error("Failed to delete temporary directory", e);
             }
         }
 
@@ -741,14 +741,14 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             if (optimalRunNumber != Integer.MIN_VALUE && optimum != null) {
                 for (String e : output) {
                     if (componentContext.getOutputDataType(e) == DataType.Vector) {
+                        int vectorSize = Integer.parseInt(componentContext.getOutputMetaDataValue(e,
+                            OptimizerComponentConstants.METADATA_VECTOR_SIZE));
                         VectorTD optimumVector =
-                            typedDatumFactory.createVector(Integer.parseInt(componentContext.getOutputMetaDataValue(e,
-                                OptimizerComponentConstants.METADATA_VECTOR_SIZE)));
-                        for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(e,
-                            OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
-                            runtimeViewValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                                ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i));
-                            optimumVector.setFloatTDForElement(((VectorTD) outputValues.get(e)).getFloatTDOfElement(i), i);
+                            typedDatumFactory.createVector(vectorSize);
+                        for (int i = 0; i < vectorSize; i++) {
+                            String vectorOutputName = e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i;
+                            runtimeViewValues.put(vectorOutputName, typedDatumFactory.createFloat(optimum.get(vectorOutputName)));
+                            optimumVector.setFloatTDForElement(typedDatumFactory.createFloat(optimum.get(vectorOutputName)), i);
                         }
                         writeOutput(e + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX, optimumVector);
                     } else {

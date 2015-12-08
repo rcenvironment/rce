@@ -1271,7 +1271,6 @@ public class WorkflowDescriptionPersistenceHandler {
             String sourceId = c.getSourceNode().getIdentifier();
             String targetId = c.getTargetNode().getIdentifier();
             List<Location> bendpoints = c.getBendpoints();
-            Collections.sort(bendpoints);
             if (!bendpoints.isEmpty()) {
                 String bendpointString = parseListOfBendpointsToString(bendpoints);
                 // note that for sake of simplicity the same separator as for bendpoints is used here

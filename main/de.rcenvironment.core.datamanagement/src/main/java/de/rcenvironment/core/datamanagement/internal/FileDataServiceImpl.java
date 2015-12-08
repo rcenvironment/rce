@@ -42,6 +42,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * 
  * @author Doreen Seider
  * @author Robert Mischke (added buffering and new remote upload)
+ * @author Brigitte Boden (added method for small uploads)
  */
 public class FileDataServiceImpl implements FileDataService {
 
@@ -198,7 +199,7 @@ public class FileDataServiceImpl implements FileDataService {
                 contentSize = 0;
             }
             while (actualRead < buffer.length && actualRead != END_OF_STREAM_MARKER) {
-                // Theoretically, it is possible that the read method didn't fill the buffer altough the end of the stream is not reached.
+                // Theoretically, it is possible that the read method didn't fill the buffer although the end of the stream is not reached.
                 // In this case, read until the buffer is full or the end is reached.
                 actualRead = inputStream.read(buffer, contentSize, buffer.length - contentSize);
                 // sanity check
@@ -336,11 +337,16 @@ public class FileDataServiceImpl implements FileDataService {
                 SharedThreadPool.getInstance().execute(asyncUploader);
 
                 long totalRead2 = 0; // other counter is held by writer thread; duplicate to avoid sync
-                // ChunkBuffer readBuffer = asyncUploader.getInitialEmptyBuffer();
                 do {
                     totalRead2 += readBuffer.getContentSize();
                     readBuffer = asyncUploader.swapBuffersWhenReady(readBuffer);
                 } while (readBuffer.fillFromStream(inputStream));
+                if (readBuffer.getContentSize() > 0) {
+                    //Because the fillFromStream method tries reading from the stream again if not the full buffer size was read,
+                    //it is possible that in the last iteration fillFromStream returns false, but the last content is still in the buffer.
+                    totalRead2 += readBuffer.getContentSize();
+                    readBuffer = asyncUploader.swapBuffersWhenReady(readBuffer);
+                }
                 asyncUploader.shutDown();
                 remoteDataService.finishUpload(uploadId, metaDataSet);
                 log.debug(StringUtils.format("Finished uploading %d bytes for upload id %s; polling for remote data reference", totalRead2,

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SSH Tool Access Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.sshremoteaccess.tests
-Bundle-Version: 7.0.0.qualifier
+Bundle-Version: 7.0.1.qualifier
 Bundle-Vendor: DLR
 Fragment-Host: de.rcenvironment.core.component.sshremoteaccess;bundle-version="7.0.0"
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7

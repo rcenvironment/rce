@@ -130,7 +130,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
     private static final Object LOCK_OBJECT = new Object();
 
-    private static final double RESULT_EPS = 1e-10;
+    private static final double RESULT_EPS = 1e-9;
 
     private static File dakotaExecutablePath = null;
 
@@ -460,7 +460,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                 boolean containsAll = true;
                 for (String variable : results.keySet()) {
                     // Have to use this since the accuracy of the variables is a bit different.
-                    if (Math.abs(results.get(variable) - iterationValues.get(variable)) > RESULT_EPS) {
+                    if (Math.abs((iterationValues.get(variable) - results.get(variable)) / iterationValues.get(variable)) > RESULT_EPS) {
                         containsAll = false;
                     }
                 }
@@ -471,7 +471,6 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         } catch (IOException e) {
             return Integer.MIN_VALUE;
         }
-
         return Integer.MIN_VALUE;
     }
 
@@ -725,7 +724,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
             if (discrete == isDiscrete) {
                 if (compContext.getOutputDataType(variableOrderForWholeExecution[i]) == DataType.Vector) {
-                    for (int j = 0; j < 2; j++) {
+                    for (int j = 0; j < Integer.parseInt(compContext.getOutputMetaDataValue(variableOrderForWholeExecution[i],
+                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); j++) {
                         result +=
                             (TABS + boundValues.get(variableOrderForWholeExecution[i]
                                 + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + j));

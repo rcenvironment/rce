@@ -257,11 +257,12 @@ public class OutputWriterComponent extends DefaultComponent {
             } catch (IOException e) {
                 throw new ComponentException(StringUtils.format("Failed to write directory of input '%s' to %s",
                     inputName, incFileOrDir.getAbsolutePath()), e);
-            }
-            try {
-                tempFileService.disposeManagedTempDirOrFile(tempDir);
-            } catch (IOException e) {
-                LogFactory.getLog(getClass()).error("Failed to delete temporary directory", e);
+            } finally {
+                try {
+                    tempFileService.disposeManagedTempDirOrFile(tempDir);
+                } catch (IOException e) {
+                    LogFactory.getLog(getClass()).error("Failed to delete temporary directory", e);
+                }
             }
             componentLog.componentInfo(StringUtils.format("Wrote directory of input '%s' to: %s",
                 inputName, incFileOrDir.getAbsolutePath()));

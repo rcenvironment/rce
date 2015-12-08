@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.jetty.tests</artifactId>
 	<name>RCE Core Jetty Tests</name>
-	<version>7.0.0.qualifier</version>
+	<version>7.0.1.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>
