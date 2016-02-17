@@ -4,11 +4,11 @@ Software website: [http://rcenvironment.de](http://rcenvironment.de)
 
 ##### Issue Tracker
 
-See the [main issue tracker](https://www.sistec.dlr.de/mantis/roadmap_page.php) for the complete set of issues and an up-to-date roadmap. It is currently read-only. Go to the [GitHub issue tracker](https://github.com/rcenvironment/rce/issues) to report new issues.
+See the [main issue tracker](https://mantis.sc.dlr.de/roadmap_page.php) for the complete set of issues and an up-to-date roadmap. It is currently read-only. Go to the [GitHub issue tracker](https://github.com/rcenvironment/rce/issues) to report new issues.
 
 ##### Changelog
 
-See [this wiki page](https://github.com/rcenvironment/rce/wiki/Changelog:-7.x.x-Releases) for a list of changes that are immediately visible to end users. For a more complete, but also more technical changelog, see the [main issue tracker](https://www.sistec.dlr.de/mantis/changelog_page.php).
+See [this wiki page](https://github.com/rcenvironment/rce/wiki/Changelog:-7.x.x-Releases) for a list of changes that are immediately visible to end users. For a more complete, but also more technical changelog, see the [main issue tracker](https://mantis.sc.dlr.de/changelog_page.php).
 
 ##### Get RCE (as a built product)
 
