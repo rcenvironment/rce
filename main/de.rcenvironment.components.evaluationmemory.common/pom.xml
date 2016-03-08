@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.evaluationmemory.common</artifactId>
 	<name>RCE Evaluation Memory Component Common Bundle</name>
-	<version>7.0.1.qualifier</version>
+	<version>7.0.2.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -27,7 +27,6 @@ import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
-import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
 import de.rcenvironment.core.communication.transport.spi.HandshakeInformation;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
@@ -108,48 +107,55 @@ public abstract class AbstractJmsTransportProvider implements NetworkTransportPr
     }
 
     @Override
-    public MessageChannel connect(NetworkContactPoint ncp, InitialNodeInformation ownNodeInformation, boolean allowInverseConnection,
-        MessageChannelEndpointHandler inverseConnectionEndpointHandler, BrokenMessageChannelListener brokenConnectionListener)
-        throws CommunicationException {
+    public MessageChannel connect(NetworkContactPoint ncp, InitialNodeInformation ownNodeInformation, String ownProtocolVersion,
+        boolean allowInverseConnection, MessageChannelEndpointHandler inverseConnectionEndpointHandler,
+        BrokenMessageChannelListener brokenConnectionListener) throws CommunicationException {
+        SelfInitiatedJmsMessageChannel newChannel = null;
         try {
-            ConnectionFactory connectionFactory = artifactFactory.createConnectionFactory(ncp);
-            NodeIdentifier localNodeId = ownNodeInformation.getNodeId();
-            SelfInitiatedJmsMessageChannel newChannel =
-                new SelfInitiatedJmsMessageChannel(localNodeId, connectionFactory, brokenConnectionListener);
-            newChannel.setChannelId(connectionIdFactory.generateId(true));
-            newChannel.connectToJmsBroker();
+            try {
+                ConnectionFactory connectionFactory = artifactFactory.createConnectionFactory(ncp);
+                NodeIdentifier localNodeId = ownNodeInformation.getNodeId();
+                newChannel = new SelfInitiatedJmsMessageChannel(localNodeId, connectionFactory, brokenConnectionListener);
+                newChannel.setChannelId(connectionIdFactory.generateId(true));
+                newChannel.connectToJmsBroker();
 
-            log.debug("Connected to JMS broker; sending initial handshake with identity '" + localNodeId + "'");
+                log.debug("Connected to JMS broker; sending initial handshake with identity '" + localNodeId + "'");
 
-            JMSHandshakeInformation ownHandshakeInformation = new JMSHandshakeInformation();
-            ownHandshakeInformation.setProtocolVersionString(ProtocolConstants.PROTOCOL_COMPATIBILITY_VERSION);
-            ownHandshakeInformation.setInitialNodeInformation(ownNodeInformation);
-            ownHandshakeInformation.setChannelId(newChannel.getChannelId());
+                JMSHandshakeInformation ownHandshakeInformation = new JMSHandshakeInformation();
+                ownHandshakeInformation.setProtocolVersionString(ownProtocolVersion);
+                ownHandshakeInformation.setInitialNodeInformation(ownNodeInformation);
+                ownHandshakeInformation.setChannelId(newChannel.getChannelId());
 
-            // this throws a CommunicationException in case of protocol version mismatch
-            HandshakeInformation remoteHandshakeInformation =
-                newChannel.performInitialHandshake(ownHandshakeInformation, inverseConnectionEndpointHandler);
+                // this throws a CommunicationException in case of protocol version mismatch
+                HandshakeInformation remoteHandshakeInformation =
+                    newChannel.performInitialHandshake(ownHandshakeInformation, inverseConnectionEndpointHandler);
 
-            InitialNodeInformation remoteNodeInformation = remoteHandshakeInformation.getInitialNodeInformation();
-            newChannel.setRemoteNodeInformation(remoteNodeInformation);
+                InitialNodeInformation remoteNodeInformation = remoteHandshakeInformation.getInitialNodeInformation();
+                newChannel.setRemoteNodeInformation(remoteNodeInformation);
 
-            log.debug("Successfully performed JMS handshake with remote node " + remoteNodeInformation.getLogDescription());
-            // basic check against duplicate node ids; does not guard against non-neighbor nodes
-            // with same id
-            if (remoteNodeInformation.getNodeIdString().equals(localNodeId.getIdString())) {
-                throw new CommunicationException("Invalid setup: Remote and local node share the same node id: "
-                    + localNodeId.getIdString());
+                log.debug("Successfully performed JMS handshake with remote node " + remoteNodeInformation.getLogDescription());
+                // basic check against duplicate node ids; does not guard against non-neighbor nodes
+                // with same id
+                if (remoteNodeInformation.getNodeIdString().equals(localNodeId.getIdString())) {
+                    throw new CommunicationException("Invalid setup: Remote and local node share the same node id: "
+                        + localNodeId.getIdString());
+                }
+                newChannel.markAsEstablished();
+                return newChannel;
+            } catch (IOException e) {
+                throw new CommunicationException("Failed to initiate JMS connection", e);
+            } catch (RuntimeException e) {
+                throw new CommunicationException("Failed to establish JMS connection", e);
+            } catch (JMSException e) {
+                throw new CommunicationException("Failed to establish JMS connection. Reason: " + e.toString()); // compress stacktrace
+            } catch (TimeoutException e) {
+                throw new CommunicationException("Timeout while establishing JMS connection", e);
             }
-            newChannel.markAsEstablished();
-            return newChannel;
-        } catch (IOException e) {
-            throw new CommunicationException("Failed to initiate JMS connection", e);
-        } catch (RuntimeException e) {
-            throw new CommunicationException("Failed to establish JMS connection", e);
-        } catch (JMSException e) {
-            throw new CommunicationException("Failed to establish JMS connection. Reason: " + e.toString()); // compress stacktrace
-        } catch (TimeoutException e) {
-            throw new CommunicationException("Timeout while establishing JMS connection", e);
+        } catch (CommunicationException e) {
+            if (newChannel != null) {
+                newChannel.onClosedOrBroken();
+            }
+            throw e;
         }
     }
 

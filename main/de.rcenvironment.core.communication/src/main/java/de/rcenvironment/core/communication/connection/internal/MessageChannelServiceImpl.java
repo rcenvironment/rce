@@ -92,6 +92,9 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     private NodeConfigurationService configurationService;
 
+    // stored here to allow overriding in integration tests
+    private String protocolVersion = ProtocolConstants.PROTOCOL_COMPATIBILITY_VERSION;
+
     private RawMessageChannelEndpointHandlerImpl rawMessageChannelEndpointHandler;
 
     private MessageRoutingService messageRoutingService;
@@ -319,8 +322,8 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 MessageChannel channel;
                 try {
                     channel =
-                        transportProvider
-                            .connect(ncp, ownNodeInformation, allowDuplex, rawMessageChannelEndpointHandler, brokenConnectionListener);
+                        transportProvider.connect(ncp, ownNodeInformation, protocolVersion, allowDuplex, rawMessageChannelEndpointHandler,
+                            brokenConnectionListener);
                 } catch (RuntimeException e) {
                     // FIXME add internal event handling of channel failures?
                     logger.error("Failed to connect to " + ncp + " (local node: " + ownNodeInformation.getLogDescription() + ")", e);
@@ -524,7 +527,8 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     @Override
     public ServerContactPoint startServer(NetworkContactPoint ncp) throws CommunicationException {
         NetworkTransportProvider transportProvider = getTransportProvider(ncp.getTransportId());
-        ServerContactPoint scp = new ServerContactPoint(transportProvider, ncp, rawMessageChannelEndpointHandler, globalIPWhitelistFilter);
+        ServerContactPoint scp =
+            new ServerContactPoint(transportProvider, ncp, protocolVersion, rawMessageChannelEndpointHandler, globalIPWhitelistFilter);
         scp.start();
         return scp;
     }
@@ -640,6 +644,11 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     @Override
     public void setForwardingService(MessageRoutingService newService) {
         this.messageRoutingService = newService;
+    }
+
+    @Override
+    public void overrideProtocolVersion(String newVersion) {
+        this.protocolVersion = newVersion;
     }
 
     /**

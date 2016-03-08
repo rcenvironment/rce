@@ -34,7 +34,7 @@ public class VirtualTopology {
 
     private boolean connectBothDirectionsByDefaultFlag;
 
-    public VirtualTopology(VirtualInstance[] instances) {
+    public VirtualTopology(VirtualInstance... instances) {
         this.instances = instances;
         allInstancesGroup = new VirtualInstanceGroup(instances);
         lastIndex = instances.length - 1;

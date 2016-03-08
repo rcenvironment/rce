@@ -14,7 +14,6 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 import javax.jms.MessageConsumer;
-import javax.jms.MessageProducer;
 import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TemporaryQueue;
@@ -174,7 +173,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
             try {
                 final Queue destinationQueue = session.createQueue(outgoingRequestQueueName);
                 Message shutdownMessage = JmsProtocolUtils.createChannelShutdownMessage(session, getChannelId(), shutdownSecurityToken);
-                session.createProducer(destinationQueue).send(shutdownMessage);
+                session.createProducer(destinationQueue).send(shutdownMessage); // disposed in finally block (as part of the session)
             } finally {
                 session.close();
             }
@@ -201,7 +200,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
                     try {
                         final Queue destinationQueue = session.createQueue(outgoingRequestQueueName);
                         Message shutdownMessage = JmsProtocolUtils.createQueueShutdownMessage(session, shutdownSecurityToken);
-                        session.createProducer(destinationQueue).send(shutdownMessage);
+                        session.createProducer(destinationQueue).send(shutdownMessage); // disposed in finally block (part of the session)
                     } finally {
                         session.close();
                     }
@@ -239,9 +238,13 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
 
     @Override
     protected void onClosedOrBroken() {
-        requestSender.shutdown();
+        if (requestSender != null) {
+            requestSender.shutdown();
+        }
         try {
-            responseInboxConsumer.triggerShutDown();
+            if (responseInboxConsumer != null) {
+                responseInboxConsumer.triggerShutDown();
+            }
         } catch (JMSException e) {
             log.warn("Error while shutting down response consumer for channel " + getChannelId(), e);
         }
@@ -427,9 +430,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
     }
 
     private void sendRequest(final Session session, Message message, final Queue destinationQueue) throws JMSException {
-        MessageProducer producer = session.createProducer(destinationQueue);
-        JmsProtocolUtils.configureMessageProducer(producer);
-        producer.send(message);
+        JmsProtocolUtils.sendWithTransientProducer(session, message, destinationQueue);
     }
 
     private Message receiveResponse(final Session session, int timeoutMsec, final TemporaryQueue tempResponseQueue) throws JMSException,

@@ -95,7 +95,9 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         IPWhitelistConnectionFilter ipFilter = new IPWhitelistConnectionFilter();
         // allow test connections from IPv4 localhost; adapt if necessary
         ipFilter.configure(Arrays.asList(new String[] { "127.0.0.1" }));
-        ServerContactPoint scp = new ServerContactPoint(transportProvider, ncp, serverEndpointHandler, ipFilter);
+        ServerContactPoint scp =
+            new ServerContactPoint(transportProvider, ncp, ProtocolConstants.PROTOCOL_COMPATIBILITY_VERSION, serverEndpointHandler,
+                ipFilter);
         // start it
         assertFalse(scp.isAcceptingMessages());
         scp.start();
@@ -107,7 +109,8 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         // connect
         // (allows duplex connections, but omits client endpoint handler as it should not be used)
         MessageChannel channel =
-            transportProvider.connect(ncp, clientNodeInformation, true, null, brokenConnectionListener);
+            transportProvider.connect(ncp, clientNodeInformation, ProtocolConstants.PROTOCOL_COMPATIBILITY_VERSION, true, null,
+                brokenConnectionListener);
 
         assertEquals(MessageChannelState.ESTABLISHED, channel.getState());
         assertTrue(channel.isReadyToUse());

@@ -90,7 +90,8 @@ public class DataManagementServiceImpl implements DataManagementService {
         }
     }
 
-    private void createTarGz(File dir, File archive) throws IOException {
+    // set visibility to from private to protected for test purposes
+    protected void createTarGz(File dir, File archive) throws IOException {
 
         try (FileOutputStream fileOutStream = new FileOutputStream(archive);
             BufferedOutputStream bufferedOutStream = new BufferedOutputStream(fileOutStream);
@@ -194,7 +195,8 @@ public class DataManagementServiceImpl implements DataManagementService {
         TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(archive);
     }
 
-    private void createDirectoryFromTarGz(File archive, File targetDir) throws FileNotFoundException, IOException {
+    // set visibility to from private to protected for test purposes
+    protected void createDirectoryFromTarGz(File archive, File targetDir) throws FileNotFoundException, IOException {
 
         targetDir.mkdirs();
 
@@ -208,25 +210,23 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     private void createFileOrDirForTarEntry(TarArchiveInputStream tarInStream, File targetDir) throws IOException {
 
-        TarArchiveEntry tarEntry = tarInStream.getNextTarEntry();
-        if (tarEntry == null) {
-            return;
-        }
-        File destPath = new File(targetDir, tarEntry.getName());
-        if (tarEntry.isDirectory()) {
-            destPath.mkdirs();
-        } else {
-            destPath.createNewFile();
-            byte[] btoRead = new byte[BUFFER];
-            try (BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(destPath))) {
-                int len = 0;
-                final int minusOne = -1;
-                while ((len = tarInStream.read(btoRead)) != minusOne) {
-                    bout.write(btoRead, 0, len);
+        TarArchiveEntry tarEntry;
+        while ((tarEntry = tarInStream.getNextTarEntry()) != null) {
+            File destPath = new File(targetDir, tarEntry.getName());
+            if (tarEntry.isDirectory()) {
+                destPath.mkdirs();
+            } else {
+                destPath.createNewFile();
+                byte[] btoRead = new byte[BUFFER];
+                try (BufferedOutputStream bout = new BufferedOutputStream(new FileOutputStream(destPath))) {
+                    int len = 0;
+                    final int minusOne = -1;
+                    while ((len = tarInStream.read(btoRead)) != minusOne) {
+                        bout.write(btoRead, 0, len);
+                    }
                 }
             }
         }
-        createFileOrDirForTarEntry(tarInStream, targetDir);
     }
 
     @Override

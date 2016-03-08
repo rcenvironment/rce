@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Scripting
 Bundle-SymbolicName: de.rcenvironment.core.utils.scripting
-Bundle-Version: 7.0.1.qualifier
+Bundle-Version: 7.0.2.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: 
  de.rcenvironment.core.utils.scripting

@@ -123,7 +123,7 @@ public class ActiveMQBroker implements JmsBroker {
                 log.debug("Sending internal queue shutdown commands");
                 String securityToken = "secToken"; // FIXME use proper token
                 Message poisonPill = JmsProtocolUtils.createQueueShutdownMessage(shutdownSession, securityToken);
-                MessageProducer producer = shutdownSession.createProducer(null);
+                MessageProducer producer = shutdownSession.createProducer(null); // disposed in finally block (as part of the session)
                 JmsProtocolUtils.configureMessageProducer(producer);
                 producer.send(shutdownSession.createQueue(JmsProtocolConstants.QUEUE_NAME_INITIAL_BROKER_INBOX), poisonPill);
                 for (int i = 0; i < numRequestConsumers; i++) {
@@ -179,11 +179,11 @@ public class ActiveMQBroker implements JmsBroker {
     }
 
     private void spawnInboxConsumers(Connection connection) throws JMSException {
-        MessageChannelEndpointHandler endpointHandler = scp.getEndpointHandler();
         log.debug("Spawning initial inbox consumer for " + scp.toString());
-        threadPool.execute(new InitialInboxConsumer(connection, endpointHandler, scp, remoteInitiatedConnectionFactory));
+        threadPool.execute(new InitialInboxConsumer(connection, scp, remoteInitiatedConnectionFactory));
 
         log.debug("Spawning " + numRequestConsumers + " request inbox consumer(s) for " + scp);
+        final MessageChannelEndpointHandler endpointHandler = scp.getEndpointHandler();
         for (int i = 1; i <= numRequestConsumers; i++) {
             threadPool.execute(
                 new RequestInboxConsumer(JmsProtocolConstants.QUEUE_NAME_C2B_REQUEST_INBOX, connection, endpointHandler),

@@ -37,6 +37,7 @@ import org.codehaus.jackson.node.TextNode;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
@@ -490,7 +491,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         return componentDescriptions;
     }
 
-    private PersistentComponentDescription checkAndSetNodeIdentifier(PersistentComponentDescription compDesc,
+    protected PersistentComponentDescription checkAndSetNodeIdentifier(PersistentComponentDescription compDesc,
         Collection<ComponentInstallation> collection) {
 
         List<ComponentInstallation> matchingComponents = new ArrayList<ComponentInstallation>();
@@ -506,7 +507,11 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         // will be considered later on
         for (ComponentInstallation compInst : collection) {
             ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
-            if (compInterface.getIdentifier().equals(compDesc.getComponentIdentifier())
+            String compId = compInterface.getIdentifier();
+            if (compId.contains(ComponentConstants.ID_SEPARATOR)) {
+                compId = compInterface.getIdentifier().split(ComponentConstants.ID_SEPARATOR)[0];
+            }
+            if (compId.equals(compDesc.getComponentIdentifier())
                 && (compDesc.getComponentVersion().equals("")
                 || compInterface.getVersion().compareTo(compDesc.getComponentVersion()) >= 0)) {
                 if (((compInst.getNodeId() == null || compInst.getNodeId().equals(localNode.getIdString()))

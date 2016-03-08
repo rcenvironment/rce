@@ -10,7 +10,6 @@ package de.rcenvironment.core.communication.transport.jms.common;
 import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
-import javax.jms.MessageProducer;
 import javax.jms.Session;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
@@ -98,8 +97,6 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
                 }
                 try {
                     Message jmsResponse = JmsProtocolUtils.createMessageFromNetworkResponse(response, session);
-                    MessageProducer responseProducer = session.createProducer(message.getJMSReplyTo());
-                    JmsProtocolUtils.configureMessageProducer(responseProducer);
                     final String messageId = message.getJMSMessageID();
                     // sanity check
                     if (messageId == null) {
@@ -107,7 +104,7 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
                         return; // no graceful handling possible
                     }
                     jmsResponse.setJMSCorrelationID(messageId); // set correlation id for non-blocking response handling
-                    responseProducer.send(jmsResponse);
+                    JmsProtocolUtils.sendWithTransientProducer(session, jmsResponse, message.getJMSReplyTo());
                 } catch (JMSException e) {
                     log.debug(StringUtils
                         .format("Error sending JMS response after successful request dispatch; most likely, the remote side "

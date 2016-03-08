@@ -19,6 +19,7 @@ import de.rcenvironment.core.communication.messaging.direct.api.DirectMessagingS
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
+import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.routing.MessageRoutingService;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
@@ -192,5 +193,13 @@ public interface MessageChannelService extends DirectMessagingSender {
      * @return the RPC response
      */
     NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, NodeIdentifier sourceId);
+
+    /**
+     * Sets a custom protocol version to use instead of the default value in {@link ProtocolConstants#PROTOCOL_COMPATIBILITY_VERSION}.
+     * Intended for integration tests only.
+     * 
+     * @param versionString the new version string to use
+     */
+    void overrideProtocolVersion(String versionString);
 
 }

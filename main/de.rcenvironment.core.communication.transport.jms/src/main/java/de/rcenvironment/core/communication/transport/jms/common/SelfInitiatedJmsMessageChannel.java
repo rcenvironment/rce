@@ -21,7 +21,6 @@ import javax.jms.Session;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
 import de.rcenvironment.core.communication.transport.spi.HandshakeInformation;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
@@ -99,7 +98,11 @@ public class SelfInitiatedJmsMessageChannel extends AbstractJmsMessageChannel {
 
         try {
             // note: this should automatically clean up (discard) the remoteInitiatedRequestInboxQueue
-            connection.close();
+            if (connection != null) {
+                connection.close();
+            } else {
+                log.debug("No JMS connection for channel " + getChannelId() + " when asked to tear it down");
+            }
         } catch (JMSException e) {
             log.debug("Exception while closing JMS connection", e);
         }
@@ -133,7 +136,7 @@ public class SelfInitiatedJmsMessageChannel extends AbstractJmsMessageChannel {
                 JmsProtocolUtils.parseHandshakeMessage(handshakeResponseMessage, ownHandshakeInformation.getProtocolVersionString());
 
             JmsProtocolUtils.failOnIncompatibleVersions(remoteHandshakeInformation.getProtocolVersionString(),
-                ProtocolConstants.PROTOCOL_COMPATIBILITY_VERSION);
+                ownHandshakeInformation.getProtocolVersionString());
 
             tempQueueManager.finishClientSide(remoteHandshakeInformation.getTemporaryQueueInformation());
 

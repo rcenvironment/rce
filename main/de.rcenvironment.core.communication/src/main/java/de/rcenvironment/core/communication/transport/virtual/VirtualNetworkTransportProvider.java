@@ -62,8 +62,8 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
 
     @Override
     public synchronized MessageChannel connect(NetworkContactPoint ncp, InitialNodeInformation initiatingNodeInformation,
-        boolean allowDuplex, MessageChannelEndpointHandler initiatingEndpointHandler,
-        BrokenMessageChannelListener brokenConnectionListener)
+        String ownProtocolVersion, boolean allowDuplex,
+        MessageChannelEndpointHandler initiatingEndpointHandler, BrokenMessageChannelListener brokenConnectionListener)
         throws CommunicationException {
         // FIXME handle case of no matching server instance; causes a NPE in current implementation
         ServerContactPoint receivingSCP = virtualServices.get(ncp);

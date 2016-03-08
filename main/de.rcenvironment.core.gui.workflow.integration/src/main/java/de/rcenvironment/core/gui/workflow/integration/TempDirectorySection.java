@@ -105,28 +105,18 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
 
         String chosen = getProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
         if (chosen != null) {
-            if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE)) {
+            if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE) && deleteOnceActive) {
                 onceDeleteTempDirectoryButton.setSelection(true);
-            } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS)) {
+            } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS) && deleteAlwaysActive) {
                 alwaysDeleteTempDirectoryButton.setSelection(true);
-            } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER)) {
+            } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER) && deleteNeverActive) {
                 neverDeleteTempDirectoryButton.setSelection(true);
+            } else {
+                //The chosen behavior is not active anymore, determine an active option to replace it.
+                determineDeletionBehaviour(deleteNeverActive, deleteOnceActive, deleteAlwaysActive);
             }
         } else {
-            if (deleteOnceActive) {
-                onceDeleteTempDirectoryButton.setSelection(true);
-                setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
-                    ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE);
-            } else if (deleteAlwaysActive) {
-                setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
-                    ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
-                alwaysDeleteTempDirectoryButton.setSelection(true);
-            } else if (deleteNeverActive) {
-                neverDeleteTempDirectoryButton.setSelection(true);
-                setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
-                    ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER);
-            }
-
+            determineDeletionBehaviour(deleteNeverActive, deleteOnceActive, deleteAlwaysActive);
         }
         onSuccessDeleteTempDirectoryButton.setEnabled(isKeepButtonActive());
         onSuccessDeleteTempDirectoryButton.setSelection(isKeepButtonActive()
@@ -134,6 +124,22 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         setProperty(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE, "" + onSuccessDeleteTempDirectoryButton.getSelection());
     }
 
+    private void determineDeletionBehaviour(boolean deleteNeverActive, boolean deleteOnceActive, boolean deleteAlwaysActive) {
+        if (deleteOnceActive) {
+            onceDeleteTempDirectoryButton.setSelection(true);
+            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE);
+        } else if (deleteNeverActive) {
+            neverDeleteTempDirectoryButton.setSelection(true);
+            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER);
+        } else if (deleteAlwaysActive) {
+            setProperty(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR,
+                ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS);
+            alwaysDeleteTempDirectoryButton.setSelection(true);
+        }
+    }
+    
     @Override
     public void refreshSection() {
         super.refreshSection();

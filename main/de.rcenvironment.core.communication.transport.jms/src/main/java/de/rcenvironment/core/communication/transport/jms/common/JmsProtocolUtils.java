@@ -11,8 +11,10 @@ import java.net.ProtocolException;
 import java.util.Map;
 
 import javax.jms.DeliveryMode;
+import javax.jms.Destination;
 import javax.jms.JMSException;
 import javax.jms.Message;
+import javax.jms.MessageEOFException;
 import javax.jms.MessageProducer;
 import javax.jms.ObjectMessage;
 import javax.jms.Session;
@@ -245,5 +247,24 @@ public final class JmsProtocolUtils {
         // set the maximum time that messages from this producer are preserved
         producer.setTimeToLive(ProtocolConstants.JMS_MESSAGES_TTL_MSEC);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
+    }
+
+    /**
+     * Wraps the common JMS pattern where a temporary {@link MessageProducer} is created from a session, used to send a single
+     * {@link MessageEOFException}, and then disposed.
+     * 
+     * @param session the session to create the producer from
+     * @param message the message to send
+     * @param destination the JMS destination
+     * @throws JMSException on JMS errors
+     */
+    public static void sendWithTransientProducer(Session session, Message message, Destination destination) throws JMSException {
+        MessageProducer producer = session.createProducer(destination);
+        try {
+            JmsProtocolUtils.configureMessageProducer(producer);
+            producer.send(message);
+        } finally {
+            producer.close();
+        }
     }
 }

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core GUI Login
 Bundle-SymbolicName: de.rcenvironment.core.gui.login;singleton:=true
 Bundle-Vendor: DLR & Fraunhofer SCAI
-Bundle-Version: 7.0.1.qualifier
+Bundle-Version: 7.0.2.qualifier
 Bundle-Activator: de.rcenvironment.core.gui.login.internal.Activator
 Bundle-ManifestVersion: 2
 Import-Package: de.rcenvironment.core.authentication,

@@ -177,6 +177,11 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     }
 
     @Override
+    public void simulateCustomProtocolVersion(String version) {
+        getService(MessageChannelService.class).overrideProtocolVersion(version);
+    }
+
+    @Override
     public synchronized void addInitialNetworkPeer(NetworkContactPoint contactPoint) {
         VirtualInstanceState currentState = getCurrentState();
         if (currentState == VirtualInstanceState.STARTED) {

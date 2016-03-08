@@ -72,8 +72,8 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  */
 public class CommonToolIntegratorComponent extends DefaultComponent {
 
-    private static final String DELETION_BEHAVIOR_ERROR_MSG =
-        "Chosen working directory deletion behavior not support for tool %s. Please choose enabled behavior in component's properties.";
+    private static final String DELETION_BEHAVIOR_ERROR_WARNING_MSG =
+        "Chosen working directory deletion behavior not supported for tool %s. Valid one is automatically chosen: %s";
 
     // adjust if necessary/not reasonable for productive environments
     private static final int MAX_TOOLS_COPIED_IN_PARALLEL = 1;
@@ -283,24 +283,33 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         if (componentContext.getConfigurationValue(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR) != null) {
             deleteToolBehaviour = componentContext.getConfigurationValue(ToolIntegrationConstants.CHOSEN_DELETE_TEMP_DIR_BEHAVIOR);
         } else {
-
-            deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS;
-            if (deleteOnceActive) {
-                deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE;
-            } else if (deleteNeverActive) {
-                deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER;
-            }
+            determineDeletionBehaviour(deleteNeverActive, deleteOnceActive);
+        }
+        if ((ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS.equals(deleteToolBehaviour) && !deleteAlwaysActive)
+            || (ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE.equals(deleteToolBehaviour) && !deleteOnceActive)
+            || (ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER.equals(deleteToolBehaviour) && !deleteNeverActive)) {
+            String displayname = determineDeletionBehaviour(deleteNeverActive, deleteOnceActive);
+            componentLog.componentWarn(
+                StringUtils.format(DELETION_BEHAVIOR_ERROR_WARNING_MSG, componentContext.getInstanceName(), displayname));
         }
         keepOnFailure = false;
         if (componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE) != null) {
             keepOnFailure = Boolean.parseBoolean(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
         }
-        if ((ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS.equals(deleteToolBehaviour) && !deleteAlwaysActive)
-            || (ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE.equals(deleteToolBehaviour) && !deleteOnceActive)
-            || (ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER.equals(deleteToolBehaviour) && !deleteNeverActive)) {
-            throw new ComponentException(
-                StringUtils.format(DELETION_BEHAVIOR_ERROR_MSG, componentContext.getInstanceName()));
+
+    }
+
+    private String determineDeletionBehaviour(boolean deleteNeverActive, boolean deleteOnceActive) {
+        String chosenDisplayName = "\"Delete after every run.\"";
+        deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS;
+        if (deleteOnceActive) {
+            deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE;
+            chosenDisplayName = "\"Delete after workflow execution.\"";
+        } else if (deleteNeverActive) {
+            deleteToolBehaviour = ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER;
+            chosenDisplayName = "\"Do not delete\"";
         }
+        return chosenDisplayName;
     }
 
     @Override
@@ -620,8 +629,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     private void writeOutputValues(ScriptEngine engine, Map<String, Object> scriptExecConfig) throws ComponentException {
         final Bindings bindings = engine.getBindings(ScriptContext.ENGINE_SCOPE);
         /*
-         * Extract all values calculated/set in the script to a custom scope so the calculated/set
-         * values are accessible via the current Context.
+         * Extract all values calculated/set in the script to a custom scope so the calculated/set values are accessible via the current
+         * Context.
          */
         for (final String key : bindings.keySet()) {
             Object value = bindings.get(key);

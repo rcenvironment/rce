@@ -22,6 +22,9 @@ import org.junit.Test;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
+import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
+import de.rcenvironment.core.communication.connection.api.DisconnectReason;
 import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
@@ -48,6 +51,10 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
     private static final int DEFAULT_TEST_TIMEOUT = 20000;
 
     private static final int DIRECT_MESSAGING_TEST_TIMEOUT = 5000;
+
+    private static final int DEFAULT_STATE_CHANGE_TIMEOUT = 5000;
+
+    private static final int WAIT_TIME_BEFORE_ASSUMING_CONNECTION_INITIATED = 500;
 
     /**
      * Test with two clients connecting to a single server. The server instance is started before and shut down after the clients.
@@ -101,6 +108,35 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
         // TODO validate server network knowledge, internal state etc.
 
         allInstances.shutDown();
+    }
+
+    /**
+     * Verifies that a connection is refused if the version strings do not match.
+     * 
+     * @throws Exception on uncaught exceptions
+     */
+    @Test(timeout = DEFAULT_TEST_TIMEOUT)
+    public void testConnectionRefusedOnVersionMismatch() throws Exception {
+        VirtualInstance client = new VirtualInstance("client");
+        VirtualInstance server = new VirtualInstance("server");
+        client.registerNetworkTransportProvider(transportProvider);
+        server.registerNetworkTransportProvider(transportProvider);
+        NetworkContactPoint serverNCP = contactPointGenerator.createContactPoint();
+        server.addServerConfigurationEntry(serverNCP);
+        client.simulateCustomProtocolVersion("wrongClientVersion");
+        server.start();
+        client.start();
+
+        ConnectionSetup connection = client.connectAsync(serverNCP);
+        // wait until the connection should have left the initial DISCONNECTED state
+        Thread.sleep(WAIT_TIME_BEFORE_ASSUMING_CONNECTION_INITIATED);
+
+        connection.awaitState(ConnectionSetupState.DISCONNECTED, DEFAULT_STATE_CHANGE_TIMEOUT);
+        // note: if the "reason" is null, the above sleep() time may be too short
+        assertEquals(DisconnectReason.FAILED_TO_CONNECT, connection.getDisconnectReason());
+
+        client.shutDown();
+        server.shutDown();
     }
 
     /**
@@ -332,4 +368,5 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
     private void failWithExceptionExpectedMessage() {
         fail("Exception expected");
     }
+
 }

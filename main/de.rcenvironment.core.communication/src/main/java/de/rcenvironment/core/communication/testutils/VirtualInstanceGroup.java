@@ -92,6 +92,13 @@ public class VirtualInstanceGroup implements CommonVirtualInstanceControl {
     }
 
     @Override
+    public void simulateCustomProtocolVersion(String version) {
+        for (CommonVirtualInstanceControl instance : instances) {
+            instance.simulateCustomProtocolVersion(version);
+        }
+    }
+
+    @Override
     public void addInitialNetworkPeer(NetworkContactPoint contactPoint) {
         for (CommonVirtualInstanceControl instance : instances) {
             instance.addInitialNetworkPeer(contactPoint);

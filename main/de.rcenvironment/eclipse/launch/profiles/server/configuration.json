@@ -41,17 +41,17 @@
     "sshServer" : {
         "enabled" : true,
         "host": "127.0.0.1",
-        "port" : 31006,
+        "port" : 31005,
         "accounts" : {
             "admin" : {
                 "password" : "changeme!_adm",
                 "role" : "admin",
                 "enabled" : false
             },
-            "ra" : {
-                "password" : "ra",
+            "ra_demo" : {
+                "password" : "ra_demo",
                 "role" : "remote access",
-                "enabled" : false
+                "enabled" : true
             }
         },
         "roles" : {
@@ -62,10 +62,7 @@
             },
             "remote access" : {
                 "allowedCommandPatterns" : [
-                    "ta .+",
-                    "toolaccess .+",
-                    "net info",
-                    "components list"
+                    "ra .+"
                 ]
             }
         }

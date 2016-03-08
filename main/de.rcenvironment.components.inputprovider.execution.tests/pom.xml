@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.inputprovider.execution.tests</artifactId>
 	<name>RCE InputProvider Component Tests</name>
-	<version>7.0.1.qualifier</version>
+	<version>7.0.2.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

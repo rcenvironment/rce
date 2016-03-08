@@ -27,6 +27,8 @@ public class ServerContactPoint {
 
     private MessageChannelEndpointHandler endpointHandler;
 
+    private String expectedProtocolVersion;
+
     private NetworkTransportProvider transportProvider;
 
     private final ConnectionFilter connectionFilter;
@@ -36,10 +38,11 @@ public class ServerContactPoint {
     private volatile boolean simulatingBreakdown;
 
     public ServerContactPoint(NetworkTransportProvider transportProvider, NetworkContactPoint ncp,
-        MessageChannelEndpointHandler endpointHandler, ConnectionFilter connectionFilter) {
+        String expectedProtocolVersion, MessageChannelEndpointHandler endpointHandler, ConnectionFilter connectionFilter) {
         this.transportProvider = transportProvider;
         this.networkContactPoint = ncp;
         this.endpointHandler = endpointHandler;
+        this.expectedProtocolVersion = expectedProtocolVersion;
         this.connectionFilter = connectionFilter;
     }
 
@@ -53,6 +56,10 @@ public class ServerContactPoint {
 
     public MessageChannelEndpointHandler getEndpointHandler() {
         return endpointHandler;
+    }
+
+    public String getExpectedProtocolVersion() {
+        return expectedProtocolVersion;
     }
 
     public void setEndpointHandler(MessageChannelEndpointHandler endpointHandler) {
