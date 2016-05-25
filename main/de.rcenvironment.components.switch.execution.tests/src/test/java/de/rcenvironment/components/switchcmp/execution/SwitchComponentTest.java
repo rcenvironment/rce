@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,21 +9,15 @@
 package de.rcenvironment.components.switchcmp.execution;
 
 import static org.easymock.EasyMock.anyObject;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 
 import junit.framework.Assert;
 
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -61,10 +55,6 @@ public class SwitchComponentTest {
 
     private static final String INPUT_Y = "y";
 
-    private static final int HIGH = 100;
-
-    private static final int LOW = 0;
-
     /**
      * Expected exception if script/validation fails.
      */
@@ -76,8 +66,6 @@ public class SwitchComponentTest {
     private ComponentContextMock context;
 
     private TypedDatumFactory typedDatumFactory;
-
-    private int seed;
 
     /**
      * Common setup.
@@ -126,30 +114,6 @@ public class SwitchComponentTest {
         scriptException.expect(ComponentException.class);
         scriptException.expectMessage("No condition is defined");
         component.start();
-    }
-
-    /**
-     * Test if syntax errors in script are recognized.
-     * 
-     * Note: Temporary disabled due to: https://www.sistec.dlr.de/mantis/view.php?id=12844. Not reworked yet because the idea
-     * behind not immediately clear -seid_do
-     * 
-     */
-    @Ignore
-    @Test
-    public void testRandomScript() {
-        context.addSimulatedInput(SwitchComponentConstants.DATA_INPUT_NAME, SwitchComponentConstants.DATA_INPUT_NAME, DataType.Float,
-            false,
-            null);
-        context.setInputValue(SwitchComponentConstants.DATA_INPUT_NAME, typedDatumFactory.createFloat(3.0));
-        String randomScript = createRandomScript();
-        context.setConfigurationValue(SwitchComponentConstants.CONDITION_KEY, randomScript);
-        try {
-            component.start();
-            fail("ComponentException expected when starting component with condition: " + randomScript);
-        } catch (ComponentException e) {
-            assertTrue(true);
-        }
     }
 
     /**
@@ -413,46 +377,6 @@ public class SwitchComponentTest {
         } else {
             Assert.assertEquals(0, context.getCapturedOutputClosings().size());                        
         }
-    }
-
-    private String createRandomScript() {
-
-        char[] chars;
-        StringBuilder sb = new StringBuilder();
-        List<String> inputs = new ArrayList<>();
-
-        Random random = new Random();
-        seed = random.nextInt(HIGH - LOW) + LOW;
-        random.setSeed(seed);
-
-        chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_".toCharArray();
-
-        for (int i = 0; i < 10; i++) {
-            for (int z = 0; z < 10; z++) {
-                sb.append(chars[random.nextInt(chars.length)]);
-            }
-            inputs.add(sb.toString());
-            sb.setLength(0);
-        }
-
-        for (String input : inputs) {
-            context.addSimulatedInput(input, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Float, true, null);
-            context.setInputValue(input, typedDatumFactory.createFloat(2.0));
-            sb.append(input);
-            String operator = SwitchComponentConstants.OPERATORS[random.nextInt(SwitchComponentConstants.OPERATORS.length)];
-
-            if (operator.equals("not")) {
-                sb.append(AND + operator + " ");
-            } else {
-                sb.append(" " + operator + " ");
-            }
-        }
-
-        context.addSimulatedInput(INPUT_X, SwitchComponentConstants.CONDITION_INPUT_ID, DataType.Float, true, null);
-        context.setInputValue(INPUT_X, typedDatumFactory.createFloat(1.0));
-        sb.append(INPUT_X);
-
-        return sb.toString();
     }
 
     private void addSimpleInputAndOutput() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,11 +8,11 @@
 
 package de.rcenvironment.core.utils.incubator.xml;
 
-import java.text.MessageFormat;
 import java.util.List;
 
 import org.dom4j.Node;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -25,7 +25,7 @@ public final class XMLSupport {
     /**
      * Constant for a logger or exception message.
      */
-    private static final String ERROR_PARAMETER_NULL = "The parameter \"{0}\" must not be null or empty.";
+    private static final String ERROR_PARAMETER_NULL = "The parameter \"%s\" must not be null or empty.";
 
     /**
      * Constant for a logger or exception message.
@@ -58,8 +58,8 @@ public final class XMLSupport {
      */
     public static String getNodeStringValue(Node rootNode, String xPathExpression) {
         
-        Assertions.isDefined(rootNode, MessageFormat.format(ERROR_PARAMETER_NULL, PARAMETER_ROOT_NODE));
-        Assertions.isDefined(xPathExpression, MessageFormat.format(ERROR_PARAMETER_NULL, PARAMETER_XPATH_EXPRESSION));
+        Assertions.isDefined(rootNode, StringUtils.format(ERROR_PARAMETER_NULL, PARAMETER_ROOT_NODE));
+        Assertions.isDefined(xPathExpression, StringUtils.format(ERROR_PARAMETER_NULL, PARAMETER_XPATH_EXPRESSION));
 
         // Retrieve a node matching the XPath expression and return its value as a string
         // representation if it's not null.
@@ -85,8 +85,8 @@ public final class XMLSupport {
      */
     public static Node selectNode(Node rootNode, String xPathExpression) {
         
-        Assertions.isDefined(rootNode, MessageFormat.format(ERROR_PARAMETER_NULL, PARAMETER_ROOT_NODE));
-        Assertions.isDefined(xPathExpression, MessageFormat.format(ERROR_PARAMETER_NULL, PARAMETER_XPATH_EXPRESSION));
+        Assertions.isDefined(rootNode, StringUtils.format(ERROR_PARAMETER_NULL, PARAMETER_ROOT_NODE));
+        Assertions.isDefined(xPathExpression, StringUtils.format(ERROR_PARAMETER_NULL, PARAMETER_XPATH_EXPRESSION));
 
         // Retrieve a node matching the XPath expression and return it.
         return rootNode.selectSingleNode(xPathExpression);
@@ -104,8 +104,8 @@ public final class XMLSupport {
      */
     public static List<Node> selectNodes(Node rootNode, String xPathExpression) {
         
-        Assertions.isDefined(rootNode, MessageFormat.format(ERROR_PARAMETER_NULL, PARAMETER_ROOT_NODE));
-        Assertions.isDefined(xPathExpression, MessageFormat.format(ERROR_PARAMETER_NULL, PARAMETER_XPATH_EXPRESSION));
+        Assertions.isDefined(rootNode, StringUtils.format(ERROR_PARAMETER_NULL, PARAMETER_ROOT_NODE));
+        Assertions.isDefined(xPathExpression, StringUtils.format(ERROR_PARAMETER_NULL, PARAMETER_XPATH_EXPRESSION));
 
         // Retrieve a list of nodes which match the XPath expression and return it.
         return rootNode.selectNodes(xPathExpression);

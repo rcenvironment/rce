@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -168,7 +169,17 @@ public final class LogModel {
      * @return Array of platform identifiers.
      */
     public synchronized List<NodeIdentifier> updateListOfLogSources() {
-        currentWorkflowHostsAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
+        
+        Set<NodeIdentifier> newWorkflowHostNodesAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
+        
+        Set<NodeIdentifier> nodeIdsRemoved = new HashSet<>(currentWorkflowHostsAndSelf);
+        nodeIdsRemoved.removeAll(newWorkflowHostNodesAndSelf);
+        
+        for (NodeIdentifier nodeIdRemoved : nodeIdsRemoved) {
+            allLogEntries.remove(nodeIdRemoved);
+        }
+        
+        currentWorkflowHostsAndSelf = newWorkflowHostNodesAndSelf;
         
         List<NodeIdentifier> logSources = new ArrayList<>();
 
@@ -180,7 +191,7 @@ public final class LogModel {
                 logSources.add(nodeId);
             }
         }
-
+        
         Collections.sort(logSources, new Comparator<NodeIdentifier>() {
 
             @Override

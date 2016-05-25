@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -30,7 +30,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Jan Flink
  * @author Sascha Zur
  */
-class DefaultTypedDatumConverter implements TypedDatumConverter {
+public class DefaultTypedDatumConverter implements TypedDatumConverter {
 
     private static final String STRING_CAN_NOT_CONVERT = "Can not convert from %s to %s";
 
@@ -108,14 +108,14 @@ class DefaultTypedDatumConverter implements TypedDatumConverter {
 
     @Override
     public boolean isConvertibleTo(TypedDatum input, DataType targetType) {
-        return TypeDatumConversionTable.getTable()[TypeDatumConversionTable.getIndexOfType(input.getDataType())][TypeDatumConversionTable
-            .getIndexOfType(targetType)] == TypeDatumConversionTable.IS_CONVERTIBLE;
+        return TypedDatumConversionTable.getTable()[TypedDatumConversionTable.getIndexOfType(input.getDataType())][TypedDatumConversionTable
+            .getIndexOfType(targetType)] == TypedDatumConversionTable.IS_CONVERTIBLE;
     }
 
     @Override
     public boolean isConvertibleTo(DataType sourceType, DataType targetType) {
-        return TypeDatumConversionTable.getTable()[TypeDatumConversionTable.getIndexOfType(sourceType)][TypeDatumConversionTable
-            .getIndexOfType(targetType)] == TypeDatumConversionTable.IS_CONVERTIBLE;
+        return TypedDatumConversionTable.getTable()[TypedDatumConversionTable.getIndexOfType(sourceType)][TypedDatumConversionTable
+            .getIndexOfType(targetType)] == TypedDatumConversionTable.IS_CONVERTIBLE;
     }
 
     @SuppressWarnings("unchecked")
@@ -156,14 +156,14 @@ class DefaultTypedDatumConverter implements TypedDatumConverter {
 
     @Override
     public boolean isUnsafeConvertibleTo(TypedDatum input, DataType targetType) {
-        return TypeDatumConversionTable.getTable()[TypeDatumConversionTable.getIndexOfType(input.getDataType())][TypeDatumConversionTable
-            .getIndexOfType(targetType)] == TypeDatumConversionTable.IS_UNSAFE_CONVERTIBLE;
+        return TypedDatumConversionTable.getTable()[TypedDatumConversionTable.getIndexOfType(input.getDataType())][TypedDatumConversionTable
+            .getIndexOfType(targetType)] == TypedDatumConversionTable.IS_UNSAFE_CONVERTIBLE;
     }
 
     @Override
     public boolean isUnsafeConvertibleTo(DataType sourceType, DataType targetType) {
-        return TypeDatumConversionTable.getTable()[TypeDatumConversionTable.getIndexOfType(sourceType)][TypeDatumConversionTable
-            .getIndexOfType(targetType)] == TypeDatumConversionTable.IS_UNSAFE_CONVERTIBLE;
+        return TypedDatumConversionTable.getTable()[TypedDatumConversionTable.getIndexOfType(sourceType)][TypedDatumConversionTable
+            .getIndexOfType(targetType)] == TypedDatumConversionTable.IS_UNSAFE_CONVERTIBLE;
     }
 
 }

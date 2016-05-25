@@ -20,9 +20,9 @@
 	
 	<property name="rce.component.version" type="String" value="3.3"/>
 		
-	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.joiner.common/resources/joiner16.png"/>
-	<property name="rce.component.icon-24" type="String" value="platform:/plugin/de.rcenvironment.components.joiner.common/resources/joiner24.png"/>
-  	<property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.joiner.common/resources/joiner32.png"/>
+	<property name="rce.component.icon-16" type="String" value="joiner16.png"/>
+	<property name="rce.component.icon-24" type="String" value="joiner24.png"/>
+  	<property name="rce.component.icon-32" type="String" value="joiner32.png"/>
     <property name="rce.component.size" type="String" value="small"/>
     <property name="rce.component.color" type="String" value="yellow"/>
     <property name="rce.component.shape" type="String" value="circle"/>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -71,6 +71,16 @@ public class BuiltInCommandPlugin implements CommandPlugin {
         contributions.add(new CommandDescription(CMD_TASKS, "[-a] [-i]", true, "show information about internal tasks",
             "-a - Show all tasks, including inactive ones",
             "-i - Extended information: list tasks with a unique id"));
+        // // Only the command description of the 'saveto' command is specified here. The functionality of the command is implemented in
+        // {@link
+        // // MultiCommandHandler}
+        // contributions.add(new CommandDescription(MultiCommandHandler.SAVETO, "[-m] (<filename>|--auto) <command(s)>", false,
+        // "saves the output of the command(s) to a file",
+        // "-m: mirrors the output to the command console",
+        // "<filename>: name of the file into which the output should be stored",
+        // "--auto: auto-generates a filename",
+        // "<command(s)>: list of commands which should be executed"));
+
         return contributions;
     }
 
@@ -95,6 +105,8 @@ public class BuiltInCommandPlugin implements CommandPlugin {
             performTasks(context);
         } else if (CMD_DUMMY.equals(cmd)) {
             performDummy(context);
+//        } else if (MultiCommandHandler.SAVETO.equals(cmd)) {
+//            throw CommandException.syntaxError("The 'saveto' command can only be used as a prefix of a list of commands!", context);
         } else {
             throw new IllegalStateException();
         }
@@ -154,17 +166,30 @@ public class BuiltInCommandPlugin implements CommandPlugin {
         }
     }
 
-    private void performCrash(CommandContext context) {
-        int delayMsec = Integer.parseInt(context.consumeNextToken());
-        LogFactory.getLog(getClass()).warn(StringUtils.format("Killing the instance (using System.exit(1)) in %,d msec...", delayMsec));
-        SharedThreadPool.getInstance().scheduleAfterDelay(new Runnable() {
+    private void performCrash(CommandContext context) throws CommandException {
+        String token = context.consumeNextToken();
 
-            @Override
-            @TaskDescription("Simulate an instance crash (triggered by console command)")
-            public void run() {
-                System.exit(1);
-            }
-        }, delayMsec);
+        if (token == null || context.hasRemainingTokens()) {
+            throw CommandException.wrongNumberOfParameters(context);
+        }
+
+        try {
+
+            int delayMsec = Integer.parseInt(token);
+            LogFactory.getLog(getClass()).warn(StringUtils.format("Killing the instance (using System.exit(1)) in %,d msec...", delayMsec));
+            SharedThreadPool.getInstance().scheduleAfterDelay(new Runnable() {
+
+                @Override
+                @TaskDescription("Simulate an instance crash (triggered by console command)")
+                public void run() {
+                    System.exit(1);
+                }
+            }, delayMsec);
+        } catch (NumberFormatException e) {
+            throw CommandException.syntaxError(
+                StringUtils.format("You need to specify the delay in milliseconds. %s is not a valid number.", token),
+                context);
+        }
     }
 
     /**

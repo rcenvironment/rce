@@ -82,6 +82,14 @@
             some optional files. It must be put in the equivalent integration type directory of the
             target RCE instance. After that, RCE automatically reads the new folder and if
             everything is valid, the tool will be integrated right away.</para>
+        <para>
+            <note>
+                <para>If you want to delete a tool folder that contains some documentation, you may
+                    get an error trying it. If you have this problem, delete the documentation
+                    folder at first (it must be empty), afterwards you can delete the tool
+                    folder.</para>
+            </note>
+        </para>
         <sect3>
             <title>Publishing a Component on a Server Instance in Headless Mode</title>
             <para>An integrated tool on a server is not neccessarily visible for other user in the
@@ -214,7 +222,7 @@
                 <title>Run process of an user-integrated CPACS Tool</title>
                 <mediaobject>
                     <imageobject>
-                        <imagedata fileref="images/ug_CPACS_ToolRunProcess.gif"
+                        <imagedata fileref="images/ug_CPACS_ToolRunProcess.png"
                         contentwidth="390"/>
                     </imageobject>
                 </mediaobject>

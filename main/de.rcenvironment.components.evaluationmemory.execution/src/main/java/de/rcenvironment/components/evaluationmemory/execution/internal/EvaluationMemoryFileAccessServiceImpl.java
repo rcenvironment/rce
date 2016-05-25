@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,7 +34,7 @@ public class EvaluationMemoryFileAccessServiceImpl implements EvaluationMemoryFi
 
         if (memoryFilesInUse.contains(memoryFilePath)) {
             throw new IOException(StringUtils.format("Failed to give read access to memory file: '%s',"
-                + " because it is already in use", memoryFilePath));
+                + " because it seems to be already in use by another 'Evaluation Memory' component", memoryFilePath));
         }
         memoryFilesInUse.add(memoryFilePath);
         EvaluationMemoryFileAccessImpl memoryAccess = new EvaluationMemoryFileAccessImpl(memoryFilePath);
@@ -43,8 +43,8 @@ public class EvaluationMemoryFileAccessServiceImpl implements EvaluationMemoryFi
     }
 
     @Override
-    public synchronized void releaseAccessToMemoryFile(String memoryFilePath) {
-        memoryFilesInUse.remove(memoryFilePath);
+    public synchronized boolean releaseAccessToMemoryFile(String memoryFilePath) {
+        return memoryFilesInUse.remove(memoryFilePath);
     }
     
     protected void bindTypedDatumService(TypedDatumService service) {

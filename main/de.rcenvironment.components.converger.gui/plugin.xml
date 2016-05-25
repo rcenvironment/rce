@@ -23,7 +23,7 @@
 		 </propertySection>
 		 <propertySection
                tab="workflow.editor.tab.parametricstudy.FaultTolerantLoop"
-               class="de.rcenvironment.core.gui.workflow.editor.properties.LoopBehaviorInCaseOfFailureSection"
+               class="de.rcenvironment.core.gui.workflow.editor.properties.FaultTolerantLoopSection"
                id="workflow.editor.tab.Properties.Section.FaultTolerantLoop"
                filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter"
                enablesFor="1">
@@ -79,8 +79,12 @@
     </extension>
     <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
-      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
    </extension>
+   
+	<extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
    
    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.converger.gui.ConvergerHistoryDataItemSubtreeBuilder"/>

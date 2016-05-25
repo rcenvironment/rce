@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -31,6 +31,7 @@ import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 
 /**
@@ -152,7 +153,7 @@ public class GenericSubscriptionManager {
     }
 
     private void retrieveMissedNotifications(SimpleNotificationService sns,
-        NodeIdentifier node, Map<String, Long> lastMissedNumbers) {
+        NodeIdentifier node, Map<String, Long> lastMissedNumbers) throws RemoteOperationException {
 
         for (String notifId : lastMissedNumbers.keySet()) {
             Long lastMissedNumber = lastMissedNumbers.get(notifId);

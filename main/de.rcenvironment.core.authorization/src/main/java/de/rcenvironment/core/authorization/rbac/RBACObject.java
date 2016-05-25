@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,8 +9,8 @@
 package de.rcenvironment.core.authorization.rbac;
 
 import java.io.Serializable;
-import java.text.MessageFormat;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -29,7 +29,7 @@ public abstract class RBACObject implements Serializable {
     /**
      * Constant.
      */
-    private static final String ASSERTIONS_PARAMETER_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ASSERTIONS_PARAMETER_NULL = "The parameter \"%s\" must not be null.";
 
     /**
      * The ID of the RBAC object.
@@ -60,7 +60,7 @@ public abstract class RBACObject implements Serializable {
      */
     public RBACObject(String id, String description) {
 
-        Assertions.isDefined(id, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, "id"));
+        Assertions.isDefined(id, StringUtils.format(ASSERTIONS_PARAMETER_NULL, "id"));
 
         myID = id;
         if (description == null) {

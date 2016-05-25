@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,7 +11,6 @@ package de.rcenvironment.core.component.registration.internal;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -75,6 +74,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  * @author Doreen Seider
  * @author Heinrich Wendel
  * @author Robert Mischke
+ * @author Sascha Zur
  */
 public class ComponentRegistryImpl implements ComponentRegistry {
 
@@ -171,6 +171,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
                     publishComponents();
                 }
             }
+
         }, ACTIVATION_TO_COMPONENT_PUBLISHING_DELAY_MSEC);
     }
 
@@ -195,7 +196,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
      * component registration stuff is done here.
      */
     protected synchronized void addComponent(ServiceReference<?> factoryReference) {
-        
+
         if (CommandLineArguments.isDoNotStartComponentsRequested()) {
             LOGGER.warn("Received a component registration call although components should be disabled: "
                 + factoryReference.getBundle().getSymbolicName());
@@ -285,17 +286,15 @@ public class ComponentRegistryImpl implements ComponentRegistry {
     private byte[] readIcon(String key, ServiceReference<?> reference) {
         String iconPath = (String) reference.getProperty(key);
         if (iconPath != null) {
-            URL url;
-            if (iconPath.startsWith("platform:")) {
-                try {
-                    url = new URL(iconPath);
-                } catch (MalformedURLException e) {
-                    LOGGER.error("Given icon path is not valid: " + iconPath, e);
-                    url = null;
-                }
+            String iconName = (String) reference.getProperty(key);
+            String bundleId = "de.rcenvironment.components.";
+            if (reference.getProperty(ComponentConstants.COMPONENT_ICON_BUNDLE_NAME_KEY) == null) {
+                String componentName = (String) reference.getProperty(ComponentConstants.COMPONENT_NAME_KEY);
+                bundleId += (componentName.toLowerCase() + ".common");
             } else {
-                url = reference.getBundle().getResource(iconPath);
+                bundleId = (String) reference.getProperty(ComponentConstants.COMPONENT_ICON_BUNDLE_NAME_KEY);
             }
+            URL url = ComponentUtils.readIconURL(bundleId, iconName);
             if (url != null) {
                 try (InputStream stream = url.openStream();
                     ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
@@ -316,6 +315,7 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             }
         }
         return null;
+
     }
 
     @Override
@@ -404,7 +404,8 @@ public class ComponentRegistryImpl implements ComponentRegistry {
             } else if (references.length > 1) {
                 LOGGER.warn(StringUtils.format(
                     "More than one component found that provides the service '%s' and that has the temporary identifier '%s',"
-                    + " first one is taken", Registerable.class.getName(), identifier));                
+                        + " first one is taken",
+                    Registerable.class.getName(), identifier));
             }
 
         } catch (InvalidSyntaxException e) {
@@ -532,13 +533,11 @@ public class ComponentRegistryImpl implements ComponentRegistry {
     }
 
     private boolean getCanHandleNotAValueDataTypes(ServiceReference<?> componentReference) {
-        return Boolean.valueOf((String) componentReference.getProperty(ComponentConstants
-            .COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES));
+        return Boolean.valueOf((String) componentReference.getProperty(ComponentConstants.COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES));
     }
 
     private boolean getIsResetSink(ServiceReference<?> componentReference) {
-        return Boolean.valueOf((String) componentReference.getProperty(LoopComponentConstants
-            .COMPONENT_IS_RESET_SINK));
+        return Boolean.valueOf((String) componentReference.getProperty(LoopComponentConstants.COMPONENT_IS_RESET_SINK));
     }
 
     private ComponentSize getComponentSize(ServiceReference<?> componentReference) {

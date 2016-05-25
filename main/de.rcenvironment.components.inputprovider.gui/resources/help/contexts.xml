@@ -1,6 +1,0 @@
-<contexts>
-	<context id="inputprovider" title="Input Provider Component Help">
-		<description>The Input Provider component fills inputs of components with specified values.</description>
-     	<topic href="resources/help/html/usage.xhtml" label="Input Provider Component Usage"></topic>
-	</context>
-</contexts>

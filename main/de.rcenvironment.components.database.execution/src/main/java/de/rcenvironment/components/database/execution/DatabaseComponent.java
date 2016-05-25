@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@
 package de.rcenvironment.components.database.execution;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -45,6 +46,7 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -54,6 +56,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 @LocalExecutionOnly
 public class DatabaseComponent extends DefaultComponent {
+
+    private static final String FULL_STOP = ".";
 
     private static final String SAVEPOINT = "RCEdatabaseTrancactionSavepoint";
 
@@ -77,7 +81,7 @@ public class DatabaseComponent extends DefaultComponent {
 
     private Savepoint transactionSavepoint;
 
-    private List inputOrder = new ArrayList<>();
+    private List<Object> inputOrder = new ArrayList<>();
 
     private ComponentContext componentContext;
 
@@ -102,14 +106,14 @@ public class DatabaseComponent extends DefaultComponent {
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
-
-        jdbcDriverService = componentContext.getService(JDBCDriverService.class);
-        typedDatumService = componentContext.getService(TypedDatumService.class);
-
     }
 
     @Override
     public void start() throws ComponentException {
+
+        jdbcDriverService = componentContext.getService(JDBCDriverService.class);
+        typedDatumService = componentContext.getService(TypedDatumService.class);
+
         super.start();
         if (componentContext.getInputs().isEmpty()) {
             runDatabaseComponent();
@@ -130,7 +134,7 @@ public class DatabaseComponent extends DefaultComponent {
     private void runDatabaseComponent() throws ComponentException {
 
         initializeNewWorkflowDataItem();
-        checkStatementValidity();
+        databaseStatements = parseAndValidateStatements();
 
         Map<String, TypedDatum> inputValues = new HashMap<>();
         if (componentContext != null && componentContext.getInputsWithDatum() != null) {
@@ -139,24 +143,11 @@ public class DatabaseComponent extends DefaultComponent {
             }
         }
 
-        String statementsString = componentContext.getConfigurationValue(DatabaseComponentConstants.DB_STATEMENTS_KEY);
-        if (statementsString != null) {
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                JavaType javaType = mapper.getTypeFactory().constructCollectionType(List.class, DatabaseStatement.class);
-                databaseStatements = mapper.readValue(statementsString, javaType);
-            } catch (IOException e) {
-                throw new ComponentException("Failed to parse SQL statements while initializing execution.", e);
-            }
-        } else {
-            throw new ComponentException("An error occured while loading statements from configuration.");
-        }
-
         String statementPart = " statement";
         if (databaseStatements.size() > 1) {
             statementPart = " statements";
         }
-        componentContext.getLog().componentInfo("Executing " + databaseStatements.size() + statementPart + ".");
+        componentContext.getLog().componentInfo("Executing " + databaseStatements.size() + statementPart + FULL_STOP);
         boolean autoCommit = false;
         try {
             try {
@@ -170,6 +161,7 @@ public class DatabaseComponent extends DefaultComponent {
             } catch (SQLException e) {
                 throw new ComponentException("Failed to initialize database connection. Database response: " + e.getMessage());
             }
+
             // PREPARE AND EXECUTE STATEMENTS
             for (DatabaseStatement databaseStatement : databaseStatements) {
                 if (!databaseStatement.getStatement().isEmpty()) {
@@ -225,7 +217,6 @@ public class DatabaseComponent extends DefaultComponent {
                         "Database query with name '" + databaseStatement.getName() + "' is empty and will be skipped.");
                 }
             }
-
             // COMMIT TRANSACTION
             try {
                 jdbcConnection.commit();
@@ -296,9 +287,11 @@ public class DatabaseComponent extends DefaultComponent {
         String databasePassword = componentContext.getConfigurationValue(DatabaseComponentConstants.CONFIG_KEY_AUTH_PHRASE);
 
         if (jdbcDriverService.getRegisteredJDBCDrivers().isEmpty()) {
-            throw new ComponentException("Failed to establish connection because no JDBC driver is registered. "
+            String noRegisteredDriversWarning = "Failed to establish connection because no JDBC driver is registered. "
                 + "Please make sure the subfolder '.../configuration/jdbc' in your "
-                + "installation directory contains the desired driver file");
+                + "installation directory contains the desired driver file";
+            componentContext.getLog().componentError(noRegisteredDriversWarning);
+            throw new ComponentException(noRegisteredDriversWarning);
         }
 
         String urlScheme = "";
@@ -309,17 +302,22 @@ public class DatabaseComponent extends DefaultComponent {
             }
         }
         if (urlScheme.isEmpty()) {
-            throw new ComponentException("Failed to establish connection because no JDBC driver for the selected connector was found. "
+            String urlSchemeEmptyWarning = "Failed to establish connection because no JDBC driver for the selected connector was found. "
                 + "Please make sure the subfolder '.../extras/database_connectors' in your "
-                + "installation directory contains the desired driver file");
+                + "installation directory contains the desired driver file";
+            componentContext.getLog().componentError(urlSchemeEmptyWarning);
+            throw new ComponentException(urlSchemeEmptyWarning);
         }
 
         String url = JDBC + COLON + urlScheme + COLON + DOUBLE_SLASH + databaseHost + COLON + databasePort + SLASH + databaseScheme;
+
         Connection connection = null;
         if (databasePassword.isEmpty()) {
             databasePassword = null;
         }
+
         connection = jdbcDriverService.getConnectionWithCredentials(url, databaseUser, databasePassword);
+
         return connection;
     }
 
@@ -385,7 +383,7 @@ public class DatabaseComponent extends DefaultComponent {
 
         if (resultSet != null && hasResultSet && databaseStatement.isWillWriteToOutput()
             && !databaseStatement.getOutputToWriteTo().isEmpty()) {
-            distributeResults(databaseStatement, resultSet);
+            distributeResults(databaseStatement.getOutputToWriteTo(), resultSet);
             if (!resultSet.isClosed()) {
                 resultSet.close();
             }
@@ -440,7 +438,7 @@ public class DatabaseComponent extends DefaultComponent {
                     value = String.valueOf(booleanTD.getBooleanValue());
                 } else if (dataType == DataType.Empty) {
                     value = ""; // set explicitly to make clear what is set
-                } 
+                }
                 smallTableReplacements.add(value);
             }
             // memorize where placeholder was and remove
@@ -475,12 +473,12 @@ public class DatabaseComponent extends DefaultComponent {
         }
     }
 
-    private void checkStatementValidity() throws ComponentException {
+    private List<DatabaseStatement> parseAndValidateStatements() throws ComponentException {
         List<DatabaseStatement> statementsToValidate = new ArrayList<>();
         // read in statements
         String statementsString = componentContext.getConfigurationValue(DatabaseComponentConstants.DB_STATEMENTS_KEY);
         if (statementsString != null) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 JavaType javaType = mapper.getTypeFactory().constructCollectionType(List.class, DatabaseStatement.class);
                 statementsToValidate = mapper.readValue(statementsString, javaType);
@@ -494,7 +492,7 @@ public class DatabaseComponent extends DefaultComponent {
         // check output to write to is really set
         for (DatabaseStatement statement : statementsToValidate) {
             String exceptionMessage =
-                "The statement ' " + statement.getName()
+                "The statement '" + statement.getName()
                     + "' is configured to write to an output but no output is selected.";
             if (statement.isWillWriteToOutput()) {
                 if (statement.getOutputToWriteTo() == null) {
@@ -512,6 +510,7 @@ public class DatabaseComponent extends DefaultComponent {
             }
         }
         componentContext.getLog().componentInfo("Statements validation successfully passed.");
+        return statementsToValidate;
     }
 
     private boolean statementTypeIsSupportedGeneral(String statement) {
@@ -549,6 +548,16 @@ public class DatabaseComponent extends DefaultComponent {
         writeFinalWorkflowDataItem();
     }
 
+    /**
+     * This method is recursively called and has 2 purposes: 1. All "RCE" placeholders (${...}) are replaced by placeholders for the
+     * prepared statement 2. The order of the input values is stored. This is important for the replacement with the actual values. Note
+     * that the order has to be reset/cleared per component run.
+     * 
+     * @param originalStatement The original statement as entered in the UI OR the statement with partial replacements during the recursive
+     *        call
+     * @param inputValues The actual input values for the current component run
+     * @return The statement where placeholders have been replaced by question marks.
+     */
     private String replaceStringAndFillInputOrder(String originalStatement, Map<String, TypedDatum> inputValues) {
         String currentStatement = originalStatement;
         Map<Integer, String> tempOccuranceToInputMapping = new HashMap<>();
@@ -604,156 +613,155 @@ public class DatabaseComponent extends DefaultComponent {
         return currentMin;
     }
 
-    private TypedDatum convertResultSetToTypedDatum(ResultSet resultSet, String outputToWriteTo)
-        throws SQLException, ComponentException {
-        // Determine resultSet's size
-        int columnCount = 0;
+    private int determineResultSetsRowCount(ResultSet resultSet) throws ComponentException {
         int rowCount = 0;
         try {
-            columnCount = resultSet.getMetaData().getColumnCount();
             while (resultSet.next()) {
                 rowCount++;
             }
             resultSet.beforeFirst();
         } catch (SQLException e1) {
-            throw new ComponentException("Failed to parse result set from database", e1);
+            throw new ComponentException("Failed to determine result set's row count.", e1);
         }
+        return rowCount;
+    }
+
+    private int determineResultSetsColumnCount(ResultSet resultSet) throws ComponentException {
+        try {
+            return resultSet.getMetaData().getColumnCount();
+        } catch (SQLException e1) {
+            throw new ComponentException("Failed to determine result set's column count.", e1);
+        }
+    }
+
+    private TypedDatum convertResultSetToTypedDatum(ResultSet resultSet, String outputToWriteTo)
+        throws SQLException, ComponentException {
+        // Determine resultSet's size
+        int columnCount = determineResultSetsColumnCount(resultSet);
+        int rowCount = determineResultSetsRowCount(resultSet);
         componentContext.getLog().componentInfo("Processing result set with " + rowCount + " row(s) and " + columnCount + " column(s).");
         DataType dataType = componentContext.getOutputDataType(outputToWriteTo);
         TypedDatumFactory tdFactory = typedDatumService.getFactory();
+        TypedDatum result = null;
+
         if (columnCount == 0 || rowCount == 0) {
             // ################ 0 x 0 ######################
-            throw new ComponentException("Received empty result set although a result was expected.");
+            throw new ComponentException(
+                "The database returned an empty result set although writing the result to an output was activated.");
         } else if (columnCount == 1 && rowCount == 1) {
             // ################ 1 x 1 ######################
-            if (dataType == DataType.Float) {
+            if (dataType == DataType.SmallTable) {
+                result = convertResultSetToSmallTableTD(rowCount, columnCount, outputToWriteTo, resultSet);
+            } else {
                 resultSet.next();
-                if (resultSet.getObject(1) instanceof Float || resultSet.getObject(1) instanceof Double) {
-                    TypedDatum result = tdFactory.createFloat(resultSet.getDouble(1));
-                    return result;
-                }
-                if (resultSet.getObject(1) instanceof Integer) {
-                    TypedDatum result = tdFactory.createInteger(resultSet.getInt(1));
-                    return result;
-                } else {
-                    throw new ComponentException("Failed to convert result set to single float value.");
-                }
-            } else if (dataType == DataType.Integer) {
-                resultSet.next();
-                if (resultSet.getObject(1) instanceof Integer) {
-                    TypedDatum result = tdFactory.createInteger(resultSet.getInt(1));
-                    return result;
-                } else {
-                    throw new ComponentException("Failed to convert result set to single integer value.");
-                }
-            } else if (dataType == DataType.ShortText) {
-                resultSet.next();
-                if (resultSet.getObject(1) instanceof String) {
-                    TypedDatum result = tdFactory.createShortText(resultSet.getString(1));
-                    return result;
-                } else {
-                    throw new ComponentException("Failed to convert result set to single short text value.");
-                }
-            } else if (dataType == DataType.Boolean) {
-                resultSet.next();
-                if (resultSet.getObject(1) instanceof Boolean) {
-                    TypedDatum result = tdFactory.createBoolean(resultSet.getBoolean(1));
-                    return result;
-                } else {
-                    throw new ComponentException("Failed to convert result set to single boolean value.");
-                }
-            } else if (dataType == DataType.SmallTable) {
-                SmallTableTD smallTableTD = tdFactory.createSmallTable(1, 1);
-                // fill table with data
-                try {
-                    while (resultSet.next()) {
-                        for (int i = 1; i <= columnCount; i++) {
-                            if (resultSet.getObject(i) instanceof String) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD
-                                    .setTypedDatumForCell(tdFactory.createShortText(resultSet.getString(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Integer) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createInteger(resultSet.getInt(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Float) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createFloat(resultSet.getFloat(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Boolean) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createBoolean(resultSet.getBoolean(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Double) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createFloat(resultSet.getDouble(i)), rowInTable, colInTable);
-                            } else {
-                                throw new ComponentException("Error when filling the output " + outputToWriteTo + " of type small table. "
-                                    + "The given data type is currently not supported.");
-                            }
-                        }
+                if (dataType == DataType.Float) {
+                    if (resultSet.getObject(1) instanceof Float || resultSet.getObject(1) instanceof Double) {
+                        result = tdFactory.createFloat(resultSet.getDouble(1));
+                    } else if (resultSet.getObject(1) instanceof Integer || resultSet.getObject(1) instanceof Long) {
+                        result = tdFactory.createFloat(resultSet.getLong(1));
+                    } else {
+                        throw new ComponentException("Failed to convert result set to single float value.");
                     }
-                } catch (SQLException e) {
-                    throw new ComponentException("Failed to distribute result set. Database response: " + e.getMessage());
+                } else if (dataType == DataType.Integer) {
+                    if (resultSet.getObject(1) instanceof Integer || resultSet.getObject(1) instanceof Long) {
+                        result = tdFactory.createInteger(resultSet.getLong(1));
+                    } else {
+                        throw new ComponentException("Failed to convert result set to single integer value.");
+                    }
+                } else if (dataType == DataType.ShortText) {
+                    if (resultSet.getObject(1) instanceof String) {
+                        result = tdFactory.createShortText(resultSet.getString(1));
+                    } else {
+                        throw new ComponentException("Failed to convert result set to single short text value.");
+                    }
+                } else if (dataType == DataType.Boolean) {
+                    if (resultSet.getObject(1) instanceof Boolean) {
+                        result = tdFactory.createBoolean(resultSet.getBoolean(1));
+                    } else {
+                        throw new ComponentException("Failed to convert result set to single boolean value.");
+                    }
                 }
-                return smallTableTD;
             }
         } else if (columnCount > 1 || rowCount > 1) {
             // ################ n x n ######################
-            if (dataType == DataType.Float || dataType == DataType.Integer
+            if (dataType == DataType.SmallTable) {
+                result = convertResultSetToSmallTableTD(rowCount, columnCount, outputToWriteTo, resultSet);
+            } else if (dataType == DataType.Float || dataType == DataType.Integer
                 || dataType == DataType.ShortText || dataType == DataType.Boolean) {
-                throw new ComponentException("Result set contains of several rows and/or columns "
-                    + "and cannot be written into selected datatype.");
-            } else if (dataType == DataType.SmallTable) {
-                SmallTableTD smallTableTD = tdFactory.createSmallTable(rowCount, columnCount);
-                // fill table with data
-                try {
-                    while (resultSet.next()) {
-                        for (int i = 1; i <= columnCount; i++) {
-                            if (resultSet.getObject(i) instanceof String) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD
-                                    .setTypedDatumForCell(tdFactory.createShortText(resultSet.getString(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Integer) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createInteger(resultSet.getInt(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Float) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createFloat(resultSet.getFloat(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Boolean) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createBoolean(resultSet.getBoolean(i)), rowInTable, colInTable);
-                            } else if (resultSet.getObject(i) instanceof Double) {
-                                int rowInTable = resultSet.getRow() - 1;
-                                int colInTable = i - 1;
-                                smallTableTD.setTypedDatumForCell(tdFactory.createFloat(resultSet.getDouble(i)), rowInTable, colInTable);
-                            } else {
-                                throw new ComponentException("Error when filling the output " + outputToWriteTo + " of type small table. "
-                                    + "The given data type is currently not supported.");
-                            }
-                        }
-                    }
-                } catch (SQLException e) {
-                    throw new ComponentException("Failed to distribute result set. Database response: " + e.getMessage());
-                }
-                return smallTableTD;
+                throw new ComponentException("The result set contains " + rowCount + " rows and " + columnCount + " columns "
+                    + "and thus cannot be written into selected datatype " + dataType.getDisplayName() + FULL_STOP);
+            } else {
+                throw new ComponentException("The output's datatype is " + dataType.getDisplayName()
+                    + " and is currently not supported for the component.");
             }
         }
-        return null;
+        return result;
     }
 
-    protected void distributeResults(DatabaseStatement statement, ResultSet resultSet) throws SQLException, ComponentException {
-        TypedDatum convertedTypedDatum = convertResultSetToTypedDatum(resultSet, statement.getOutputToWriteTo());
+    /**
+     * Converts a given result set to a small table typed datum of the given size.
+     * 
+     * @param rowCount The rows of the result set.
+     * @param columnCount The columns of the result set.
+     * @param outputToWriteTo The output name to write to.
+     * @param resultSet The result set.
+     * @param tdFactory The typed datum factory.
+     * @return
+     * @throws ComponentException
+     */
+    private SmallTableTD convertResultSetToSmallTableTD(int rowCount, int columnCount, String outputToWriteTo, ResultSet resultSet)
+        throws ComponentException {
+        TypedDatumFactory tdFactory = typedDatumService.getFactory();
+        SmallTableTD smallTableTD = tdFactory.createSmallTable(rowCount, columnCount);
+        // fill table with data
+        try {
+            while (resultSet.next()) {
+                for (int i = 1; i <= columnCount; i++) {
+                    int rowInTable = resultSet.getRow() - 1;
+                    int colInTable = i - 1;
+                    if (resultSet.getObject(i) instanceof String) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createShortText(resultSet.getString(i)), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) instanceof Integer) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createInteger(resultSet.getInt(i)), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) instanceof Long) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createInteger(resultSet.getLong(i)), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) instanceof Float) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createFloat(resultSet.getFloat(i)), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) instanceof Double) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createFloat(resultSet.getDouble(i)), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) instanceof Boolean) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createBoolean(resultSet.getBoolean(i)), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) == null) {
+                        smallTableTD.setTypedDatumForCell(tdFactory.createEmpty(), rowInTable, colInTable);
+                    } else if (resultSet.getObject(i) instanceof BigDecimal) {
+                        throw new ComponentException("Error when filling the output '" + outputToWriteTo
+                            + "' of type small table. "
+                            + "Note that currently no internal data type represents big decimal values.");
+                    } else {
+                        throw new ComponentException("Error when filling the output '" + outputToWriteTo
+                            + "' of type small table. "
+                            + "The given data type is currently not supported.");
+                    }
+                    // Datetime currently not supported in DB component - seeb_ol, April 2016
+                    // else if (resultSet.getObject(i) instanceof Timestamp) {
+                    // smallTableTD.setTypedDatumForCell(tdFactory.createDateTime((resultSet.getTimestamp(i).getTime())), rowInTable,
+                    // colInTable);
+                    // }
+                }
+            }
+        } catch (SQLException e) {
+            throw new ComponentException("Failed to distribute result set. Database response: " + e.getMessage());
+        }
+        return smallTableTD;
+    }
+
+    protected void distributeResults(String outputToWriteTo, ResultSet resultSet) throws SQLException, ComponentException {
+        TypedDatum convertedTypedDatum = convertResultSetToTypedDatum(resultSet, outputToWriteTo);
         if (convertedTypedDatum != null) {
-            componentContext.writeOutput(statement.getOutputToWriteTo(), convertedTypedDatum);
+            componentContext.writeOutput(outputToWriteTo, convertedTypedDatum);
         } else {
-            componentContext.getLog().componentError("Failed to convert the database result set into to the given output.");
+            componentContext.getLog().componentError(
+                "Failed to convert the database result set into to the given output " + outputToWriteTo + FULL_STOP);
         }
     }
 

@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow.execution.api;
 
 import java.io.File;
@@ -21,29 +21,44 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Manages workflow executions.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (added fail-on-update flag)
  */
 public interface WorkflowExecutionService {
 
     /**
      * Loads {@link WorkflowDescription} from a {@link File}. It checks for updates and perform updates if needed.
+     * 
      * @param wfFile the worflow file to load the {@link WorkflowDescription} from
      * @param callback a {@link WorkflowDescriptionLoaderCallback} to announce certain events during loading
      * @return {@link WorkflowDescription}
      * @throws WorkflowFileException if loading the {@link WorkflowDescription} from the file failed
      */
-    WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback) 
+    WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback)
         throws WorkflowFileException;
-    
+
+    /**
+     * Loads {@link WorkflowDescription} from a {@link File}. It checks for updates and perform updates if needed.
+     * 
+     * @param wfFile the worflow file to load the {@link WorkflowDescription} from
+     * @param callback a {@link WorkflowDescriptionLoaderCallback} to announce certain events during loading
+     * @param abortIfWorkflowUpdateRequired whether a required workflow update should be considered an error
+     * @return {@link WorkflowDescription}
+     * @throws WorkflowFileException if loading the {@link WorkflowDescription} from the file failed
+     */
+    WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback,
+        boolean abortIfWorkflowUpdateRequired) throws WorkflowFileException;
+
     /**
      * Loads {@link WorkflowDescription} from a {@link File}. It _doesn't_ check for updates and _doesn't_ perform updates at all.
+     * 
      * @param wfFile the worflow file to load the {@link WorkflowDescription} from
      * @param callback a {@link WorkflowDescriptionLoaderCallback} to announce certain events during loading
      * @return {@link WorkflowDescription}
      * @throws WorkflowFileException if loading the {@link WorkflowDescription} from the file failed
      */
-    WorkflowDescription loadWorkflowDescriptionFromFile(File wfFile, WorkflowDescriptionLoaderCallback callback) 
+    WorkflowDescription loadWorkflowDescriptionFromFile(File wfFile, WorkflowDescriptionLoaderCallback callback)
         throws WorkflowFileException;
-    
+
     /**
      * Checks if the components of the workflow are installed on the configured target nodes and if the configured controller node is
      * available.
@@ -52,7 +67,7 @@ public interface WorkflowExecutionService {
      * @return {@link WorkflowDescriptionValidationResult}
      */
     WorkflowDescriptionValidationResult validateWorkflowDescription(WorkflowDescription workflowDescription);
-    
+
     /**
      * Executes a workflow represented by its {@link WorkflowExecutionContext}.
      * 
@@ -75,7 +90,7 @@ public interface WorkflowExecutionService {
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
     void cancel(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
-    
+
     /**
      * Triggers workflow to pause.
      * 
@@ -86,7 +101,7 @@ public interface WorkflowExecutionService {
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
     void pause(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
-    
+
     /**
      * Triggers workflow to resume when paused.
      * 
@@ -97,7 +112,7 @@ public interface WorkflowExecutionService {
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
     void resume(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
-    
+
     /**
      * Triggers workflow to dispose.
      * 
@@ -108,7 +123,7 @@ public interface WorkflowExecutionService {
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
     void dispose(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
-    
+
     /**
      * Gets current workflow state.
      * 
@@ -120,7 +135,7 @@ public interface WorkflowExecutionService {
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
     WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
-    
+
     /**
      * Gets current workflow state.
      * 
@@ -132,17 +147,17 @@ public interface WorkflowExecutionService {
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
     Long getWorkflowDataManagementId(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
-    
+
     /**
      * @return {@link WorkflowExecutionInformation} objects of all active and local workflows
      */
     Set<WorkflowExecutionInformation> getLocalWorkflowExecutionInformations();
-    
+
     /**
      * @return {@link WorkflowExecutionInformation} objects of all active workflows
      */
     Set<WorkflowExecutionInformation> getWorkflowExecutionInformations();
-    
+
     /**
      * @param forceRefresh <code>true</code> if the cache of {@link WorkflowExecutionInformation}s shall be refreshed, <code>false</code>
      *        otherwise

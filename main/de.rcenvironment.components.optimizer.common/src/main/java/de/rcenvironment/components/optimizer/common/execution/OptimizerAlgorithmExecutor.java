@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -234,7 +234,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                     command = executionCommand + inputFileName;
                 } else {
                     command =
-                        previousCommand + " " + workingDir.getAbsolutePath() + File.separator + executionCommand + " " + inputFileName;
+                        previousCommand + " \"" + workingDir.getAbsolutePath() + File.separator + executionCommand + "\" " + inputFileName;
                 }
             } else if (previousCommand == null || previousCommand.equalsIgnoreCase("")) {
                 command = executionCommand + inputFileName;

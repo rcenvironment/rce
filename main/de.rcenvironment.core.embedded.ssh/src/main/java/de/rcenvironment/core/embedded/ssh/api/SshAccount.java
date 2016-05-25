@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -7,6 +7,8 @@
  */
 
 package de.rcenvironment.core.embedded.ssh.api;
+
+import java.security.PublicKey;
 
 /**
  * Represents an SSH account, authenticated with a public key or password.
@@ -32,9 +34,14 @@ public interface SshAccount {
     String getPasswordHash();
 
     /**
-     * @return the string representation of this account's public key (TODO document format)
+     * @return the string representation of this account's public key (in ssh-rsa format like in an authorized_keys file)
      */
     String getPublicKey();
+    
+    /**
+     * @return this account's public key (in ssh-rsa format like in an authorized_keys file)
+     */
+    PublicKey getPublicKeyObj();
 
     /**
      * @return the name of the role used to determine permissions for this user

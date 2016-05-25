@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -89,7 +89,7 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
                     headlessWfExeContext.getTextOutputReceiver().addOutput(compactOutput);
                 }
             } else {
-                if (compactOutput != null && !compactOutput.isEmpty()) {
+                if (verboseOutput != null && !verboseOutput.isEmpty()) {
                     headlessWfExeContext.getTextOutputReceiver().addOutput(verboseOutput);
                 }
             }
@@ -107,7 +107,7 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
     }
 
     protected synchronized void reportWorkflowNotAliveAnymore(String errorMessage) {
-        log.error(StringUtils.format("Final state of workflow '%s' /%s) is %s - %s",
+        log.error(StringUtils.format("Final state of workflow '%s' (%s) is %s - %s",
             getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
             WorkflowState.UNKNOWN.getDisplayName(),
             errorMessage));
@@ -128,8 +128,9 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
         }
         this.finalState = newState;
         if (finalState != WorkflowState.FINISHED) {
-            addOutput("Workflow did not terminated normally (" + finalState.getDisplayName()
-                + "); check log and console output for details");
+            addOutput(StringUtils.format("'%s' terminated abnormally: %s; check log and console output for details",
+                getWorkflowFile().getName(), finalState.getDisplayName()));
+            
         }
         log.debug(StringUtils.format("Workflow '%s' (%s) has terminated, final state: %s (%s)",
             getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
@@ -258,6 +259,11 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
     @Override
     public DeletionBehavior getDeletionBehavior() {
         return headlessWfExeContext.getDeletionBehavior();
+    }
+
+    @Override
+    public boolean shouldAbortIfWorkflowUpdateRequired() {
+        return headlessWfExeContext.shouldAbortIfWorkflowUpdateRequired();
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,7 +34,7 @@ public enum ColumnType {
 
     private final Class<? extends Serializable> javaType;
 
-    private ColumnType(final String label, final int sqlType, final Class<? extends Serializable> type) {
+    ColumnType(final String label, final int sqlType, final Class<? extends Serializable> type) {
         this.label = label;
         this.sqlType = sqlType;
         this.javaType = type;

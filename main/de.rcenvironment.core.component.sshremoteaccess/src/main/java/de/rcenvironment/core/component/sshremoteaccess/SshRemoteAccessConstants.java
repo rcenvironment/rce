@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,6 +26,11 @@ public final class SshRemoteAccessConstants {
      * Name of the tool.
      */
     public static final String KEY_TOOL_NAME = "toolName";
+    
+    /**
+     * Whether the component represents a remote workflow.
+     */
+    public static final String KEY_IS_WORKFLOW = "isWorkflow";
     
     /**
      * Version of the tool.
@@ -65,7 +70,12 @@ public final class SshRemoteAccessConstants {
     /**
      * Name of the group for SSH components.
      */
-    public static final String GROUP_NAME = "SSH Remote Access Tools";
+    public static final String GROUP_NAME_TOOLS = "SSH Remote Access Tools";
+    
+    /**
+     * Name of the group for SSH workflow components.
+     */
+    public static final String GROUP_NAME_WFS = "SSH Remote Access Workflows";
     
     
     //Keys for endpoint definitions

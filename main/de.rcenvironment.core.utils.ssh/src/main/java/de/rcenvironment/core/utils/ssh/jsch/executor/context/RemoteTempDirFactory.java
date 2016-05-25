@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,7 +29,7 @@ class RemoteTempDirFactory {
 
     private final Random random = new Random();
 
-    public RemoteTempDirFactory(String rootDir) {
+    RemoteTempDirFactory(String rootDir) {
         // basic root dir checks
         if (rootDir == null || rootDir.length() < MIN_PLAUSIBLE_ROOT_DIR_LENGTH) {
             throw new IllegalArgumentException("Invalid root path: " + rootDir);

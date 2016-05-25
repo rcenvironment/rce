@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -101,8 +101,7 @@ public class DiscoveryBootstrapServiceImpl implements DiscoveryBootstrapService 
         }
     }
 
-    private String getExternalHostAdressFromDiscovery(DiscoveryClientSetup discoveryClientSetup)
-    {
+    private String getExternalHostAdressFromDiscovery(DiscoveryClientSetup discoveryClientSetup) {
         List<ServerEntry> servers = discoveryClientSetup.getServers();
         if (servers.size() == 0) {
             return null;

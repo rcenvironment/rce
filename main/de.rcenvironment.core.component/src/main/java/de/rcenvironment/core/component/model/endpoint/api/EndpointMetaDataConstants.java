@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,7 +20,7 @@ public final class EndpointMetaDataConstants {
      * 
      * @author Doreen Seider
      */
-    public static enum Visibility {
+    public enum Visibility {
         /** Only configurable by developer. */
         developerConfigurable,
         /** Configurable by developer and user. */

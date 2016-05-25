@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,10 +22,10 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPan
  */
 public class XPathChooserPropertyView extends EndpointPropertySection {
 
-    private static final String ID_INPUT_PANE = "default";
+    protected static final String ID_INPUT_PANE = "default";
 
     /** ID of output pane. */
-    private static final String ID_OUTPUT_PANE = "default";
+    protected static final String ID_OUTPUT_PANE = "default";
     
     public XPathChooserPropertyView() {
         super();

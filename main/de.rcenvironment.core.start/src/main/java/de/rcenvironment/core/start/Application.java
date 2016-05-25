@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.start;
 
+import java.io.PrintStream;
 import java.util.List;
 
 import org.apache.commons.logging.Log;
@@ -30,6 +31,9 @@ import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
  * @author Robert Mischke
  */
 public class Application implements IApplication {
+
+    // note: when changing this message, check whether the Instance Management stdout listener needs backwards compatibility code
+    private static final String STDOUT_MESSAGE_EARLY_STARTUP_COMPLETE = "Early startup complete, running main application";
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -67,6 +71,11 @@ public class Application implements IApplication {
                 break;
             }
         }
+
+        // working around the CheckStyle rule here as this is one of the few cases where StdOut is actually correct - misc_ro
+        PrintStream sysOut = System.out;
+        sysOut.println(STDOUT_MESSAGE_EARLY_STARTUP_COMPLETE);
+
         InstanceRunner instanceRunner = Instance.getInstanceRunner();
         int runnerResult = instanceRunner.run();
 

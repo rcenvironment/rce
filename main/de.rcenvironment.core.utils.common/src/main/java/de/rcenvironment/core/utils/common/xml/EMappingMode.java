@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,8 +11,10 @@ package de.rcenvironment.core.utils.common.xml;
 
 /**
  * Mapping mode.
+ * 
  * @author Arne Bachmann
  * @author Markus Kunde
+ * @author Jan Flink (added DeleteOnly)
  */
 
 public enum EMappingMode {
@@ -25,6 +27,11 @@ public enum EMappingMode {
     /**
      * Remove all and insert all, but reuse if name already exists (?).  
      */
-    Delete;
+    Delete,
+
+    /**
+     * Removes all nodes defined by the target path.
+     */
+    DeleteOnly;
     
 }

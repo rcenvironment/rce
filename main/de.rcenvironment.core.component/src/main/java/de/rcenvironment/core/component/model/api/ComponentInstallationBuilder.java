@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,6 +23,24 @@ public class ComponentInstallationBuilder {
 
     public ComponentInstallationBuilder() {
         componentInstallation = new ComponentInstallationImpl();
+    }
+
+    /**
+     * Creates a {@link ComponentInstallationBuilder} instance from an existing {@link ComponentInstallation} instance. If {@link #build()}
+     * is called directly afterwards, the {@link ComponentInstallation} instance returned is equal to the {@link ComponentInstallation}
+     * instance given regarding installation id, component revision, publishing state, max count of parallel instances, and node id.
+     * 
+     * @param templateComponentInstallation {@link ComponentInstallation} instance that serves as template
+     * @return pre-initialized {@link ComponentInstallationBuilder} instance 
+     */
+    public static ComponentInstallationBuilder fromComponentInstallation(ComponentInstallation templateComponentInstallation) {
+        ComponentInstallationBuilder componentInstallationBuilder = new ComponentInstallationBuilder();
+        componentInstallationBuilder.setInstallationId(templateComponentInstallation.getInstallationId());
+        componentInstallationBuilder.setComponentRevision((ComponentRevisionImpl) templateComponentInstallation.getComponentRevision());
+        componentInstallationBuilder.setIsPublished(templateComponentInstallation.getIsPublished());
+        componentInstallationBuilder.setMaximumCountOfParallelInstances(templateComponentInstallation.getMaximumCountOfParallelInstances());
+        componentInstallationBuilder.setNodeId(templateComponentInstallation.getNodeId());
+        return componentInstallationBuilder;
     }
 
     /**
@@ -62,8 +80,8 @@ public class ComponentInstallationBuilder {
     }
 
     /**
-     * @param isPublished <code>true</code> if {@link ComponentInstallation} is published (is made
-     *        available for remote nodes), otherwise <code>false</code>
+     * @param isPublished <code>true</code> if {@link ComponentInstallation} is published (is made available for remote nodes), otherwise
+     *        <code>false</code>
      * @return builder object for method chaining purposes
      */
     public ComponentInstallationBuilder setIsPublished(boolean isPublished) {

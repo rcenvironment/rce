@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -77,7 +77,6 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
                 log.error("Failed to initialize batch command execution");
             }
         } else {
-            // "standard" headless mode
             Instance.awaitShutdown();
         }
 

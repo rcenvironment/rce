@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,7 @@ import org.eclipse.gef.palette.PaletteDrawer;
 import org.eclipse.gef.palette.PaletteEntry;
 import org.eclipse.gef.palette.PaletteGroup;
 import org.eclipse.gef.palette.PaletteRoot;
-import org.eclipse.gef.palette.SelectionToolEntry;
+import org.eclipse.gef.palette.PanningSelectionToolEntry;
 import org.eclipse.gef.palette.ToolEntry;
 import org.eclipse.gef.requests.SimpleFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
@@ -146,11 +146,11 @@ public class WorkflowPaletteFactory {
         List<PaletteEntry> entries = new ArrayList<PaletteEntry>();
 
         // Add a selection tool to the group
-        ToolEntry tool = new SelectionToolEntry();
+        ToolEntry tool = new PanningSelectionToolEntry();
         tool.setLabel(Messages.select);
         palette.setDefaultEntry(tool);
         entries.add(tool);
-
+        
         // Add (solid-line) connection tool
         tool = new ConnectionCreationToolEntry(
             Messages.connection,

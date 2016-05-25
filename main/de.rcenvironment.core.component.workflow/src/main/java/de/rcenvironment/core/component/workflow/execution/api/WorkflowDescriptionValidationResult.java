@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.component.workflow.execution.api;
 
+import java.util.HashMap;
 import java.util.Map;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
@@ -27,7 +28,7 @@ public class WorkflowDescriptionValidationResult {
     
     private NodeIdentifier missingControllerNodeId = null;
     
-    private Map<String, NodeIdentifier> missingComponentsNodeIds = null;
+    private Map<String, NodeIdentifier> missingComponentsNodeIds = new HashMap<>();
 
     public WorkflowDescriptionValidationResult(boolean validationSucceeded, NodeIdentifier missingControllerNodeId,
         Map<String, NodeIdentifier> missingComponentsNodeIds) {
@@ -40,7 +41,7 @@ public class WorkflowDescriptionValidationResult {
         return succeeded;
     }
 
-    public NodeIdentifier getMissingControllerNodeIds() {
+    public NodeIdentifier getMissingControllerNodeId() {
         return missingControllerNodeId;
     }
 
@@ -50,17 +51,20 @@ public class WorkflowDescriptionValidationResult {
     
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuffer causeLogMsg = new StringBuffer();
         if (missingControllerNodeId != null) {
-            buffer.append(StringUtils.format("Workflow controller -> %s\n", missingControllerNodeId.getAssociatedDisplayName()));
+            causeLogMsg
+                .append(StringUtils.format("target instance for workflow controller unknown: %s", missingControllerNodeId));
         }
-        if (missingComponentsNodeIds != null) {
-            for (String wfNodeName : missingComponentsNodeIds.keySet()) {
-                buffer.append(StringUtils.format("%s -> %s\n", wfNodeName, 
-                    missingComponentsNodeIds.get(wfNodeName).getAssociatedDisplayName()));
+        for (String compName : missingComponentsNodeIds.keySet()) {
+            if (causeLogMsg.length() > 0) {
+                causeLogMsg.append(", ");
             }
+            causeLogMsg.append(StringUtils.format("target instance for component unknown: %s -> %s", compName,
+                missingComponentsNodeIds.get(compName)));
         }
-        return buffer.toString().trim();
+        
+        return causeLogMsg.toString().trim();
     }
 
     /**

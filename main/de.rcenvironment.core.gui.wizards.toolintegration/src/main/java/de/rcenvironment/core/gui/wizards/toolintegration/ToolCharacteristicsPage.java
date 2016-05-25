@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,6 +49,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Sascha Zur
  */
 public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
+
+    private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_characteristics";
 
     private static final String DOTS = "  ...  ";
 
@@ -225,6 +227,8 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         integratorEmail = addLabelAndTextfieldForPropertyToComposite(userInformationGroup, Messages.email,
             ToolIntegrationConstants.KEY_TOOL_INTEGRATOR_EMAIL);
         setControl(container);
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
+            HELP_CONTEXT_ID);
         validate(false);
 
     }
@@ -320,7 +324,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
         private final Text text;
 
-        public TextModifyListener(Text text) {
+        TextModifyListener(Text text) {
             this.text = text;
         }
 
@@ -332,8 +336,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     }
 
     /**
-     * Listener allowing to leave the description field by pressing TAB (instead of inserting a tab
-     * into the text).
+     * Listener allowing to leave the description field by pressing TAB (instead of inserting a tab into the text).
      *
      * @author bode_br
      */
@@ -361,8 +364,9 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         if (!docValid.isEmpty()) {
             setMessage(docValid, DialogPage.WARNING);
         }
-        if (configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME) == null
-            || ((String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)).isEmpty()) {
+        String name = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
+        if (name == null
+            || name.trim().isEmpty()) {
             setMessage(Messages.toolFilenameInvalid, DialogPage.ERROR);
             setPageComplete(false);
         } else if ((!update) && usedToolnames.contains((configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
@@ -450,7 +454,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
     public void performHelp() {
         super.performHelp();
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
-        helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_characteristics");
+        helpSystem.displayHelp(HELP_CONTEXT_ID);
     }
 
     @Override

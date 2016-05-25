@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -65,6 +65,8 @@ public class XMLMergerIntegrationTest {
     private static final String ENDPOINT_NAME_XML = "XML";
 
     private static final String ENDPOINT_NAME_XML_TO_INTEGRATE = XmlMergerComponentConstants.INPUT_NAME_XML_TO_INTEGRATE;
+    
+    private static final String ENDPOINT_NAME_MAPPING_FILE = XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE;
 
     /**
      * Junit Exception rule.
@@ -230,6 +232,9 @@ public class XMLMergerIntegrationTest {
         context.addSimulatedInput(ENDPOINT_NAME_XML_TO_INTEGRATE, ENDPOINT_NAME_XML_TO_INTEGRATE, DataType.FileReference, false, null);
         context.addSimulatedOutput(ENDPOINT_NAME_XML, ENDPOINT_NAME_XML, DataType.FileReference, false, null);
 
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+            XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED);
+        
         component = new ComponentTestWrapper(new XmlMergerComponent(), context);
         typedDatumFactory = context.getService(TypedDatumService.class).getFactory();
         
@@ -257,6 +262,43 @@ public class XMLMergerIntegrationTest {
             typedDatumFactory.createFileReference(originCPACS.getAbsolutePath(), originCPACS.getName()));
         context.setInputValue(ENDPOINT_NAME_XML_TO_INTEGRATE,
             typedDatumFactory.createFileReference(xmlToIntegrate.getAbsolutePath(), xmlToIntegrate.getName()));
+
+        component.processInputs();
+
+        File resultFile = new File(((FileReferenceTD) context.getCapturedOutput(ENDPOINT_NAME_XML).get(0)).getFileReference());
+
+        Document resultDoc = xmlSupport.readXMLFromFile(resultFile);
+        Document expectedDoc = xmlSupport.readXMLFromFile(expectedResult);
+        expectedDoc.normalizeDocument();
+        assertTrue(XML_MAPPING_DIDN_T_PRODUCE_THE_EXPECTED_RESULT,
+            xmlSupport.writeXMLToString(resultDoc).equals(xmlSupport.writeXMLToString(expectedDoc)));
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+    
+    /**
+     * Test with standard inputs and mapping file as input (no dynamic inputs/outputs).
+     * 
+     * @throws Exception e
+     */
+    @Test
+    public void testXSLTMappingWithStandardInputAndMappingFileAsInput() throws Exception {
+
+        context.addSimulatedInput(ENDPOINT_NAME_MAPPING_FILE, ENDPOINT_NAME_MAPPING_FILE, DataType.FileReference, true, null);
+
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+            XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT);
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, XmlMergerComponentConstants.MAPPINGTYPE_XSLT);
+
+        component.start();
+
+        context.setInputValue(ENDPOINT_NAME_XML,
+            typedDatumFactory.createFileReference(originCPACS.getAbsolutePath(), originCPACS.getName()));
+        context.setInputValue(ENDPOINT_NAME_XML_TO_INTEGRATE,
+            typedDatumFactory.createFileReference(xmlToIntegrate.getAbsolutePath(), xmlToIntegrate.getName()));
+        context.setInputValue(ENDPOINT_NAME_MAPPING_FILE,
+            typedDatumFactory.createFileReference(mappingRules.getAbsolutePath(), mappingRules.getName()));
+        
 
         component.processInputs();
 
@@ -305,9 +347,46 @@ public class XMLMergerIntegrationTest {
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
 
     }
+    
+    /**
+     * Test with standard inputs and mapping file as input (no dynamic inputs/outputs).
+     * 
+     * @throws Exception e
+     */
+    @Test
+    public void testXMLMappingWithStandardInputAndMappingFileAsInput() throws Exception {
+
+        context.addSimulatedInput(ENDPOINT_NAME_MAPPING_FILE, ENDPOINT_NAME_MAPPING_FILE, DataType.FileReference, true, null);
+        
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+            XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT);
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC);
+
+        component.start();
+
+        context.setInputValue(ENDPOINT_NAME_XML,
+            typedDatumFactory.createFileReference(originCPACS.getAbsolutePath(), originCPACS.getName()));
+        context.setInputValue(ENDPOINT_NAME_XML_TO_INTEGRATE,
+            typedDatumFactory.createFileReference(xmlToIntegrate.getAbsolutePath(), xmlToIntegrate.getName()));
+        context.setInputValue(ENDPOINT_NAME_MAPPING_FILE,
+            typedDatumFactory.createFileReference(mappingRulesXml.getAbsolutePath(), mappingRulesXml.getName()));
+
+        component.processInputs();
+        File resultFile = new File(((FileReferenceTD) context.getCapturedOutput(ENDPOINT_NAME_XML).get(0)).getFileReference());
+
+        Document resultDoc = xmlSupport.readXMLFromFile(resultFile);
+        Document expectedDoc = xmlSupport.readXMLFromFile(expectedResultXml);
+        expectedDoc.normalizeDocument();
+        resultDoc.normalizeDocument();
+        assertTrue(XML_MAPPING_DIDN_T_PRODUCE_THE_EXPECTED_RESULT,
+            xmlSupport.writeXMLToString(resultDoc).equals(xmlSupport.writeXMLToString(expectedDoc)));
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+
+    }
 
     /**
-     * Test with invalid XSTL mapping.
+     * Test with invalid XSLT mapping.
      * 
      * @throws ComponentException e
      */

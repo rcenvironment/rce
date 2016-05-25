@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,6 +17,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Common test/mock implementations of {@link CommunicationService}. These can be used directly, or can as superclasses for custom mock
@@ -47,7 +48,8 @@ public class MockDistributedNotificationService implements DistributedNotificati
     public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform) {}
 
     @Override
-    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) {
+    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform)
+        throws RemoteOperationException {
         return null;
     }
 

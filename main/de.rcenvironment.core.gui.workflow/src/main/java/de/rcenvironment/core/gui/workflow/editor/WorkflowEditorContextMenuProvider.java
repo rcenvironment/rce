@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -48,7 +48,7 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
      * @param viewer the editor's graphical viewer
      * @param actionRegistry the editor's action registry
      */
-    public WorkflowEditorContextMenuProvider(EditPartViewer viewer, ActionRegistry actionRegistry) {
+    WorkflowEditorContextMenuProvider(EditPartViewer viewer, ActionRegistry actionRegistry) {
         super(viewer);
         this.viewer = viewer;
         this.actionRegistry = actionRegistry;

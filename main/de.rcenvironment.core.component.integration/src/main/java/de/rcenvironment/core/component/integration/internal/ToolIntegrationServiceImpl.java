@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -65,6 +65,7 @@ import de.rcenvironment.core.component.registration.api.ComponentRegistry;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.utils.common.CompressingHelper;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -130,7 +131,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     private PlatformService platformService;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private ToolIntegrationFileWatcherManager watchManager;
 
@@ -207,9 +208,15 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD)
                 .build();
 
-        String limitExecutionCount =
-            (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+        String limitExecutionCount = "";
+        if ((((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+            .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) != null) {
+            limitExecutionCount = (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
                 .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES);
+        } else {
+            limitExecutionCount = (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
+                .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
+        }
         String maxParallelCountString =
             (((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0))
                 .get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT);
@@ -218,6 +225,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         if (limitExecutionCount != null && Boolean.parseBoolean(limitExecutionCount) && maxParallelCountString != null
             && !maxParallelCountString.equals("")) {
             maxParallelCount = Integer.parseInt(maxParallelCountString);
+            if (maxParallelCount < 1) {
+                LOGGER.error(StringUtils.format(
+                    "A maximum count of parallel executions of %d is invalid, it must be >= 1; a maximum count of 1 is used instead",
+                    maxParallelCount));
+                maxParallelCount = 1;
+            }
         }
         ComponentInstallation ci =
             new ComponentInstallationBuilder()
@@ -248,7 +261,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             docDir.mkdirs();
         }
         if (docDir.listFiles().length > 0) {
-            if (validateDocumentationDirectory(docDir)) {
+            if (docDir.exists() && validateDocumentationDirectory(docDir)) {
                 try {
                     byte[] zippedByteArray = CompressingHelper.createZippedByteArrayFromFolder(docDir);
                     return DigestUtils.md5Hex(zippedByteArray);
@@ -655,6 +668,14 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     @Override
     public void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
         ToolIntegrationContext information) throws IOException {
+
+        // TODO : Code for removing deprecated key; should be removed in the future 8/3/16 zur_sa
+        @SuppressWarnings("unchecked") Map<String, String> launchSettings =
+            ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0);
+        String value = launchSettings.remove(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
+        if (!launchSettings.containsKey(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) && value != null) {
+            launchSettings.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES, value);
+        }
 
         File toolConfigFile =
             new File(folder, information.getNameOfToolIntegrationDirectory() + File.separator

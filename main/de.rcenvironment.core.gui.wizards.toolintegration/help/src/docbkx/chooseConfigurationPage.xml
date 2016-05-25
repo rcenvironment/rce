@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Choose Integration Configuration</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>First page of the wizard for choosing whether to integrate a tool from scratch or to
+            reactivate (and perhaps edit) an inactive tool.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Create a new common configuration:</emphasis>
+                        Choosing this option, a complete new integration for a common configuration
+                        will be created without presets.</para>
+                </listitem>
+            </itemizedlist>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Create a new &lt;other> configuration
+                            (optional):</emphasis> If some extensions are installed, it is possible
+                        to create configurations that need special pages. These are shown
+                        here.</para>
+                </listitem>
+            </itemizedlist>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Create new integration with template:</emphasis>
+                        Some cases need always the same configuration for some elements, so a preset
+                        configuration is given with these templates.</para>
+                </listitem>
+            </itemizedlist>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Choose an inactive configuration to edit:</emphasis>
+                        If configurations are found in your integration folder and the components
+                        they describe are not active, you can choose one of them in the list, edit
+                        it if you want and then activate the component.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+    </sect1>
+</chapter>

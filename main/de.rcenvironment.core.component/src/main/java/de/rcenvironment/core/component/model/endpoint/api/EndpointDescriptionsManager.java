@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,10 +24,13 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Manages endpoint descriptions of a component. This class is not thread-safe. It is intended that
- * this class is primary called by the GUI thread.
+ * Manages endpoint descriptions of a component. This class is not thread-safe. It is intended that this class is primary called by the GUI
+ * thread.
  * 
  * @author Doreen Seider
+ * 
+ * FIXME: Use a factory to create {@link EndpointDescription} instances and just provide add, delete, etc. for
+ * {@link EndpointDescription} instances --seid_do
  */
 public class EndpointDescriptionsManager extends PropertiesChangeSupport implements Serializable {
 
@@ -284,6 +287,27 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
         }
     }
 
+    /**
+     * Add a dynamic endpoint to the list of dynamic endpoints with a random identifier.
+     * 
+     * @param endpointId identifier of dynamic {@link EndpointDefinition} to chose as the underlying
+     *        {@link EndpointDefinition}
+     * @param name name to set
+     * @param dataType data type to set
+     * @param metaData meta data to set
+     * @param parentGroup name of parent input group, <code>null</code> for using default group or
+     *        none
+     * @param checkIfDeclared perform check if dynamic endpoint is declared
+     * @return {@link EndpointDescription} object created and added or <code>null</code> if the name
+     *         already exists
+     * @throws IllegalArgumentException if dynamic endpoint description with given name already
+     *         exists or new name is invalid
+     */
+    public EndpointDescription addDynamicEndpointDescription(String endpointId, String name, DataType dataType,
+        Map<String, String> metaData, String parentGroup, boolean checkIfDeclared) throws IllegalArgumentException {
+        return addDynamicEndpointDescription(endpointId, name, dataType, metaData, UUID.randomUUID().toString(),
+            parentGroup, checkIfDeclared);
+    }
     /**
      * Add a dynamic endpoint to the list of dynamic endpoints.
      * 

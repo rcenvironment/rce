@@ -22,7 +22,7 @@
 			</note></para>
 		<para>All manual configuration takes place in the profile's central configuration file,
 			"configuration.json". As of RCE 7.0.0, most configuration settings only take effect on
-			startup, so you need to restart RCE after editing it. (This will be changed in an future
+			startup, so you need to restart RCE after editing it. (This will be changed in a future
 			release.) This applies to all types of installations.</para>
 	</sect2>
 	<sect2>
@@ -47,7 +47,25 @@
 			<tbody>
 					<row>
 						<entry>instanceName</entry>
-						<entry>The name of the instance that will be shown to all users in the RCE network.</entry>
+						<entry>The name of the instance that will be shown to all users in the RCE network. The
+							following placeholders can be used within the instance name:<itemizedlist>
+								<listitem>
+									<para>${hostName} is resolved to the local system's host
+										name.</para>
+								</listitem>
+								<listitem>
+									<para>${systemUser} is resolved to the Java "user.name"
+										property.</para>
+								</listitem>
+								<listitem>
+									<para>${profileName} is resolved to the last part of the current
+										profile's file system path.</para>
+								</listitem>
+								<listitem>
+									<para>${version} is resolved to the build id.</para>
+								</listitem>
+							</itemizedlist><para>Example: "Default instance started by
+								\"${systemUser}\" on ${hostName}".</para></entry>
 						<entry>"&lt;unnamed instance>"</entry>
 					</row>
 				<row>
@@ -77,8 +95,10 @@
 					<entry>Can be used to override the default path where RCE stores temporary files. Useful if
 							there is little space in the default temp file location. Must be an
 							absolute path to an existing directory, and the path must not contain
-							spaces (to prevent problems with tools accessing such
-							directories).</entry>
+							spaces (to prevent problems with tools accessing such directories). The
+							placeholder <emphasis role="italic">${systemUser}</emphasis> can be used
+							for path construction, e.g.
+							"/tmp/custom-temp-directory/${systemUser}"</entry>
 					<entry>An "rce-temp" subdirectory within the user or system temp directory.</entry>
 				</row>
 				<row>
@@ -107,7 +127,7 @@
 			<tbody>
 					<row>
 						<entry>enabledIds</entry>
-						<entry>Comma-separated list of identifiers refering to certain kind of moinitoring data that should be logged continuously in the background. Currently, only 'basic_system_data' is supported.</entry>
+						<entry>Comma-separated list of identifiers referring to certain kind of monitoring data that should be logged continuously in the background. Currently, only 'basic_system_data' is supported.</entry>
 						<entry></entry>
 					</row>
 					<row>
@@ -125,7 +145,7 @@
 				like the internet. When setting up RCE connections between different locations, make
 				sure that they either connect across a secure network (e.g. your institution's
 				internal network), or that the connection is secured by other means, like SSH
-				tunnelling or a VPN. Alternatively, you can set up SSH connections in RCE instead of
+				tunneling or a VPN. Alternatively, you can set up SSH connections in RCE instead of
 				the standard RCE connections.</para>
 		</note>
 		<table frame="all" width="100%">
@@ -155,7 +175,7 @@
 						<entry>forwardingTimeout Msec</entry>
 						<entry>The timeout (in milliseconds) for network requests that are forwarded
 							by the local node on behalf of another node. If this time expires before
-							a response is received, an error reponse is sent back to the node that
+							a response is received, an error response is sent back to the node that
 							made the request.</entry>
 						<entry>35000</entry>
 					</row>
@@ -168,7 +188,7 @@
 					</row>
 					<row>
 						<entry>connections/[id]/host</entry>
-						<entry>IP address of the host to connect to. Host names and IPv4 adresses
+						<entry>IP address of the host to connect to. Host names and IPv4 addresses
 							are permitted.</entry>
 						<entry>-</entry>
 					</row>
@@ -265,13 +285,100 @@
 					<row>
 						<entry>components </entry>
 						<entry>List of workflow components, which are made available to other instances within the RCE
-							network. Workflow components are represented by their identifiers. Note:
-							That doesn't affect integrated tools.</entry>
+							network. Workflow components are represented by their identifiers (see
+							table below). Note: That doesn't affect integrated tools.</entry>
 						<entry>[] (an empty list in JSON format)</entry>
 					</row>
 				</tbody>
 			</tgroup>
 			</table>
+		<table frame="all">
+			<title>Component identifiers used in configuration group 'publishing'</title>
+			<tgroup cols="2">
+				<colspec colname="c1" colnum="1" colwidth="1.0*"/>
+				<colspec colname="c2" colnum="2" colwidth="1.0*"/>
+				<thead>
+					<row>
+						<entry>Component name</entry>
+						<entry>Component identifier</entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>Cluster</entry>
+						<entry>de.rcenvironment.cluster</entry>
+					</row>
+					<row>
+						<entry>Converger</entry>
+						<entry>de.rcenvironment.converger</entry>
+					</row>
+					<row>
+						<entry>CPACS VampZero Initializer</entry>
+						<entry>de.rcenvironment.vampzeroinitializer</entry>
+					</row>
+					<row>
+						<entry>CPACS Writer</entry>
+						<entry>de.rcenvironment.cpacswriter</entry>
+					</row>
+					<row>
+						<entry>Database</entry>
+						<entry>de.rcenvironment.database</entry>
+					</row>
+					<row>
+						<entry>Design of Experiments</entry>
+						<entry>de.rcenvironment.doe.v2</entry>
+					</row>
+					<row>
+						<entry>Evaluation Memory</entry>
+						<entry>de.rcenvironment.evaluationmemory</entry>
+					</row>
+					<row>
+						<entry>Excel</entry>
+						<entry>de.rcenvironment.excel</entry>
+					</row>
+					<row>
+						<entry>Input Provider</entry>
+						<entry>de.rcenvironment.inputprovider</entry>
+					</row>
+					<row>
+						<entry>Joiner</entry>
+						<entry>de.rcenvironment.joiner</entry>
+					</row>
+					<row>
+						<entry>Optimizer</entry>
+						<entry>de.rcenvironment.optimizer</entry>
+					</row>
+					<row>
+						<entry>Output Writer</entry>
+						<entry>de.rcenvironment.outputwriter</entry>
+					</row>
+					<row>
+						<entry>Parametric Study</entry>
+						<entry>de.rcenvironment.parametricstudy</entry>
+					</row>
+					<row>
+						<entry>Script</entry>
+						<entry>de.rcenvironment.script</entry>
+					</row>
+					<row>
+						<entry>Switch</entry>
+						<entry>de.rcenvironment.switchcmp</entry>
+					</row>
+					<row>
+						<entry>TiGL Viewer</entry>
+						<entry>de.rcenvironment.tiglviewer</entry>
+					</row>
+					<row>
+						<entry>XML Loader</entry>
+						<entry>de.rcenvironment.xmlloader</entry>
+					</row>
+					<row>
+						<entry>XML Merger</entry>
+						<entry>de.rcenvironment.xmlmerger</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
 		<table width="100%">
 			<title>componentSettings</title>
 			<tgroup cols="3">
@@ -387,7 +494,7 @@
 						<entry>The host's ip address to bind to. If you want to make the SSH server
 							accessible from remote, you should set this to the IP of the machine's
 							external network interface. Alternatively, you can set this to "0.0.0.0"
-							to listen on all available IPv4 adresses, if this is appropriate in your
+							to listen on all available IPv4 addresses, if this is appropriate in your
 							network setup.</entry>
 						<entry>127.0.0.1</entry>
 					</row>
@@ -404,9 +511,9 @@
 					</row>
 					<row>
 						<entry>[account name]/passwordHash</entry>
-						<entry>The hashed password for the account. If the SSH account is configured
-							using the configuration UI, the hash is automatically computed and
-							stored here.</entry>
+						<entry>The hashed password for the account, if password authentication is used. If the SSH
+							account is configured using the configuration UI, the hash is
+							automatically computed and stored here.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -418,6 +525,15 @@
 								<emphasis>must</emphasis> be secured against unauthorized reading
 							(e.g. by setting restrictive filesystem permissions). A more secure
 							alternative is to just store the password hash.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>[account name]/publicKey</entry>
+						<entry>The public key for the account, if keyfile authentication is used. Only RSA keys in the
+							OpenSSH format are supported. The public key has to be entered here in
+							the OpenSSH format (a string starting with "ssh-rsa", like it is used
+							for example in authorized_keys files). Only applicable on RCE version
+							7.1 or newer.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -471,7 +587,7 @@
 					</row>
 					<row>
 						<entry>sshConnections/[id]/host </entry>
-						<entry>The remote RCE instance to connect to. Host names and IPv4 adresses are
+						<entry>The remote RCE instance to connect to. Host names and IPv4 addresses are
 							permitted.</entry>
 						<entry>-</entry>
 					</row>
@@ -482,9 +598,22 @@
 					</row>
 					<row>
 						<entry>sshConnections/[id]/loginName</entry>
-						<entry>A map of accounts. For each account a unique identifier (account name) must be
-							given.</entry>
-						<entry>{} (an empty map in JSON format)</entry>
+						<entry>The login name for authentication.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>sshConnections/[id]/keyfileLocation</entry>
+						<entry>Path to the private key file, if keyfile authentication is used. Only RSA keys in the
+							OpenSSH format are supported.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>sshConnections/[id]/noPassphrase</entry>
+						<entry>This option should only be set if a private key that requires no
+							passphrase is used for authentication. If set to <emphasis role="italic"
+								>true</emphasis>, RCE does not ask for a passphrase before
+							connecting.</entry>
+						<entry>false</entry>
 					</row>
 				</tbody>
 			</tgroup>

@@ -1,0 +1,6 @@
+<contexts>
+	<context id="cpacswriter" title="CPACS Writer Component Help">
+		<description>The CPACS Writer component saves incoming CPACS content as an xml file on the local file system. It has a runtime-GUI to show the CPACS file in TiGL Viewer.</description>
+     	<topic href="help/generated/html/usage.xhtml" label="CPACS Writer Component Usage"></topic>
+	</context>
+</contexts>

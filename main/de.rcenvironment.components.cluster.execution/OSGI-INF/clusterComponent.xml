@@ -21,7 +21,7 @@
     
     <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
 
-	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.cluster.common/resources/cluster16.png"/>
-  	<property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.cluster.common/resources/cluster32.png"/>
+	<property name="rce.component.icon-16" type="String" value="cluster16.png"/>
+	<property name="rce.component.icon-32" type="String" value="cluster32.png"/>
 	
 </scr:component> 

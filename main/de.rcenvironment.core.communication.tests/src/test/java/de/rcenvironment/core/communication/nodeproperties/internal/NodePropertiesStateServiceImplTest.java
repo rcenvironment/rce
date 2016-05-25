@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -92,7 +92,7 @@ public class NodePropertiesStateServiceImplTest {
 
         public final Collection<? extends NodeProperty> removed;
 
-        public CallbackHolder(Collection<? extends NodeProperty> addedSet, Collection<? extends NodeProperty> updatedSet,
+        CallbackHolder(Collection<? extends NodeProperty> addedSet, Collection<? extends NodeProperty> updatedSet,
             Collection<? extends NodeProperty> removedSet) {
             this.added = addedSet;
             this.updated = updatedSet;

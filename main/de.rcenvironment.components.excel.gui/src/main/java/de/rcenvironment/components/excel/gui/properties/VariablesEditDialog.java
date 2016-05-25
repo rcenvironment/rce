@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.components.excel.gui.properties;
 
 import java.io.File;
@@ -19,8 +19,10 @@ import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
@@ -43,15 +45,14 @@ import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 public class VariablesEditDialog extends EndpointEditDialog {
 
     private File xlFile;
-    
+
     private CellSelectionDialog selectionDialog;
 
-    
     public VariablesEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
         EndpointType direction, String id, boolean isStatic, Image icon,
         EndpointMetaDataDefinition metaData, Map<String, String> metadataValues, final File xlFile) {
         super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);
-        
+
         this.xlFile = xlFile;
     }
 
@@ -61,20 +62,27 @@ public class VariablesEditDialog extends EndpointEditDialog {
 
     protected void notifyAboutSelection() {
         if (selectionDialog.getAddress() != null && !selectionDialog.getAddress().isEmpty()) {
-            ExcelAddress addr = new ExcelAddress(xlFile, selectionDialog.getAddress());
-
+            ExcelAddress addr = null;
+            try {
+                addr = new ExcelAddress(xlFile, selectionDialog.getAddress());
+            } catch (ExcelException ee) {
+                MessageBox messageBox = new MessageBox(Display.getDefault().getActiveShell(), SWT.ICON_WARNING | SWT.ABORT);
+                messageBox.setText("Invalid Excel Address");
+                messageBox.setMessage(ee.getMessage());
+                messageBox.open();
+            }
             Widget address = super.getWidget(ExcelComponentConstants.METADATA_ADDRESS);
-            if (address instanceof Text) {
+            if (addr != null && address instanceof Text) {
                 ((Text) address).setText(addr.getFullAddress());
             }
         }
-        selectionDialog.close(); 
+        selectionDialog.close();
     }
-    
+
     @Override
     protected Control createConfigurationArea(Composite parent) {
         Control superControl = super.createConfigurationArea(parent);
-        
+
         Button selectButton = new Button(parent, SWT.NONE);
         selectButton.setText(Messages.selectButton);
         selectButton.addListener(SWT.Selection, new Listener() {
@@ -84,14 +92,14 @@ public class VariablesEditDialog extends EndpointEditDialog {
                 createExcelDialog();
             }
         });
-        
+
         return superControl;
     }
-    
+
     @Override
     protected boolean validateMetaDataInputs() {
         boolean validation = false;
-        
+
         if (super.validateMetaDataInputs()) {
             try {
                 Widget address = super.getWidget(ExcelComponentConstants.METADATA_ADDRESS);
@@ -104,10 +112,10 @@ public class VariablesEditDialog extends EndpointEditDialog {
                 validation = false;
             }
         }
-        
-        return validation;   
+
+        return validation;
     }
-    
+
     /**
      * Creates the Excel-cell choosing dialog.
      */
@@ -131,9 +139,8 @@ public class VariablesEditDialog extends EndpointEditDialog {
         locationY = (parentSize.height - mySize.height) / 2 + parentSize.y;
 
         excelDialog.setLocation(new Point(locationX, locationY));
-        excelDialog.open();        
+        excelDialog.open();
         selectionDialog.open(super.getMetadataValues().get(ExcelComponentConstants.METADATA_ADDRESS));
     }
 
-    
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.datamanagement.internal;
 
-import java.text.MessageFormat;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -63,8 +62,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).addComponentRun(componentInstanceId, nodeId, count, starttime);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to add component run from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to add component run from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -74,8 +73,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             getRemoteMetaDataService(storageNodeId).addInputDatum(componentRunId, typedDatumId, endpointInstanceId, count);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to add input datum from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to add input datum from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -85,8 +84,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).addOutputDatum(componentRunId, endpointInstanceId, datum, count);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to add output datum from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to add output datum from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -96,9 +95,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             getRemoteMetaDataService(storageNodeId).addComponentRunProperties(componentRunId, properties);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to add component run properties from remote node @{0}: ",
-                storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to add component run properties from remote node @%s: ",
+                storageNodeId) + e.getMessage());
         }
     }
 
@@ -108,8 +106,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).addTimelineInterval(workflowRunId, intervalType, starttime, relatedComponentId);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to add timeline interval from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to add timeline interval from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -119,9 +117,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             getRemoteMetaDataService(storageNodeId).setTimelineIntervalFinished(timelineIntervalId, endtime);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to set endtime of timeline interval from remote node @{0}: ",
-                storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to set endtime of timeline interval from remote node @%s: ",
+                storageNodeId) + e.getMessage());
         }
     }
 
@@ -131,9 +128,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             getRemoteMetaDataService(storageNodeId).setOrUpdateHistoryDataItem(componentRunId, historyDataItem);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to update history data item from remote node @{0}: ",
-                storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to update history data item from remote node @%s: ",
+                storageNodeId) + e.getMessage());
         }
     }
 
@@ -143,9 +139,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             getRemoteMetaDataService(storageNodeId).setComponentRunFinished(componentRunId, endtime);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to set endtime of component run from remote node @{0}: ",
-                storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to set endtime of component run from remote node @%s: ",
+                storageNodeId) + e.getMessage());
         }
     }
 
@@ -155,9 +150,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             getRemoteMetaDataService(storageNodeId).setComponentInstanceFinalState(componentInstanceId, finalState);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format(
-                "Failed to set final state of component instance from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format(
+                "Failed to set final state of component instance from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -236,8 +230,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).getWorkflowRun(workflowRunId);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to get workflow run from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to get workflow run from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -246,8 +240,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).getWorkflowTimeline(workflowRunId);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to get workflow timeline from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to get workflow timeline from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -256,8 +250,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).deleteWorkflowRun(workflowRunId);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to delete worklfow run from remote node @{0}: ", storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(
+                StringUtils.format("Failed to delete worklfow run from remote node @%s: ", storageNodeId) + e.getMessage());
         }
     }
 
@@ -267,9 +261,8 @@ public class MetaDataServiceImpl implements MetaDataService {
         try {
             return getRemoteMetaDataService(storageNodeId).deleteWorkflowRunFiles(workflowRunId);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to delete files of worklfow run from remote node @{0}: ",
-                storageNodeId)
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to delete files of worklfow run from remote node @%s: ",
+                storageNodeId) + e.getMessage());
         }
     }
 

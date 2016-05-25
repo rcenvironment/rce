@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,7 @@ import org.eclipse.equinox.app.IApplication;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.osgi.service.datalocation.Location;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.ui.PlatformUI;
@@ -108,7 +109,7 @@ public final class GUIInstanceRunner extends InstanceRunner {
         
         if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
             InstanceValidationResult result = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).get(0);
-            showErrorDialog("Instance validation failure", result.getGuiDialogMessage() + "\n\nRCE will be shutdown.");
+            showErrorDialog("Instance validation failure", result.getGuiDialogMessage() + "\n\nRCE will be shut down.");
             return false;
         }
         
@@ -260,11 +261,11 @@ public final class GUIInstanceRunner extends InstanceRunner {
     }
     
     private void showErrorDialog(String title, String message) {
-        MessageDialog.openError(new Shell(), title, message);
+        MessageDialog.openError(new Shell(SWT.ON_TOP), title, message);
     }
     
     private boolean showQuestionDialog(String title, String message) {
-        return MessageDialog.openQuestion(new Shell(), title, message);
+        return MessageDialog.openQuestion(new Shell(SWT.ON_TOP), title, message);
     }
     
 }

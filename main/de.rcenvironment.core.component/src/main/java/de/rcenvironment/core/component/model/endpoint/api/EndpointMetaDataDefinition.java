@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
  * Describes endpoint meta data.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public interface EndpointMetaDataDefinition {
 
@@ -50,7 +51,11 @@ public interface EndpointMetaDataDefinition {
      * @return activation filter: meta data value set under which the meta datum is active in the GUI
      */
     Map<String, List<String>> getGuiActivationFilter(String key);
-
+    /**
+     * @param key meta data key
+     * @return visibility filter: meta data value set under which the meta datum is shown in the GUI
+     */
+    Map<String, List<String>> getGuiVisibilityFilter(String key);
     /**
      * @param key meta data key
      * @return possible values for this meta data. "*" if every alphanumeric value is possible

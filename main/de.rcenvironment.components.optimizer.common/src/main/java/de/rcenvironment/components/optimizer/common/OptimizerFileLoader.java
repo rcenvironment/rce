@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,6 +27,7 @@ import org.osgi.framework.FrameworkUtil;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Static class for loading resources.
@@ -37,7 +38,7 @@ public final class OptimizerFileLoader {
 
     private static final String RESOURCES = "/resources";
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private static ConfigurationService configService;
 

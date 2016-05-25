@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -128,6 +128,8 @@ public class ExcelAddress implements Serializable {
                 // Short validation
                 String[] splitAddress = rawAddress.split("!");
                 String lastAddressToken = splitAddress[splitAddress.length - 1];
+                String exceptionMessage = "Validation of address '" + rawAddress + "' failed. "
+                    + "Most likely it's no valid Excel cell address.";
                 if (isNewXlFile) {
                     if (splitAddress.length != 2
                         || !(lastAddressToken.matches("^\\$?([A-Za-z]{0,3})\\$?([0-9]{0,7}):?\\$?([A-Za-z]{0,3})\\$?([0-9]{0,7})$"))
@@ -135,7 +137,7 @@ public class ExcelAddress implements Serializable {
                         || (lastAddressToken.matches("[0-9]+"))
                         || (lastAddressToken.startsWith(ExcelComponentConstants.DIVIDER_CELLADDRESS))
                         || (lastAddressToken.endsWith(ExcelComponentConstants.DIVIDER_CELLADDRESS))) {
-                        throw new ExcelException("Validation of address fails. Maybe not a valid Excel cell address?");
+                        throw new ExcelException(exceptionMessage);
                     }
                 } else {
                     if (splitAddress.length != 2
@@ -144,7 +146,7 @@ public class ExcelAddress implements Serializable {
                         || (lastAddressToken.matches("[0-9]+"))
                         || (lastAddressToken.startsWith(ExcelComponentConstants.DIVIDER_CELLADDRESS))
                         || (lastAddressToken.endsWith(ExcelComponentConstants.DIVIDER_CELLADDRESS))) {
-                        throw new ExcelException("Validation of address fails. Maybe not a valid Excel cell address?");
+                        throw new ExcelException(exceptionMessage);
                     }
                 }
                 String rawAddressWithoutAbsoluteFlag = StringUtils.remove(rawAddress, ExcelComponentConstants.ABSOLUTEFLAG);

@@ -128,7 +128,6 @@
       "CustomDakotaPath" : "false",
       "algorithm" : "Dakota Coliny COBYLA (Constraint Optimization By Linear Approximations)",
       "dakotaExecPath" : "${dakotaExecPath}",
-      "genericPythonPath" : "${genericPythonPath}",
       "isNestedLoop_5e0ed1cd" : "true",
       "loopFaultTolerance_5e0ed1cd" : "Fail",
       "loopRerunAndDiscard_5e0ed1cd" : "1",

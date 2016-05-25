@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,9 +26,6 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
 import org.eclipse.swt.custom.SashForm;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -60,6 +57,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.log.SerializableLogEntry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
@@ -169,7 +167,7 @@ public class LogView extends ViewPart {
                 @Override
                 public void run() {
                     if (!myLogEntryTableViewer.getTable().isDisposed()) {
-                        if (logEntry.getPlatformIdentifer().toString().equals(getPlatform())) {
+                        if (logEntry.getPlatformIdentifer().equals(getPlatform())) {
                             myLogEntryTableViewer.remove(logEntry);
                         }
                     }
@@ -692,8 +690,10 @@ public class LogView extends ViewPart {
             myPlatformCombo.setData(nodeId.getAssociatedDisplayName(), nodeId);
         }
         
+        LogModel logModel = LogModel.getInstance();
+        logModel.updateListOfLogSources();
         // select platform (previously selected)
-        NodeIdentifier currentPlatform = LogModel.getInstance().getCurrentLogSource();
+        NodeIdentifier currentPlatform = logModel.getCurrentLogSource();
         if (currentPlatform != null) {
             String[] items = myPlatformCombo.getItems();
             for (int i = 0; i < items.length; i++) {
@@ -704,6 +704,8 @@ public class LogView extends ViewPart {
             }
         }
         myPlatformCombo.select(0);
+        logModel.setSelectedLogSource((NodeIdentifier) myPlatformCombo.getData(myPlatformCombo.getItem(0)));
+        asyncRefresh(logModel.getCurrentLogSource());
     }
 
     private void initActions() {
@@ -722,7 +724,6 @@ public class LogView extends ViewPart {
 
             @Override
             public void run() {
-                Clipboard cb = new Clipboard(Display.getDefault());
                 ISelection selection = myLogEntryTableViewer.getSelection();
                 List<SerializableLogEntry> logEntries = new ArrayList<SerializableLogEntry>();
                 if (selection != null && selection instanceof IStructuredSelection) {
@@ -736,10 +737,8 @@ public class LogView extends ViewPart {
                 for (SerializableLogEntry logEntry : logEntries) {
                     sb.append(logEntry.toString() + System.getProperty("line.separator")); //$NON-NLS-1$
                 }
-                TextTransfer textTransfer = TextTransfer.getInstance();
                 if (sb.length() > 0) {
-                    cb.setContents(new Object[] { sb.toString() },
-                        new Transfer[] { textTransfer });
+                    ClipboardHelper.setContent(sb.toString());
                 }
             }
         };

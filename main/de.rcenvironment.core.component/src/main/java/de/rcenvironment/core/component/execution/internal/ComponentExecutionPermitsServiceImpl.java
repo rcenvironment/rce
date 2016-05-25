@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Future;
 import java.util.concurrent.Semaphore;
+
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -59,22 +61,30 @@ public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionP
     }
     
     @Override
-    public synchronized Future<Void> acquire(String componentIdentifier, String executionIdentifier) {
+    public synchronized Future<Boolean> acquire(final String componentIdentifier, final String executionIdentifier) {
         if (semaphores == null) {
             updateSemaphores(componentKnowledgeService.getCurrentComponentKnowledge());
         }
         final ResizableSemaphore semaphore = semaphores.get(componentIdentifier);
-        return SharedThreadPool.getInstance().submit(new Callable<Void>() {
+        return SharedThreadPool.getInstance().submit(new Callable<Boolean>() {
 
-            @TaskDescription("Aquire component execution permit")
+            @TaskDescription("Acquire component execution permit")
             @Override
-            public Void call() throws Exception {
+            public Boolean call() throws Exception {
+                boolean aquired = false;
                 if (semaphore != null) {
-                    semaphore.acquire();
+                    try {
+                        semaphore.acquire();
+                        aquired = true;
+                    } catch (InterruptedException e) {
+                        LogFactory.getLog(getClass())
+                            .debug(StringUtils.format("Interupted while waiting for execution permit for component '%s' - %s",
+                                componentIdentifier, executionIdentifier));
+                    }
                 }
-                return null;
+                return aquired;
             }
-        }, StringUtils.format("Waiting for execution lock for component '%s' - %s", componentIdentifier, executionIdentifier));
+        }, StringUtils.format("Waiting for execution permit for component '%s' - %s", componentIdentifier, executionIdentifier));
     }
 
     @Override

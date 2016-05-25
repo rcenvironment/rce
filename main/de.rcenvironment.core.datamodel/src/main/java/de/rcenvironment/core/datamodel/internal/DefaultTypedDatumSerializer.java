@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,6 +32,7 @@ import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -80,7 +81,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
 
         DefaultTypedDatumFactory factory = new DefaultTypedDatumFactory();
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode rootNode = mapper.readTree(input);
             DataType dataType = DataType.byShortName(rootNode.get(TYPE_STRING).getTextValue());
             JsonNode valueNode = rootNode.get(VALUE_STRING);
@@ -133,7 +134,12 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
                 returnDatum = smallTable;
                 break;
             case NotAValue:
-                returnDatum = factory.createNotAValue(valueNode.getTextValue());
+                String id = valueNode.getTextValue();
+                if (id.endsWith(NotAValueTD.FAILURE_CAUSE_SUFFIX)) {
+                    returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.Failure);
+                } else {
+                    returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.InvalidInputs);
+                }
                 break;
             case Empty:
                 returnDatum = factory.createEmpty();
@@ -177,7 +183,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
 
     @Override
     public String serialize(TypedDatum input) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         if (input == null || input.getDataType() == null) {
             throw new NullPointerException();

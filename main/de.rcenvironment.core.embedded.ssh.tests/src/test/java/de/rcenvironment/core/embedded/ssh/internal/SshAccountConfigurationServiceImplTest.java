@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -40,7 +40,7 @@ public class SshAccountConfigurationServiceImplTest {
      */
     private class AdaptedSshAccountConfigurationServiceImpl extends SshAccountConfigurationServiceImpl {
 
-        public AdaptedSshAccountConfigurationServiceImpl() {
+        AdaptedSshAccountConfigurationServiceImpl() {
             ConfigurationService confServiceMock = EasyMock.createMock(ConfigurationService.class);
             EasyMock.expect(confServiceMock.isUsingIntendedProfileDirectory()).andReturn(Boolean.TRUE);
             // the configuration fallback in case of invalid configuration data is not part of this test so far

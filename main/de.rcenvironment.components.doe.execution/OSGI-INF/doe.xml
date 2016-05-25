@@ -9,12 +9,14 @@
 	
 	<property name="rce.component.id" type="String" value="de.rcenvironment.doe.v2"/>
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.doe.execution.DOEComponent"/>
-	<property name="rce.component.version" type="String" value="3.3"/>
+	<property name="rce.component.version" type="String" value="3.4"/>
 
 	<property name="rce.component.name" type="String" value="Design of Experiments"/>
 	<property name="rce.component.group" type="String" value="Evaluation"/>
-	<property name="rce.component.icon-16" type="String" value="/resources/doe_16.png"/>
-  	<property name="rce.component.icon-32" type="String" value="/resources/doe_32.png"/>
+	
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.doe.common" />
+	<property name="rce.component.icon-16" type="String" value="doe_16.png"/>
+  	<property name="rce.component.icon-32" type="String" value="doe_32.png"/>
   	
   	<property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
 	<property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>

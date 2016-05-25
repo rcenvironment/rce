@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.authorization.internal;
 
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
@@ -27,6 +26,7 @@ import de.rcenvironment.core.authorization.rbac.Permission;
 import de.rcenvironment.core.authorization.rbac.Role;
 import de.rcenvironment.core.authorization.rbac.Subject;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -40,13 +40,13 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
      * Error message.
      */
     private static final String ERROR_SERVICE_NOT_REGISTERED = "A service providing the desired"
-        + " authorization store \"{0}\" is not registered.";
+        + " authorization store \"%s\" is not registered.";
 
     /**
      * Error message.
      */
     private static final String ERROR_BUNDLE_NOT_INSTALLED = "A bundle providing the desired"
-        + " authorization store \"{0}\" is not installed.";
+        + " authorization store \"%s\" is not installed.";
 
     /**
      * Logger for this class.
@@ -61,7 +61,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     /**
      * Constant.
      */
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     /**
      * The authorization store to use.
@@ -92,7 +92,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public Permission getPermission(String permissionID) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(permissionID, MessageFormat.format(ERROR_PARAMETERS_NULL, "permissionID"));
+        Assertions.isDefined(permissionID, StringUtils.format(ERROR_PARAMETERS_NULL, "permissionID"));
 
         final Permission permission = myStore.lookupPermission(permissionID);
         return permission;
@@ -101,7 +101,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public Set<Permission> getPermissions(String subjectID) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(subjectID, MessageFormat.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
+        Assertions.isDefined(subjectID, StringUtils.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
 
         Set<Permission> permissions = new HashSet<Permission>();
 
@@ -118,7 +118,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public Role getRole(String roleID) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(roleID, MessageFormat.format(ERROR_PARAMETERS_NULL, "roleID"));
+        Assertions.isDefined(roleID, StringUtils.format(ERROR_PARAMETERS_NULL, "roleID"));
 
         final Role role = myStore.lookupRole(roleID);
         return role;
@@ -127,7 +127,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public Set<Role> getRoles(String subjectID) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(subjectID, MessageFormat.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
+        Assertions.isDefined(subjectID, StringUtils.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
 
         Set<Role> roles = myStore.lookupSubject(subjectID).getRoles();
         return Collections.unmodifiableSet(roles);
@@ -137,7 +137,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public Subject getSubject(String subjectID) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(subjectID, MessageFormat.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
+        Assertions.isDefined(subjectID, StringUtils.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
 
         final Subject subject = myStore.lookupSubject(subjectID);
         return subject;
@@ -146,8 +146,8 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public boolean hasPermission(String subjectID, Permission permission) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(subjectID, MessageFormat.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
-        Assertions.isDefined(permission, MessageFormat.format(ERROR_PARAMETERS_NULL, "permission"));
+        Assertions.isDefined(subjectID, StringUtils.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
+        Assertions.isDefined(permission, StringUtils.format(ERROR_PARAMETERS_NULL, "permission"));
 
         boolean hasPermission = false;
 
@@ -165,8 +165,8 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
     @Override
     public boolean hasRole(String subjectID, Role role) {
         myStore = getAuthorizationStore();
-        Assertions.isDefined(subjectID, MessageFormat.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
-        Assertions.isDefined(role, MessageFormat.format(ERROR_PARAMETERS_NULL, "role"));
+        Assertions.isDefined(subjectID, StringUtils.format(ERROR_PARAMETERS_NULL, SUBJECT_ID));
+        Assertions.isDefined(role, StringUtils.format(ERROR_PARAMETERS_NULL, "role"));
 
         return myStore.lookupSubject(subjectID).hasRole(role);
     }
@@ -185,14 +185,14 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
         Bundle[] bundles = bundleContext.getBundles();
 
         if (bundles == null) {
-            throw new RuntimeException(MessageFormat.format(ERROR_BUNDLE_NOT_INSTALLED, store));
+            throw new RuntimeException(StringUtils.format(ERROR_BUNDLE_NOT_INSTALLED, store));
         } else {
             for (Bundle bundle : bundles) {
                 if (bundle.getSymbolicName().equals(store)) {
                     try {
                         bundle.start();
                     } catch (BundleException e) {
-                        throw new RuntimeException(MessageFormat.format(ERROR_BUNDLE_NOT_INSTALLED, store), e);
+                        throw new RuntimeException(StringUtils.format(ERROR_BUNDLE_NOT_INSTALLED, store), e);
                     }
                 }
             }
@@ -209,7 +209,7 @@ public final class AuthorizationServiceImpl implements AuthorizationService {
         }
 
         if (storeReferences == null || storeReferences.length < 1) {
-            throw new RuntimeException(MessageFormat.format(ERROR_SERVICE_NOT_REGISTERED, store));
+            throw new RuntimeException(StringUtils.format(ERROR_SERVICE_NOT_REGISTERED, store));
         }
 
         return (AuthorizationStore) bundleContext.getService(storeReferences[0]);

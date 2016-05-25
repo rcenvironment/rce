@@ -1,10 +1,10 @@
 {
-  "identifier" : "0f9c4c8d-89dd-4171-a5f1-b0f2ac42c183",
+  "identifier" : "450af4e8-2636-4309-8aec-142a817832df",
   "workflowVersion" : "4",
-  "name" : "04_02_Script_And_Tool_Integration_API_2015-11-16_17:40:59_04",
+  "name" : "04_02_Script_And_Tool_Integration_API_2016-04-21_14:31:11_02",
   "nodes" : [ {
-    "identifier" : "cd7a72c1-0ba2-45c1-becc-21b07e9114e9",
-    "name" : "API Jython",
+    "identifier" : "cea76ca5-e0f0-41ca-906b-965436e3b81d",
+    "name" : "API Python",
     "location" : "301:203",
     "active" : "true",
     "component" : {
@@ -16,7 +16,7 @@
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "print(\"Test read_input(), value should be 1 ...\")\r\nprint(RCE.read_input(\"x\"))\r\nprint(RCE.read_input(\"x\") == 1)\r\n\r\nprint(\"Test  get_input_names_with_datum(), values should be x and y ...\")\r\nprint(RCE.get_input_names_with_datum())\r\nprint(RCE.get_input_names_with_datum() == [\"x\", \"y\"] or RCE.get_input_names_with_datum() == [\"y\", \"x\"])\r\n\r\n\r\nprint(\"Test  get_output_names(), values should be f and g ...\")\r\nprint(RCE.get_output_names())\r\nprint(RCE.get_output_names() == [\"f\", \"g\"] or RCE.get_output_names() == [\"g\", \"f\"])\r\n\r\nprint(\"Test get_execution_count() ...\")\r\nprint(RCE.get_execution_count())\r\nprint(RCE.get_execution_count() == 1)\r\n\r\nprint(\"Test write_output with value 3\")\r\nRCE.write_output(\"f\", 3)\r\n\r\nprint(\"Test write_not_a_value_output\")\r\nRCE.write_not_a_value_output(\"g\")\r\n",
       "scriptLanguage" : "Python",
-      "storeComponentHistoryData" : "false",
+      "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },
     "dynamicInputs" : [ {
@@ -54,19 +54,20 @@
       "datatype" : "Float"
     } ]
   }, {
-    "identifier" : "2a5fab65-d2ff-4f60-a349-92742e73a07d",
+    "identifier" : "caa3f183-9329-48e7-b54a-cebc02a922a2",
     "name" : "Parametric Study API Jython",
     "location" : "142:203",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
+      "version" : "3.3",
       "name" : "Parametric Study"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1"
     },
     "dynamicInputs" : [ {
       "identifier" : "f69b4a80-0238-4833-8567-f60c987964b4",
@@ -124,19 +125,20 @@
       }
     } ]
   }, {
-    "identifier" : "8b782551-e464-46b8-a709-a8d0f9727b6b",
+    "identifier" : "f3c59e17-0d2a-4c2c-829d-52828f34b32c",
     "name" : "Parametric Study SUM Jython",
     "location" : "142:312",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
+      "version" : "3.3",
       "name" : "Parametric Study"
     },
     "configuration" : {
+      "faultTolerance-NAV_5e0ed1cd" : "Fail",
       "loopFaultTolerance_5e0ed1cd" : "Fail",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1"
     },
     "staticOutputs" : [ {
       "identifier" : "e3c076f8-ff90-47da-900a-8b69f5721fb6",
@@ -171,8 +173,8 @@
       }
     } ]
   }, {
-    "identifier" : "7406011f-d733-41e1-8e81-47c97a1b28e9",
-    "name" : "SUM Jython",
+    "identifier" : "c3fc7e6f-14eb-43a8-b223-1777986a29a8",
+    "name" : "SUM Python",
     "location" : "301:312",
     "active" : "true",
     "component" : {
@@ -182,9 +184,9 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "sum = RCE.read_state_variable_default(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n\tRCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))",
-      "scriptLanguage" : "Jython",
-      "storeComponentHistoryData" : "false",
+      "script" : "sum = RCE.read_state_variable(\"sum\", RCE.read_input(\"x\"))\r\nRCE.write_state_variable(\"sum\", sum + RCE.read_input(\"x\"))\r\nprint \"Current sum in dict: \" + str(RCE.get_state_dict())\r\nprint \"Current sum: \" + str(RCE.read_state_variable(\"sum\"))\r\n\r\nif RCE.get_execution_count() == 11:\r\n  RCE.write_output(\"f\",  RCE.read_state_variable(\"sum\"))",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },
     "dynamicInputs" : [ {
@@ -207,29 +209,29 @@
     } ]
   } ],
   "connections" : [ {
-    "source" : "cd7a72c1-0ba2-45c1-becc-21b07e9114e9",
+    "source" : "cea76ca5-e0f0-41ca-906b-965436e3b81d",
     "output" : "aa8eab76-50fa-4820-be2b-6d20df3e65a9",
-    "target" : "2a5fab65-d2ff-4f60-a349-92742e73a07d",
+    "target" : "caa3f183-9329-48e7-b54a-cebc02a922a2",
     "input" : "f69b4a80-0238-4833-8567-f60c987964b4"
   }, {
-    "source" : "cd7a72c1-0ba2-45c1-becc-21b07e9114e9",
+    "source" : "cea76ca5-e0f0-41ca-906b-965436e3b81d",
     "output" : "59f3f0ad-e669-4c54-a7db-b7511712b1e7",
-    "target" : "2a5fab65-d2ff-4f60-a349-92742e73a07d",
+    "target" : "caa3f183-9329-48e7-b54a-cebc02a922a2",
     "input" : "2a0c4386-32b0-4374-b626-6dda86a390a0"
   }, {
-    "source" : "2a5fab65-d2ff-4f60-a349-92742e73a07d",
+    "source" : "caa3f183-9329-48e7-b54a-cebc02a922a2",
     "output" : "cb3f1e29-2d09-4d1e-97d8-207f63d25b71",
-    "target" : "cd7a72c1-0ba2-45c1-becc-21b07e9114e9",
+    "target" : "cea76ca5-e0f0-41ca-906b-965436e3b81d",
     "input" : "8bfb15f3-2c80-40d7-8fe4-fcc06c0cb59e"
   }, {
-    "source" : "2a5fab65-d2ff-4f60-a349-92742e73a07d",
+    "source" : "caa3f183-9329-48e7-b54a-cebc02a922a2",
     "output" : "cb3f1e29-2d09-4d1e-97d8-207f63d25b71",
-    "target" : "cd7a72c1-0ba2-45c1-becc-21b07e9114e9",
+    "target" : "cea76ca5-e0f0-41ca-906b-965436e3b81d",
     "input" : "94be55fb-c76f-4648-a007-2fcb7c6e1314"
   }, {
-    "source" : "8b782551-e464-46b8-a709-a8d0f9727b6b",
+    "source" : "f3c59e17-0d2a-4c2c-829d-52828f34b32c",
     "output" : "e3c076f8-ff90-47da-900a-8b69f5721fb6",
-    "target" : "7406011f-d733-41e1-8e81-47c97a1b28e9",
+    "target" : "c3fc7e6f-14eb-43a8-b223-1777986a29a8",
     "input" : "4305c542-b0a9-489b-94bb-09bc0f1b7908"
   } ],
   "labels" : "[{\"identifier\":\"28ded08d-8a30-4212-a1d7-bfb965b13e45\",\"text\":\"Example workflow: 'Script and Tool Integration API'\\r\\nObjective: Introducing RCE's Python API\\r\\n\\r\\nThis workflow demonstrates all Python API methods available in\\r\\nthe Script workflow component. They are also available in the\\r\\npre and post scripts of integrated tools. In the context help\\r\\n(\\\"F1\\\") of the Script workflow component, you will also find a\\r\\nlist of all methods including documentation.\",\"location\":\"56:19\",\"size\":\"405:163\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"}]"

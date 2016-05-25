@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * Encapsulates data used for headless workflow execution.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (added fail-on-update flag)
  */
 public interface HeadlessWorkflowExecutionContext {
 
@@ -28,8 +29,7 @@ public interface HeadlessWorkflowExecutionContext {
     File getWorkflowFile();
 
     /**
-     * @return JSON file containing componentId->(key->value) placeholder values. Is optional and
-     *         can be <code>null</code>
+     * @return JSON file containing componentId->(key->value) placeholder values. Is optional and can be <code>null</code>
      */
     File getPlaceholdersFile();
 
@@ -39,14 +39,12 @@ public interface HeadlessWorkflowExecutionContext {
     File getLogDirectory();
 
     /**
-     * @return the {@link TextOutputReceiver} to write status messages to. Is optional and can be
-     *         <code>null</code>
+     * @return the {@link TextOutputReceiver} to write status messages to. Is optional and can be <code>null</code>
      */
     TextOutputReceiver getTextOutputReceiver();
 
     /**
-     * @return listener for all received {@link ConsoleRow}s. Is optional and can be
-     *         <code>null</code>
+     * @return listener for all received {@link ConsoleRow}s. Is optional and can be <code>null</code>
      */
     SingleConsoleRowsProcessor getSingleConsoleRowReceiver();
 
@@ -59,6 +57,14 @@ public interface HeadlessWorkflowExecutionContext {
      * @return {@link DeletionBehavior}
      */
     DeletionBehavior getDeletionBehavior();
+
+    /**
+     * Enables a fail-fast mechanism for workflow files generated from internal templates, where a required update indicates that the
+     * template is out of date and should be updated instead.
+     * 
+     * @return true if workflow execution should abort if the workflow file would require an update
+     */
+    boolean shouldAbortIfWorkflowUpdateRequired();
 
     /**
      * @return <code>true</code> if output should be compact. Default is <code>false</code>

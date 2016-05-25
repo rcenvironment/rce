@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,6 +32,7 @@ import de.rcenvironment.core.gui.cluster.internal.ErrorMessageDialogFactory;
 import de.rcenvironment.core.gui.cluster.view.internal.ClusterConnectionInformation;
 import de.rcenvironment.core.utils.cluster.ClusterService;
 import de.rcenvironment.core.utils.cluster.ClusterServiceManager;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -220,7 +221,7 @@ public class ClusterConnectionConfigurationDialogsController {
     }
     
     private void storeClusterConnectionConfigurations(ClusterConnectionConfiguration[] configurations, boolean wasPasswordSet) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             PlainClusterConnectionConfiguration[] plainConfigurations = new PlainClusterConnectionConfigurationImpl[configurations.length];
             for (int i = 0; i < plainConfigurations.length; i++) {
@@ -257,7 +258,7 @@ public class ClusterConnectionConfigurationDialogsController {
     }
 
     protected ClusterConnectionConfiguration[] getStoredClusterConnectionConfigurations() {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
        
         
         ClusterConnectionConfiguration[] configurations = new ClusterConnectionConfiguration[0];

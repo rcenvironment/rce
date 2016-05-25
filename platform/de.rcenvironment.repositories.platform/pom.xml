@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.repositories.rce.platform.master</artifactId>
 	<name>RCE Platform Master Project</name>
-	<version>7.0.0.qualifier</version>
+	<version>7.1.0.qualifier</version>
 	<packaging>pom</packaging>
 
 	<parent>

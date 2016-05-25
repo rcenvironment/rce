@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,7 @@ public interface RemoteFileConnection extends Serializable {
     /**
      * Enumeration to decide between file on file system or in the RCE data management.
      */
-    public enum FileType {
+    enum FileType {
 
         /**
          * File in RCE data management.

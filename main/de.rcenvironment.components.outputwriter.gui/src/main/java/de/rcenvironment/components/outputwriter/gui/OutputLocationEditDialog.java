@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -482,6 +482,7 @@ public class OutputLocationEditDialog extends Dialog {
 
         headerPlaceholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
         headerPlaceholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
+        headerPlaceholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
 
         Collections.sort(chosenInputSet);
 
@@ -498,6 +499,7 @@ public class OutputLocationEditDialog extends Dialog {
         }
         placeholderList.add(OutputWriterComponentConstants.PH_LINEBREAK);
         placeholderList.add(OutputWriterComponentConstants.PH_TIMESTAMP);
+        placeholderList.add(OutputWriterComponentConstants.PH_EXECUTION_COUNT);
 
         formatPlaceholderCombo.setItems((String[]) placeholderList.toArray(new String[placeholderList.size()]));
         formatPlaceholderCombo.select(0);

@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Excel Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para>The Excel Component is designed to access Microsoft Excel files within RCE and to execute
+            macros.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>This component wraps an existing Microsoft Excel file which is linked to RCE. The
+            general principle is:</para>
+        <para>
+            <orderedlist>
+                <listitem>
+                    <para>Copy of the existing Excel file as temporarily file in a temporarily
+                        folder (working copy)</para>
+                </listitem>
+                <listitem>
+                    <para>Wait for all input channels which are needed to run the component
+                        (depending on how input handling and constraints are set)</para>
+                </listitem>
+                <listitem>
+                    <para>Execute VBA-macro “Before Excel run”</para>
+                </listitem>
+                <listitem>
+                    <para>Copy all input channels to their specific cell ranges. If there are
+                        multiple values in an input channel the first value occurring will be copied
+                        (“first in, first out”).</para>
+                </listitem>
+                <listitem>
+                    <para>Update all formulas</para>
+                </listitem>
+                <listitem>
+                    <para>Execute VBA-macro “After input variables are written”</para>
+                </listitem>
+                <listitem>
+                    <para>Update all formulas</para>
+                </listitem>
+                <listitem>
+                    <para>Read all output channel values from their specific cell range</para>
+                </listitem>
+                <listitem>
+                    <para>Execute VBA-macro “After Excel run”</para>
+                </listitem>
+                <listitem>
+                    <para>Delete temporary Excel file</para>
+                </listitem>
+            </orderedlist>
+        </para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>The Excel component has three tabs for configuration.</para>
+        <sect2>
+            <title>File</title>
+            <para>In the 'File' tab you can link an Excel file to the RCE component. Note that the
+                Excel file must be located within the workflows project. Click "Link an Excel file
+                ..." and navigate to the Excel file of your choice.</para>
+            <para><inlinegraphic fileref="../../images/image001.png"/></para>
+        </sect2>
+        <sect2>
+            <title>Inputs/Outputs</title>
+            <para>The 'Inputs/Outputs' tab can be used to create inputs and outputs for the Excel
+                component. The configuration of the channels of both types is (mostly) similar. An
+                RCE-channel is always connected to a specific Excel cell range. The button
+                “Autodiscover” discovers automatically all input and output channels which are
+                described as user-specific cell areas which start with “I_” for input-channels and
+                with “O_” for output channels respectively.</para>
+            <para><inlinegraphic fileref="../../images/image002.png"/></para>
+            <para><inlinegraphic fileref="../../images/image003.png"/>
+                <inlinegraphic fileref="../../images/image004.png"/></para>
+            <para>The following list gives a short description of all channel configuration
+                    parameters:<informaltable frame="none">
+                    <tgroup cols="2">
+                        <colspec colname="c1" colnum="1" colwidth="1.0*"/>
+                        <colspec colname="c2" colnum="2" colwidth="1.0*"/>
+                        <thead>
+                            <row>
+                                <entry>Element</entry>
+                                <entry>Description</entry>
+                            </row>
+                        </thead>
+                        <tbody>
+                            <row>
+                                <entry>Name</entry>
+                                <entry>The name of the RCE-channel</entry>
+                            </row>
+                            <row>
+                                <entry>Data Type</entry>
+                                <entry>See RCE user guide (Coupling Workflow Components)</entry>
+                            </row>
+                            <row>
+                                <entry>Constraints</entry>
+                                <entry>See RCE user guide (Coupling Workflow Components)</entry>
+                            </row>
+                            <row>
+                                <entry>Handling</entry>
+                                <entry>See RCE user guide (Coupling Workflow Components)</entry>
+                            </row>
+                            <row>
+                                <entry>Expand Cell Area (only input channels)</entry>
+                                <entry>If the user does not know the size of the cell area which she
+                                    wants to insert, this field can be set to true. Now the upper
+                                    left cell area field can be selected in “Address”-parameter.
+                                    From that address on the complete table will be inserted,
+                                    ignoring existing cell entries</entry>
+                            </row>
+                            <row>
+                                <entry>Delete empty entries (only output channels)</entry>
+                                <entry>If a selected cell area contains empty rows at the end these
+                                    will be cut off when setting this field to true.</entry>
+                            </row>
+                            <row>
+                                <entry>Button "Select address in Excel file... "</entry>
+                                <entry>To select a cell area in Excel this button opens the file in
+                                    Microsoft Excel so the user can select a specific cell
+                                    area.</entry>
+                            </row>
+                        </tbody>
+                    </tgroup>
+                </informaltable></para>
+        </sect2>
+        <sect2>
+            <title>Macros</title>
+            <para>In the 'Macros' tab you can configure which VBA macros are to be run during
+                runtime. </para>
+            <para><inlinegraphic fileref="../../images/image005.png"/></para>
+            <para>When in Microsoft Excel properties the access to the VBA-project object model is
+                granted the macros are available VBA macros are discovered automatrically. All
+                available macros can be chosen in the respective dropdown menu.</para>
+        </sect2>
+    </sect1>
+    <sect1>
+        <title>Requirements</title>
+        <para>
+            <orderedlist>
+                <listitem>
+                    <para>Microsoft Excel must be installed. The component is being tested with
+                        Microsoft Excel 2010.</para>
+                </listitem>
+                <listitem>
+                    <para>For an automatic detection of VBA-macros the VBA-project must be trusted.
+                        Please start Excel as administrator. Navigate to file->options->trust
+                        center->trust center settings->macro settings and check the "trust access to
+                        the VBA project object model" option.</para>
+                </listitem>
+            </orderedlist>
+        </para>
+    </sect1>
+</chapter>

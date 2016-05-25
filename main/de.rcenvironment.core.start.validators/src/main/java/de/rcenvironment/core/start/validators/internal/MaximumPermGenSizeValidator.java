@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,7 +15,7 @@ import java.util.List;
 
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
-import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
 
 /**
  * Ensures that RCE is started with a PermGen size >= 256 MB.
@@ -23,7 +23,7 @@ import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
  * @author Sascha Zur
  */
 // TODO review: is this validator robust enough? especially the unit handling seems to be broken
-public class MaximumPermGenSizeValidator implements InstanceValidator {
+public class MaximumPermGenSizeValidator extends DefaultInstanceValidator {
 
     private static final String VALIDATION_DISPLAY_NAME = "Maximum permanent generation heap (MaxPermSize)";
 

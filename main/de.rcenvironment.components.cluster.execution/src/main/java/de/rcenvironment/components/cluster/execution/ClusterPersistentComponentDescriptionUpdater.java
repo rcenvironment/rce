@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -82,7 +83,7 @@ public class ClusterPersistentComponentDescriptionUpdater implements PersistentC
      * */
     private PersistentComponentDescription uodateFrom30To31(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode objectNode = (ObjectNode) node.get(CONFIGURATION);
         objectNode.put(ClusterComponentConstants.CONFIG_KEY_PATHTOQUEUINGSYSTEMCOMMANDS, "");
@@ -98,7 +99,7 @@ public class ClusterPersistentComponentDescriptionUpdater implements PersistentC
             PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier("dynamicOutputs", "default", description);
         description =
             PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier("dynamicInputs", "default", description);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ObjectNode oldConfig = (ObjectNode) node.get(CONFIGURATION);

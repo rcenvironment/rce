@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -53,7 +53,7 @@ public class InstanceComponentsInfoContributor extends NetworkViewContributorBas
 
         private final boolean typeIsPublic;
 
-        public ComponentFolderNode(NetworkGraphNodeWithContext instanceNode, boolean typeIsPublic) {
+        ComponentFolderNode(NetworkGraphNodeWithContext instanceNode, boolean typeIsPublic) {
             this.instanceNode = instanceNode;
             this.typeIsPublic = typeIsPublic;
         }

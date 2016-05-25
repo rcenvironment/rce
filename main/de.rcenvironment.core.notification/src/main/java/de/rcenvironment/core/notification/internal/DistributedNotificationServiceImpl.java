@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,7 +9,6 @@
 package de.rcenvironment.core.notification.internal;
 
 import java.io.Serializable;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.notification.api.RemotableNotificationService;
 import de.rcenvironment.core.utils.common.ServiceUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
 import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -97,7 +97,7 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
                 RemotableNotificationService.class, publishPlatform);
             return remoteService.subscribe(notificationId, subscriber);
         } catch (RemoteOperationException e) {
-            String message = MessageFormat.format("Failed to subscribe to publisher @{0}: ", publishPlatform);
+            String message = StringUtils.format("Failed to subscribe to publisher @%s: ", publishPlatform);
             throw new RemoteOperationException(message + e.toString());
         }
     }
@@ -144,20 +144,15 @@ public class DistributedNotificationServiceImpl implements DistributedNotificati
         try {
             getRemoteNotificationService(publishPlatform).unsubscribe(notificationId, subscriber);
         } catch (RuntimeException | RemoteOperationException e) {
-            throw new RemoteOperationException(MessageFormat.format("Failed to unsubscribe from remote publisher @{0}: ", publishPlatform)
-                + e.getMessage());
+            throw new RemoteOperationException(
+                StringUtils.format("Failed to unsubscribe from remote publisher @%s: ", publishPlatform) + e.getMessage());
         }
     }
 
     @Override
-    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) {
-        try {
-            return getRemoteNotificationService(publishPlatform).getNotifications(notificationId);
-        } catch (RuntimeException | RemoteOperationException e) {
-            String message = MessageFormat.format("Failed to get remote notifications @{0}: ", publishPlatform);
-            LOGGER.error(message, e);
-            throw new IllegalStateException(message, e);
-        }
+    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform)
+        throws RemoteOperationException {
+        return getRemoteNotificationService(publishPlatform).getNotifications(notificationId);
     }
 
     private RemotableNotificationService getRemoteNotificationService(NodeIdentifier publishPlatform) throws RemoteOperationException {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -227,7 +227,7 @@ public class JDBCDriverServiceImpl implements JDBCDriverService {
 
         private final Driver driver;
 
-        public DriverAdapter(final Driver driver) {
+        DriverAdapter(final Driver driver) {
             this.driver = driver;
         }
 

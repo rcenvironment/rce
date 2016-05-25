@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,7 +9,6 @@
 package de.rcenvironment.core.authorization.xml.internal;
 
 import java.io.File;
-import java.text.MessageFormat;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -24,9 +23,11 @@ import org.osgi.framework.BundleContext;
 import de.rcenvironment.core.authorization.AuthorizationStore;
 import de.rcenvironment.core.authorization.AuthorizationStoreException;
 import de.rcenvironment.core.authorization.rbac.Permission;
+import de.rcenvironment.core.authorization.rbac.RBACObject;
 import de.rcenvironment.core.authorization.rbac.Role;
 import de.rcenvironment.core.authorization.rbac.Subject;
 import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 import de.rcenvironment.core.utils.incubator.xml.XMLIOSupport;
 import de.rcenvironment.core.utils.incubator.xml.XMLSupport;
@@ -47,7 +48,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
     /**
      * Constant for a logger or exception message.
      */
-    private static final String ERROR_ARGUMENT_IS_NULL = "Argument for parameter {0} is null.";
+    private static final String ERROR_ARGUMENT_IS_NULL = "Argument for parameter %s is null.";
 
     /**
      * XPath query to select permission elements.
@@ -67,12 +68,12 @@ public class XMLAuthorizationStore implements AuthorizationStore {
     /**
      * XPath query to select an users.
      */
-    private static final String XPATH_QUERY_SELECT_SUBJECT = "//subject[@id=''{0}'']";
+    private static final String XPATH_QUERY_SELECT_SUBJECT = "//subject[@id='%s']";
 
     /**
      * XPath query to select a group.
      */
-    private static final String XPATH_QUERY_SELECT_ROLE = "//role[@id=''{0}'']";
+    private static final String XPATH_QUERY_SELECT_ROLE = "//role[@id='%s']";
 
     /**
      * XPath query to select an extension.
@@ -82,7 +83,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
     /**
      * XPath query to select an extension.
      */
-    private static final String XPATH_QUERY_SELECT_PERMISSION = "//permission[@id=''{0}'']";
+    private static final String XPATH_QUERY_SELECT_PERMISSION = "//permission[@id='%s']";
 
     /**
      * XPath query to select an extension.
@@ -146,7 +147,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
     @Override
     public Permission lookupPermission(String permissionID) {
 
-        Assertions.isDefined(permissionID, MessageFormat.format(ERROR_ARGUMENT_IS_NULL, "permissionID"));
+        Assertions.isDefined(permissionID, StringUtils.format(ERROR_ARGUMENT_IS_NULL, "permissionID"));
 
         try {
             LOGGER.debug("Retrieving entry for permission: " + permissionID);
@@ -160,7 +161,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
     @Override
     public Role lookupRole(String roleID) {
 
-        Assertions.isDefined(roleID, MessageFormat.format(ERROR_ARGUMENT_IS_NULL, "roleID"));
+        Assertions.isDefined(roleID, StringUtils.format(ERROR_ARGUMENT_IS_NULL, "roleID"));
 
         try {
             LOGGER.debug("Retrieving entry for role: " + roleID);
@@ -174,7 +175,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
     @Override
     public Subject lookupSubject(String subjectID) {
 
-        Assertions.isDefined(subjectID, MessageFormat.format(ERROR_ARGUMENT_IS_NULL, "subjectID"));
+        Assertions.isDefined(subjectID, StringUtils.format(ERROR_ARGUMENT_IS_NULL, "subjectID"));
 
         try {
             LOGGER.debug("Retrieving entry for subject: " + subjectID);
@@ -196,7 +197,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
      */
     private Subject getSubject(String subjectID) throws DocumentException {
 
-        Node subjectNode = XMLSupport.selectNode(myXMLDocument, MessageFormat.format(XPATH_QUERY_SELECT_SUBJECT, subjectID));
+        Node subjectNode = XMLSupport.selectNode(myXMLDocument, StringUtils.format(XPATH_QUERY_SELECT_SUBJECT, subjectID));
         return getSubject(subjectNode);
     }
 
@@ -210,7 +211,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
      */
     private Role getRole(String roleID) throws DocumentException {
 
-        Node roleNode = XMLSupport.selectNode(myXMLDocument, MessageFormat.format(XPATH_QUERY_SELECT_ROLE, roleID));
+        Node roleNode = XMLSupport.selectNode(myXMLDocument, StringUtils.format(XPATH_QUERY_SELECT_ROLE, roleID));
         return getRole(roleNode);
     }
 
@@ -223,7 +224,7 @@ public class XMLAuthorizationStore implements AuthorizationStore {
      * @throws DocumentException if the specified arguments are illegal.
      */
     private Permission getPermission(String permissionID) throws DocumentException {
-        Node permissionNode = XMLSupport.selectNode(myXMLDocument, MessageFormat.format(XPATH_QUERY_SELECT_PERMISSION, permissionID));
+        Node permissionNode = XMLSupport.selectNode(myXMLDocument, StringUtils.format(XPATH_QUERY_SELECT_PERMISSION, permissionID));
 
         return getPermission(permissionNode);
     }

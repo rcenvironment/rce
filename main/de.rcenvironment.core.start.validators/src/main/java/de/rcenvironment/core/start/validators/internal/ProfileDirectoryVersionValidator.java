@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -7,6 +7,9 @@
  */
 
 package de.rcenvironment.core.start.validators.internal;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
@@ -101,6 +104,15 @@ public class ProfileDirectoryVersionValidator implements InstanceValidator {
 
     protected void bindConfigurationService(ConfigurationService configIn) {
         configService = configIn;
+    }
+
+    @Override
+    public List<Class<? extends InstanceValidator>> getNecessaryPredecessors() {
+        ArrayList<Class<? extends InstanceValidator>> predecessors = new ArrayList<Class<? extends InstanceValidator>>();
+        // we need to make sure that the original profile directory is accessible, since the fallback profile does not contain a version
+        // number.
+        predecessors.add(OriginalProfileDirectoryAccessibleValidator.class);
+        return predecessors;
     }
 
 }

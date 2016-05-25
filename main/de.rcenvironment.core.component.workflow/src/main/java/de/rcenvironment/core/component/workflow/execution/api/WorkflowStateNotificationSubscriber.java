@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@
 package de.rcenvironment.core.component.workflow.execution.api;
 
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.spi.MultipleWorkflowsStateChangeListener;
@@ -42,6 +43,8 @@ public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubs
     private transient volatile long latestIsAliveReceived = 0;
 
     private transient ScheduledFuture<?> isWorkflowAliveCheckTask = null;
+    
+    private AtomicBoolean isStopped = new AtomicBoolean(false);
 
     public WorkflowStateNotificationSubscriber(MultipleWorkflowsStateChangeListener listener) {
         this.multiWfStateChangeListener = listener;
@@ -108,18 +111,23 @@ public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubs
                 @TaskDescription("Check workflow is alive")
                 @Override
                 public void run() {
-                    if (System.currentTimeMillis() - latestIsAliveReceived > IS_ALIVE_CHECK_INTERVAL_MSEC) {
-                        String errorMessage = StringUtils.format("Receiving 'is alive' message from workflow '%s' stopped. Most likely, "
-                            + "because the network connection to the workflow host node was interrupted", singleWfExecutionId);
-                        singleWfStateChangeListener.onWorkflowNotAliveAnymore(errorMessage);
-                        SharedThreadPool.getInstance().submit(new Runnable() {
-
-                            @TaskDescription("Stop checking workflow is alive")
-                            @Override
-                            public void run() {
-                                stopCheckingForWorkflowNotAlive();
-                            }
-                        });
+                    if (!isStopped.get()) {
+                        if (System.currentTimeMillis() - latestIsAliveReceived > IS_ALIVE_CHECK_INTERVAL_MSEC) {
+                            isStopped.set(true);
+                            String errorMessage = StringUtils.format(
+                                "Receiving 'is alive' message from workflow '%s' stopped. Most likely, "
+                                + "because the network connection to the workflow host node was interrupted",
+                                singleWfExecutionId);
+                            singleWfStateChangeListener.onWorkflowNotAliveAnymore(errorMessage);
+                            SharedThreadPool.getInstance().submit(new Runnable() {
+    
+                                @TaskDescription("Stop checking workflow is alive")
+                                @Override
+                                public void run() {
+                                    stopCheckingForWorkflowNotAlive();
+                                }
+                            });
+                        }
                     }
                 }
             }, IS_ALIVE_CHECK_INTERVAL_MSEC);

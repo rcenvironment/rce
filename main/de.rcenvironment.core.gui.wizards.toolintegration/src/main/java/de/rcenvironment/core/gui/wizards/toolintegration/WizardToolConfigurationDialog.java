@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -69,7 +69,7 @@ public class WizardToolConfigurationDialog extends Dialog {
 
     private final List<Map<String, String>> allConfigs;
 
-//    private Label tempLabel;
+    // private Label tempLabel;
 
     private Map<String, String> oldConfig;
 
@@ -113,13 +113,14 @@ public class WizardToolConfigurationDialog extends Dialog {
         allConfigs = configs;
         this.isEdit = isEdit;
         this.context = context;
-        if (config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) == null) {
+        if (config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) == null
+            && config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD) == null) {
             config.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES, "false");
             config.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT, "10");
         }
         setShellStyle(SWT.RESIZE | SWT.MAX | SWT.APPLICATION_MODAL);
     }
-    
+
     @Override
     protected Point getInitialSize() {
         final int width = 600;
@@ -180,17 +181,23 @@ public class WizardToolConfigurationDialog extends Dialog {
             }
         }
         if (config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES) != null) {
-            if (Boolean.parseBoolean(config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES))) {
-                limitInstancesButton.setSelection(true);
-                limitInstancesText.setEnabled(true);
-                limitInstancesText.setText(config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT));
-            } else {
-                limitInstancesButton.setSelection(false);
-                limitInstancesText.setEnabled(false);
-                limitInstancesText.setText("");
-            }
+            setInstanceLimit(ToolIntegrationConstants.KEY_LIMIT_INSTANCES);
+        } else if (config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD) != null) {
+            setInstanceLimit(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
         } else {
             limitInstancesButton.setSelection(false);
+            limitInstancesText.setText("");
+        }
+    }
+
+    private void setInstanceLimit(String key) {
+        if (Boolean.parseBoolean(config.get(key))) {
+            limitInstancesButton.setSelection(true);
+            limitInstancesText.setEnabled(true);
+            limitInstancesText.setText(config.get(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT));
+        } else {
+            limitInstancesButton.setSelection(false);
+            limitInstancesText.setEnabled(false);
             limitInstancesText.setText("");
         }
     }
@@ -210,31 +217,26 @@ public class WizardToolConfigurationDialog extends Dialog {
 
         // localhostButton.setLayoutData(localhostData);
         // localhostButton.setVisible(false);
-//        tempLabel = new Label(propertyContainer, SWT.NONE);
-//        tempLabel.setText(Messages.localHostButtonText);
-//        GridData localhostData = new GridData();
-//        localhostData.horizontalSpan = 3;
-//        tempLabel.setLayoutData(localhostData);
+        // tempLabel = new Label(propertyContainer, SWT.NONE);
+        // tempLabel.setText(Messages.localHostButtonText);
+        // GridData localhostData = new GridData();
+        // localhostData.horizontalSpan = 3;
+        // tempLabel.setLayoutData(localhostData);
 
         /*
-         * hostButton = new Button(propertyContainer, SWT.RADIO);
-         * hostButton.setText(Messages.hostButtonText); GridData hostData = new
-         * GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL); hostData.horizontalSpan =
-         * 3; hostButton.setLayoutData(hostData); hostButton.setEnabled(false); // disabled for now
+         * hostButton = new Button(propertyContainer, SWT.RADIO); hostButton.setText(Messages.hostButtonText); GridData hostData = new
+         * GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL); hostData.horizontalSpan = 3; hostButton.setLayoutData(hostData);
+         * hostButton.setEnabled(false); // disabled for now
          * 
-         * Label hostLabel = new Label(propertyContainer, SWT.NONE); hostLabel.setText("\t" +
-         * Messages.host); hostLabel.setEnabled(false); // disabled for now hostText = new
-         * Text(propertyContainer, SWT.BORDER); GridData textGridData = new
-         * GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-         * textGridData.horizontalSpan = 2; hostText.setLayoutData(textGridData);
-         * hostText.setEnabled(false); // disabled for now
+         * Label hostLabel = new Label(propertyContainer, SWT.NONE); hostLabel.setText("\t" + Messages.host); hostLabel.setEnabled(false);
+         * // disabled for now hostText = new Text(propertyContainer, SWT.BORDER); GridData textGridData = new
+         * GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL); textGridData.horizontalSpan = 2;
+         * hostText.setLayoutData(textGridData); hostText.setEnabled(false); // disabled for now
          * 
-         * Label portLabel = new Label(propertyContainer, SWT.NONE); portLabel.setText("\t" +
-         * Messages.port); portLabel.setEnabled(false); // disabled for now portText = new
-         * Text(propertyContainer, SWT.BORDER); GridData portGridData = new
-         * GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
-         * portGridData.horizontalSpan = 2; portText.setLayoutData(portGridData);
-         * portText.setText(DEFAULT_PORT_TEXT); portText.setEnabled(false); // disabled for now
+         * Label portLabel = new Label(propertyContainer, SWT.NONE); portLabel.setText("\t" + Messages.port); portLabel.setEnabled(false);
+         * // disabled for now portText = new Text(propertyContainer, SWT.BORDER); GridData portGridData = new
+         * GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL); portGridData.horizontalSpan = 2;
+         * portText.setLayoutData(portGridData); portText.setText(DEFAULT_PORT_TEXT); portText.setEnabled(false); // disabled for now
          */
         Label toolDirLabel = new Label(propertyContainer, SWT.NONE);
         toolDirLabel.setText(Messages.toolDirectoryRequired);
@@ -264,9 +266,9 @@ public class WizardToolConfigurationDialog extends Dialog {
         chooseRootDirPathButton = new Button(propertyContainer, SWT.PUSH);
         chooseRootDirPathButton.setText("  ...  ");
         chooseRootDirPathButton.addSelectionListener(new PathChooserButtonListener(rootWorkingDirText, true, getShell()));
-        
+
         new Label(propertyContainer, SWT.NONE);
-        
+
         defaultTempDirButton = new Button(propertyContainer, SWT.CHECK);
         GridData defaultTempDirData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
         defaultTempDirData.horizontalSpan = 2;
@@ -292,7 +294,7 @@ public class WizardToolConfigurationDialog extends Dialog {
         limitInstancesGridData.horizontalSpan = 2;
         limitInstancesText.setLayoutData(limitInstancesGridData);
         limitInstancesText.addVerifyListener(new NumericalTextConstraintListener(limitInstancesText,
-            NumericalTextConstraintListener.ONLY_INTEGER));
+            NumericalTextConstraintListener.ONLY_INTEGER | NumericalTextConstraintListener.GREATER_ZERO));
 
         limitInstancesButton.setSelection(true);
         limitInstancesButton.addSelectionListener(new SelectionListener() {
@@ -319,8 +321,7 @@ public class WizardToolConfigurationDialog extends Dialog {
         // if (localhostButton.getSelection()) {
         config.put(ToolIntegrationConstants.KEY_HOST, ToolIntegrationConstants.VALUE_LOCALHOST);
         /*
-         * } else { // config.put(ToolIntegrationConstants.KEY_HOST, hostText.getText() +
-         * HOST_SEPARATOR + // portText.getText()); }
+         * } else { // config.put(ToolIntegrationConstants.KEY_HOST, hostText.getText() + HOST_SEPARATOR + // portText.getText()); }
          */
         config.put(ToolIntegrationConstants.KEY_TOOL_DIRECTORY, toolDirectoryText.getText());
 
@@ -330,7 +331,7 @@ public class WizardToolConfigurationDialog extends Dialog {
         if (limitInstancesButton.getSelection()) {
             config.put(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_COUNT, limitInstancesText.getText());
         }
-
+        config.remove(ToolIntegrationConstants.KEY_LIMIT_INSTANCES_OLD);
         if (defaultTempDirButton.getSelection()) {
             config.put(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY, "");
         } else {
@@ -381,10 +382,8 @@ public class WizardToolConfigurationDialog extends Dialog {
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 /*
-                 * hostText.setEnabled(hostButton.getSelection());
-                 * portText.setEnabled(hostButton.getSelection());
-                 * chooseRootDirPathButton.setEnabled(!hostButton.getSelection() &&
-                 * customTempDirButton.getSelection());
+                 * hostText.setEnabled(hostButton.getSelection()); portText.setEnabled(hostButton.getSelection());
+                 * chooseRootDirPathButton.setEnabled(!hostButton.getSelection() && customTempDirButton.getSelection());
                  * chooseToolDirPathButton.setEnabled(!hostButton.getSelection());
                  */
                 validateInput();
@@ -417,20 +416,18 @@ public class WizardToolConfigurationDialog extends Dialog {
 
         boolean isValid = true;
         /*
-         * if (hostButton.getSelection()) { if (hostText.getText() == null ||
-         * hostText.getText().isEmpty()) { isValid = false; } if (portText.getText() == null ||
-         * portText.getText().isEmpty()) { isValid = false; } else { try {
-         * Integer.parseInt(portText.getText()); } catch (NumberFormatException e) { isValid =
-         * false; } } }
+         * if (hostButton.getSelection()) { if (hostText.getText() == null || hostText.getText().isEmpty()) { isValid = false; } if
+         * (portText.getText() == null || portText.getText().isEmpty()) { isValid = false; } else { try {
+         * Integer.parseInt(portText.getText()); } catch (NumberFormatException e) { isValid = false; } } }
          */
-        if (toolDirectoryText.getText() == null || toolDirectoryText.getText().isEmpty()) {
+        if (toolDirectoryText.getText() == null || toolDirectoryText.getText().trim().isEmpty()) {
             isValid = false;
         }
-        if (limitInstancesButton.getSelection() && (limitInstancesText.getText().equals("")
+        if (limitInstancesButton.getSelection() && (limitInstancesText.getText().trim().isEmpty()
             || !limitInstancesText.getText().matches("\\d+"))) {
             isValid = false;
         }
-        if (versionText.getText() == null || versionText.getText().isEmpty()) {
+        if (versionText.getText() == null || versionText.getText().trim().isEmpty()) {
             isValid = false;
         }
         if (isValid && !(isEdit && oldConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(toolDirectoryText.getText()))) {
@@ -438,20 +435,19 @@ public class WizardToolConfigurationDialog extends Dialog {
 
                 if (otherConfig.get(ToolIntegrationConstants.KEY_TOOL_DIRECTORY).equals(toolDirectoryText.getText())
                 /*
-                 * && ((localhostButton.getSelection() &&
-                 * otherConfig.get(ToolIntegrationConstants.KEY_HOST).equals(
+                 * && ((localhostButton.getSelection() && otherConfig.get(ToolIntegrationConstants.KEY_HOST).equals(
                  * ToolIntegrationConstants.VALUE_LOCALHOST))
                  */
                 /*
-                 * || (!localhostButton.getSelection() &&
-                 * otherConfig.get(ToolIntegrationConstants.KEY_HOST).equals( hostText.getText() +
+                 * || (!localhostButton.getSelection() && otherConfig.get(ToolIntegrationConstants.KEY_HOST).equals( hostText.getText() +
                  * HOST_SEPARATOR + portText.getText())) )
                  */) {
                     isValid = false;
                 }
             }
         }
-        if (!defaultTempDirButton.getSelection() && (rootWorkingDirText.getText() == null || rootWorkingDirText.getText().isEmpty())) {
+        if (!defaultTempDirButton.getSelection()
+            && (rootWorkingDirText.getText() == null || rootWorkingDirText.getText().trim().isEmpty())) {
             isValid = false;
         }
         getButton(IDialogConstants.OK_ID).setEnabled(isValid);

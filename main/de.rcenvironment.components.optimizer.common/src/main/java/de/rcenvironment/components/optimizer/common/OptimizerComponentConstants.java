@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -212,8 +212,22 @@ public final class OptimizerComponentConstants {
 
     /** Constant. */
     public static final String GENERIC_MAIN_FILE = "generic_optimizer.py";
+
     /** Constant. */
     public static final String META_IS_DISCRETE = "isDiscrete";
+
+    /** Constant. */
+    public static final String META_STEP = "step";
+
+    /** Constant. */
+    public static final String META_USE_STEP = "useStep";
+
+    /** Constant. */
+    public static final String META_USE_UNIFIED_STEP = "useUnifiedStep";
+
+    /** Constant. */
+    public static final String STEP_VALUE_SIGNATURE = " - step value";
+
     /**
      * Hide the constructor.
      */

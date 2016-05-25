@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,8 +9,8 @@
 package de.rcenvironment.core.communication.legacy.internal;
 
 import java.io.Serializable;
-import java.text.MessageFormat;
 
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -27,7 +27,7 @@ public class NetworkContact implements Serializable {
     /**
      * Exception thrown if a parameter is null.
      */
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     /**
      * Serial UID.
@@ -60,9 +60,9 @@ public class NetworkContact implements Serializable {
      */
     public NetworkContact(String host, String protocol, Integer port) {
 
-        Assertions.isDefined(host, MessageFormat.format(ERROR_PARAMETERS_NULL, "host"));
-        Assertions.isDefined(protocol, MessageFormat.format(ERROR_PARAMETERS_NULL, "protocol"));
-        Assertions.isDefined(port, MessageFormat.format(ERROR_PARAMETERS_NULL, "port"));
+        Assertions.isDefined(host, StringUtils.format(ERROR_PARAMETERS_NULL, "host"));
+        Assertions.isDefined(protocol, StringUtils.format(ERROR_PARAMETERS_NULL, "protocol"));
+        Assertions.isDefined(port, StringUtils.format(ERROR_PARAMETERS_NULL, "port"));
 
         myHost = host;
         myProtocol = protocol;
@@ -100,7 +100,7 @@ public class NetworkContact implements Serializable {
 
     @Override
     public boolean equals(Object object) {
-        Assertions.isDefined(object, MessageFormat.format(ERROR_PARAMETERS_NULL, "object"));
+        Assertions.isDefined(object, StringUtils.format(ERROR_PARAMETERS_NULL, "object"));
         return toString().equals(object.toString());
     }
 

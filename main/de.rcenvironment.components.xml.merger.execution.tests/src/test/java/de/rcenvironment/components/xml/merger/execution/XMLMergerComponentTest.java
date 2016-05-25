@@ -1,11 +1,11 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.components.xml.merger.execution;
 
 import java.io.File;
@@ -31,7 +31,6 @@ import de.rcenvironment.core.utils.common.xml.api.XMLMapperService;
 import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
 import de.rcenvironment.core.utils.common.xml.impl.XMLSupportServiceImpl;
 
-
 /**
  * Unit test for the XML Merger Component. This test uses mocks for the XML services. It does not contain many test cases because most of
  * the logic can only be tested with the actual XMLSupport, so most of the tests for this component are in the XMLMergerIntegrationTest.
@@ -39,29 +38,29 @@ import de.rcenvironment.core.utils.common.xml.impl.XMLSupportServiceImpl;
  * @author Brigitte Boden
  */
 public class XMLMergerComponentTest {
-    
+
     private static final String ENDPOINT_NAME_XML = "XML";
 
     private static final String ENDPOINT_NAME_XML_TO_INTEGRATE = XmlMergerComponentConstants.INPUT_NAME_XML_TO_INTEGRATE;
-    
+
     /**
      * Junit Exception rule.
      */
     @Rule
     public ExpectedException exception = ExpectedException.none();
-    
+
     private ComponentTestWrapper component;
-    
+
     private XMLMergerComponentContextMock context;
-    
+
     private ComponentDataManagementService componentDataManagementServiceMock;
-    
+
     private File originCPACS;
 
     private File xmlToIntegrate;
-    
+
     private TypedDatumFactory typedDatumFactory;
-    
+
     /**
      * Context mock for XMLMerger Component test.
      *
@@ -81,21 +80,21 @@ public class XMLMergerComponentTest {
     @Before
     public void setup() throws Exception {
         TempFileServiceAccess.setupUnitTestEnvironment();
-        
+
         context = new XMLMergerComponentContextMock();
         componentDataManagementServiceMock = EasyMock.createMock(ComponentDataManagementService.class);
         context.addService(ComponentDataManagementService.class, componentDataManagementServiceMock);
         component = new ComponentTestWrapper(new XmlMergerComponent(), context);
-        
+
         context.addSimulatedInput(ENDPOINT_NAME_XML, ENDPOINT_NAME_XML, DataType.FileReference, false, null);
         context.addSimulatedInput(ENDPOINT_NAME_XML_TO_INTEGRATE, ENDPOINT_NAME_XML_TO_INTEGRATE, DataType.FileReference, false, null);
         context.addSimulatedOutput(ENDPOINT_NAME_XML, ENDPOINT_NAME_XML, DataType.FileReference, false, null);
-        
+
         XMLSupportService support = EasyMock.createMock(XMLSupportService.class);
         XMLMapperService mapper = EasyMock.createMock(XMLMapperService.class);
         context.addService(XMLSupportService.class, support);
         context.addService(XMLMapperService.class, mapper);
-        
+
         EasyMock.expect(support.readXMLFromString(EasyMock.anyObject(String.class))).andReturn(null).anyTimes();
         Document emptyDoc = new XMLSupportServiceImpl().createDocument();
         EasyMock.expect(support.readXMLFromFile(EasyMock.anyObject(File.class))).andReturn(emptyDoc).anyTimes();
@@ -103,12 +102,12 @@ public class XMLMergerComponentTest {
         EasyMock.expectLastCall();
         EasyMock.replay(support);
         EasyMock.replay(mapper);
-        
+
         originCPACS = new File("src/test/resources/CPACS.xml");
         xmlToIntegrate = new File("src/test/resources/xmlToIntegrate.xml");
         typedDatumFactory = context.getService(TypedDatumService.class).getFactory();
     }
-    
+
     /**
      * Test with no input.
      * 
@@ -133,6 +132,8 @@ public class XMLMergerComponentTest {
 
         context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC);
         context.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, mapping);
+        context.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+            XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED);
 
         component.start();
 
@@ -140,7 +141,7 @@ public class XMLMergerComponentTest {
             typedDatumFactory.createFileReference(originCPACS.getAbsolutePath(), originCPACS.getName()));
         context.setInputValue(ENDPOINT_NAME_XML_TO_INTEGRATE,
             typedDatumFactory.createFileReference(xmlToIntegrate.getAbsolutePath(), xmlToIntegrate.getName()));
-        
+
         exception.expect(ComponentException.class);
         component.processInputs();
 
@@ -149,4 +150,3 @@ public class XMLMergerComponentTest {
     }
 
 }
-

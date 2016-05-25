@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import org.codehaus.jackson.util.DefaultPrettyPrinter.Lf2SpacesIndenter;
 
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Default {@link ConfigurationStore} implementation.
@@ -54,7 +55,7 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
                 // return empty placeholder
                 return new WritableConfigurationSegmentImpl(null);
             }
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             mapper.configure(org.codehaus.jackson.JsonParser.Feature.ALLOW_COMMENTS, true);
             mapper.configure(org.codehaus.jackson.JsonParser.Feature.ALLOW_UNQUOTED_FIELD_NAMES, true);
             validateJsonSyntax(mapper);
@@ -129,7 +130,7 @@ public class ConfigurationStoreImpl implements ConfigurationStore {
     }
 
     private void writeJsonFile(JsonNode jsonRootNode, File file) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonFactory jsonFactory = new JsonFactory();
         try (JsonGenerator jsonGenerator = jsonFactory.createJsonGenerator(file, JsonEncoding.UTF8)) {
             DefaultPrettyPrinter prettyPrinter = new DefaultPrettyPrinter();

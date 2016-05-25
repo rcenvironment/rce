@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,28 +26,29 @@ public class LoopComponentWorkflowNodeValidator extends AbstractWorkflowNodeVali
 
     @Override
     protected Collection<WorkflowNodeValidationMessage> validate() {
-        
+
         List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();
-        
+
         LoopBehaviorInCaseOfFailure loopBehaviorInCaseOfFailure = LoopBehaviorInCaseOfFailure
-            .fromString(getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE));
-        
+            .fromString(getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV));
+
         if (loopBehaviorInCaseOfFailure.equals(LoopBehaviorInCaseOfFailure.RerunAndFail)) {
-            if (getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_FAIL) == null
-                || getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_FAIL).isEmpty()) {
+            if (getProperty(LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV) == null
+                || getProperty(LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV).isEmpty()) {
                 messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR,
-                    LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_FAIL, "Define maximum of reruns", "Maximum of reruns missing"));
+                    LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV, "Define maximum of reruns", "Maximum of reruns missing"));
             }
         }
-        
+
         if (loopBehaviorInCaseOfFailure.equals(LoopBehaviorInCaseOfFailure.RerunAndDiscard)) {
-            if (getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_DISCARD) == null
-                || getProperty(LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_DISCARD).isEmpty()) {
+            if (getProperty(LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV) == null
+                || getProperty(LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV).isEmpty()) {
                 messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR,
-                    LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_DISCARD, "Define maximum of reruns", "Maximum of reruns missing"));
+                    LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV, "Define maximum of reruns",
+                    "Maximum of reruns missing"));
             }
         }
-        
+
         return messages;
     }
 

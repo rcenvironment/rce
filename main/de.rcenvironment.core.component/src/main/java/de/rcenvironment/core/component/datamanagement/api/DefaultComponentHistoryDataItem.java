@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,6 +24,7 @@ import org.codehaus.jackson.node.ObjectNode;
 
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Default implementation of {@link ComponentHistoryDataItem} containing inputs and outputs.
@@ -80,7 +81,7 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
 
     @Override
     public synchronized String serialize(TypedDatumSerializer serializer) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         rootNode.put(FORMAT_VERSION_COMMON, CURRENT_FORMAT_VERSION);
         rootNode.put(INPUTS, getEndpointsAsJsonObjectNode(inputs, mapper, serializer));
@@ -196,7 +197,7 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
 
     private static Map<String, Deque<EndpointHistoryDataItem>> getInputsFromString(String endpoints, TypedDatumSerializer serializer)
         throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             JsonNode tree = mapper.readTree(endpoints);
             return getEndpointsFromString((ObjectNode) tree.get(INPUTS), serializer);
@@ -207,7 +208,7 @@ public class DefaultComponentHistoryDataItem implements ComponentHistoryDataItem
 
     private static Map<String, Deque<EndpointHistoryDataItem>> getOutputsFromString(String endpoints, TypedDatumSerializer serializer)
         throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             JsonNode tree = mapper.readTree(endpoints);
             return getEndpointsFromString((ObjectNode) tree.get(OUTPUTS), serializer);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,6 +16,7 @@ import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link OptimizerResultService}.
@@ -50,7 +51,7 @@ public class OptimizerResultServiceImpl implements OptimizerResultService {
 
     @Override
     public OptimizerReceiver createReceiver(final String identifier,
-        final NodeIdentifier platform) {
+        final NodeIdentifier platform) throws RemoteOperationException {
         final String notificationId = StringUtils.format(OptimizerUtils.STRUCTURE_PATTERN,
             identifier);
         if (distributedNotificationService != null && distributedNotificationService

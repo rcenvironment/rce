@@ -1,0 +1,8 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Workflow Execution Related Instances Factory">
+	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionRelatedInstancesFactoryImpl"/>
+
+	<service>
+		<provide interface="de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionRelatedInstancesFactory"/>
+	</service>
+		
+</scr:component>

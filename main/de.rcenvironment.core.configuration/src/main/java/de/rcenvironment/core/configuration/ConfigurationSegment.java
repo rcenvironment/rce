@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@
 package de.rcenvironment.core.configuration;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.map.ObjectMapper;
@@ -32,6 +33,13 @@ public interface ConfigurationSegment {
      * @return the requested {@link ConfigurationSegment}
      */
     ConfigurationSegment getSubSegment(String relativePath);
+    
+    /**
+     * @param relativePath the path relative to the current one to fetch
+     * @return the value of the given relativ path, or null if no such value exists
+     * @throws ConfigurationException on failure.
+     */
+    List<String> getStringArray(String relativePath) throws ConfigurationException;
 
     /**
      * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment

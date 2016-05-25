@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@ package de.rcenvironment.components.script.execution;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
@@ -18,6 +19,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.execution.api.ThreadHandler;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.utils.common.LogUtils;
@@ -44,6 +46,10 @@ public class ScriptComponent extends DefaultComponent {
 
     private String scriptFileRef;
 
+    private Log log = LogFactory.getLog(ScriptComponent.class);
+
+    private volatile boolean canceled;
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
@@ -56,6 +62,7 @@ public class ScriptComponent extends DefaultComponent {
 
     @Override
     public void start() throws ComponentException {
+        canceled = false;
 
         scriptExecutorRegistry = componentContext.getService(ScriptExecutorFactoryRegistry.class);
         String language = componentContext.getConfigurationValue("scriptLanguage");
@@ -90,10 +97,42 @@ public class ScriptComponent extends DefaultComponent {
                 }
             }
         }
-        executor.runScript();
+
+        try {
+            executor.runScript();
+        } catch (ComponentException e) {
+            // A ComponentException is thrown if the script execution failed as well as if the script execution was canceled. To distinguish
+            // between both cases, we catch the exception and re-throw it, if the execution was not canceled by the user.
+
+            if (canceled) {
+                return;
+            }
+            throw e;
+        }
+
         executor.postRun();
         executor.deleteTempFiles();
         writeFinalHistoryDataItem();
+    }
+
+    @Override
+    public void onStartInterrupted(ThreadHandler executingThreadHandler) {
+        cancelScriptExecution(executingThreadHandler);
+    }
+
+    @Override
+    public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
+        cancelScriptExecution(executingThreadHandler);
+    }
+    
+    private void cancelScriptExecution(ThreadHandler executingThreadHandler) {
+        canceled = true;
+
+        if (executor.isCancelable()) {
+            this.executor.cancelScript();
+        } else {
+            executingThreadHandler.interrupt();
+        }
     }
 
     public void setExecutor(ScriptExecutor executor) {

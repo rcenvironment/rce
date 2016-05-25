@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -102,6 +102,7 @@ import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentHistoryDataItem;
 import de.rcenvironment.components.optimizer.common.execution.OptimizerAlgorithmExecutor;
 import de.rcenvironment.core.component.api.ComponentException;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -156,21 +157,24 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
 
     private FileReferenceTD dakotaInputFileReference;
 
+    private Map<String, Double> stepValues;
+
     public DakotaAlgorithm() {}
 
-    public DakotaAlgorithm(String algorithm, Map<String, MethodDescription> methodConfigurations, Map<String, TypedDatum> outputValues,
+    public DakotaAlgorithm(Map<String, MethodDescription> methodConfigurations, Map<String, TypedDatum> outputValues,
         Collection<String> input2, ComponentContext compContext, Map<String, Double> upperMap,
-        Map<String, Double> lowerMap) throws ComponentException {
+        Map<String, Double> lowerMap, Map<String, Double> stepValues) throws ComponentException {
         super(compContext, "dakotaInput.in", "results.out");
 
         typedDatumFactory = compContext.getService(TypedDatumService.class).getFactory();
-        this.algorithm = algorithm;
+        this.algorithm =
+            compContext.getConfigurationValue(OptimizerComponentConstants.ALGORITHMS);
         this.outputValues = outputValues;
         this.input = input2;
         this.methodConfigurations = methodConfigurations;
         this.upperMap = upperMap;
         this.lowerMap = lowerMap;
-
+        this.stepValues = stepValues;
         synchronized (LOCK_OBJECT) {
             if (Boolean.parseBoolean(compContext.getConfigurationValue(OptimizerComponentConstants.USE_CUSTOM_DAKOTA_PATH))) {
                 dakotaExecutablePath = new File(compContext.getConfigurationValue(OptimizerComponentConstants.CUSTOM_DAKOTA_PATH));
@@ -372,8 +376,13 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                             while (xStrg != null && xStrg[j].isEmpty()) {
                                 j++;
                             }
-                            if (xStrg != null) {
+                            if (xStrg == null) {
+                                continue;
+                            }
+                            if (!(xStrg[j].contains("nan"))) {
                                 newOutput.put(xStrg[j + 1], Double.parseDouble(xStrg[j]));
+                            } else {
+                                newOutput.put(xStrg[j + 1], Double.NaN);
                             }
                         }
 
@@ -460,7 +469,8 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                 boolean containsAll = true;
                 for (String variable : results.keySet()) {
                     // Have to use this since the accuracy of the variables is a bit different.
-                    if (Math.abs((iterationValues.get(variable) - results.get(variable)) / iterationValues.get(variable)) > RESULT_EPS) {
+                    if (Math.abs((iterationValues.get(variable) - results.get(variable)) / iterationValues.get(variable)) > RESULT_EPS
+                        || Double.isNaN(iterationValues.get(variable))) {
                         containsAll = false;
                     }
                 }
@@ -480,10 +490,15 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         String command = dakotaExecutablePath.getAbsolutePath();
         if (compContext.getConfigurationValue(OptimizerComponentConstants.USE_RESTART_FILE) != null
             && Boolean.parseBoolean(compContext.getConfigurationValue(OptimizerComponentConstants.USE_RESTART_FILE))) {
-            command +=
-                RESTART_FILE_ARGUMENT
-                    + "\"" + new File(compContext.getConfigurationValue(OptimizerComponentConstants.RESTART_FILE_PATH)).getAbsolutePath()
-                    + "\" ";
+            if (compContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP) == null
+                || !Boolean.parseBoolean(compContext.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP))) {
+                command +=
+                    RESTART_FILE_ARGUMENT
+                        + "\""
+                        + new File(compContext.getConfigurationValue(OptimizerComponentConstants.RESTART_FILE_PATH)).getAbsolutePath()
+                        + "\" ";
+
+            }
         }
         command += INPUT_ARGUMENT;
         try {

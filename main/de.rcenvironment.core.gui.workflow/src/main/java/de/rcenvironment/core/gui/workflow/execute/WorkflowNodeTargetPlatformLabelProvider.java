@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -138,8 +138,11 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
         if (!exactMatch) {
             combo.setForeground(ColorPalette.getInstance().getWarningColor());
         } else {
-
             combo.setForeground(ColorPalette.getInstance().getBlackColor());
+        }
+
+        if (combo.getItemCount() <= 1 && exactMatch) {
+            combo.setEnabled(false);
         }
 
         nodesValid.put(wfNode, exactMatch);
@@ -156,29 +159,9 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
         for (CCombo combo : comboList) {
 
             if (combo.getData(TableBehaviour.EDITOR) instanceof TableEditor) {
-
-                WorkflowNode node = (WorkflowNode) combo.getData();
-                if (combo.getForeground().equals(ColorPalette.getInstance().getWarningColor())) {
-                    nodeValueWithError.put(node, combo.getSelectionIndex());
-                } else {
-                    if (nodeValueWithError.containsKey(node)) {
-                        nodeValueWithError.remove(node);
-                    }
-
-                }
                 TableEditor editor = (TableEditor) combo.getData(TableBehaviour.EDITOR);
                 editor.dispose();
             } else {
-
-                TreeNode node = (TreeNode) combo.getData();
-                if (combo.getForeground().equals(ColorPalette.getInstance().getWarningColor())) {
-                    nodeValueWithError.put(node.getWorkflowNode(), combo.getSelectionIndex());
-                } else {
-                    if (nodeValueWithError.containsKey(node.getWorkflowNode())) {
-                        nodeValueWithError.remove(node.getWorkflowNode());
-                    }
-
-                }
                 TreeEditor editor = (TreeEditor) combo.getData(TableBehaviour.EDITOR);
                 editor.dispose();
 
@@ -251,9 +234,9 @@ public class WorkflowNodeTargetPlatformLabelProvider extends
         return workflowDescription;
     }
 
-    public Map<WorkflowNode, Integer> getNodeValueWithError() {
-        return nodeValueWithError;
-    }
+    // public Map<WorkflowNode, Integer> getNodeValueWithError() {
+    // return nodeValueWithError;
+    // }
 
 
 }

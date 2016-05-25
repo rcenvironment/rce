@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -205,11 +205,11 @@ public class EndpointSelectionPane implements Refreshable {
         tableLayout.setColumnData(col1, new ColumnWeightData(columnWeight, true));
         tableLayout.setColumnData(col2, new ColumnWeightData(columnWeight, true));
         if (!readonly) {
-            buttonAdd = toolkit.createButton(client, EndpointActionType.ADD.toString(), SWT.FLAT);
+            buttonAdd = toolkit.createButton(client, EndpointActionType.ADD.getButtonText(), SWT.FLAT);
             buttonAdd.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
-            buttonEdit = toolkit.createButton(client, EndpointActionType.EDIT.toString(), SWT.FLAT);
+            buttonEdit = toolkit.createButton(client, EndpointActionType.EDIT.getButtonText(), SWT.FLAT);
             buttonEdit.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
-            buttonRemove = toolkit.createButton(client, EndpointActionType.REMOVE.toString(), SWT.FLAT);
+            buttonRemove = toolkit.createButton(client, EndpointActionType.REMOVE.getButtonText(), SWT.FLAT);
             buttonRemove.setLayoutData(new GridData(SWT.FILL, SWT.TOP, false, false));
             table.addSelectionListener(new SelectionAdapter() {
 
@@ -261,8 +261,7 @@ public class EndpointSelectionPane implements Refreshable {
     }
 
     /**
-     * Set the component instance configuration for configuration handling & storage; must not be
-     * null.
+     * Set the component instance configuration for configuration handling & storage; must not be null.
      * 
      * @param configuration Component configuration
      */
@@ -444,11 +443,14 @@ public class EndpointSelectionPane implements Refreshable {
 
             Set<String> metaDataKeys = getMetaDataDescription(name).getMetaDataKeys();
             for (String key : metaDataKeys) {
-                if (getMetaDataDescription(name).getVisibility(key) == Visibility.shown) {
+                if (getMetaDataDescription(name).getVisibility(key) == Visibility.shown
+                    && EndpointHelper.checkMetadataFilter(getMetaDataDescription(name).getGuiVisibilityFilter(key), getMetaData(name),
+                        configuration.getConfigurationDescription())) {
                     if (getMetaData(name).get(key) != null && !getMetaData(name).get(key).isEmpty()
                         && !getMetaData(name).get(key).matches(ComponentUtils.PLACEHOLDER_REGEX)) {
-                        if (EndpointEditDialog.checkActivationFilter(getMetaDataDescription(name).getGuiActivationFilter(key),
-                            getMetaData(name)) && guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)) != null) {
+                        if (EndpointHelper.checkMetadataFilter(getMetaDataDescription(name).getGuiActivationFilter(key),
+                            getMetaData(name), configuration.getConfigurationDescription())
+                            && guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)) != null) {
                             item.setText(guiKeyToColumnNumberMap.get(getMetaDataDescription(name).getGuiName(key)),
                                 getMetaDataWithGuiNames(name).get(key).toString());
                             if (!isValueEditable(name, key)) {

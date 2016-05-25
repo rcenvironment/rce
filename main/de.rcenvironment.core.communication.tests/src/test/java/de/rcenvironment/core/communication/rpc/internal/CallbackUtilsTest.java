@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -234,7 +234,7 @@ public class CallbackUtilsTest {
 
         private String id;
 
-        public DummyProxy(String id) {
+        DummyProxy(String id) {
             this.id = id;
         }
 

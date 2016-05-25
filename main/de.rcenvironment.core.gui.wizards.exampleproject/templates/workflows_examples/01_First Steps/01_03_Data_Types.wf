@@ -1,8 +1,9 @@
 {
-  "identifier" : "3cc3c23a-489b-402e-b4a3-959f5eaf63a2",
+  "identifier" : "733699e6-0cc3-4375-b2e8-6cbbc2c8ce69",
   "workflowVersion" : "4",
+  "name" : "01_03_Data_Types_2016-01-27_08:37:00_02",
   "nodes" : [ {
-    "identifier" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "identifier" : "e9375108-1fe1-413c-9041-806c1560f683",
     "name" : "First",
     "location" : "166:246",
     "active" : "true",
@@ -13,9 +14,9 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "# First, create an empty directory and file to send\r\nimport os\r\nos.mkdir(\"directoryname\")\r\nf = open(\"filename\", 'w')\r\nf.close()\r\n#Send values\r\nRCE.write_output(\"boolean\", True)\r\nRCE.write_output(\"directory\", \"directoryname\")\r\nRCE.write_output(\"file\", \"filename\")\r\nRCE.write_output(\"float\", 1.0)\r\nRCE.write_output(\"integer\", 42)\r\nRCE.write_output(\"shorttext\", \"This is a short text.\")\r\nRCE.write_output(\"smallTable\", [[1, 2.0, \"Hallo\"], [\"This\", \"is\", \"a test\"]])\r\nRCE.write_output(\"vector\", [1.0, 2.0, 3.0])",
+      "script" : "# First, create an empty directory and file to send\r\nimport os\r\nos.mkdir(\"directoryname\")\r\nf = open(\"filename\", 'w')\r\nf.close()\r\n#Send values\r\nRCE.write_output(\"boolean\", True)\r\nRCE.write_output(\"directory\", \"directoryname\")\r\nRCE.write_output(\"file\", \"filename\")\r\nRCE.write_output(\"float\", 1.0)\r\nRCE.write_output(\"integer\", 42)\r\nRCE.write_output(\"shorttext\", \"This is a short text.\")\r\nRCE.write_output(\"smallTable\", [[1, 2.0, \"Hallo\"], [\"This\", \"is\", \"a test\"]])\r\nRCE.write_output(\"vector\", [1.0, 2.0, 3.0])\r\nRCE.write_output(\"matrix\", [[1.0, 2.0, 3.0],[1.0, 2.0, 3.0],[1.0, 2.0, 3.0]])\r\n",
       "scriptLanguage" : "Jython",
-      "storeComponentHistoryData" : "false",
+      "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     },
     "dynamicOutputs" : [ {
@@ -49,6 +50,12 @@
       "group" : null,
       "datatype" : "Integer"
     }, {
+      "identifier" : "88f1fcdc-4300-481c-8573-f9b3c87502da",
+      "name" : "matrix",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Matrix"
+    }, {
       "identifier" : "571c0604-39ce-490a-a0cb-87e05f6a0688",
       "name" : "shorttext",
       "epIdentifier" : "default",
@@ -68,7 +75,7 @@
       "datatype" : "Vector"
     } ]
   }, {
-    "identifier" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "identifier" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "name" : "Second",
     "location" : "393:246",
     "active" : "true",
@@ -79,7 +86,7 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "script" : "print(\"Boolean: \" + str(RCE.read_input(\"boolean\")))\r\nprint(\"Directory: \" + str(RCE.read_input(\"directory\")))\r\nprint(\"File: \" + str(RCE.read_input(\"file\")))\r\nprint(\"Float: \" + str(RCE.read_input(\"float\")))\r\nprint(\"Integer: \" + str(RCE.read_input(\"integer\")))\r\nprint(\"Short Text: \" + str(RCE.read_input(\"shorttext\")))\r\nprint(\"Small Table: \" + str(RCE.read_input(\"smallTable\")))\r\nprint \"Vector: \" + str(RCE.read_input(\"vector\"))",
+      "script" : "print(\"Boolean: \" + str(RCE.read_input(\"boolean\")))\r\nprint(\"Directory: \" + str(RCE.read_input(\"directory\")))\r\nprint(\"File: \" + str(RCE.read_input(\"file\")))\r\nprint(\"Float: \" + str(RCE.read_input(\"float\")))\r\nprint(\"Integer: \" + str(RCE.read_input(\"integer\")))\r\nprint(\"Short Text: \" + str(RCE.read_input(\"shorttext\")))\r\nprint(\"Small Table: \" + str(RCE.read_input(\"smallTable\")))\r\nprint(\"Vector: \" + str(RCE.read_input(\"vector\")))\r\nprint(\"Matrix: \" + str(RCE.read_input(\"matrix\")))",
       "scriptLanguage" : "Jython",
       "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
@@ -135,6 +142,16 @@
         "inputHandling_73b1056e" : "Single"
       }
     }, {
+      "identifier" : "97b75f38-166d-4b99-a527-6d58a20829fb",
+      "name" : "matrix",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Matrix",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
       "identifier" : "e5f9f208-225e-4b4f-9369-9ff3024cbdc1",
       "name" : "shorttext",
       "epIdentifier" : "default",
@@ -167,44 +184,49 @@
     } ]
   } ],
   "connections" : [ {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "a335b9f6-cc91-4f0f-9948-877c1e8f49a9",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "e182c569-e5f6-4542-b250-97c68fcff058"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "c7eecbd3-d532-46bd-b3b7-a30de25b708b",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "f4226d8c-58d0-48d0-8752-7d7474acf05a"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "c60e1342-b904-4994-9c24-5aa7519e31a6",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "b44b62bc-5b20-4eaa-a478-7fe0342fb264"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "17ce1c20-7a83-42db-aff4-1cccb08bf454",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "746a4254-8cee-4cf8-8a5b-496ce785eb84"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "544d42f0-a7f8-4c59-ade8-b787d5e33e21",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "5e384ab1-34ed-4482-b968-379e51df21ab"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
+    "output" : "88f1fcdc-4300-481c-8573-f9b3c87502da",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
+    "input" : "97b75f38-166d-4b99-a527-6d58a20829fb"
+  }, {
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "571c0604-39ce-490a-a0cb-87e05f6a0688",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "e5f9f208-225e-4b4f-9369-9ff3024cbdc1"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "c73f575e-d164-4574-bcb0-38bbbb694d96",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "a544963d-5c7a-4acb-ac0b-3eca9582f321"
   }, {
-    "source" : "2466c4ad-90ec-4f06-b39c-c998ad48e660",
+    "source" : "e9375108-1fe1-413c-9041-806c1560f683",
     "output" : "d25d61f9-0d51-4544-bef0-9be57955b2a8",
-    "target" : "4e1a7c89-83ad-4adb-8e56-ab5f84ea562a",
+    "target" : "8ab6d979-71ea-4f2f-b47d-387fe3740368",
     "input" : "7c760d85-90a8-4789-9951-5092ae9d1818"
   } ],
   "labels" : "[{\"identifier\":\"ede01042-36b4-4f73-a381-eab90d5708d1\",\"text\":\"Example workflow: \\\"Data Types\\\"\\r\\nObjective: Introducing data types transferred between workflow components\\r\\n(See section \\\"Workflows\\\" in the user guide for details.)\\r\\n\\r\\nA workflow component can send data to other workflow components via directed, typed data channels\\r\\ncalled connections. Supported data types are: Short Text, Integer, Float, Boolean, File, Directory, Vector,\\r\\nMatrix, Small Table (see User Guide for details).\\r\\n\\r\\nThis workflow consists of two workflow components that exchange data of all of the data types allowed.\\r\\nThey also demonstrate how to make use of the data types in the \\\"Script\\\" workflow component.\",\"location\":\"30:13\",\"size\":\"653:194\",\"alpha\":\"202\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"}]"

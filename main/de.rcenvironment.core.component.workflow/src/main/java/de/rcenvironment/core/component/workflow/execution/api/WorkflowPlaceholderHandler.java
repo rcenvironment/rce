@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,8 +36,7 @@ import de.rcenvironment.core.configuration.SecurePreferencesFactory;
 
 /**
  * 
- * Class for placeholder management and parsing. Here, all information about the placeholders are
- * stored.
+ * Class for placeholder management and parsing. Here, all information about the placeholders are stored.
  * 
  * @author Sascha Zur
  */
@@ -146,8 +145,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
     }
 
     /**
-     * Restores the passwords in the eclipse secure storage to the current placeholder. This will
-     * ask the user for the eclipse storage master passphrase.
+     * Restores the passwords in the eclipse secure storage to the current placeholder. This will ask the user for the eclipse storage
+     * master passphrase.
      * 
      * @param componentHistory the map with password placeholder
      */
@@ -174,8 +173,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     }
 
     /**
-     * Automatically add the given placeholder to the right map and adds an instance to the
-     * componentype if necessary.
+     * Automatically add the given placeholder to the right map and adds an instance to the componentype if necessary.
      * 
      * @param placeholder : the placeholder
      * @param componentID : the component type id
@@ -204,7 +202,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
             if ((matcher.group(ComponentUtils.ATTRIBUTE1) != null
                 && matcher.group(ComponentUtils.ATTRIBUTE1).equals(ComponentUtils.ENCODEDATTRIBUTE))
                 || (matcher.group(ComponentUtils.ATTRIBUTE2) != null
-                && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
+                    && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
                 encryptedPlaceholder.add(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME));
             }
         }
@@ -214,8 +212,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private boolean isGlobalPlaceholder(Matcher matcherOfPlaceholder) {
         return (matcherOfPlaceholder.group(ComponentUtils.ATTRIBUTE1) != null && (matcherOfPlaceholder.group(ComponentUtils.ATTRIBUTE1)
             .equals(ComponentUtils.GLOBALATTRIBUTE) || (matcherOfPlaceholder
-            .group(ComponentUtils.ATTRIBUTE2) != null && matcherOfPlaceholder
-            .group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.GLOBALATTRIBUTE))));
+                .group(ComponentUtils.ATTRIBUTE2) != null && matcherOfPlaceholder
+                    .group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.GLOBALATTRIBUTE))));
     }
 
     private void addPlaceholderKeyToMap(Map<String, Map<String, String>> map, String key, String placeholderName) {
@@ -322,8 +320,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     }
 
     /**
-     * Adds a value to the given placeholder in the right map. Use only if you are sure the
-     * placeholder is global.
+     * Adds a value to the given placeholder in the right map. Use only if you are sure the placeholder is global.
      * 
      * @param placeholder : the placeholder with the new value.
      * @param componentID : the component type id
@@ -385,8 +382,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     /**
      * 
-     * Returns the value for the given placeholder. If it is not found, the value is null. Use this
-     * method if you are sure the placeholder is global.
+     * Returns the value for the given placeholder. If it is not found, the value is null. Use this method if you are sure the placeholder
+     * is global.
      * 
      * 
      * @param placeholderName : the placeholder to look for.
@@ -430,8 +427,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     /**
      * 
-     * Returns the value for the given placeholder. If it is not found, the value is null. Use this
-     * method if you are sure the placeholder is global.
+     * Returns the value for the given placeholder. If it is not found, the value is null. Use this method if you are sure the placeholder
+     * is global.
      * 
      * 
      * @param placeholder : the placeholder to look for.
@@ -647,7 +644,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
     public void deletePlaceholderHistory(String componentDescriptionIdentifier, String placeholderName) {
         Set<String> setToDelete = new HashSet<String>();
         for (String key : componentInstanceHistory.keySet()) {
-            if (key.endsWith(placeholderName)) {
+            if (key != null && placeholderName != null && key.endsWith(placeholderName)) {
                 setToDelete.add(key);
             }
         }

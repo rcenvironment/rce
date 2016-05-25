@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -62,8 +62,10 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
      * 
      * @param componentIdentifier identifier of specific component
      * @param publishPlatform identifier of publishing platform
+     * @throws RemoteOperationException when subscribing to remote notifications fails
      */
-    public void subscribeToLocalToolRunPlatForm(final String componentIdentifier, final NodeIdentifier publishPlatform) {
+    public void subscribeToLocalToolRunPlatForm(final String componentIdentifier, final NodeIdentifier publishPlatform)
+        throws RemoteOperationException {
         if (!isSubscribed) {
             SimpleNotificationService sns = new SimpleNotificationService();
 

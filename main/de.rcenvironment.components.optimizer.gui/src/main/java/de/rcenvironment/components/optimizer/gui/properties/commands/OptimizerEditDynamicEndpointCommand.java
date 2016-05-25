@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -100,36 +100,26 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                 }
 
             }
-            if (getWorkflowNode().getOutputDescriptionsManager().getEndpointDescription(
-                oldDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX) != null) {
-                getWorkflowNode().getOutputDescriptionsManager().removeDynamicEndpointDescription(
-                    oldDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX);
-            }
-            Map<String, String> metadata = new HashMap<>();
-            metadata.putAll(newDesc.getMetaData());
-            metadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
-            getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
-                newDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
-                newDesc.getDataType(), metadata);
 
-            if ((oldDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) == null
-                && oldDesc.getMetaData().get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
-                || (oldDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
-                    && !Boolean.parseBoolean(oldDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
-                workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(
-                    oldDesc.getName() + OptimizerComponentConstants.STARTVALUE_SIGNATURE);
+            if (!oldDesc.getName().equals(newDesc.getName()) || !oldDesc.getDataType().equals(newDesc.getDataType())) {
+                if (getWorkflowNode().getOutputDescriptionsManager().getEndpointDescription(
+                    oldDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX) != null) {
+                    getWorkflowNode().getOutputDescriptionsManager().removeDynamicEndpointDescription(
+                        oldDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX);
+                }
+                Map<String, String> metadata = new HashMap<>();
+                metadata.putAll(newDesc.getMetaData());
+                metadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
+                    newDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
+                    newDesc.getDataType(), metadata);
             }
-            if ((newDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) == null
-                && newDesc.getMetaData().get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
-                || (newDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
-                    && !Boolean.parseBoolean(newDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
-                Map<String, String> newMetaData = new HashMap<String, String>();
-                newMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+            handleExtraValueInputs(workflowNode, OptimizerComponentConstants.META_HAS_STARTVALUE,
+                null, OptimizerComponentConstants.STARTVALUE_SIGNATURE, true, oldDesc, newDesc);
+            handleExtraValueInputs(workflowNode, OptimizerComponentConstants.META_USE_STEP,
+                OptimizerComponentConstants.META_USE_UNIFIED_STEP, OptimizerComponentConstants.STEP_VALUE_SIGNATURE, false, oldDesc,
+                newDesc);
 
-                workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
-                    newDesc.getName() + OptimizerComponentConstants.STARTVALUE_SIGNATURE, newDesc.getDataType(),
-                    newMetaData);
-            }
             break;
         default:
             throw new RuntimeException();
@@ -158,6 +148,70 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
         if (refreshable != null) {
             for (Refreshable r : refreshable) {
                 r.refresh();
+            }
+        }
+    }
+
+    private void handleExtraValueInputs(final WorkflowNode workflowNode, final String conditionName, final String condition2Name,
+        final String signature, boolean negateCondition, EndpointDescription fromDescription, EndpointDescription toDescription) {
+
+        String newConditionValueString = toDescription.getMetaDataValue(conditionName);
+        boolean newConditionValue = newConditionValueString != null && Boolean.parseBoolean(newConditionValueString);
+
+        String oldConditionValueString = fromDescription.getMetaDataValue(conditionName);
+        boolean oldConditionValue = oldConditionValueString != null && Boolean.parseBoolean(oldConditionValueString);
+
+        boolean condition2Active = false;
+        boolean newCondition2Value = false;
+        boolean oldCondition2Value = false;
+        if (condition2Name != null) {
+            condition2Active = true;
+            String newCondition2ValueString = toDescription.getMetaDataValue(condition2Name);
+            newCondition2Value = newCondition2ValueString != null && !Boolean.parseBoolean(newCondition2ValueString);
+            String oldCondition2ValueString = fromDescription.getMetaDataValue(condition2Name);
+            oldCondition2Value = oldCondition2ValueString != null && !Boolean.parseBoolean(oldCondition2ValueString);
+        }
+
+        boolean nameChanged = !fromDescription.getName().equals(toDescription.getName());
+        boolean dataTypeChanged = !fromDescription.getDataType().equals(toDescription.getDataType());
+
+        if (negateCondition) {
+            newConditionValue = !newConditionValue;
+            oldConditionValue = !oldConditionValue;
+        }
+
+        if ((nameChanged || dataTypeChanged) && oldConditionValue && (!condition2Active || (oldCondition2Value))) {
+            workflowNode.getInputDescriptionsManager().editDynamicEndpointDescription(fromDescription.getName() + signature,
+                toDescription.getName() + signature, toDescription.getDataType(), fromDescription.getMetaData());
+        }
+        if (oldConditionValue && newConditionValue && condition2Active) {
+            if (oldCondition2Value && !newCondition2Value) {
+                if (workflowNode.getInputDescriptionsManager().getEndpointDescription(toDescription.getName() + signature) != null) {
+                    workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(
+                        toDescription.getName() + signature);
+                }
+            }
+            if (!oldCondition2Value && newCondition2Value) {
+                Map<String, String> metaData = new HashMap<String, String>();
+                metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
+                    toDescription.getName() + signature, toDescription.getDataType(), metaData);
+            }
+        }
+        if (oldConditionValue && !newConditionValue
+            && (!condition2Active || (oldCondition2Value && !newCondition2Value))) {
+            if (workflowNode.getInputDescriptionsManager().getEndpointDescription(toDescription.getName() + signature) != null) {
+                workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(
+                    toDescription.getName() + signature);
+            }
+        }
+
+        if (!oldConditionValue && newConditionValue) {
+            if (!condition2Active || (!oldCondition2Value && newCondition2Value)) {
+                Map<String, String> metaData = new HashMap<String, String>();
+                metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
+                    toDescription.getName() + signature, toDescription.getDataType(), metaData);
             }
         }
     }
@@ -272,24 +326,11 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                     oldDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
                     newDesc.getDataType(), metadata);
             }
-            if ((newDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) == null
-                && newDesc.getMetaData().get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
-                || (newDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
-                    && !Boolean.parseBoolean(newDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
-                workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(
-                    newDesc.getName() + OptimizerComponentConstants.STARTVALUE_SIGNATURE);
-            }
-            if ((oldDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) == null
-                && oldDesc.getMetaData().get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
-                || (oldDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
-                    && !Boolean.parseBoolean(oldDesc.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
-                Map<String, String> newMetaData = new HashMap<String, String>();
-                newMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
-
-                workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
-                    oldDesc.getName() + OptimizerComponentConstants.STARTVALUE_SIGNATURE, oldDesc.getDataType(),
-                    newMetaData);
-            }
+            handleExtraValueInputs(workflowNode, OptimizerComponentConstants.META_HAS_STARTVALUE,
+                null, OptimizerComponentConstants.STARTVALUE_SIGNATURE, true, newDesc, oldDesc);
+            handleExtraValueInputs(workflowNode, OptimizerComponentConstants.META_USE_STEP,
+                OptimizerComponentConstants.META_USE_UNIFIED_STEP, OptimizerComponentConstants.STEP_VALUE_SIGNATURE, false, newDesc,
+                oldDesc);
             break;
         default:
             throw new RuntimeException();

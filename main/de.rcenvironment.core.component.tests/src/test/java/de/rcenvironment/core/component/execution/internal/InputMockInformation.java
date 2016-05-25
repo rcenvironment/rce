@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,6 +11,7 @@ package de.rcenvironment.core.component.execution.internal;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputDatumHandling;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
+import de.rcenvironment.core.datamodel.api.DataType;
 
 /**
  * Describes scheduling-related information about an input.
@@ -20,6 +21,9 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.Inp
 public final class InputMockInformation {
 
     protected final String name;
+    
+    // make configurable if needed
+    protected final DataType dataType = DataType.Float;
 
     protected final EndpointDefinition.InputDatumHandling inputDatumHandling;
 

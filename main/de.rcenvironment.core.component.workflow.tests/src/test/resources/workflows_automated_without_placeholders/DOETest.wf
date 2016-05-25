@@ -64,8 +64,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.2",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "3.4"
     },
     "configuration" : {
       "endSample" : "0",
@@ -125,8 +125,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.2",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "3.4"
     },
     "configuration" : {
       "endSample" : "0",
@@ -146,7 +146,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
     }, {
       "identifier" : "486930e8-ba42-40a7-ba4a-22dec1549504",
@@ -218,8 +218,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.2",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "3.4"
     },
     "configuration" : {
       "endSample" : "0",
@@ -250,7 +250,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
     }, {
       "identifier" : "8d5023dd-3a94-487e-a165-a009e55fb3b2",
@@ -322,8 +322,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.2",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "3.4"
     },
     "configuration" : {
       "endSample" : "0",

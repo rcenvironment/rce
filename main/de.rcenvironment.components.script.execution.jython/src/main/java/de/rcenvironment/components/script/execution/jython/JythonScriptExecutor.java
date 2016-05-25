@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 package de.rcenvironment.components.script.execution.jython;
 
 import java.io.File;
+import java.io.IOError;
 import java.io.IOException;
 import java.util.HashMap;
 
@@ -125,13 +126,14 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 // imports, variables and
                 // its changig the working directory.
                 scriptEngine.eval(header);
-            } catch (ScriptException e) {
+                
+            } catch (IOError | ScriptException e) {
                 throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
-            }
+            } 
             try {
                 // execute the script, written by the user.
                 scriptEngine.eval(body);
-            } catch (ScriptException e) {
+            } catch (IOError | ScriptException e) {
                 throw new ComponentException("Failed to execute script", e);
             }
             try {
@@ -140,7 +142,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 scriptEngine.eval(foot);
                 ((WorkflowConsoleForwardingWriter) scriptEngine.getContext().getWriter()).awaitPrintingLinesFinished();
                 ((WorkflowConsoleForwardingWriter) scriptEngine.getContext().getErrorWriter()).awaitPrintingLinesFinished();
-            } catch (ScriptException e) {
+            } catch (IOError | ScriptException e) {
                 throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
             } catch (InterruptedException e) {
                 componentContext.getLog().componentError("Failed to wait for console output. Some output might be missing");
@@ -164,5 +166,16 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
     @Override
     public void setWorkingPath(String workingPath) {
         this.workingPath = workingPath;
+    }
+
+    @Override
+    public void cancelScript() {
+        // We cannot cancel the execution of the script. Instead the thread needs to be interrupted.
+    }
+
+    @Override
+    public boolean isCancelable() {
+        // We cannot cancel the execution of the script. Instead the thread needs to be interrupted.
+        return false;
     }
 }

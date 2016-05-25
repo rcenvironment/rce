@@ -1,15 +1,13 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.gui.workflow.editor.handlers;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -30,9 +28,9 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
-
 
 /**
  * Handle copy part of copy&paste for {@link WorkflowNode}s, {@link Connection}s and {@link WorkflowLabel}s.
@@ -55,18 +53,18 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
         List<WorkflowLabelPart> labels = new ArrayList<WorkflowLabelPart>();
 
         // check whether there are connections between the selected nodes; if yes, add them to clipboard, too.
-        for (Object selectedObject : selection){
-            if (selectedObject instanceof WorkflowNodePart){
+        for (Object selectedObject : selection) {
+            if (selectedObject instanceof WorkflowNodePart) {
                 WorkflowNodePart workflowNodePart = (WorkflowNodePart) selectedObject;
                 nodes.add(workflowNodePart);
                 WorkflowNode workflowNode = (WorkflowNode) workflowNodePart.getModel();
-                for (Object comparisonObject : selection){
-                    if (comparisonObject instanceof WorkflowNodePart){
+                for (Object comparisonObject : selection) {
+                    if (comparisonObject instanceof WorkflowNodePart) {
                         WorkflowNodePart comparisonWorkflowNodePart = ((WorkflowNodePart) comparisonObject);
                         WorkflowNode comparisonWorkflowNode = (WorkflowNode) comparisonWorkflowNodePart.getModel();
-                        for (Connection connection : model.getConnections()){
-                            if ((connection.getSourceNode().getIdentifier().equals(workflowNode.getIdentifier()) 
-                                && connection.getTargetNode().getIdentifier().equals(comparisonWorkflowNode.getIdentifier()))){
+                        for (Connection connection : model.getConnections()) {
+                            if ((connection.getSourceNode().getIdentifier().equals(workflowNode.getIdentifier())
+                                && connection.getTargetNode().getIdentifier().equals(comparisonWorkflowNode.getIdentifier()))) {
                                 connections.add(connection);
                             }
                         }
@@ -96,13 +94,12 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
             if (!labels.isEmpty()) {
                 writeLabel(generator, labels);
             }
-            if (!connections.isEmpty()){
+            if (!connections.isEmpty()) {
                 writeBendpoints(generator, connections);
             }
             generator.writeEndObject();
             generator.close();
-            StringSelection stringSelection = new StringSelection(outputStream.toString());
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(stringSelection, null);
+            ClipboardHelper.setContent(outputStream.toString());
         } catch (IOException e) {
             LogFactory.getLog(getClass()).debug("Error when writing components to JSON: " + e.getMessage());
         }
@@ -124,8 +121,8 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
         }
         generator.writeEndArray();
     }
-    
-    private void writeBendpoints(JsonGenerator generator, List<Connection> connections) throws JsonGenerationException, IOException{
+
+    private void writeBendpoints(JsonGenerator generator, List<Connection> connections) throws JsonGenerationException, IOException {
         generator.writeArrayFieldStart(WorkflowDescriptionPersistenceHandler.BENDPOINTS);
         Map<String, String> uniqueConnectionBendpointMapping = descriptionHandler.calculateUniqueBendpointList(connections);
         descriptionHandler.writeBendpoints(generator, uniqueConnectionBendpointMapping);
@@ -148,12 +145,11 @@ public class WorkflowNodeCopyHandler extends AbstractWorkflowNodeEditHandler {
      */
     private class WorkflowLabelpartComparator implements Comparator<WorkflowLabelPart> {
 
-
         @Override
         public int compare(WorkflowLabelPart part1, WorkflowLabelPart part2) {
             int y1 = getYPosition(part1);
             int y2 = getYPosition(part2);
-            
+
             if (y1 == y2) {
                 return 0;
             } else if (y1 < y2) {

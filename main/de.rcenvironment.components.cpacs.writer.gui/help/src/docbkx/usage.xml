@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN" "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>CPACS Writer Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para>The CPACS Writer component saves incoming CPACS content as an xml file on the local file
+            system. It has a runtime-GUI to show the CPACS file in TiGL Viewer.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>On the “Target” tab you can select the target folder where the file will be stored. If
+            you select the property “Overwrite CPACS file each run” the filename will be “cpacs.xml”
+            and the file will be overwritten each time the component runs. If you do not select this
+            property a new file will be written on each run with a filename following the scheme
+            “cpacs_[iteration count]_[timestamp].xml”.</para>
+        <para>You can define the scheduling of the static input channels on the tab “Inputs/Outputs”
+            You are also able to add dynamic input or output channels here. Thus it is possible to
+            map single values into the XML dataset via XPATH declaration. Moreover, you can select
+            single values in order to write them in an output channel.</para>
+        <para>On the “Workflow Data” tab you can select whether to store history data for each
+            component run or not.</para>
+    </sect1>
+    <sect1>
+        <title>Runtime GUI</title>
+        <para>Double clicking on the CPACS Writer component during or after workflow execution opens
+            the “CPACS Geometry” view where the current CPACS content is shown. By clicking the
+            button “Show CPACS dataset in TIGL Viewer” the corresponding view “TIGL Viewer” will
+            show the CPACS geometry in the TiGL Viewer.</para>
+    </sect1>
+</chapter>

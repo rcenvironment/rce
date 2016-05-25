@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,7 +11,7 @@ package de.rcenvironment.core.start.validators.internal;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
-import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -21,7 +21,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Jan Flink
  * @author Robert Mischke
  */
-public class ProfileDirectoryNotInUseValidator implements InstanceValidator {
+public class ProfileDirectoryNotInUseValidator extends DefaultInstanceValidator {
 
     private static ConfigurationService configService;
 

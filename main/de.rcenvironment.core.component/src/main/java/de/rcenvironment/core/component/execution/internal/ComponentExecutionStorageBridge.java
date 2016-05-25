@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,13 +9,8 @@
 package de.rcenvironment.core.component.execution.internal;
 
 import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.datamanagement.MetaDataService;
@@ -29,23 +24,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class ComponentExecutionStorageBridge {
 
-    private static final Log LOG = LogFactory.getLog(ComponentExecutionStorageBridge.class);
-    
-    private final String compExeId;
-    
+    private static MetaDataService metaDataService;
+
+    private final ComponentExecutionRelatedInstances compExeRelatedInstances;
+
     private final String errorMessageSuffix;
 
-    private final MetaDataService metaDataService;
-
-    private final NodeIdentifier storageNodeId;
-
     private final int timestampOffset;
-
-    private final Long compInstanceDmId;
-
-    private final Map<String, Long> inputDmIds;
-
-    private final Map<String, Long> outputDmIds;
 
     private Long compExeDmId;
 
@@ -53,42 +38,44 @@ public class ComponentExecutionStorageBridge {
 
     private EndpointCountMap outputCount = new EndpointCountMap();
 
-    public ComponentExecutionStorageBridge(MetaDataService metaDataService, ComponentExecutionContext compExeCtx,
-        int timestampOffset) {
-        this.compExeId = compExeCtx.getExecutionIdentifier();
-        this.metaDataService = metaDataService;
-        this.storageNodeId = compExeCtx.getDefaultStorageNodeId();
-        this.compInstanceDmId = compExeCtx.getInstanceDataManagementId();
-        this.timestampOffset = timestampOffset;
-        this.inputDmIds = compExeCtx.getInputDataManagementIds();
-        this.outputDmIds = compExeCtx.getOutputDataManagementIds();
+    @Deprecated
+    public ComponentExecutionStorageBridge() {
+        compExeRelatedInstances = null;
+        this.timestampOffset = 0;
+        errorMessageSuffix = null;
+    }
+
+    public ComponentExecutionStorageBridge(ComponentExecutionRelatedInstances compExeRelatedInstances) {
+        this.compExeRelatedInstances = compExeRelatedInstances;
+        this.timestampOffset = compExeRelatedInstances.timestampOffsetToWorkfowNode;
         errorMessageSuffix = StringUtils.format(" of '%s' (%s) (workflow '%s' (%s)) at %s",
-            compExeCtx.getInstanceName(), compExeCtx.getExecutionIdentifier(),
-            compExeCtx.getWorkflowInstanceName(), compExeCtx.getWorkflowExecutionIdentifier(),
-            compExeCtx.getWorkflowNodeId());
+            compExeRelatedInstances.compExeCtx.getInstanceName(), compExeRelatedInstances.compExeCtx.getExecutionIdentifier(),
+            compExeRelatedInstances.compExeCtx.getWorkflowInstanceName(),
+            compExeRelatedInstances.compExeCtx.getWorkflowExecutionIdentifier(),
+            compExeRelatedInstances.compExeCtx.getWorkflowNodeId());
     }
 
     protected synchronized void addComponentExecution(final ComponentExecutionContext compExeCtx, final Integer executionCount)
         throws ComponentExecutionException {
-        new MetaDataServiceCaller("Failed to store component execution" + errorMessageSuffix) {
-            @Override
-            protected Object callback() throws CommunicationException {
-                compExeDmId = metaDataService.addComponentRun(compInstanceDmId, compExeCtx.getNodeId().getIdString(),
-                    executionCount, System.currentTimeMillis() + timestampOffset, storageNodeId);
-                return null;
-            }
-        }.callbackWithRetries();
+        try {
+            compExeDmId = metaDataService.addComponentRun(compExeRelatedInstances.compExeCtx.getInstanceDataManagementId(),
+                compExeCtx.getNodeId().getIdString(),
+                executionCount, System.currentTimeMillis() + timestampOffset,
+                compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
+        } catch (CommunicationException e) {
+            throw new ComponentExecutionException("Failed to store component execution" + errorMessageSuffix, e);
+        }
     }
 
     protected synchronized Long addOutput(final String outputName, final String datum) throws ComponentExecutionException {
         assertCompExeDmIdNotNull("Adding value for output: " + outputName);
-        return (Long) new MetaDataServiceCaller(StringUtils.format("Failed to store output '%s'", outputName) + errorMessageSuffix) {
-            @Override
-            protected Object callback() throws CommunicationException {
-                return metaDataService.addOutputDatum(compExeDmId, outputDmIds.get(outputName), datum,
-                    outputCount.getAndIncrement(outputName), storageNodeId);
-            }
-        }.callbackWithRetries();
+        try {
+            return metaDataService.addOutputDatum(compExeDmId,
+                compExeRelatedInstances.compExeCtx.getOutputDataManagementIds().get(outputName), datum,
+                outputCount.getAndIncrement(outputName), compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
+        } catch (CommunicationException e) {
+            throw new ComponentExecutionException(StringUtils.format("Failed to store output '%s'", outputName) + errorMessageSuffix, e);
+        }
     }
 
     protected synchronized void addInput(final String inputName, final Long typedDatumId) throws ComponentExecutionException {
@@ -97,50 +84,46 @@ public class ComponentExecutionStorageBridge {
             throw new ComponentExecutionException(StringUtils.format("Failed to store input '%s'", inputName) + errorMessageSuffix + ", "
                 + "because given datamanagement id of related ouput was null. Likely, because saving output failed earlier.");
         } else {
-            new MetaDataServiceCaller(StringUtils.format("Failed to store input '%s'", inputName) + errorMessageSuffix) {
-                @Override
-                protected Object callback() throws CommunicationException {
-                    metaDataService.addInputDatum(compExeDmId, typedDatumId, inputDmIds.get(inputName),
-                        inputCount.getAndIncrement(inputName), storageNodeId);
-                    return null;
-                }
-            }.callbackWithRetries();
+            try {
+                metaDataService.addInputDatum(compExeDmId, typedDatumId,
+                    compExeRelatedInstances.compExeCtx.getInputDataManagementIds().get(inputName),
+                    inputCount.getAndIncrement(inputName), compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
+            } catch (CommunicationException e) {
+                throw new ComponentExecutionException(StringUtils.format("Failed to store input '%s'", inputName) + errorMessageSuffix, e);
+            }
         }
     }
 
     protected synchronized void setComponentExecutionFinished() throws ComponentExecutionException {
         assertCompExeDmIdNotNull("Setting component execution to finish");
-        new MetaDataServiceCaller("Failed to store component execution" + errorMessageSuffix) {
-            @Override
-            protected Object callback() throws CommunicationException {
-                metaDataService.setComponentRunFinished(compExeDmId, System.currentTimeMillis() + timestampOffset, storageNodeId);
-                return null;
-            }
-        }.callbackWithRetries();
+        try {
+            metaDataService.setComponentRunFinished(compExeDmId, System.currentTimeMillis() + timestampOffset,
+                compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
+        } catch (CommunicationException e) {
+            throw new ComponentExecutionException("Failed to store component execution" + errorMessageSuffix, e);
+        }
         compExeDmId = null;
     }
 
     protected synchronized void setFinalComponentState(final FinalComponentState finalState) throws ComponentExecutionException {
-        new MetaDataServiceCaller("Failed to store final state" + errorMessageSuffix) {
-            @Override
-            protected Object callback() throws CommunicationException {
-                metaDataService.setComponentInstanceFinalState(compInstanceDmId, finalState, storageNodeId);
-                return null;
-            }
-        }.callbackWithRetries();
+        try {
+            metaDataService.setComponentInstanceFinalState(compExeRelatedInstances.compExeCtx.getInstanceDataManagementId(), finalState,
+                compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
+        } catch (CommunicationException e) {
+            throw new ComponentExecutionException("Failed to store final state" + errorMessageSuffix, e);
+        }
     }
 
     protected synchronized void setOrUpdateHistoryDataItem(final String historyDataItem) throws ComponentExecutionException {
         assertCompExeDmIdNotNull("Adding or updating history data");
-        new MetaDataServiceCaller("Failed to add or update history data" + errorMessageSuffix) {
-            @Override
-            protected Object callback() throws CommunicationException {
-                metaDataService.setOrUpdateHistoryDataItem(compExeDmId, historyDataItem, storageNodeId);
-                return null;
-            }
-        }.callbackWithRetries();
+        try {
+            metaDataService.setOrUpdateHistoryDataItem(compExeDmId, historyDataItem,
+                compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
+        } catch (CommunicationException e) {
+            throw new ComponentExecutionException("Failed to add or update history data" + errorMessageSuffix, e);
+        }
     }
-    
+
     protected synchronized boolean hasUnfinishedComponentExecution() {
         return compExeDmId != null;
     }
@@ -148,54 +131,16 @@ public class ComponentExecutionStorageBridge {
     protected synchronized Long getComponentExecutionDataManagementId() {
         return compExeDmId;
     }
-
+    
     private void assertCompExeDmIdNotNull(String info) throws ComponentExecutionException {
         if (compExeDmId == null) {
-            throw new ComponentExecutionException(StringUtils.format("There is no related component run for component %s"
-                + " in the database stored; ignored: '%s'", compExeId, info));
+            throw new ComponentExecutionException(StringUtils.format("No component run for component '%s' stored in the database; "
+                + "request failed: '%s'; note: writing outputs and history data items is only allowed within 'start()' if "
+                + "'treatStartAsComponentRun()' returns true and within 'processInputs()' and not allowed at all if component "
+                + "was cancelled", compExeRelatedInstances.compExeCtx.getExecutionIdentifier(), info));
         }
     }
 
-    /**
-     * Executes callbacks to the workflow controller by doing a certain amount of retries in
-     * case of failure.
-     * 
-     * @author Doreen Seider
-     */
-    private abstract class MetaDataServiceCaller {
-        
-        private final String exceptionMessage;
-        
-        protected MetaDataServiceCaller(String exceptionMessage) {
-            this.exceptionMessage = exceptionMessage;
-        }
-
-        protected Object callbackWithRetries() throws ComponentExecutionException {
-            
-            // retrying disabled as long as methods called are not robust against multiple calls
-
-//            int failureCount = 0;
-//            while (true) {
-            try {
-                Object result = callback();
-//                    ComponentExecutionUtils.logCallbackSuccessAfterFailure(LOG, "Storing data" + errorMessageSuffix, failureCount);
-                return result;
-            } catch (CommunicationException e) {
-//                    if (++failureCount < ComponentExecutionUtils.MAX_RETRIES) {
-//                        ComponentExecutionUtils.waitForRetryAfterCallbackFailure(LOG, failureCount, 
-//                            "Failed to store data" + errorMessageSuffix, e.toString());
-//                    } else {
-//                        ComponentExecutionUtils.logCallbackFailureAfterRetriesExceeded(LOG, 
-//                            "Failed to store data" + errorMessageSuffix, e);
-                throw new ComponentExecutionException(exceptionMessage, e);
-//                    }
-//                }
-            }
-        }
-        
-        protected abstract Object callback() throws CommunicationException;
-    }
-    
     /**
      * {@link HashMap} that has default values and adds support for incrementing its values when returning them.
      * 
@@ -218,5 +163,9 @@ public class ComponentExecutionStorageBridge {
             put(endpointName, count + 1);
             return count;
         }
+    }
+
+    protected void bindMetaDataService(MetaDataService newService) {
+        ComponentExecutionStorageBridge.metaDataService = newService;
     }
 }

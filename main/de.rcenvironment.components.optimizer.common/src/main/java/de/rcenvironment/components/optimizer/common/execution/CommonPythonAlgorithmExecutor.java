@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -31,6 +31,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * A part implementation for the algorithm executor which write config files in python.
@@ -48,8 +49,6 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
     private static final String DOT = ".";
 
     private static final int NEGATE_VALUE = -1;
-
-    private static final String META_STEP = "step";
 
     private static final String META_BASE = "base";
 
@@ -75,17 +74,21 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
 
     private List<String> orderedOutputValueKeys;
 
-    public CommonPythonAlgorithmExecutor(String algorithm, Map<String, MethodDescription> methodConfiguration,
+    private Map<String, Double> stepValues;
+
+    public CommonPythonAlgorithmExecutor(Map<String, MethodDescription> methodConfiguration,
         Map<String, TypedDatum> outputValues,
         Collection<String> input, ComponentContext compContext,
-        Map<String, Double> upperMap, Map<String, Double> lowerMap, String inputFilename) throws ComponentException {
+        Map<String, Double> upperMap, Map<String, Double> lowerMap, Map<String, Double> stepValues, String inputFilename)
+        throws ComponentException {
         super(compContext, compContext.getInstanceName(), inputFilename);
-        this.algorithm = algorithm;
+        this.algorithm = compContext.getConfigurationValue(OptimizerComponentConstants.ALGORITHMS);
         this.methodConfiguration = methodConfiguration;
         this.outputValues = outputValues;
         this.input = input;
         this.lowerMap = lowerMap;
         this.upperMap = upperMap;
+        this.stepValues = stepValues;
         typedDatumFactory = compContext.getService(TypedDatumService.class).getFactory();
 
     }
@@ -109,20 +112,19 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
             for (String key : allSettings.keySet()) {
                 Map<String, Object> set = new HashMap<>();
                 String dataType = allSettings.get(key).get("dataType");
-
                 String value = allSettings.get(key).get("Value");
                 if (value == null || value.isEmpty()) {
                     value = allSettings.get(key).get("DefaultValue");
                 }
-
-                switch (dataType) {
-                case "Real":
+                switch (dataType.toLowerCase()) {
+                case "real":
                     set.put(VALUE, Double.parseDouble(value));
+
                     break;
-                case "Int":
+                case "int":
                     set.put(VALUE, Integer.parseInt(value));
                     break;
-                case "Bool":
+                case "bool":
                     set.put(VALUE, Boolean.parseBoolean(value));
                     break;
                 case "None":
@@ -135,7 +137,7 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
             configuration.put("algorithm", algo.substring(0, algo.lastIndexOf("[") - 1));
         }
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(configFile, configuration);
         } catch (IOException e) {
@@ -200,7 +202,7 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
         Collections.sort(orderedOutputValueKeys);
         Map<String, Double> initValues = new HashMap<>();
         Map<String, Double> baseValues = new HashMap<>();
-        Map<String, Double> stepValues = new HashMap<>();
+        // Map<String, Double> stepValues = new HashMap<>();
         Map<String, Boolean> discreteValues = new HashMap<>();
         Map<String, Double> minValues = new HashMap<>();
         Map<String, Double> maxValues = new HashMap<>();
@@ -223,16 +225,9 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
                         baseValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(
                             getVectorName(key), META_BASE)));
                     }
-                    if (compContext.getOutputMetaDataValue(getVectorName(key), META_STEP) != null) {
-                        stepValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(
-                            getVectorName(key), META_STEP)));
-                    }
                 } else {
                     if (compContext.getOutputMetaDataValue(key, META_BASE) != null) {
                         baseValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(key, META_BASE)));
-                    }
-                    if (compContext.getOutputMetaDataValue(key, META_STEP) != null) {
-                        stepValues.put(key, Double.valueOf(compContext.getOutputMetaDataValue(key, META_STEP)));
                     }
                 }
             }
@@ -251,10 +246,6 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
 
     }
 
-    private int getVectorIndex(String key) {
-        return Integer.parseInt(key.substring(key.lastIndexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL)));
-    }
-
     private String getVectorName(String key) {
         return key.substring(0, key.indexOf(OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL));
     }
@@ -268,7 +259,7 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
                 File[] cwdFiles = new File(currentWorkingDir).listFiles();
                 if (cwdFiles != null) {
                     File outputFile = cwdFiles[0];
-                    ObjectMapper mapper = new ObjectMapper();
+                    ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
                     Map<String, Object> result = mapper.readValue(outputFile, new HashMap<String, Object>().getClass());
                     List<Double> outputs = (List<Double>) result.get("designVar");
                     int offset = 0;
@@ -335,7 +326,7 @@ public abstract class CommonPythonAlgorithmExecutor extends OptimizerAlgorithmEx
         getGradients(functionVariables, functionVariablesGradients, gradientsPerObjectiveOrConstraint, orderedOutputValueKeys);
         getGradients(constraintVariables, functionVariablesGradients, gradientsPerObjectiveOrConstraint, orderedOutputValueKeys);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         Map<String, Object> all = new HashMap<>();
 
         all.put("objective", functionVariables);

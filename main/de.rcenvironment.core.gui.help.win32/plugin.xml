@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.help.toc">
+      <toc file="help/generated/user_guide_toc.xml" primary="true"/>
+      <toc file="help/generated/developer_guide_toc.xml" primary="true"/>
+   </extension>
+</plugin>

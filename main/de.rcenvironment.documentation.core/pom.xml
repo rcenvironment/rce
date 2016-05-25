@@ -7,7 +7,7 @@
 	<!-- as a preliminary workaround, the POM version is used to transport root 
 		version information to the DocBook processor; it should work with normal 
 		properties as well, though - misc_ro -->
-	<version>7.0.2.qualifier</version>
+	<version>7.1.0.qualifier</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -17,6 +17,11 @@
 		<relativePath>../de.rcenvironment.documentation.core/maven/parent</relativePath>
 	</parent>
 
+	<properties>
+		<userguide.content.prefix>user_guide/</userguide.content.prefix>
+		<devguide.content.prefix>developer_guide/</devguide.content.prefix>
+	</properties>
+	
 	<build>
 		<plugins>
 			<!-- render SVG diagrams to PNG; required for embedding in HTML - misc_ro -->
@@ -29,7 +34,7 @@
 						<goals>
 							<goal>rasterize</goal>
 						</goals>
-						<phase>prepare-package</phase>
+						<phase>generate-resources</phase>
 						<configuration>
 							<srcDir>src/docbkx/diagrams/svg</srcDir>
 							<destDir>target/docbkx/diagrams/img-gen</destDir>
@@ -61,7 +66,7 @@
 						<goals>
 							<goal>build-qualifier</goal>
 						</goals>
-						<phase>prepare-package</phase>
+						<phase>generate-resources</phase>
 					</execution>
 				</executions>
 			</plugin>
@@ -72,7 +77,7 @@
 				<version>1.7</version>
 				<executions>
 					<execution>
-						<phase>prepare-package</phase>
+						<phase>generate-resources</phase>
 						<configuration>
 							<exportAntProperties>true</exportAntProperties>
 							<target>
@@ -89,6 +94,45 @@
 						<goals>
 							<goal>run</goal>
 						</goals>
+					</execution>
+					<execution>
+						<id>modify-eclipse-help</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>run</goal>
+						</goals>
+						<configuration>
+							<target>
+								<replace dir="target/docbkx/eclipse" >
+									<include name="**/user_guide/toc.xml"/>
+									<replacefilter token="topic=&quot;" value="topic=&quot;${userguide.content.prefix}"/>
+									<replacefilter token="href=&quot;" value="href=&quot;${userguide.content.prefix}"/>
+								</replace>
+								<replace dir="target/docbkx/eclipse">
+									<include name="**/developer_guide/toc.xml"/>
+									<replacefilter token="topic=&quot;" value="topic=&quot;${devguide.content.prefix}"/>
+									<replacefilter token="href=&quot;" value="href=&quot;${devguide.content.prefix}"/>
+								</replace>
+								<delete>
+									<fileset dir="target/docbkx/eclipse" includes="**/plugin.xml"/>
+									<fileset dir="target/docbkx/eclipse" includes="**/index.xml"/>
+								</delete>
+								<move file="target/docbkx/eclipse/windows/user_guide/toc.xml" toFile="target/docbkx/eclipse/windows/user_guide_toc.xml"/>
+								<move file="target/docbkx/eclipse/windows/developer_guide/toc.xml" toFile="target/docbkx/eclipse/windows/developer_guide_toc.xml"/>
+								<move file="target/docbkx/eclipse/linux/user_guide/toc.xml" toFile="target/docbkx/eclipse/linux/user_guide_toc.xml"/>
+								<move file="target/docbkx/eclipse/linux/developer_guide/toc.xml" toFile="target/docbkx/eclipse/linux/developer_guide_toc.xml"/>
+								<echo>Modified toc.xml files and deleted plugin.xml and index.xml files.</echo>
+								<zip destfile="target/docbkx/eclipse/windows/doc.zip">
+									<fileset dir="target/docbkx/eclipse/windows" excludes="**/*.xml"/>
+									<zipfileset dir="target/docbkx/html/images" prefix="images"/>
+								</zip>
+								<zip destfile="target/docbkx/eclipse/linux/doc.zip">
+									<fileset dir="target/docbkx/eclipse/linux" excludes="**/*.xml"/>
+									<zipfileset dir="target/docbkx/html/images" prefix="images"/>
+								</zip>
+								<echo>Generated doc.zip files.</echo>
+							</target>
+						</configuration>
 					</execution>
 				</executions>
 			</plugin>
@@ -108,7 +152,7 @@
 				<executions>
 					<execution>
 						<id>generate-docbook-html</id>
-						<phase>prepare-package</phase>
+						<phase>generate-resources</phase>
 						<goals>
 							<goal>generate-html</goal>
 						</goals>
@@ -158,8 +202,32 @@
 							<targetDirectory>${basedir}/target/docbkx/pdf/linux</targetDirectory>
 						</configuration>
 					</execution>
+					<execution>
+						<id>generate-docbook-eclipse-windows</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>generate-eclipse</goal>
+						</goals>
+						<configuration>
+							<profileOs>windows</profileOs>
+							<targetDirectory>${basedir}/target/docbkx/eclipse/windows</targetDirectory>
+						</configuration>
+					</execution>
+					<execution>
+						<id>generate-docbook-eclipse-linux</id>
+						<phase>generate-resources</phase>
+						<goals>
+							<goal>generate-eclipse</goal>
+						</goals>
+						<configuration>
+							<profileOs>linux</profileOs>
+							<targetDirectory>${basedir}/target/docbkx/eclipse/linux</targetDirectory>
+						</configuration>
+					</execution>
 				</executions>
 				<configuration>
+					<chunkedOutput>true</chunkedOutput>
+					<eclipseCustomization>${basedir}/src/docbkx/stylesheets/docbkx_rce_eclipse.xsl</eclipseCustomization>
 					<foCustomization>${basedir}/src/docbkx/stylesheets/docbkx_rce_pdf.xsl</foCustomization>
 					<!-- activate xInclude, which is a better approach than including sections 
 						via XML entities - misc_ro -->

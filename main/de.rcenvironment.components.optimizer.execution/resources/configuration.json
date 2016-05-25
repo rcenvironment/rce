@@ -30,12 +30,24 @@
             "defaultValue": "Fail"
         },
         {
-            "key": "loopRerunAndFail_5e0ed1cd",
+            "key": "faultTolerance-NAV_5e0ed1cd",
+            "defaultValue": "Fail"
+        },
+        {
+            "key": "maxRerunBeforeFail-NAV_5e0ed1cd",
             "defaultValue": "1"
         },
         {
-            "key": "loopRerunAndDiscard_5e0ed1cd",
+            "key": "maxRerunBeforeDiscard-NAV_5e0ed1cd",
             "defaultValue": "1"
+        },
+        {
+            "key": "failLoopOnly-NAV_5e0ed1cd",
+            "defaultValue": "false"
+        },
+        {
+            "key": "finallyFailIfDiscarded-NAV_5e0ed1cd",
+            "defaultValue": "false"
         }
     ],
     "placeholders": [

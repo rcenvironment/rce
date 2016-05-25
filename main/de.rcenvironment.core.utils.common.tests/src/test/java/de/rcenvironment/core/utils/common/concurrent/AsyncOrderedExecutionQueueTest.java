@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,7 +9,10 @@
 package de.rcenvironment.core.utils.common.concurrent;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,6 +28,8 @@ import org.junit.Test;
  * @author Robert Mischke
  */
 public class AsyncOrderedExecutionQueueTest {
+
+    private static final int MEDIUM_TEST_TIMEOUT = 10000;
 
     private static final int SHORT_TEST_TIMEOUT = 1000;
 
@@ -134,6 +139,27 @@ public class AsyncOrderedExecutionQueueTest {
         }
         // test expectation: no other task was executed after the one that cancel() was called from
         assertEquals(iterationToCancelIn, executed.get());
+    }
+
+    /**
+     * Verifies that the queue has sufficient mass throughput.
+     * 
+     * @throws InterruptedException on test interruption
+     */
+    @Test
+    public void massThroughput() throws InterruptedException {
+        final int count = 1 * 1000 * 1000;
+        final CountDownLatch cdl = new CountDownLatch(count);
+        for (int i = 0; i < count; i++) {
+            queue.enqueue(new Runnable() {
+
+                @Override
+                public void run() {
+                    cdl.countDown();
+                }
+            });
+        }
+        assertTrue(cdl.await(MEDIUM_TEST_TIMEOUT, TimeUnit.MILLISECONDS));
     }
 
 }

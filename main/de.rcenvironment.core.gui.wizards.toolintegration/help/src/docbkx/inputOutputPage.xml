@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Inputs and Outputs</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>Define the inputs and outputs the component for the tool should have in an RCE
+            workflow.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>On this page, the inputs and outputs for the component are defined. Their behavior is
+            the same as other inputs or outputs of other components, but they will always be static.
+            That means no user can add or remove inputs or outputs that were defined here. However
+            the handling and the constraint options can be customized when the workflow is being
+            created. In the wizard you can define which options can be chosen and which one is
+            default. It is not mandatory to define inputs and outputs. If there are no inputs, the
+            component will run once at workflow start and will be finished then.</para>
+        <para>As for the inputs, you can choose the data types File and Directory. If you do so, it
+            is possible to define a file or directory name (File/Dir). Thereby the incoming
+            file/directory will always be renamed to it.</para>
+        <para>If no value is entered, the file/directory will have its original name (noted by “As
+            incoming”).</para>
+    </sect1>
+</chapter>

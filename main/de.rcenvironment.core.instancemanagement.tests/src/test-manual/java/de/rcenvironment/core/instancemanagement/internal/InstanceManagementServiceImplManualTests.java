@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -31,6 +31,7 @@ import de.rcenvironment.core.utils.common.textstream.receivers.LoggingTextOutRec
  * Manual integration tests for {@link InstanceManagementServiceImpl}.
  * 
  * @author Robert Mischke
+ * @author David Scholz
  */
 public class InstanceManagementServiceImplManualTests {
 
@@ -96,6 +97,6 @@ public class InstanceManagementServiceImplManualTests {
         imService.activate();
 
         imService.setupInstallationFromUrlQualifier("latest-snapshot", "snapshots/trunk",
-            InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT, new LoggingTextOutReceiver(""));
+            InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT, new LoggingTextOutReceiver(""), 0);
     }
 }

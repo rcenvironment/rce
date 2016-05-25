@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -64,7 +64,7 @@ final class TargetNodeEditingSupport extends EditingSupport {
 
     private Map<WorkflowNode, ComponentDescription> initialComponentDescriptions = new HashMap<WorkflowNode, ComponentDescription>();
 
-    public TargetNodeEditingSupport(final NodeIdentifierConfigurationHelper nodeIdConfigHelper, final NodeIdentifier localNode,
+    TargetNodeEditingSupport(final NodeIdentifierConfigurationHelper nodeIdConfigHelper, final NodeIdentifier localNode,
         final ColumnViewer viewer, final int column) {
         super(viewer);
         this.nodeIdConfigHelper = nodeIdConfigHelper;

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -25,6 +25,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -61,7 +62,8 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                         }
                     }
                     if (context != null) {
-                        integrationService.unregisterIntegration(selectedTool, context);
+                        String toolname = selectedTool.substring(selectedTool.lastIndexOf(".") + 1);
+                        integrationService.unregisterIntegration(toolname, context);
                         integrationService.removeTool(selectedTool, context);
                         integrationService.unpublishTool(context.getRootPathToToolIntegrationDirectory() + File.separator
                             + context.getNameOfToolIntegrationDirectory() + File.separator + context.getToolDirectoryPrefix()
@@ -69,20 +71,8 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                         integrationService.updatePublishedComponents(context);
                         File remove =
                             new File(integrationService.getPathOfComponentID(selectedTool));
-                        try {
-                            if (!dialog.getKeepOnDisk()) {
-                                FileUtils.deleteDirectory(remove);
-                            } else if (remove.exists()) {
-                                ObjectMapper mapper = new ObjectMapper();
-                                @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
-                                    mapper.readValue(new File(remove, context.getConfigurationFilename()),
-                                        new HashMap<String, Object>().getClass());
-                                configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, false);
-                                integrationService.writeToolIntegrationFile(configurationMap, context);
-                            }
-                        } catch (IOException e) {
-                            LOGGER.error("Toolintegration: ", e);
-                        }
+                        removeOrDeactive(integrationService, dialog, context, remove);
+
                     } else {
                         LOGGER.error("ToolintegrationContext is null.");
                     }
@@ -91,5 +81,29 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
         }
         integrationService.setFileWatcherActive(true);
         return null;
+    }
+
+    private void removeOrDeactive(ToolIntegrationService integrationService, RemoveToolIntegrationDialog dialog,
+        ToolIntegrationContext context, File remove) {
+        if (!dialog.getKeepOnDisk()) {
+            if (remove.exists() && remove.canWrite()) {
+                try {
+                    FileUtils.forceDelete(remove);
+                } catch (IOException e) {
+                    LOGGER.error("Could not delete tool directory: ", e);
+                }
+            }
+        } else if (remove.exists()) {
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+            try {
+                @SuppressWarnings("unchecked") Map<String, Object> configurationMap =
+                    mapper.readValue(new File(remove, context.getConfigurationFilename()),
+                        new HashMap<String, Object>().getClass());
+                configurationMap.put(ToolIntegrationConstants.IS_ACTIVE, false);
+                integrationService.writeToolIntegrationFile(configurationMap, context);
+            } catch (IOException e) {
+                LOGGER.error("Failed to set tool inactive ( " + remove + "): ", e);
+            }
+        }
     }
 }

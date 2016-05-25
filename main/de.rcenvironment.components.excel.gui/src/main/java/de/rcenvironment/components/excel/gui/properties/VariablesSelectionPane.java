@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -270,7 +270,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
 
         private Button buttonToEnable = null;
 
-        public EnablingPaintListener(Button button) {
+        EnablingPaintListener(Button button) {
             buttonToEnable = button;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.embedded.ssh.internal;
 
+import java.security.PublicKey;
 import java.util.List;
 
 import junit.framework.TestCase;
@@ -26,8 +27,6 @@ public class SshAuthenticationManagerTest extends TestCase {
     private SshConfiguration configuration = null;
 
     private SshAuthenticationManager authenticationManager = null;
-
-    // TODO add test for "enabled" flag - misc_ro
 
     public SshAuthenticationManagerTest() {
         configuration = SshTestUtils.getValidConfig();
@@ -92,6 +91,20 @@ public class SshAuthenticationManagerTest extends TestCase {
             + userName + ")",
             authenticationManager.authenticate(userName, password, null));
     }
+    
+    /**
+     * 
+     * Test for authenticate method with disabled account.
+     * 
+     */
+    @Test
+    public void testDisabledAccount() {
+        SshAccountImpl user = SshTestUtils.getDisabledUser();
+        user.setEnabled(false);
+        assertFalse("Authenticator accepted a disabled account.",
+            authenticationManager.authenticate(user.getLoginName(), user.getPassword(), null));
+    }
+
 
     /**
      * 
@@ -108,6 +121,79 @@ public class SshAuthenticationManagerTest extends TestCase {
             }
         }
     }
+
+    /**
+     * 
+     * Test authentication of user with correct public key.
+     * 
+     */
+    @Test
+    public void testCorrectCredentialsForPublicKeyUser() {
+        List<SshAccountImpl> users = configuration.getAccounts();
+        for (SshAccount user : users) {
+            if (user.getPublicKey() != null && !user.getPublicKey().isEmpty()) {
+                assertTrue("Public key user " + user.getLoginName() + " was not accepted.",
+                    authenticationManager.authenticate(user.getLoginName(), user.getPublicKeyObj(), null));
+            }
+        }
+    }
+
+    /**
+     * 
+     * Test for authenticate method with incorrect credentials (wrong user).
+     * 
+     */
+    @Test
+    public void testIncorrectUserForPublicKeyUser() {
+        SshAccount user = SshTestUtils.getValidPublicKeyUser();
+        String userName = "sadkflsas";
+        assertFalse("Authenticator accepted a wrong username (with correct password). (Note: Do not define a test user with the name "
+            + userName
+            + ")",
+            authenticationManager.authenticate(userName, user.getPublicKeyObj(), null));
+    }
+
+    /**
+     * 
+     * Test for authenticate method with incorrect credentials (wrong key).
+     * 
+     */
+    @Test
+    public void testIncorrectKeyForPublicKeyUser() {
+        SshAccount user =  SshTestUtils.getValidPublicKeyUser();
+        PublicKey key = SshTestUtils.createIncorrectPublicKey();
+        assertFalse("Authenticator accepted a existing user with incorrect key.",
+            authenticationManager.authenticate(user.getLoginName(), key, null));
+    }
+
+    /**
+     * 
+     * Test for authenticate method with incorrect credentials (wrong user and key).
+     * 
+     */
+    @Test
+    public void testIncorrectUserAndPwForPublicKeyUser() {
+        String userName = "sadkflsas";
+        PublicKey key = SshTestUtils.createIncorrectPublicKey();
+
+        assertFalse("Authenticator accepted a wrong username (with worng password). (Note: Do not define a test user with the name "
+            + userName + ")",
+            authenticationManager.authenticate(userName, key, null));
+    }
+    
+    /**
+     * 
+     * Test for authenticate method with disabled account.
+     * 
+     */
+    @Test
+    public void testDisabledPublicKeyAccount() {
+        SshAccountImpl user = SshTestUtils.getDisabledPublicKeyUser();
+        user.setEnabled(false);
+        assertFalse("Authenticator accepted a disabled account.",
+            authenticationManager.authenticate(user.getLoginName(), user.getPublicKeyObj(), null));
+    }
+
 
     /**
      * 

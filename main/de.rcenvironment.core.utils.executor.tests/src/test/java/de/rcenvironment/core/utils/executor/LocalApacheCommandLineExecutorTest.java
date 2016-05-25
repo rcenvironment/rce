@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -7,6 +7,11 @@
  */
 
 package de.rcenvironment.core.utils.executor;
+
+import static org.hamcrest.CoreMatchers.not;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
@@ -17,7 +22,10 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import com.sun.jna.Platform;
+
 import de.rcenvironment.core.utils.common.OSFamily;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -27,6 +35,10 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * 
  */
 public class LocalApacheCommandLineExecutorTest extends CommonExecutorTests {
+
+    private static final String UNKOWN_PLATFORM = "Unkown platform. Currently only Windows and Linux are supported.";
+
+    private static final int HUNDRED_SECONDS = 100;
 
     private LocalApacheCommandLineExecutor executor;
 
@@ -147,4 +159,72 @@ public class LocalApacheCommandLineExecutorTest extends CommonExecutorTests {
         testWindowsProvidedInputStream(executor);
     }
 
+    /**
+     * Tests the correct cancellation prior to the start of the execution.
+     * 
+     * @throws IOException on I/O errors
+     * @throws InterruptedException on thread interruption
+     */
+    @Test
+    public void testCancellationOfUnstartedExecutor() throws IOException, InterruptedException {
+        executor.cancel();
+        String commandString;
+        if (Platform.isWindows()) {
+            commandString = "";
+        } else if (Platform.isLinux()) {
+            commandString = ":";
+        } else {
+            throw new IllegalStateException(UNKOWN_PLATFORM);
+        }
+        executor.start(commandString);
+
+        int exitCode = executor.waitForTermination();
+        assertEquals(1, exitCode); // indicates failure during execution
+    }
+
+    /**
+     * Tests the correct cancellation after the start of the execution.
+     * 
+     * @throws IOException on I/O errors
+     * @throws InterruptedException on thread interruption
+     */
+    @Test
+    public void testCancellationOfStartedExecutor() throws IOException, InterruptedException {
+        String commandString;
+        if (Platform.isWindows()) {
+            commandString = StringUtils.format(ProcessUtilsTests.WINDOWS_WAIT_COMMAND_TEMPLATE, HUNDRED_SECONDS);
+        } else if (Platform.isLinux()) {
+            commandString = StringUtils.format(ProcessUtilsTests.LINUX_WAIT_COMMAND_TEMPLATE, HUNDRED_SECONDS);
+        } else {
+            throw new IllegalStateException(UNKOWN_PLATFORM);
+        }
+        executor.start(commandString);
+        Thread.sleep(ProcessUtilsTests.ONE_SECOND_AS_MILLIS);
+        assertTrue(executor.cancel());
+        int exitCode = executor.waitForTermination();
+        assertThat(exitCode, not(0)); // indicates failure during execution        
+    }
+
+    /**
+     * Tests the correct cancellation after the start of the execution.
+     * 
+     * @throws IOException on I/O errors
+     * @throws InterruptedException on thread interruption
+     */
+    @Test
+    public void testCancellationOfFinishedExecutor() throws IOException, InterruptedException {
+        String commandString;
+        if (Platform.isWindows()) {
+            commandString = StringUtils.format(ProcessUtilsTests.WINDOWS_WAIT_COMMAND_TEMPLATE, 5);
+        } else if (Platform.isLinux()) {
+            commandString = StringUtils.format(ProcessUtilsTests.LINUX_WAIT_COMMAND_TEMPLATE, 5);
+        } else {
+            throw new IllegalStateException(UNKOWN_PLATFORM);
+        }
+        executor.start(commandString);
+        Thread.sleep(ProcessUtilsTests.ONE_SECOND_AS_MILLIS);
+        int exitCode = executor.waitForTermination();
+        assertEquals(exitCode, 0); // indicates failure during execution
+        assertTrue(executor.cancel());
+    }
 }

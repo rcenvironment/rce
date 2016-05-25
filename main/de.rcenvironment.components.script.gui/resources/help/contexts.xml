@@ -1,6 +1,0 @@
-<contexts>
-	<context id="script" title="Script Component Help">
-		<description>The Script component allows the execution of a self-written script.</description>
-		<topic href="resources/help/html/usage.xhtml" label="Script Component Usage" />
-	</context>
-</contexts>

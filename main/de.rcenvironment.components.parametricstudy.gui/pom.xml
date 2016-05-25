@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.parametricstudy.gui</artifactId>
 	<name>RCE Parametric Study Component GUI Bundle</name>
-	<version>7.0.2.qualifier</version>
+	<version>7.1.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

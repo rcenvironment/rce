@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,7 +47,7 @@ public enum TimelineActivityType {
     private RGB previewColor = null;
 
     
-    private TimelineActivityType(String displayName, String jsonName, RGB color, RGB previewColor) {
+    TimelineActivityType(String displayName, String jsonName, RGB color, RGB previewColor) {
         this.displayName = displayName;
         this.jsonName = jsonName;
         this.color = color;

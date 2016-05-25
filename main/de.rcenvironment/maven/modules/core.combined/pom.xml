@@ -37,6 +37,7 @@
 		<module>${projects-root}/de.rcenvironment.core.component.integration.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.scripting</module>
 		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess</module>
+		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow.tests</module>
@@ -78,6 +79,7 @@
 		<module>${projects-root}/de.rcenvironment.core.shutdown</module>
 		<module>${projects-root}/de.rcenvironment.core.start</module>
 		<module>${projects-root}/de.rcenvironment.core.start.common</module>
+		<module>${projects-root}/de.rcenvironment.core.start.common.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.start.headless</module>
 		<module>${projects-root}/de.rcenvironment.core.scripting.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.start.validators</module>
@@ -102,6 +104,8 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.datamanagement</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.help</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.help.linux</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.help.win32</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.log</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.login</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.resources</module>
@@ -115,6 +119,7 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.executor</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.integration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.scripting</module>
+		<module>${projects-root}/de.rcenvironment.core.gui.workflow.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.xpathchooser</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.feature</module>
 		<module>${projects-root}/de.rcenvironment.core.start.gui</module>

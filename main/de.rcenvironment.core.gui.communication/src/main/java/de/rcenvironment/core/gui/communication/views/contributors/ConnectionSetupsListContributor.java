@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -51,7 +51,7 @@ public class ConnectionSetupsListContributor extends NetworkViewContributorBase 
 
         private final ConnectionSetup connectionSetup;
 
-        public ConnectionSetupNode(ConnectionSetup connectionSetup) {
+        ConnectionSetupNode(ConnectionSetup connectionSetup) {
             // consistency check
             if (connectionSetup == null) {
                 throw new NullPointerException();

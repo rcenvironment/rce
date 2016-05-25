@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,7 +32,10 @@ public interface ExecutionController {
     
     /**
      * Restarts the workflow/component.
+     * 
+     * @deprecated will be removed in 8.0
      */
+    @Deprecated
     void restart();
 
     /**

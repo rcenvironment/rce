@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,11 +44,17 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
     private static final String OUTPUTS = "outputs";
 
     private static final String INPUTS = "inputs";
+    
+    private static final List<DataType> ALWAYS_VALID_OUTPUT_DATATYPES = new ArrayList<>();
 
     private final File evalMemoryFile;
 
     private TypedDatumSerializer typedDatumSerializer;
-
+    
+    static {
+        ALWAYS_VALID_OUTPUT_DATATYPES.add(DataType.NotAValue);
+    }
+    
     public EvaluationMemoryFileAccessImpl(String memoryFilePath) {
         evalMemoryFile = new File(memoryFilePath);
     }
@@ -69,8 +75,8 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
         
         Properties evalMemory = loadEvaluationMemory();
         
-        validateInputs(getEndpoints(inputValues), evalMemory);
-        validateOutputs(getEndpoints(outputValues), evalMemory);
+        validateInputs(evalMemory, getEndpoints(inputValues));
+        validateOutputs(evalMemory, getEndpoints(outputValues));
         
         String evalMemoryKey = createEvaluationMemoryKeyForInputValues(inputValues);
         List<String> evalMemoryValues = new ArrayList<>();    
@@ -96,8 +102,8 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
         
         Properties evalMemory = loadEvaluationMemory();
         
-        validateInputs(getEndpoints(inputValues), evalMemory);
-        validateOutputs(outputs, evalMemory);
+        validateInputs(evalMemory, getEndpoints(inputValues));
+        validateOutputs(evalMemory, outputs);
         
         SortedMap<String, TypedDatum> outputValues = null;
         String evalMemoryKey = createEvaluationMemoryKeyForInputValues(inputValues);
@@ -117,8 +123,8 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
         throws IOException {
         Properties evalMemory = loadEvaluationMemory();
         validateVersionAndType(evalMemory);
-        validateInputs(inputs, evalMemory);
-        validateOutputs(outputs, evalMemory);
+        validateInputs(evalMemory, inputs);
+        validateOutputs(evalMemory, outputs);
         validateEvaluationMemoryEntries(inputs, outputs, evalMemory);
     }
     
@@ -163,10 +169,14 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
             throwIOException(endpoints, typedDatums);
         }
         int i = 0;
-        for (String input : endpoints.keySet()) {
-            if (endpoints.get(input) != typedDatums.get(i++).getDataType()) {
+        for (String endpointName : endpoints.keySet()) {
+            if (ALWAYS_VALID_OUTPUT_DATATYPES.contains(typedDatums.get(i).getDataType())) {
+                continue;
+            }
+            if (endpoints.get(endpointName) != typedDatums.get(i).getDataType()) {
                 throwIOException(endpoints, typedDatums);
             }
+            i++;
         }
     }
     
@@ -193,29 +203,33 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
         }
     }
     
-    private void validateInputs(Map<String, DataType> inputs, Properties evalMemory) throws IOException {
-        validateEndoints(inputs, getEndpoints(evalMemory, INPUTS));
+    private void validateInputs(Properties evalMemory, Map<String, DataType> inputs) throws IOException {
+        validateEndoints(getEndpoints(evalMemory, INPUTS), inputs, true);
     }
     
-    private void validateOutputs(Map<String, DataType> outputs, Properties evalMemory) throws IOException {
-        validateEndoints(outputs, getEndpoints(evalMemory, OUTPUTS));
+    private void validateOutputs(Properties evalMemory, Map<String, DataType> outputs) throws IOException {
+        validateEndoints(getEndpoints(evalMemory, OUTPUTS), outputs, false);
     }
     
-    private void validateEndoints(Map<String, DataType> endpointsExpected, Map<String, DataType> actualEndpoints) throws IOException {
-        if (!areEndpointsEqual(endpointsExpected, actualEndpoints)) {
+    private void validateEndoints(Map<String, DataType> endpointsExpected, Map<String, DataType> actualEndpoints, boolean inputs)
+        throws IOException {
+        if (!areEndpointsEqual(endpointsExpected, actualEndpoints, inputs)) {
             throw new IOException(StringUtils.format("Input(s)/output(s) don't match input(s)/output(s) in evaluation memory file"
                 + " - expected: %s actual: %s", endpointsExpected, actualEndpoints));
         }
     }
     
-    private boolean areEndpointsEqual(Map<String, DataType> endpointsExpected, Map<String, DataType> actualEndpoints) {
+    private boolean areEndpointsEqual(Map<String, DataType> endpointsExpected, Map<String, DataType> actualEndpoints, boolean inputs) {
         boolean equals = endpointsExpected.size() == actualEndpoints.size();
         if (equals) {
-            for (String endpoint : endpointsExpected.keySet()) {
-                if (!actualEndpoints.containsKey(endpoint)
+            for (String endpoint : actualEndpoints.keySet()) {
+                if (!inputs && ALWAYS_VALID_OUTPUT_DATATYPES.contains(actualEndpoints.get(endpoint))) {
+                    continue;
+                }
+                if (!endpointsExpected.containsKey(endpoint)
                     || !endpointsExpected.get(endpoint).equals(actualEndpoints.get(endpoint))) {
                     equals = false;
-                    break;
+                    break;                        
                 }
             }            
         }
@@ -266,5 +280,5 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
     protected void setTypedDatumSerializer(TypedDatumSerializer serializer) {
         this.typedDatumSerializer = serializer;
     }
-
+    
 }

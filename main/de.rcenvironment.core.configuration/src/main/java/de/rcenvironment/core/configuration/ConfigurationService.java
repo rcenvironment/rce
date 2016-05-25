@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -61,7 +61,7 @@ public interface ConfigurationService {
     String CONFIGURATION_PLACEHOLDER_PROFILE_NAME = "${profileName}";
 
     /**
-     * A placeholder in certain configuration properties that is resolved to the last part of the current profile's file system path.
+     * A placeholder in certain configuration properties that is resolved to the build id.
      */
     String CONFIGURATION_PLACEHOLDER_VERSION = "${version}";
 
@@ -108,7 +108,7 @@ public interface ConfigurationService {
      * 
      * @author Robert Mischke
      */
-    public enum ConfigurablePathId {
+    enum ConfigurablePathId {
         /**
          * The directory where installation-provided files (including possible "configuration" and "integration" directories) are located.
          */
@@ -177,7 +177,7 @@ public interface ConfigurationService {
      * 
      * @author Robert Mischke
      */
-    public enum ConfigurablePathListId {
+    enum ConfigurablePathListId {
         /**
          * The current instance's existing locations for reading configuration data from.
          */

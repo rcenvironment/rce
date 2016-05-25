@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -95,7 +95,7 @@ public final class CommandLineArguments {
 
         private int next = 0;
 
-        public CommandStack(String[] args) {
+        CommandStack(String[] args) {
             this.args = args;
         }
 

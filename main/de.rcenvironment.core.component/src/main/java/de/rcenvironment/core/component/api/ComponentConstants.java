@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -83,6 +83,11 @@ public final class ComponentConstants {
     public static final String ICON_32_KEY = "rce.component.icon-32";
 
     /**
+     * Key that specifies the bundle in which the icons can be found. This is an optional key.
+     */
+    public static final String COMPONENT_ICON_BUNDLE_NAME_KEY = "rce.component.icon.bundlename";
+
+    /**
      * Key for component's indefinite data type behevior.
      */
     public static final String COMPONENT_CAN_HANDLE_NAV_INPUT_DATA_TYPES = "rce.component.canHandleNotAValueDataTypes";
@@ -118,32 +123,27 @@ public final class ComponentConstants {
     public static final String OUTPUTS_DEF_KEY = "rce.component.outputs";
 
     /**
-     * Key used within the properties of the component to define possible configuration keys as a
-     * comma separated list.
+     * Key used within the properties of the component to define possible configuration keys as a comma separated list.
      */
     public static final String CONFIGURATION_DEF_KEY = "rce.component.configuration";
 
     /**
-     * The entry of the Manifest indicating that the bundle provides at least one integrated
-     * {@link Component}.
+     * The entry of the Manifest indicating that the bundle provides at least one integrated {@link Component}.
      */
     public static final String MANIFEST_ENTRY_RCE_COMPONENT = "RCE-Component";
 
     /**
-     * Manifest header key for definition of additional (regarding to an existing component)
-     * configuration definitions.
+     * Manifest header key for definition of additional (regarding to an existing component) configuration definitions.
      */
     public static final String MANIFEST_ENTRY_RCE_COMPONENT_EXTENSION_CONFIGURATION = "RCE-ComponentExtension-Configuration";
 
     /**
-     * Manifest header key for definition of additional (regarding to an existing component) input
-     * meta data definitions.
+     * Manifest header key for definition of additional (regarding to an existing component) input meta data definitions.
      */
     public static final String MANIFEST_ENTRY_RCE_COMPONENT_EXTENSION_INPUT_META_DATA = "RCE-ComponentExtension-InputMetaData";
 
     /**
-     * Manifest header key for definition of additional (regarding to an existing component) output
-     * meta data definitions.
+     * Manifest header key for definition of additional (regarding to an existing component) output meta data definitions.
      */
     public static final String MANIFEST_ENTRY_RCE_COMPONENT_EXTENSION_OUTPUT_META_DATA = "RCE-ComponentExtension-OutputMetaData";
 
@@ -225,7 +225,7 @@ public final class ComponentConstants {
 
     /** Constant for ID separation. */
     public static final String ID_SEPARATOR = "/";
-    
+
     /** Constant. */
     public static final String CONFIG_KEY_ENABLE_INPUT_TAB = "enableDeprecatedInputTab";
 
@@ -240,13 +240,13 @@ public final class ComponentConstants {
 
     /** Constant. */
     public static final ComponentShape COMPONENT_SHAPE_STANDARD = ComponentShape.SQUARE;
-    
+
     /** Finished component states. */
     public static final List<ComponentState> FININISHED_COMPONENT_STATES = new ArrayList<>();
-    
+
     /** Final component states. */
     public static final List<ComponentState> FINAL_COMPONENT_STATES = new ArrayList<>();
-    
+
     /** Final component states. */
     public static final List<ComponentState> FINAL_COMPONENT_STATES_WITH_DISPOSED = new ArrayList<>();
 

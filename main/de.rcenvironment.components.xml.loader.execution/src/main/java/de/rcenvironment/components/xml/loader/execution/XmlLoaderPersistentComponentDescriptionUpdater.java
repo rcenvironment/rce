@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,6 +23,7 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -108,7 +109,7 @@ public class XmlLoaderPersistentComponentDescriptionUpdater implements Persisten
     private PersistentComponentDescription updateFrom3To31(PersistentComponentDescription description)
         throws JsonParseException, IOException {
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode = mapper.readTree(jsonParser);
         
         final String name = "name";

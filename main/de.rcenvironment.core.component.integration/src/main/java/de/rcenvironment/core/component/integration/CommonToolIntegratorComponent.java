@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.Semaphore;
 
 import javax.script.Bindings;
@@ -44,6 +45,7 @@ import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
+import de.rcenvironment.core.component.execution.api.ThreadHandler;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.component.scripting.WorkflowConsoleForwardingWriter;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -53,6 +55,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptDataTypeHelper;
 import de.rcenvironment.core.scripting.ScriptingService;
@@ -71,6 +74,9 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * @author Sascha Zur
  */
 public class CommonToolIntegratorComponent extends DefaultComponent {
+
+    private static final String KEEP_ON_FAILURE_ERROR_MSG =
+        "Tool %s : \"Keep working directory(ies) in case of failure\" was active but is not supported by the tool, so it was deactivated.";
 
     private static final String DELETION_BEHAVIOR_ERROR_WARNING_MSG =
         "Chosen working directory deletion behavior not supported for tool %s. Valid one is automatically chosen: %s";
@@ -170,6 +176,12 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
     private Map<String, String> outputMapping;
 
+    private LocalApacheCommandLineExecutor executor;
+    
+    private Set<String> outputsWithNotAValueWritten = new HashSet<>();
+
+    private volatile boolean canceled;
+
     @Override
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
@@ -183,6 +195,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
     @Override
     public void start() throws ComponentException {
+        canceled = false;
+
         datamanagementService = componentContext.getService(ComponentDataManagementService.class);
         scriptingService = componentContext.getService(ScriptingService.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
@@ -293,9 +307,29 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 StringUtils.format(DELETION_BEHAVIOR_ERROR_WARNING_MSG, componentContext.getInstanceName(), displayname));
         }
         keepOnFailure = false;
-        if (componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE) != null) {
+        if (checkIfKeepOnFailureCanBeActive()) {
             keepOnFailure = Boolean.parseBoolean(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
+        } else {
+            keepOnFailure = Boolean.parseBoolean(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
+            if (keepOnFailure) {
+                keepOnFailure = false;
+                componentLog.componentWarn(StringUtils.format(KEEP_ON_FAILURE_ERROR_MSG, componentContext.getInstanceName()));
+            }
         }
+    }
+
+    private boolean checkIfKeepOnFailureCanBeActive() {
+        if (componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE) != null
+            && !(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER.equals(deleteToolBehaviour))) {
+            if (ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS.equals(deleteToolBehaviour)) {
+                return Boolean.parseBoolean(componentContext
+                    .getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ITERATION));
+            } else if (ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ONCE.equals(deleteToolBehaviour)) {
+                return Boolean.parseBoolean(componentContext
+                    .getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_KEEP_ON_ERROR_ONCE));
+            }
+        }
+        return false;
 
     }
 
@@ -424,10 +458,20 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         beforeCommandExecution(inputValues, inputNamesToLocalFile);
 
         componentContext.announceExternalProgramStart();
-        int exitCode = runCommand(inputValues, inputNamesToLocalFile);
-        componentContext.announceExternalProgramTermination();
-
+        int exitCode;
+        try {
+            exitCode = runCommand(inputValues, inputNamesToLocalFile);
+        } finally {
+            componentContext.announceExternalProgramTermination();
+        }
+        
         afterCommandExecution(inputValues, inputNamesToLocalFile);
+
+        // do not execute the post script if the execution was canceled prior
+        if (canceled) {
+            return;
+        }
+
         String postScript = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_POST_SCRIPT);
         if (postScript != null) {
             postScript = ComponentUtils.replaceVariable(postScript, String.valueOf(exitCode),
@@ -442,8 +486,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         beforeCommandExecution(inputValues, inputNamesToLocalFile);
 
         afterCommandExecution(inputValues, inputNamesToLocalFile);
+
         String postScript = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_MOCK_SCRIPT);
-        runScript(postScript, inputValues, inputNamesToLocalFile, "Mock");
+        runScript(postScript, inputValues, inputNamesToLocalFile, "Tool run imitation");
     }
 
     // The before* and after* methods are for implementing own code in sub classes
@@ -459,7 +504,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
     protected void beforeCommandExecution(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
-        // LOG.debug("before commad execution");
+        // LOG.debug("before command execution");
     }
 
     protected void afterCommandExecution(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
@@ -496,12 +541,6 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
     }
 
-    @Override
-    public void dispose() {
-        super.dispose();
-        deleteBaseWorkingDirectory(false);
-    }
-
     private int runCommand(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
         String commScript = null;
@@ -521,31 +560,55 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
 
         try {
             componentLog.componentInfo("Executing command(s)...");
-            LocalApacheCommandLineExecutor executor = null;
-            if (setToolDirectoryAsWorkingDirectory) {
-                executor = new LocalApacheCommandLineExecutor(executionToolDirectory);
-            } else {
-                executor = new LocalApacheCommandLineExecutor(currentWorkingDirectory);
+
+            synchronized (this) {
+                if (setToolDirectoryAsWorkingDirectory) {
+                    executor = new LocalApacheCommandLineExecutor(executionToolDirectory);
+                } else {
+                    executor = new LocalApacheCommandLineExecutor(currentWorkingDirectory);
+                }
+
+                // if cancel was called before the executor was created, we cancel it now before the actual execution
+                if (canceled) {
+                    executor.cancel();
+                }
+
+                executor.startMultiLineCommand(commScript.split("\r?\n|\r"));
+                stdoutWatcher = ConsoleRowUtils.logToWorkflowConsole(componentLog, executor.getStdout(),
+                    ConsoleRow.Type.TOOL_OUT, null, false);
+                stderrWatcher = ConsoleRowUtils.logToWorkflowConsole(componentLog, executor.getStderr(),
+                    ConsoleRow.Type.TOOL_ERROR, null, false);
+
+                if (canceled) {
+                    stdoutWatcher.cancel();
+                    stderrWatcher.cancel();
+                }
             }
-            executor.startMultiLineCommand(commScript.split("\r?\n|\r"));
-            stdoutWatcher = ConsoleRowUtils.logToWorkflowConsole(componentLog, executor.getStdout(),
-                ConsoleRow.Type.TOOL_OUT, null, false);
-            stderrWatcher = ConsoleRowUtils.logToWorkflowConsole(componentLog, executor.getStderr(),
-                ConsoleRow.Type.TOOL_ERROR, null, false);
-            exitCode = executor.waitForTermination();
-            stdoutWatcher.waitForTermination();
-            stderrWatcher.waitForTermination();
+
+            try {
+                exitCode = executor.waitForTermination();
+                stdoutWatcher.waitForTermination();
+                stderrWatcher.waitForTermination();
+            } catch (CancellationException e) {
+                LOG.debug("Execution canceled while waiting for termination of TextStreamWatcher.");
+                exitCode = 1;
+            }
+
             componentLog.componentInfo("Command(s) executed - exit code: " + exitCode);
             if (historyDataItem != null) {
                 historyDataItem.setExitCode(exitCode);
             }
+
+            // check if tool execution was canceled by the user
+            if (canceled) {
+                return exitCode;
+            }
+
             if (!dontCrashOnNonZeroExitCodes && exitCode != 0) {
-                deleteBaseWorkingDirectory(false);
                 throw new ComponentException(StringUtils.format("Command(s) execution terminated abnormally with exit code: %d",
                     exitCode));
             }
         } catch (IOException | InterruptedException e) {
-            deleteBaseWorkingDirectory(false);
             throw new ComponentException("Failed to execute command(s)", e);
         }
         return exitCode;
@@ -570,8 +633,11 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 script = replacePlaceholder(script, inputValues, inputNamesToLocalFile, SubstitutionContext.JYTHON);
                 try {
                     engine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath + QUOTE);
-                    engine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
-
+                    if (!setToolDirectoryAsWorkingDirectory) {
+                        engine.eval("RCE_Temp_working_path = " + QUOTE + workingPath + QUOTE);
+                    } else {
+                        engine.eval("RCE_Temp_working_path = " + QUOTE + createJythonPath(executionToolDirectory) + QUOTE);
+                    }
                     String headerScript = ScriptingUtils.prepareHeaderScript(stateMap, componentContext, inputDirectory,
                         new LinkedList<File>());
                     engine.eval(headerScript);
@@ -594,7 +660,6 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     }
 
                 } catch (ScriptException e) {
-                    deleteBaseWorkingDirectory(false);
                     throw new ComponentException(StringUtils.format("Failed to execute %s script",
                         scriptPrefix.toLowerCase()), e);
                 } catch (InterruptedException e) {
@@ -602,9 +667,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                         componentContext.getInstanceName(), componentContext.getExecutionIdentifier()), e);
                 }
                 if (exitCode != null && (!(exitCode instanceof Integer) || (((Integer) exitCode).intValue() != 0))) {
-                    deleteBaseWorkingDirectory(false);
-                    throw new ComponentException(StringUtils.format("%s script execution of terminated abnormally - exit code: %s",
-                        scriptPrefix, exitCode));
+                    throw new ComponentException(StringUtils.format("Execution of %s script terminated abnormally - exit code: %s",
+                        scriptPrefix.toLowerCase(), exitCode));
                 }
                 writeOutputValues(engine, scriptExecConfig);
             }
@@ -618,6 +682,19 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 script += inputName + "= [";
                 for (FloatTD floatEntry : ((VectorTD) inputValues.get(inputName)).toArray()) {
                     script += floatEntry.getFloatValue() + ",";
+                }
+                script = script.substring(0, script.length() - 1) + "]\n";
+            }
+            if (componentContext.getInputDataType(inputName) == DataType.Matrix) {
+                script += inputName + "= [";
+                MatrixTD matrix = ((MatrixTD) componentContext.readInput(inputName));
+                for (int i = 0; i < matrix.getRowDimension(); i++) {
+                    script += "[";
+                    for (int j = 0; j < matrix.getColumnDimension(); j++) {
+                        script += matrix.getFloatTDOfElement(i, j).getFloatValue() + ",";
+                    }
+                    script = script.substring(0, script.length() - 1) + "],";
+
                 }
                 script = script.substring(0, script.length() - 1) + "]\n";
             }
@@ -694,7 +771,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
         }
         ScriptingUtils.writeAPIOutput(stateMap, componentContext, engine, workingPath, historyDataItem);
-
+        outputsWithNotAValueWritten.addAll(ScriptingUtils.getOutputsSendingNotAValue(engine));
+        
         for (String outputName : (List<String>) engine.get("RCE_CloseOutputChannelsList")) {
             componentContext.closeOutput(outputName);
         }
@@ -720,7 +798,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     } else if (componentContext.getInputDataType(inputName) == DataType.Vector) {
                         script = script.replace(StringUtils.format(INPUT_PLACEHOLDER, inputName), validate(inputName, context,
                             StringUtils.format("Name of Vector '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX, inputName)));
-
+                    } else if (componentContext.getInputDataType(inputName) == DataType.Matrix) {
+                        script = script.replace(StringUtils.format(INPUT_PLACEHOLDER, inputName), validate(inputName, context,
+                            StringUtils.format("Name of Vector '%s'" + SUBSTITUTION_ERROR_MESSAGE_PREFIX, inputName)));
                     } else {
                         String value = inputValues.get(inputName).toString();
                         if (context == SubstitutionContext.JYTHON && componentContext.getInputDataType(inputName) == DataType.Boolean) {
@@ -837,7 +917,6 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             componentLog.componentInfo("Copied tool directory '" + sourceToolDirectory.getName() + "' to working directory");
             copiedToolDir = true;
         } catch (IOException e) {
-            deleteBaseWorkingDirectory(false);
             throw new ComponentException(StringUtils.format("Failed to copy tool directory: %s",
                 sourceToolDirectory.getAbsolutePath()), e);
         }
@@ -926,15 +1005,27 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
 
         File file = new File(baseWorkingDirectory.getAbsolutePath(), "jython-import-" + UUID.randomUUID().toString() + ".tmp");
-        workingPath = file.getAbsolutePath().toString();
-        workingPath = workingPath.replaceAll(ESCAPESLASH, SLASH);
 
-        String[] splitted = workingPath.split(SLASH);
-        workingPath = "";
-        for (int i = 0; i < splitted.length - 1; i++) {
-            workingPath += splitted[i] + SLASH;
+        workingPath = createJythonPath(file);
+
+    }
+
+    private String createJythonPath(File file) {
+        String path = file.getAbsolutePath().toString();
+        path = path.replaceAll(ESCAPESLASH, SLASH);
+
+        String[] splitted = path.split(SLASH);
+        path = "";
+
+        int lastEntry = splitted.length;
+        if (!file.isDirectory()) {
+            lastEntry--;
         }
 
+        for (int i = 0; i < lastEntry; i++) {
+            path += splitted[i] + SLASH;
+        }
+        return path;
     }
 
     protected void closeConsoleWriters() throws IOException {
@@ -964,4 +1055,25 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
     }
 
+    @Override
+    public synchronized void onStartInterrupted(ThreadHandler executingThreadHandler) {
+        canceled = true;
+        // the command might not be started yet
+        if (executor != null) {
+            executor.cancel();
+        }
+    }
+
+    @Override
+    public synchronized void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
+        canceled = true;
+        // the command might not be started yet
+        if (executor != null) {
+            executor.cancel();
+        }
+    }
+    
+    protected Set<String> getOutputsWithNotAValueWritten() {
+        return outputsWithNotAValueWritten;
+    }
 }

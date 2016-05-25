@@ -20,13 +20,14 @@
 	<property name="rce.component.group" type="String" value="XML"/>
 	
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.xml.merger.execution.XmlMergerComponent"/>
-	
-	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.xml.merger.common/resources/merger16.png"/>
-	<property name="rce.component.icon-24" type="String" value="platform:/plugin/de.rcenvironment.components.xml.merger.common/resources/merger24.png"/>
-    <property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.xml.merger.common/resources/merger32.png"/>
-	<property name="rce.component.version" type="String" value="3.2"/>
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.xml.merger.common" />
+	<property name="rce.component.icon-16" type="String" value="merger16.png"/>
+	<property name="rce.component.icon-24" type="String" value="merger24.png"/>
+    <property name="rce.component.icon-32" type="String" value="merger32.png"/>
+	<property name="rce.component.version" type="String" value="4.0"/>
 	
 	<property name="rce.component.size" type="String" value="small"/>
     <property name="rce.component.shape" type="String" value="circle"/>
     
 </scr:component>
+ 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -180,11 +180,11 @@ class OpenSSLKeyMock extends OpenSSLKey {
      * @throws IOException if an exception occurs.
      * @throws GeneralSecurityException
      */
-    public OpenSSLKeyMock(String file) throws IOException, GeneralSecurityException {
+    OpenSSLKeyMock(String file) throws IOException, GeneralSecurityException {
         super(file);
     }
 
-    public OpenSSLKeyMock(InputStream is) throws IOException, GeneralSecurityException {
+    OpenSSLKeyMock(InputStream is) throws IOException, GeneralSecurityException {
         super(is);
     }
 

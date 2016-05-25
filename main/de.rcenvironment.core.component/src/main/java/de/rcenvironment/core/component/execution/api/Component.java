@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,26 +17,26 @@ import de.rcenvironment.core.component.registration.api.Registerable;
  * @author Doreen Seider
  */
 public interface Component extends Registerable {
-    
+
     /**
      * The final states a component can have. Used to pass into {@link Component#tearDown(FinalComponentState)} method.
      * 
      * @author Doreen Seider
      */
     enum FinalComponentState {
-        
+
         FINISHED,
         CANCELLED,
         FAILED,
     }
-    
+
     /**
      * Injects the {@link ComponentContext}.
      * 
      * @param componentContext interface to the workflow engine. Used it to read component configuration, read inputs, write outputs, etc.
      */
     void setComponentContext(ComponentContext componentContext);
-    
+
     /**
      * Called at workflow start before {@link Component#start(ComponentContext)}. Used to indicate if
      * {@link Component#start(ComponentContext)} must be handled as a component execution.
@@ -52,9 +52,10 @@ public interface Component extends Registerable {
      * @throws ComponentException on component error
      */
     void start() throws ComponentException;
-    
+
     /**
-     * Called if the workflow is cancelled and the component is currently in {@link #start(ComponentContext)}.
+     * Called if the workflow is cancelled and the component is currently or was recently in {@link #start(ComponentContext)}. It might be
+     * called in parallel {@link #start(ComponentContext)}. So, it need to be implemented thread-safe.
      * 
      * @param executingThreadHandler allows to interrupt the thread of {@link #start(ComponentContext)}
      */
@@ -66,9 +67,10 @@ public interface Component extends Registerable {
      * @throws ComponentException on component error
      */
     void processInputs() throws ComponentException;
-    
+
     /**
-     * Called if the workflow is cancelled and the component is currently in {@link #processInputs()}.
+     * Called if the workflow is cancelled and the component is currently or was recently in {@link #processInputs()}. It might be called in
+     * parallel {@link #processInputs()}. So, it need to be implemented thread-safe.
      * 
      * @param executingThreadHandler allows to interrupt the thread of {@link #processInputs()}
      */
@@ -80,14 +82,14 @@ public interface Component extends Registerable {
      * @throws ComponentException on component error
      */
     void reset() throws ComponentException;
-    
+
     /**
      * Called if exception in {@link #start()} or {@link #processInputs()} was thrown. It is called immediately afterwards.
      * 
      * @throws ComponentException on component error
      */
     void completeStartOrProcessInputsAfterFailure() throws ComponentException;
-    
+
     /**
      * Called if the component reached any of the final states. Valid ones are defined in {@link FinalComponentState}.
      * 
@@ -99,11 +101,11 @@ public interface Component extends Registerable {
      * Called if the workflow is disposed.
      */
     void dispose();
-    
+
     /**
      * Is called periodically. Here, the component's history data can be updated. Useful for long running {@link #start(ComponentContext)}
      * or {@link #processInputs()}.
      */
     void onIntermediateHistoryDataUpdateTimer();
-    
+
 }

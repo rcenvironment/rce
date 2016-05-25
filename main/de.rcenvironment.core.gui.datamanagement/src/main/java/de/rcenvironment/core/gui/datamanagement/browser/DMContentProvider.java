@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -274,6 +274,9 @@ public class DMContentProvider implements ITreeContentProvider {
             break;
         case Component:
         case HistoryObject:
+            break;
+        case DMDirectoryReference:
+            CommonHistoryDataItemSubtreeBuilderUtils.buildSubtreeForDirectoryItem(node.getDirectoryReferenceTD(), node, node.getParent());
             break;
         default:
             log.warn("Unexpected node type: " + node.getType().name());
@@ -1087,7 +1090,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
         private final DMBrowserNode node;
 
-        public RetrieverTask(final DMBrowserNode node) {
+        RetrieverTask(final DMBrowserNode node) {
             this.node = node;
         }
 

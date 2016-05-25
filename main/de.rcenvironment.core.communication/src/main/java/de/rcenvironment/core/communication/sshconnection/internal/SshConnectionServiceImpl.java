@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,6 +26,7 @@ import com.jcraft.jsch.Session;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionConstants;
+import de.rcenvironment.core.communication.sshconnection.SshConnectionContext;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListener;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListenerAdapter;
@@ -44,7 +45,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  * @author Brigitte Boden
  */
 public class SshConnectionServiceImpl implements SshConnectionService {
-    
+
     private static final String NO_SSH_CONNECTION_WITH_ID_S_CONFIGURED = "No SSH connection with id %s configured.";
 
     private final Map<String, SshConnectionSetup> connectionSetups;
@@ -72,15 +73,15 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     }
 
     @Override
-    public String addSshConnectionWithAuthPhrase(String displayName, String destinationHost, int port, String sshAuthUser,
-        String sshAuthPassPhrase, boolean storePassphrase, boolean connectOnStartUp) {
+    public String addSshConnection(String displayName, String destinationHost, int port, String sshAuthUser, String keyfileLocation,
+        boolean usePassphrase, boolean connectImmediately) {
         String connectionId = UUID.randomUUID().toString();
 
         SshConnectionListener listenerAdapter = defineListenerForSSHConnectionSetup();
 
         final SshConnectionSetupImpl newSetup;
         newSetup = new SshConnectionSetupImpl(connectionId, displayName, destinationHost, port, sshAuthUser,
-            storePassphrase, connectOnStartUp, listenerAdapter);
+            keyfileLocation, usePassphrase, false, connectImmediately, listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -93,12 +94,6 @@ public class SshConnectionServiceImpl implements SshConnectionService {
                         listener.onCollectionChanged(snapshot);
                     }
                 });
-            }
-            if (storePassphrase) {
-                storeSshConnectionPassword(connectionId, sshAuthPassPhrase);
-            }
-            if (connectOnStartUp) {
-                connectSession(connectionId, sshAuthPassPhrase);
             }
         }
         return connectionId;
@@ -140,7 +135,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
                     }
                 });
             }
-            
+
             @Override
             public void onCreated(final SshConnectionSetup setup) {
                 callbackManager.enqueueCallback(new AsyncCallback<SshConnectionListener>() {
@@ -151,7 +146,6 @@ public class SshConnectionServiceImpl implements SshConnectionService {
                     }
                 });
             }
-
 
         };
         return listenerAdapter;
@@ -165,8 +159,11 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     @Override
     public Session connectSession(String connectionId) {
 
-        // Retreive passphrase from secure store.
-        String passphrase = retreiveSshConnectionPassword(connectionId);
+        String passphrase = "";
+        if (connectionSetups.get(connectionId).getUsePassphrase()) {
+            // Retreive passphrase from secure store.
+            passphrase = retreiveSshConnectionPassword(connectionId);
+        }
 
         return connectSession(connectionId, passphrase);
     }
@@ -255,17 +252,19 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     }
 
     @Override
-    public void editSshConnection(String id, String displayName, String destinationHost, int port, String sshAuthUser) {
+    public void editSshConnection(SshConnectionContext context) {
 
         SshConnectionListener listenerAdapter = defineListenerForSSHConnectionSetup();
 
         final SshConnectionSetupImpl newSetup;
-        newSetup = new SshConnectionSetupImpl(id, displayName, destinationHost, port, sshAuthUser,
-            false, false, listenerAdapter);
+        newSetup =
+            new SshConnectionSetupImpl(context.getId(), context.getDisplayName(), context.getDestinationHost(),
+                context.getPort(), context.getSshAuthUser(),
+                context.getKeyfileLocation(), context.isUsePassphrase(), false, context.isConnectImmediately(), listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
-                connectionSetups.put(id, newSetup);
+                connectionSetups.put(context.getId(), newSetup);
                 final Collection<SshConnectionSetup> snapshot = Collections.unmodifiableCollection(connectionSetups.values());
                 callbackManager.enqueueCallback(new AsyncCallback<SshConnectionListener>() {
 
@@ -301,7 +300,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
         for (InitialSshConnectionConfig config : configs) {
             SshConnectionSetup setup =
                 new SshConnectionSetupImpl(config.getId(), config.getDisplayName(), config.getHost(), config.getPort(), config.getUser(),
-                    false, false, defineListenerForSSHConnectionSetup());
+                    config.getKeyFileLocation(), config.getUsePassphrase(), false, false, defineListenerForSSHConnectionSetup());
             connectionSetups.put(config.getId(), setup);
         }
     }
@@ -325,7 +324,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
             log.error("Could not store password: " + e);
         }
     }
-    
+
     private void removeSshConnectionPassword(String connectionId) {
 
         try {
@@ -352,13 +351,15 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     }
 
     @Override
-    public void editAuthPhraseForSshConnection(String id, String sshAuthPassPhrase, boolean storePassphrase, boolean connectOnStartup) {
+    public void setAuthPhraseForSshConnection(String id, String sshAuthPassPhrase, boolean storePassphrase) {
         SshConnectionListener listenerAdapter = defineListenerForSSHConnectionSetup();
 
         final SshConnectionSetup oldSetup = connectionSetups.get(id);
         final SshConnectionSetupImpl newSetup;
-        newSetup = new SshConnectionSetupImpl(id, oldSetup.getDisplayName(), oldSetup.getHost(), oldSetup.getPort(), oldSetup.getUsername(),
-            storePassphrase, connectOnStartup, listenerAdapter);
+        newSetup =
+            new SshConnectionSetupImpl(id, oldSetup.getDisplayName(), oldSetup.getHost(), oldSetup.getPort(), oldSetup.getUsername(),
+                oldSetup.getKeyfileLocation(), oldSetup.getUsePassphrase(), storePassphrase, oldSetup.getConnectOnStartUp(),
+                listenerAdapter);
 
         if (newSetup != null) {
             synchronized (connectionSetups) {
@@ -374,13 +375,11 @@ public class SshConnectionServiceImpl implements SshConnectionService {
             }
             if (storePassphrase) {
                 storeSshConnectionPassword(id, sshAuthPassPhrase);
-            } else {
-                //Remove old stored password, if one exists.
+            } else if (oldSetup.getStorePassphrase()) {
+                // Remove old stored password, if one exists.
                 removeSshConnectionPassword(id);
-            }
-            if (connectOnStartup) {
-                connectSession(id, sshAuthPassPhrase);
             }
         }
     }
+
 }

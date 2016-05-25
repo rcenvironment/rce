@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * Implementation of {@link HeadlessWorkflowExecutionContext}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (minor change)
  */
 public class HeadlessWorkflowExecutionContextImpl implements HeadlessWorkflowExecutionContext {
 
@@ -36,6 +37,8 @@ public class HeadlessWorkflowExecutionContextImpl implements HeadlessWorkflowExe
     private DisposalBehavior disposeBehavior = DisposalBehavior.OnFinished;
 
     private DeletionBehavior deletionBehavior = DeletionBehavior.OnFinished;
+
+    private boolean abortIfWorkflowUpdateRequired = false;
 
     private boolean isCompactOutput = false;
 
@@ -67,6 +70,11 @@ public class HeadlessWorkflowExecutionContextImpl implements HeadlessWorkflowExe
     @Override
     public DisposalBehavior getDisposalBehavior() {
         return disposeBehavior;
+    }
+
+    @Override
+    public boolean shouldAbortIfWorkflowUpdateRequired() {
+        return abortIfWorkflowUpdateRequired;
     }
 
     @Override
@@ -105,6 +113,10 @@ public class HeadlessWorkflowExecutionContextImpl implements HeadlessWorkflowExe
 
     public void setDeletionBehavior(DeletionBehavior delete) {
         this.deletionBehavior = delete;
+    }
+
+    public void setAbortIfWorkflowUpdateRequired(boolean abortIfWorkflowUpdateRequired) {
+        this.abortIfWorkflowUpdateRequired = abortIfWorkflowUpdateRequired;
     }
 
     public void setIsCompactOutput(boolean isCompactOutput) {

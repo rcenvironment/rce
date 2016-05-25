@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,7 +23,7 @@ public interface ConsoleRow extends Comparable<ConsoleRow>, Serializable {
     String NOTIFICATION_SUFFIX = ":rce.component.console";
     
     /** Type of the row. */
-    public enum Type {
+    enum Type {
 
         /** Tool standard out. */
         TOOL_OUT("TOOL OUT"),
@@ -54,7 +54,7 @@ public interface ConsoleRow extends Comparable<ConsoleRow>, Serializable {
         
         private String displayName;
         
-        private Type(String displayName) {
+        Type(String displayName) {
             this.displayName = displayName;
         }
         
@@ -64,7 +64,7 @@ public interface ConsoleRow extends Comparable<ConsoleRow>, Serializable {
     }
 
     /** Type of the workflow lifecylce event. */
-    public enum WorkflowLifecyleEventType {
+    enum WorkflowLifecyleEventType {
 
         /**
          * Sent if component is started.

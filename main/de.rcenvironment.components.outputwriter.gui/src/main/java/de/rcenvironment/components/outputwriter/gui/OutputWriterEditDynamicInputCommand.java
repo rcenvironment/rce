@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,8 +11,8 @@ package de.rcenvironment.components.outputwriter.gui;
 import java.io.IOException;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
@@ -22,6 +22,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicEndpointCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Command for editing dynamic inputs in the outputWriter component. Also removes the endpoint from its corresponding target, if it is a
@@ -50,7 +51,7 @@ public class OutputWriterEditDynamicInputCommand extends EditDynamicEndpointComm
     public OutputWriterEditDynamicInputCommand(EndpointType direction, EndpointDescription oldDescription,
         EndpointDescription newDescription, String outputLocationId, Refreshable... refreshable) {
         super(direction, oldDescription, newDescription, refreshable);
-        mapper = new ObjectMapper();
+        mapper = JsonUtils.getDefaultObjectMapper();
         mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
         this.outputLocationId = outputLocationId;
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -66,8 +66,10 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
     private String toolVersion;
 
     private String connectionId;
-    
+
     private ComponentLog componentLog;
+
+    private boolean isWorkflow;
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
@@ -83,6 +85,8 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         toolName = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_TOOL_NAME);
         toolVersion = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_TOOL_VERSION);
         connectionId = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_CONNECTION);
+        isWorkflow = Boolean.parseBoolean(componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_IS_WORKFLOW));
+
         if (toolName == null || toolVersion == null || connectionId == null) {
             throw new ComponentException("Configuration for remote tool is not valid.");
         }
@@ -160,7 +164,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
 
         // Upload input directory
         try {
-            JschFileTransfer.uploadDirectoryToRCEInstance(session, inputDir, StringUtils.format("ra/%s/input", sessionToken));
+            JschFileTransfer.uploadDirectoryToRCEInstance(session, inputDir, StringUtils.format("/ra/%s/input", sessionToken));
         } catch (IOException | JSchException | InterruptedException e2) {
             throw new ComponentException("Uploading input directory via SCP failed", e2);
         }
@@ -169,11 +173,16 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         String formattedToolName = QUOT + toolName.replace(QUOT, QUOT + QUOT) + QUOT;
         String formattedVersion = QUOT + toolVersion.replace(QUOT, QUOT + QUOT) + QUOT;
 
-        String command =
-            StringUtils.format("ra run-tool %s --show-output %s %s %s", sessionToken, formattedToolName, formattedVersion,
+        String command;
+        if (isWorkflow) {
+            command = StringUtils.format("ra run-wf %s --show-output %s %s %s", sessionToken, formattedToolName, formattedVersion,
                 inputShortText, inputDir.getName(), outputDir.getName());
-        
-        //Parse final state of component
+        } else {
+            command = StringUtils.format("ra run-tool %s --show-output %s %s %s", sessionToken, formattedToolName, formattedVersion,
+                inputShortText, inputDir.getName(), outputDir.getName());
+        }
+
+        // Parse final state of component
         String state = "";
 
         // Run the tool
@@ -181,7 +190,6 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
             rceExecutor.start(command);
             try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
 
-                
                 LineIterator it = IOUtils.lineIterator(stdoutStream, (String) null);
                 while (it.hasNext()) {
                     String line = it.nextLine();
@@ -189,7 +197,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
                         componentLog.toolStdout(line.substring(line.indexOf(COLON) + 2));
                     } else if (line.startsWith(StringUtils.format("[%s] State: ", sessionToken))) {
                         componentLog.toolStdout(line.substring(line.indexOf("]") + 2));
-                        //Parse state from line
+                        // Parse state from line
                         state = line.substring(line.indexOf(COLON) + 2);
                     } else if (line.startsWith(StringUtils.format("[%s] StdErr: ", sessionToken))) {
                         componentLog.toolStderr(line.substring(line.indexOf(COLON) + 2));
@@ -209,15 +217,15 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         } catch (IOException | InterruptedException e1) {
             throw new ComponentException("Executing SSH command failed", e1);
         }
-        
-        //Check if final state was "FINISHED"
+
+        // Check if final state was "FINISHED"
         if (!state.equals(FinalWorkflowState.FINISHED.toString())) {
             throw new ComponentException("Remote component execution failed.");
         }
 
         // Download output directory
         try {
-            JschFileTransfer.downloadDirectory(session, StringUtils.format("ra/%s/output", sessionToken),
+            JschFileTransfer.downloadDirectory(session, StringUtils.format("/ra/%s/output", sessionToken),
                 outputDir.getParentFile());
         } catch (IOException | JSchException e1) {
             throw new ComponentException("Downloading outputput directory via SCP failed", e1);

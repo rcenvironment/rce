@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
@@ -111,8 +112,9 @@ public final class EndpointHelper {
                     currentDescription.getEndpointDefinition().getMetaDataDefinition();
                 for (String metaDatumKey : metaDataDefinition
                     .getMetaDataKeys()) {
-                    if (metaDataDefinition.getVisibility(metaDatumKey)
-                        .equals(visibility)) {
+                    if (metaDataDefinition.getVisibility(metaDatumKey).equals(visibility)
+                        && checkConfigurationFilter(metaDataDefinition.getGuiVisibilityFilter(metaDatumKey),
+                            configuration.getConfigurationDescription())) {
                         Map<Integer, String> sortedKeyMap = null;
                         if (staticGroups.get(metaDataDefinition.getGuiGroup(metaDatumKey)) != null) {
                             sortedKeyMap = staticGroups.get(metaDataDefinition.getGuiGroup(metaDatumKey));
@@ -135,7 +137,9 @@ public final class EndpointHelper {
                 for (String metaDatumKey : dynamicDescription.getMetaDataDefinition().getMetaDataKeys()) {
                     if (dynamicDescription.getIdentifier().equals(id)
                         && dynamicDescription.getMetaDataDefinition().getVisibility(metaDatumKey)
-                            .equals(visibility)) {
+                            .equals(visibility)
+                        && checkConfigurationFilter(metaDataDefinition.getGuiVisibilityFilter(metaDatumKey),
+                            configuration.getConfigurationDescription())) {
                         Map<Integer, String> sortedKeyMap = null;
 
                         if (dynamicGroups.get(metaDataDefinition.getGuiGroup(metaDatumKey)) != null) {
@@ -155,6 +159,58 @@ public final class EndpointHelper {
             }
         }
         return new LinkedList<String>(resultList);
+    }
+
+    private static boolean checkConfigurationFilter(Map<String, List<String>> filter,
+        ConfigurationDescription configurationDescription) {
+        if (filter != null && !filter.isEmpty()) {
+            for (String filterKey : filter.keySet()) {
+                for (String filterValues : filter.get(filterKey)) {
+                    if (filterKey.startsWith("configuration:")) {
+                        String newFilterKey = filterKey.split(":")[1];
+                        if (configurationDescription.getConfigurationValue(newFilterKey) != null
+                            && configurationDescription.getConfigurationValue(newFilterKey).equals(filterValues)) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Checks whether the given filter is active or not.
+     * 
+     * @param filter to check the data
+     * @param metaDataValues the current values for checking the filter
+     * @param configDesc configuration values to check
+     * @return true, if the filter is active, false else.
+     */
+    public static boolean checkMetadataFilter(Map<String, List<String>> filter, Map<String, String> metaDataValues,
+        ConfigurationDescription configDesc) {
+        if (filter != null && !filter.isEmpty()) {
+            boolean result = true;
+            for (String filterKey : filter.keySet()) {
+
+                for (String filterValues : filter.get(filterKey)) {
+                    if (filterKey.startsWith("configuration:")) {
+                        String newFilterKey = filterKey.split(":")[1];
+                        if (!(configDesc.getConfigurationValue(newFilterKey) != null
+                            && configDesc.getConfigurationValue(newFilterKey).equals(filterValues))) {
+                            result = false;
+                        }
+                    } else {
+                        if (!(metaDataValues.get(filterKey) != null && metaDataValues.get(filterKey).equals(filterValues))) {
+                            result = false;
+                        }
+                    }
+                }
+            }
+            return result;
+        }
+        return true;
     }
 
     /**

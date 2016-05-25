@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,7 +10,6 @@ package de.rcenvironment.core.communication.file.service.legacy.internal;
 
 import java.io.IOException;
 import java.net.URI;
-import java.text.MessageFormat;
 
 import org.osgi.framework.BundleContext;
 
@@ -18,6 +17,7 @@ import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.file.service.legacy.api.RemotableFileStreamAccessService;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
@@ -35,7 +35,7 @@ public class ServiceRemoteFileConnection implements RemoteFileConnection {
 
     private static final long serialVersionUID = -3315352695999821776L;
 
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     /**
      * The {@link RemotableFileStreamAccessService} of the remote instance where the file is located.
@@ -74,7 +74,7 @@ public class ServiceRemoteFileConnection implements RemoteFileConnection {
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
 
-        Assertions.isDefined(b, MessageFormat.format(ERROR_PARAMETERS_NULL, "b"));
+        Assertions.isDefined(b, StringUtils.format(ERROR_PARAMETERS_NULL, "b"));
 
         Byte[] objectB = new Byte[b.length];
         for (int i = 0; i < b.length; i++) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -48,6 +48,7 @@ import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVer
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescription;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -117,7 +118,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
-    private NodeIdentifier localNode;
+    private NodeIdentifier localNodeId;
 
     @Override
     public boolean isUpdateForWorkflowDescriptionAvailable(PersistentWorkflowDescription description, boolean silent) {
@@ -163,7 +164,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     }
 
     private PersistentWorkflowDescription updateWorkflowToCurrentVersion(PersistentWorkflowDescription description) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
             ((ObjectNode) workflowDescriptionAsTree).put(WORKFLOW_VERSION, TextNode.valueOf(CURRENT_VERSION));
@@ -203,7 +204,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         List<PersistentComponentDescription> componentDescriptions = componentUpdateService
             .performComponentDescriptionUpdates(formatVersion, description.getComponentDescriptions(), silent);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
         try {
             ObjectNode workflowDescriptionAsTree = (ObjectNode) mapper.readTree(description.getWorkflowDescriptionAsString());
@@ -239,7 +240,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         PersistentWorkflowDescription description) throws IOException {
 
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
         JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
         JsonNode nodes = workflowDescriptionAsTree.get(NODES);
@@ -259,7 +260,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         throws IOException {
 
         JsonNodeFactory jsonFactory = JsonNodeFactory.instance;
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
         JsonNode workflowDescriptionAsTree = mapper.readTree(description.getWorkflowDescriptionAsString());
         JsonNode nodes = workflowDescriptionAsTree.get(NODES);
@@ -453,7 +454,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         throws JsonParseException, IOException {
 
         try (JsonParser jsonParser = new JsonFactory().createJsonParser(persistentWorkflowDescriptionString)) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
 
             List<PersistentComponentDescription> nodeDescriptionList = new ArrayList<PersistentComponentDescription>();
@@ -477,7 +478,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             while (nodeIterator.hasNext()) {
                 JsonNode component = nodeIterator.next();
 
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
                 ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
                 componentDescriptions.add(new PersistentComponentDescription(writer.writeValueAsString(component)));
             }
@@ -494,17 +495,15 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     protected PersistentComponentDescription checkAndSetNodeIdentifier(PersistentComponentDescription compDesc,
         Collection<ComponentInstallation> collection) {
 
+        ComponentInstallation exactlyMatchingComponent = null;
+        
         List<ComponentInstallation> matchingComponents = new ArrayList<ComponentInstallation>();
 
-        // for all registered components which match the persistent one (identifiers are equal and
-        // version of
-        // persistent one is greater or equal of registered one) decide:
-        // if the platform is equal as well, the component is registered on the node where it was
-        // when workflow was created, the update check can be directly done on the given node, the
-        // description can be
-        // returned as it is and this method is done
-        // otherwise add the basically matching component to the list of matching components which
-        // will be considered later on
+        // for all registered components which match the persistent one (identifiers are equal and version of persistent one is greater or
+        // equal of registered one) decide:
+        // if the platform is equal as well, the component is registered on the node where it was when workflow was created, the update
+        // check can be directly done on the given node, the description can be returned as it is and this method is done otherwise add the
+        // basically matching component to the list of matching components which will be considered later on
         for (ComponentInstallation compInst : collection) {
             ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
             String compId = compInterface.getIdentifier();
@@ -514,17 +513,23 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             if (compId.equals(compDesc.getComponentIdentifier())
                 && (compDesc.getComponentVersion().equals("")
                 || compInterface.getVersion().compareTo(compDesc.getComponentVersion()) >= 0)) {
-                if (((compInst.getNodeId() == null || compInst.getNodeId().equals(localNode.getIdString()))
-                    && compDesc.getComponentNodeIdentifier() == null)
-                    || compInst.getNodeId() != null && compDesc.getComponentNodeIdentifier() != null
-                    && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getIdString())) {
+                if (compInst.getNodeId() == null || compInst.getNodeId().equals(localNodeId.getIdString())) {
+                    compDesc.setNodeIdentifier(null);
                     return compDesc;
+                } else if (compInst.getNodeId() != null && compDesc.getComponentNodeIdentifier() != null
+                    && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getIdString())) {
+                    exactlyMatchingComponent = compInst;
                 } else {
                     matchingComponents.add(compInst);
                 }
             }
         }
 
+        // if there is not local component, take the exactly matching remote component if there is one
+        if (exactlyMatchingComponent != null) {
+            compDesc.setNodeIdentifier(NodeIdentifierFactory.fromNodeId(exactlyMatchingComponent.getNodeId()));
+            return compDesc;
+        }
         // a matching component on the originally registered node was not found. thus set the node
         // identifier of any matching component if there is at least one found
         if (matchingComponents.size() > 0) {
@@ -554,7 +559,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     }
 
     protected void bindPlatformService(PlatformService platformService) {
-        localNode = platformService.getLocalNodeId();
+        localNodeId = platformService.getLocalNodeId();
     }
 
 }

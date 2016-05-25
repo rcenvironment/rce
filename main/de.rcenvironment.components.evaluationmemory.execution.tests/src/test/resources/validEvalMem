@@ -1,0 +1,8 @@
+#Sat Sep 19 20:51:12 CEST 2015
+inputs=x1\:Float\:x2\:Float
+{"t"\\\:"Flt","v"\\\:1.0}\:{"t"\\\:"Flt","v"\\\:2.0}={"t"\\\:"Flt","v"\\\:3.0}
+outputs=y\:Float
+{"t"\\\:"Flt","v"\\\:1.0}\:{"t"\\\:"Flt","v"\\\:-1.0}={"t"\\\:"Ind","v"\\\:"5bced5e7-a953-4120-91fb-36f7ccdf1df4"}
+{"t"\\\:"Flt","v"\\\:3.0}\:{"t"\\\:"Flt","v"\\\:2.0}={"t"\\\:"Flt","v"\\\:4.0}
+version=1
+type=de.rcenvironment.evaluationmemory

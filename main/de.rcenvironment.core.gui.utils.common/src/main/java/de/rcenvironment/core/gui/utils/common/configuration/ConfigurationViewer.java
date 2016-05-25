@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -691,7 +691,7 @@ public class ConfigurationViewer extends TreeViewer {
         /** Buffer variable to store/remember the last meaningful width hint. */
         private Integer widthHint = 0;
 
-        public LayoutComposite(Composite parent, int style) {
+        LayoutComposite(Composite parent, int style) {
             super(parent, style);
         }
 

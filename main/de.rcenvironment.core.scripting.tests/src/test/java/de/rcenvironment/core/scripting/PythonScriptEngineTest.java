@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,8 +14,6 @@ import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -27,10 +25,10 @@ import org.python.jsr223.PyScriptEngineFactory;
 
 import de.rcenvironment.core.scripting.python.PythonOutputWriter;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
- * Tests the execution behavior of the Python script engine. Especially, during parallel script
- * execution.
+ * Tests the execution behavior of the Python script engine. Especially, during parallel script execution.
  * 
  * @author Doreen Seider
  */
@@ -52,8 +50,7 @@ public class PythonScriptEngineTest {
     private final AtomicInteger wrongOutputCount = new AtomicInteger(0);
 
     /**
-     * Tests correct output handling of multiple scripts are executed in parallel threads but
-     * synchronized.
+     * Tests correct output handling of multiple scripts are executed in parallel threads but synchronized.
      * 
      * @throws InterruptedException on error
      */
@@ -71,12 +68,12 @@ public class PythonScriptEngineTest {
 
         final CountDownLatch iterationFinishedLatch = new CountDownLatch(scriptEvalCount);
 
-        ExecutorService threadPool = Executors.newFixedThreadPool(scriptEvalCount);
+        final SharedThreadPool threadPool = SharedThreadPool.getInstance();
 
         for (int i = 0; i < scriptEvalCount; i++) {
 
             final String suffix = String.valueOf(i);
-            threadPool.submit(new Runnable() {
+            threadPool.execute(new Runnable() {
 
                 @Override
                 public void run() {
@@ -122,8 +119,7 @@ public class PythonScriptEngineTest {
     }
 
     /**
-     * Stub implementation of {@link PythonOutputWriter} used by the Jython script engine for stdout
-     * and stderr.
+     * Stub implementation of {@link PythonOutputWriter} used by the Jython script engine for stdout and stderr.
      * 
      * @author Doreen Seider
      */
@@ -133,7 +129,7 @@ public class PythonScriptEngineTest {
 
         private final String outSuffix;
 
-        public PythonOutputWriterStub(Object lock, String outPrefix, String outSuffix) {
+        PythonOutputWriterStub(Object lock, String outPrefix, String outSuffix) {
             super(lock, null);
             this.outPrefix = outPrefix;
             this.outSuffix = outSuffix;

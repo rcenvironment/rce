@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -39,6 +39,8 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
 
     /** Property that is fired when the name changes. */
     public static final String PROPERTY_NODE_ATTRIBUTES = "de.rcenvironment.props.n";
+    
+    private static final int DEFAULT_X_Y = 0;
 
     private static final long serialVersionUID = -7495156467094187194L;
 
@@ -73,6 +75,8 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     public WorkflowNode(ComponentDescription componentDescription) {
         compDesc = componentDescription;
         identifier = UUID.randomUUID().toString();
+        x = DEFAULT_X_Y;
+        y = DEFAULT_X_Y;
     }
 
     @Override

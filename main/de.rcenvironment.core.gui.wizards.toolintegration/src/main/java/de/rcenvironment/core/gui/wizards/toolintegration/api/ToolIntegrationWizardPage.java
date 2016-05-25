@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -89,7 +89,7 @@ public abstract class ToolIntegrationWizardPage extends WizardPage {
 
         private Table table;
 
-        public ButtonSelectionAdapter(MenuItem itemAdd, MenuItem itemEdit, MenuItem itemRemove, Table tab) {
+        ButtonSelectionAdapter(MenuItem itemAdd, MenuItem itemEdit, MenuItem itemRemove, Table tab) {
 
             this.itemAdd = itemAdd;
             this.itemEdit = itemEdit;

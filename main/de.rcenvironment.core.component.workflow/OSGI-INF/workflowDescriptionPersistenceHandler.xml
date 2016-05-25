@@ -8,6 +8,13 @@
 		cardinality="1..1"
 		policy="dynamic"
 		/>
+		<reference name="Component Description Factory Service"
+		interface="de.rcenvironment.core.component.model.api.ComponentDescriptionFactoryService"
+		bind="bindComponentDescriptionFactoryService"
+		unbind="unbindComponentDescriptionFactoryService"
+		cardinality="1..1"
+		policy="dynamic"
+		/>
 	<reference name="Platform Service"
 		interface="de.rcenvironment.core.communication.api.PlatformService"
 		cardinality="1..1"

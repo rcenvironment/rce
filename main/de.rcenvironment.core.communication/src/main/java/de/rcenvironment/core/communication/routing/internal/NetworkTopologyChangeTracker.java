@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,7 +36,7 @@ class NetworkTopologyChangeTracker {
 
     private NetworkGraphImpl cachedReachableNetworkGraph;
 
-    public NetworkTopologyChangeTracker() {
+    NetworkTopologyChangeTracker() {
         this.lastReachableNodes = Collections.unmodifiableSet(new HashSet<NodeIdentifier>()); // see invariant
         this.callbackManager = new AsyncOrderedCallbackManager<NetworkTopologyChangeListener>(SharedThreadPool.getInstance(),
             AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -119,14 +119,29 @@ public interface TypedDatumFactory {
     EmptyTD createEmpty();
     
     /**
+     * Like {@link #createNotAValue(NotAValueTD.Cause)} called with {@link Cause.InvalidInputs}.
      * @return an undefined value (NaV)
      */
     NotAValueTD createNotAValue();
     
     /**
+     * @param cause {@link Cause} why the {@link NotAValueTD} was sent
+     * @return an undefined value (NaV)
+     */
+    NotAValueTD createNotAValue(NotAValueTD.Cause cause);
+    
+    /**
+     * Like {@link #createNotAValue(String, NotAValueTD.Cause)} called with {@link Cause.InvalidInputs}.
      * @param identifier identifier of the {@link NotAValueTD} instance
      * @return an undefined value (NaV)
      */
     NotAValueTD createNotAValue(String identifier);
+    
+    /**
+     * @param identifier identifier of the {@link NotAValueTD} instance
+     * @param cause {@link Cause} why the {@link NotAValueTD} was sent
+     * @return an undefined value (NaV)
+     */
+    NotAValueTD createNotAValue(String identifier, NotAValueTD.Cause cause);
 
 }

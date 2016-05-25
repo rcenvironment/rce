@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -76,7 +76,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
 
         private volatile boolean cancelled = false;
 
-        public RequestSender(String queueName, Connection connection) {}
+        RequestSender(String queueName, Connection connection) {}
 
         @Override
         @TaskDescription("JMS Network Transport: Message channel request sender")

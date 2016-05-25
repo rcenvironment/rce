@@ -1,0 +1,39 @@
+{
+    "configuration":[
+        {
+            "key":"epsA",
+            "defaultValue":"0.1"
+        },
+        {
+            "key":"epsR",
+            "defaultValue":"0.1"
+        },
+        {
+            "key":"maxIterations"
+        },
+        {
+            "key":"iterationsToConsider",
+            "defaultValue":"1"
+        }, 
+        {
+            "key":"notConvIgnore",
+            "defaultValue": "true"
+        },
+        {
+            "key":"notConvFail",
+            "defaultValue": "false"
+        },
+        {
+            "key":"notConvNotAValue",
+           "defaultValue": "false"
+        },
+        {
+            "key": "maxRerunBeforeFail-NAV_5e0ed1cd",
+            "defaultValue": "1"
+        },
+        {
+            "key": "failLoopOnly-NAV_5e0ed1cd",
+            "defaultValue": "false"
+        }
+    ]
+}

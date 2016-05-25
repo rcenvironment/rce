@@ -2,14 +2,14 @@
 <feature
       id="de.rcenvironment.platform.maven.native.feature"
       label="RCE Platform - Maven Native Code Libraries Feature"
-      version="7.0.0.qualifier">
+      version="7.1.0.qualifier">
 
    <description url="http://www.rcenvironment.de">
       Win32 library files for RCE (Remote Component Environment).
    </description>
 
    <copyright url="http://www.rcenvironment.de">
-      Copyright (C) 2006-2015 DLR, Germany.
+      Copyright (C) 2006-2016 DLR, Germany.
 All rights reserved. This program and the accompanying materials
 are made available under the terms of the Eclipse Public License
 v1.0 which accompanies this distribution, and is available at

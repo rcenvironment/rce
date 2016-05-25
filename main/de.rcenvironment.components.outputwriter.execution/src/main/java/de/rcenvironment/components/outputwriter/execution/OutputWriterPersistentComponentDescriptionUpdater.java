@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,6 +21,7 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -75,7 +76,7 @@ public class OutputWriterPersistentComponentDescriptionUpdater implements Persis
 
         final String affectedConfigFieldName = "OWWritePath";
         
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configurationsNode = (ObjectNode) node.get(WorkflowDescriptionPersistenceHandler.CONFIGURATION);
         if (configurationsNode != null && configurationsNode.has(affectedConfigFieldName)) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,8 +17,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
@@ -28,6 +28,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Validator for output writer component.
@@ -52,7 +53,7 @@ public class OutputWriterComponentWorkflowNodeValidator extends AbstractWorkflow
         }
         // Validate OutputLocations
         String outputLocString = getProperty(OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);
-        ObjectMapper jsonMapper = new ObjectMapper();
+        ObjectMapper jsonMapper = JsonUtils.getDefaultObjectMapper();
         jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
         if (outputLocString == null) {
             outputLocString = "{}";
@@ -119,7 +120,8 @@ public class OutputWriterComponentWorkflowNodeValidator extends AbstractWorkflow
                 }
                 for (String placeholder : placeholders) {
                     if (placeholder.equals(OutputWriterComponentConstants.TIMESTAMP)
-                        || placeholder.equals(OutputWriterComponentConstants.LINEBREAK)) {
+                        || placeholder.equals(OutputWriterComponentConstants.LINEBREAK)
+                        || placeholder.equals(OutputWriterComponentConstants.EXECUTION_COUNT)) {
                         continue;
                     } else {
                         boolean foundMatch = false;
@@ -156,7 +158,8 @@ public class OutputWriterComponentWorkflowNodeValidator extends AbstractWorkflow
                 }
                 for (String placeholder : headerPlaceholders) {
                     if (placeholder.equals(OutputWriterComponentConstants.TIMESTAMP)
-                        || placeholder.equals(OutputWriterComponentConstants.LINEBREAK)) {
+                        || placeholder.equals(OutputWriterComponentConstants.LINEBREAK)
+                        || placeholder.equals(OutputWriterComponentConstants.EXECUTION_COUNT)) {
                         continue;
                     }
                     // No input matched this placeholder

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,6 +27,7 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -110,7 +111,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
      * */
     private PersistentComponentDescription fourthUpdate(PersistentComponentDescription description) throws JsonParseException, IOException {
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
@@ -133,7 +134,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
      **/
     private PersistentComponentDescription thirdUpdate(PersistentComponentDescription description) throws JsonProcessingException,
         IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
@@ -177,7 +178,7 @@ public class ScriptPersistentComponentDescriptionUpdater implements PersistentCo
         description =
             PersistentComponentDescriptionUpdaterUtils.updateAllDynamicEndpointsToIdentifier("dynamicInputs", "default", description);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);

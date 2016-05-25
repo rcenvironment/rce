@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -280,7 +280,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
 
             private final EditPart child;
 
-            public NoBorderEditPolicy(EditPart child) {
+            NoBorderEditPolicy(EditPart child) {
                 this.child = child;
             }
 
@@ -311,7 +311,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
 
             private static final int BORDERWIDTH = 2;
 
-            public OvalBorderMoveHandle(GraphicalEditPart owner) {
+            OvalBorderMoveHandle(GraphicalEditPart owner) {
                 super(owner);
             }
 
@@ -381,7 +381,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
 
         private int y;
 
-        public BackgroundLayer() {
+        BackgroundLayer() {
             orgImage = Activator.getInstance().getImageRegistry().get(Activator.IMAGE_WORKFLOW_EDITOR_BACKGROUND);
             resize();
             addFigureListener(this);

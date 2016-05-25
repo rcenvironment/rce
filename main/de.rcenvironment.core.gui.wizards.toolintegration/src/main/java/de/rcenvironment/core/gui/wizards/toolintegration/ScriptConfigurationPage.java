@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -46,6 +46,7 @@ import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWiza
  */
 public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
+
     /** Constant. */
     public static final int INPUT_COMBO = 0;
 
@@ -60,6 +61,10 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
     /** Constant. */
     public static final int DIRECTORY_COMBO = 4;
+
+    private static final int MOCK_GROUP_MINIMUM_HEIGHT = 67;
+
+    private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_execution";
 
     private static final int TEXTFIELD_HEIGHT = 270;
 
@@ -129,6 +134,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         tabFolder = new CTabFolder(container, SWT.BORDER);
         GridData layoutData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL
             | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+        layoutData.grabExcessVerticalSpace = true;
         tabFolder.setLayoutData(layoutData);
         createScriptTabItem(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX, Messages.commandScriptMessage, 0);
         createScriptTabItem(ToolIntegrationConstants.KEY_PRE_SCRIPT, Messages.preScript, 1);
@@ -140,6 +146,9 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         createMockModeGroup(container);
 
         setControl(container);
+
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
+            HELP_CONTEXT_ID);
         updatePageComplete();
     }
 
@@ -148,8 +157,8 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         Group mockGroup = new Group(container, SWT.NONE);
         mockGroup.setText("Tool run imitation mode");
         mockGroup.setLayout(new GridLayout(2, false));
-        layoutData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL
-            | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+        layoutData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
+        layoutData.minimumHeight = MOCK_GROUP_MINIMUM_HEIGHT;
         mockGroup.setLayoutData(layoutData);
         mockModeCheckBox = new Button(mockGroup, SWT.CHECK);
         layoutData = new GridData();
@@ -343,9 +352,9 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             setPageComplete(false);
         } else {
             boolean winScriptNotEmpty = ((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_WINDOWS)) != null
-                && !((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_WINDOWS)).isEmpty();
+                && !((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_WINDOWS)).trim().isEmpty();
             boolean linuxScriptNotEmpty = ((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX)) != null
-                && !((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX)).isEmpty();
+                && !((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX)).trim().isEmpty();
             if ((winEnabled && winScriptNotEmpty) || (linuxEnabled && linuxScriptNotEmpty)) {
                 validateIsMockScriptConfiguration();
             } else {
@@ -610,7 +619,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             GridData copyData = new GridData();
             copyData.horizontalSpan = 2;
             insertCopyCommand.setLayoutData(copyData);
-            insertCopyCommand.setText("Insert copy of file/dir");
+            insertCopyCommand.setText("Insert copy of file/dir...");
             insertCopyCommand.addSelectionListener(new CopyInputListener(scriptArea));
         }
 
@@ -675,7 +684,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         private final String key;
 
-        public TextAreaModifyListener(String key) {
+        TextAreaModifyListener(String key) {
             this.key = key;
         }
 
@@ -703,13 +712,13 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         private Text text2;
 
-        public InsertButtonListener(Combo inputCombo, Text scriptArea, int comboType) {
+        InsertButtonListener(Combo inputCombo, Text scriptArea, int comboType) {
             combo = inputCombo;
             text = scriptArea;
             this.comboType = comboType;
         }
 
-        public InsertButtonListener(Combo inputCombo, Text scriptArea, Text scriptArea2, int comboType) {
+        InsertButtonListener(Combo inputCombo, Text scriptArea, Text scriptArea2, int comboType) {
             combo = inputCombo;
             text = scriptArea;
             text2 = scriptArea2;
@@ -808,7 +817,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         private final Text text;
 
-        public CopyInputListener(Text text) {
+        CopyInputListener(Text text) {
             this.text = text;
         }
 
@@ -865,7 +874,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
     public void performHelp() {
         super.performHelp();
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
-        helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_execution");
+        helpSystem.displayHelp(HELP_CONTEXT_ID);
     }
 
 }

@@ -40,7 +40,7 @@
       <propertyTabs contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
       
       	 <propertyTab
-         		label="Memory File"
+         		label="Evaluation Memory"
          		category="default"
          		id="workflow.editor.tab.evaluationmemory.File">
          </propertyTab>
@@ -63,7 +63,7 @@
    
    <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
-      <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
    </extension>
    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
       <validator 
@@ -74,6 +74,10 @@
     <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryHistoryDataItemSubtreeBuilder"/>
    </extension> 
+   
+    <extension point="org.eclipse.help.toc">
+  		<toc file="help/toc.xml"/>
+ 	</extension>
   
  </plugin>
  

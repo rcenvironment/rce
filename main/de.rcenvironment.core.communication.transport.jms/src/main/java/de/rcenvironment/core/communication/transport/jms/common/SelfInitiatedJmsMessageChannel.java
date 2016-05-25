@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -135,7 +135,7 @@ public class SelfInitiatedJmsMessageChannel extends AbstractJmsMessageChannel {
             JMSHandshakeInformation remoteHandshakeInformation =
                 JmsProtocolUtils.parseHandshakeMessage(handshakeResponseMessage, ownHandshakeInformation.getProtocolVersionString());
 
-            JmsProtocolUtils.failOnIncompatibleVersions(remoteHandshakeInformation.getProtocolVersionString(),
+            failOnIncompatibleVersions(remoteHandshakeInformation.getProtocolVersionString(),
                 ownHandshakeInformation.getProtocolVersionString());
 
             tempQueueManager.finishClientSide(remoteHandshakeInformation.getTemporaryQueueInformation());

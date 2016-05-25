@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,18 +22,25 @@ import org.eclipse.draw2d.PolylineConnection;
 import org.eclipse.draw2d.PolylineDecoration;
 import org.eclipse.draw2d.PositionConstants;
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.gef.CompoundSnapToHelper;
 import org.eclipse.gef.EditPart;
 import org.eclipse.gef.EditPartViewer;
 import org.eclipse.gef.EditPolicy;
+import org.eclipse.gef.SnapToGeometry;
+import org.eclipse.gef.SnapToGrid;
+import org.eclipse.gef.SnapToHelper;
 import org.eclipse.gef.editparts.AbstractConnectionEditPart;
 import org.eclipse.gef.editparts.ScalableFreeformRootEditPart;
+import org.eclipse.ui.views.properties.IPropertySource;
 
 import de.rcenvironment.core.component.workflow.execution.impl.WorkflowExecutionInformationImpl;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.Location;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.editor.commands.ConnectionBendpointEditPolicy;
 import de.rcenvironment.core.gui.workflow.editor.commands.ConnectionDeletionPolicy;
+import de.rcenvironment.core.gui.workflow.editor.properties.ComponentPropertySource;
 
 /**
  * EditPart representing all connections between two workflow nodes.
@@ -44,7 +51,7 @@ import de.rcenvironment.core.gui.workflow.editor.commands.ConnectionDeletionPoli
 public class ConnectionPart extends AbstractConnectionEditPart implements PropertyChangeListener {
 
     private Label relationshipLabel;
-
+    
     @Override
     public IFigure createFigure() {
 
@@ -60,10 +67,11 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
         if (wrapper.getTargetArrow()) {
             connection.setTargetDecoration(new PolylineDecoration());
         }
-
+        
         // skip self connections
         if (!wrapper.getSource().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
             ConnectionLocator connectionLocator = new ConnectionLocator(connection, ConnectionLocator.MIDDLE);
+            
             connectionLocator.setRelativePosition(PositionConstants.NSEW);
             connectionLocator.setGap(5);
             relationshipLabel = new Label(String.valueOf(((ConnectionWrapper) getModel()).getNumberOfConnections()));
@@ -71,6 +79,7 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             relationshipLabel.setVisible(false);
             connection.add(relationshipLabel, connectionLocator);
         }
+        
         return connection;
     }
 
@@ -115,6 +124,28 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             }
         }
     }
+    
+    @Override
+    public Object getAdapter(@SuppressWarnings("rawtypes") Class type) {
+        // Enable Snap to grid/geometry in wf editor for bendpoints..
+        if (type == SnapToHelper.class) {
+            List<SnapToHelper> helpers = new ArrayList<SnapToHelper>();
+            if (Boolean.TRUE.equals(getViewer().getProperty(SnapToGeometry.PROPERTY_SNAP_ENABLED))) {
+                helpers.add(new SnapToGeometry(this));
+            }
+            if (Boolean.TRUE.equals(getViewer().getProperty(SnapToGrid.PROPERTY_GRID_ENABLED))) {
+                helpers.add(new SnapToGrid(this));
+            }
+            if (helpers.size() == 0) {
+                return null;
+            } else {
+                return new CompoundSnapToHelper(helpers.toArray(new SnapToHelper[0]));
+            }
+        } else if (type == IPropertySource.class && getModel() instanceof WorkflowNode) {
+            return new ComponentPropertySource(getViewer().getEditDomain().getCommandStack(), (WorkflowNode) getModel());
+        }
+        return super.getAdapter(type);
+    }
 
     private void addBendpointsFromModelToGraphics(Connection matchingConnection) {
         org.eclipse.draw2d.Connection connection = getConnectionFigure();
@@ -156,7 +187,7 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
             refreshVisuals();
         }
     }
-
+    
     private WorkflowDescription getWorkflowDescriptionFromModelObject(Object modelObject) {
         WorkflowDescription workflowDescription = null;
         if (modelObject instanceof WorkflowDescription) {
@@ -166,4 +197,6 @@ public class ConnectionPart extends AbstractConnectionEditPart implements Proper
         }
         return workflowDescription;
     }
+    
+    
 }

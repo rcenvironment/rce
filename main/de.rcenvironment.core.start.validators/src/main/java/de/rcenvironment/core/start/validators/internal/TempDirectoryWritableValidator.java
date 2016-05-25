@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,7 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
-import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -27,7 +27,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * 
  * @author Robert Mischke
  */
-public class TempDirectoryWritableValidator implements InstanceValidator {
+public class TempDirectoryWritableValidator extends DefaultInstanceValidator {
 
     private ConfigurationService configurationService;
 
@@ -36,13 +36,18 @@ public class TempDirectoryWritableValidator implements InstanceValidator {
     @Override
     public InstanceValidationResult validate() {
         final String validationDisplayName = "RCE temp directory";
-        
+
         TempFileService tempFileService = TempFileServiceAccess.getInstance();
         log.debug("Initializing temp file service and creating a test file");
         File tempFile;
         try {
             tempFile = tempFileService.createTempFileFromPattern("check.*.tmp");
-            if (tempFile.canRead()) {
+            boolean canRead = tempFile.canRead();
+            // Clean up test file. Even if we are not allowed to read the file, we are still able to delete it, since this depends on the
+            // granted permissions wrt. the parent directory.
+            tempFileService.disposeManagedTempDirOrFile(tempFile);
+
+            if (canRead) {
                 // all ok, no error
                 return InstanceValidationResultFactory.createResultForPassed(validationDisplayName);
             } else {
@@ -50,18 +55,16 @@ public class TempDirectoryWritableValidator implements InstanceValidator {
                 log.error("Creating a temporary test file succeeded, but was not readable afterwards; "
                     + "a validation error will be generated");
             }
-            // clean up test file
-            tempFileService.disposeManagedTempDirOrFile(tempFile);
         } catch (IOException e) {
             log.error("Error creating a temporary test file; a validation error will be generated", e);
         }
 
-        String errorMessage = StringUtils.format(Messages.failedToCreateTempFile, 
+        String errorMessage = StringUtils.format(Messages.failedToCreateTempFile,
             configurationService.getParentTempDirectoryRoot().getAbsolutePath());
         return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(
             validationDisplayName, errorMessage);
     }
-    
+
     protected void bindConfigurationService(ConfigurationService configIn) {
         configurationService = configIn;
     }

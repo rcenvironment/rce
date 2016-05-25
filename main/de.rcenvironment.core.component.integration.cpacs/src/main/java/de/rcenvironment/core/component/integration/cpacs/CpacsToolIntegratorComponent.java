@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
@@ -38,8 +39,11 @@ import de.rcenvironment.core.component.xml.api.EndpointXMLService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
+import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.datamodel.types.api.NotAValueTD.Cause;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -451,11 +455,34 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             }
         }
     }
-
+    
     @Override
     protected void afterPostScriptExecution(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
+        
+        // if not-a-value was sent to the CPACS output, send not-a-value to all of the dynamic outputs and skip output mapping as no more
+        // values must be sent to the CPACS output
+        Set<String> outputsWithNotAValue = getOutputsWithNotAValueWritten();
+        if (outputsWithNotAValue.contains(getCpacsOutputName())) {
+            writeNotAValueToDynamicOutputs(outputsWithNotAValue);
+            componentLog.componentInfo("not-a-value was sent to the output '%s' to which the resulting CPACS file is intended to "
+                + "be written to; thus, output mapping is skipped, the resulting CPACS file is not sent and not-a-value is "
+                + "sent to all of the dynamic outputs (if existent) which would extract some value from the resulting CPACS file");
+            return;
+        }
+        
         try {
+            Boolean outputFileExists = new File(getToolOutput()).exists();
+            componentLog.componentInfo(StringUtils.format(STRING_TOOL_OUTPUT_FILE_EXISTS, getToolOutput(),
+                outputFileExists));
+
+            if (!outputFileExists) {
+                throw new ComponentException(
+                    StringUtils.format(
+                        "Failed to perform output mapping. Tool output file is missing after post script execution: %s",
+                        getToolOutput()));
+            }
+
             if (!isAlwaysRun()) {
                 if (needsToRun) {
                     if (tmpOutputFile != null && tmpOutputFile.exists()) {
@@ -467,30 +494,22 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     FileUtils.copyFile(tmpOutputFile, new File(getToolOutput()));
                 }
             }
+
             String cpacsInitial = inputNamesToLocalFile.get(getCpacsInitialEndpointName());
-            if (new File(getToolOutput()).exists()) {
-                componentLog.componentInfo(StringUtils.format(STRING_TOOL_OUTPUT_FILE_EXISTS, getToolOutput(),
-                    new File(getToolOutput()).exists()));
-                performOutputMapping(cpacsInitial);
-            }
+            performOutputMapping(cpacsInitial);
             dynamicEndpointMapper.updateOutputsFromXML(new File(getCpacsResult()), componentContext);
             File resultFile = new File(getCpacsResult());
             FileReferenceTD outgoingCPACSFileReference =
                 datamanagementService.createFileReferenceTDFromLocalFile(componentContext, resultFile,
                     componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_RESULT_FILENAME));
             try {
-                componentContext.writeOutput(
-                    componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_OUTGOING_ENDPOINTNAME),
-                    outgoingCPACSFileReference);
+                componentContext.writeOutput(getCpacsOutputName(), outgoingCPACSFileReference);
             } catch (NullPointerException e) {
                 throw new ComponentException(StringUtils.format(
-                    "Failed to write output to CPACS output; output '%s' is not configured", 
-                    componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_OUTGOING_ENDPOINTNAME)), e);
+                    "Failed to write output to CPACS output; output '%s' is not configured", getCpacsOutputName()), e);
             }
             if (getHistoryDataItem() != null) {
-                getHistoryDataItem().addOutput(
-                    componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_OUTGOING_ENDPOINTNAME),
-                    outgoingCPACSFileReference);
+                getHistoryDataItem().addOutput(getCpacsOutputName(), outgoingCPACSFileReference);
             }
         } catch (DataTypeException e) {
             throw new ComponentException("Failed to extract dynamic output values from CPACS", e);
@@ -498,6 +517,15 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             throw new ComponentException("Failed to create result CPACS file", e);
         }
 
+    }
+    
+    private void writeNotAValueToDynamicOutputs(Set<String> outputsWithNotAValue) {
+        TypedDatumFactory typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
+        for (String outputName : componentContext.getOutputs()) {
+            if (componentContext.isDynamicOutput(outputName) && !outputsWithNotAValue.contains(outputName)) {
+                componentContext.writeOutput(outputName, typedDatumFactory.createNotAValue(Cause.InvalidInputs));
+            }
+        }
     }
 
     private void performOutputMapping(String cpacsInitial) throws ComponentException {
@@ -597,6 +625,10 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     protected String getCpacsResult() {
         return outputDirectory + File.separator
             + componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_RESULT_FILENAME);
+    }
+    
+    protected String getCpacsOutputName() {
+        return componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_OUTGOING_ENDPOINTNAME);
     }
 
     protected String getOutputMapping() {

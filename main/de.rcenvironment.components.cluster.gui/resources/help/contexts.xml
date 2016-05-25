@@ -1,6 +1,0 @@
-<contexts>
-	<context id="cluster" title="Cluster Component Help">
-		<description>The Cluster Component is used to submit a job to a cluster queuing system within a workflow.</description>
-		<topic href="resources/help/html/usage.xhtml" label="Cluster Component Usage"></topic>
-	</context>
-</contexts>

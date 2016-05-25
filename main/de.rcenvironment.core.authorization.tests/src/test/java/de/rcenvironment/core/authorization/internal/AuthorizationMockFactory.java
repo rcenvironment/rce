@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,24 +34,24 @@ public final class AuthorizationMockFactory {
      * The bundle context mock.
      */
     private static BundleContext myBundleContextMock = null;
-    
+
     /**
      * 
      * Constructor.
      * 
      */
-    private AuthorizationMockFactory() {
-    }
-    
+    private AuthorizationMockFactory() {}
+
     /**
      * Getter.
+     * 
      * @return The configuration service mock object.
      */
     public static ConfigurationService getConfigurationService() {
 
         AuthorizationConfiguration authorizationConfiguration = new AuthorizationConfiguration();
         authorizationConfiguration.setStore(AuthorizationStoreDummy.XML_STORE);
-        
+
         ConfigurationService configurationMock = EasyMock.createNiceMock(ConfigurationService.class);
         EasyMock.expect(configurationMock.getConfiguration(AuthorizationStoreDummy.BUNDLE_SYMBOLIC_NAME,
             AuthorizationConfiguration.class)).andReturn(authorizationConfiguration).anyTimes();
@@ -59,14 +59,13 @@ public final class AuthorizationMockFactory {
 
         return configurationMock;
     }
-    
+
     /**
      * 
      * Getter.
      * 
      * @return the bundle context mock object.
-     * @throws InvalidSyntaxException
-     *             if an error occurs.
+     * @throws InvalidSyntaxException if an error occurs.
      */
     public static BundleContext getBundleContextMock() throws InvalidSyntaxException {
         if (myBundleContextMock == null) {
@@ -74,18 +73,23 @@ public final class AuthorizationMockFactory {
         }
         return myBundleContextMock;
     }
-    
+
+    /**
+     * Dummy interface to ensure type safety for mocking.
+     */
+    private interface AuthorizationStoreDummyServiceReference extends ServiceReference<AuthorizationStoreDummy> {
+    }
+
     /**
      * 
      * Creates a bundle context mock.
      * 
      * @param bundleSymbolicName The symbolic name of the related bundle.
      * @return the bundle context mock.
-     * @throws InvalidSyntaxException
-     *             if an error occurs.
+     * @throws InvalidSyntaxException if an error occurs.
      */
     private static BundleContext createBundleContextMock(String bundleSymbolicName) throws InvalidSyntaxException {
-        
+
         Bundle bundle = EasyMock.createNiceMock(Bundle.class);
         EasyMock.expect(bundle.getSymbolicName()).andReturn(bundleSymbolicName).anyTimes();
         EasyMock.replay(bundle);
@@ -95,23 +99,23 @@ public final class AuthorizationMockFactory {
 
         Bundle serviceCallProtocolBundleMock = createXMLAuthorizazionBundleMock();
         EasyMock.expect(bundleContext.getBundles()).andReturn(new Bundle[] { serviceCallProtocolBundleMock, bundle })
-                .anyTimes();
-        
+            .anyTimes();
+
         // RMI service call request sender factory reference
-        ServiceReference storeReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<AuthorizationStoreDummy> storeReferenceMock =
+            EasyMock.createNiceMock(AuthorizationStoreDummyServiceReference.class);
         // RMI service call request sender factory service
         String serviceProtocolFilter = "(" + AuthorizationStore.STORE + EQUALS_SIGN + AuthorizationStoreDummy.XML_STORE + ")";
         EasyMock.expect(bundleContext.getAllServiceReferences(AuthorizationStore.class.getName(), serviceProtocolFilter))
-                .andReturn(new ServiceReference[] { storeReferenceMock }).anyTimes();
-        EasyMock.expect(bundleContext.getService(storeReferenceMock))
-                .andReturn(new AuthorizationStoreDummy()).anyTimes();
-        
-        
+            .andReturn(new ServiceReference[] { storeReferenceMock }).anyTimes();
+
+        EasyMock.expect(bundleContext.getService(storeReferenceMock)).andReturn(new AuthorizationStoreDummy()).anyTimes();
+
         EasyMock.replay(bundleContext);
-        
+
         return bundleContext;
     }
-    
+
     /**
      * 
      * Creates a service call protocol bundle mock.
@@ -124,5 +128,5 @@ public final class AuthorizationMockFactory {
         EasyMock.replay(protocolBundleMock);
         return protocolBundleMock;
     }
-    
+
 }

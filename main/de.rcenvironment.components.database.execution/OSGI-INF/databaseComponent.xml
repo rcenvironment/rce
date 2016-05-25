@@ -20,8 +20,8 @@
 	
 	<property name="rce.component.version" type="String" value="1.0"/>
 	
-  	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.database.common/resources/database_16.png"/>
-  	<property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.database.common/resources/database_32.png"/>
+  	<property name="rce.component.icon-16" type="String" value="database_16.png"/>
+  	<property name="rce.component.icon-32" type="String" value="database_32.png"/>
     
     <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
     

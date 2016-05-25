@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -51,7 +51,6 @@ public class TableBehaviour extends AbstractUpdateBehavior {
 
     @Override
     public void updateInstanceColumn(ViewerCell cell) {
-
         final WorkflowNode workflowNode = (WorkflowNode) cell
             .getElement();
         TableItem item = (TableItem) cell.getItem();
@@ -65,6 +64,7 @@ public class TableBehaviour extends AbstractUpdateBehavior {
 
         combo.addListener(SWT.Resize, new Listener() {
 
+            @Override
             public void handleEvent(final Event argEvent) {
                 combo.setText(combo.getText());
             }
@@ -99,20 +99,11 @@ public class TableBehaviour extends AbstractUpdateBehavior {
 
         if (selectionIndex != null && !(selectionIndex > combo.getItemCount())) {
             combo.select(selectionIndex);
-
         } else {
-            // default selection is the first available element
             combo.select(0);
         }
 
-        if (instanceProvider.getNodeValueWithError().containsKey(workflowNode)) {
-            combo.select(instanceProvider.getNodeValueWithError().get(workflowNode));
-        }
         instanceProvider.handleSelection(combo, workflowNode);
-
-        if (combo.getItemCount() == 1) {
-            combo.setEnabled(false);
-        }
 
         combo.addSelectionListener(new SelectionAdapter() {
 
@@ -144,7 +135,7 @@ public class TableBehaviour extends AbstractUpdateBehavior {
         checkProvider.clearButtonList();
         instanceProvider.clearComboList();
 
-        // the table is sorted by names.
+        // the table is sorted by instances.
         if (currentlyUsedSortingColumn == 2) {
             if (tableViewer.getTable().getSortDirection() == SWT.UP) {
                 tableViewer.setContentProvider(new WorkflowDescriptionContentProvider(SWT.UP, TableSortSelectionListener.COLUMN_INSTANCE));
@@ -153,7 +144,7 @@ public class TableBehaviour extends AbstractUpdateBehavior {
                 tableViewer
                     .setContentProvider(new WorkflowDescriptionContentProvider(SWT.DOWN, TableSortSelectionListener.COLUMN_INSTANCE));
             }
-            // it is sorted by instances.
+            // it is sorted by names.
         } else {
 
             if (tableViewer.getTable().getSortDirection() == SWT.UP) {
@@ -179,7 +170,6 @@ public class TableBehaviour extends AbstractUpdateBehavior {
 
             }
         }
-
         tableViewer.getTable().setRedraw(true);
         tableViewer.getTable().redraw();
         tableViewer.getTable().update();

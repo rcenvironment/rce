@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,17 +12,18 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.map.ObjectMapper;
+
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
-
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.map.ObjectMapper;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * A class for writing the outputLocation information into the component's configuration.
@@ -51,7 +52,7 @@ public class EditOutputLocationsCommand extends WorkflowNodeCommand {
         super();
         this.out = out;
         this.refreshable = refreshable;
-        mapper = new ObjectMapper();
+        mapper = JsonUtils.getDefaultObjectMapper();
         mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
 

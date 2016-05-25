@@ -1,6 +1,6 @@
 {
   "identifier" : "7e2e30c3-832d-4443-9f26-c4f09a82b90c",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "Script_as_controller_2013-08-21_12:32:09",
   "nodes" : [ {
     "identifier" : "54ae0236-1b36-4e05-b797-3627225eb4a3",
@@ -8,7 +8,7 @@
     "location" : "254:18",
     "component" : {
       "identifier" : "de.rcenvironment.components.inputprovider.execution.InputProviderComponent_Input Provider",
-      "version" : "3.0"
+      "version" : "3.2"
     },
     "dynamicOutputs" : [ {
       "identifier" : "d5ffdeb1-ad3e-4420-9ad9-34e1aca271b6",
@@ -25,7 +25,7 @@
     "location" : "393:269",
     "component" : {
       "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
-      "version" : "3.3"
+      "version" : "3.4"
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
@@ -39,7 +39,8 @@
       "epIdentifier" : "default",
       "datatype" : "Integer",
       "metadata" : {
-        "usage" : "required"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ],
     "dynamicOutputs" : [ {
@@ -54,7 +55,7 @@
     "location" : "532:133",
     "component" : {
       "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
-      "version" : "3.3"
+      "version" : "3.4"
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
@@ -68,7 +69,8 @@
       "epIdentifier" : "default",
       "datatype" : "Integer",
       "metadata" : {
-        "usage" : "required"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ],
     "dynamicOutputs" : [ {
@@ -79,29 +81,30 @@
     } ]
   }, {
     "identifier" : "e6278492-f352-4d5a-b854-511d28c3f70e",
-    "name" : "Merger",
+    "name" : "Joiner",
     "location" : "254:133",
     "component" : {
       "identifier" : "de.rcenvironment.components.merger.execution.MergerComponent_Merger",
-      "version" : "3.1"
+      "version" : "3.3"
     },
     "configuration" : {
-      "Merged" : "2"
+      "inputCount" : "2",
+      "datatype" : "Integer"
     },
     "dynamicInputs" : [ {
       "identifier" : "04d1cbce-41a0-47dd-ba48-b382be7a7927",
       "name" : "Input 001",
-      "epIdentifier" : "toMerge",
+      "epIdentifier" : "toJoin",
       "datatype" : "Integer"
     }, {
       "identifier" : "7c2f1933-df01-4eab-918c-2a01a354812e",
       "name" : "Input 002",
-      "epIdentifier" : "toMerge",
+      "epIdentifier" : "toJoin",
       "datatype" : "Integer"
     } ],
     "staticOutputs" : [ {
       "identifier" : "3948191e-789e-497a-bcd6-54804c7dec89",
-      "name" : "Merged",
+      "name" : "Joined",
       "epIdentifier" : null,
       "datatype" : "Integer"
     } ]

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,6 +9,7 @@
 package de.rcenvironment.components.optimizer.common;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Service used to announce and receive values used for parameter study purposes.
@@ -32,7 +33,8 @@ public interface OptimizerResultService {
      * @param identifier the unique identifier
      * @param platform the platform to receive values from
      * @return the created {@link OptimizerReceiver}
+     * @throws RemoteOperationException 
      */
-    OptimizerReceiver createReceiver(final String identifier, final NodeIdentifier platform);
+    OptimizerReceiver createReceiver(final String identifier, final NodeIdentifier platform) throws RemoteOperationException;
 
 }

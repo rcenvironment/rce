@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,20 +10,21 @@ package de.rcenvironment.core.component.workflow.model.api;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.ParseException;
 import java.util.ArrayList;
-
-import junit.framework.Assert;
 
 import org.easymock.EasyMock;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.testutils.ComponentDescriptionFactoryServiceDefaultStub;
+import de.rcenvironment.core.component.testutils.DistributedComponentKnowledgeServiceDefaultStub;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
+import junit.framework.Assert;
 
 /**
  * Utils class for the workflow tests.
@@ -79,11 +80,12 @@ public final class WorkflowTestUtils {
     public static WorkflowDescription createWorkflowDescription() {
         WorkflowDescription wd = null;
         DummyWorkflowDescriptionPersistenceHandler dwph = new DummyWorkflowDescriptionPersistenceHandler();
-        dwph.bindDistributedComponentKnowledgeService(null);
-        dwph.bindPlatformService(null);
+        dwph.bindDistributedComponentKnowledgeService(new DistributedComponentKnowledgeServiceDefaultStub());
+        dwph.bindComponentDescriptionFactoryService(new ComponentDescriptionFactoryServiceDefaultStub());
+        dwph.bindPlatformService(new PlatformServiceDefaultStub());
         try (InputStream is = WorkflowDescription.class.getResourceAsStream("/workflows_unit_test/DummyUnitTest.wf")) {
             wd = dwph.readWorkflowDescriptionFromStream(is);
-        } catch (IOException | ParseException | WorkflowFileException e) {
+        } catch (IOException | WorkflowFileException e) {
             Assert.fail();
         }
         return wd;

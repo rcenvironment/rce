@@ -1,0 +1,114 @@
+{
+  "identifier" : "a5018ce0-bfdd-4704-a1a7-32d8a3a739ad",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "d31c12aa-faab-4ed1-89ae-08eaa8c9a9af",
+    "name" : "Joiner",
+    "location" : "385:199",
+    "active" : "true",
+    "platform" : "bf06d53798424ec3ac48171b6cfdc31b",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.2",
+      "name" : "Joiner"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "fb133814-405b-46f3-b627-0b2eaaab71da",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "8f8795ae-49db-4543-928b-ec4ad1248858",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "c4133339-da1d-4aee-bdb1-78b6255c6ddb",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "90bd82b2-e654-47a2-bec4-9ef0fcbed237",
+    "name" : "Joiner (1)",
+    "location" : "479:187",
+    "active" : "true",
+    "platform" : "bf06d53798424ec3ac48171b6cfdc31b",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.2",
+      "name" : "Joiner"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "fb438e90-d8eb-4bb2-8502-2f375c636c1a",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "20edc6cc-6733-4fb1-8dc5-889f1ea3c9d8",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "bb29cd98-69ab-4234-ad14-48d0288b4636",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "b11692d5-632b-42eb-893b-98f6bb95b18e",
+    "name" : "Joiner (2)",
+    "location" : "512:280",
+    "active" : "true",
+    "platform" : "bf06d53798424ec3ac48171b6cfdc31b",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.2",
+      "name" : "Joiner"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "aa47f3f2-bed7-49c9-8098-fb8e637bbeb4",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "842c2cde-e167-479f-a193-c8ef8bed5e69",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "21731d16-780d-4520-b174-f9e9ee499d34",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "datatype" : "Float"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "d31c12aa-faab-4ed1-89ae-08eaa8c9a9af",
+    "output" : "c4133339-da1d-4aee-bdb1-78b6255c6ddb",
+    "target" : "90bd82b2-e654-47a2-bec4-9ef0fcbed237",
+    "input" : "fb438e90-d8eb-4bb2-8502-2f375c636c1a"
+  }, {
+    "source" : "90bd82b2-e654-47a2-bec4-9ef0fcbed237",
+    "output" : "bb29cd98-69ab-4234-ad14-48d0288b4636",
+    "target" : "b11692d5-632b-42eb-893b-98f6bb95b18e",
+    "input" : "aa47f3f2-bed7-49c9-8098-fb8e637bbeb4"
+  }, {
+    "source" : "b11692d5-632b-42eb-893b-98f6bb95b18e",
+    "output" : "21731d16-780d-4520-b174-f9e9ee499d34",
+    "target" : "d31c12aa-faab-4ed1-89ae-08eaa8c9a9af",
+    "input" : "fb133814-405b-46f3-b627-0b2eaaab71da"
+  } ],
+  "bendpoints" : [ {
+    "source" : "d31c12aa-faab-4ed1-89ae-08eaa8c9a9af",
+    "target" : "90bd82b2-e654-47a2-bec4-9ef0fcbed237",
+    "coordinates" : "352:41"
+  }, {
+    "source" : "90bd82b2-e654-47a2-bec4-9ef0fcbed237",
+    "target" : "b11692d5-632b-42eb-893b-98f6bb95b18e",
+    "coordinates" : "381:360"
+  } ]
+}

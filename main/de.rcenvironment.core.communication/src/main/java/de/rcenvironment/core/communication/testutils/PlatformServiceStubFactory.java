@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,7 +33,7 @@ public abstract class PlatformServiceStubFactory {
 
         private Set<NodeIdentifier> remotePlatforms;
 
-        public HostAndNumberStub(String host, int platformNumber, Collection<NodeIdentifier> remotePlatforms) {
+        HostAndNumberStub(String host, int platformNumber, Collection<NodeIdentifier> remotePlatforms) {
             this.nodeId = NodeIdentifierFactory.fromHostAndNumber(host, platformNumber);
             this.remotePlatforms = new HashSet<NodeIdentifier>(remotePlatforms);
         }

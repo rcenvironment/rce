@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,7 +12,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
-import java.text.MessageFormat;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -32,6 +31,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
 import de.rcenvironment.core.gui.utils.common.EditorsHelper;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
@@ -80,7 +80,7 @@ public final class DataManagementWorkbenchUtils {
             try {
                 dataManagementService.copyReferenceToLocalFile(dataReferenceId, file, rceNodeIdentifier);
             } catch (CommunicationException e) {
-                throw new RuntimeException(MessageFormat.format("Failed to copy data reference from remote node @{0} to local file: ",
+                throw new RuntimeException(StringUtils.format("Failed to copy data reference from remote node @%s to local file: ",
                     rceNodeIdentifier)
                     + e.getMessage(), e);
             }
@@ -141,8 +141,8 @@ public final class DataManagementWorkbenchUtils {
                     } catch (IOException e) {
                         log.error("Failed to copy datamanagement reference to local file.", e);
                     } catch (CommunicationException e) {
-                        throw new RuntimeException(MessageFormat.format(
-                            "Failed to copy data reference from remote node @{0} to local file: ",
+                        throw new RuntimeException(StringUtils.format(
+                            "Failed to copy data reference from remote node @%s to local file: ",
                             rceNodeIdentifier)
                             + e.getMessage(), e);
                     }

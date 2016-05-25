@@ -19,8 +19,13 @@
 <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
 <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
 <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
-<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.evaluationmemory.common/resources/evaluation_memory_16.png"/>
-<property name="rce.component.icon-24" type="String" value="platform:/plugin/de.rcenvironment.components.evaluationmemory.common/resources/evaluation_memory_24.png"/>
+
+<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.evaluationmemory.common" />
+<property name="rce.component.icon-16" type="String" value="evaluation_memory_16.png"/>
+<property name="rce.component.icon-24" type="String" value="evaluation_memory_24.png"/>
+
 <property name="rce.component.size" type="String" value="small"/>
 <property name="rce.component.shape" type="String" value="square"/>
+
+<property name="rce.component.canHandleNotAValueDataTypes" type="String" value="true"/>
 </scr:component>

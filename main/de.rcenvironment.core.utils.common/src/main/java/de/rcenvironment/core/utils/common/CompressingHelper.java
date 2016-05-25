@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,11 +14,16 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Arrays;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 
@@ -59,13 +64,13 @@ public final class CompressingHelper {
         Arrays.sort(list);
         for (File file : list) {
             if (file.isDirectory()) {
-                compressDirectoryToZipfile(rootDir, sourceDir + "/" + file.getName() + File.separator, out);
+                compressDirectoryToZipfile(rootDir, new File(sourceDir, file.getName()).getAbsolutePath(), out);
             } else {
                 ZipEntry entry = new ZipEntry(sourceDir.replace(rootDir, "") + file.getName());
                 entry.setTime(0); // Set creation time to 0 to get the same hash value for same
                                   // content.
                 out.putNextEntry(entry);
-                FileInputStream in = new FileInputStream(sourceDir + "/" + file.getName());
+                FileInputStream in = new FileInputStream(new File(sourceDir, file.getName()));
                 IOUtils.copy(in, out);
                 IOUtils.closeQuietly(in);
             }
@@ -94,6 +99,47 @@ public final class CompressingHelper {
             fout.close();
         }
         zipFile.close();
+    }
+
+    /**
+     * Unzip a zip input stream to the destination folder.
+     * 
+     * @param is {@link InputStream} from a zip file
+     * @param destination direcotry to unzip to
+     * @throws FileNotFoundException wrong is.
+     * @throws IOException unzipping failed
+     * @throws ArchiveException unzipping failed
+     */
+    public static void unzip(InputStream is, File destination) throws FileNotFoundException, IOException, ArchiveException {
+        try (ArchiveInputStream ais = new ArchiveStreamFactory().createArchiveInputStream("zip", is)) {
+            ZipEntry entry = null;
+            while ((entry = (ZipArchiveEntry) ais.getNextEntry()) != null) {
+                if (entry.getName().endsWith("/")) {
+                    File dir = new File(destination, entry.getName());
+                    if (!dir.exists()) {
+                        dir.mkdirs();
+                    }
+                    continue;
+                }
+
+                File outFile = new File(destination, entry.getName());
+                if (outFile.isDirectory()) {
+                    continue;
+                }
+                if (outFile.exists()) {
+                    continue;
+                }
+                FileOutputStream out = new FileOutputStream(outFile);
+                final int byteBuffer = 1024;
+                byte[] buffer = new byte[byteBuffer];
+                int length = 0;
+                while ((length = ais.read(buffer)) > 0) {
+                    out.write(buffer, 0, length);
+                    out.flush();
+                }
+                out.close();
+            }
+        }
     }
 
 }

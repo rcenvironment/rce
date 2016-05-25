@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -74,7 +74,7 @@ public enum ComponentState {
     TEARING_DOWN("Tearing down"),
     
     /** Disposing. */
-    DISPOSING("Dispoing"),
+    DISPOSING("Disposing"),
     
     /** Disposed. */
     DISPOSED("Disposed"),
@@ -84,7 +84,7 @@ public enum ComponentState {
     
     private String displayName;
     
-    private ComponentState(String displayName) {
+    ComponentState(String displayName) {
         this.displayName = displayName;
     }
     

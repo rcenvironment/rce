@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,15 +20,15 @@ class RCEBuildPreprocessor {
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
 			'platform': 'snapshots/trunk',
-			'dakotaBinaries': 'snapshots/trunk',
-			'tiglViewerBinaries': 'snapshots/trunk',
+			'dakotaBinaries': 'releases/6.0.0',
+			'tiglViewerBinaries': 'releases/7.0.0',
 			'intermediate': 'snapshots/trunk'
 		],
 		'rc_or_release': [
-			'platform': 'releases/7.0.0',
+			'platform': 'releases/7.1.0',
 			'dakotaBinaries': 'releases/6.0.0',
 			'tiglViewerBinaries': 'releases/7.0.0',
-			'intermediate': 'releases/6.0.0'
+			'intermediate': 'releases/7.1.0'
 		]
 	]
 	
@@ -98,6 +98,10 @@ class RCEBuildPreprocessor {
 				addRepository(setup, 'foundation', 'platform')
 				break;
 			case 'intermediateRepo':
+				addRepository(setup, 'foundation', 'platform')
+				break;
+			case 'helpResourcesOnly':
+				setup.setGoals('clean generate-resources process-resources')
 				addRepository(setup, 'foundation', 'platform')
 				break;
 			case 'product.usingIntermediateRepo':

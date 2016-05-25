@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,13 +15,10 @@ import java.util.List;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.jface.viewers.TableViewer;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
-import org.eclipse.swt.widgets.Display;
 
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.log.SerializableLogEntry;
 
 /**
@@ -45,7 +42,6 @@ public class CopyToClipboardListener implements SelectionListener {
     @Override
     public void widgetSelected(SelectionEvent e) {
         
-        Clipboard cb = new Clipboard(Display.getDefault());
         ISelection selection = myTableViewer.getSelection();
         List<SerializableLogEntry> logEntries = new ArrayList<SerializableLogEntry>();
         if (selection != null && selection instanceof IStructuredSelection) {
@@ -60,9 +56,8 @@ public class CopyToClipboardListener implements SelectionListener {
         for (SerializableLogEntry logEntry : logEntries) {
             sb.append(logEntry.toString() + System.getProperty("line.separator")); //$NON-NLS-1$
         }
-        TextTransfer textTransfer = TextTransfer.getInstance();
-        cb.setContents(new Object[] { sb.toString() },
-            new Transfer[] { textTransfer });
+        
+        ClipboardHelper.setContent(sb.toString());
     }
 
 }

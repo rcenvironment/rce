@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,8 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
+import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -47,7 +49,30 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
 
     private int convergenceChecks = 0;
 
+    private NotConvergedBehavior notConvergedBehavior;
+
+    /**
+     * @author Sascha Zur on behalf of Caslav Ilic
+     */
+    private enum NotConvergedBehavior {
+        Ignore,
+        Fail,
+        NotAValue;
+    }
+
     private Boolean[] isConverged;
+
+    private Map<String, Boolean[]> isSingleConverged;
+
+    private NotConvergedBehavior getNotConvergedBehavior() {
+        if (Boolean.valueOf(componentContext.getConfigurationValue(ConvergerComponentConstants.NOT_CONVERGED_FAIL))) {
+            return NotConvergedBehavior.Fail;
+        } else if (Boolean.valueOf(componentContext.getConfigurationValue(ConvergerComponentConstants.NOT_CONVERGED_NOT_A_VALUE))) {
+            return NotConvergedBehavior.NotAValue;
+        } else {
+            return NotConvergedBehavior.Ignore;
+        }
+    }
 
     @Override
     public void startNestedComponentSpecific() throws ComponentException {
@@ -71,6 +96,16 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
         isConverged = new Boolean[2];
         isConverged[0] = false;
         isConverged[1] = false;
+
+        isSingleConverged = new HashMap<>();
+        for (String inputName : componentContext.getInputs()) {
+            Boolean[] isInputConverged = new Boolean[2];
+            isInputConverged[0] = false;
+            isInputConverged[1] = false;
+            isSingleConverged.put(inputName, isInputConverged);
+        }
+
+        notConvergedBehavior = getNotConvergedBehavior();
 
         if (!hasStartValueInputs()) {
             sendValuesNestedComponentSpecific();
@@ -128,41 +163,56 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
         return maxConvergenceChecks != NO_MAX_CONVERGENCE_CHECKS && convergenceChecks >= maxConvergenceChecks;
     }
 
-    private Boolean[] isConverged() {
+    private Map<String, Boolean[]> isSingleConverged() {
 
         boolean convergenceCheckSkipped = false;
 
-        boolean isConvergedAbs = true;
-        boolean isConvergedRel = true;
+        Map<String, Boolean[]> isInputConverged = new HashMap<>();
         for (String inputName : valueTuples.keySet()) {
             CircularFifoQueue<Double> values = valueTuples.get(inputName);
             int valueCount = values.size();
             int[] range = getValueTupleRange();
+            boolean isCurrentConvergedAbs;
+            boolean isCurrentConvergedRel;
             if (valueCount >= valueTuplesToConsider) {
                 double maxValue = Collections.max(values);
                 double minValue = Collections.min(values);
-                boolean isCurrentConvergedAbs = (Math.abs(maxValue - minValue) <= epsA);
-                boolean isCurrentConvergedRel = (Math.abs((maxValue - minValue) / maxValue) <= epsR);
-                if (!isCurrentConvergedAbs) {
-                    isConvergedAbs = false;
-                }
-                if (!isCurrentConvergedRel) {
-                    isConvergedRel = false;
-                }
+                isCurrentConvergedAbs = (Math.abs(maxValue - minValue) <= epsA);
+                isCurrentConvergedRel = (Math.abs((maxValue - minValue) / maxValue) <= epsR);
                 componentLog.componentInfo(StringUtils.format("%s [%d->%d] -> min: %s; max: %s; conv abs: %s; "
                     + "conv rel: %s; #conv check: %d", inputName, range[0], range[1],
                     minValue, maxValue, isCurrentConvergedAbs, isCurrentConvergedRel, convergenceChecks + 1));
             } else {
-                isConvergedAbs = false;
-                isConvergedRel = false;
+                isCurrentConvergedAbs = false;
+                isCurrentConvergedRel = false;
                 convergenceCheckSkipped = true;
                 componentLog.componentInfo(
                     StringUtils.format("%s [%d->%d] -> skipped convergence check - not enough values yet (current: %s, required: %s)",
                         inputName, range[0], range[1], valueCount, valueTuplesToConsider));
             }
+            Boolean[] isThisInputConverged = new Boolean[2];
+            isThisInputConverged[0] = isCurrentConvergedAbs;
+            isThisInputConverged[1] = isCurrentConvergedRel;
+            isInputConverged.put(inputName, isThisInputConverged);
         }
         if (!convergenceCheckSkipped) {
             convergenceChecks++;
+        }
+        return isInputConverged;
+    }
+
+    private Boolean[] isConverged(Map<String, Boolean[]> isInputConverged) {
+
+        boolean isConvergedAbs = true;
+        boolean isConvergedRel = true;
+        for (String inputName : valueTuples.keySet()) {
+            Boolean[] isThisInputConverged = isInputConverged.get(inputName);
+            if (!isThisInputConverged[0]) {
+                isConvergedAbs = false;
+            }
+            if (!isThisInputConverged[1]) {
+                isConvergedRel = false;
+            }
         }
         return new Boolean[] { isConvergedAbs, isConvergedRel };
     }
@@ -187,6 +237,8 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
                         .get(valueTuples.get(inputName).size() - 1);
                     writeOutput(inputName, typedDatumFactory.createInteger((long) value));
                 }
+                writeOutput(inputName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX, typedDatumFactory.createBoolean(
+                    isSingleConverged.get(inputName)[0] || isSingleConverged.get(inputName)[1]));
             }
         }
     }
@@ -202,10 +254,17 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
     }
 
     private void sendConvergedValues() {
-        writeOutput(ConvergerComponentConstants.CONVERGED, typedDatumFactory.createBoolean(
-            isConverged[0] | isConverged[1]));
-        writeOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, typedDatumFactory.createBoolean(isConverged[0]));
-        writeOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, typedDatumFactory.createBoolean(isConverged[1]));
+        if (notConvergedBehavior == NotConvergedBehavior.NotAValue && areMaxConvergenceChecksReached()) {
+            TypedDatumFactory factory = componentContext.getService(TypedDatumService.class).getFactory();
+            componentContext.writeOutput(ConvergerComponentConstants.CONVERGED, factory.createNotAValue());
+            componentContext.writeOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, factory.createNotAValue());
+            componentContext.writeOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, factory.createNotAValue());
+        } else {
+            writeOutput(ConvergerComponentConstants.CONVERGED, typedDatumFactory.createBoolean(
+                isConverged[0] | isConverged[1]));
+            writeOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, typedDatumFactory.createBoolean(isConverged[0]));
+            writeOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, typedDatumFactory.createBoolean(isConverged[1]));
+        }
     }
 
     @Override
@@ -235,23 +294,36 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
     protected void processInputsNestedComponentSpecific() {
         addValuesToLastIterationsValues(
             componentContext.getInputsWithDatum().iterator().next().endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX));
-        isConverged = isConverged();
+        isSingleConverged = isSingleConverged();
+        isConverged = isConverged(isSingleConverged);
         valueTuplesProcessed++;
     }
 
     @Override
-    protected void sendFinalValues() {
+    protected void sendFinalValues() throws ComponentException {
+        boolean maxIterationsReached = areMaxConvergenceChecksReached();
+        TypedDatumFactory factory = componentContext.getService(TypedDatumService.class).getFactory();
+        if (notConvergedBehavior == NotConvergedBehavior.Fail && maxIterationsReached) {
+            throw new ComponentException("Maximum number of checks reached without convergence.");
+        } else if (notConvergedBehavior == NotConvergedBehavior.NotAValue && maxIterationsReached) {
+            componentContext.getLog().componentError(StringUtils.format("Maximum number of checks (%d) reached without convergence",
+                maxConvergenceChecks));
+        }
         for (String key : valueTuples.keySet()) {
             int valueCount = valueTuples.get(key).size();
             if (valueCount > 0) {
-
-                if (componentContext.getOutputDataType(key).equals(DataType.Float)) {
-                    writeOutput(key + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-                        typedDatumFactory.createFloat(valueTuples.get(key).get(valueCount - 1)));
-                } else if (componentContext.getOutputDataType(key).equals(DataType.Integer)) {
-                    long value = (long) ((double) valueTuples.get(key).get(valueCount - 1));
-                    writeOutput(key + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-                        typedDatumFactory.createInteger(value));
+                if (notConvergedBehavior == NotConvergedBehavior.NotAValue && maxIterationsReached) {
+                    componentContext.writeOutput(key + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
+                        factory.createNotAValue());
+                } else {
+                    if (componentContext.getOutputDataType(key).equals(DataType.Float)) {
+                        writeOutput(key + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
+                            typedDatumFactory.createFloat(valueTuples.get(key).get(valueCount - 1)));
+                    } else if (componentContext.getOutputDataType(key).equals(DataType.Integer)) {
+                        long value = (long) ((double) valueTuples.get(key).get(valueCount - 1));
+                        writeOutput(key + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
+                            typedDatumFactory.createInteger(value));
+                    }
                 }
             }
         }

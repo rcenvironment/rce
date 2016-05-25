@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -42,7 +42,7 @@ public interface EndpointDefinition extends EndpointGroupDefinition {
         
         private String displayName;
         
-        private InputDatumHandling(String displayName) {
+        InputDatumHandling(String displayName) {
             this.displayName = displayName;
         }
         
@@ -82,7 +82,7 @@ public interface EndpointDefinition extends EndpointGroupDefinition {
         
         private String displayName;
         
-        private InputExecutionContraint(String displayName) {
+        InputExecutionContraint(String displayName) {
             this.displayName = displayName;
         }
         

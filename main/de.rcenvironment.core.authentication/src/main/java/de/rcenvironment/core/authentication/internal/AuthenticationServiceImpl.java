@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -18,7 +18,6 @@ import java.security.cert.CertificateExpiredException;
 import java.security.cert.CertificateNotYetValidException;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
@@ -76,7 +75,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     /** LDAP protocol. */
     private static final String LDAP_PROTOCOL = "ldap://";
 
-    private static final String ASSERTIONS_PARAMETER_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ASSERTIONS_PARAMETER_NULL = "The parameter \"%s\" must not be null.";
 
     private static final String DSA = "DSA";
 
@@ -112,8 +111,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     public X509AuthenticationResult authenticate(X509Certificate certificate, OpenSSLKey encryptedKey, String password)
         throws AuthenticationException {
 
-        Assertions.isDefined(certificate, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, "certificate"));
-        Assertions.isDefined(encryptedKey, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, "key"));
+        Assertions.isDefined(certificate, StringUtils.format(ASSERTIONS_PARAMETER_NULL, "certificate"));
+        Assertions.isDefined(encryptedKey, StringUtils.format(ASSERTIONS_PARAMETER_NULL, "key"));
 
         X509AuthenticationResult result = null;
 

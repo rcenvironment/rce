@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,7 +16,9 @@ import java.util.Properties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPartListener;
@@ -172,6 +174,22 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         return results.toArray(new IWizardDescriptor[0]);
     }
 
+    @Override
+    public boolean preShutdown() {
+
+        try {
+            IWorkspace workspace = ResourcesPlugin.getWorkspace();
+            workspace.save(true, null);
+        } catch (CoreException e) {
+            // swallow
+            @SuppressWarnings("unused") int i = 0;
+        } catch (RuntimeException e) {
+            // swallow
+            @SuppressWarnings("unused") int i = 0;
+        }
+        return super.preShutdown();
+    }
+
     /**
      * PartListener for WorkbenchWindow making sure the ProjectExplorer shows resources on reopen properly.
      *
@@ -198,5 +216,5 @@ public class ApplicationWorkbenchAdvisor extends WorkbenchAdvisor {
         @Override
         public void partActivated(IWorkbenchPart workbenchPart) {}
     }
-    
+
 }

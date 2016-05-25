@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -62,13 +62,7 @@ public final class DatabaseComponentConstants {
     
     /** Identifier component. */
     public static final String DATABASE_CONNECTOR = "databaseConnector";    
-    
-    /** Identifier component. */
-    public static final String DATABASE_USER = "databaseUser";   
-    
-    /** Identifier component. */
-    public static final String DATABASE_PASSWORD = "databasePassword";
-    
+
     /** Configuration key constant. */
     public static final String CONFIG_KEY_AUTH_USER = "authUser";
     
@@ -105,7 +99,7 @@ public final class DatabaseComponentConstants {
          * 
          * @param title the title
          */
-        private DatabaseExecutionType(final String title) {
+        DatabaseExecutionType(final String title) {
             this.title = title;
         }
 

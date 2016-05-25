@@ -45,6 +45,21 @@
 				"host" : "127.0.0.1",
 				"port" : 31005,
 				"loginName" : "ra_demo"
+			},
+			"exampleSSHConnectionWithKeyfileAuthentication" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo",
+				"keyfileLocation" : "/path/to/private/key/file"
+			},
+			"exampleSSHConnectionWithKeyfileAuthenticationWithoutPassphrase" : {
+				"displayName" : "example",
+				"host" : "127.0.0.1",
+				"port" : 31005,
+				"loginName" : "ra_demo",
+				"keyfileLocation" : "/path/to/private/key/file",
+				"noPassphrase" : true
 			}
 		}
 	},
@@ -98,28 +113,38 @@
 		"port" : 31005,
 		"accounts" : {
 			"admin" : {
-				"password" : "changeme!_adm",
+				// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
 				"role" : "admin",
 				"enabled" : false
 			},
 			"developer" : {
-				"password" : "changeme!_dev",
+				// hashed form of the "changeme!_dev" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$AS2w2BiUDhFgvFdmFpTr3.RiBnsGQQl8u4pqD/UsOUOyYgr0RqlwS",
 				"role" : "developer",
 				"enabled" : false
 			},
 			"user" : {
-				"password" : "changeme!_user",
+				// hashed form of the "changeme!_user" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$SQ1f3ApE3sp5eDqEqO8S9uGmk04JsSYnj3GK.6RNf5E6WBElUcTIe",
 				"role" : "user",
 				"enabled" : false
 			},
 			"ra_demo" : {
-				"password" : "ra_demo",
+				// hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$5fNaK.L39IATICLMXoszyeeWc4xAy7Lgau2Xwz4Jw42oYsGVV1YGq",
 				"role" : "remote access",
 				"enabled" : false
 			},
 			"default" : {
-				"password" : "default",
+				// hashed form of the "default" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$A7qyN0mf93f2wY0OemfnfeGADs5p7jc2doJfAEPGPtLvB30ooToz6",
 				"role" : "guest"
+			},
+			"ra_demo_with_public_key" : {
+				"publicKey" : "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAs/ozsKK3OpYdKKnKWMoOCaTLD6nkOqUsVi4m1l0Y/TD3fQgB4W1RKhmi6gL73hyqSLFRdldBikTvghRuuoTBJeS+Q70Rf2NMLK4VdVogjXj3W6eKOxhwoGbbnQCX0SpyD7uPs+tZ2toKbzK5ip1pM0MHu1uwRZY2D2u+v49i8jFaG83GYgZzUEf5LBWnEg1mEsOilGBxuUoFCLhXVjlu8lIVAFRQyT/FiV+5JQbsf61AEJeGa/pVuXtDDgMRRgq4LHTY0+kH8hkilI+XDm7BV8DeKaZ+boCKk+VikZagL8UtSwdJywEr8dvgv9606j6itbdiPsw9vZFx1twgJI6lRw== imported-openssh-key",
+				"role" : "remote access",
+				"enabled" : false
 			}
 		},
 		"roles" : {

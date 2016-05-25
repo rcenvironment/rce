@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -268,6 +268,7 @@ public class ApplicationActionBarAdvisor extends ActionBarAdvisor {
         dynamicHelpAction = ActionFactory.DYNAMIC_HELP.create(window);
         register(dynamicHelpAction);
         aboutAction = ActionFactory.ABOUT.create(window);
+        aboutAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.RCE_LOGO_16));
         register(aboutAction);
         
         // Cool bar actions

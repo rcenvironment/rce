@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -31,16 +31,12 @@ import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.wizard.WizardDialog;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.SWTException;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
-import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
@@ -58,10 +54,12 @@ import de.rcenvironment.components.excel.common.SimpleExcelService;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.rce.components.excel.commons.ChannelValue;
 
 /**
@@ -475,7 +473,6 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
      * Copy selected rows to clipboard.
      */
     private void copyToClipboard() {
-        Clipboard cb = new Clipboard(Display.getDefault());
         ISelection selection = null;
         List<ChannelValue> channelValueList = new ArrayList<ChannelValue>();
 
@@ -511,12 +508,8 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
             sb.append(ExcelComponentConstants.TABLELINESEPARATOR);
         }
         sb.delete(sb.lastIndexOf(ExcelComponentConstants.TABLELINESEPARATOR), sb.length());
-        TextTransfer textTransfer = TextTransfer.getInstance();
-        try {
-            cb.setContents(new Object[] { sb.toString() }, new Transfer[] { textTransfer });
-        } catch (IllegalArgumentException e) {
-            LOGGER.info("Clipboard cannot be set. Nothing selected.");
-        }
+        
+        ClipboardHelper.setContent(sb.toString());
 
         // Deselect all rows.
         inputTableViewer.getTable().deselectAll();
@@ -537,7 +530,11 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
     @Override
     public void initializeData(ComponentExecutionInformation compInstanceDescr) {
         compExeInfo = compInstanceDescr;
-        model.subscribeToLocalToolRunPlatForm(compExeInfo.getExecutionIdentifier(), compExeInfo.getNodeId());
+        try {
+            model.subscribeToLocalToolRunPlatForm(compExeInfo.getExecutionIdentifier(), compExeInfo.getNodeId());
+        } catch (RemoteOperationException e) {
+            LogFactory.getLog(getClass()).error("Subscribing to remote notifiactions failed " + e);
+        }
 
     }
 

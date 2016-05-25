@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.datamanagement.internal;
 
-import java.text.MessageFormat;
 import java.util.Collection;
 
 import org.osgi.framework.BundleContext;
@@ -21,6 +20,7 @@ import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataReferenceService;
 import de.rcenvironment.core.datamanagement.RemotableMetaDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
@@ -66,7 +66,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
         try {
             return getRemoteMetaDataBackendService(platform).getDataReference(dataReferenceKey);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(MessageFormat.format("Failed to get data reference from remote node @{0}: ",
+            throw new CommunicationException(StringUtils.format("Failed to get data reference from remote node @%s: ",
                 platform)
                 + e.getMessage());
         }
@@ -89,7 +89,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
                     break;
                 }
             } catch (RemoteOperationException e) {
-                throw new CommunicationException(MessageFormat.format("Failed to get data reference from remote node @{0}: ",
+                throw new CommunicationException(StringUtils.format("Failed to get data reference from remote node @%s: ",
                     pi)
                     + e.getMessage());
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -143,7 +143,7 @@ public class OptimizerEndpointSelectionPane extends EndpointSelectionPane {
      */
     private class OptimizerEndpointEditDialog extends EndpointEditDialog {
 
-        public OptimizerEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
+        OptimizerEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
             ComponentInstanceProperties configuration,
             EndpointType direction, String id, boolean isStatic, EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
             super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);

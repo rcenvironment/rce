@@ -1,6 +1,0 @@
-<contexts>
-	<context id="switchcmp" title="Switch Component Help">
-		<description>The Switch component forwards an input value to one of two ouputs.</description>
-		<topic href="resources/help/html/usage.xhtml" label="Switch Component Usage"></topic>
-	</context>
-</contexts>

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -69,6 +69,7 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  * Implementation of {@link WorkflowExecutionService}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
@@ -77,9 +78,8 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionServiceImpl.class);
 
     /**
-     * The interval (in msec) between the "heartbeat" notifications sent for active workflows.
-     * Workflows are considered active when they are running or paused, or in the transitional
-     * states in-between.
+     * The interval (in msec) between the "heartbeat" notifications sent for active workflows. Workflows are considered active when they are
+     * running or paused, or in the transitional states in-between.
      */
     private static final int ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC = 6 * 1000;
 
@@ -118,38 +118,42 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             @Override
             @TaskDescription("Send heartbeat for active workflows")
             public void run() {
-                try {
-                    Set<WorkflowExecutionInformation> wfExeInfoSnapshot = new HashSet<>(getExecutionControllerService(
-                        platformService.getLocalNodeId()).getWorkflowExecutionInformations());
-                    for (WorkflowExecutionInformation wfExeInfo : wfExeInfoSnapshot) {
-                        String wfExeId = wfExeInfo.getExecutionIdentifier();
-                        WorkflowState state = getExecutionControllerService(platformService.getLocalNodeId()).getWorkflowState(wfExeId);
-                        switch (state) {
-                        case INIT:
-                        case PREPARING:
-                        case PREPARED:
-                        case STARTING:
-                        case RUNNING:
-                        case PAUSING:
-                        case PAUSED:
-                        case RESUMING:
-                        case CANCELING:
-                        case CANCELING_AFTER_FAILED:
-                            if (verboseLogging) {
-                                LOG.debug(StringUtils.format("Sending heartbeat notification for active workflow '%s' (%s)",
-                                    wfExeInfo.getInstanceName(), wfExeId));
-                            }
-                            notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeId, WorkflowState.IS_ALIVE.name());
-                            break;
-                        default:
-                            // do nothing
-                            break;
+                Set<WorkflowExecutionInformation> wfExeInfoSnapshot = getWorkflowExecutionInformation();
+                for (WorkflowExecutionInformation wfExeInfo : wfExeInfoSnapshot) {
+                    String wfExeId = wfExeInfo.getExecutionIdentifier();
+                    switch (wfExeInfo.getWorkflowState()) {
+                    case INIT:
+                    case PREPARING:
+                    case PREPARED:
+                    case STARTING:
+                    case RUNNING:
+                    case PAUSING:
+                    case PAUSED:
+                    case RESUMING:
+                    case CANCELING:
+                    case CANCELING_AFTER_FAILED:
+                        if (verboseLogging) {
+                            LOG.debug(StringUtils.format("Sending heartbeat notification for active workflow '%s' (%s)",
+                                wfExeInfo.getInstanceName(), wfExeId));
                         }
+                        notificationService.send(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeId, WorkflowState.IS_ALIVE.name());
+                        break;
+                    default:
+                        // do nothing
+                        break;
                     }
-                } catch (ExecutionControllerException | RemoteOperationException e) {
-                    throw new IllegalStateException("Failed to get local workflow execution information or workflow states: "
-                        + e.toString());
                 }
+            }
+            
+            private Set<WorkflowExecutionInformation> getWorkflowExecutionInformation() {
+                Set<WorkflowExecutionInformation> wfExeInfoSnapshot = new HashSet<>();
+                try {
+                    wfExeInfoSnapshot
+                        .addAll(getExecutionControllerService(platformService.getLocalNodeId()).getWorkflowExecutionInformations());
+                } catch (ExecutionControllerException | RemoteOperationException e) {
+                    LOG.error("Failed to fetch local workflow execution informations: " + e.getMessage());
+                }
+                return wfExeInfoSnapshot;
             }
         }, ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC);
     }
@@ -163,6 +167,13 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     @Override
     public WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback)
         throws WorkflowFileException {
+        // delegate
+        return loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, callback, false);
+    }
+
+    @Override
+    public WorkflowDescription loadWorkflowDescriptionFromFileConsideringUpdates(File wfFile, WorkflowDescriptionLoaderCallback callback,
+        boolean abortIfWorkflowUpdateRequired) throws WorkflowFileException {
 
         try {
             int wfVersion = readWorkflowVersionNumber(wfFile);
@@ -171,16 +182,24 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                     + StringUtils.format(". Its version (%d) is newer than the expected"
                         + " one (%d). Most likely reason: it was opened with a newer version of RCE before.",
                         wfVersion, WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER));
-                    
+
             }
-            
+
             try (InputStream fileInputStream = new FileInputStream(wfFile)) {
-                
+
                 PersistentWorkflowDescription persistentDescription = wfUpdateService.createPersistentWorkflowDescription(
                     IOUtils.toString(fileInputStream, WorkflowConstants.ENCODING_UTF8));
 
                 boolean updateRequired = wfUpdateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, false);
                 boolean nonSilentUpdateRequired = updateRequired;
+
+                if (updateRequired && abortIfWorkflowUpdateRequired) {
+                    throw new WorkflowFileException(
+                        "The workflow file "
+                            + wfFile.getAbsolutePath()
+                            + " would require an update before execution, but the 'fail on required update' flag has been set. "
+                            + "Typically, this means that it was generated from an internal template which should be updated.");
+                }
 
                 if (!nonSilentUpdateRequired) {
                     updateRequired = wfUpdateService.isUpdateForWorkflowDescriptionAvailable(persistentDescription, true);
@@ -210,7 +229,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath(), e);
         }
     }
-    
+
     private int readWorkflowVersionNumber(File wfFile) throws ParseException, IOException {
         try (InputStream fileInputStream = new FileInputStream(wfFile)) {
             return new WorkflowDescriptionPersistenceHandler().readWorkflowVersionNumber(fileInputStream);
@@ -242,7 +261,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                 }
             }
             return wd;
-        } catch (IOException | ParseException e) {
+        } catch (IOException | ParseException | RuntimeException e) {
             throw new WorkflowFileException(FAILED_TO_LOAD_WORKFLOW_FILE + wfFile.getAbsolutePath(), e);
         }
     }
@@ -250,12 +269,12 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     private void onWorkflowFileUpdated(File wfFile, boolean silentUpdate, String backupFilename,
         WorkflowDescriptionLoaderCallback callback) {
         if (silentUpdate) {
-            String message = StringUtils.format("Workflow file is updated (silent update): %s", wfFile.getAbsolutePath());
+            String message = StringUtils.format("'%s' is updated (silent) (full path: %s)", wfFile.getName(), wfFile.getAbsolutePath());
             LOG.debug(message);
             callback.onSilentWorkflowFileUpdated(message);
         } else {
-            String message = StringUtils.format("Workflow file is updated (non-silent update):"
-                + " %s. Backup file is generated: %s", wfFile.getAbsolutePath(), backupFilename);
+            String message = StringUtils.format("'%s' is updated (non-silent); backup file generated: %s (full path: %s)", wfFile.getName(),
+                backupFilename, wfFile.getAbsolutePath());
             LOG.debug(message);
             callback.onNonSilentWorkflowFileUpdated(message, backupFilename);
         }
@@ -272,7 +291,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     @Override
     public WorkflowDescriptionValidationResult validateWorkflowDescription(WorkflowDescription workflowDescription) {
         NodeIdentifier missingControllerNodeId = null;
-        Map<String, NodeIdentifier> missingComponentsNodeIds = null;
+        Map<String, NodeIdentifier> missingComponentsNodeIds = new HashMap<>();
 
         NodeIdentifier controllerNode = workflowDescription.getControllerNode();
         if (controllerNode == null) {
@@ -291,13 +310,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             }
             if (!ComponentUtils.hasComponent(compKnowledge.getAllInstallations(), node.getComponentDescription().getIdentifier(),
                 componentNode)) {
-                if (missingComponentsNodeIds == null) {
-                    missingComponentsNodeIds = new HashMap<>();
-                }
                 missingComponentsNodeIds.put(node.getName(), componentNode);
             }
         }
-        if (missingControllerNodeId == null && missingComponentsNodeIds == null) {
+        if (missingControllerNodeId == null && missingComponentsNodeIds.isEmpty()) {
             return WorkflowDescriptionValidationResult.createResultForSuccess();
         } else {
             return WorkflowDescriptionValidationResult.createResultForFailure(missingControllerNodeId, missingComponentsNodeIds);
@@ -325,11 +341,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     }
 
     /**
-     * Creates an auth token for each component which must be instantiated locally from an remote
-     * workflow execution controller that was instantiated from local node. It ensures that local
-     * components, which were not published, can be instantiated from remote, but only from workflow
-     * execution controllers, which were created from local node and thus, which are allowed to
-     * instantiate local components even if they are not published.
+     * Creates an auth token for each component which must be instantiated locally from an remote workflow execution controller that was
+     * instantiated from local node. It ensures that local components, which were not published, can be instantiated from remote, but only
+     * from workflow execution controllers, which were created from local node and thus, which are allowed to instantiate local components
+     * even if they are not published.
      */
     private Map<String, String> createAndRegisterLocalComponentExecutionAuthTokens(WorkflowDescription workflowDescription) {
         Map<String, String> compIdToTokenMapping = new HashMap<String, String>();

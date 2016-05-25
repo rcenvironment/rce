@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -53,6 +53,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -86,8 +87,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
 
     private Button insertInputButton;
 
-    static
-    {
+    static {
         templatesMap = new HashMap<>();
         templatesMap.put(
             DatabaseComponentConstants.SELECT, "SELECT * FROM table_name WHERE column1 = 'value1';");
@@ -682,7 +682,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
 
     // READ MODEL
     private List<DatabaseStatement> readCurrentDatabaseStatementsFromConfig() {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         List<DatabaseStatement> models = new ArrayList<>();
         try {
             String modelsString = getProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY);
@@ -725,7 +725,7 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
                     currentStatements.add(statement);
                 }
             }
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             String currentStatementsString = null;
 
             try {

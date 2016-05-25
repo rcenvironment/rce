@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -31,6 +31,7 @@ import org.osgi.framework.BundleContext;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of simple key-value store to persist settings of an RCE platform.
@@ -157,7 +158,7 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
 
     @Override
     public synchronized Map<String, List<String>> readMapWithStringList(String filename) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         File f = null;
         f = new File(storageDirectory, filename);
         if (!f.exists()) {
@@ -209,7 +210,7 @@ public class PersistentSettingsServiceImpl implements PersistentSettingsService 
         // write JSON to a file
         try {
             JsonGenerator jsonGenerator = new JsonFactory().createJsonGenerator(f, JsonEncoding.UTF8);
-            new ObjectMapper().writeValue(jsonGenerator, content);
+            JsonUtils.getDefaultObjectMapper().writeValue(jsonGenerator, content);
         } catch (IOException e) {
             // TODO >6.0.0: this should probably do more than just log a message
             LOGGER.error(ERROR_MSG_SAVE, e);

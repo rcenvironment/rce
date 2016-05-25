@@ -1,0 +1,18 @@
+{
+    "configuration": [
+        {
+            "key": "xmlContent"
+        },
+        {
+            "key": "mappingType"
+        },
+		{
+            "key": "mappingFileDeployment",
+			"defaultValue": "input"
+        },
+		{
+            "key": "storeComponentHistoryData",
+            "defaultValue": "false"
+        }
+    ]
+}

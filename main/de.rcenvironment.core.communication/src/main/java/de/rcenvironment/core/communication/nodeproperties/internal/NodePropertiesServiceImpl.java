@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -125,7 +125,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
         private List<NodePropertyImpl> entries;
 
-        public IncomingUpdate(NetworkMessage request) {
+        IncomingUpdate(NetworkMessage request) {
             entries = new ArrayList<NodePropertyImpl>();
             try {
                 rawParts = tokenizeMessageBody(request);
@@ -180,7 +180,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
         // note: currently, the fact that new neighbors may appear while this delta is being aggregated with others
         // is not considered a problem; if this changes, a snapshot of the current neighbors may be needed, too
-        public UpdateDeltaForBroadcasting(Collection<NodePropertyImpl> properties, NodeIdentifier recipientExclusion) {
+        UpdateDeltaForBroadcasting(Collection<NodePropertyImpl> properties, NodeIdentifier recipientExclusion) {
             this.properties = properties;
             this.recipientExclusion = recipientExclusion;
         }

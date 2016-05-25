@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -203,6 +203,7 @@ public class WizardEndpointEditDialog extends Dialog {
         supportedDataTypes.add(DataType.Integer);
         supportedDataTypes.add(DataType.Float);
         supportedDataTypes.add(DataType.Vector);
+        supportedDataTypes.add(DataType.Matrix);
         supportedDataTypes.add(DataType.FileReference);
         supportedDataTypes.add(DataType.DirectoryReference);
         new Label(propertyContainer, SWT.NONE).setText(Messages.dataTypeColon);

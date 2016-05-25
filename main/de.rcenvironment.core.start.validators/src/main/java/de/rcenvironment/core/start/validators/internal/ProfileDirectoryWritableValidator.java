@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -13,14 +13,14 @@ import java.io.File;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
-import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
 
 /**
  * Ensures that the profile directory used is writable.
  * 
  * @author Christian Weiss
  */
-public class ProfileDirectoryWritableValidator implements InstanceValidator {
+public class ProfileDirectoryWritableValidator extends DefaultInstanceValidator {
 
     private ConfigurationService configurationService;
 

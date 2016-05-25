@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -39,6 +39,7 @@ import de.rcenvironment.core.configuration.WritableConfigurationSegment;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryBootstrapService;
 import de.rcenvironment.core.configuration.discovery.bootstrap.DiscoveryConfiguration;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -123,7 +124,7 @@ public class ConfigurationServiceImpl implements ConfigurationService {
     private boolean usingDefaultConfigurationValues = false;
 
     public ConfigurationServiceImpl() {
-        mapper = new ObjectMapper();
+        mapper = JsonUtils.getDefaultObjectMapper();
         // allow comments in JSON files
         mapper.configure(JsonParser.Feature.ALLOW_COMMENTS, true);
     }

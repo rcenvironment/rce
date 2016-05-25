@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,8 +12,8 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
@@ -22,6 +22,7 @@ import de.rcenvironment.components.outputwriter.common.OutputWriterComponentCons
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicEndpointCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Command for deleting dynamic inputs from an outputwriter component. If the input is a simple data type, it is also removed from the
@@ -50,7 +51,7 @@ public class OutputWriterRemoveDynamicInputCommand extends RemoveDynamicEndpoint
         List<String> outputLocationIds, Refreshable... refreshable) {
         super(type, dynamicEndpointId, names, refreshable);
         this.outputLocationIds = outputLocationIds;
-        mapper = new ObjectMapper();
+        mapper = JsonUtils.getDefaultObjectMapper();
         mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
 

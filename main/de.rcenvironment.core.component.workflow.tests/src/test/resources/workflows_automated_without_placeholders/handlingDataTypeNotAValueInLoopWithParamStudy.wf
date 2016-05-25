@@ -2,13 +2,11 @@
   "identifier" : "1e4beb0e-2670-476e-9eb2-f10014b88c88",
   "workflowVersion" : "4",
   "name" : "ind_2015-04-12_19:23:58_05",
-  "platform" : "136db52cf2964047b85822ebead37d69",
   "nodes" : [ {
     "identifier" : "51affe82-12ef-4010-80b6-9a0504ca5e6a",
     "name" : "Forwarder 1",
     "location" : "300:117",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -44,7 +42,6 @@
     "name" : "Forwarder 2",
     "location" : "300:221",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -80,7 +77,6 @@
     "name" : "Joiner",
     "location" : "450:80",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
       "version" : "3.3",
@@ -115,7 +111,6 @@
     "name" : "NaV Sender",
     "location" : "154:174",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -157,16 +152,16 @@
     "name" : "Parametric Study",
     "location" : "154:61",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "dynamicInputs" : [ {
       "identifier" : "d79f3d5c-bb2a-4c41-aee7-6407ab9794bc",

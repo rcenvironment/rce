@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,7 +12,6 @@ import java.util.List;
 import java.util.Map;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaDataConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
@@ -63,7 +62,7 @@ public class InputProviderRemoveDynamicEndpointCommand extends RemoveDynamicEndp
             }
             if (oldDescription.getMetaData().containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
                 && oldDescription.getMetaData().get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                    .equals(FileSourceType.atWorkflowStart.name())) {
+                    .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
                 InputProviderDynamicEndpointCommandUtils.setValueName(getWorkflowNode(),
                     manager.getEndpointDescription(name).getDataType(),
                     name);

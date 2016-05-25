@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -177,7 +177,7 @@ public class WorkflowDescriptionTest {
          * 
          * @param event Name of the property to listen for.
          */
-        public WorkflowNodeChangeListener(String event) {
+        WorkflowNodeChangeListener(String event) {
             this.event = event;
         }
 

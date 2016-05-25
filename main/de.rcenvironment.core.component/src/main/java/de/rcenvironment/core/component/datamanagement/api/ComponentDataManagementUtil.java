@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -40,6 +40,11 @@ public abstract class ComponentDataManagementUtil {
     public static void setComponentMetaData(MetaDataSet mds, ComponentContext componentContext) {
 
         MetaData mdComponentRunId = new MetaData(MetaDataKeys.COMPONENT_RUN_ID, true, true);
+        if (((ComponentContextImpl) componentContext).getComponentExecutionDataManagementId() == null) {
+            throw new IllegalArgumentException("Given data managegment identifier for the associated component run must not be null; "
+                + "note: writing files to the data management is only allowed within 'start()' if 'treatStartAsComponentRun()' returns "
+                + "true and within 'processInputs()' and not allowed at all if component was cancelled");
+        }
         // transfer component run dm id
         mds.setValue(mdComponentRunId, String.valueOf(((ComponentContextImpl) componentContext).getComponentExecutionDataManagementId()));
     }

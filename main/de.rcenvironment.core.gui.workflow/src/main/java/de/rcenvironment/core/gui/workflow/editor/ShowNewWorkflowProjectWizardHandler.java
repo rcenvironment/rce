@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -55,7 +55,7 @@ public class ShowNewWorkflowProjectWizardHandler extends AbstractHandler{
     private static final class WorkflowProjectWizardDialog extends WizardDialog{
         
         
-        public WorkflowProjectWizardDialog(Shell parentShell, Wizard newWizard) {
+        WorkflowProjectWizardDialog(Shell parentShell, Wizard newWizard) {
             super(parentShell, newWizard);
         }
         

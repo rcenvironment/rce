@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -94,9 +94,10 @@ public class DistributedNotificationServiceTest {
         }
     }
 
-    /** Test. */
+    /** Test. 
+     * @throws RemoteOperationException on error*/
     @Test
-    public void testGetNotifications() {
+    public void testGetNotifications() throws RemoteOperationException {
         assertEquals(notifications, notificationService.getNotifications(NotificationTestConstants.NOTIFICATION_ID,
             NotificationTestConstants.LOCALHOST));
 
@@ -263,7 +264,7 @@ public class DistributedNotificationServiceTest {
             if (notificationIdentifier.equals(remoteNotification.getHeader().getNotificationIdentifier())) {
                 return remoteNotifications;
             } else if (notificationIdentifier.equals(NotificationTestConstants.NOTIFICATION_ID)) {
-                throw new UndeclaredThrowableException(new RuntimeException());
+                throw new IllegalStateException();
             } else {
                 return null;
             }

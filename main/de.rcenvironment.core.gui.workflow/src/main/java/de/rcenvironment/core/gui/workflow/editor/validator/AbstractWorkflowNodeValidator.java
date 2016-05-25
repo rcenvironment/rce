@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -123,7 +123,7 @@ public abstract class AbstractWorkflowNodeValidator implements WorkflowNodeValid
             if (exeConstraint.equals(EndpointDefinition.InputExecutionContraint.Required) && !inputEp.isConnected()) {
                 m.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR,
                     "", StringUtils.format("Connect input '%s' to an output as it is required", inputEp.getName()),
-                    StringUtils.format("Input '%s' is required but not connected to an output", inputEp.getName())));
+                    StringUtils.format("Input '%s' is required but not connected to an output", inputEp.getName()), true));
             }
         }
         

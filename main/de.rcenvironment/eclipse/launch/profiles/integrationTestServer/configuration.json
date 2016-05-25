@@ -10,12 +10,14 @@
         "port" : 31055,
         "accounts" : {
             "ra_demo" : {
-                "password" : "ra_demo",
+                // hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$5fNaK.L39IATICLMXoszyeeWc4xAy7Lgau2Xwz4Jw42oYsGVV1YGq",
                 "role" : "remote access",
                 "enabled" : true
             },
             "pwtest" : {
-                "password" : "the_pw",
+            	// hashed form of the "the_pw" test password; DO NOT reuse this for live accounts!
+                "passwordHash" : "$2a$10$mfP7m8rsTlNbAipi4RuBU.BAhBHQUKaVuSmk.iWtA6dOe1ez2iSSu",
                 "role" : "remote access",
                 "enabled" : true
             }

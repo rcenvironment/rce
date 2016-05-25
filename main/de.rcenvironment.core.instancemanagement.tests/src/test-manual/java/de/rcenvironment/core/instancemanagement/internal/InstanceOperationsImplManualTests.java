@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -13,6 +13,8 @@ import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.junit.After;
 import org.junit.Before;
@@ -61,6 +63,8 @@ public class InstanceOperationsImplManualTests {
         final File installationDir = testParameters.getExistingDir("startStopRoundTrip.installationDir");
         // may exist
         final File profileDir = testParameters.getDefinedFileOrDir("startStopRoundTrip.profileDir");
+        List<File> profileDirList = new ArrayList<>();
+        profileDirList.add(profileDir);
         // optional repetitions, e.g. for stability testing
         final int repetitions = testParameters.getOptionalInteger("startStopRoundTrip.repetitions", 1);
 
@@ -74,10 +78,10 @@ public class InstanceOperationsImplManualTests {
 
         for (int i = 0; i < repetitions; i++) {
 
-            instanceOperations.startInstanceUsingInstallation(profileDir, installationDir);
+            instanceOperations.startInstanceUsingInstallation(profileDirList, installationDir, 0, null, false);
             assertTrue("profile not locked after start", instanceOperations.isProfileLocked(profileDir));
 
-            instanceOperations.shutdownInstance(profileDir);
+            instanceOperations.shutdownInstance(profileDirList, 0, null);
             assertFalse("profile still locked after shutdown", instanceOperations.isProfileLocked(profileDir));
         }
     }

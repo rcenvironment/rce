@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -43,7 +43,7 @@ public enum DisconnectReason {
 
     private final String displayText;
 
-    private DisconnectReason(String displayText) {
+    DisconnectReason(String displayText) {
         this.displayText = displayText;
     }
 

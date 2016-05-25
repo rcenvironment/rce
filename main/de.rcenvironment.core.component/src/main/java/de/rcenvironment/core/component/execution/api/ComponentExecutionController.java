@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -45,10 +45,12 @@ public interface ComponentExecutionController extends ExecutionController {
     
     /**
      * Cancels the component.
+     * 
      * @param timeoutMsec max time to wait
      * @throws InterruptedException if waiting for the component to get cancelled failed
+     * @return <code>false</code> if the timeout exceeded, otherwise <code>true</code>
      */
-    void cancelSync(long timeoutMsec) throws InterruptedException;
+    boolean cancelSync(long timeoutMsec) throws InterruptedException;
     
     /**
      * @return <code>true</code> if sending heartbeats to workflow controller succeeded, <code>false</code> otherwise

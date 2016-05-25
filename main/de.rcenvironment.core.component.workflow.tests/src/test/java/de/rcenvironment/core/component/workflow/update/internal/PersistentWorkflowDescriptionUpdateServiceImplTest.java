@@ -9,6 +9,8 @@
 package de.rcenvironment.core.component.workflow.update.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -82,13 +84,16 @@ public class PersistentWorkflowDescriptionUpdateServiceImplTest {
         final String componentId = "de.rce.comp-A";
         final String version = "1.1";
         final String componentIdPlusVersion = componentId + ComponentConstants.ID_SEPARATOR + version;
-        String nodeId1 = "node-id-1";
+        final String localNodeId = "local-node-id";
+        final String nodeId1 = "node-id-1";
+        final String nodeId2 = "node-id-2";
+        final String nodeId3 = "node-id-3";
         
         PersistentWorkflowDescriptionUpdateServiceImpl updateService = new PersistentWorkflowDescriptionUpdateServiceImpl();
         updateService.bindPlatformService(new PlatformServiceDefaultStub() {
             @Override
             public NodeIdentifier getLocalNodeId() {
-                return NodeIdentifierFactory.fromNodeId("local-node-id");
+                return NodeIdentifierFactory.fromNodeId(localNodeId);
             }
         });
         PersistentComponentDescription persCompDesc = EasyMock.createStrictMock(PersistentComponentDescription.class);
@@ -97,16 +102,38 @@ public class PersistentWorkflowDescriptionUpdateServiceImplTest {
         EasyMock.expect(persCompDesc.getComponentNodeIdentifier()).andStubReturn(NodeIdentifierFactory.fromNodeId(nodeId1));
         Capture<NodeIdentifier> capturedNodeId = new Capture<>();
         persCompDesc.setNodeIdentifier(EasyMock.capture(capturedNodeId));
+        EasyMock.expectLastCall().asStub();
         EasyMock.replay(persCompDesc);
         
         Collection<ComponentInstallation> compInstalls = new ArrayList<>();
-        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, "node-id-2"));
+        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId2));
+        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId1));
+        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, localNodeId));
+        
+        updateService.checkAndSetNodeIdentifier(persCompDesc, compInstalls);
+        assertTrue(capturedNodeId.hasCaptured());
+        assertNull(capturedNodeId.getValue());
+
+        compInstalls = new ArrayList<>();
+        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId2));
         compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId1));
         
-        PersistentComponentDescription resultPersCompDesc = updateService.checkAndSetNodeIdentifier(persCompDesc, compInstalls);
+        updateService.checkAndSetNodeIdentifier(persCompDesc, compInstalls);
+        assertTrue(capturedNodeId.hasCaptured());
+        assertEquals(nodeId1, capturedNodeId.getValue().getIdString());
+
+        compInstalls = new ArrayList<>();
+        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId2));
+        compInstalls.add(ComponentInstallationMockFactory.createComponentInstallationMock(componentIdPlusVersion, version, nodeId3));
         
-        assertEquals(0, capturedNodeId.getValues().size());
-        assertEquals(persCompDesc.getComponentNodeIdentifier(), resultPersCompDesc.getComponentNodeIdentifier());
+        updateService.checkAndSetNodeIdentifier(persCompDesc, compInstalls);
+        assertTrue(capturedNodeId.hasCaptured());
+        assertTrue(capturedNodeId.getValue().getIdString().equals(nodeId2) || capturedNodeId.getValue().getIdString().equals(nodeId3));
+
+        updateService.checkAndSetNodeIdentifier(persCompDesc,  new ArrayList<ComponentInstallation>());
+        assertTrue(capturedNodeId.hasCaptured());
+        assertNull(capturedNodeId.getValue());
+
     }
     
 }

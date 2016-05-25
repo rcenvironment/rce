@@ -26,7 +26,8 @@
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.sql.execution.SQLWriterComponent"/>
 	
 	<property name="rce.component.version" type="String" value="3.0"/>
-	
-	<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.sql.common/resources/sqlWriter_16.png"/>
-    <property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.sql.common/resources/sqlWriter_32.png"/>
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.sql.common" />
+	<property name="rce.component.icon-16" type="String" value="sqlWriter_16.png"/>
+    <property name="rce.component.icon-32" type="String" value="sqlWriter_32.png"/>
 </scr:component> 
+ 

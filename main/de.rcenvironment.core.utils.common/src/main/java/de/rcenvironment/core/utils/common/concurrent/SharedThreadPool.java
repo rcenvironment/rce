@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,10 +24,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,6 +51,28 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  */
 public final class SharedThreadPool implements ThreadPool {
+
+    // compatibility and test flag: declare this property to make the thread pool behave like RCE 7.0.x.
+    private static final String SYSTEM_PROPERTY_USE_70x_THREAD_POOL_CONFIGURATION = "rce.threadpool.use70xBehavior";
+
+    // override property for DEFAULT_COMMON_THREAD_POOL_SIZE
+    private static final String SYSTEM_PROPERTY_COMMMON_THREAD_POOL_SIZE = "rce.threadpool.common.size";
+
+    // schedules a task to periodically log thread pool information (similar to the "tasks -a" command); this is useful in cases where the
+    // main pool is too congested to execute new console commands
+    private static final String SYSTEM_PROPERTY_ENABLE_PERIODIC_DEBUG_LOGGING = "rce.threadpool.enableDebugLogging";
+
+    private static final int PERIODIC_DEBUG_LOGGING_INTERVAL_MSEC = 60 * 1000;
+
+    // preliminary cap to prevent excessive thread allocation; quite high as currently, network forwarding is still a blocking operation, so
+    // a lower cap may bottleneck busy relay nodes in very slow networks; also, workflow execution is unbounded. this is planned to be
+    // reworked in 8.0.0.
+    private static final int DEFAULT_COMMON_THREAD_POOL_SIZE = 512;
+
+    private static final long IDLE_THREAD_RELEASE_TIME_SECONDS = 60; // JDK default time: 60 seconds
+
+    // the number of scheduled/repeated tasks that can execute concurrently; adjust as necessary
+    private static final int NUM_THREADS_FOR_SCHEDULED_TASKS = 4;
 
     private static final float NANOS_TO_MSEC_RATIO = 1000000f;
 
@@ -81,7 +105,7 @@ public final class SharedThreadPool implements ThreadPool {
 
         private final String taskName;
 
-        public StatisticsEntry(Class<?> taskClass) {
+        StatisticsEntry(Class<?> taskClass) {
             this.taskClass = taskClass;
             this.taskName = determineTaskName();
         }
@@ -166,6 +190,8 @@ public final class SharedThreadPool implements ThreadPool {
                 float avgTimeMsec = totalTimeNanos / NANOS_TO_MSEC_RATIO / numCompleted;
                 sb.append(", AvgTime: ");
                 sb.append(avgTimeMsec);
+                sb.append(" msec, Total: ");
+                sb.append(totalTimeNanos / NANOS_TO_MSEC_RATIO);
                 sb.append(" msec, MaxTime: ");
                 sb.append(maxNormalCompletionTime / NANOS_TO_MSEC_RATIO);
                 sb.append(" msec");
@@ -210,7 +236,7 @@ public final class SharedThreadPool implements ThreadPool {
 
         private final String taskId;
 
-        public WrappedCallable(Callable<T> callable, String taskId) {
+        WrappedCallable(Callable<T> callable, String taskId) {
             this.innerCallable = callable;
             this.taskId = taskId;
         }
@@ -254,7 +280,7 @@ public final class SharedThreadPool implements ThreadPool {
 
         private final String taskId;
 
-        public WrappedRunnable(Runnable runnable, String taskId) {
+        WrappedRunnable(Runnable runnable, String taskId) {
             this.innerRunnable = runnable;
             this.taskId = taskId;
         }
@@ -333,6 +359,8 @@ public final class SharedThreadPool implements ThreadPool {
 
     /**
      * Default implementation of {@link CallablesGroup}.
+     * 
+     * @param <T> the result type of method call of the {@link Callable}s
      * 
      * @author Robert Mischke
      */
@@ -598,13 +626,50 @@ public final class SharedThreadPool implements ThreadPool {
                 return new Thread(threadGroup, r, threadNamePrefix + threadIndex.incrementAndGet());
             }
         };
-        executorService = Executors.newCachedThreadPool(threadFactory);
-        schedulerService = Executors.newScheduledThreadPool(1, threadFactory);
+        if (System.getProperty(SYSTEM_PROPERTY_USE_70x_THREAD_POOL_CONFIGURATION) == null) {
+            // 7.1.0+ default behavior
+
+            // determine maximum common pool size
+            int commonPoolSize = DEFAULT_COMMON_THREAD_POOL_SIZE;
+            if (System.getProperty(SYSTEM_PROPERTY_COMMMON_THREAD_POOL_SIZE) != null) {
+                commonPoolSize = Integer.parseInt(System.getProperty(SYSTEM_PROPERTY_COMMMON_THREAD_POOL_SIZE));
+                if (commonPoolSize < 1) {
+                    throw new IllegalArgumentException("Invalid thread pool size: " + commonPoolSize);
+                }
+            }
+            log.debug("Setting maximum thread pool size to " + commonPoolSize);
+
+            // this sets up a bounded thread pool that allows threads to be released after a certain time again; note that as the
+            // "core size" is used to achieve this upper bound, there is no minimum number of threads that is kept alive at any time
+            executorService = new ThreadPoolExecutor(commonPoolSize, commonPoolSize,
+                IDLE_THREAD_RELEASE_TIME_SECONDS, TimeUnit.SECONDS, new LinkedBlockingQueue<Runnable>(), threadFactory);
+            ((ThreadPoolExecutor) executorService).allowCoreThreadTimeOut(true);
+
+            // a separate thread pool for scheduled/repeated tasks
+            schedulerService = Executors.newScheduledThreadPool(NUM_THREADS_FOR_SCHEDULED_TASKS, threadFactory);
+        } else {
+            // 7.0.x compatibility mode
+            log.info("Using 7.0.x compatible thread pool configuration");
+
+            executorService = Executors.newCachedThreadPool(threadFactory);
+            schedulerService = Executors.newScheduledThreadPool(1, threadFactory);
+        }
         statisticsMap = Collections.synchronizedMap(new HashMap<Class<?>, StatisticsEntry>());
+
+        if (System.getProperty(SYSTEM_PROPERTY_ENABLE_PERIODIC_DEBUG_LOGGING) != null) {
+            scheduleAtFixedRate(new Runnable() {
+
+                @Override
+                @TaskDescription("Thread pool debug logging")
+                public void run() {
+                    log.debug("Current combined thread pool size: " + getCurrentThreadCount() + "; " + getFormattedStatistics(false, true));
+                }
+            }, PERIODIC_DEBUG_LOGGING_INTERVAL_MSEC);
+        }
     }
 
     private StatisticsEntry getStatisticsEntry(Class<?> r) {
-        // TODO >4.0.0: use ThreadsafeAutoCreationMap; not changing as release is imminent - misc_ro
+        // TODO >=8.0.0: use ThreadsafeAutoCreationMap? - misc_ro
         StatisticsEntry statisticsEntry = statisticsMap.get(r);
         if (statisticsEntry == null) {
             // NOTE: while this looks similar to the double-checked locking anti-pattern,

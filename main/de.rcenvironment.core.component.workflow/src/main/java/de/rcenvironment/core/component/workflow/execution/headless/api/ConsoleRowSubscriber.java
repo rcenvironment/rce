@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,6 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
-import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.headless.internal.ExtendedHeadlessWorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.internal.ConsoleRowFormatter;
@@ -38,6 +37,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Sascha Zur
  * @author Robert Mischke
+ * @author Doreen Seider
  */
 public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implements Closeable {
 
@@ -124,7 +124,7 @@ public class ConsoleRowSubscriber extends DefaultNotificationSubscriber implemen
                 log.warn("Workflow log writer is already closed; ignoring event " + row.getType() + ":" + row.getPayload());
             }
         }
-        if (row.getType() == Type.LIFE_CYCLE_EVENT) {
+        if (row.getType() == ConsoleRow.Type.LIFE_CYCLE_EVENT) {
             log.debug("Received workflow life-cycle event: " + row.getPayload());
             if (ConsoleRow.WorkflowLifecyleEventType.WORKFLOW_FINISHED.name().equals(row.getPayload())) {
                 workflowExecutionContext.reportConsoleOutputTerminated();

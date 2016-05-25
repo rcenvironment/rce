@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
@@ -35,8 +36,10 @@ import de.rcenvironment.core.gui.datamanagement.browser.Activator;
 
 /**
  * @author Robert Mischke (based on DMObject class by Markus Litz)
+ * @author Jan Flink
+ * @author Doreen Seider
+ * @author Marc Stammerjohann
  * 
- *         TODO list additional authors; incomplete
  */
 public final class DMBrowserNode {
 
@@ -86,6 +89,8 @@ public final class DMBrowserNode {
     private Boolean enabled;
 
     private String cachedPath;
+    
+    private DirectoryReferenceTD dirRefTD = null;
 
     public DMBrowserNode(String title) {
         this.title = title;
@@ -309,6 +314,17 @@ public final class DMBrowserNode {
 
     public DataReference getDataReference() {
         return dataReference;
+    }
+    
+    public void setDirectoryReferenceTD(DirectoryReferenceTD directoryReferenceTD) {
+        this.dirRefTD = directoryReferenceTD;
+    }
+    
+    /**
+     * @return <code>null</code> in case the {@link #getType()} returns another type than {@link DMBrowserNodeType.DMDirectoryReference}
+     */
+    public DirectoryReferenceTD getDirectoryReferenceTD() {
+        return dirRefTD;
     }
 
     /**

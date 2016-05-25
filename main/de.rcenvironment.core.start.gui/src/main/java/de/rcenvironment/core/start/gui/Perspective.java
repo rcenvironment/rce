@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,6 +17,7 @@ import org.eclipse.ui.IPerspectiveFactory;
  * 
  * @author Thijs Metsch
  * @author Andreas Baecker
+ * @author Jan Flink
  */
 public class Perspective implements IPerspectiveFactory {
 
@@ -24,13 +25,17 @@ public class Perspective implements IPerspectiveFactory {
     public void createInitialLayout(IPageLayout layout) {
         
         // relative positions of the views.
-        final float leftRatio = 0.3f;
-        final float bottomRatio = 0.6f;
+        final float leftRatio = 0.2f;
+        final float bottomRatio = 0.7f;
         
         String editorArea = layout.getEditorArea();
         IFolderLayout left = layout.createFolder("de.rcenvironment.core.Perspective.left", IPageLayout.LEFT, leftRatio, editorArea);
-        layout.createPlaceholderFolder("de.rcenvironment.core.Perspective.bottom", IPageLayout.BOTTOM, bottomRatio, editorArea);
         left.addView(IPageLayout.ID_PROJECT_EXPLORER);
+        IFolderLayout bottomLeft =
+            layout.createFolder("de.rcenvironment.core.Perspective.bottomLeft", IPageLayout.BOTTOM, bottomRatio,
+                "de.rcenvironment.core.Perspective.left");
+        bottomLeft.addView(IPageLayout.ID_OUTLINE);
+        layout.createPlaceholderFolder("de.rcenvironment.core.Perspective.bottom", IPageLayout.BOTTOM, bottomRatio, editorArea);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -345,7 +345,7 @@ public class DOEComponentTest {
     public void testAlgorithmFullFactorialWithHistoryData() throws ComponentException {
         setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, TWO, ZERO, ZERO,
             LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
-        context.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM, Boolean.toString(true));
+        context.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM, String.valueOf(true));
 
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
@@ -806,8 +806,8 @@ public class DOEComponentTest {
         context.setConfigurationValue(DOEConstants.KEY_RUN_NUMBER, runNumber);
         context.setConfigurationValue(DOEConstants.KEY_START_SAMPLE, startSample);
         context.setConfigurationValue(DOEConstants.KEY_END_SAMPLE, endSample);
-        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE, behaviour.toString());
-        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_LOOP_RERUN_FAIL, "1");
+        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV, behaviour.name());
+        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV, "1");
         context.setConfigurationValue(DOEConstants.KEY_TABLE, table);
     }
 

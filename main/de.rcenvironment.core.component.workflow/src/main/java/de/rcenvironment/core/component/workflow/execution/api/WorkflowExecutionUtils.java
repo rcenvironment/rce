@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -166,13 +166,34 @@ public final class WorkflowExecutionUtils {
     }
     
     /**
+     * Set {@link NodeIdentifier}s to transient if they point to the local node.
+     * 
+     * @param wfDescription {@link WorkflowDescription}
+     * @param localNodeId local {@link NodeIdentifier}
+     */
+    public static void setNodeIdentifiersToTransientInCaseOfLocalOnes(WorkflowDescription wfDescription,
+        NodeIdentifier localNodeId) {
+
+        for (WorkflowNode node : wfDescription.getWorkflowNodes()) {
+            node.getComponentDescription().setIsNodeIdTransient(node.getComponentDescription().getNode() == null
+                || node.getComponentDescription().getNode().equals(localNodeId));
+        }
+
+        wfDescription.setIsControllerNodeIdTransient(wfDescription.getControllerNode() == null
+            || wfDescription.getControllerNode().equals(localNodeId));
+    }
+    
+    /**
      * Removed disabled workflow nodes from given {@link WorkflowDescription}.
      * 
      * @param workflowDescription to remove the disabled {@link WorkflowNode}s from
      * @return {@link WorkflowDescription} without disabled {@link WorkflowNode}s
      */
     public static WorkflowDescription removeDisabledWorkflowNodesWithoutNotify(WorkflowDescription workflowDescription) {
-        workflowDescription.removeWorkflowNodesAndRelatedConnectionsWithoutNotify(getDisabledWorkflowNodes(workflowDescription));
+        List<WorkflowNode> disabledWorkflowNodes = getDisabledWorkflowNodes(workflowDescription);
+        if (!disabledWorkflowNodes.isEmpty()) {
+            workflowDescription.removeWorkflowNodesAndRelatedConnectionsWithoutNotify(disabledWorkflowNodes);            
+        }
         return workflowDescription;
     }
     
@@ -190,6 +211,14 @@ public final class WorkflowExecutionUtils {
             }
         }
         return nodes;
+    }
+
+    /**
+     * @param wfExeCtx {@link WorkflowExecutionContext} of related workflow
+     * @return text containing workflow instance name and workflow execution id that can be used in log messages
+     */
+    public static String substituteWorkflowNameAndExeId(WorkflowExecutionContext wfExeCtx) {
+        return String.format("workflow '%s' (%s)", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
     }
 
 }

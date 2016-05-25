@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,11 +28,10 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.StyleRange;
 import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.custom.VerifyKeyListener;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
 import org.eclipse.swt.events.TraverseEvent;
@@ -55,6 +54,7 @@ import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -117,7 +117,7 @@ public class CommandConsoleViewer extends ViewPart {
      */
     private final class ClearConsoleAction extends Action {
 
-        public ClearConsoleAction(String clearConsoleActionContextMenuLabel) {
+        ClearConsoleAction(String clearConsoleActionContextMenuLabel) {
             super(clearConsoleActionContextMenuLabel);
         }
 
@@ -137,7 +137,7 @@ public class CommandConsoleViewer extends ViewPart {
      */
     private final class PasteAction extends Action {
 
-        public PasteAction(String text) {
+        PasteAction(String text) {
             super(text);
         }
 
@@ -145,18 +145,18 @@ public class CommandConsoleViewer extends ViewPart {
         public void run() {
             // if multiple lines are in the clipboard, extract the first one and put it back to the
             // clipboard so that only this line will be
-            Clipboard clipboard = new Clipboard(Display.getCurrent());
-            String content = ((String) clipboard.getContents(TextTransfer.getInstance()));
+            String content = ClipboardHelper.getContentAsStringOrNull();
+            if (content == null) {
+                return;
+            }
+
             final int contentLength = content.length();
-            if (content != null && contentLength < MAXIMUM_PASTE_LENGTH) {
+            if (contentLength < MAXIMUM_PASTE_LENGTH) {
                 if (content.contains(platformIndependentLineBreak)) {
-
                     content = content.replaceAll(platformIndependentLineBreak, " ");
-
                 }
 
-                clipboard.setContents(new String[] { content },
-                    new Transfer[] { TextTransfer.getInstance() });
+                ClipboardHelper.setContent(content);
 
                 styledtext.paste();
                 String line = getLineWithoutRCEPROMPT(currentLine);
@@ -170,7 +170,7 @@ public class CommandConsoleViewer extends ViewPart {
                     @Override
                     public void run() {
                         String warningMessage = "The text could not be pasted because it is too long. "
-                            + "Its length is " + contentLength + " characters but the maximum allowed length is " 
+                            + "Its length is " + contentLength + " characters but the maximum allowed length is "
                             + MAXIMUM_PASTE_LENGTH + " characters.";
                         MessageDialog.open(MessageDialog.ERROR, null, "Warning", warningMessage, SWT.NONE);
                     }
@@ -217,6 +217,7 @@ public class CommandConsoleViewer extends ViewPart {
         styledtext.addMouseListener(new CommandMouseListener());
         styledtext.addVerifyKeyListener(new CommandVerifyKeyListener());
         styledtext.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
+        styledtext.addModifyListener(new CommandModifyListener());
         insertRCEPrompt();
 
         makeActions();
@@ -427,12 +428,36 @@ public class CommandConsoleViewer extends ViewPart {
     }
 
     /**
-     * If a key (between 'a' and 'z', '0' and '9') is pressed, caret selects the command line (where
-     * the latest RCEPROMPT is). If command line contains text, caret is set at the end.
+     * If a key (between 'a' and 'z', '0' and '9') is pressed, caret selects the command line (where the latest RCEPROMPT is). If command
+     * line contains text, caret is set at the end.
      */
     private void moveCaretToCommandLine() {
         String line = getLineWithoutRCEPROMPT(currentLine);
         setSelection(caretLinePosition + line.length());
+    }
+
+    /**
+     * As soon as the text is modified this listener ensures that the clearConsoleAction is enabled, if the text contains anything else than
+     * the command prompt.
+     */
+    private class CommandModifyListener implements ModifyListener {
+
+        private boolean containsContent() {
+            for (int i = 0; i <= currentLine; i++) {
+                if (!getLineWithoutRCEPROMPT(i).isEmpty()) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        @Override
+        public void modifyText(ModifyEvent arg0) {
+            if (clearConsoleAction != null && !clearConsoleAction.isEnabled() && containsContent()) {
+                clearConsoleAction.setEnabled(true);
+            }
+        }
     }
 
     /** A {@link KeyListener} to react on pressed or released key's. */
@@ -460,12 +485,13 @@ public class CommandConsoleViewer extends ViewPart {
 
             String command = getLineWithoutRCEPROMPT(currentLine);
 
-            if (!getLineWithoutRCEPROMPT(0).isEmpty()) {
-                clearConsoleAction.setEnabled(true);
-            }
-            if (keyEvent.keyCode == SWT.CR) {
-                if (getLineWithoutRCEPROMPT(currentLine).isEmpty()) {
-
+            // It can happen that keyEvent.keyCode == SWT.CR but keyEvent.character != '\r'. This is for example the case if you press <^>
+            // once on your keyboard and <RETURN> directly after that. In this case two KeyEvents are passed to this method. Both KeyEvents
+            // have keyEvent.keyCode == SWT.CR but one will also have keyEvent.character == '^'. This is due to the construction of some
+            // special characters which require two key presses, e.g. diacritical versions of characters like the circumflex on top of the
+            // letter e.
+            if ((keyEvent.keyCode == SWT.CR || keyEvent.keyCode == SWT.KEYPAD_CR) && keyEvent.character == '\r') {
+                if (command.isEmpty()) {
                     increaseCurrentLine();
                     insertRCEPrompt();
 
@@ -480,19 +506,24 @@ public class CommandConsoleViewer extends ViewPart {
                         return;
 
                     } else {
-                        setSelection(styledtext.getCaretOffset() + getLineWithoutRCEPROMPT(currentLine).length());
+                        setSelection(styledtext.getCaretOffset() + command.length());
 
                         resetCommandPosition();
                         // addUsedCommand(command);
                         setCaretLinePosition(caretLinePosition + command.length());
-                        increaseCurrentLine();
+                        increaseCurrentLine(); // TODO problematic
                         insertRCEPrompt();
                         // run command in separate thread to keep the UI responsive
                         SharedThreadPool.getInstance().execute(new ExecuteCommand(command));
                     }
                 }
+            } else if (keyEvent.keyCode == SWT.HOME) {
+                setSelection(caretLinePosition); // POS1/HOME moves caret behind prompt of last command line
+            } else if (keyEvent.keyCode == SWT.END) {
+                setSelection(caretLinePosition + command.length()); // END moves caret behind command of the last of command line
             }
-            if (!getLineWithoutRCEPROMPT(currentLine).isEmpty() && getCurrentCaretLocation() > caretLinePosition) {
+
+            if (!command.isEmpty() && getCurrentCaretLocation() > caretLinePosition) {
                 // set new character to prompt color
                 setStyledRange(getCurrentCaretLocation() - 1, 1);
             }
@@ -535,8 +566,7 @@ public class CommandConsoleViewer extends ViewPart {
 
         /**
          * "Return" is enabled: if the selected line has text. <br>
-         * "Return" is disabled: if the selected line is empty or the selected line is above the
-         * command
+         * "Return" is disabled: if the selected line is empty or the selected line is above the command
          * 
          * @param event
          */
@@ -558,8 +588,7 @@ public class CommandConsoleViewer extends ViewPart {
 
     /**
      * A {@link VerifyKeyListener} to change the keys behavior.<br>
-     * Changes the behavior of the key, if the current caret position is lower than the
-     * {@link CommandConsoleViewer#caretLinePosition}.
+     * Changes the behavior of the key, if the current caret position is lower than the {@link CommandConsoleViewer#caretLinePosition}.
      */
     private class CommandVerifyKeyListener implements VerifyKeyListener {
 
@@ -681,7 +710,7 @@ public class CommandConsoleViewer extends ViewPart {
 
         private volatile boolean writing;
 
-        public ExecuteCommand(String command) {
+        ExecuteCommand(String command) {
             this.command = command;
             // this.line = ++currentLine;
             this.writing = true;
@@ -702,8 +731,7 @@ public class CommandConsoleViewer extends ViewPart {
         }
 
         /**
-         * waiting for the execution to finish, while text is displayed user cannot enter new
-         * commands.
+         * waiting for the execution to finish, while text is displayed user cannot enter new commands.
          */
         private void waitWithDelay() {
             int sleepTime = 5;
@@ -755,18 +783,21 @@ public class CommandConsoleViewer extends ViewPart {
 
         private final String text;
 
-        public DisplayText(String text) {
+        DisplayText(String text) {
             this.text = text;
         }
 
         @Override
         @TaskDescription("Display Text")
         public void run() {
+            if (styledtext.isDisposed()) {
+                return;
+            }
             if (text.equals(RCEPROMPT)) {
                 insertRCEPrompt();
             } else {
                 displayMessage(text);
-            }
+            }                
         }
     }
 
@@ -775,13 +806,16 @@ public class CommandConsoleViewer extends ViewPart {
 
         private final Display display = Display.getDefault();
 
-        public CommandConsoleOutputAdapter() {
+        CommandConsoleOutputAdapter() {
             super(commandExecutionService);
         }
 
         /** Adds an Output to the console. */
         @Override
         public void addOutput(String line) {
+            if (display.isDisposed()) {
+                return;
+            }
             if (line.contains("\n")) {
                 while (line.contains("\n")) {
                     // displays the string before the line break

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,6 +49,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
+
     /** Key for in-/output from configuration map. */
     public static final String FOLDER = ToolIntegrationConstants.KEY_ENDPOINT_FOLDER;
 
@@ -78,6 +79,8 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
     /** Key for the input keyword. */
     public static final String INPUTS = ToolIntegrationConstants.KEY_ENDPOINT_INPUTS;
+
+    private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_inputOutput";
 
     private static final String OUTPUTS = ToolIntegrationConstants.KEY_ENDPOINT_OUTPUTS;
 
@@ -118,6 +121,8 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
         tabFolder.setSelection(0);
         setControl(tabFolder);
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
+            HELP_CONTEXT_ID);
         setPageComplete(true);
     }
 
@@ -427,7 +432,7 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
 
         private final String type;
 
-        public ButtonSelectionListener(Button button, Table table, String name) {
+        ButtonSelectionListener(Button button, Table table, String name) {
             this.button = button;
             this.selectionTable = table;
             type = name;
@@ -486,7 +491,7 @@ public class InOutputConfigurationPage extends ToolIntegrationWizardPage {
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench()
             .getHelpSystem();
         helpSystem
-            .displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_inputOutput");
+            .displayHelp(HELP_CONTEXT_ID);
     }
 
     @SuppressWarnings("unchecked")

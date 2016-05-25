@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -148,15 +148,15 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
         private final long taskId;
 
-        public StateMachineEvent(StateMachineEventType type) {
+        StateMachineEvent(StateMachineEventType type) {
             this(type, null, 0);
         }
 
-        public StateMachineEvent(StateMachineEventType type, MessageChannel relatedChannel) {
+        StateMachineEvent(StateMachineEventType type, MessageChannel relatedChannel) {
             this(type, relatedChannel, 0);
         }
 
-        public StateMachineEvent(StateMachineEventType type, MessageChannel relatedChannel, long taskId) {
+        StateMachineEvent(StateMachineEventType type, MessageChannel relatedChannel, long taskId) {
             if (taskId < 0) {
                 throw new IllegalArgumentException();
             }
@@ -205,7 +205,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
             private volatile Future<MessageChannel> future;
 
-            public AsyncConnectTask(long taskId, boolean isAutoRetry) {
+            AsyncConnectTask(long taskId, boolean isAutoRetry) {
                 this.taskId = taskId;
                 this.isAutoRetry = isAutoRetry;
             }
@@ -329,7 +329,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
         private long currentAutoRetryWaitExpiredTaskId;
 
-        public StateMachine() {
+        StateMachine() {
             super(ConnectionSetupState.DISCONNECTED, VALID_STATE_TRANSITIONS);
         }
 

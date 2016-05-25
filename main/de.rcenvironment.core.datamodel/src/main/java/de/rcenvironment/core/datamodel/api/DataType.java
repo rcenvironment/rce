@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -121,7 +121,7 @@ public enum DataType {
     StructuredData("Structured Data", "SDat", StructuredDataTD.class),
     
     /**
-     * Use if no output can be computed due to invalid inputs. Used in optimization loops.
+     * Sent if no output can be computed due to invalid inputs or component crash. Used in loops.
      */
     NotAValue("Not-a-value", "Ind", NotAValueTD.class),
     
@@ -136,7 +136,7 @@ public enum DataType {
 
     private Class<? extends TypedDatum> tdClass;
 
-    private DataType(String displayName, String shortName, Class<? extends TypedDatum> tdClass) {
+    DataType(String displayName, String shortName, Class<? extends TypedDatum> tdClass) {
         this.displayName = displayName;
         this.shortName = shortName;
         this.tdClass = tdClass;

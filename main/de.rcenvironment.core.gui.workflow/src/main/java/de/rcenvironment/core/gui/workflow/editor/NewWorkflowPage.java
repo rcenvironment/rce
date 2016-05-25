@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,10 +27,13 @@ import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintList
  * @author Oliver Seebach
  */
 final class NewWorkflowPage extends WizardPage {
+    
+    private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
+        '*', '?', '\"', '>', '<', '|' };
 
     private Text workflownameTextfield = null;
     
-    public NewWorkflowPage(final NewWorkflowProjectWizard parentWizard, final IStructuredSelection selection){
+    NewWorkflowPage(final NewWorkflowProjectWizard parentWizard, final IStructuredSelection selection){
         super("Workflow");
         setTitle("Workflow");
         setDescription("Please enter the name of the new workflow");
@@ -68,6 +71,7 @@ final class NewWorkflowPage extends WizardPage {
         workflownameTextfield.setData("name", "WorkflowNameTextfield");
         workflownameTextfield.setFocus();
         workflownameTextfield.addListener(SWT.Verify, new AlphanumericalTextContraintListener(false, true));
+        workflownameTextfield.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         workflownameTextfield.addKeyListener(new KeyAdapter() {
             @Override
             public void keyReleased(KeyEvent e) {

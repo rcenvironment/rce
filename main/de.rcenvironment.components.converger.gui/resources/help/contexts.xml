@@ -1,6 +1,0 @@
-<contexts>
-	<context id="converger" title="Converger Component Help">
-		<description>The Converger Component to check if data from a workflow loop converges in comparison to its last run.</description>
-		<topic href="resources/help/html/usage.xhtml" label="Converger Component Usage"></topic>
-	</context>
-</contexts>

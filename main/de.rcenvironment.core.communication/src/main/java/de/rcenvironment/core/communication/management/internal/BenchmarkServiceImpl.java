@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -52,7 +52,7 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
 
         private List<BenchmarkSubtaskImpl> subtasks;
 
-        public BenchmarkSetupImpl(List<BenchmarkSubtaskImpl> subtasks) {
+        BenchmarkSetupImpl(List<BenchmarkSubtaskImpl> subtasks) {
             this.subtasks = subtasks;
         }
 

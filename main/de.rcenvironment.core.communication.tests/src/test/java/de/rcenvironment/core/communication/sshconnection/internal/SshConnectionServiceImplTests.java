@@ -30,6 +30,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.sshconnection.SshConnectionConstants;
+import de.rcenvironment.core.communication.sshconnection.SshConnectionContext;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -48,13 +49,13 @@ public class SshConnectionServiceImplTests {
     private static final String LOCALHOST = "localhost";
 
     private static final String DISPLAYNAME = "example connection";
-    
+
     private static final String DISPLAYNAME2 = "example connection2";
 
     private static final String USER = "user";
 
     private static final String PASSWORD = "password";
-    
+
     private static final int TIMEOUT = 30000;
 
     private SshServer sshServer;
@@ -85,29 +86,29 @@ public class SshConnectionServiceImplTests {
                 return (username.equals(USER) && password.equals(PASSWORD));
             }
         });
-        //Command factory that returns the correct version for the command "ra protocol-version"
+        // Command factory that returns the correct version for the command "ra protocol-version"
         sshServer.setCommandFactory(new CommandFactory() {
 
             @Override
             public Command createCommand(String commandString) {
                 if (commandString.equals("ra protocol-version")) {
                     return new Command() {
-                        
+
                         /** Test constant. */
                         public static final String EMPTY_STRING = "";
-                        
+
                         protected ExitCallback exitCallback;
 
                         private String stdout = SshConnectionConstants.REQUIRED_PROTOCOL_VERSION;
-                        
+
                         private String stderr;
-                        
+
                         private int exitValue;
-                        
+
                         private OutputStream stdoutStream;
 
                         private OutputStream stderrStream;
-                        
+
                         @Override
                         public void setInputStream(InputStream in) {}
 
@@ -148,7 +149,7 @@ public class SshConnectionServiceImplTests {
 
                         @Override
                         public void destroy() {}
-                        
+
                     };
                 } else {
                     throw new IllegalArgumentException("Unknown command: " + commandString);
@@ -168,15 +169,15 @@ public class SshConnectionServiceImplTests {
     }
 
     /**
-     * Test adding, editing, connecting and disconnecting an SSH connection.
-     * Does not test storing a password because we can't access the secure store here.
+     * Test adding, editing, connecting and disconnecting an SSH connection. Does not test storing a password because we can't access the
+     * secure store here.
      * 
      */
     @Test(timeout = TIMEOUT)
     public void testHandlingSshConnection() {
-        //Add a connection
+        // Add a connection
         String connectionId =
-            sshConnectionService.addSshConnectionWithAuthPhrase(DISPLAYNAME, LOCALHOST, PORT, USER, PASSWORD, false, false);
+            sshConnectionService.addSshConnection(DISPLAYNAME, LOCALHOST, PORT, USER, null, true, false);
         assertEquals(0, sshConnectionService.getAllActiveSshConnectionSetups().size());
         assertEquals(1, sshConnectionService.getAllSshConnectionSetups().size());
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getId(), connectionId);
@@ -184,9 +185,10 @@ public class SshConnectionServiceImplTests {
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getUsername(), USER);
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getHost(), LOCALHOST);
         assertNull(sshConnectionService.getAvtiveSshSession(connectionId));
-        
-        //Edit the connection
-        sshConnectionService.editSshConnection(connectionId, DISPLAYNAME2, LOCALHOST, PORT, USER);
+
+        // Edit the connection
+        sshConnectionService.editSshConnection(new SshConnectionContext(connectionId, DISPLAYNAME2, LOCALHOST, PORT, USER, null, true,
+            false));
         assertEquals(0, sshConnectionService.getAllActiveSshConnectionSetups().size());
         assertEquals(1, sshConnectionService.getAllSshConnectionSetups().size());
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getId(), connectionId);
@@ -194,13 +196,13 @@ public class SshConnectionServiceImplTests {
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getUsername(), USER);
         assertEquals(sshConnectionService.getConnectionSetup(connectionId).getHost(), LOCALHOST);
         assertNull(sshConnectionService.getAvtiveSshSession(connectionId));
-        
-        //Connect 
+
+        // Connect
         sshConnectionService.connectSession(connectionId, PASSWORD);
         assertNotNull(sshConnectionService.getAvtiveSshSession(connectionId));
         assertTrue(sshConnectionService.isConnected(connectionId));
-        
-        //Disconnect
+
+        // Disconnect
         sshConnectionService.disconnectSession(connectionId);
         assertNull(sshConnectionService.getAvtiveSshSession(connectionId));
         assertFalse(sshConnectionService.isConnected(connectionId));

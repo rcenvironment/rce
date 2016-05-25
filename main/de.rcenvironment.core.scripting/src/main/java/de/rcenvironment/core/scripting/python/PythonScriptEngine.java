@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.CountDownLatch;
 
 import javax.script.Bindings;
 import javax.script.ScriptContext;
@@ -47,10 +49,12 @@ import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptDataTypeHelper;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.legacy.FileSupport;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
@@ -75,6 +79,8 @@ public class PythonScriptEngine implements ScriptEngine {
 
     private static final String ESCAPED_DOUBLE_QUOTE = "\"";
 
+    private static final int EXIT_CODE_FAILURE = 1;
+
     private static ComponentDataManagementService componentDatamanagementService;
 
     private File tempDir;
@@ -83,7 +89,7 @@ public class PythonScriptEngine implements ScriptEngine {
 
     private LocalApacheCommandLineExecutor executor;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private Map<String, Serializable> output = new HashMap<String, Serializable>();
 
@@ -100,13 +106,21 @@ public class PythonScriptEngine implements ScriptEngine {
     private List<String> notAValueOutputsList = new LinkedList<String>();
 
     /**
+     * This latch is used to ensure that a cancellation request is not performed during the preparation of the script execution is executed,
+     * but after the initialization is completed.
+     */
+    private CountDownLatch initializationSignal;
+
+    /**
      * Creates a new executor.
      * 
      * @param dataItem {@link ScriptComponentHistoryDataItem} object for this script execution
      */
-    public void createNewExecutor(CommonComponentHistoryDataItem dataItem) {
+    public synchronized void createNewExecutor(CommonComponentHistoryDataItem dataItem) {
+        // This method is synchronized to avoid a race condition with cancel
         try {
             executor = new LocalApacheCommandLineExecutor(null);
+            initializationSignal = new CountDownLatch(1);
         } catch (IOException e) {
             LOGGER.error("Failed to create executor for python.");
         }
@@ -147,26 +161,32 @@ public class PythonScriptEngine implements ScriptEngine {
                 + " -u "
                 + tempDir.getAbsolutePath() + File.separator + RUN_SCRIPT;
         LOGGER.debug("PythonExecutor executes command: " + command);
+
         int exitCode = 0;
         try {
             executor.start(command);
             prepareOutputForRun();
+
+            // as soon as we reach this position the execution can be interrupted
+            initializationSignal.countDown();
+
             try {
                 exitCode = executor.waitForTermination();
+                stdoutWatcher.waitForTermination();
+                stderrWatcher.waitForTermination();
+
             } catch (InterruptedException e) {
                 LOGGER.error("ProgramBlocker: InterruptedException " + e.getMessage());
+                return EXIT_CODE_FAILURE;
+            } catch (CancellationException e) {
+                LOGGER.debug("Execution canceled while waiting for termination of TextStreamWatcher.");
+                return EXIT_CODE_FAILURE;
             }
-            waitForConsoleOutputAndAddThemToHistoryDataItem();
         } catch (IOException e) {
             LOGGER.error("Something during Python execution failed. See exception for details", e);
         }
         readOutputFromPython();
         return exitCode;
-    }
-
-    private void waitForConsoleOutputAndAddThemToHistoryDataItem() throws IOException {
-        stdoutWatcher.waitForTermination();
-        stderrWatcher.waitForTermination();
     }
 
     private void prepareOutputForRun() {
@@ -238,6 +258,24 @@ public class PythonScriptEngine implements ScriptEngine {
                 }
                 inputsToWrite.put(inputName, resultVector);
                 break;
+            case Matrix:
+                MatrixTD matrix = (MatrixTD) compContext.readInput(inputName);
+                if (matrix.getRowDimension() > 1) {
+                    Object[][] result = new Object[matrix.getRowDimension()][matrix.getColumnDimension()];
+                    for (int i = 0; i < result.length; i++) {
+                        for (int j = 0; j < result[0].length; j++) {
+                            result[i][j] = ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j));
+                        }
+                    }
+                    inputsToWrite.put(inputName, result);
+                } else {
+                    Object[] result = new Object[matrix.getColumnDimension()];
+                    for (int j = 0; j < matrix.getColumnDimension(); j++) {
+                        result[j] = ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(0, j));
+                    }
+                    inputsToWrite.put(inputName, result);
+                }
+                break;
             case SmallTable:
                 SmallTableTD table = (SmallTableTD) compContext.readInput(inputName);
                 if (table.getRowCount() > 1) {
@@ -274,7 +312,8 @@ public class PythonScriptEngine implements ScriptEngine {
         for (String input : compContext.getInputs()) {
             if (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
                 && compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
-                    InputExecutionContraint.NotRequired.name()) && !compContext.getInputsWithDatum().contains(input)) {
+                    InputExecutionContraint.NotRequired.name())
+                && !compContext.getInputsWithDatum().contains(input)) {
                 inputsNotConnected.add(input);
             }
         }
@@ -476,4 +515,22 @@ public class PythonScriptEngine implements ScriptEngine {
         componentDatamanagementService = compDataManagementService;
     }
 
+    /**
+     * Cancels the execution of the Python script.
+     */
+    public synchronized void cancel() {
+        // This method is synchronized to avoid a race condition with createNewExecutor
+        
+        try {
+            initializationSignal.await();
+        } catch (InterruptedException e) {
+            LOGGER.debug("Interrupted while waiting for the initialization to finish.", e);
+            LOGGER.debug("Cancelling the cancellation.");
+            return;
+        }
+
+        stdoutWatcher.cancel();
+        stderrWatcher.cancel();
+        executor.cancel();
+    }
 }

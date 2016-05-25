@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
 
@@ -34,12 +35,13 @@ public class XmlMergerWorkflowNodeValidator extends AbstractWorkflowNodeValidato
     @Override
     protected Collection<WorkflowNodeValidationMessage> validate() {
         final List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();
-        if (!isPropertySet(PROPERTY_XML_CONTENT)) {
+        boolean mappingFileInputExists = getInputs(DataType.FileReference).size() == 3;
+        if (!mappingFileInputExists && !isPropertySet(PROPERTY_XML_CONTENT)) {
             messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, PROPERTY_XML_CONTENT,
                 Messages.noXmlFileLoaded,
                 Messages.noXmlFileLoadedLong));
         }
-        if (!isPropertySet(PROPERTY_MAPPING_TYPE)) {
+        if (!mappingFileInputExists && !isPropertySet(PROPERTY_MAPPING_TYPE)) {
             messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, PROPERTY_MAPPING_TYPE,
                 Messages.unknownMappingType,
                 Messages.unknownMappingTypeLong));

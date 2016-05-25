@@ -1,0 +1,52 @@
+{
+    "configuration": [
+        {
+            "key": "method",
+            "defaultValue": "Full factorial design"
+        },
+        {
+            "key": "startSample",
+            "defaultValue": "0"
+        },
+        {
+            "key": "endSample",
+            "defaultValue": "0"
+        },
+        {
+            "key": "table",
+            "defaultValue": ""
+        },
+        {
+            "key": "runNumber",
+            "defaultValue": "2"
+        },
+        {
+            "key": "seedNumber",
+            "defaultValue": "0"
+        },
+        {
+            "key": "loopFaultTolerance_5e0ed1cd",
+            "defaultValue": "Fail"
+        },
+        {
+            "key": "faultTolerance-NAV_5e0ed1cd",
+            "defaultValue": "Fail"
+        },
+        {
+            "key": "maxRerunBeforeFail-NAV_5e0ed1cd",
+            "defaultValue": "1"
+        },
+        {
+            "key": "maxRerunBeforeDiscard-NAV_5e0ed1cd",
+            "defaultValue": "1"
+        },
+        {
+            "key": "failLoopOnly-NAV_5e0ed1cd",
+            "defaultValue": "false"
+        },
+        {
+            "key": "finallyFailIfDiscarded-NAV_5e0ed1cd",
+            "defaultValue": "false"
+        }
+    ]
+}

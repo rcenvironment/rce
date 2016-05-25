@@ -161,6 +161,27 @@
                 }
             }
         },
+         {
+            "identifier": "stepvalues",
+            "group" : "startValues",
+            "dataTypes": [
+                "Float",
+                "Vector"
+            ],
+            "defaultDataType": "Float",
+            "metaData": {
+                "usage": {
+                    "guiName": "Usage",
+                    "guiPosition": "0",
+                    "guiGroup": "Scheduling",
+                    "visibility": "shown",
+                    "possibleValues": [
+                        "initial"
+                    ],
+                    "defaultValue": "initial"
+                }
+            }
+        },
         {
             "identifier": "outerLoopDone",
             "group":"innerLoop",

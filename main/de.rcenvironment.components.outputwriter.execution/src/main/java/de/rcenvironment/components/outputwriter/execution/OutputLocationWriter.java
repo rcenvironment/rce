@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,7 +44,7 @@ public class OutputLocationWriter {
     private static final String LINE_SEP = System.getProperty("line.separator");
 
     private File outputFile;
-    
+
     private String basicName;
 
     private FileOutputStream outputStream;
@@ -95,7 +95,7 @@ public class OutputLocationWriter {
                     Date dt = new Date();
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
-                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp) + LINE_SEP, true);
+                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp, 0) + LINE_SEP, true);
                 }
 
             } catch (IOException e) {
@@ -106,8 +106,8 @@ public class OutputLocationWriter {
         componentLog.componentInfo("Created and initialized file used as target for simple data types: " + outputFile.getAbsolutePath());
     }
 
-    protected void writeOutput(Map<String, TypedDatum> inputMap, String timestamp) throws ComponentException {
-        String outputString = formatOutput(inputMap, timestamp);
+    protected void writeOutput(Map<String, TypedDatum> inputMap, String timestamp, int executionCount) throws ComponentException {
+        String outputString = formatOutput(inputMap, timestamp, executionCount);
         iterations++;
         try {
             if (handleExistingFile == HandleExistingFile.APPEND) {
@@ -120,7 +120,7 @@ public class OutputLocationWriter {
                     Date dt = new Date();
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
-                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp) + LINE_SEP + outputString, false);
+                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp, executionCount) + LINE_SEP + outputString, false);
                 } else {
                     FileUtils.writeStringToFile(outputFile, outputString, false);
                 }
@@ -132,7 +132,7 @@ public class OutputLocationWriter {
                     SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
                     String timeStamp = df.format(dt);
                     outputFile = getNamePerIteration(outputFile);
-                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp) + LINE_SEP + outputString, false);
+                    FileUtils.writeStringToFile(outputFile, formatHeader(timeStamp, executionCount) + LINE_SEP + outputString, false);
                 } else {
                     outputFile = getNamePerIteration(outputFile);
                     FileUtils.writeStringToFile(outputFile, outputString, false);
@@ -145,11 +145,13 @@ public class OutputLocationWriter {
         componentLog.componentInfo(StringUtils.format("Wrote '%s' to: %s", inputMap, outputFile.getAbsolutePath()));
     }
 
-    protected String formatOutput(Map<String, TypedDatum> inputMap, String timestamp) {
+    protected String formatOutput(Map<String, TypedDatum> inputMap, String timestamp, int executionCount) {
         String outputString = formatString;
 
         outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_TIMESTAMP), timestamp);
         outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_LINEBREAK), LINE_SEP);
+        outputString =
+            outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_EXECUTION_COUNT), Integer.toString(executionCount));
 
         for (Map.Entry<String, TypedDatum> entry : inputMap.entrySet()) {
             outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_PREFIX) + entry.getKey()
@@ -165,11 +167,13 @@ public class OutputLocationWriter {
         return outputString;
     }
 
-    protected String formatHeader(String timestamp) {
+    protected String formatHeader(String timestamp, int executionCount) {
         String outputString = this.header;
 
         outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_TIMESTAMP), timestamp);
         outputString = outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_LINEBREAK), LINE_SEP);
+        outputString =
+            outputString.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_EXECUTION_COUNT), Integer.toString(executionCount));
 
         for (String inputName : inputNames) {
             outputString =

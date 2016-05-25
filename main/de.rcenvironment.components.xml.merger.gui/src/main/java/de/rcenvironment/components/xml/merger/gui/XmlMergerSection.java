@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,15 +8,21 @@
 
 package de.rcenvironment.components.xml.merger.gui;
 
-import java.io.File;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.custom.CLabel;
+import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -24,19 +30,22 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Text;
-import org.eclipse.ui.PartInitException;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.components.xml.merger.common.XmlMergerComponentConstants;
-import de.rcenvironment.core.gui.utils.common.EditorsHelper;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
+import de.rcenvironment.core.gui.workflow.editor.properties.AbstractWorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.legacy.FileEncodingUtils;
 
 /**
  * GUI in property tab for tool finding.
@@ -46,6 +55,7 @@ import de.rcenvironment.core.utils.common.legacy.FileEncodingUtils;
  * @author Markus Litz
  * @author Miriam Lenk
  * @author Jan Flink
+ * @author Brigitte Boden
  */
 public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
@@ -59,7 +69,29 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
     private Composite contentGroup;
 
+    private CLabel fileContentLabel;
+
     private Text fileContentText;
+
+    private boolean mappingFileAsInput;
+
+    private Button mappingFileAsInputButton;
+
+    private Button loadMappingFileButton;
+
+    @Override
+    public void setInput(IWorkbenchPart part, ISelection selection) {
+        super.setInput(part, selection);
+        addPropertyChangeListener(new PropertyChangeListener() {
+
+            @Override
+            public void propertyChange(PropertyChangeEvent evt) {
+                if (!getComposite().isDisposed()) {
+                    refreshSection();
+                }
+            }
+        });
+    }
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
@@ -90,8 +122,33 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         client.setLayoutData(layoutData);
         client.setLayout(new GridLayout(1, false));
 
+        Composite radioGroup = toolkit.createComposite(client);
+        radioGroup.setLayout(new GridLayout(2, false));
+
+        mappingFileAsInputButton = new Button(radioGroup, SWT.RADIO);
+        mappingFileAsInputButton.setText(Messages.mappingFileAsInputButton);
+        mappingFileAsInputButton.setSelection(mappingFileAsInput);
+        loadMappingFileButton = new Button(radioGroup, SWT.RADIO);
+        loadMappingFileButton.setText(Messages.mappingFileLoadedButton);
+        mappingFileAsInputButton.addSelectionListener(new SelectionAdapter() {
+
+            @Override
+            public void widgetSelected(SelectionEvent e) {
+                mappingFileAsInput = mappingFileAsInputButton.getSelection();
+
+                if (getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
+                    .equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT) && !mappingFileAsInput) {
+                    execute(new ChangeToLoadedMappingFileCommand());
+                } else if (getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
+                    .equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED) && mappingFileAsInput) {
+                    execute(new ChangeToMappingFileAsInputCommand());
+                }
+            }
+        });
+
         fileGroup = toolkit.createComposite(client);
         fileGroup.setLayout(new GridLayout(2, false));
+        fileGroup.setEnabled(!mappingFileAsInput);
 
         GridData gridData = new GridData();
         gridData.horizontalAlignment = GridData.FILL_HORIZONTAL;
@@ -106,7 +163,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         contentGroup.setLayoutData(layoutData);
         contentGroup.setLayout(new GridLayout(1, false));
 
-        toolkit.createCLabel(contentGroup, Messages.actuallyLoadedLabel);
+        fileContentLabel = toolkit.createCLabel(contentGroup, Messages.actuallyLoadedLabel);
 
         gridData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         gridData.heightHint = MINIMUM_HEIGHT_OF_FILE_CONTENT_TEXT;
@@ -146,42 +203,10 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
      * 
      */
     private void fileEditing() {
-        try {
-            final File tempFile =
-                TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("mapping.xsl");
-            String content = getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
-
-            FileEncodingUtils.saveUnicodeStringToFile(content, tempFile);
-
-            EditorsHelper.openExternalFileInEditor(tempFile, new Runnable[] {
-                new Runnable() {
-
-                    @Override
-                    public void run() {
-                        try {
-                            final String newValue = FileEncodingUtils.loadUnicodeStringFromFile(tempFile);
-                            setProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, newValue);
-                            setXMLContent();
-                            if (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME) == null
-                                || (getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME)
-                                instanceof String
-                                && getProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME)
-                                    .isEmpty())) {
-                                // Just guessing it is XSLT
-                                setProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME,
-                                    XmlMergerComponentConstants.MAPPINGTYPE_XSLT);
-                            }
-                        } catch (final IOException e) {
-                            logger.error("Could not read temporary edited file", e);
-                        }
-                    }
-                }
-            });
-        } catch (IOException e) {
-            logger.error("Could not create temporary file", e);
-        } catch (PartInitException e) {
-            logger.error(e);
-        }
+        Runnable editMappingFileRunnable = new EditMappingFileRunnable(node);
+        editMappingFileRunnable.run();
+        setXMLContent();
+        
     }
 
     private void setMappingType(final String fileName) {
@@ -195,7 +220,30 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
     @Override
     protected void refreshBeforeValidation() {
         fileEditor.setEnabled(getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME) != null);
+        mappingFileAsInput =
+            (getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
+                .equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT));
         setXMLContent();
+        mappingFileAsInputButton.setSelection(mappingFileAsInput);
+        loadMappingFileButton.setSelection(!mappingFileAsInput);
+        fileChooser.setEnabled(!mappingFileAsInput);
+        fileEditor.setEnabled(!mappingFileAsInput && getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME) != null);
+        fileContentLabel.setEnabled(!mappingFileAsInput);
+        fileContentText.setEnabled(!mappingFileAsInput);
+        if (mappingFileAsInput) {
+            fileContentLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_TITLE_INACTIVE_FOREGROUND));
+            // Setting the focus to the selected radio button. This is necessary when the button has been selected automatically (e.g. after
+            // a "redo" operation), because otherwise a "save" operation will change the button selection again, causing the bug in
+            // https://mantis.sc.dlr.de/view.php?id=13578
+            if (loadMappingFileButton.isFocusControl()) {
+                mappingFileAsInputButton.setFocus();
+            }
+        } else {
+            fileContentLabel.setForeground(Display.getDefault().getSystemColor(SWT.COLOR_TITLE_FOREGROUND));
+            if (mappingFileAsInputButton.isFocusControl()) {
+                loadMappingFileButton.setFocus();
+            }
+        }
         fileGroup.pack(true);
     }
 
@@ -232,4 +280,70 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         }
 
     }
+
+    /**
+     * Adds the input for the mapping file.
+     * 
+     */
+    private class ChangeToMappingFileAsInputCommand extends AbstractWorkflowNodeCommand {
+
+        private String oldXmlContent;
+
+        @Override
+        protected void execute2() {
+            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+                XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT);
+            oldXmlContent = configDesc.getConfigurationValue((XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME));
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, null);
+            addMappingFileInput(getWorkflowNode());
+        }
+
+        @Override
+        protected void undo2() {
+            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+                XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED);
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, oldXmlContent);
+            removeMappingFileInput(getWorkflowNode());
+        }
+
+    }
+
+    /**
+     * Remove the input for the mapping file.
+     * 
+     */
+    private class ChangeToLoadedMappingFileCommand extends AbstractWorkflowNodeCommand {
+
+        @Override
+        protected void execute2() {
+            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+                XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED);
+            removeMappingFileInput(getWorkflowNode());
+        }
+
+        @Override
+        protected void undo2() {
+            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
+                XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT);
+            addMappingFileInput(getWorkflowNode());
+        }
+    }
+
+    private void addMappingFileInput(WorkflowNode workflowNode) {
+        EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
+        Map<String, String> metaData = new HashMap<String, String>();
+        manager.addDynamicEndpointDescription(XmlMergerComponentConstants.INPUT_ID_MAPPING_FILE,
+            XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE, DataType.FileReference,
+            metaData);
+    }
+
+    private void removeMappingFileInput(WorkflowNode workflowNode) {
+        EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
+        manager.removeDynamicEndpointDescription(XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE);
+    }
+
 }

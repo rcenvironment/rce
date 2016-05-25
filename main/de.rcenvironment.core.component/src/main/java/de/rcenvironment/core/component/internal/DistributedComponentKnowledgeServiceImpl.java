@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -35,6 +35,7 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
 import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
 import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
@@ -103,7 +104,7 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
 
         private final Map<NodeIdentifier, Collection<ComponentInstallation>> distributedStateAsMap;
 
-        public DistributedComponentKnowledgeSnapshot(InternalModel internalModel) {
+        DistributedComponentKnowledgeSnapshot(InternalModel internalModel) {
             synchronized (internalModel) {
                 // simply copy the local state object as it is immutable
                 localStateAsList = internalModel.immutableLocalState;
@@ -413,7 +414,7 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
     }
 
     private String serializeComponentInstallationData(ComponentInstallation ci) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             return mapper.writeValueAsString(ci);
         } catch (IOException e) {
@@ -423,7 +424,7 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
     }
 
     private ComponentInstallation deserializeComponentInstallationData(String jsonData) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             return mapper.readValue(jsonData, ComponentInstallationImpl.class);
         } catch (IOException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,6 +21,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * 
@@ -43,7 +44,7 @@ public class SwitchPersistentComponentDescriptionUpdater implements PersistentCo
     
     private static final String REQUIRED = "Required";
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {

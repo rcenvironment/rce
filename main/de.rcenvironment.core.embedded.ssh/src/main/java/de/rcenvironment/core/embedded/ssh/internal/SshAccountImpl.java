@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,9 +8,22 @@
 
 package de.rcenvironment.core.embedded.ssh.internal;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.KeySpec;
+import java.security.spec.RSAPublicKeySpec;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
+import org.codehaus.jackson.annotate.JsonIgnore;
 
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 
@@ -19,6 +32,7 @@ import de.rcenvironment.core.embedded.ssh.api.SshAccount;
  * 
  * @author Sebastian Holtappels
  * @author Robert Mischke
+ * @author Brigitte Boden (added public key authentication)
  */
 public class SshAccountImpl implements SshAccount {
 
@@ -29,6 +43,9 @@ public class SshAccountImpl implements SshAccount {
     private String passwordHash;
 
     private String publicKey;
+
+    @JsonIgnore
+    private PublicKey publicKeyObj;
 
     private String role = "";
 
@@ -43,6 +60,7 @@ public class SshAccountImpl implements SshAccount {
         this.passwordHash = passwordHash;
         this.publicKey = publicKey;
         this.role = role;
+        parsePublicKey();
     }
 
     /**
@@ -78,6 +96,12 @@ public class SshAccountImpl implements SshAccount {
 
         if (password != null && passwordHash != null) {
             log.warn("User " + loginName + " has both a clear-text and a hashed password at the same time");
+            isValid = false;
+        }
+
+        // ensure public key is valid (can be parsed to public key object)
+        if (publicKey != null && !publicKey.isEmpty() && publicKeyObj == null) {
+            log.warn("SSH User " + loginName + " has an invalid public key (only RSA keys are valid)");
             isValid = false;
         }
 
@@ -129,8 +153,20 @@ public class SshAccountImpl implements SshAccount {
         return publicKey;
     }
 
+    /**
+     * Sets the string representation of the public key and parses it to a key object.
+     * 
+     * @param publicKey the string representation of the public key
+     */
     public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
+        parsePublicKey();
+    }
+    
+    @JsonIgnore
+    @Override
+    public PublicKey getPublicKeyObj() {
+        return publicKeyObj;
     }
 
     @Override
@@ -156,4 +192,35 @@ public class SshAccountImpl implements SshAccount {
         this.enabled = enabled;
     }
 
+    private void parsePublicKey() {
+        if (publicKey != null && !publicKey.isEmpty()) {
+            try {
+                // Parse known key string to a PublicKey object.
+                byte[] encKey = Base64.decodeBase64(publicKey.split(" ")[1]);
+                DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(encKey));
+
+                byte[] header = readElement(inputStream);
+                String pubKeyFormat = new String(header);
+                if (pubKeyFormat.equals("ssh-rsa")) {
+                    byte[] publicExponent = readElement(inputStream);
+                    byte[] modulus = readElement(inputStream);
+
+                    KeySpec spec = new RSAPublicKeySpec(new BigInteger(modulus), new BigInteger(publicExponent));
+                    KeyFactory kf = KeyFactory.getInstance("RSA");
+                    publicKeyObj = kf.generatePublic(spec);
+                }
+            } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | ArrayIndexOutOfBoundsException e) {
+                // No valid public key
+                publicKeyObj = null;
+            }
+        }
+    }
+
+    // Helper method for parsing public key string
+    private static byte[] readElement(DataInput dataInput) throws IOException {
+        int len = dataInput.readInt();
+        byte[] buf = new byte[len];
+        dataInput.readFully(buf);
+        return buf;
+    }
 }

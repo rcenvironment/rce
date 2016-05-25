@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,7 +33,7 @@ public enum ScriptLanguage {
 
     private final String extension;
 
-    private ScriptLanguage(final String name, final String extension) {
+    ScriptLanguage(final String name, final String extension) {
         this.name = name;
         this.extension = extension;
     }

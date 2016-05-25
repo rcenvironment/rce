@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,9 +32,11 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
+import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -56,14 +58,14 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
      * max length of short text content.
      */
     public static final int MAX_LABEL_LENGTH = 30;
-    
+
     private static final int MAX_NON_PERSISTENT_ENTRIES = 1000;
 
     private static final String LEAF_TEXT_FORMAT = "%s: %s";
 
     private static Log logger = LogFactory.getLog(CommonHistoryDataItemSubtreeBuilderUtils.class);
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private CommonHistoryDataItemSubtreeBuilderUtils() {};
 
@@ -198,30 +200,13 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             type = DMBrowserNodeType.DMFileResource;
         } else if (dataType == DataType.DirectoryReference) {
             type = DMBrowserNodeType.DMDirectoryReference;
+        } else if (dataType == DataType.Matrix) {
+            type = DMBrowserNodeType.Matrix;
         } else {
             // use information type as fallback
             type = DMBrowserNodeType.InformationText;
         }
         return type;
-    }
-
-    private static void recursiveBrowseDirectory(File parentFile, DMBrowserNode parentNode) {
-        for (File file : parentFile.listFiles()) {
-            // if file is directory and contains something, add child node and go on
-            if (file.isDirectory()) {
-                if (file.listFiles().length > 0) {
-                    DMBrowserNode node = DMBrowserNode.addNewChildNode(file.getName(), DMBrowserNodeType.DMDirectoryReference, parentNode);
-                    recursiveBrowseDirectory(file, node);
-                } else {
-                    DMBrowserNode.addNewLeafNode(file.getName(), DMBrowserNodeType.DMDirectoryReference, parentNode);
-                }
-            } else {
-                // else add leaf node for each item and finish
-                DMBrowserNode node = DMBrowserNode.addNewLeafNode(file.getName(), DMBrowserNodeType.DMFileResource, parentNode);
-                node.setAssociatedFilename(file.getName());
-                node.setFileReferencePath(file.getAbsolutePath());
-            }
-        }
     }
 
     private static List<String> sortKeys(Set<String> unsortedKeys) {
@@ -246,6 +231,7 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             node.setAssociatedFilename(directoryReference.getDirectoryName());
             node.setDataReferenceId(directoryReference.getDirectoryReference());
             node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, item.getEndpointName(), directoryReference.getDirectoryName()));
+            node.setDirectoryReferenceTD((DirectoryReferenceTD) item.getValue());
         }
     }
 
@@ -254,36 +240,47 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
         return handleLabel(fullContent, org.apache.commons.lang3.StringUtils.abbreviate(fullContent, MAX_LABEL_LENGTH), endpointName, node);
     }
 
+    private static void handleNotAValueLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
+        NotAValueTD notAValue = (NotAValueTD) item.getValue();
+        String labelText = notAValue.toString();
+        if (notAValue.getCause().equals(NotAValueTD.Cause.Failure)) {
+            labelText += " [cause: some component failed]";
+        } else {
+            labelText += " [cause: explicitly sent by some component]";
+        }
+        node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, endpointName, labelText));
+    }
+
     private static String handleSmallTableLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
         SmallTableTD table = (SmallTableTD) item.getValue();
-        String abbreviatedContent =  table.toLengthLimitedString(MAX_LABEL_LENGTH);
+        String abbreviatedContent = table.toLengthLimitedString(MAX_LABEL_LENGTH);
         if (table.getColumnCount() * table.getRowCount() > MAX_NON_PERSISTENT_ENTRIES) {
             node.setSmallTableTDAndFileName(table, endpointName);
             return handleLabel(abbreviatedContent, endpointName, node);
         } else {
-            return handleLabel(table.toString(), abbreviatedContent, endpointName, node);            
+            return handleLabel(table.toString(), abbreviatedContent, endpointName, node);
         }
     }
 
     private static String handleMatrixLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
         MatrixTD matrix = (MatrixTD) item.getValue();
-        String abbreviatedContent =  matrix.toLengthLimitedString(MAX_LABEL_LENGTH);
+        String abbreviatedContent = matrix.toLengthLimitedString(MAX_LABEL_LENGTH);
         if (matrix.getRowDimension() * matrix.getColumnDimension() > MAX_NON_PERSISTENT_ENTRIES) {
             node.setMatrixTDAndFileName(matrix, endpointName);
             return handleLabel(abbreviatedContent, endpointName, node);
         } else {
-            return handleLabel(matrix.toString(), abbreviatedContent, endpointName, node);            
+            return handleLabel(matrix.toString(), abbreviatedContent, endpointName, node);
         }
     }
 
     private static String handleVectorLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
         VectorTD vector = (VectorTD) item.getValue();
-        String abbreviatedContent =  vector.toLengthLimitedString(MAX_LABEL_LENGTH);
+        String abbreviatedContent = vector.toLengthLimitedString(MAX_LABEL_LENGTH);
         if (vector.getRowDimension() > MAX_NON_PERSISTENT_ENTRIES) {
             node.setVectorTDAndFileName(vector, endpointName);
             return handleLabel(abbreviatedContent, endpointName, node);
         } else {
-            return handleLabel(vector.toString(), abbreviatedContent, endpointName, node);            
+            return handleLabel(vector.toString(), abbreviatedContent, endpointName, node);
         }
     }
 
@@ -319,15 +316,14 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             || currentDataType == DataType.Integer
             || currentDataType == DataType.Float) {
             handleBooleanDigitShortTextLabel(item, name, node);
+        } else if (currentDataType == DataType.NotAValue) {
+            handleNotAValueLabel(item, name, node);
         } else if (currentDataType == DataType.Matrix) {
             handleMatrixLabel(item, name, node);
         } else if (currentDataType == DataType.FileReference) {
             addFileReference(item, node);
         } else if (currentDataType == DataType.DirectoryReference) {
             addDirectoryReference(item, node);
-            if (!node.isBuiltForDeletionPurpose()) {
-                buildSubtreeForDirectoryItem(item, node, parent);
-            }
         } else {
             node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, name, item.getValue()));
         }
@@ -343,15 +339,14 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
         }
     }
 
-    private static void buildSubtreeForDirectoryItem(EndpointHistoryDataItem item, DMBrowserNode node, DMBrowserNode parent) {
-        DirectoryReferenceTD directoryReference = null;
-        if (item.getValue() instanceof DirectoryReferenceTD) {
-            directoryReference = (DirectoryReferenceTD) item.getValue();
-        } else {
-            // A check to avoid potential null pointer access. Should never be reached as method is only called for directory references.
-            logger.error("Unexpected method call: item is not a directory reference.");
-            return;
-        }
+    /**
+     * Builds directory subtree for endpoint.
+     * 
+     * @param directoryReference {@link DirectoryReferenceTD} pointing to the directory in the data management
+     * @param node {@link DMBrowserNode} of the endpoint
+     * @param parent parent {@link DMBrowserNode} of the endpoint {@link DMBrowserNode}
+     */
+    public static void buildSubtreeForDirectoryItem(DirectoryReferenceTD directoryReference, DMBrowserNode node, DMBrowserNode parent) {
         File dir = new File(Activator.getInstance().getBundleSpecificTempDir(), directoryReference.getDirectoryReference());
         if (!dir.mkdir() && (!dir.exists() || dir.isFile())) {
             logger.error("Temp directory could not be created or did already exist as file: " + dir);
@@ -366,7 +361,6 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             CommonHistoryDataItemSubtreeBuilderUtils dummyInstance = new CommonHistoryDataItemSubtreeBuilderUtils();
             ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(dummyInstance);
             ComponentDataManagementService componentService = serviceRegistryAccess.getService(ComponentDataManagementService.class);
-
             try {
                 componentService.copyDirectoryReferenceTDToLocalDirectory(directoryReference, dir,
                     parent.getNodeWithTypeWorkflow().getNodeIdentifier());
@@ -381,6 +375,25 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
                 recursiveBrowseDirectory(new File(dir, directoryReference.getDirectoryName()), node);
             } else {
                 node.markAsLeaf();
+            }
+        }
+    }
+
+    private static void recursiveBrowseDirectory(File parentFile, DMBrowserNode parentNode) {
+        for (File file : parentFile.listFiles()) {
+            // if file is directory and contains something, add child node and go on
+            if (file.isDirectory()) {
+                if (file.listFiles().length > 0) {
+                    DMBrowserNode node = DMBrowserNode.addNewChildNode(file.getName(), DMBrowserNodeType.DMDirectoryReference, parentNode);
+                    recursiveBrowseDirectory(file, node);
+                } else {
+                    DMBrowserNode.addNewLeafNode(file.getName(), DMBrowserNodeType.DMDirectoryReference, parentNode);
+                }
+            } else {
+                // else add leaf node for each item and finish
+                DMBrowserNode node = DMBrowserNode.addNewLeafNode(file.getName(), DMBrowserNodeType.DMFileResource, parentNode);
+                node.setAssociatedFilename(file.getName());
+                node.setFileReferencePath(file.getAbsolutePath());
             }
         }
     }

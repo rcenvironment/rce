@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.datamanagement.backend.data.efs.tests</artifactId>
 	<name>RCE Core Datamamanagement Data EFS Bundle Tests</name>
-	<version>7.0.2.qualifier</version>
+	<version>7.1.0.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

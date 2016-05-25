@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -101,7 +101,7 @@ public class NewExampleProjectWizardPage extends WizardPage {
     private void dialogChanged() {
         final String newProjectName = textFieldProjectName.getText();
         if (newProjectName.length() == 0) {
-            updateStatus("Please chose a name for the new demo project");
+            updateStatus("Please chose a name for the new project");
             return;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -40,23 +40,26 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
 
     private Button selectAtWfStartButton;
 
+    private Button storeLoopFailures;
+
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage propSheetPage) {
+        super.createCompositeContent(parent, propSheetPage);
         parent.setLayout(new GridLayout(1, false));
         parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL));
-        Section parentSection = propSheetPage.getWidgetFactory().createSection(parent, Section.TITLE_BAR);
-        parentSection.setLayout(new GridLayout());
-        parentSection.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
-        parentSection.setText("Evaluation Memory File");
-        super.createCompositeContent(parent, propSheetPage);
+        
+        Section memFileSection = propSheetPage.getWidgetFactory().createSection(parent, Section.TITLE_BAR);
+        memFileSection.setLayout(new GridLayout());
+        memFileSection.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
+        memFileSection.setText("Evaluation Memory File");
 
-        final Composite mainComposite = propSheetPage.getWidgetFactory().createComposite(parent);
-        mainComposite.setLayout(new GridLayout(2, true));
-        mainComposite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        final Composite memFileComposite = propSheetPage.getWidgetFactory().createComposite(parent);
+        memFileComposite.setLayout(new GridLayout(2, true));
+        memFileComposite.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
 
-        selectAtWfStartButton = new Button(mainComposite, SWT.CHECK);
+        selectAtWfStartButton = new Button(memFileComposite, SWT.CHECK);
         selectAtWfStartButton.setText("Select at workflow start");
-        selectAtWfStartButton.setBackground(mainComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
+        selectAtWfStartButton.setBackground(memFileComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
         selectAtWfStartButton.addSelectionListener(new SelectionListener() {
             
             @Override
@@ -76,11 +79,11 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
         gridData.horizontalSpan = 2;
         selectAtWfStartButton.setLayoutData(gridData);
         
-        memoryFilePathText = new Text(mainComposite, SWT.WRAP | SWT.BORDER | SWT.SINGLE);
+        memoryFilePathText = new Text(memFileComposite, SWT.WRAP | SWT.BORDER | SWT.SINGLE);
         memoryFilePathText.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_MEMORY_FILE);
         memoryFilePathText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
         
-        selectFilePathButton = new Button(mainComposite, SWT.PUSH);
+        selectFilePathButton = new Button(memFileComposite, SWT.PUSH);
         selectFilePathButton.setText("...");
         selectFilePathButton.addListener(SWT.Selection, new Listener() {
             
@@ -93,6 +96,21 @@ public class EvaluationMemoryFileSection extends ValidatingWorkflowNodePropertyS
                 }
             }
         });
+        
+        Section memOptionsSection = propSheetPage.getWidgetFactory().createSection(parent, Section.TITLE_BAR);
+        memOptionsSection.setLayout(new GridLayout());
+        memOptionsSection.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
+        memOptionsSection.setText("Evaluation Memory Options");
+        
+        final Composite memOptionsComposite = propSheetPage.getWidgetFactory().createComposite(parent);
+        memOptionsComposite.setLayout(new GridLayout(2, true));
+        memOptionsComposite.setLayoutData(new GridData(GridData.FILL | GridData.FILL_HORIZONTAL));
+
+        storeLoopFailures = new Button(memOptionsComposite, SWT.CHECK);
+        storeLoopFailures.setData(CONTROL_PROPERTY_KEY, EvaluationMemoryComponentConstants.CONFIG_CONSIDER_LOOP_FAILURES);
+        storeLoopFailures.setText("Consider loop failures as valid loop results"
+            + " (values of type not-a-value that are explicitly sent by components)");
+        storeLoopFailures.setBackground(memOptionsComposite.getDisplay().getSystemColor(SWT.COLOR_WHITE));
     }
     
     @Override

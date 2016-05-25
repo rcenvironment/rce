@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 

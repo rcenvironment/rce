@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,14 +8,11 @@
 
 package de.rcenvironment.core.gui.datamanagement.browser;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.text.MessageFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -97,6 +94,7 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeUtils;
 import de.rcenvironment.core.gui.datamanagement.commons.DataManagementWorkbenchUtils;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.view.timeline.TimelineView;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -202,12 +200,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         private final List<DMBrowserNodeType> savableNodeAsFolder = new ArrayList<DMBrowserNodeType>();
 
-        private List<DMBrowserNode> browserNodesToSave;
-
-        private File ordnerPath;
-
-        private File filePath;
-
         /*
          * Set all savable DMBrowserNodeTypes.
          */
@@ -274,8 +266,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
         @Override
         public void run() {
-            browserNodesToSave = new LinkedList<DMBrowserNode>(
-                selectedNodes);
+            final List<DMBrowserNode> browserNodesToSave = new LinkedList<DMBrowserNode>(selectedNodes);
             FileDialog fileDialog = new FileDialog(display.getActiveShell(), SWT.SAVE);
             fileDialog.setText("Export");
             fileDialog.setFileName(browserNodesToSave.get(0).getTitle().replace(":", "_"));
@@ -283,8 +274,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             if (directoryPath == null) {
                 return;
             }
-            ordnerPath = new File(directoryPath);
-            final Job job = new ExportJob("Exporting");
+            final File targetDirectory = new File(directoryPath);
+            final ExportJob job = new ExportJob("Exporting", browserNodesToSave, targetDirectory);
             job.addJobChangeListener(new IJobChangeListener() {
 
                 @Override
@@ -294,17 +285,13 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
                             @Override
                             public void run() {
-                                String location = "";
-                                if (filePath != null) {
-                                    location =
-                                        StringUtils
-                                            .format(Messages.exportSuccessText, browserNodesToSave.toString(), filePath.getAbsolutePath())
-                                            .replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, "");
-                                    // reset filePath
-                                    filePath = null;
+                                String location;
+                                if (job.getTargetFile() != null) {
+                                    location =  StringUtils.format(Messages.exportSuccessText, browserNodesToSave.toString(),
+                                        job.getTargetFile().getAbsolutePath()).replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, "");
                                 } else {
                                     location = StringUtils.format(Messages.exportSuccessText,
-                                        browserNodesToSave.toString(), ordnerPath.getAbsolutePath()).replace(BRACKET_OPEN, "")
+                                        browserNodesToSave.toString(), targetDirectory.getAbsolutePath()).replace(BRACKET_OPEN, "")
                                         .replace(BRACKET_CLOSE, "");
                                 }
                                 MessageDialog.openInformation(display.getActiveShell(), "Export", location);
@@ -347,9 +334,17 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         private final class ExportJob extends Job {
 
             private static final String DOT = ".";
+            
+            private List<DMBrowserNode> browserNodesToSave;
 
-            ExportJob(String title) {
+            private File targetDirectory;
+            
+            private File targetFile;
+
+            protected ExportJob(String title, List<DMBrowserNode> browserNodesToSave, File ordnerPath) {
                 super(title);
+                this.browserNodesToSave = browserNodesToSave;
+                this.targetDirectory = ordnerPath;
             }
 
             @Override
@@ -371,39 +366,42 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 monitor.worked(1);
                 return Status.OK_STATUS;
             }
+            
+            protected File getTargetFile() {
+                return targetFile;
+            }
 
             private void saveNode(final DMBrowserNode browserNode) {
                 if (savableNodeAsFolder.contains(browserNode.getType())) {
-                    if (!ordnerPath.exists()) {
-                        ordnerPath.mkdir();
+                    if (!targetDirectory.exists()) {
+                        targetDirectory.mkdir();
                     }
                     if (!browserNode.areChildrenKnown()) {
                         contentProvider.fetchChildren(browserNode);
                     }
                     for (final DMBrowserNode child : contentProvider.getChildren(browserNode)) {
                         if (child.isEnabled()) {
-                            save(child, ordnerPath);
+                            save(child, targetDirectory);
                         }
                     }
                 } else {
-                    String fileName = ordnerPath.getName();
-                    ordnerPath = new File(ordnerPath.getAbsolutePath().replace(File.separator + fileName, ""));
+                    String fileName = targetDirectory.getName();
+                    targetDirectory = new File(targetDirectory.getAbsolutePath().replace(File.separator + fileName, ""));
                     if (!fileName.contains(DOT)) {
                         final String[] fileEnding = browserNode.getAssociatedFilename().split(Pattern.quote(DOT));
                         if (fileEnding.length == 2) {
                             fileName = fileName + DOT + fileEnding[1];
                         }
                     }
-                    filePath = findUniqueFilename(ordnerPath, fileName);
+                    targetFile = findUniqueFilename(targetDirectory, fileName);
                     if (browserNode.isEnabled()) {
-                        save(browserNode.getDataReferenceId(), browserNode.getFileReferencePath(), filePath.getName(), ordnerPath,
+                        save(browserNode.getDataReferenceId(), browserNode.getFileReferencePath(), targetFile.getName(), targetDirectory,
                             browserNode.getNodeWithTypeWorkflow().getNodeIdentifier());
                     }
                 }
             }
 
-            private void save(final DMBrowserNode browserNode,
-                final File directory) {
+            private void save(final DMBrowserNode browserNode, final File directory) {
                 // get the current DataReference and delete it, if it is
                 // not null (null DataReferences are used for
                 // aggregating tree items)
@@ -721,6 +719,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                         || node.getType() == DMBrowserNodeType.Integer
                         || node.getType() == DMBrowserNodeType.ShortText
                         || node.getType() == DMBrowserNodeType.SmallTable
+                        || node.getType() == DMBrowserNodeType.Matrix
                         || node.getType() == DMBrowserNodeType.Vector)) {
                     setEnabled(true);
                     return;
@@ -888,7 +887,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             if (nodeTitle.matches(".*: .*")) {
                 nodeTitle = nodeTitle.split(": ")[1];
             }
-            Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(nodeTitle), null);
+   
+            ClipboardHelper.setContent(nodeTitle);
         }
 
     }
@@ -1076,8 +1076,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     } catch (IOException e) {
                         throw new RuntimeException(e.getCause());
                     } catch (CommunicationException e) {
-                        throw new RuntimeException(MessageFormat.format(
-                            "Failed to copy data reference from remote node @{0} to local file: ",
+                        throw new RuntimeException(StringUtils.format(
+                            "Failed to copy data reference from remote node @%s to local file: ",
                             node.getNodeWithTypeWorkflow().getNodeIdentifier())
                             + e.getMessage(), e);
 
@@ -1314,7 +1314,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         // refresh Actions: refresh a node or refresh all
         makeRefreshActions(selectionProvider);
         // an action to open a selected entry in a read-only editor
-        openInEditorAction = new OpenInEditorAction(selectionProvider, "Open in Editor (read-only)");
+        openInEditorAction = new OpenInEditorAction(selectionProvider, "Open in editor (read-only)");
         openInEditorAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.OPEN_READ_ONLY_16));
 
         openTiglAction = new OpenInTiglAction(selectionProvider, "Open in TiGL Viewer");
@@ -1443,7 +1443,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         for (TreeItem item : viewer.getTree().getItems()) {
             DMBrowserNode node = (DMBrowserNode) item.getData();
             String nodeID = node.getNodeIdentifier().getIdString();
-            if (nodeID.equals(unreachableID)) {
+            if (node.isEnabled() && nodeID.equals(unreachableID)) {
                 node.setTitle(StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME, node.getTitle(),
                     "[offline]"));
                 disableNode(node);

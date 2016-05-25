@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -50,6 +50,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Sascha Zur
  */
 public class ToolConfigurationPage extends ToolIntegrationWizardPage {
+
+    private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_launchsettings";
 
     private static final int INDENT_KEEP_ON_ERROR_BUTTON = 20;
 
@@ -196,6 +198,8 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
         updateButtonActivation();
         setPageComplete(false);
         setControl(container);
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
+            HELP_CONTEXT_ID);
         updatePageComplete();
     }
 
@@ -254,6 +258,8 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
                     if (copyAlwaysButton.getSelection() && !((Button) arg0.getSource()).getSelection()) {
                         copyAlwaysButton.setSelection(false);
                         copyOnceButton.setSelection(true);
+                        configurationMap.put(ToolIntegrationConstants.KEY_COPY_TOOL_BEHAVIOUR,
+                            ToolIntegrationConstants.VALUE_COPY_TOOL_BEHAVIOUR_ONCE);
                     }
                     if (deleteTempDirAlwaysCheckbox.getSelection() && !((Button) arg0.getSource()).getSelection()) {
                         deleteTempDirAlwaysCheckbox.setSelection(false);
@@ -566,7 +572,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
 
         private final Table table;
 
-        public ButtonSelectionListener(Button button, Table table) {
+        ButtonSelectionListener(Button button, Table table) {
             this.button = button;
             this.table = table;
         }
@@ -630,7 +636,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
     public void performHelp() {
         super.performHelp();
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
-        helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_launchsettings");
+        helpSystem.displayHelp(HELP_CONTEXT_ID);
     }
 
     @SuppressWarnings("unchecked")

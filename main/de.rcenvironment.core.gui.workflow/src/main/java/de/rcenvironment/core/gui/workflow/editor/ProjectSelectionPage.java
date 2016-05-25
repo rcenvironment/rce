@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,6 +44,9 @@ import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintList
  * @author Oliver Seebach
  */
 final class ProjectSelectionPage extends WizardPage {
+    
+    private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
+        '*', '?', '\"', '>', '<', '|' };
 
     private static final int TEXT_WIDTH = 100;
     private static final int TREE_HEIGHT = 200;
@@ -62,7 +65,7 @@ final class ProjectSelectionPage extends WizardPage {
     private Button useDefaultNameButton;
     private String workflowName;
 
-    public ProjectSelectionPage(final NewWorkflowProjectWizard parentWizard,
+    ProjectSelectionPage(final NewWorkflowProjectWizard parentWizard,
             final IStructuredSelection selection) {
         super("Project");
         this.selection = selection;
@@ -74,7 +77,7 @@ final class ProjectSelectionPage extends WizardPage {
         final String newProjectName = getProjectNameTextField().getText();
         if (newProjectName.length() == 0
                 && newProjectRadioButton.getSelection()) {
-            updateStatus("Please chose a name for the new demo project");
+            updateStatus("Please chose a name for the new project");
             return;
         }
 
@@ -226,6 +229,7 @@ final class ProjectSelectionPage extends WizardPage {
         projectNameTextField.setVisible(true);
         projectNameTextField.setLayoutData(newGridDataText);
         projectNameTextField.addListener(SWT.Verify, new AlphanumericalTextContraintListener(false, true));
+        projectNameTextField.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
         projectNameTextField.addModifyListener(new ModifyListener() {
 
             @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -84,7 +84,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
 
         private IOException asyncException;
 
-        public UploadHolder() throws IOException {
+        UploadHolder() throws IOException {
             this.tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("upload.*.tmp");
             this.outputStream = new BufferedOutputStream(new FileOutputStream(tempFile), UPLOAD_TEMP_FILE_STREAM_BUFFER_SIZE);
         }

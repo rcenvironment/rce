@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -37,8 +37,8 @@ public final class HeadlessWorkflowExecutionContextBuilder {
     }
 
     /**
-     * @param placeholdersFile an optional JSON file containing componentId->(key->value)
-     *        placeholder values; pass <code>null</code> if no one to consider
+     * @param placeholdersFile an optional JSON file containing componentId->(key->value) placeholder values; pass <code>null</code> if no
+     *        one to consider
      * @return {@link HeadlessWorkflowExecutionContext} to support method chaining
      */
     public HeadlessWorkflowExecutionContextBuilder setPlaceholdersFile(File placeholdersFile) {
@@ -57,8 +57,7 @@ public final class HeadlessWorkflowExecutionContextBuilder {
 
     /**
      * @param outputReceiver an optional {@link TextOutputReceiver} to write status messages to
-     * @param isCompactOutput <code>true</code> if output should be compact. Default is
-     *        <code>false</code>
+     * @param isCompactOutput <code>true</code> if output should be compact. Default is <code>false</code>
      * @return {@link HeadlessWorkflowExecutionContext} to support method chaining
      */
     public HeadlessWorkflowExecutionContextBuilder setTextOutputReceiver(TextOutputReceiver outputReceiver, boolean isCompactOutput) {
@@ -77,8 +76,7 @@ public final class HeadlessWorkflowExecutionContextBuilder {
     }
 
     /**
-     * @param disposalBehavior the {@link DisposalBehavior}. Default is
-     *        {@link DisposalBehavior#OnFinished}
+     * @param disposalBehavior the {@link DisposalBehavior}. Default is {@link DisposalBehavior#OnFinished}
      * @return {@link HeadlessWorkflowExecutionContext} to support method chaining
      */
     public HeadlessWorkflowExecutionContextBuilder setDisposalBehavior(DisposalBehavior disposalBehavior) {
@@ -93,6 +91,13 @@ public final class HeadlessWorkflowExecutionContextBuilder {
     public HeadlessWorkflowExecutionContextBuilder setDeletionBehavior(DeletionBehavior delete) {
         headlessWfExeCtx.setDeletionBehavior(delete);
         return this;
+    }
+
+    /**
+     * @param value set to true to refuse execution of workflow files that would need to be updated first
+     */
+    public void setAbortIfWorkflowUpdateRequired(boolean value) {
+        headlessWfExeCtx.setAbortIfWorkflowUpdateRequired(value);
     }
 
     /**

@@ -11,8 +11,7 @@
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 		href="user_guide/sections/preface/user_preface.xml" />
 
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-		href="user_guide/sections/setup/setup.xml" />
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="user_guide/sections/setup/setup.xml"/>
 	
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="user_guide/sections/usage/usage.xml" />

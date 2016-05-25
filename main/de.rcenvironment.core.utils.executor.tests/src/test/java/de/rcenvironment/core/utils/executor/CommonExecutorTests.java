@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,7 +49,7 @@ abstract class CommonExecutorTests {
 
         private String stderr;
 
-        public OutputHolder(String stdout, String stderr) {
+        OutputHolder(String stdout, String stderr) {
             this.stdout = stdout;
             this.stderr = stderr;
         }

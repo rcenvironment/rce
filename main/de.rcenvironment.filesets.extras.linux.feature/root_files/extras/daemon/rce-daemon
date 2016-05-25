@@ -14,7 +14,7 @@ DAEMON_NAME="$DAEMON_BASENAME-$PROFILE_ID"
 DAEMON_USER=rce-daemon
 ETC_INIT_D_SCRIPT="/etc/init.d/$DAEMON_NAME"
 
-USAGE="Usage: rce-daemon {install|uninstall|locate|remove-old|start|stop|status|restart}"
+USAGE="Usage: rce-daemon {install|uninstall|locate|remove-old|start|stop|status|restart|kill}"
 
 if [ $# == 0 ]; then echo $USAGE; exit 1; fi
 
@@ -73,11 +73,17 @@ if [[ -e "/etc/init.d/rcedaemon" ]]; then
 	exit;
 fi
 
+if [[ $1 != "install" && ! -e $ETC_INIT_D_SCRIPT ]]; then
+	echo "The daemon is not installed yet - run \"rce-daemon install\" to install it"
+	exit;
+fi
+
 case "$1" in
 	start) $ETC_INIT_D_SCRIPT start; exit 0;;
 	stop) $ETC_INIT_D_SCRIPT stop; exit 0;;
 	status) $ETC_INIT_D_SCRIPT status; exit 0;;
 	restart) $ETC_INIT_D_SCRIPT restart; exit 0;;
+	kill) $ETC_INIT_D_SCRIPT kill; exit 0;;
 	install)
 		echo "Creating daemon entry \"$ETC_INIT_D_SCRIPT\""
 		cp -f "$SCRIPT_DIR/wrapper" $ETC_INIT_D_SCRIPT

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -106,27 +106,6 @@ public final class JmsProtocolUtils {
             throw new ProtocolException("Failed to deserialize initial node information from handshake message: " + e.toString());
         }
         return result;
-    }
-
-    /**
-     * Throws a {@link CommunicationException} with a proper end-user description if the given protocol version strings do not match.
-     * 
-     * @param remoteProtocolVersion the received version string (may be null)
-     * @param expectedProtocolVersion the local version string
-     * @throws CommunicationException on a version mismatch
-     */
-    public static void failOnIncompatibleVersions(String remoteProtocolVersion, String expectedProtocolVersion)
-        throws CommunicationException {
-        if (remoteProtocolVersion == null) {
-            throw new CommunicationException(
-                "The remote instance sent a response, but it did not contain a proper version code. "
-                    + "You are probably trying to connect to an instance running an incompatible version of the software.");
-        }
-        if (!remoteProtocolVersion.equals(expectedProtocolVersion)) {
-            throw new CommunicationException(
-                "The remote instance is running a software version that is not compatible with the local instance: "
-                    + "The remote version is '" + remoteProtocolVersion + "' and the local version is '" + expectedProtocolVersion + "'.");
-        }
     }
 
     /**

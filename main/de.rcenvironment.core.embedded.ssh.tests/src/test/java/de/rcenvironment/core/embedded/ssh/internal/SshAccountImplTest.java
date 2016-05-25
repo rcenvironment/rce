@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,6 +24,8 @@ import org.junit.Test;
  */
 public class SshAccountImplTest extends TestCase {
 
+    private static final String SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED = 
+        "SshUser.validateUser returned true but false was expected.";
     private Log logger = LogFactory.getLog(SshAccountImplTest.class);
 
     /** Test. */
@@ -52,9 +54,21 @@ public class SshAccountImplTest extends TestCase {
     public void testValidationPassword() {
         SshAccountImpl user = SshTestUtils.getValidUser();
         user.setPassword(null);
-        assertFalse("SshUser.validateUser returned true but false was expected.", user.validate(SshTestUtils.getValidRoles(), logger));
+        assertFalse(SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED, user.validate(SshTestUtils.getValidRoles(), logger));
         user.setPassword("");
-        assertFalse("SshUser.validateUser returned true but false was expected.", user.validate(SshTestUtils.getValidRoles(), logger));
+        assertFalse(SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED, user.validate(SshTestUtils.getValidRoles(), logger));
+    }
+    
+    /** Test. */
+    @Test
+    public void testValidationPublicKey() {
+        SshAccountImpl user = SshTestUtils.getValidPublicKeyUser();
+        user.setPublicKey(null);
+        assertFalse(SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED, user.validate(SshTestUtils.getValidRoles(), logger));
+        user.setPublicKey("");
+        assertFalse(SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED, user.validate(SshTestUtils.getValidRoles(), logger));
+        user.setPublicKey("some_invalid_key");
+        assertFalse(SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED, user.validate(SshTestUtils.getValidRoles(), logger));
     }
 
     // if (role == null)

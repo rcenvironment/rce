@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,6 +11,8 @@ package de.rcenvironment.components.parametricstudy.common.internal;
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.commons.logging.LogFactory;
+
 import de.rcenvironment.components.parametricstudy.common.ParametricStudyService;
 import de.rcenvironment.components.parametricstudy.common.Study;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
@@ -21,6 +23,7 @@ import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
  * Implementation of {@link ParametricStudyService}.
@@ -54,18 +57,23 @@ public class ParametricStudyServiceImpl implements ParametricStudyService {
     public StudyReceiver createReceiver(final String identifier, final NodeIdentifier node) {
         final String notificationId = StringUtils.format(ParametricStudyUtils.STRUCTURE_PATTERN,
                 identifier);
-        final List<Notification> notifications = distributedNotificationService
-                .getNotifications(notificationId, node).get(notificationId);
-        if (notifications.size() > 0) {
-            final Notification studyNotification = notifications
+        List<Notification> notifications;
+        try {
+            notifications = distributedNotificationService
+                    .getNotifications(notificationId, node).get(notificationId);
+            if (notifications.size() > 0) {
+                final Notification studyNotification = notifications
                     .get(notifications.size() - 1);
-            final Serializable[] notificationContent = (Serializable[]) studyNotification.getBody();
-            final StudyStructure structure = (StudyStructure) notificationContent[0];
-            final String title = (String) notificationContent[1];
-            final Study study = new Study(identifier, title, structure);
-            final StudyReceiver studyReceiver = new StudyReceiverImpl(study,
+                final Serializable[] notificationContent = (Serializable[]) studyNotification.getBody();
+                final StudyStructure structure = (StudyStructure) notificationContent[0];
+                final String title = (String) notificationContent[1];
+                final Study study = new Study(identifier, title, structure);
+                final StudyReceiver studyReceiver = new StudyReceiverImpl(study,
                     node, distributedNotificationService);
-            return studyReceiver;
+                return studyReceiver;
+            }
+        } catch (RemoteOperationException e) {
+            LogFactory.getLog(getClass()).error("Failed to get remote notifications.");
         }
         return null;
     }

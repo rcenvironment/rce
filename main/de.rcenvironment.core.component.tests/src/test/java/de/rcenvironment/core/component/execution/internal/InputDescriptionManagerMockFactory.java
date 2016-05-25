@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -65,6 +65,7 @@ public final class InputDescriptionManagerMockFactory implements ExceptionDetail
             metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING, info.inputDatumHandling.name());
             metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT, info.inputExecutionContraint.name());
             EasyMock.expect(endpointDescriptionMock.getMetaData()).andReturn(metaData).anyTimes();
+            EasyMock.expect(endpointDescriptionMock.getDataType()).andReturn(info.dataType).anyTimes();
             EasyMock.expect(endpointDescriptionMock.isConnected()).andReturn(info.connected).anyTimes();
             EasyMock.expect(endpointDescriptionMock.getParentGroupName()).andReturn(info.parentGroup).anyTimes();
             EasyMock.replay(endpointDescriptionMock);

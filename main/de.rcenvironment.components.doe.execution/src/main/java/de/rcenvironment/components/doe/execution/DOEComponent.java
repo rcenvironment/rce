@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,6 +34,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
@@ -105,7 +106,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             valuesTable = DOEAlgorithms.populateTableMonteCarlo(outputs.size(), runNumberCount, seedNumber);
             break;
         case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE:
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 if (componentContext.getConfigurationValue(DOEConstants.KEY_TABLE) != null
                     && !componentContext.getConfigurationValue(DOEConstants.KEY_TABLE).isEmpty()) {
@@ -237,12 +238,14 @@ public class DOEComponent extends AbstractNestedLoopComponent {
     }
 
     @Override
+    public void completeStartOrProcessInputsAfterFailure() throws ComponentException {
+        writeResultFile();
+        writeFinalHistoryDataItem();
+    }
+    
+    @Override
     public void tearDown(FinalComponentState state) {
         super.tearDown(state);
-        if (state == FinalComponentState.FAILED) {
-            writeResultFile();
-            writeFinalHistoryDataItem();
-        }
         if (tableFile != null && tableFile.exists()) {
             try {
                 TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tableFile);

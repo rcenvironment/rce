@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -41,6 +41,18 @@ public final class OutputWriterComponentConstants {
     /** placeholder workflowname. */
     public static final String PH_WORKFLOWNAME = PH_PREFIX + "Workflow name" + PH_SUFFIX;
 
+    /** Execution count. */
+    public static final String EXECUTION_COUNT = "Execution count";
+    
+    /** placeholder execution count. */
+    public static final String PH_EXECUTION_COUNT = PH_PREFIX + EXECUTION_COUNT + PH_SUFFIX;
+    
+    /** filename. */
+    public static final String FILE_NAME = "Original filename";
+    
+    /** placeholder filename. */
+    public static final String PH_FILE_NAME = PH_PREFIX + FILE_NAME + PH_SUFFIX;
+
     /** placeholder timestamp. */
     public static final String TIMESTAMP = "Timestamp";
 
@@ -62,11 +74,16 @@ public final class OutputWriterComponentConstants {
     /** placeholder component type. */
     public static final String PH_COMP_TYPE = PH_PREFIX + "Component type" + PH_SUFFIX;
 
-    /** All Placeholder. */
-    public static final String[] WORDLIST = new String[] { PH_COMP_NAME, PH_INPUTNAME, PH_TIMESTAMP, PH_WF_START_TS, PH_WORKFLOWNAME };
+    /** All Placeholders. */
+    public static final String[] WORDLIST = new String[] { PH_COMP_NAME, PH_INPUTNAME, PH_TIMESTAMP, PH_WF_START_TS, PH_WORKFLOWNAME,
+        PH_EXECUTION_COUNT , PH_FILE_NAME};
+
+    /** All Placeholders for sub folders. */
+    public static final String[] WORDLIST_SUBFOLDER = new String[] { PH_COMP_NAME, PH_INPUTNAME, PH_WF_START_TS,
+        PH_WORKFLOWNAME };
 
     /** All Placeholders for Output Locations. */
-    public static final String[] WORDLIST_OUTPUT = new String[] { PH_COMP_NAME, PH_TIMESTAMP, PH_WF_START_TS, PH_WORKFLOWNAME };
+    public static final String[] WORDLIST_OUTPUT = new String[] { PH_COMP_NAME, PH_WF_START_TS, PH_WORKFLOWNAME };
 
     /** Constant. */
     public static final String ROOT_DISPLAY_NAME = PH_PREFIX + "root" + PH_SUFFIX;
@@ -106,10 +123,10 @@ public final class OutputWriterComponentConstants {
 
     /** Constant. */
     public static final String CONFIG_KEY_OUTPUTLOCATIONS = "outputLocations";
-    
+
     /** Constant. */
     public static final String EP_IDENTIFIER = "dynamicAndGroup";
-    
+
     /** Constant. */
     public static final String DEFAULT_GROUP = "write";
 

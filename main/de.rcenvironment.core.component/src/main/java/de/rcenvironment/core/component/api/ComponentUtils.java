@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,8 +10,10 @@ package de.rcenvironment.core.component.api;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -21,10 +23,13 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+import org.eclipse.core.runtime.Platform;
+import org.osgi.framework.Bundle;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
@@ -34,6 +39,7 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;
 import de.rcenvironment.core.component.model.configuration.impl.ConfigurationDefinitionImpl;
 import de.rcenvironment.core.component.model.configuration.impl.ConfigurationExtensionDefinitionImpl;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionImpl;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionsProviderImpl;
@@ -42,6 +48,7 @@ import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -52,6 +59,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Sascha Zur
  */
 public final class ComponentUtils {
+
+    /** Logger. */
+    public static final Log LOGGER = LogFactory.getLog(ComponentUtils.class);
 
     /** Component version on other node is lower. */
     public static final int LOWER_COMPONENT_VERSION = -1;
@@ -331,7 +341,7 @@ public final class ComponentUtils {
         Matcher matcherOfPlaceholder = getMatcherForPlaceholder(placeholder);
         return (matcherOfPlaceholder.group(ATTRIBUTE1) != null && (matcherOfPlaceholder.group(ATTRIBUTE1)
             .equals(GLOBALATTRIBUTE) | (matcherOfPlaceholder
-            .group(ATTRIBUTE2) != null && matcherOfPlaceholder.group(ATTRIBUTE2).equals(GLOBALATTRIBUTE))));
+                .group(ATTRIBUTE2) != null && matcherOfPlaceholder.group(ATTRIBUTE2).equals(GLOBALATTRIBUTE))));
     }
 
     /**
@@ -607,7 +617,7 @@ public final class ComponentUtils {
             ConfigurationDefinitionConstants.JSON_KEY_ACTIVATION_FILTER));
         return extConfigDef;
     }
-    
+
     /**
      * Creates log message for an exception and its cause if it exists.
      * 
@@ -617,7 +627,7 @@ public final class ComponentUtils {
     public static String createErrorLogMessage(Throwable t) {
         return addCauseToExceptionErrorLogMessage(t, "");
     }
-    
+
     /**
      * Creates log message for an exception and its cause if it exists.
      * 
@@ -629,7 +639,7 @@ public final class ComponentUtils {
     public static String createErrorLogMessage(String errorMessage, String errorId) {
         return StringUtils.format("%s (%s)", errorMessage, errorId);
     }
-    
+
     /**
      * Creates log message for an exception and its cause if it exists.
      * 
@@ -641,12 +651,12 @@ public final class ComponentUtils {
     public static String createErrorLogMessage(Throwable t, String errorId) {
         return StringUtils.format("%s (%s)", addCauseToExceptionErrorLogMessage(t, ""), errorId);
     }
-    
+
     private static String addCauseToExceptionErrorLogMessage(Throwable cause, String errorMessage) {
         if (!errorMessage.isEmpty()) {
             errorMessage = errorMessage + "; cause: ";
         }
-        if (cause.getMessage() == null || cause.getMessage().isEmpty() 
+        if (cause.getMessage() == null || cause.getMessage().isEmpty()
             || (cause.getCause() != null && cause.getMessage().startsWith(cause.getCause().getClass().getCanonicalName()))) {
             errorMessage = errorMessage + "Unexpected error: " + cause.getClass().getSimpleName();
         } else {
@@ -702,7 +712,7 @@ public final class ComponentUtils {
         try {
             TypeReference<HashMap<String, Object>> typeRef = new TypeReference<HashMap<String, Object>>() {
             };
-            descriptions = new ObjectMapper().readValue(jsonInputStream, typeRef);
+            descriptions = JsonUtils.getDefaultObjectMapper().readValue(jsonInputStream, typeRef);
         } catch (JsonParseException e) {
             throw new IOException(errorMessage, e);
         } catch (JsonMappingException e) {
@@ -711,6 +721,31 @@ public final class ComponentUtils {
         jsonInputStream.close();
 
         return descriptions.get(key);
+    }
+
+    /**
+     * Reads the URL for the icon, correcting it if it does not fit.
+     *
+     * @param bundleName name of the bundle to look
+     * @param iconName name of the icon
+     * @return correct url, or null, if icon can't be found
+     */
+    public static URL readIconURL(String bundleName, String iconName) {
+        URL url = null;
+        Bundle bundle = Platform.getBundle(bundleName);
+        if (bundle != null) {
+            Enumeration<URL> result = Platform.getBundle(bundleName).findEntries("/", iconName, true);
+            if (result != null) {
+                if (result.hasMoreElements()) {
+                    url = result.nextElement();
+                } else {
+                    url = null;
+                }
+            }
+        } else {
+            LOGGER.warn("Bundle for loading icons could not be found: " + bundleName);
+        }
+        return url;
     }
 
 }

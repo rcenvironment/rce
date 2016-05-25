@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,9 +9,6 @@
 package de.rcenvironment.components.optimizer.gui.view;
 
 import java.io.Serializable;
-
-
-
 
 import de.rcenvironment.components.optimizer.common.OptimizerResultSet;
 import de.rcenvironment.core.notification.DefaultNotificationSubscriber;

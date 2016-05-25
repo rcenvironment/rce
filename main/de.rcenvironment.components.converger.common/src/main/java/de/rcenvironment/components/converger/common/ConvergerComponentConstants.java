@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,6 +49,9 @@ public final class ConvergerComponentConstants {
     public static final String CONVERGED_OUTPUT_SUFFIX = "_converged";
 
     /** Constant. */
+    public static final String IS_CONVERGED_OUTPUT_SUFFIX = "_is_converged";
+
+    /** Constant. */
     public static final String CONVERGED = "Converged";
 
     /** Constant. */
@@ -59,6 +62,18 @@ public final class ConvergerComponentConstants {
 
     /** Constant. */
     public static final String ENDPOINT_ID_TO_CONVERGE = "valueToConverge";
+
+    /** Constant. */
+    public static final String ENDPOINT_ID_AUXILIARY = "auxiliaryValue";
+
+    /** Constant. */
+    public static final String NOT_CONVERGED_IGNORE = "notConvIgnore";
+
+    /** Constant. */
+    public static final String NOT_CONVERGED_FAIL = "notConvFail";
+
+    /** Constant. */
+    public static final String NOT_CONVERGED_NOT_A_VALUE = "notConvNotAValue";
 
     private ConvergerComponentConstants() {
 

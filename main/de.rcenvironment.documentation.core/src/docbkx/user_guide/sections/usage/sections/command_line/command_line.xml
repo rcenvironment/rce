@@ -306,7 +306,7 @@
 									workflow's assigned id if the start was successful, or a text
 									starting with <code>"Error "</code> if the workflow could not be
 									started. If (and only if) the start was successful, a second
-									like will be printed once the workflow has terminated. The
+									line will be printed once the workflow has terminated. The
 									pattern of this second line is "<code>&lt;workflow id>:
 										&lt;final state></code>".</para>
 								<para>The "-p" option can be used to define a placeholder value file
@@ -395,7 +395,7 @@
 		</para>
 		<para><code>}</code></para>
 		
-		<para>The following table lists components and their configuratuon placeholders.</para>
+		<para>The following table lists components and their configuration placeholders.</para>
 		<para>
 			<table frame="all">
 				<title>Components and their configuration placeholders</title>
@@ -423,7 +423,7 @@
 						</row>
 						<row>
 							<entry>Output Writer</entry>
-							<entry>de.rcenvironment.outputwriter/1.1</entry>
+							<entry>de.rcenvironment.outputwriter/2.0</entry>
 							<entry>targetRootFolder - path to target root folder</entry>
 						</row>
 						<row>

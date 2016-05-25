@@ -1,14 +1,15 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.components.inputprovider.gui;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.Map;
@@ -16,12 +17,12 @@ import java.util.Set;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
+import org.eclipse.core.resources.IResource;
 import org.eclipse.core.resources.IWorkspace;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.core.resources.ResourcesPlugin;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
@@ -73,11 +74,12 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
      * @param values of the {@link EndpointDescription}
      */
     private void validateExistingFiles(String outputName, Collection<String> values, String fileName) {
-        if (!values.contains(FileSourceType.atWorkflowStart.toString())) {
-            if (values.contains(FileSourceType.fromProject.toString())) {
-                validateFileFromProject(outputName, fileName);
-            } else {
+        if (!values.contains(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
+
+            if (Paths.get(fileName).isAbsolute()) {
                 validateFileFromFileSystem(outputName, fileName);
+            } else {
+                validateFileFromProject(outputName, fileName);
             }
         }
     }
@@ -85,10 +87,15 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
     private void validateFileFromProject(String outputName, String fileName) {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot workspaceRoot = workspace.getRoot();
-        IFile newFile = (IFile) workspaceRoot
-            .findMember(fileName);
-        if (newFile == null || !newFile.exists()) {
+        IResource member = workspaceRoot.findMember(fileName);
+
+        if (member == null || !member.exists()) {
             createFileDoesNotExistMessage(outputName, fileName);
+        } else {
+            if (!(member instanceof IFile)) {
+                String text = StringUtils.format("'%s': '%s' is not a file", outputName, fileName);
+                messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, "", text, text, true));
+            }
         }
     }
 
@@ -116,11 +123,12 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
             messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.WARNING, "", text, text, false));
             return;
         }
-        if (!values.contains(FileSourceType.atWorkflowStart.toString())) {
-            if (values.contains(FileSourceType.fromProject.toString())) {
-                validateDirFromProject(outputName, pathName);
-            } else {
+
+        if (!values.contains(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
+            if (Paths.get(pathName).isAbsolute()) {
                 validateDirFromFileSystem(outputName, pathName);
+            } else {
+                validateDirFromProject(outputName, pathName);
             }
         }
     }
@@ -128,9 +136,14 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
     private void validateDirFromProject(String outputName, String pathName) {
         IWorkspace workspace = ResourcesPlugin.getWorkspace();
         IWorkspaceRoot workspaceRoot = workspace.getRoot();
-        IFolder folder = (IFolder) workspaceRoot.findMember(pathName);
-        if (folder == null || !folder.exists()) {
+        IResource member = workspaceRoot.findMember(pathName);
+        if (member == null || !member.exists()) {
             createDirDoesNotExistMessage(outputName, pathName);
+        } else {
+            if (!(member instanceof IFolder)) {
+                String text = StringUtils.format("'%s': '%s' is not a directory", outputName, pathName);
+                messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, "", text, text, true));
+            }
         }
     }
 
@@ -145,6 +158,5 @@ public class InputProviderWorkflowNodeValidator extends AbstractWorkflowNodeVali
         String text = StringUtils.format("'%s': missing directory '%s'", outputName, pathName);
         messages.add(new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, "", text, text, true));
     }
-
 
 }

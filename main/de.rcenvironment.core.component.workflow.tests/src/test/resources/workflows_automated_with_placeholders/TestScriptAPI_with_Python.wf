@@ -2,13 +2,11 @@
   "identifier" : "eaa90fd6-875b-4d2b-b3e4-89d51e136a1e",
   "workflowVersion" : "4",
   "name" : "TestScriptAPI_2014-11-28_15:35:49_20",
-  "platform" : "136db52cf2964047b85822ebead37d69",
   "nodes" : [ {
     "identifier" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
     "name" : "API Jython",
     "location" : "342:38",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -60,7 +58,6 @@
     "name" : "API Python",
     "location" : "342:144",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -112,7 +109,6 @@
     "name" : "Parametric Study API Jython",
     "location" : "183:38",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
       "version" : "3.2",
@@ -183,7 +179,6 @@
     "name" : "Parametric Study API Python",
     "location" : "183:144",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
       "version" : "3.2",
@@ -254,7 +249,6 @@
     "name" : "Parametric Study SUM Jython",
     "location" : "183:253",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
       "version" : "3.2",
@@ -302,7 +296,6 @@
     "name" : "Parametric Study SUM Python",
     "location" : "183:358",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
       "version" : "3.2",
@@ -350,7 +343,6 @@
     "name" : "SUM Jython",
     "location" : "342:253",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -386,7 +378,6 @@
     "name" : "SUM Python",
     "location" : "342:358",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -422,7 +413,6 @@
     "name" : "Validation Jython",
     "location" : "500:38",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -451,7 +441,6 @@
     "name" : "Validation Python",
     "location" : "500:144",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -480,7 +469,6 @@
     "name" : "Validation SUM Jython",
     "location" : "500:253",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -509,7 +497,6 @@
     "name" : "Validation Sum Python",
     "location" : "500:358",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",

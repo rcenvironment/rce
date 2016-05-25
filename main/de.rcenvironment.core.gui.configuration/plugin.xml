@@ -28,7 +28,7 @@
 	            <command
 	               commandId="de.rcenvironment.core.gui.configuration.configurationInformation"
 	               icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigInformation.gif"
-	               label="Open Configuration Information"
+	               label="Open Configuration Information..."
 	               style="push">
 	            </command>
 	      </menuContribution>
@@ -52,7 +52,7 @@
        		<command
                commandId="de.rcenvironment.core.gui.configuration.configurationInformation"
                icon="platform:/plugin/de.rcenvironment.core.gui.configuration/resources/icons/toolbar/openConfigInformation.gif"
-               label="Open Configuration Information"
+               label="Open Configuration Information..."
                style="push">
        		</command>
          </toolbar>

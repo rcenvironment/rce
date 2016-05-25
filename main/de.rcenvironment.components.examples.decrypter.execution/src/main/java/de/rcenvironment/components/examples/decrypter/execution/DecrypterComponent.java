@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,8 +9,6 @@
 package de.rcenvironment.components.examples.decrypter.execution;
 
 import java.io.IOException;
-import java.text.MessageFormat;
-
 import de.rcenvironment.components.examples.decrypter.common.DecrypterComponentConstants;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -21,6 +19,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.encryption.EncryptionFactory;
 import de.rcenvironment.core.utils.encryption.PassphraseBasedEncryption;
 
@@ -89,7 +88,7 @@ public class DecrypterComponent extends DefaultComponent {
         } catch (IOException e) {
             encryptedString = null;
         } catch (CommunicationException e) {
-            throw new RuntimeException(MessageFormat.format("Failed to retrieve string from data reference from remote node @{0}: ",
+            throw new RuntimeException(StringUtils.format("Failed to retrieve string from data reference from remote node @%s: ",
                 componentContext.getNodeId())
                 + e.getMessage(), e);
         }

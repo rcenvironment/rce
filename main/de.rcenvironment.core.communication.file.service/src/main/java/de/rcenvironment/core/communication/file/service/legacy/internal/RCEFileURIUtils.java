@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,12 +9,12 @@
 package de.rcenvironment.core.communication.file.service.legacy.internal;
 
 import java.net.URI;
-import java.text.MessageFormat;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -31,7 +31,7 @@ public final class RCEFileURIUtils {
 
     private static final String ERROR_URI_IS_INVALID = "The URI is invalid: ";
 
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     private RCEFileURIUtils() {
 
@@ -46,7 +46,7 @@ public final class RCEFileURIUtils {
      */
     public static FileType getType(URI uri) throws CommunicationException {
 
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
 
         if (!uri.isAbsolute()) {
             throw new CommunicationException(ERROR_URI_IS_INVALID + "scheme is missing.");
@@ -68,7 +68,7 @@ public final class RCEFileURIUtils {
      */
     public static NodeIdentifier getNodeIdentifier(URI uri) throws CommunicationException {
 
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
 
         validateURI(uri);
 
@@ -84,7 +84,7 @@ public final class RCEFileURIUtils {
      */
     public static String getPath(URI uri) throws CommunicationException {
 
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
 
         validateURI(uri);
 
@@ -100,7 +100,7 @@ public final class RCEFileURIUtils {
      */
     private static void validateURI(URI uri) throws CommunicationException {
 
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
 
         String host = uri.getHost();
         if (host == null || host.trim().isEmpty()) {

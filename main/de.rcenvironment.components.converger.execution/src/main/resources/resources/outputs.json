@@ -1,0 +1,108 @@
+{
+    "staticOutputs": [
+        {
+            "name": "Converged",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            }
+        },
+        {
+            "name": "Converged absolute",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            }
+        },
+        {
+            "name": "Converged relative",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            }
+        },
+        {
+            "name": "Done",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "OuterLoopEndpoint"
+                }
+            }
+        },
+        {
+            "name": "Outer loop done",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "metaData": {
+                "loopEndpointType_5e0ed1cd": {
+                    "visibility": "developerConfigurable",
+                    "dataType": "String",
+                    "defaultValue": "InnerLoopEndpoint"
+                }
+            }
+        }
+    ],
+    "dynamicOutputs": [
+        {
+            "identifier": "valueToConverge",
+            "dataTypes": [
+                "Float",
+                "Integer"
+            ],
+            "defaultDataType": "Float",
+            "readOnly": "true"
+        },
+        {
+            "identifier": "auxiliaryValue",
+            "dataTypes": [
+                "Boolean"
+            ],
+            "defaultDataType": "Boolean",
+            "readOnly": "true"
+        },
+        {
+            "identifier":"toForward",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "readOnly": "true"
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,6 +14,7 @@ import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.ClosedWatchServiceException;
 import java.nio.file.FileSystems;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -37,6 +38,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -46,6 +48,12 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  * @author Sascha Zur
  */
 public class ToolIntegrationFileWatcher implements Runnable {
+
+    private static final int MAX_RETRIES_REGISTER_ON_CREATE = 5;
+
+    private static final int MAX_RETRIES_INTEGRATE_NEW_FILE = 5;
+
+    private static final int SLEEPING_TIME = 50;
 
     private static final Log LOGGER = LogFactory.getLog(ToolIntegrationFileWatcher.class);
 
@@ -63,7 +71,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
 
     private Path rootContextPath;
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     public ToolIntegrationFileWatcher(ToolIntegrationContext context, ToolIntegrationService integrationService) throws IOException {
         this.watcher = FileSystems.getDefault().newWatchService();
@@ -135,22 +143,37 @@ public class ToolIntegrationFileWatcher implements Runnable {
         isActive.set(value);
     }
 
+    /**
+     * Stops the watcher and ends the thread.
+     */
+    public void stop() {
+        try {
+            watcher.close();
+        } catch (IOException e) {
+            LOGGER.error("Error stopping watcher thread:", e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     @TaskDescription("Filewatcher for integration files")
     public void run() {
-        boolean valid = true;
-        while (valid) {
+        boolean running = true;
+        while (running) {
             WatchKey key = null;
             try {
                 if (watcher != null) {
                     key = watcher.take();
                 } else {
-                    valid = false;
+                    running = false;
                 }
             } catch (InterruptedException e) {
                 LOGGER.error("Got interrupted waiting for watch keys", e);
                 return;
+            } catch (ClosedWatchServiceException e) {
+                running = false;
+                LOGGER.debug("Shut down watcher for context " + context.getContextType());
+                continue;
             }
 
             if (key == null) {
@@ -186,10 +209,27 @@ public class ToolIntegrationFileWatcher implements Runnable {
     }
 
     private void handleCreate(Path child, Path directory) {
-        try {
-            registerRecursive(child);
-        } catch (IOException x) {
-            LOGGER.debug("Could not register new path: " + child.toString());
+        boolean registered = false;
+        int attempt = 0;
+        while (!registered && attempt < MAX_RETRIES_REGISTER_ON_CREATE) {
+            try {
+                registerRecursive(child);
+                registered = true;
+            } catch (IOException x) {
+                registered = false;
+                LOGGER.error(StringUtils.format(
+                    "Could not register new path (Tried %s of %s times): %s; Cause: %s", ++attempt, MAX_RETRIES_REGISTER_ON_CREATE,
+                    child.toString(), x.getMessage()));
+                try {
+                    Thread.sleep(SLEEPING_TIME);
+                } catch (InterruptedException e1) {
+                    LOGGER.error("Integration watcher sleep interrupted.");
+                }
+            }
+        }
+        if (attempt == MAX_RETRIES_REGISTER_ON_CREATE) {
+            LOGGER.error(
+                StringUtils.format("Could not register new path after %s tries: %s", MAX_RETRIES_REGISTER_ON_CREATE, child.toString()));
         }
         if (isActive.get()) {
             if (Files.isDirectory(child)) {
@@ -293,16 +333,41 @@ public class ToolIntegrationFileWatcher implements Runnable {
     }
 
     private void integrateFile(File newConfiguration) {
-        try {
-            if (newConfiguration.exists() && newConfiguration.getAbsolutePath().endsWith(".json")) {
-                @SuppressWarnings("unchecked") Map<String, Object> configuration =
-                    mapper.readValue(newConfiguration, new HashMap<String, Object>().getClass());
-                integrationService.integrateTool(configuration, context);
-                integrationService.putToolNameToPath((String) configuration.get(ToolIntegrationConstants.KEY_TOOL_NAME),
-                    newConfiguration.getParentFile());
+        boolean read = false;
+        int attempt = 0;
+        while (!read && attempt < MAX_RETRIES_INTEGRATE_NEW_FILE) {
+            try {
+                if (newConfiguration.exists() && newConfiguration.getAbsolutePath().endsWith(".json")) {
+                    @SuppressWarnings("unchecked") Map<String, Object> configuration =
+                        mapper.readValue(newConfiguration, new HashMap<String, Object>().getClass());
+                    integrationService.integrateTool(configuration, context);
+                    integrationService.putToolNameToPath((String) configuration.get(ToolIntegrationConstants.KEY_TOOL_NAME),
+                        newConfiguration.getParentFile());
+                    read = true;
+                } else {
+                    LOGGER.debug(StringUtils.format("Configuration file does not exist or is no json file: %s",
+                        newConfiguration.getAbsolutePath()));
+                    read = true; // cancel while
+                }
+            } catch (IOException e) {
+                read = false;
+                LOGGER.error(
+                    String.format("Could not read tool configuration (Tried %s of %s times)", ++attempt, MAX_RETRIES_INTEGRATE_NEW_FILE),
+                    e);
+                try {
+                    Thread.sleep(SLEEPING_TIME);
+                } catch (InterruptedException e1) {
+                    LOGGER.error("Integration watcher sleep interrupted.");
+                }
             }
-        } catch (IOException e) {
-            LOGGER.error("Could not read tool configuration", e);
         }
+        if (attempt == MAX_RETRIES_INTEGRATE_NEW_FILE) {
+            LOGGER.error(StringUtils.format("Could not read tool configuration after %s times. Path: %s", MAX_RETRIES_INTEGRATE_NEW_FILE,
+                newConfiguration.getAbsolutePath()));
+        }
+    }
+
+    public Map<WatchKey, Path> getRegisteredPaths() {
+        return registeredKeys;
     }
 }

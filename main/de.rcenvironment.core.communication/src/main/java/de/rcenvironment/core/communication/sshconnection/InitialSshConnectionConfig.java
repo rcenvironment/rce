@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,8 @@ public class InitialSshConnectionConfig {
     private int port;
     private String user;
     private String displayName;
+    private String keyFileLocation;
+    private boolean usePassphrase;
     
     public String getHost() {
         return host;
@@ -61,6 +63,22 @@ public class InitialSshConnectionConfig {
     
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getKeyFileLocation() {
+        return keyFileLocation;
+    }
+
+    public void setKeyFileLocation(String keyFileLocation) {
+        this.keyFileLocation = keyFileLocation;
+    }
+
+    public boolean getUsePassphrase() {
+        return usePassphrase;
+    }
+
+    public void setUsePassphrase(boolean usePassphrase) {
+        this.usePassphrase = usePassphrase;
     }
     
 }

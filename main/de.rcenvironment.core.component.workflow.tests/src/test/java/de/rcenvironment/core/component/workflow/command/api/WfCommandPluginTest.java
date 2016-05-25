@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -199,16 +199,12 @@ public class WfCommandPluginTest {
         EasyMock.replay(outputReceiver);
 
         // invoke
-        try {
-            wfCommandPlugin.execute(new CommandContext(tokens, outputReceiver, null));
-            fail(MESSAGE_EXPECTED_COMMAND_EXCEPTION);
-        } catch (CommandException e) {
-            assertEquals(Type.EXECUTION_ERROR, e.getType());
-            assertEquals(errorMessage, e.getMessage());
-        }
+        wfCommandPlugin.execute(new CommandContext(tokens, outputReceiver, null));
 
         // test callback parameter(s)
-        assertEquals("Expected no text output", 0, capture.getValues().size());
+        assertEquals(2, capture.getValues().size());
+        assertTrue(capture.getValues().get(0).contains(errorMessage));
+        assertTrue(capture.getValues().get(1).contains("not executed"));
 
         EasyMock.verify(outputReceiver);
 

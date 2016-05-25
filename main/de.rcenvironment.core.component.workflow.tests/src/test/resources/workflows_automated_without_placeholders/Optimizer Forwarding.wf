@@ -63,11 +63,10 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "6.2",
-      "name" : "Optimizer"
+      "name" : "Optimizer",
+      "version" : "7.1"
     },
     "configuration" : {
-      "genericPythonPath" : "${genericPythonPath}",
       "preCalcFilePath" : "${preCalcFilePath}",
       "CustomDakotaPath" : "false",
       "optimizerPackageCode" : "dakota",
@@ -89,7 +88,8 @@
         "inputHandling_73b1056e" : "Single",
         "vectorSize" : "-",
         "hasGradient" : "false",
-        "goal" : "Minimize"
+        "goal" : "Minimize",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
     }, {
       "identifier" : "9d64b4e8-ec74-4dd9-b6c4-0a3d933105fc",
@@ -108,7 +108,8 @@
       "group" : "startValues",
       "datatype" : "Float",
       "metadata" : {
-        "usage" : "initial"
+        "usage" : "initial",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
       }
     } ],
     "staticOutputs" : [ {
@@ -177,7 +178,8 @@
         "isDiscrete" : "false",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
-        "vectorSize" : "-"
+        "vectorSize" : "-",
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
     }, {
       "identifier" : "a9b5aba8-054f-4c42-9854-42a8e66653f1",
@@ -192,7 +194,8 @@
         "isDiscrete" : "false",
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
-        "vectorSize" : "-"
+        "vectorSize" : "-",
+        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
       }
     } ]
   }, {

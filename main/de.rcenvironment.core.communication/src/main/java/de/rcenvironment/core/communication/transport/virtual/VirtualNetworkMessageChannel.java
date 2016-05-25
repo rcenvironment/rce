@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -53,11 +53,14 @@ public class VirtualNetworkMessageChannel extends AbstractMessageChannel {
     private ThreadPool threadPool = SharedThreadPool.getInstance();
 
     public VirtualNetworkMessageChannel(InitialNodeInformation ownNodeInformation,
-        MessageChannelEndpointHandler receivingRawEndpointHandler,
-        ServerContactPoint remoteSCP) {
+        String ownProtocolVersion, MessageChannelEndpointHandler receivingRawEndpointHandler, ServerContactPoint remoteSCP)
+        throws CommunicationException {
         this.receivingRawEndpointHandler = receivingRawEndpointHandler;
         this.ownNodeInformation = ownNodeInformation;
         this.associatedSCP = remoteSCP;
+
+        // note: this check is performed at a different place than in the JMS channel
+        failOnIncompatibleVersions(remoteSCP.getExpectedProtocolVersion(), ownProtocolVersion);
     }
 
     @Override

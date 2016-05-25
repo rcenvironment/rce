@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,14 +8,13 @@
 
 package de.rcenvironment.components.sql.gui.properties;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.components.sql.common.SqlComponentConstants;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryDataItemSubtreeBuilder;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DefaultHistoryDataItemSubtreeBuilder;
 
@@ -23,19 +22,16 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.DefaultHistoryDataIt
  * Implementation of {@link ComponentHistoryDataItemSubtreeBuilder} for the Parametric study component.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class SqlWriterComponentHistoryDataItemSubtreeBuilder extends DefaultHistoryDataItemSubtreeBuilder {
 
     private static final Image COMPONENT_ICON;
 
     static {
-        String iconPath = "platform:/plugin/de.rcenvironment.components.sql.common/resources/sqlWriter_16.png";
-        URL url = null;
-        try {
-            url = new URL(iconPath);
-        } catch (MalformedURLException e) {
-            LogFactory.getLog(SqlWriterComponentHistoryDataItemSubtreeBuilder.class).error("Component icon not found: " + iconPath);
-        }
+        String bundleName = "de.rcenvironment.components.sql.common";
+        String iconName = "sqlWriter_16.png";
+        URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();
         } else {

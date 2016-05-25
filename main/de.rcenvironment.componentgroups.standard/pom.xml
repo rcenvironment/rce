@@ -32,6 +32,7 @@
 		<!-- database component -->
 		<module>${modules-root}/de.rcenvironment.components.database.common</module>
 		<module>${modules-root}/de.rcenvironment.components.database.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.database.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.database.gui</module>
 		
 		<!-- doe component -->
@@ -50,10 +51,12 @@
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.common</module>
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.gui</module>
+		<module>${modules-root}/de.rcenvironment.components.inputprovider.gui.tests</module>
 
 		<!-- joiner component -->
 		<module>${modules-root}/de.rcenvironment.components.joiner.common</module>
 		<module>${modules-root}/de.rcenvironment.components.joiner.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.joiner.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.joiner.gui</module>
 		
 		<!-- optimizer component -->

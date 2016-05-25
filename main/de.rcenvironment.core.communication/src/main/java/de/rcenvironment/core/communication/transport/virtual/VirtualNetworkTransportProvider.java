@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,8 +15,8 @@ import de.rcenvironment.core.communication.channel.MessageChannelIdFactory;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
@@ -47,8 +47,7 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
     /**
      * Constructor.
      * 
-     * @param supportRemoteInitiatedConnections whether the transport should simulate support for
-     *        passive/inverse connections or not
+     * @param supportRemoteInitiatedConnections whether the transport should simulate support for passive/inverse connections or not
      */
     public VirtualNetworkTransportProvider(boolean supportRemoteInitiatedConnections, MessageChannelIdFactory connectionIdFactory) {
         this.supportRemoteInitiatedConnections = supportRemoteInitiatedConnections;
@@ -77,7 +76,7 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
         MessageChannelEndpointHandler receivingEndpointHandler = receivingSCP.getEndpointHandler();
 
         MessageChannel newChannel =
-            new VirtualNetworkMessageChannel(initiatingNodeInformation, receivingEndpointHandler, receivingSCP);
+            new VirtualNetworkMessageChannel(initiatingNodeInformation, ownProtocolVersion, receivingEndpointHandler, receivingSCP);
         InitialNodeInformation receivingNodeInformation = receivingEndpointHandler.exchangeNodeInformation(initiatingNodeInformation);
         newChannel.setRemoteNodeInformation(receivingNodeInformation);
         newChannel.setChannelId(connectionIdFactory.generateId(true));
@@ -86,7 +85,8 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
 
         if (allowDuplex && supportRemoteInitiatedConnections) {
             MessageChannel remoteChannel =
-                new VirtualNetworkMessageChannel(receivingNodeInformation, initiatingEndpointHandler, receivingSCP);
+                new VirtualNetworkMessageChannel(receivingNodeInformation, receivingSCP.getExpectedProtocolVersion(),
+                    initiatingEndpointHandler, receivingSCP);
             remoteChannel.setRemoteNodeInformation(initiatingNodeInformation);
             remoteChannel.setChannelId(connectionIdFactory.generateId(false));
             remoteChannel.setInitiatedByRemote(true);

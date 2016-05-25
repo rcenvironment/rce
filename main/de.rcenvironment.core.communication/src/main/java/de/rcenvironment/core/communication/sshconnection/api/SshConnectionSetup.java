@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -42,6 +42,11 @@ public interface SshConnectionSetup {
      * @return Displayname for this connection.
      */
     String getDisplayName();
+    
+    /**
+     * @return location of private key file for this connection, or null, if password authentication is used.
+     */
+    String getKeyfileLocation();
 
     /**
      * @return true, if currently connected.
@@ -80,4 +85,11 @@ public interface SshConnectionSetup {
      * @return true, if the passphrase is to be stored.
      */
     boolean getStorePassphrase();
+    
+    /**
+     * Get the setting using a passphrase.
+     * 
+     * @return true, if a passphrase is used.
+     */
+    boolean getUsePassphrase();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,6 +17,7 @@ import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
+import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
@@ -28,6 +29,7 @@ import org.codehaus.jackson.node.TextNode;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Utils for updater classes.
@@ -59,10 +61,9 @@ public final class PersistentComponentDescriptionUpdaterUtils {
 
     private static final String DIRECTORY = "Directory";
     
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
-    private PersistentComponentDescriptionUpdaterUtils() {
-
-    }
+    private PersistentComponentDescriptionUpdaterUtils() {}
 
     /**
      * @param direction if it is in or outsputs (valid are "dynmaicInputs" and "dynamicOutputs")
@@ -74,7 +75,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription updateAllDynamicEndpointsToIdentifier(String direction, String identifier,
         PersistentComponentDescription description) throws JsonParseException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         JsonNode dynEndpoints = node.get(direction);
@@ -91,6 +91,54 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
+
+    /**
+     * Updates configuration key for fault-tolerance (RCE 7.0.2 -> 7.1.0).
+     * 
+     * @param description {@link PersistentComponentDescription} to update
+     * @return updated {@link PersistentComponentDescription}
+     * @throws JsonProcessingException on unexpected error
+     * @throws IOException on unexpected error
+     */
+    public static PersistentComponentDescription updateFaultToleranceOfLoopDriver(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        JsonNode configJsonNode = node.get("configuration");
+        if (configJsonNode instanceof ObjectNode) {
+            ObjectNode configObjectNode = (ObjectNode) configJsonNode;
+            String confgKeyFaultToleranceNAV = "loopFaultTolerance_5e0ed1cd";
+            if (configObjectNode.has(confgKeyFaultToleranceNAV)) {
+                String faultToleranceNAV = configObjectNode.get(confgKeyFaultToleranceNAV).getTextValue();
+                configObjectNode.put(confgKeyFaultToleranceNAV, "Fail");
+                configObjectNode.put("faultTolerance-NAV_5e0ed1cd", faultToleranceNAV);
+            }
+            String configKeyMaxRerunBeforeFail = "loopRerunAndFail_5e0ed1cd";
+            if (configObjectNode.has(configKeyMaxRerunBeforeFail)) {
+                String faultToleranceNAV = configObjectNode.get(configKeyMaxRerunBeforeFail).getTextValue();
+                configObjectNode.remove(configKeyMaxRerunBeforeFail);
+                configObjectNode.put("maxRerunBeforeFail-NAV_5e0ed1cd", faultToleranceNAV);
+            }
+            String configKeyMaxRerunBeforeDiscard = "loopRerunAndDiscard_5e0ed1cd";
+            if (configObjectNode.has(configKeyMaxRerunBeforeDiscard)) {
+                String faultToleranceNAV = configObjectNode.get(configKeyMaxRerunBeforeDiscard).getTextValue();
+                configObjectNode.remove(configKeyMaxRerunBeforeDiscard);
+                configObjectNode.put("maxRerunBeforeDiscard-NAV_5e0ed1cd", faultToleranceNAV);
+            }
+            String configKeyFailLoopOnly = "failLoop_5e0ed1cd";
+            if (configObjectNode.has(configKeyFailLoopOnly)) {
+                String faultToleranceNAV = configObjectNode.get(configKeyFailLoopOnly).getTextValue();
+                configObjectNode.remove(configKeyFailLoopOnly);
+                configObjectNode.put("failLoopOnly-NAV_5e0ed1cd", faultToleranceNAV);
+            }
+            String configKeyFinallyFailIfDiscarded = "finallyFail_5e0ed1cd";
+            if (configObjectNode.has(configKeyFinallyFailIfDiscarded)) {
+                String faultToleranceNAV = configObjectNode.get(configKeyFinallyFailIfDiscarded).getTextValue();
+                configObjectNode.remove(configKeyFinallyFailIfDiscarded);
+                configObjectNode.put("finallyFailIfDiscarded-NAV_5e0ed1cd", faultToleranceNAV);
+            }
+        }
+        return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
+    }
     
     /**
      * Replaces the usage meta data entries with input handling and input execution constraints entries.
@@ -105,7 +153,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         
         JsonFactory jsonFactory = new JsonFactory();
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
         
@@ -131,7 +178,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         
         JsonFactory jsonFactory = new JsonFactory();
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
         
@@ -199,7 +245,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription addStaticInput(PersistentComponentDescription description, String inputName)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ArrayNode staticInputs = (ArrayNode) node.get(STATIC_INPUTS);
@@ -234,7 +279,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription addStaticOutput(PersistentComponentDescription description, String outputName)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ArrayNode staticOutputs = (ArrayNode) node.get("staticOutputs");
@@ -268,7 +312,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
     public static PersistentComponentDescription updateConsumeCPACSFlag(PersistentComponentDescription description)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         final String consumeCPACSInputsConfigVersion3 = "consumeCPACS";
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ArrayNode staticInputs = (ArrayNode) node.get(STATIC_INPUTS);
@@ -300,7 +343,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription updateDynamicInputsOptional(PersistentComponentDescription description)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ArrayNode dynamicInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
@@ -328,7 +370,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
     public static PersistentComponentDescription updateConsumeDirectoryFlag(PersistentComponentDescription description)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         final String consumeDirectoryInputsConfigVersion3 = "consumeDirectory";
-        ObjectMapper mapper = new ObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         ArrayNode dynamicInputs = (ArrayNode) node.get(DYNAMIC_INPUTS);
@@ -369,7 +410,6 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription updateDirectoryEndpointId(String direction, PersistentComponentDescription description)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
         
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         JsonNode dynEndpoints = node.get(direction);

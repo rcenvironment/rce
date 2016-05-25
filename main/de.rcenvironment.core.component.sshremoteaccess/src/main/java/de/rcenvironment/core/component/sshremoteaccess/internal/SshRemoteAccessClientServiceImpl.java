@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,6 +32,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
 
 import com.jcraft.jsch.Session;
 
@@ -105,6 +106,10 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
 
         if (session != null) {
             JSchRCECommandLineExecutor executor = new JSchRCECommandLineExecutor(session);
+
+            List<String> componentIdsReceived = new ArrayList<String>();
+
+            // Get remote tools
             String command = StringUtils.format("ra list-tools");
             String toolDescriptionsString = "";
             try {
@@ -112,7 +117,6 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                 try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
 
                     executor.waitForTermination();
-                    // toolDescriptionStrings = IOUtils.readLines(stdoutStream);
                     toolDescriptionsString = IOUtils.toString(stdoutStream);
                 }
             } catch (IOException | InterruptedException e1) {
@@ -120,7 +124,6 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             }
 
             // Parse output string and register/unregister components
-            List<String> toolsAndHostIdsReceived = new ArrayList<String>();
             final CSVFormat csvFormat = CSVFormat.newFormat(' ').withQuote('"').withQuoteMode(QuoteMode.ALL);
             CSVParser parser = null;
             try (final Reader toolDescriptionReader = new StringReader(toolDescriptionsString);) {
@@ -138,27 +141,70 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                     // If this component was not registered before, register it now.
                     if (!registeredComponents.containsKey(toolAndHostId)) {
                         LOG.info(StringUtils.format("Detected new SSH tool %s (version %s) on host %s.", toolName, toolVersion, hostName));
-                        registerToolAccessComponent(toolAndHostId, toolName, toolVersion, hostName, hostId, connectionId);
+                        registerToolAccessComponent(toolAndHostId, toolName, toolVersion, hostName, hostId, connectionId, false);
                     } else {
                         // If this is a new version of a component, replace the old installation by the new one.
                         if (!registeredComponents.get(toolAndHostId).getComponentRevision().getComponentInterface().getVersion()
                             .equals(toolVersion)) {
                             removeToolAccessComponent(toolAndHostId, connectionId);
-                            registerToolAccessComponent(toolAndHostId, toolName, toolVersion, hostName, hostId, connectionId);
+                            registerToolAccessComponent(toolAndHostId, toolName, toolVersion, hostName, hostId, connectionId, false);
                             LOG.info(StringUtils.format("SSH tool %s changed to version %s on host %s.", toolName, toolVersion,
                                 hostName));
                         }
                     }
-                    toolsAndHostIdsReceived.add(toolAndHostId);
+                    componentIdsReceived.add(toolAndHostId);
                 }
             } catch (IOException e) {
                 LOG.error("Could not parse tool descriptions" + e.toString());
             }
 
+            // Get remote workflows
+            command = StringUtils.format("ra list-wfs");
+            try {
+                executor.start(command);
+                try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
+
+                    LineIterator it = IOUtils.lineIterator(stdoutStream, (String) null);
+
+                    Integer numberOfWorkflows = null;
+                    Integer tokensPerWorkflow = null;
+                    if (it.hasNext()) {
+                        numberOfWorkflows = Integer.parseInt(it.nextLine());
+                    }
+                    if (it.hasNext()) {
+                        tokensPerWorkflow = Integer.parseInt(it.nextLine());
+                    }
+
+                    if (numberOfWorkflows != null && tokensPerWorkflow != null) {
+                        if (tokensPerWorkflow != 4) {
+                            LOG.error("Unkown format of workflow descriptions");
+                        } else {
+                            for (int i = 0; i < numberOfWorkflows; i++) {
+                                String wfName = it.nextLine();
+                                String wfVersion = it.nextLine();
+                                // Not used yet
+                                String hostId = it.nextLine();
+                                String hostName = it.nextLine();
+                                String componentId = wfName + "_wf_" + hostId;
+                                if (!registeredComponents.containsKey(componentId)) {
+                                    LOG.info(StringUtils.format("Detected new remote workflow %s (version %s) on host %s.", wfName,
+                                        wfVersion, hostName));
+                                    registerToolAccessComponent(componentId, wfName, wfVersion, hostName, hostId, connectionId, true);
+                                }
+                                componentIdsReceived.add(componentId);
+                            }
+                        }
+                    }
+                    executor.waitForTermination();
+                }
+            } catch (IOException | InterruptedException e1) {
+                LOG.error("Executing SSH command (ra list-wfs) failed", e1);
+            }
+
             // Check if there are "old" components from this connection that are not available any more.
             for (Iterator<String> it = registeredComponents.keySet().iterator(); it.hasNext();) {
                 String regCompName = it.next();
-                if (!toolsAndHostIdsReceived.contains(regCompName)) {
+                if (!componentIdsReceived.contains(regCompName)) {
                     removeToolAccessComponent(regCompName, connectionId);
                     it.remove();
                 }
@@ -167,8 +213,8 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         }
     }
 
-    protected void registerToolAccessComponent(String toolAndHostId, String toolName, String toolVersion, String hostName, String hostId,
-        String connectionId) {
+    protected void registerToolAccessComponent(String componentId, String toolName, String toolVersion, String hostName, String hostId,
+        String connectionId, boolean isWorkflow) {
         EndpointDefinitionsProvider inputProvider;
         EndpointDefinitionsProvider outputProvider;
         ConfigurationDefinition configuration;
@@ -179,15 +225,17 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         Set<EndpointDefinition> outputs = createOutputs();
         outputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(outputs);
 
-        configuration = generateConfiguration(toolName, toolVersion, hostName, hostId, connectionId);
+        configuration = generateConfiguration(toolName, toolVersion, hostName, hostId, connectionId, isWorkflow);
 
-        ComponentInterface componentInterface =
-            new ComponentInterfaceBuilder()
-                .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + toolAndHostId)
-                .setDisplayName(StringUtils.format("%s (%s)  - %s", toolName, toolVersion, hostName))
+        ComponentInterface componentInterface;
+        if (isWorkflow) {
+            componentInterface = new ComponentInterfaceBuilder()
+                .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + componentId)
+                // Add "WORKFLOW" to display name
+                .setDisplayName(StringUtils.format("%s (%s) - WORKFLOW - %s", toolName, toolVersion, hostName))
                 .setIcon16(readDefaultToolIcon(SIZE_16))
                 .setIcon32(readDefaultToolIcon(SIZE_32))
-                .setGroupName(SshRemoteAccessConstants.GROUP_NAME)
+                .setGroupName(SshRemoteAccessConstants.GROUP_NAME_WFS)
                 .setVersion(toolVersion)
                 .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
                 .setConfigurationDefinition(configuration)
@@ -196,6 +244,22 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                 .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
                 .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD)
                 .build();
+        } else {
+            componentInterface = new ComponentInterfaceBuilder()
+                .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + componentId)
+                .setDisplayName(StringUtils.format("%s (%s) - %s", toolName, toolVersion, hostName))
+                .setIcon16(readDefaultToolIcon(SIZE_16))
+                .setIcon32(readDefaultToolIcon(SIZE_32))
+                .setGroupName(SshRemoteAccessConstants.GROUP_NAME_TOOLS)
+                .setVersion(toolVersion)
+                .setInputDefinitionsProvider(inputProvider).setOutputDefinitionsProvider(outputProvider)
+                .setConfigurationDefinition(configuration)
+                .setConfigurationExtensionDefinitions(new HashSet<ConfigurationExtensionDefinition>())
+                .setColor(ComponentConstants.COMPONENT_COLOR_STANDARD)
+                .setShape(ComponentConstants.COMPONENT_SHAPE_STANDARD)
+                .setSize(ComponentConstants.COMPONENT_SIZE_STANDARD)
+                .build();
+        }
 
         ComponentInstallation ci =
             new ComponentInstallationBuilder()
@@ -208,7 +272,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                 .setIsPublished(true)
                 .build();
         registry.addComponent(ci);
-        registeredComponentsPerConnection.get(connectionId).put(toolAndHostId, ci);
+        registeredComponentsPerConnection.get(connectionId).put(componentId, ci);
     }
 
     protected void removeToolAccessComponent(String toolAndHostId, String connectionId) {
@@ -219,7 +283,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
     }
 
     private ConfigurationDefinition generateConfiguration(String toolName, String toolVersion, String hostName, String hostId,
-        String connectionId) {
+        String connectionId, boolean isWorkflow) {
         List<Object> configuration = new LinkedList<Object>();
         Map<String, String> readOnlyConfiguration = new HashMap<String, String>();
         readOnlyConfiguration.put(SshRemoteAccessConstants.KEY_TOOL_NAME, toolName);
@@ -227,6 +291,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         readOnlyConfiguration.put(SshRemoteAccessConstants.KEY_CONNECTION, connectionId);
         readOnlyConfiguration.put(SshRemoteAccessConstants.KEY_HOST_ID, hostId);
         readOnlyConfiguration.put(SshRemoteAccessConstants.KEY_HOST_NAME, hostName);
+        readOnlyConfiguration.put(SshRemoteAccessConstants.KEY_IS_WORKFLOW, Boolean.toString(isWorkflow));
         return ComponentConfigurationModelFactory.createConfigurationDefinition(configuration, new LinkedList<Object>(),
             new LinkedList<Object>(), readOnlyConfiguration);
     }
@@ -371,8 +436,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
     }
 
     private byte[] readDefaultToolIcon(int iconSize) {
-        try (InputStream inputStream =
-                getClass().getResourceAsStream("/icons/tool" + iconSize + ".png")) {
+        try (InputStream inputStream = getClass().getResourceAsStream("/icons/tool" + iconSize + ".png")) {
             return IOUtils.toByteArray(inputStream);
         } catch (FileNotFoundException e) {
             return null;

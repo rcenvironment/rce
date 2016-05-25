@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptingService;
+import de.rcenvironment.core.scripting.ScriptingUtils;
 import de.rcenvironment.core.scripting.python.PythonComponentConstants;
 import de.rcenvironment.core.scripting.python.PythonScriptContext;
 import de.rcenvironment.core.scripting.python.PythonScriptEngine;
@@ -37,9 +38,8 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
 
 /**
  * 
- * Implementation of {@link ScriptExecutor} to execute python scripts. This is needed because Python
- * is not part of the default ScriptEngine and must be implemented manually. For this we require
- * some different code for the {@link ScriptExecutor} methods.
+ * Implementation of {@link ScriptExecutor} to execute python scripts. This is needed because Python is not part of the default ScriptEngine
+ * and must be implemented manually. For this we require some different code for the {@link ScriptExecutor} methods.
  * 
  * @author Sascha Zur
  * 
@@ -93,9 +93,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
             // Executing script here
             componentContext.announceExternalProgramStart();
             exitCode = (Integer) scriptEngine.eval(wrappingScript);
-            componentContext.announceExternalProgramTermination();
         } catch (ScriptException e) {
             throw new ComponentException("Failed to execute script", e);
+        } finally {
+            componentContext.announceExternalProgramTermination();
         }
 
         if (exitCode != 0) {
@@ -151,6 +152,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             VectorTD vector = factory.createVector(resultVector.size());
                             int index = 0;
                             for (Object element : resultVector) {
+                                if (element instanceof List) {
+                                    throw new ComponentException(StringUtils
+                                        .format("Value for endpoint %s was a matrix, but endpoint is of type Vector", outputName));
+                                }
                                 double convertedValue = 0;
                                 if (element instanceof Integer) {
                                     convertedValue = (Integer) element;
@@ -161,6 +166,9 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                 index++;
                             }
                             outputValue = vector;
+                            break;
+                        case Matrix:
+                            outputValue = ScriptingUtils.createResultMatrix(o, outputName);
                             break;
                         case SmallTable:
                             List<Object> rowArray = (List<Object>) o;
@@ -242,7 +250,8 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         } catch (IOException e) {
             throw new ComponentException(StringUtils.format(
                 "Failed to store %s into the data management - "
-                    + "if it is not stored in the data management, it can not be sent as output value", type), e);
+                    + "if it is not stored in the data management, it can not be sent as output value",
+                type), e);
         }
         return outputValue;
     }
@@ -253,5 +262,15 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         if (scriptEngine != null) {
             ((PythonScriptEngine) scriptEngine).dispose();
         }
+    }
+
+    @Override
+    public void cancelScript() {
+        ((PythonScriptEngine) scriptEngine).cancel();
+    }
+
+    @Override
+    public boolean isCancelable() {
+        return true;
     }
 }

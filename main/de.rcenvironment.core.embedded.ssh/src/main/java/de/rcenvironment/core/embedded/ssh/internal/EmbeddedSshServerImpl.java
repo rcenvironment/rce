@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,6 +34,7 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  * 
  * @author Sebastian Holtappels
  * @author Robert Mischke
+ * @author Brigitte Boden (added public key authentication)
  */
 public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
 
@@ -100,6 +101,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             // TODO also use this to announce the RCE product version?
             updateServerBannerWithAnnouncementData();
             sshd.setPasswordAuthenticator(authenticationManager);
+            sshd.setPublickeyAuthenticator(authenticationManager);
             String hostKeyFilePath = new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA),
                 HOST_KEY_STORAGE_FILE_NAME).getAbsolutePath();
             logger.debug("Using SSH server key storage " + hostKeyFilePath);

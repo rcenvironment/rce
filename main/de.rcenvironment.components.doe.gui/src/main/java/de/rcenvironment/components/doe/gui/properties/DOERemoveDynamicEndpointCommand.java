@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,7 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationDesc
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicEndpointCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Add command for changing custom table if neccessary.
@@ -40,7 +41,7 @@ public class DOERemoveDynamicEndpointCommand extends RemoveDynamicEndpointComman
         ConfigurationDescription config =
             getWorkflowNode().getConfigurationDescription();
         if (DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE.equals(config.getConfigurationValue(DOEConstants.KEY_METHOD))) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 String[][] tableValuesDouble = null;
                 if (config.getConfigurationValue(DOEConstants.KEY_TABLE) != null
@@ -68,7 +69,7 @@ public class DOERemoveDynamicEndpointCommand extends RemoveDynamicEndpointComman
         ConfigurationDescription config =
             getWorkflowNode().getConfigurationDescription();
         if (DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE.equals(config.getConfigurationValue(DOEConstants.KEY_METHOD))) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 String[][] tableValuesDouble = null;
                 if (config.getConfigurationValue(DOEConstants.KEY_TABLE) != null

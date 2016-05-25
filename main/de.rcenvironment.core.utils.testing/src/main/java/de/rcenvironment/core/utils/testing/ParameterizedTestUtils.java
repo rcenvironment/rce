@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,6 +10,7 @@ package de.rcenvironment.core.utils.testing;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -38,6 +39,22 @@ public class ParameterizedTestUtils implements TestParametersProvider {
     }
 
     /**
+     * Reads a specific property file resource.
+     * 
+     * @param paramFile the location of the parameter/properties file to load
+     * @return 'self' (for easy command chaining)
+     * @throws IOException on load failure, e.g. on a non-existing file
+     */
+    public TestParametersProvider readPropertiesFile(File paramFile) throws IOException {
+
+        properties = new Properties();
+
+        verifyAndLoadPropertiesFile(paramFile);
+
+        return this; // for easy command chaining
+    }
+
+    /**
      * Reads a property file resouce with the name of the given class and a ".properties" suffix. If no such file is found, an
      * {@link IOException} is thrown.
      * 
@@ -55,12 +72,7 @@ public class ParameterizedTestUtils implements TestParametersProvider {
         if (paramsDir != null) {
             // standalone use case: read from file in parameter directory
             File paramFile = new File(paramsDir, resourceName);
-            if (!paramFile.isFile()) {
-                throw new IOException("Expected to find test parameter file " + paramFile.getAbsolutePath());
-            }
-            try (InputStream is = new FileInputStream(paramFile)) {
-                properties.load(is);
-            }
+            verifyAndLoadPropertiesFile(paramFile);
         } else {
             // development/IDE use case: read from workspace file as resource
             InputStream propertiesStream = testClass.getResourceAsStream("/" + resourceName);
@@ -69,6 +81,23 @@ public class ParameterizedTestUtils implements TestParametersProvider {
             }
             properties.load(propertiesStream);
         }
+
+        return this; // for easy command chaining
+    }
+
+    /**
+     * Reads a property file resource with the specified name. If no such file is found, an {@link IOException} is thrown.
+     * 
+     * @param resourceName the classpath location of the file resource
+     * @return 'self' (for easy command chaining)
+     * @throws IOException on load failure
+     */
+    public TestParametersProvider readPropertiesFile(String resourceName) throws IOException {
+
+        properties = new Properties();
+
+        File paramFile = new File(resourceName);
+        verifyAndLoadPropertiesFile(paramFile);
 
         return this; // for easy command chaining
     }
@@ -121,5 +150,19 @@ public class ParameterizedTestUtils implements TestParametersProvider {
             throw new AssertionError(StringUtils.format("Value %s for required test property %s is not an Integer.", key, value));
         }
         return intValue;
+    }
+
+    private void verifyAndLoadPropertiesFile(File paramFile) throws IOException, FileNotFoundException {
+        if (!paramFile.isFile()) {
+            throw new IOException("Expected to find test parameter file " + paramFile.getAbsolutePath());
+        }
+        try (InputStream is = new FileInputStream(paramFile)) {
+            properties.load(is);
+        }
+    }
+
+    @Override
+    public String getOptionalString(String key) {
+        return properties.getProperty(key);
     }
 }

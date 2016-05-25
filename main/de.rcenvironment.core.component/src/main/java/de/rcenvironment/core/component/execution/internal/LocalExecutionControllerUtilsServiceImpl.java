@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -46,8 +46,10 @@ public class LocalExecutionControllerUtilsServiceImpl implements LocalExecutionC
             // should not happen
             LogFactory.getLog(LocalExecutionControllerUtilsServiceImpl.class).error(StringUtils.format("Filter '%s' is not valid", filter));
         } catch (IllegalStateException e) {
-            LogFactory.getLog(LocalExecutionControllerUtilsServiceImpl.class).warn("Bundle seems to be shutted down. "
-                + "If this occurs at any other time than shut down, it is an error", e);
+            // TODO change this once "graceful shutdown" is implemented; then it is an error at any time
+            LogFactory.getLog(LocalExecutionControllerUtilsServiceImpl.class).warn(
+                "The software bundle providing this workflow component is unavailable; "
+                    + "if this happens at any other time than shutdown, it is an error", e);
         }
         throw new ExecutionControllerException(StringUtils.format("Component or workflow (%s) "
             + "(more precisely its execution controller) does not exist (anymore)", executionId));

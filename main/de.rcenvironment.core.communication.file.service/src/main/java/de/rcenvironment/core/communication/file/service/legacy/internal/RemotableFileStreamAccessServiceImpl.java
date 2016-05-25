@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,7 +10,6 @@ package de.rcenvironment.core.communication.file.service.legacy.internal;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -42,7 +41,7 @@ public class RemotableFileStreamAccessServiceImpl implements RemotableFileStream
 
     private static final String ERROR_INPUT_STREAM_NOT_FOUND = "The input stream could not be found: ";
 
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     private static final Log LOGGER = LogFactory.getLog(RemotableFileStreamAccessServiceImpl.class);
 
@@ -66,7 +65,7 @@ public class RemotableFileStreamAccessServiceImpl implements RemotableFileStream
     @Override
     @AllowRemoteAccess
     public void close(String uuid) throws IOException {
-        Assertions.isDefined(uuid, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
+        Assertions.isDefined(uuid, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
         if (inputStreamMap.containsKey(uuid)) {
             inputStreamMap.get(uuid).close();
             inputStreamMap.remove(uuid);
@@ -77,8 +76,8 @@ public class RemotableFileStreamAccessServiceImpl implements RemotableFileStream
     @AllowRemoteAccess
     public String open(FileType type, String uri) throws IOException {
 
-        Assertions.isDefined(type, MessageFormat.format(ERROR_PARAMETERS_NULL, "type"));
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, "uri"));
+        Assertions.isDefined(type, StringUtils.format(ERROR_PARAMETERS_NULL, "type"));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, "uri"));
 
         LOGGER.debug("Received request for file: " + uri);
         String uuid = UUID.randomUUID().toString();
@@ -107,7 +106,7 @@ public class RemotableFileStreamAccessServiceImpl implements RemotableFileStream
     @Override
     public int read(String uuid) throws IOException {
 
-        Assertions.isDefined(uuid, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
+        Assertions.isDefined(uuid, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
 
         InputStream inputStream = inputStreamMap.get(uuid);
         if (inputStream == null) {
@@ -121,8 +120,8 @@ public class RemotableFileStreamAccessServiceImpl implements RemotableFileStream
     @AllowRemoteAccess
     public byte[] read(String uuid, Integer len) throws IOException {
 
-        Assertions.isDefined(uuid, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
-        Assertions.isDefined(len, MessageFormat.format(ERROR_PARAMETERS_NULL, "len"));
+        Assertions.isDefined(uuid, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
+        Assertions.isDefined(len, StringUtils.format(ERROR_PARAMETERS_NULL, "len"));
 
         InputStream inputStream = inputStreamMap.get(uuid);
         if (inputStream == null) {
@@ -148,8 +147,8 @@ public class RemotableFileStreamAccessServiceImpl implements RemotableFileStream
     @Override
     public long skip(String uuid, Long n) throws IOException {
 
-        Assertions.isDefined(uuid, MessageFormat.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
-        Assertions.isDefined(n, MessageFormat.format(ERROR_PARAMETERS_NULL, "n"));
+        Assertions.isDefined(uuid, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_UUID));
+        Assertions.isDefined(n, StringUtils.format(ERROR_PARAMETERS_NULL, "n"));
 
         InputStream inputStream = inputStreamMap.get(uuid);
         if (inputStream == null) {

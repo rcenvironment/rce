@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -43,41 +43,35 @@ public interface SshConnectionService {
     Session getAvtiveSshSession(String connnectionId);
 
     /**
-     * Adds a new ssh connection config to the service and connects it, if connectOnStartup is set.
+     * Adds a new ssh connection config to the service (does not store the passphrase). For adding keyfile and/or passphrase, call the
+     * "setAuthDataForSshConnection" method after adding the connection.
      * 
      * @param displayName Name to be shown in network view.
      * @param destinationHost The SSH host.
      * @param port The port of the SSH server.
      * @param sshAuthUser User name.
-     * @param sshAuthPassPhrase Password.
-     * @param storePassphrase if the passphrase should be stored in the secure store
-     * @param connectOnStartup if the connection should be immediately connected.
+     * @param keyfileLocation Location of the private key file. Must be in the OpenSSH format.
+     * @param usePassphrase if a passphrase should be used in case of keyfile authentication
+     * @param connectImmediately if the connection should be connected immediately
      * @return connection Id for the new connection
      */
-    String addSshConnectionWithAuthPhrase(String displayName, String destinationHost, int port, String sshAuthUser,
-        String sshAuthPassPhrase, boolean storePassphrase, boolean connectOnStartup);
+    String addSshConnection(String displayName, String destinationHost, int port, String sshAuthUser, String keyfileLocation,
+        boolean usePassphrase, boolean connectImmediately);
 
     /**
-     * Edits the ssh connection config with the given id (does not store the passphrase!).
-     * 
-     * @param id The id of the configuration to edit.
-     * @param displayName Name to be shown in network view.
-     * @param destinationHost The SSH host.
-     * @param port The port of the SSH server.
-     * @param sshAuthUser User name.
+     * Edits the ssh connection config with the given id (does not store the passphrase).
+     * @param context Parameters for the connection.
      */
-    void editSshConnection(String id, String displayName, String destinationHost, int port, String sshAuthUser);
+    void editSshConnection(SshConnectionContext context);
 
     /**
-     * Edits the passphrase for the ssh connection with the given id, stores it in the secure store, if storePassphrase is set, and connects
-     * it, if connectOnStartup is set.
+     * Edits the keyfile/passphrase for the ssh connection with the given id, stores it in the secure store, if storePassphrase is set.
      * 
      * @param id The id of the configuration to edit.
-     * @param sshAuthPassPhrase Password.
+     * @param sshAuthPassPhrase passphrase (for password authentication or for the keyfile)
      * @param storePassphrase if the passphrase should be stored in the secure store
-     * @param connectOnStartup if the connection should be immediately connected.
      */
-    void editAuthPhraseForSshConnection(String id, String sshAuthPassPhrase, boolean storePassphrase, boolean connectOnStartup);
+    void setAuthPhraseForSshConnection(String id, String sshAuthPassPhrase, boolean storePassphrase);
 
     /**
      * Return all available connections (connected or not).

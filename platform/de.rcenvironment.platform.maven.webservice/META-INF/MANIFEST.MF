@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - Web Services
 Bundle-SymbolicName: de.rcenvironment.platform.maven.webservice;singleton:=true
-Bundle-Version: 7.0.0.qualifier
+Bundle-Version: 7.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: lib/maven/cxf-bundle-minimal-2.2.11.jar,
  lib/maven/geronimo-servlet_2.5_spec-1.2.jar,

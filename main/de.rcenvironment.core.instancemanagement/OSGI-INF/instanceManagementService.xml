@@ -11,5 +11,6 @@
 		interface="de.rcenvironment.core.configuration.ConfigurationService"
 		name="Configuration Service"
 		policy="dynamic" />
+ <reference bind="bindPersistentSettingsService" cardinality="1..1" interface="de.rcenvironment.core.configuration.PersistentSettingsService" name="PersistentSettingsService" policy="dynamic"/>
 
 </scr:component>

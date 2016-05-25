@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -25,6 +25,8 @@ import org.apache.commons.compress.compressors.gzip.GzipCompressorInputStream;
 import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
@@ -34,6 +36,7 @@ import de.rcenvironment.core.datamanagement.DataReferenceService;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
@@ -45,11 +48,19 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class DataManagementServiceImpl implements DataManagementService {
 
+    private static final String STRING_FILENAME_NOT_VALID =
+        "Filename/path '%S' contains characters that are not valid for all operating systems; "
+            + "it might lead to problems when accessing the file on another operating system";
+
     private static final String ARCHIVE_TAR_GZ = "archive.tar.gz";
 
     private static final int BUFFER = 1024;
 
     private static final String REFERENCE_NOT_FOUND_MESSAGE = "No such data entry (id='%s').";
+
+    private static final String TAR_GZ_PATH_SEPARATOR = "/";
+
+    private static final Log LOGGER = LogFactory.getLog(DataManagementServiceImpl.class);
 
     private FileDataService fileDataService;
 
@@ -58,6 +69,9 @@ public class DataManagementServiceImpl implements DataManagementService {
     @Override
     public String createReferenceFromLocalFile(File file, MetaDataSet additionalMetaData,
         NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        if (!CrossPlatformFilenameUtils.isFilenameValid(file.getName())) {
+            LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, file.getName()));
+        }
         return createReferenceFromStream(new FileInputStream(file), additionalMetaData, nodeId);
     }
 
@@ -79,6 +93,9 @@ public class DataManagementServiceImpl implements DataManagementService {
     @Override
     public String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, NodeIdentifier nodeId)
         throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        if (!CrossPlatformFilenameUtils.isFilenameValid(dir.getName())) {
+            LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, dir.getName()));
+        }
 
         File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
         createTarGz(dir, archive);
@@ -90,7 +107,7 @@ public class DataManagementServiceImpl implements DataManagementService {
         }
     }
 
-    // set visibility to from private to protected for test purposes
+    // set visibility from private to protected for test purposes
     protected void createTarGz(File dir, File archive) throws IOException {
 
         try (FileOutputStream fileOutStream = new FileOutputStream(archive);
@@ -103,6 +120,9 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     private void addFileToTarGz(TarArchiveOutputStream tOutStream, String path, String base) throws IOException {
         File file = new File(path);
+        if (!CrossPlatformFilenameUtils.isPathValid(file.getAbsolutePath())) {
+            LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, file.getAbsolutePath()));
+        }
         String entryName = base + file.getName();
         TarArchiveEntry tarEntry = new TarArchiveEntry(file, entryName);
         tOutStream.setLongFileMode(TarArchiveOutputStream.LONGFILE_GNU);
@@ -118,7 +138,10 @@ public class DataManagementServiceImpl implements DataManagementService {
             File[] children = file.listFiles();
             if (children != null) {
                 for (File child : children) {
-                    addFileToTarGz(tOutStream, child.getAbsolutePath(), entryName + "/");
+                    if (!CrossPlatformFilenameUtils.isFilenameValid(child.getName())) {
+                        LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, child.getName()));
+                    }
+                    addFileToTarGz(tOutStream, child.getAbsolutePath(), entryName + TAR_GZ_PATH_SEPARATOR);
                 }
             }
         }
@@ -188,7 +211,6 @@ public class DataManagementServiceImpl implements DataManagementService {
     @Override
     public void copyReferenceToLocalDirectory(String reference, File targetDir, NodeIdentifier node) throws IOException,
         CommunicationException {
-
         File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
         copyReferenceToLocalFile(reference, archive, node);
         createDirectoryFromTarGz(archive, targetDir);
@@ -213,6 +235,7 @@ public class DataManagementServiceImpl implements DataManagementService {
         TarArchiveEntry tarEntry;
         while ((tarEntry = tarInStream.getNextTarEntry()) != null) {
             File destPath = new File(targetDir, tarEntry.getName());
+
             if (tarEntry.isDirectory()) {
                 destPath.mkdirs();
             } else {

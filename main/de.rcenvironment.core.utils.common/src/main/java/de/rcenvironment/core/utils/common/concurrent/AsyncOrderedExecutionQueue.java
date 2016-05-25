@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,6 +49,17 @@ public class AsyncOrderedExecutionQueue {
         @Override
         @TaskDescription(ASYNC_TASK_DESCRIPTION)
         public void run() {
+            // dispatch all currently queued elements in the same execution to avoid thread switching and thread pool overhead
+            while (dispatchSingleElement()) {
+                // sometimes, CheckStyle rules just don't make sense...
+                @SuppressWarnings("unused") int i = 0; // (this should be eliminated by the compiler)
+            }
+        }
+
+        /**
+         * @return true if dispatching should continue, ie the queue is neither empty nor canceled
+         */
+        private boolean dispatchSingleElement() {
             final Runnable preExecutionFirst;
             synchronized (queue) {
                 preExecutionFirst = queue.peekFirst();
@@ -57,8 +68,8 @@ public class AsyncOrderedExecutionQueue {
             if (preExecutionFirst == null) {
                 log.debug("Queue cancelled, discarding queued trigger");
                 cancelCompleteLatch.countDown();
-                // leave marker in queue for other queued dispatchers
-                return;
+                // note: leaving marker in queue for other queued dispatchers
+                return false; // do not continue dispatching
             }
             try {
                 preExecutionFirst.run();
@@ -71,7 +82,7 @@ public class AsyncOrderedExecutionQueue {
                     } catch (TimeoutException e2) {
                         log.error("Timeout exceeded while cancelling queue after a task exception", e2);
                     }
-                    return; // do not enqueue again
+                    return false; // do not continue dispatching
                 case LOG_AND_PROCEED:
                     log.error("Error in asynchronous callback; continuing (as defined by exception policy)", e);
                     break;
@@ -86,17 +97,13 @@ public class AsyncOrderedExecutionQueue {
                         log.debug("Queue cancelled during a task's execution; stopping dispatcher "
                             + "and waiting for the running task to complete");
                         cancelCompleteLatch.countDown();
-                        return; // do not enqueue again
+                        return false; // do not continue dispatching
                     } else {
                         throw new IllegalStateException("Queue corruption");
                     }
                 }
-                // if this was not the last queued callback, enqueue the dispatcher again
-                if (!queue.isEmpty()) {
-                    // note: this approach gives more fairness between concurrent queues, but is slightly less efficient than
-                    // executing all queued Runnables each time a DispatchRunnable is executed - misc_ro
-                    threadPool.execute(dispatchRunnable); // == this
-                }
+                // if this was not the last queued callback, continue dispatching
+                return !queue.isEmpty();
             }
         }
     }

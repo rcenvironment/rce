@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,6 +33,7 @@ import de.rcenvironment.core.component.model.endpoint.impl.EndpointDefinitionsPr
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentInterfaceImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Test cases for {@link ComponentInstallationImpl}.
@@ -76,7 +77,7 @@ public class ComponentInstallationImplTest {
         ci.setComponentRevision(cr);
         ci.setInstallationId("install-id");
         
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ComponentInstallationImpl otherCi = mapper.readValue(mapper.writeValueAsString(ci), ComponentInstallationImpl.class);
         
         assertEquals(0, otherCi.compareTo(ci));

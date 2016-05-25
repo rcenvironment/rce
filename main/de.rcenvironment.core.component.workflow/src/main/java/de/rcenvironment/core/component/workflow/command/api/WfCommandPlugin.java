@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -30,8 +30,10 @@ import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowDescriptionValidationResult;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
@@ -222,56 +224,76 @@ public class WfCommandPlugin implements CommandPlugin {
         // established when --batch is executed
         // It slows down the execution as parsing the workflow file is done twice now. Should be
         // improved. -seid_do
-        validateWorkflow(cmdCtx, wfFile);
-
-        try {
-            // TODO specify log directory?
-            HeadlessWorkflowExecutionContextBuilder exeContextBuilder =
-                new HeadlessWorkflowExecutionContextBuilder(wfFile, setupLogDirectoryForWfFile(wfFile));
-            exeContextBuilder.setPlaceholdersFile(placeholdersFile);
-            exeContextBuilder.setTextOutputReceiver(cmdCtx.getOutputReceiver(), compactId);
-            exeContextBuilder.setDisposalBehavior(dispose);
-            exeContextBuilder.setDeletionBehavior(delete);
-
-            workflowExecutionService.executeWorkflowSync(exeContextBuilder.build());
-        } catch (WorkflowExecutionException e) {
-            log.error("Exception while executing workflow from file: " + wfFile.getAbsolutePath(), e);
-            throw CommandException.executionError(e.getMessage(), cmdCtx);
+        if (validateWorkflow(cmdCtx, wfFile)) {
+            try {
+                // TODO specify log directory?
+                HeadlessWorkflowExecutionContextBuilder exeContextBuilder =
+                    new HeadlessWorkflowExecutionContextBuilder(wfFile, setupLogDirectoryForWfFile(wfFile));
+                exeContextBuilder.setPlaceholdersFile(placeholdersFile);
+                exeContextBuilder.setTextOutputReceiver(cmdCtx.getOutputReceiver(), compactId);
+                exeContextBuilder.setDisposalBehavior(dispose);
+                exeContextBuilder.setDeletionBehavior(delete);
+                
+                workflowExecutionService.executeWorkflowSync(exeContextBuilder.build());
+            } catch (WorkflowExecutionException e) {
+                log.error("Exception while executing workflow: " + wfFile.getAbsolutePath(), e);
+                throw CommandException.executionError(ComponentUtils.createErrorLogMessage(e), cmdCtx);
+            }
+        } else {
+            cmdCtx.getOutputReceiver()
+                .addOutput(StringUtils.format("'%s' not executed due to validation errors (see log messages above) (full path: %s)",
+                    wfFile.getName(), wfFile.getAbsolutePath()));
         }
     }
-
-    private void validateWorkflow(CommandContext context, File wfFile) throws CommandException {
+    
+    private boolean validateWorkflow(CommandContext context, File wfFile) throws CommandException {
+        TextOutputReceiver outputReceiver = context.getOutputReceiver();
+        WorkflowDescription workflowDescription;
+        try {
+            workflowDescription = workflowExecutionService
+                .loadWorkflowDescriptionFromFileConsideringUpdates(wfFile,
+                    new HeadlessWorkflowDescriptionLoaderCallback(outputReceiver));
+        } catch (WorkflowFileException e) {
+            log.error("Exception while parsing the workflow file " + wfFile.getAbsolutePath(), e);
+            outputReceiver.addOutput(StringUtils.format("Error when parsing '%s': %s (full path: %s)", wfFile.getName(), e.getMessage(),
+                wfFile.getAbsolutePath()));
+            return false;
+        }
+        outputReceiver.addOutput(
+            StringUtils.format("Validating target instances of '%s'... (full path: %s", wfFile.getName(),
+                wfFile.getAbsolutePath()));
         int retries = 0;
         while (true) {
-            try {
-                WorkflowDescription workflowDescription = workflowExecutionService
-                    .loadWorkflowDescriptionFromFileConsideringUpdates(wfFile,
-                        new HeadlessWorkflowDescriptionLoaderCallback(context.getOutputReceiver()));
-                if (workflowExecutionService.validateWorkflowDescription(workflowDescription).isSucceeded()) {
-                    break;
-                } else {
-                    if (retries >= MAXIMUM_WORKFLOW_PARSE_RETRIES) {
-                        log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
-                            MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
-                        throw CommandException.executionError(
-                            StringUtils.format("Workflow file '%s' is not valid. See log above for more details.",
-                                wfFile.getAbsolutePath()),
-                            context);
-                    }
-                    log.debug("Retrying workflow validation in a few seconds.");
-                    try {
-                        Thread.sleep(PARSING_WORKFLOW_FILE_RETRY_INTERVAL);
-                    } catch (InterruptedException e1) {
-                        log.error("Waiting for parsing retry failed", e1);
-                        throw CommandException.executionError(e1.getMessage(), context);
-                    }
-                    retries++;
+            WorkflowDescriptionValidationResult validationResult =
+                workflowExecutionService.validateWorkflowDescription(workflowDescription);
+            if (validationResult.isSucceeded()) {
+                outputReceiver
+                    .addOutput(StringUtils.format("Target instance(s) of '%s' valid (full path: %s", wfFile.getName(),
+                        wfFile.getAbsolutePath()));
+                break;
+            } else {
+                if (retries >= MAXIMUM_WORKFLOW_PARSE_RETRIES) {
+                    log.debug(StringUtils.format("Maximum number of retries (%d) reached while validating the workflow file '%s'",
+                        MAXIMUM_WORKFLOW_PARSE_RETRIES, wfFile.getAbsolutePath()));
+                    outputReceiver.addOutput(StringUtils.format("Some target instance(s) of '%s' unknown: %s (full path: %s)",
+                            wfFile.getName(), validationResult.toString(), wfFile.getAbsolutePath()));
+                    return false;
                 }
-            } catch (WorkflowFileException e) {
-                log.error("Exception while parsing the workflow file " + wfFile.getAbsolutePath(), e);
-                throw CommandException.executionError(e.getMessage(), context);
+                log.debug("Retrying workflow validation in a few seconds.");
+                try {
+                    Thread.sleep(PARSING_WORKFLOW_FILE_RETRY_INTERVAL);
+                } catch (InterruptedException e) {
+                    log.error("Interrupted while waiting for parsing retry", e);
+                    outputReceiver.addOutput(
+                        StringUtils.format("Internal error when validating '%s': %s (full path: %s)", wfFile.getName(), e.getMessage(),
+                            wfFile.getAbsolutePath()));
+                    return false;
+                }
+                retries++;
             }
+            
         }
+        return true;
     }
 
     private void performWfVerify(final CommandContext context) throws CommandException {
@@ -718,7 +740,7 @@ public class WfCommandPlugin implements CommandPlugin {
 
         private AtomicInteger error = new AtomicInteger(0);
 
-        public WfVerifyResult(int runsSubmitted) {
+        WfVerifyResult(int runsSubmitted) {
             this.runsSubmitted = runsSubmitted;
         }
 
@@ -805,5 +827,5 @@ public class WfCommandPlugin implements CommandPlugin {
         }
         return wExecInf;
     }
-    
+
 }

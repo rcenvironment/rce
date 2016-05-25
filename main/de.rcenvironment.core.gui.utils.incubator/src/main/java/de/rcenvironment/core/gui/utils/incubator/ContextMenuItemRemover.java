@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -103,7 +103,7 @@ public final class ContextMenuItemRemover {
             public void menuHidden(MenuEvent arg0) {}
         }
 
-        public RemoveItemsMenuListener(Menu menu) {
+        RemoveItemsMenuListener(Menu menu) {
             this.menu = menu;
         }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,7 +21,6 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.widgets.Button;
-import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
@@ -221,6 +220,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
     }
 
     private void updateChild(final ViewerCell cell) {
+
         final TreeNode treeNodeCell = (TreeNode) cell.getElement();
 
         final CCombo combo = new CCombo(treeViewer.getTree(), SWT.READ_ONLY);
@@ -242,6 +242,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
 
         combo.addListener(SWT.Resize, new Listener() {
 
+            @Override
             public void handleEvent(final Event argEvent) {
                 if (combo != null) {
                     combo.setText(combo.getText());
@@ -284,10 +285,6 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
             }
         }
 
-        if (instanceProvider.getNodeValueWithError().containsKey(treeNodeCell.getWorkflowNode())) {
-            combo.select(instanceProvider.getNodeValueWithError().get(treeNodeCell.getWorkflowNode()));
-        }
-
         instanceProvider.handleSelection(combo, treeNodeCell.getWorkflowNode());
 
         checkForSameSelection(treeNodeCell.getFatherNode());
@@ -308,11 +305,6 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
             }
 
         });
-
-        if (combo.getItemCount() == 1) {
-
-            combo.setEnabled(false);
-        }
 
     }
 
@@ -399,6 +391,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
 
         combo.addListener(SWT.Resize, new Listener() {
 
+            @Override
             public void handleEvent(final Event argEvent) {
 
                 if (combo != null) {
@@ -411,7 +404,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
             comboList.add(combo);
         }
         treeNodeCell.setCombo(combo);
-        editor.setEditor((Control) combo, item, 2);
+        editor.setEditor(combo, item, 2);
 
         for (String value : editingSupport.getValues(treeNodeCell.getChildrenNodes().get(0).getWorkflowNode())) {
             combo.add(value);

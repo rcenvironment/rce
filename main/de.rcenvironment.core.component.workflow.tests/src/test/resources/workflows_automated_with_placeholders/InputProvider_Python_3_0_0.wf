@@ -59,19 +59,9 @@
     "input" : "seperator"
   }, {
     "source" : "178b9928-3c61-4e59-ad5e-d6be10359f04",
-    "output" : "inputFile",
-    "target" : "e73c5c6b-3270-44db-b52f-2506e60b4393",
-    "input" : "inputFile"
-  }, {
-    "source" : "178b9928-3c61-4e59-ad5e-d6be10359f04",
     "output" : "value",
     "target" : "298e845c-f53f-44d7-901b-9e3187163515",
     "input" : "value"
-  }, {
-    "source" : "298e845c-f53f-44d7-901b-9e3187163515",
-    "output" : "result",
-    "target" : "e73c5c6b-3270-44db-b52f-2506e60b4393",
-    "input" : "result"
   }, {
     "source" : "298e845c-f53f-44d7-901b-9e3187163515",
     "output" : "result",

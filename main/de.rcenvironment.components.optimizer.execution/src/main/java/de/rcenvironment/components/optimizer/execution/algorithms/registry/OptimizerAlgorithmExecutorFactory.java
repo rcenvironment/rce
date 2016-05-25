@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -35,18 +35,18 @@ public interface OptimizerAlgorithmExecutorFactory {
     /**
      * Returns an instance for executing the methods of the implementing bundle.
      * 
-     * @param algorithm :
      * @param methodConfiguration :
      * @param outputValues :
      * @param input :
      * @param ci :
      * @param lowerMap map with lower bounds start values
      * @param upperMap map with upper bounds start values
+     * @param stepValues for the algorithm
      * @return instance for executing methods
      * @throws ComponentException on unexpected errors when creating instance of {@link OptimizerAlgorithmExecutor}
      */
-    OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(String algorithm,
-        Map<String, MethodDescription> methodConfiguration, Map<String, TypedDatum> outputValues,
-        Collection<String> input, ComponentContext ci, Map<String, Double> upperMap, Map<String, Double> lowerMap) 
+    OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(Map<String, MethodDescription> methodConfiguration,
+        Map<String, TypedDatum> outputValues, Collection<String> input, ComponentContext ci, Map<String, Double> upperMap,
+        Map<String, Double> lowerMap, Map<String, Double> stepValues)
         throws ComponentException;
 }

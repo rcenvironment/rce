@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -99,7 +99,7 @@ public final class ProtocolConstants {
         private final String stringForm;
 
         // note: userMessage may be null for results that are not typically presented to the user
-        private ResultCode(int code, String userMessage) {
+        ResultCode(int code, String userMessage) {
             this.code = code;
             // prepare and store toString() message
             if (userMessage != null) {

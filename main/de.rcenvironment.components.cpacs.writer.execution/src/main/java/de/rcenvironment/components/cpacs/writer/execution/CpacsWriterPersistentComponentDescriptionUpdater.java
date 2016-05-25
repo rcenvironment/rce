@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -108,7 +109,7 @@ public class CpacsWriterPersistentComponentDescriptionUpdater implements Persist
         
         
         // Savemode is now boolean
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configuration = (ObjectNode) node.get("configuration");
         final String saveModeConfig = "saveMode";

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -56,7 +56,7 @@ public class ExcelWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
                 new WorkflowNodeValidationMessage(WorkflowNodeValidationMessage.Type.ERROR, 
                     ExcelComponentConstants.XL_FILENAME,
                     Messages.errorNoExcelFileRelative, 
-                    Messages.bind(Messages.errorNoExcelFileRelative, null));
+                    Messages.bind(Messages.errorNoExcelFileRelative, null), true);
             
             messages.add(validationMessage);
         }
@@ -84,6 +84,11 @@ public class ExcelWorkflowNodeValidator extends AbstractWorkflowNodeValidator {
         return messages;
     }
     
+
+    @Override
+    protected Collection<WorkflowNodeValidationMessage> validateOnStart() {
+        return validate();
+    }
     
     private List<WorkflowNodeValidationMessage> testChannelMetaData(final File xlFile, EndpointDescription endpointDesc) {
         final List<WorkflowNodeValidationMessage> messages = new LinkedList<WorkflowNodeValidationMessage>();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,22 +16,25 @@ package de.rcenvironment.core.datamodel.api;
  */
 public enum EndpointActionType {
     /** Add. */
-    ADD("Add"),
+    ADD("Add", "Add..."),
     /** Edit. */
-    EDIT("Edit"),
+    EDIT("Edit", "Edit..."),
     /** Remove. */
-    REMOVE("Remove");
+    REMOVE("Remove", "Remove");
     
     /** The title. */
     private final String title;
+
+    private String buttonText;
 
     /**
      * Instantiates a new type.
      * 
      * @param title the title
      */
-    private EndpointActionType(final String title) {
+    EndpointActionType(final String title, final String buttonText) {
         this.title = title;
+        this.buttonText = buttonText;
     }
 
     /**
@@ -42,6 +45,10 @@ public enum EndpointActionType {
     @Override
     public String toString() {
         return title;
+    }
+
+    public String getButtonText() {
+        return buttonText;
     }
 
 }

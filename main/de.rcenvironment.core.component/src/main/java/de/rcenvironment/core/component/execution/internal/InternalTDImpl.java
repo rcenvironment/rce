@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Internal value sent to ouputs to control the workflow.
@@ -121,7 +122,7 @@ public class InternalTDImpl implements InternalTD {
      * @return serialized {@link InternalTDImpl}
      */
     public String serialize() {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         rootNode.put(SERIALIZE_KEY_TYPE, getType().name());
         rootNode.put(SERIALIZE_KEY_IDENTIFIER, getIdentifier());
@@ -152,7 +153,7 @@ public class InternalTDImpl implements InternalTD {
      * @return {@link InternalTDImpl} instance
      */
     public static InternalTDImpl fromString(String value) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode;
         try {
             rootNode = (ObjectNode) mapper.readTree(value);

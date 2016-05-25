@@ -1,6 +1,0 @@
-<contexts>
-	<context id="parametricstudy" title="Parametric Study Component Help">
-		<description>The Parametric Study Component is for running a workflow through a set of values for one input variable.</description>
-		<topic href="resources/help/html/usage.xhtml" label="Parametric Study Component Usage"></topic>
-	</context>
-</contexts>

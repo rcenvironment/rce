@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -61,6 +61,8 @@ public class SshConnectionsConfiguration {
         connection.setPort(connectionPart.getLong("port").intValue());
         connection.setUser(connectionPart.getString("loginName"));
         connection.setDisplayName(connectionPart.getString("displayName"));
+        connection.setKeyFileLocation(connectionPart.getString("keyfileLocation"));
+        connection.setUsePassphrase(!connectionPart.getBoolean("noPassphrase", false));
         return connection;
     }
 

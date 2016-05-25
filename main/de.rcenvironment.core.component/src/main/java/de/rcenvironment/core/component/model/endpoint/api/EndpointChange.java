@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,7 +24,7 @@ public final class EndpointChange implements Serializable {
      * 
      * @author Christian Weiss
      */
-    public static enum Type {
+    public enum Type {
         /** An endpoint was added. */
         Added,
         /** An endpoint was removed. */

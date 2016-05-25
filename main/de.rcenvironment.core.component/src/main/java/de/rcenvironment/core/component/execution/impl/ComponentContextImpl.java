@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,12 +20,12 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
-import de.rcenvironment.core.component.execution.api.ComponentExecutionControllerCallback;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.PersistedComponentData;
+import de.rcenvironment.core.component.execution.internal.ComponentContextBridge;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
@@ -44,17 +44,17 @@ public class ComponentContextImpl implements ComponentContext {
 
     private static final long serialVersionUID = -8834897231211155860L;
 
-    private String executionIdentifier;
+    private String compExeId;
 
     private String instanceName;
 
     private final NodeIdentifier node;
 
-    private final String controllersExecutionIdentifier;
+    private final String wfExeCrtlId;
 
-    private final String controllersInstanceName;
+    private final String wfCtrlInstanceName;
 
-    private final NodeIdentifier controllersNode;
+    private final NodeIdentifier wfCtrlNode;
 
     private NodeIdentifier defaultStorageNode;
 
@@ -84,7 +84,7 @@ public class ComponentContextImpl implements ComponentContext {
 
     private final String componentName;
 
-    private final ComponentExecutionControllerCallback controllerCallback;
+    private final ComponentContextBridge compExeCtxBridge;
 
     private final ServiceRegistryAccess serviceRegistryAccess;
     
@@ -92,42 +92,42 @@ public class ComponentContextImpl implements ComponentContext {
         
         @Override
         public void toolStdout(String message) {
-            controllerCallback.printConsoleRow(message, Type.TOOL_OUT);
+            compExeCtxBridge.printConsoleRow(message, Type.TOOL_OUT);
         }
         
         @Override
         public void toolStderr(String message) {
-            controllerCallback.printConsoleRow(message, Type.TOOL_ERROR);
+            compExeCtxBridge.printConsoleRow(message, Type.TOOL_ERROR);
         }
         
         @Override
         public void componentWarn(String message) {
-            controllerCallback.printConsoleRow(message, Type.COMPONENT_WARN);
+            compExeCtxBridge.printConsoleRow(message, Type.COMPONENT_WARN);
         }
         
         @Override
         public void componentInfo(String message) {
-            controllerCallback.printConsoleRow(message, Type.COMPONENT_INFO);
+            compExeCtxBridge.printConsoleRow(message, Type.COMPONENT_INFO);
         }
         
         @Override
         public void componentError(String message) {
-            controllerCallback.printConsoleRow(message, Type.COMPONENT_ERROR);
+            compExeCtxBridge.printConsoleRow(message, Type.COMPONENT_ERROR);
         }
 
         @Override
         public void componentError(String message, Throwable t, String errorId) {
-            controllerCallback.printConsoleRow(StringUtils.format("%s: %s (%s)", message, t.getMessage(), errorId), Type.COMPONENT_ERROR);
+            compExeCtxBridge.printConsoleRow(StringUtils.format("%s: %s (%s)", message, t.getMessage(), errorId), Type.COMPONENT_ERROR);
         }
     };
 
-    public ComponentContextImpl(ComponentExecutionContext compExeCtx, ComponentExecutionControllerCallback ctrlCallback) {
-        executionIdentifier = compExeCtx.getExecutionIdentifier();
+    public ComponentContextImpl(ComponentExecutionContext compExeCtx, ComponentContextBridge compExeCtxBridge) {
+        compExeId = compExeCtx.getExecutionIdentifier();
         instanceName = compExeCtx.getInstanceName();
         node = compExeCtx.getNodeId();
-        controllersNode = compExeCtx.getWorkflowNodeId();
-        controllersExecutionIdentifier = compExeCtx.getWorkflowExecutionIdentifier();
-        controllersInstanceName = compExeCtx.getWorkflowInstanceName();
+        wfCtrlNode = compExeCtx.getWorkflowNodeId();
+        wfExeCrtlId = compExeCtx.getWorkflowExecutionIdentifier();
+        wfCtrlInstanceName = compExeCtx.getWorkflowInstanceName();
         defaultStorageNode = compExeCtx.getWorkflowNodeId();
         workingDirectory = compExeCtx.getWorkingDirectory();
         configurationDescription = compExeCtx.getComponentDescription().getConfigurationDescription();
@@ -155,13 +155,15 @@ public class ComponentContextImpl implements ComponentContext {
         }
         componentIdentifier = compExeCtx.getComponentDescription().getIdentifier();
         componentName = compExeCtx.getComponentDescription().getName();
-        controllerCallback = ctrlCallback;
+        
+        this.compExeCtxBridge = compExeCtxBridge;
+        
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
     }
 
     @Override
     public String getExecutionIdentifier() {
-        return executionIdentifier;
+        return compExeId;
     }
 
     @Override
@@ -185,7 +187,7 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     public void setInstanceIdentifier(String instanceIdentifier) {
-        this.executionIdentifier = instanceIdentifier;
+        this.compExeId = instanceIdentifier;
     }
 
     public void setInstanceName(String instanceName) {
@@ -250,7 +252,7 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public Set<String> getInputsWithDatum() {
-        return Collections.unmodifiableSet(controllerCallback.getInputsWithDatum());
+        return Collections.unmodifiableSet(compExeCtxBridge.getInputsWithDatum());
     }
 
     @Override
@@ -270,7 +272,7 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public TypedDatum readInput(String inputName) {
-        return controllerCallback.readInput(inputName);
+        return compExeCtxBridge.readInput(inputName);
     }
 
     @Override
@@ -295,27 +297,27 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public void writeOutput(String outputName, TypedDatum value) {
-        controllerCallback.writeOutput(outputName, value);
+        compExeCtxBridge.writeOutput(outputName, value);
     }
 
     @Override
     public void resetOutput(String outputName) {
-        controllerCallback.resetOutput(outputName);
+        compExeCtxBridge.resetOutput(outputName);
     }
 
     @Override
     public void closeOutput(String outputName) {
-        controllerCallback.closeOutput(outputName);
+        compExeCtxBridge.closeOutput(outputName);
     }
 
     @Override
     public void closeAllOutputs() {
-        controllerCallback.closeAllOutputs();
+        compExeCtxBridge.closeAllOutputs();
     }
 
     @Override
     public boolean isOutputClosed(String outputName) {
-        return controllerCallback.isOutputClosed(outputName);
+        return compExeCtxBridge.isOutputClosed(outputName);
     }
     
     @Override
@@ -325,22 +327,22 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public int getExecutionCount() {
-        return controllerCallback.getExecutionCount();
+        return compExeCtxBridge.getExecutionCount();
     }
 
     @Override
     public NodeIdentifier getWorkflowNodeId() {
-        return controllersNode;
+        return wfCtrlNode;
     }
 
     @Override
     public String getWorkflowExecutionIdentifier() {
-        return controllersExecutionIdentifier;
+        return wfExeCrtlId;
     }
 
     @Override
     public String getWorkflowInstanceName() {
-        return controllersInstanceName;
+        return wfCtrlInstanceName;
     }
 
     @Override
@@ -350,12 +352,12 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public void writeIntermediateHistoryData(ComponentHistoryDataItem historyDataItem) {
-        controllerCallback.writeIntermediateHistoryData(historyDataItem);
+        compExeCtxBridge.writeIntermediateHistoryData(historyDataItem);
     }
 
     @Override
     public void writeFinalHistoryDataItem(ComponentHistoryDataItem historyDataItem) {
-        controllerCallback.writeFinalHistoryDataItem(historyDataItem);
+        compExeCtxBridge.writeFinalHistoryDataItem(historyDataItem);
     }
 
     @Override
@@ -379,7 +381,7 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     public Long getComponentExecutionDataManagementId() {
-        return controllerCallback.getComponentExecutionDataManagementId();
+        return compExeCtxBridge.getComponentExecutionDataManagementId();
     }
 
     @Override
@@ -394,12 +396,12 @@ public class ComponentContextImpl implements ComponentContext {
 
     @Override
     public void announceExternalProgramStart() {
-        controllerCallback.printConsoleRow(WorkflowLifecyleEventType.TOOL_STARTING.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
+        compExeCtxBridge.printConsoleRow(WorkflowLifecyleEventType.TOOL_STARTING.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
     }
 
     @Override
     public void announceExternalProgramTermination() {
-        controllerCallback.printConsoleRow(WorkflowLifecyleEventType.TOOL_FINISHED.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
+        compExeCtxBridge.printConsoleRow(WorkflowLifecyleEventType.TOOL_FINISHED.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
     }
 
 }

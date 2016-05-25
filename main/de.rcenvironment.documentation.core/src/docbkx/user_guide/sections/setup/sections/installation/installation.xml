@@ -363,7 +363,7 @@
             when the GUI is not needed. For ad-hoc or temporary RCE network setups, running RCE this
             way is perfectly fine. For more permanent installations, however, we recommend
             installing RCE as a <phrase os="windows">Windows service</phrase><phrase os="linux"
-                >system daemon</phrase> instead. Thas the advantage that RCE automatically shuts
+                >system daemon</phrase> instead. This has the advantage that RCE automatically shuts
             down when the server is shut down, and automatically restarts when the server
             does.</para>
         <para>To run a headless RCE instance, open a <phrase os="windows">command

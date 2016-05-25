@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -26,6 +26,9 @@ public final class EvaluationMemoryComponentConstants {
     
     /** Constants. */
     public static final String CONFIG_MEMORY_FILE = "mem_file";
+    
+    /** Constants. */
+    public static final String CONFIG_CONSIDER_LOOP_FAILURES = "store_failures";
     
     /** Constants. */
     public static final String CONFIG_MEMORY_FILE_WF_START = "mem_file_wf_start";

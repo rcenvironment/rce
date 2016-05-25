@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -30,8 +30,6 @@ public class AsyncOrderedCallbackManager<T> {
      * Wrapper class to queue callbacks per listener.
      * 
      * @author Robert Mischke
-     * 
-     * @param <T> the listener class (usually an interface)
      */
     private final class AsyncOrderedCallbackQueue extends AsyncOrderedExecutionQueue {
 

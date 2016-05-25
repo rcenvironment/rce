@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,10 +9,10 @@
 package de.rcenvironment.core.communication.rpc;
 
 import java.io.Serializable;
-import java.text.MessageFormat;
 import java.util.List;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -24,7 +24,7 @@ public class ServiceCallRequest implements Serializable {
 
     private static final long serialVersionUID = -9120629516281659775L;
 
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     /**
      * The {@link NodeIdentifier} on which the call should be processed.
@@ -61,10 +61,10 @@ public class ServiceCallRequest implements Serializable {
     public ServiceCallRequest(NodeIdentifier destination, NodeIdentifier sender,
         String serviceName, String methodName, List<? extends Serializable> parameters) {
 
-        Assertions.isDefined(destination, MessageFormat.format(ERROR_PARAMETERS_NULL, "destination"));
-        Assertions.isDefined(sender, MessageFormat.format(ERROR_PARAMETERS_NULL, "sender"));
-        Assertions.isDefined(serviceName, MessageFormat.format(ERROR_PARAMETERS_NULL, "serviceName"));
-        Assertions.isDefined(methodName, MessageFormat.format(ERROR_PARAMETERS_NULL, "methodName"));
+        Assertions.isDefined(destination, StringUtils.format(ERROR_PARAMETERS_NULL, "destination"));
+        Assertions.isDefined(sender, StringUtils.format(ERROR_PARAMETERS_NULL, "sender"));
+        Assertions.isDefined(serviceName, StringUtils.format(ERROR_PARAMETERS_NULL, "serviceName"));
+        Assertions.isDefined(methodName, StringUtils.format(ERROR_PARAMETERS_NULL, "methodName"));
 
         this.destination = destination;
         this.sender = sender;

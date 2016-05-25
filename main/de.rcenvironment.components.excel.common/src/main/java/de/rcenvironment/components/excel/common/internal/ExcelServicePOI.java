@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -44,7 +44,6 @@ import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
-
 /**
  * Excel file representation with access to its data.
  * 
@@ -53,32 +52,30 @@ import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 public class ExcelServicePOI implements ExcelService {
 
     protected static final Log LOGGER = LogFactory.getLog(ExcelServicePOI.class);
-    
+
     protected static final int BLOCKING_ITERATIONMAX = 600; // regarding POI interface unstable behavior
 
     protected static final int BLOCKING_SLEEP = 50; // regarding POI interface unstable behavior
-    
-    
+
     /* Exception messages. */
     private static final String EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED = "Excel file is not found or cannot be opened.";
 
     private static final String EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT = "Excel file has an invalid format.";
 
-    private static final String EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND = "Excel file cannot not found.";
-    
+    private static final String EXCMSG_EXCEL_FILE_NOT_FOUND = "Excel file not found.";
+
     private static final String EXCMSG_CANNOT_SAVE_FILE_WITH_RESULT_DATA = "Cannot save file with result data.";
-   
+
     private static final String EXCMSG_EXCEL_FILE_CANNOT_CLOSED = "Excel file access cannot be closed.";
-    
+
     private static TypedDatumFactory typedDatumFactory;
-    
 
     /**
      * Default Constructor.
      * 
      */
     public ExcelServicePOI() {}
-    
+
     /**
      * Constructor to get typedDatumFactory not from RCE-service into ExcelService class.
      * 
@@ -87,46 +84,43 @@ public class ExcelServicePOI implements ExcelService {
     public ExcelServicePOI(final TypedDatumFactory typedDatumFactory) {
         ExcelServicePOI.typedDatumFactory = typedDatumFactory;
     }
-    
+
     protected void bindTypedDatumService(TypedDatumService newTypedDatumService) {
         typedDatumFactory = newTypedDatumService.getFactory();
     }
-  
+
     protected void unbindTypedDatumService(TypedDatumService oldTypedDatumService) {}
-    
+
     /**
      * Just a simple test method if Excel file is really an Excel file.
      * 
      * @param xlFile Excel file
      * @throws ExcelException thrown if not a real Excel file
      */
-    protected void initialTest(final File xlFile) throws ExcelException {        
+    protected void initialTest(final File xlFile) throws ExcelException {
+
         try (BufferedInputStream bis = new BufferedInputStream(new FileInputStream(xlFile))) {
-            boolean isXlsx = POIXMLDocument.hasOOXMLHeader(bis);            
+            boolean isXlsx = POIXMLDocument.hasOOXMLHeader(bis);
             bis.reset();
             boolean isXls = POIFSFileSystem.hasPOIFSHeader(bis);
-            
+
             if (!isXlsx && !isXls) {
                 throw new ExcelException("Given file seems to be no Excel file");
             }
         } catch (FileNotFoundException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
+            throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
         } catch (IllegalArgumentException e) {
             throw new ExcelException("Given file seems to be no Excel file", e);
         } catch (IOException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
         }
     }
-    
-    
-    
+
     @Override
     public void setValues(File xlFile, ExcelAddress addr, SmallTableTD values) throws ExcelException {
         setValues(xlFile, xlFile, addr, values);
     }
 
-    
-    
     @Override
     public void setValues(File xlFile, File newFile, ExcelAddress addr, SmallTableTD values) throws ExcelException {
         try {
@@ -136,7 +130,7 @@ public class ExcelServicePOI implements ExcelService {
                 inp = new FileInputStream(xlFile);
 
                 try {
-                    // Setting values in Excel file 
+                    // Setting values in Excel file
                     org.apache.poi.ss.usermodel.Workbook wb = WorkbookFactory.create(inp);
                     Sheet sheet = wb.getSheet(addr.getWorkSheetName());
 
@@ -192,14 +186,11 @@ public class ExcelServicePOI implements ExcelService {
                             }
                         }
                     }
-                    
-                    
-                    
-                    /* 
-                     * Solves temporarily the problem with reading from I-Stream and writing to O-Stream
-                     * with the same file handle. Causes sometimes exceptions if I-Stream is blocked
-                     * when trying to write. Should be reported to Apache POI.
-                     */  
+
+                    /*
+                     * Solves temporarily the problem with reading from I-Stream and writing to O-Stream with the same file handle. Causes
+                     * sometimes exceptions if I-Stream is blocked when trying to write. Should be reported to Apache POI.
+                     */
                     for (int i = 0; i < BLOCKING_ITERATIONMAX; i++) {
                         try {
                             if (newFile != null) {
@@ -239,16 +230,16 @@ public class ExcelServicePOI implements ExcelService {
                             LOGGER.error("Failed to flush or close output stream", e);
                         }
                     }
-                    
-                    //Not nice, but workbook-object will not released.
+
+                    // Not nice, but workbook-object will not released.
                     ExcelUtils.destroyGarbage();
                 }
 
-                //Recalculate formulas 
+                // Recalculate formulas
                 recalculateFormulas(xlFile);
             }
         } catch (FileNotFoundException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
+            throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
         } catch (InvalidFormatException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
         } catch (IOException e) {
@@ -256,8 +247,6 @@ public class ExcelServicePOI implements ExcelService {
         }
     }
 
-    
-    
     @Override
     public SmallTableTD getValueOfCells(File xlFile, ExcelAddress addr) throws ExcelException {
         // recalculate Formulas
@@ -308,7 +297,7 @@ public class ExcelServicePOI implements ExcelService {
                                 retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                             } else {
                                 double rawNumber = cell.getNumericCellValue();
-                                long lRawNumber = (long) rawNumber; 
+                                long lRawNumber = (long) rawNumber;
                                 if ((rawNumber - lRawNumber) == 0) { // For discovering if value may be of type 'long'
                                     data = typedDatumFactory.createInteger(lRawNumber);
                                 } else {
@@ -327,7 +316,7 @@ public class ExcelServicePOI implements ExcelService {
                                 CellValue cellValue = evaluator.evaluate(cell);
                                 switch (cellValue.getCellType()) {
                                 case Cell.CELL_TYPE_BOOLEAN:
-                                    data = typedDatumFactory.createBoolean(cellValue.getBooleanValue());                                  
+                                    data = typedDatumFactory.createBoolean(cellValue.getBooleanValue());
                                     retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     break;
                                 case Cell.CELL_TYPE_NUMERIC:
@@ -356,7 +345,7 @@ public class ExcelServicePOI implements ExcelService {
                                         retValues.setTypedDatumForCell(data, row - addressRowCorrection, col - addressColumnCorrection);
                                     } else {
                                         double rawNumber = cell.getNumericCellValue();
-                                        long lRawNumber = (long) rawNumber; 
+                                        long lRawNumber = (long) rawNumber;
                                         if ((rawNumber - lRawNumber) == 0) { // For discovering if value may be of type 'long'
                                             data = typedDatumFactory.createInteger(lRawNumber);
                                         } else {
@@ -384,7 +373,7 @@ public class ExcelServicePOI implements ExcelService {
                     }
                 }
             } catch (FileNotFoundException e) {
-                throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
+                throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
             } catch (InvalidFormatException e) {
                 throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
             } catch (IOException e) {
@@ -397,16 +386,14 @@ public class ExcelServicePOI implements ExcelService {
                         LOGGER.error("Failed to close input stream", e);
                     }
                 }
-                
-                //Not nice, but workbook-object will not released.
+
+                // Not nice, but workbook-object will not released.
                 ExcelUtils.destroyGarbage();
             }
         }
         return retValues;
     }
 
-    
-    
     @Override
     public ExcelAddress[] getUserDefinedCellNames(File xlFile) throws ExcelException {
         InputStream inp = null;
@@ -421,7 +408,7 @@ public class ExcelServicePOI implements ExcelService {
                 names[i] = new ExcelAddress(xlFile, wb.getNameAt(i).getNameName());
             }
         } catch (FileNotFoundException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
+            throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
         } catch (InvalidFormatException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
         } catch (IOException e) {
@@ -436,30 +423,24 @@ public class ExcelServicePOI implements ExcelService {
                     throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_CLOSED, e);
                 }
             }
-            
-            //Not nice, but workbook-object will not released.
+
+            // Not nice, but workbook-object will not released.
             ExcelUtils.destroyGarbage();
         }
 
         return names;
     }
 
-    
-    
     @Override
     public String[] getMacros(File xlFile) throws ExcelException {
         throw new ExcelException("Excel is using POI implementation only. Cannot receive macro names.");
     }
 
-    
-    
     @Override
     public void runMacro(File xlFile, String macroname) throws ExcelException {
         throw new ExcelException("Excel is using POI implementation only. Cannot execute macro.");
     }
 
-    
-    
     @Override
     public void recalculateFormulas(File xlFile) throws ExcelException {
         InputStream inp = null;
@@ -480,12 +461,12 @@ public class ExcelServicePOI implements ExcelService {
         } catch (NotImplementedException e) {
             throw new ExcelException("Tried to evaluate unknow formula", e);
         } catch (FileNotFoundException e) {
-            throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_NOT_FOUND, e);
+            throw new ExcelException(EXCMSG_EXCEL_FILE_NOT_FOUND, e);
         } catch (InvalidFormatException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_HAS_AN_INVALID_FORMAT, e);
         } catch (IOException e) {
             throw new ExcelException(EXCMSG_EXCEL_FILE_IS_NOT_FOUND_OR_CANNOT_BE_OPENED, e);
-        }  finally {
+        } finally {
             if (inp != null) {
                 try {
                     inp.close();
@@ -493,16 +474,18 @@ public class ExcelServicePOI implements ExcelService {
                     throw new ExcelException(EXCMSG_EXCEL_FILE_CANNOT_CLOSED, e);
                 }
             }
-          
-            //Not nice, but workbook-object will not released.
+
+            // Not nice, but workbook-object will not released.
             ExcelUtils.destroyGarbage();
         }
     }
 
-
-
     @Override
     public boolean isValidExcelFile(File xlFile) {
+        if (xlFile == null) {
+            return false;
+        }
+        
         try {
             initialTest(xlFile);
         } catch (ExcelException e) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -77,7 +77,7 @@ public class SwitchConditionInputSelectionPane extends EndpointSelectionPane {
      */
     private class SwitchConditionEndpointEditDialog extends EndpointEditDialog {
 
-        public SwitchConditionEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
+        SwitchConditionEndpointEditDialog(Shell parentShell, EndpointActionType actionType,
             ComponentInstanceProperties configuration,
             EndpointType direction, String id, boolean isStatic, EndpointMetaDataDefinition metaData, Map<String, String> metadataValues) {
             super(parentShell, actionType, configuration, direction, id, isStatic, metaData, metadataValues);

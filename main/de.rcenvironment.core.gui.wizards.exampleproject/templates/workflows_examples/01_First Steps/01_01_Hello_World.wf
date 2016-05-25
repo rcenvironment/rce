@@ -16,7 +16,7 @@
       "pythonExecutionPath" : "${pythonExecutionPath}",
       "script" : "print(\"Hello World\")",
       "scriptLanguage" : "Jython",
-      "storeComponentHistoryData" : "false",
+      "storeComponentHistoryData" : "true",
       "usageOfScript" : "NEW"
     }
   } ],

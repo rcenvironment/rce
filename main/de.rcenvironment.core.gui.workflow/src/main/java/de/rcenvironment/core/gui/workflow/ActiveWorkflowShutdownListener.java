@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -329,7 +329,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
         
         private final transient CountDownLatch wfDisposeLatch;
 
-        public ConsoleRowSubscriber(CountDownLatch countDownLatch) {
+        ConsoleRowSubscriber(CountDownLatch countDownLatch) {
             this.wfDisposeLatch = countDownLatch;
         }
         

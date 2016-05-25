@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,8 +28,10 @@ public final class SshRemoteAccessClientTestConstants {
     
     static final String TOOL_NAME = "exampleTool";
     static final String TOOL_VERSION = "exampleVersion";
-    static final String TOOL_HOST_ID = "exampleHostId";
-    static final String TOOL_HOST_NAME = "exampleHostName";
+    static final String WF_NAME = "exampleWorkflow";
+    static final String WF_VERSION = "exampleVersion";
+    static final String HOST_ID = "exampleHostId";
+    static final String HOST_NAME = "exampleHostName";
 
     private SshRemoteAccessClientTestConstants() {
     }

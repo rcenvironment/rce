@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -46,6 +46,12 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String dialogMessageReadFromFileError;
+    
+    /** Constant. */
+    public static String mappingFileAsInputButton;
+    
+    /** Constant. */
+    public static String mappingFileLoadedButton;
 
     /** Validation message. */
     public static String noXmlFileLoaded;

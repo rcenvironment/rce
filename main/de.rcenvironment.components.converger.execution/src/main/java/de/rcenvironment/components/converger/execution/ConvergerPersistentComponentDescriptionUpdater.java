@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,8 +9,10 @@
 package de.rcenvironment.components.converger.execution;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -34,6 +36,7 @@ import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVer
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -44,11 +47,11 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 public class ConvergerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
     private static final String LOOP_ENDPOINT_TYPE = "loopEndpointType_5e0ed1cd";
-    
+
     private static final String OUTER_LOOP_ENDPOINT = "OuterLoopEndpoint";
 
     private static final String METADATA = "metadata";
-    
+
     private static final String BOOLEAN = "Boolean";
 
     private static final String IDENTIFIER = "identifier";
@@ -74,17 +77,21 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
     private static final String STATIC_INPUTS = "staticInputs";
 
     private static final String V3_0 = "3.0";
-    
+
     private static final String V3_1 = "3.1";
 
     private static final String V3_2 = "3.2";
-    
+
     private static final String V4_0 = "4.0";
 
     private static final String V4_1 = "4.1";
+
+    private static final String V5_0 = "5";
+
+    private static final String V5_1 = "5.1";
     
-    private static final String V5 = "5";
-    
+    private static final String V5_1_1 = "5.1.1";
+
     private static TypedDatumService typedDatumService;
 
     @Override
@@ -109,12 +116,12 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         }
         // Update 3 non-silent : 3.0 -> latest
         if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V5) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V5_0) < 0) {
             versions = versions | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         // Update 3 silent : 3.0 -> latest
         if (silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V4_1) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V5_1_1) < 0) {
             versions = versions | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         return versions;
@@ -123,7 +130,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
     @Override
     public PersistentComponentDescription performComponentDescriptionUpdate(int formatVersion, PersistentComponentDescription description,
         boolean silent) throws IOException {
-        if (!silent) {
+        if (!silent) { // called after "silent" was called
             if (formatVersion == PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE) {
                 description = firstUpdate(description);
                 description.setComponentVersion(V1_0);
@@ -139,23 +146,78 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                 case V3_2:
                     description = updateFrom32To40(description);
                 case V4_0:
-                case V4_1:
                     description = updateFrom40To41(description);
+                case V4_1:
                     description = updateFrom41To5(description);
+                case V5_0:
+                    description = updateFrom50To51(description);
+                case V5_1:
+                    description = updateFrom51To511(description);
                 default:
                     // nothing to do here
                 }
             }
-        } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
-            && description.getComponentVersion().equals(V4_0)) {
-            description = updateFrom40To41(description);
+        } else { // called first (before non-silent)
+            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+                switch (description.getComponentVersion()) {
+                case V5_0:
+                    description = updateFrom50To51(description);
+                case V5_1:
+                    description = updateFrom51To511(description);
+                default:
+                    // nothing to do here
+                }
+            }
         }
         return description;
     }
     
+    private PersistentComponentDescription updateFrom51To511(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        description =
+            PersistentComponentDescriptionUpdaterUtils.updateFaultToleranceOfLoopDriver(description);
+        description.setComponentVersion(V5_1_1);
+        return description;
+    }
+    
+    private PersistentComponentDescription updateFrom50To51(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
+        configNode.put(ConvergerComponentConstants.NOT_CONVERGED_IGNORE, true);
+        configNode.put(ConvergerComponentConstants.NOT_CONVERGED_FAIL, false);
+        configNode.put(ConvergerComponentConstants.NOT_CONVERGED_NOT_A_VALUE, false);
+        JsonNode dynamicOutputs = node.get(DYNAMIC_OUTPUTS);
+        if (dynamicOutputs != null) {
+            List<ObjectNode> newOutputEndpoints = new ArrayList<ObjectNode>();
+            for (JsonNode outputEndpoint : dynamicOutputs) {
+                String outputName = outputEndpoint.get(NAME).getTextValue();
+                String outputEndpointId = outputEndpoint.get(EP_IDENTIFIER).getTextValue();
+                if (outputEndpointId.equals("valueToConverge") && !outputName.endsWith("_converged")) {
+                    ObjectNode convergedEndpoint = mapper.createObjectNode();
+                    convergedEndpoint.put(NAME, TextNode.valueOf(outputName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX));
+                    convergedEndpoint.put(EP_IDENTIFIER, ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY);
+                    convergedEndpoint.put(DATATYPE, TextNode.valueOf(BOOLEAN));
+                    convergedEndpoint.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+                    ObjectNode metaData = mapper.createObjectNode();
+                    metaData.put(LOOP_ENDPOINT_TYPE, "SelfLoopEndpoint");
+                    convergedEndpoint.put(METADATA, metaData);
+                    newOutputEndpoints.add(convergedEndpoint);
+                }
+            }
+            for (JsonNode newOutputEndpoint : newOutputEndpoints) {
+                ((ArrayNode) dynamicOutputs).add(newOutputEndpoint);
+            }
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        description = new PersistentComponentDescription(writer.writeValueAsString(node));
+        return description;
+    }
+
     private PersistentComponentDescription updateFrom41To5(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         JsonNode staticOutputs = node.get(STATIC_OUTPUTS);
         if (staticOutputs != null) {
@@ -195,16 +257,16 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         }
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
-        newdesc.setComponentVersion(V5);
+        newdesc.setComponentVersion(V5_0);
         return newdesc;
     }
 
     private PersistentComponentDescription updateFrom40To41(PersistentComponentDescription description) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
+
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         JsonNode dynOutputsNode = node.get(DYNAMIC_OUTPUTS);
-        
+
         if (dynOutputsNode != null) {
             Iterator<JsonNode> nodeIterator = dynOutputsNode.getElements();
             while (nodeIterator.hasNext()) {
@@ -222,9 +284,9 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
 
     private PersistentComponentDescription updateFrom32To40(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
-        ObjectNode configNode = (ObjectNode) node.get("configuration");
+        ObjectNode configNode = (ObjectNode) node.get(CONFIGURATION);
         JsonNode maxIterNode = configNode.get("maxIterations");
         if (maxIterNode != null) {
             String maxConvChecks = maxIterNode.getTextValue();
@@ -236,16 +298,16 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         description.setComponentVersion(V4_0);
         return description;
     }
-    
+
     private PersistentComponentDescription updateFrom31To32(PersistentComponentDescription description)
         throws JsonParseException, IOException {
         description = PersistentComponentDescriptionUpdaterUtils.updateIsNestedLoop(description);
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
-        
+
         JsonNode dynInputsNode = node.get(DYNAMIC_INPUTS);
-        
+
         if (dynInputsNode != null) {
             Iterator<JsonNode> nodeIterator = dynInputsNode.getElements();
             while (nodeIterator.hasNext()) {
@@ -267,13 +329,13 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         description.setComponentVersion(V3_2);
         return description;
     }
-    
+
     /**
      * Updates descriptions of version 3.0 to 3.1.
      **/
     private PersistentComponentDescription updateFrom30To31(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode objectNode = (ObjectNode) node.get(CONFIGURATION);
         objectNode.put(ConvergerComponentConstants.KEY_ITERATIONS_TO_CONSIDER, "1");
@@ -282,13 +344,13 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         description.setComponentVersion(V3_1);
         return description;
     }
-    
+
     /**
-     * The second update is for the Workflow update 3.0, and though for versions between 1.0 and
-     * 3.0. It updates the IDs for the dynamic in and outputs.
-     * */
+     * The second update is for the Workflow update 3.0, and though for versions between 1.0 and 3.0. It updates the IDs for the dynamic in
+     * and outputs.
+     */
     private PersistentComponentDescription secondUpdate(PersistentComponentDescription description) throws JsonParseException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         JsonNode dynInputs = node.get(DYNAMIC_INPUTS);
         if (dynInputs != null) {
@@ -362,12 +424,12 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
     }
 
     /**
-     * The first update is for Componentversions < 1.0 and updates the eps configuration from Double
-     * to String. It further adds new output channel that were needed.
-     * */
+     * The first update is for Componentversions < 1.0 and updates the eps configuration from Double to String. It further adds new output
+     * channel that were needed.
+     */
     private PersistentComponentDescription firstUpdate(PersistentComponentDescription description) throws IOException, JsonParseException,
         JsonProcessingException, JsonGenerationException, JsonMappingException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         description = replaceEpsDataType(mapper, node, "epsR");
@@ -450,7 +512,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         }
         return addOutputNode;
     }
-    
+
     protected void bindTypedDatumService(TypedDatumService newService) {
         typedDatumService = newService;
     }

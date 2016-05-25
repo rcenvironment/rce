@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,13 +8,10 @@
 
 package de.rcenvironment.core.gui.workflow.editor.handlers;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.DataFlavor;
-import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,11 +20,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonParseException;
-import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.JsonToken;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.node.ArrayNode;
+import org.codehaus.jackson.node.ObjectNode;
 import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
@@ -44,12 +42,15 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.ConnectionUtils;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeLabelConnectionCreateCommand;
 import de.rcenvironment.core.gui.workflow.parts.EditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
+import de.rcenvironment.core.utils.common.JsonUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Pasting {@link WorkflowNode}s, {@link Connection}s, {@link EndpointDescription}s and
@@ -65,14 +66,14 @@ import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 // TODO fix class name, it is not longer only a paste handler for WorkflowNodes
 public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
 
+    private static final ObjectMapper JSON_OBJECT_MAPPER = JsonUtils.getDefaultObjectMapper();
+    
     private final Map<String, String> nameMapping = new HashMap<String, String>();
 
     // mapping between old identifier and new workflow node !
     private final Map<WorkflowNode, WorkflowNode> nodeMapping = new HashMap<WorkflowNode, WorkflowNode>();
 
-    private final Map<EndpointDescription, EndpointDescription> endpointMapping = new HashMap<EndpointDescription, EndpointDescription>();
-
-    private final Map<String, EndpointDescription> endpointIDMapping = new HashMap<String, EndpointDescription>();
+    private final Map<String, Map<String, EndpointDescription>> endpointIDMapping = new HashMap<String, Map<String, EndpointDescription>>();
 
     private final Map<WorkflowNode, Rectangle> newNodeAndLocationMapping = new HashMap<>();
 
@@ -125,11 +126,8 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
             editorOffsetPoint = ((FigureCanvas) viewer.getControl()).getViewport().getViewLocation();
         }
 
-        Object content = null;
-        try {
-            content = extractContentfromSystemClipboard();
-        } catch (UnsupportedFlavorException | IOException | ParseException e) {
-            LogFactory.getLog(getClass()).debug("Error when extracting content from system clipboard: " + e.getMessage());
+        Object content = extractContentfromSystemClipboard();
+        if (content == null) {
             return;
         }
         Map<String, List<String>> otherNodesCombined = new HashMap<String, List<String>>();
@@ -200,16 +198,17 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
 
                     nodeConstraintPositionCounter++;
 
+                    Map<String, EndpointDescription> nodesEndpointIDMapping = new HashMap<>();
+                    
                     for (EndpointDescription endpoint : node.getInputDescriptionsManager().getEndpointDescriptions()) {
                         EndpointDescription newEndpoint = newNode.getInputDescriptionsManager().getEndpointDescription(endpoint.getName());
-                        endpointMapping.put(endpoint, newEndpoint);
-                        endpointIDMapping.put(endpoint.getIdentifier(), newEndpoint);
+                        nodesEndpointIDMapping.put(endpoint.getIdentifier(), newEndpoint);
                     }
                     for (EndpointDescription endpoint : node.getOutputDescriptionsManager().getEndpointDescriptions()) {
                         EndpointDescription newEndpoint = newNode.getOutputDescriptionsManager().getEndpointDescription(endpoint.getName());
-                        endpointMapping.put(endpoint, newEndpoint);
-                        endpointIDMapping.put(endpoint.getIdentifier(), newEndpoint);
+                        nodesEndpointIDMapping.put(endpoint.getIdentifier(), newEndpoint);
                     }
+                    endpointIDMapping.put(node.getIdentifier(), nodesEndpointIDMapping);
                 }
                 if (partToPaste instanceof WorkflowLabel) {
                     WorkflowLabel label = (WorkflowLabel) partToPaste;
@@ -224,8 +223,10 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
                     Connection oldConnection = (Connection) partToPaste;
                     WorkflowNode source = nodeMapping.get(oldConnection.getSourceNode());
                     WorkflowNode target = nodeMapping.get(oldConnection.getTargetNode());
-                    EndpointDescription sourceOutput = endpointIDMapping.get(oldConnection.getOutput().getIdentifier());
-                    EndpointDescription targetInput = endpointIDMapping.get(oldConnection.getInput().getIdentifier());
+                    EndpointDescription sourceOutput =
+                        endpointIDMapping.get(oldConnection.getSourceNode().getIdentifier()).get(oldConnection.getOutput().getIdentifier());
+                    EndpointDescription targetInput =
+                        endpointIDMapping.get(oldConnection.getTargetNode().getIdentifier()).get(oldConnection.getInput().getIdentifier());
                     List<Location> originalBendpoints = oldConnection.getBendpoints();
                     int bendpointOffsetX = newNodeAndLocationMapping.get(source).x - oldConnection.getSourceNode().getX();
                     int bendpointOffsetY = newNodeAndLocationMapping.get(source).y - oldConnection.getSourceNode().getY();
@@ -261,16 +262,19 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         }
     }
 
-    private Object extractContentfromSystemClipboard() throws UnsupportedFlavorException, IOException, ParseException {
-        Transferable transferable = Toolkit.getDefaultToolkit().getSystemClipboard().getContents(null);
-        if (transferable != null && transferable.isDataFlavorSupported(DataFlavor.stringFlavor)) {
-            String clipboardText = (String) transferable.getTransferData(DataFlavor.stringFlavor);
-            InputStream inputStream = new ByteArrayInputStream(clipboardText.getBytes());
-            JsonFactory f = new JsonFactory();
-            JsonParser jp = f.createJsonParser(inputStream);
-            List<?> parsedIS = parseInputStream(jp);
-            jp.close();
-            return parsedIS;
+    private Object extractContentfromSystemClipboard() {
+        String clipboardText = ClipboardHelper.getContentAsStringOrNull();
+        if (clipboardText != null) {
+            try {
+                try (InputStream inputStream = new ByteArrayInputStream(clipboardText.getBytes())) {
+                    return parseJson(
+                        (ObjectNode) JSON_OBJECT_MAPPER.readTree(IOUtils.toString(inputStream, StandardCharsets.UTF_8.name())));
+                }
+            } catch (IOException | ParseException | ClassCastException e) {
+                LogFactory.getLog(getClass())
+                    .debug(StringUtils.format("Pasted content not valid, it will be ignored: '%s' (cause: %s)",
+                        clipboardText, e.toString()));
+            }
         }
         return null;
     }
@@ -405,116 +409,41 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     }
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
-    private List parseInputStream(JsonParser jp) throws IOException, JsonParseException, ParseException {
+    private List parseJson(ObjectNode rootJsonNode) throws IOException, JsonParseException, ParseException {
         List combinedList = new ArrayList();
         WorkflowDescriptionPersistenceHandler descriptionHandler = new WorkflowDescriptionPersistenceHandler();
         EditorEditPartFactory factory = new EditorEditPartFactory();
-        Map<String, WorkflowNode> parseNodes = null;
-        while (jp.nextToken() != JsonToken.END_OBJECT) {
-            jp.nextToken();
-            String fieldname = jp.getCurrentName();
-            if (WorkflowDescriptionPersistenceHandler.NODES.equals(fieldname)) {
-                jp.nextToken();
-                // parsing content to WorkflowNode
-                parseNodes = descriptionHandler.parseNodes(jp);
-                for (String key : parseNodes.keySet()) {
-                    // creating WorkflowNodePart
-                    EditPart createEditPart = factory.createEditPart(null, parseNodes.get(key));
-                    if (createEditPart instanceof WorkflowNodePart) {
-                        combinedList.add(createEditPart);
-                    }
+        Map<String, WorkflowNode> parsedNodes = null;
+        if (rootJsonNode.has(WorkflowDescriptionPersistenceHandler.NODES)) {
+            // parsing content to WorkflowNode
+            parsedNodes = descriptionHandler.parseNodes((ArrayNode) rootJsonNode.get(WorkflowDescriptionPersistenceHandler.NODES));
+            for (String key : parsedNodes.keySet()) {
+                // creating WorkflowNodePart
+                EditPart createEditPart = factory.createEditPart(null, parsedNodes.get(key));
+                if (createEditPart instanceof WorkflowNodePart) {
+                    combinedList.add(createEditPart);
                 }
-            } else if (WorkflowDescriptionPersistenceHandler.CONNECTIONS.equals(fieldname)) {
-                // parsing content to Connection
-                Set<Connection> parseConnections = descriptionHandler.parseConnections(jp, parseNodes);
-                combinedList.addAll(parseConnections);
-            } else if (WorkflowDescriptionPersistenceHandler.BENDPOINTS.equals(fieldname)) {
-                // parsing content of bendpoints
-                while (jp.nextToken() != JsonToken.END_ARRAY) {
-                    while (jp.nextToken() != JsonToken.END_OBJECT) {
-
-                        WorkflowNode output = null;
-                        WorkflowNode input = null;
-                        List<Location> bendpoints = new ArrayList<>();
-                        String bendpointListString = null;
-
-                        String bendpointField = jp.getCurrentName();
-                        jp.nextToken(); // move to value
-                        if (WorkflowDescriptionPersistenceHandler.SOURCE.equals(bendpointField)) {
-                            output = getWorkflowNodeByName(combinedList, jp.getText());
-                        } else {
-                            throw new ParseException("No source definition.", jp.getCurrentLocation().getLineNr());
-                        }
-                        jp.nextToken();
-                        bendpointField = jp.getCurrentName();
-                        jp.nextToken(); // move to value
-                        if (WorkflowDescriptionPersistenceHandler.TARGET.equals(bendpointField)) {
-                            input = getWorkflowNodeByName(combinedList, jp.getText());
-                        } else {
-                            throw new ParseException("No target definition.", jp.getCurrentLocation().getLineNr());
-                        }
-                        jp.nextToken();
-                        bendpointField = jp.getCurrentName();
-                        jp.nextToken(); // move to value
-                        if (WorkflowDescriptionPersistenceHandler.COORDINATES.equals(bendpointField)) {
-                            bendpointListString = jp.getText();
-                        } else {
-                            throw new ParseException("No input definition.", jp.getCurrentLocation().getLineNr());
-                        }
-
-                        if (bendpointListString != null) {
-                            for (String bendpointString : bendpointListString
-                                .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_SEPARATOR)) {
-                                Location bendpoint =
-                                    new Location(Integer.parseInt(bendpointString
-                                        .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_COORDINATE_SEPARATOR)[0]),
-                                        Integer.parseInt(bendpointString
-                                            .split(WorkflowDescriptionPersistenceHandler.BENDPOINT_COORDINATE_SEPARATOR)[1]));
-                                bendpoints.add(bendpoint);
-                            }
-
-                            for (Object connectionObject : combinedList) {
-                                if (connectionObject instanceof Connection) {
-                                    Connection connection = (Connection) connectionObject;
-                                    if ((connection.getTargetNode().getIdentifier().equals(input.getIdentifier())
-                                        && connection.getSourceNode().getIdentifier().equals(output.getIdentifier()))) {
-                                        connection.setBendpoints(bendpoints);
-                                    } else if (connection.getTargetNode().getIdentifier().equals(output.getIdentifier())
-                                        && connection.getSourceNode().getIdentifier().equals(input.getIdentifier())) {
-                                        List<Location> invertedBendpointsToAdd = new ArrayList<>();
-                                        for (Location l : bendpoints) {
-                                            invertedBendpointsToAdd.add(0, l);
-                                        }
-                                        connection.setBendpoints(invertedBendpointsToAdd);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            } else if (WorkflowDescriptionPersistenceHandler.LABELS.equals(fieldname)) {
-                if (parseNodes == null) {
-                    jp.nextToken();
-                }
-                // parsing content to WorkflowLabel
-                Set<WorkflowLabel> parseLabel = descriptionHandler.parseLabels(jp);
-                combinedList.addAll(parseLabel);
             }
+        }
+        List<Connection> parsedConnections = null;
+        if (rootJsonNode.has(WorkflowDescriptionPersistenceHandler.CONNECTIONS)) {
+            // parsing content of connections
+            parsedConnections = descriptionHandler.parseConnections(
+                (ArrayNode) rootJsonNode.get(WorkflowDescriptionPersistenceHandler.CONNECTIONS), parsedNodes);
+            combinedList.addAll(parsedConnections);
+        }
+        if (rootJsonNode.has(WorkflowDescriptionPersistenceHandler.BENDPOINTS)) {
+            // parsing content of bendpoints
+            descriptionHandler.parseBendpoints(
+                (ArrayNode) rootJsonNode.get(WorkflowDescriptionPersistenceHandler.BENDPOINTS), parsedNodes, parsedConnections);
+        }
+        if (rootJsonNode.has(WorkflowDescriptionPersistenceHandler.LABELS)) {
+            // parsing content of labels
+            Set<WorkflowLabel> parsedLabel = descriptionHandler.parseLabels(
+                (ArrayNode) rootJsonNode.get(WorkflowDescriptionPersistenceHandler.LABELS));
+            combinedList.addAll(parsedLabel);
         }
         return combinedList;
-    }
-
-    private WorkflowNode getWorkflowNodeByName(List<?> combinedList, String nodeId) {
-        WorkflowNode matchingNode = null;
-        for (Object object : combinedList) {
-            if (object instanceof WorkflowNodePart) {
-                WorkflowNode node = (WorkflowNode) ((WorkflowNodePart) object).getModel();
-                if (node.getIdentifier().equals(nodeId)) {
-                    matchingNode = node;
-                }
-            }
-        }
-        return matchingNode;
     }
 
     /**
@@ -551,7 +480,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         copied.setIsNodeIdTransient(origin.getIsNodeIdTransient());
         for (EndpointDescription ep : origin.getInputDescriptionsManager().getDynamicEndpointDescriptions()) {
             copied.getInputDescriptionsManager().addDynamicEndpointDescription(ep.getDynamicEndpointIdentifier(),
-                ep.getName(), ep.getDataType(), ep.getMetaData(), ep.getIdentifier(), ep.getParentGroupName(), false);
+                ep.getName(), ep.getDataType(), ep.getMetaData(), ep.getParentGroupName(), false);
         }
         for (EndpointDescription ep : origin.getInputDescriptionsManager().getStaticEndpointDescriptions()) {
             copied.getInputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(),
@@ -559,7 +488,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         }
         for (EndpointDescription ep : origin.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
             copied.getOutputDescriptionsManager().addDynamicEndpointDescription(ep.getDynamicEndpointIdentifier(),
-                ep.getName(), ep.getDataType(), ep.getMetaData(), ep.getIdentifier(), ep.getParentGroupName(), false);
+                ep.getName(), ep.getDataType(), ep.getMetaData(), ep.getParentGroupName(), false);
         }
         for (EndpointDescription ep : origin.getOutputDescriptionsManager().getStaticEndpointDescriptions()) {
             copied.getOutputDescriptionsManager().editStaticEndpointDescription(ep.getName(), ep.getDataType(), ep.getMetaData(),

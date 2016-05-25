@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,18 +10,17 @@ package de.rcenvironment.components.database.gui;
 
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.components.database.common.DatabaseComponentConstants;
 import de.rcenvironment.components.database.common.DatabaseComponentHistoryDataItem;
 import de.rcenvironment.components.database.common.DatabaseStatementHistoryData;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
@@ -35,19 +34,16 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * Database History Data Item Builder.
  *
  * @author Oliver Seebach
+ * @author Sascha Zur
  */
 public class DatabaseHistoryDataItemSubtreeBuilder extends DefaultHistoryDataItemSubtreeBuilder {
 
     private static final Image COMPONENT_ICON;
 
     static {
-        String iconPath = "platform:/plugin/de.rcenvironment.components.database.common/resources/database_16.png";
-        URL url = null;
-        try {
-            url = new URL(iconPath);
-        } catch (MalformedURLException e) {
-            LogFactory.getLog(DatabaseHistoryDataItemSubtreeBuilder.class).error("Component icon not found: " + iconPath);
-        }
+        String bundleName = "de.rcenvironment.components.database.common";
+        String iconName = "database_16.png";
+        URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();
         } else {
@@ -95,13 +91,15 @@ public class DatabaseHistoryDataItemSubtreeBuilder extends DefaultHistoryDataIte
                     DMBrowserNode statementPatternNode =
                         DMBrowserNode.addNewLeafNode("Statement pattern: "
                             + StringUtils.abbreviate(statement.getStatementPattern(),
-                                CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH), DMBrowserNodeType.CommonText,
+                                CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH),
+                            DMBrowserNodeType.CommonText,
                             statementsFolderWithName);
                     statementPatternNode.setFileContentAndName(statement.getStatementPattern(), "Statement pattern");
                     DMBrowserNode statementEffectiveNode =
                         DMBrowserNode.addNewLeafNode("Effective statement: "
                             + StringUtils.abbreviate(statement.getStatementEffective(),
-                                CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH), DMBrowserNodeType.CommonText,
+                                CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH),
+                            DMBrowserNodeType.CommonText,
                             statementsFolderWithName);
                     statementEffectiveNode.setFileContentAndName(statement.getStatementEffective(),
                         "Effective statement");

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -306,7 +306,11 @@ public final class ToolIntegrationConstants {
     public static final String KEY_TEMPLATE_NAME = "templateName";
 
     /** Constant. */
-    public static final String KEY_LIMIT_INSTANCES = "limitInstalltionInstances";
+    public static final String KEY_LIMIT_INSTANCES = "limitInstallationInstances";
+
+    /** Constant. */
+    @Deprecated
+    public static final String KEY_LIMIT_INSTANCES_OLD = "limitInstalltionInstances";
 
     /** Constant. */
     public static final String KEY_LIMIT_INSTANCES_COUNT = "limitInstallationInstancesNumber";

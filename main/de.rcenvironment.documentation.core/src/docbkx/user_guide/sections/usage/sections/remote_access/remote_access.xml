@@ -36,7 +36,7 @@
 					<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
 				</listitem>
 				<listitem>
-					<para>Use the configuration UI (described in the "Run RCE and select the "Help > Configuration
+					<para>Start RCE and select the "Help > Configuration
 						Information" menu option. From the list of configuration examples,
 						double-click "Remote Access Server" to open it. Mark all text (Ctrl-A) and
 						copy it to the clipboard (Ctrl-C).</para>

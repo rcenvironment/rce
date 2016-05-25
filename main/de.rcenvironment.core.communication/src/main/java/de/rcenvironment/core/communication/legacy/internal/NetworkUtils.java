@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,8 +8,7 @@
 
 package de.rcenvironment.core.communication.legacy.internal;
 
-import java.text.MessageFormat;
-
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -19,7 +18,7 @@ import de.rcenvironment.core.utils.incubator.Assertions;
  */
 public final class NetworkUtils {
 
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     /**
      * Regex for IP address.
@@ -40,8 +39,8 @@ public final class NetworkUtils {
      */
     public static boolean isHostInNetwork(String hostname, String network) {
 
-        Assertions.isDefined(hostname, MessageFormat.format(ERROR_PARAMETERS_NULL, "hostname"));
-        Assertions.isDefined(network, MessageFormat.format(ERROR_PARAMETERS_NULL, "network"));
+        Assertions.isDefined(hostname, StringUtils.format(ERROR_PARAMETERS_NULL, "hostname"));
+        Assertions.isDefined(network, StringUtils.format(ERROR_PARAMETERS_NULL, "network"));
 
         boolean returnCode = true;
 
@@ -84,7 +83,7 @@ public final class NetworkUtils {
      */
     public static byte[] addressToByte(String address) {
 
-        Assertions.isDefined(address, MessageFormat.format(ERROR_PARAMETERS_NULL, "address"));
+        Assertions.isDefined(address, StringUtils.format(ERROR_PARAMETERS_NULL, "address"));
 
         if (!address.matches(IPV4_REGEX)) {
             throw new IllegalArgumentException("Wrong format of the address: " + address);
@@ -107,7 +106,7 @@ public final class NetworkUtils {
      */
     public static String convertFromCidrToNetmask(String cidr) {
 
-        Assertions.isDefined(cidr, MessageFormat.format(ERROR_PARAMETERS_NULL, "cidr"));
+        Assertions.isDefined(cidr, StringUtils.format(ERROR_PARAMETERS_NULL, "cidr"));
 
         Integer cidrInt = null;
         try {

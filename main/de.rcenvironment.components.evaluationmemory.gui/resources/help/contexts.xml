@@ -1,6 +1,0 @@
-<contexts>
-	<context id="evaluationmemory" title="Evaluation Memory Component Help">
-		<description>The Evaluation Memory component provides caching-capability for evaluation results.</description>
-		<topic href="resources/help/html/usage.xhtml" label="Evaluation Memory Component Usage"></topic>
-	</context>
-</contexts>

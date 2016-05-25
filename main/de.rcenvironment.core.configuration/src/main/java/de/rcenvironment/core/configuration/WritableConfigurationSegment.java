@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,7 @@ package de.rcenvironment.core.configuration;
  * Sub-interface of {@link ConfigurationSegment} that adds write/update methods.
  * 
  * @author Robert Mischke
+ * @author David Scholz
  */
 public interface WritableConfigurationSegment extends ConfigurationSegment {
 
@@ -33,7 +34,25 @@ public interface WritableConfigurationSegment extends ConfigurationSegment {
      */
     void setBoolean(String key, boolean value) throws ConfigurationException;
 
-    // void setInteger(String relativePath, Integer value);
+    /**
+     * 
+     * Adds or replaces an integer field.
+     * 
+     * @param key the field name.
+     * @param value the new value.
+     * @throws ConfigurationException if editing the configuration failed.
+     */
+    void setInteger(String key, Integer value) throws ConfigurationException;
+    
+    /**
+     * 
+     * Adds or replaces a long field.
+     * 
+     * @param key the field name.
+     * @param value the new value.
+     * @throws ConfigurationException if editing the configuration failed.
+     */
+    void setLong(String key, Long value) throws ConfigurationException;
 
     // void setFloat(String relativePath, Double value);
 

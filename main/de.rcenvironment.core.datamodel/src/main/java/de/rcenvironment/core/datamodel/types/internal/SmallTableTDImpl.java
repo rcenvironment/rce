@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,7 @@ import java.util.Arrays;
 
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.internal.TypedDatumConversionTable;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -32,9 +33,6 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
     public static final int MAXIMUM_ENTRY_COUNT = 100000;
 
     private final TypedDatum[][] tableEntries; // [row][column]
-
-    private DataType[] allowedCellDatatypes = { DataType.Integer, DataType.ShortText, DataType.Float, DataType.Boolean, DataType.DateTime,
-        DataType.Empty };
 
     public SmallTableTDImpl(TypedDatum[][] tableEntries) {
         super(DataType.SmallTable);
@@ -60,8 +58,8 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
         if (isAllowedAsCellType(typedDatum)) {
             tableEntries[rowIndex][columnIndex] = typedDatum;
         } else {
-            throw new IllegalArgumentException("Data type " + typedDatum.getDataType()
-                + " is not allowed in small tables.");
+            throw new IllegalArgumentException("Data type '" + typedDatum.getDataType()
+                + "' is not allowed in small tables.");
         }
     }
 
@@ -173,6 +171,9 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
 
     @Override
     public boolean isAllowedAsCellType(TypedDatum typedDatum) {
-        return Arrays.asList(allowedCellDatatypes).contains(typedDatum.getDataType());
+        return TypedDatumConversionTable.getTable()[TypedDatumConversionTable
+            .getIndexOfType(typedDatum.getDataType())][TypedDatumConversionTable
+                .getIndexOfType(DataType.SmallTable)] == TypedDatumConversionTable.IS_CONVERTIBLE
+            && typedDatum.getDataType() != DataType.Matrix && typedDatum.getDataType() != DataType.Vector;
     }
 }

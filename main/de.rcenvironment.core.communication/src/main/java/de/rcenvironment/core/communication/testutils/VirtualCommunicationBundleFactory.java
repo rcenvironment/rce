@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -78,7 +78,7 @@ public final class VirtualCommunicationBundleFactory {
 
         private CommunicationManagementServiceImpl communicationManagementService;
 
-        public VirtualCommunicationBundleImpl(NodeConfigurationService nodeConfigurationService) {
+        VirtualCommunicationBundleImpl(NodeConfigurationService nodeConfigurationService) {
 
             serviceRegistry = new VirtualServiceRegistry();
 

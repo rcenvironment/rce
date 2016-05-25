@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,6 +15,8 @@ import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
@@ -22,13 +24,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.easymock.EasyMock;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumSerializerDefaultStub;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -40,20 +43,23 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 public class EvaluationMemoryFileAccessImplTest {
 
     private static final String DON_T_MATCH = "don't match";
+
     private static final String Y = "y";
+
     private static final String X2 = "x2";
+
     private static final String X1 = "x1";
-    private File testFile;
+
+    private List<File> tempFiles = new ArrayList<>();
     
     /**
      * Common setup.
      * 
      * @throws IOException on unexpected failure
      */
-    @Before
-    public void setUp() throws IOException {
+    @BeforeClass
+    public static void setUp() throws IOException {
         TempFileServiceAccess.setupUnitTestEnvironment();
-        testFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("some_file");
     }
     
     /**
@@ -63,7 +69,9 @@ public class EvaluationMemoryFileAccessImplTest {
      */
     @After
     public void tearDown() throws IOException {
-        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(testFile);
+        for (File file : tempFiles) {
+            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(file);            
+        }
     }
 
     /**
@@ -73,6 +81,8 @@ public class EvaluationMemoryFileAccessImplTest {
      */
     @Test
     public void testAddingAndGettingTuple() throws IOException {
+        File testFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("some_file");
+        tempFiles.add(testFile);
         EvaluationMemoryFileAccessImpl fileAccess = new EvaluationMemoryFileAccessImpl(testFile.getAbsolutePath());
         fileAccess.setTypedDatumSerializer(new TypedDatumSerializerDefaultStub());
         
@@ -120,6 +130,19 @@ public class EvaluationMemoryFileAccessImplTest {
         long fileSizeBeforeAdding = FileUtils.sizeOf(testFile);
         fileAccess.addEvaluationValues(inputValues2, outputValues2);
         assertEquals(fileSizeBeforeAdding, FileUtils.sizeOf(testFile));
+        
+        // add values of type not-a-value
+        SortedMap<String, Double> values5 = new TreeMap<>();
+        values5.put(X1, 3.0);
+        values5.put(X2, 2.0);
+
+        SortedMap<String, Double> values6 = new TreeMap<>();
+        values6.put(Y, null);
+        
+        SortedMap<String, TypedDatum> inputValues3 = createEndpointValues(values5);
+        SortedMap<String, TypedDatum> outputValues4 = createEndpointValues(values6);
+        
+        fileAccess.addEvaluationValues(inputValues3, outputValues4);
     }
     
     /**
@@ -129,7 +152,8 @@ public class EvaluationMemoryFileAccessImplTest {
      */
     @Test
     public void testValidation() throws IOException {
-        
+        File testFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("some_file");
+        tempFiles.add(testFile);
         EvaluationMemoryFileAccessImpl fileAccess = new EvaluationMemoryFileAccessImpl(testFile.getAbsolutePath());
         fileAccess.setTypedDatumSerializer(new TypedDatumSerializerDefaultStub());
         
@@ -185,9 +209,18 @@ public class EvaluationMemoryFileAccessImplTest {
         }
         
         File testFile2 = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("some_file2");
-        FileUtils.writeStringToFile(testFile2, IOUtils.toString(getClass().getResourceAsStream("/evalMemTest")));
+        tempFiles.add(testFile2);
+        FileUtils.writeStringToFile(testFile2, IOUtils.toString(getClass().getResourceAsStream("/validEvalMem")));
         
         fileAccess = new EvaluationMemoryFileAccessImpl(testFile2.getAbsolutePath());
+        fileAccess.setTypedDatumSerializer(new TypedDatumSerializerDefaultStub());
+        fileAccess.validateEvaluationMemory(inputs1, outputs1);
+            
+        File testFile3 = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("some_file3");
+        tempFiles.add(testFile3);
+        FileUtils.writeStringToFile(testFile3, IOUtils.toString(getClass().getResourceAsStream("/invalidEvalMem")));
+        
+        fileAccess = new EvaluationMemoryFileAccessImpl(testFile3.getAbsolutePath());
         fileAccess.setTypedDatumSerializer(new TypedDatumSerializerDefaultStub());
         try {
             fileAccess.validateEvaluationMemory(inputs1, outputs1);
@@ -200,7 +233,11 @@ public class EvaluationMemoryFileAccessImplTest {
     private SortedMap<String, TypedDatum> createEndpointValues(SortedMap<String, Double> values) {
         SortedMap<String, TypedDatum> inputValues = new TreeMap<>();
         for (String name : values.keySet()) {
-            inputValues.put(name, createFloatTypedDatumMock(values.get(name)));
+            if (values.get(name) != null) {
+                inputValues.put(name, createFloatTypedDatumMock(values.get(name)));                
+            } else {
+                inputValues.put(name, createNotAValueTypedDatumMock());
+            }
         }
         return inputValues;
     }
@@ -214,12 +251,19 @@ public class EvaluationMemoryFileAccessImplTest {
     }
     
     private FloatTD createFloatTypedDatumMock(double value) {
-        FloatTD typedDatum = EasyMock.createNiceMock(FloatTD.class);
-        EasyMock.expect(typedDatum.getDataType()).andReturn(DataType.Float).anyTimes();
-        EasyMock.expect(typedDatum.getFloatValue()).andReturn(value).anyTimes();
+        FloatTD typedDatum = EasyMock.createStrictMock(FloatTD.class);
+        EasyMock.expect(typedDatum.getDataType()).andStubReturn(DataType.Float);
+        EasyMock.expect(typedDatum.getFloatValue()).andStubReturn(value);
         EasyMock.replay(typedDatum);
         return typedDatum;
     }
     
-
+    private NotAValueTD createNotAValueTypedDatumMock() {
+        NotAValueTD typedDatum = EasyMock.createStrictMock(NotAValueTD.class);
+        EasyMock.expect(typedDatum.getDataType()).andStubReturn(DataType.NotAValue);
+        EasyMock.expect(typedDatum.getIdentifier()).andStubReturn("id");
+        EasyMock.expect(typedDatum.getCause()).andStubReturn(NotAValueTD.Cause.InvalidInputs);
+        EasyMock.replay(typedDatum);
+        return typedDatum;
+    }
 }

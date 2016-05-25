@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -20,8 +21,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.SynchronousQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -36,6 +40,7 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
+import de.rcenvironment.core.component.execution.api.ThreadHandler;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -105,6 +110,14 @@ public class ClusterComponent extends DefaultComponent {
 
     private Map<String, String> pathsToQueuingSystemCommands;
 
+    private List<String> jobIds = Collections.synchronizedList(new ArrayList<String>());
+    
+    private AtomicReference<CountDownLatch> jobsCountDefinedLatch = new AtomicReference<CountDownLatch>(null);
+    
+    private AtomicReference<CountDownLatch> jobsSubmittedLatch = new AtomicReference<CountDownLatch>(null);
+    
+    private AtomicBoolean isCancelled = new AtomicBoolean(true);
+    
     private Integer jobCount = null;
 
     private boolean considerSharedInputDir = true;
@@ -112,7 +125,7 @@ public class ClusterComponent extends DefaultComponent {
     private int iteration = 0;
 
     private Semaphore upDownloadSemaphore;
-
+    
     private boolean isJobScriptProvidedWithinInputDir;
 
     private Map<String, Deque<TypedDatum>> inputValues = new HashMap<String, Deque<TypedDatum>>();
@@ -186,6 +199,7 @@ public class ClusterComponent extends DefaultComponent {
 
     @Override
     public void processInputs() throws ComponentException {
+        jobsCountDefinedLatch.set(new CountDownLatch(1));
         for (String inputName : componentContext.getInputsWithDatum()) {
             if (!inputValues.containsKey(inputName)) {
                 inputValues.put(inputName, new LinkedList<TypedDatum>());
@@ -199,7 +213,8 @@ public class ClusterComponent extends DefaultComponent {
             && inputValues.get(ClusterComponentConstants.INPUT_JOBINPUTS).size() >= jobCount
             && (!considerSharedInputDir || (inputValues.containsKey(ClusterComponentConstants.INPUT_SHAREDJOBINPUT)
             && inputValues.get(ClusterComponentConstants.INPUT_SHAREDJOBINPUT).size() >= 1))) {
-
+            jobsSubmittedLatch.set(new CountDownLatch(jobCount));
+            jobsCountDefinedLatch.get().countDown();
             // consume inputs
             List<DirectoryReferenceTD> inputDirs = new ArrayList<DirectoryReferenceTD>();
             for (int i = 0; i < jobCount; i++) {
@@ -229,6 +244,23 @@ public class ClusterComponent extends DefaultComponent {
         }
     }
     
+    @Override
+    public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
+        isCancelled.set(true);
+        try {
+            jobsCountDefinedLatch.get().await();
+            jobsSubmittedLatch.get().await();
+            String stdErr = clusterService.cancelClusterJobs(jobIds);
+            if (!stdErr.isEmpty()) {
+                componentLog.componentError(stdErr);
+            }
+        } catch (InterruptedException e) {
+            componentLog.componentError("Interrupted while cancelling cluster job(s)");
+        } catch (IOException e) {
+            componentLog.componentError("Failed to cancel cluster job(s): " + e.getMessage());
+        }
+    }
+    
     private Integer readAndEvaluateJobCount() throws ComponentException {
         Integer count = Integer.valueOf((int) ((IntegerTD) inputValues.get(ClusterComponentConstants.INPUT_JOBCOUNT).poll()).getIntValue());
         if (count <= 0) {
@@ -246,7 +278,7 @@ public class ClusterComponent extends DefaultComponent {
     private void deleteSandboxIfNeeded() {
         Boolean deleteSandbox = Boolean.valueOf(componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_DELETESANDBOX));
 
-        if (deleteSandbox) {
+        if (executor != null && deleteSandbox) {
             String sandbox = executor.getWorkDirPath();
             try {
                 // delete here explicitly as context.tearDownSandbox(executor) doesn't support -r option for safety reasons
@@ -420,7 +452,8 @@ public class ClusterComponent extends DefaultComponent {
         }
 
         String jobId = extractJobIdFromQsubStdout(stdout);
-
+        jobIds.add(jobId);
+        jobsSubmittedLatch.get().countDown();
         componentLog.componentInfo("Id of submitted job: " + jobId);
         BlockingQueue<String> synchronousQueue = new SynchronousQueue<String>();
         clusterService.addClusterJobStateChangeListener(jobId, new ClusterJobFinishListener(synchronousQueue));
@@ -517,38 +550,42 @@ public class ClusterComponent extends DefaultComponent {
         }
     }
 
-    private void downloadDirectoriesAndSendToOutputsOnJobFinished(Queue<BlockingQueue<String>> queues) {
+    private void downloadDirectoriesAndSendToOutputsOnJobFinished(Queue<BlockingQueue<String>> queues) throws ComponentException {
 
-        CallablesGroup<RuntimeException> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(RuntimeException.class);
+        CallablesGroup<ComponentException> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(ComponentException.class);
 
         int i = 0;
         for (BlockingQueue<String> queue : queues) {
             final BlockingQueue<String> queueSnapshot = queue;
             final int jobSnapshot = i++;
-            callablesGroup.add(new Callable<RuntimeException>() {
+            callablesGroup.add(new Callable<ComponentException>() {
 
                 @Override
                 @TaskDescription("Wait for Job termination, check for failure, and download output directory afterwards")
-                public RuntimeException call() throws Exception {
+                public ComponentException call() throws Exception {
                     try {
                         try {
                             if (queueSnapshot.take().equals(ClusterComponentConstants.CLUSTER_FETCHING_FAILED)) {
                                 throw new ComponentException(FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED);
                             }
-                            checkIfClusterJobSucceeded(jobSnapshot);
-                            downloadDirectoryAndSendToOutput(jobSnapshot);
+                            if (!isCancelled.get()) {
+                                checkIfClusterJobSucceeded(jobSnapshot);
+                                downloadDirectoryAndSendToOutput(jobSnapshot);
+                            }
                         } catch (InterruptedException e) {
-                            throw new RuntimeException("Internal error: " + FAILED_TO_WAIT_FOR_JOB_TO_BECOME_COMPLETED, e);
+                            throw new RuntimeException("Interrupted while waiting for job termination");
                         }
                         return null;
-                    } catch (RuntimeException e) {
+                    } catch (ComponentException e) {
                         return e;
+                    } catch (RuntimeException e) {
+                        return new ComponentException("Unexpected error when waiting for job termination or during failure check", e);
                     }
                 }
             });
         }
 
-        List<RuntimeException> exceptions = callablesGroup.executeParallel(new AsyncExceptionListener() {
+        List<ComponentException> exceptions = callablesGroup.executeParallel(new AsyncExceptionListener() {
 
             @Override
             public void onAsyncException(Exception e) {
@@ -557,13 +594,13 @@ public class ClusterComponent extends DefaultComponent {
             }
         });
 
-        for (RuntimeException e : exceptions) {
+        for (ComponentException e : exceptions) {
             if (e != null) {
                 log.error("Exception caught when downloading directories: " + e.getMessage());
             }
         }
 
-        for (RuntimeException e : exceptions) {
+        for (ComponentException e : exceptions) {
             if (e != null) {
                 throw e;
             }

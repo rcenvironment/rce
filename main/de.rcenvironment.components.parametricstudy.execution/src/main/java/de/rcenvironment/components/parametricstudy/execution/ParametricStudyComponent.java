@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,9 +23,9 @@ import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.model.api.LazyDisposal;
 import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
-import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -207,10 +207,18 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             if (componentContext.isDynamicInput(inputName)
                 && !componentContext.getDynamicInputIdentifier(inputName).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
                 TypedDatum input = componentContext.readInput(inputName);
-                if (input.getDataType().equals(DataType.NotAValue)) {
+                switch (input.getDataType()) {
+                case NotAValue:
                     values.put(inputName, Double.NaN);
-                } else {
+                    break;
+                case Integer:
+                    values.put(inputName, ((IntegerTD) input).getIntValue());
+                    break;
+                case Float:
                     values.put(inputName, ((FloatTD) input).getFloatValue());
+                    break;
+                default:
+                    throw new ComponentException(StringUtils.format("Data type '%s' not supported as input", input.getDataType()));
                 }
             }
         }

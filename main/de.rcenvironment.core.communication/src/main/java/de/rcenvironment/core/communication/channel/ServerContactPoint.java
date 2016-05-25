@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,19 +17,19 @@ import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Extension of a {@link NetworkContactPoint} to represent transport-specific implementations that accept incoming connections. For example,
- * a TCP-based {@link ServerContactPoint} might listen on a TCP port and accept inbound connections.
+ * a TCP-based {@link ServerContactPoint} may listen on a TCP port and accept inbound connections.
  * 
  * @author Robert Mischke
  */
 public class ServerContactPoint {
 
-    private NetworkContactPoint networkContactPoint;
+    private final NetworkContactPoint networkContactPoint;
 
-    private MessageChannelEndpointHandler endpointHandler;
+    private final MessageChannelEndpointHandler endpointHandler;
 
-    private String expectedProtocolVersion;
+    private final String expectedProtocolVersion;
 
-    private NetworkTransportProvider transportProvider;
+    private final NetworkTransportProvider transportProvider;
 
     private final ConnectionFilter connectionFilter;
 
@@ -50,10 +50,6 @@ public class ServerContactPoint {
         return networkContactPoint;
     }
 
-    public void setNetworkContactPoint(NetworkContactPoint contactPoint) {
-        this.networkContactPoint = contactPoint;
-    }
-
     public MessageChannelEndpointHandler getEndpointHandler() {
         return endpointHandler;
     }
@@ -62,21 +58,18 @@ public class ServerContactPoint {
         return expectedProtocolVersion;
     }
 
-    public void setEndpointHandler(MessageChannelEndpointHandler endpointHandler) {
-        this.endpointHandler = endpointHandler;
-    }
-
     public ConnectionFilter getConnectionFilter() {
         return connectionFilter;
     }
 
     // TODO review: currently, only used by integration test
-    public boolean isAcceptingMessages() {
+    public synchronized boolean isAcceptingMessages() {
         return acceptingMessages;
     }
 
     @Override
     public String toString() {
+        // note: acceptingMessages is left volatile as I don't want to synchronize on "this" in toString() - misc_ro
         return StringUtils.format("SCP (NCP='%s', acc=%s, simbr=%s)", networkContactPoint, acceptingMessages, simulatingBreakdown);
     }
 
@@ -91,7 +84,7 @@ public class ServerContactPoint {
      * 
      * @throws CommunicationException on startup failure
      */
-    public void start() throws CommunicationException {
+    public synchronized void start() throws CommunicationException {
         transportProvider.startServer(this);
         acceptingMessages = true;
     }
@@ -100,7 +93,7 @@ public class ServerContactPoint {
      * Stops accepting connections at the configured {@link NetworkContactPoint}. Whether inbound connections are actively closed is
      * transport-specific.
      */
-    public void shutDown() {
+    public synchronized void shutDown() {
         acceptingMessages = false;
         transportProvider.stopServer(this);
     }

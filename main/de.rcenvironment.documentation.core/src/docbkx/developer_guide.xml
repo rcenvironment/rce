@@ -23,9 +23,11 @@
 	<chapter>
 		<title>Build and Infrastructure</title>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-			href="developer_guide/sections/build_process_and_dependencies.xml" />
+			href="developer_guide/sections/build_process_and_dependencies.xml"/>
 		<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 			href="developer_guide/sections/releasing_and_versioning.xml" />
+		<xi:include href="developer_guide/sections/build_process_faq_and_tips.xml"
+			xmlns:xi="http://www.w3.org/2001/XInclude"/>
 	</chapter>
 	
 	<chapter>

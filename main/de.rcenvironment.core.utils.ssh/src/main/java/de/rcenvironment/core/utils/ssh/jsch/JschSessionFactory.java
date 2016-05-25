@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -82,7 +82,7 @@ public final class JschSessionFactory {
 
         private String pw;
 
-        public UserInfoAdapter(String pw) {
+        UserInfoAdapter(String pw) {
             this.pw = pw;
         }
 
@@ -170,12 +170,12 @@ public final class JschSessionFactory {
         if (user.length() == 0) {
             throw new SshParameterException("The user name cannot be empty");
         }
-        if (authPhrase.length() == 0) {
-            throw new SshParameterException("The authentication phrase cannot be empty");
-        }
 
         if (keyfileLocation.length() == 0) {
             // use password authentication
+            if (authPhrase.length() == 0) {
+                throw new SshParameterException("The authentication phrase cannot be empty");
+            }
             if (log.isDebugEnabled()) {
                 log.debug("Setting up JSCH/SSH connection, password authentication, host='"
                     + host + "', user='" + user + "'");

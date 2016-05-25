@@ -44,7 +44,69 @@
 	</repositories>
 
 	<profiles>
-
+		<profile>
+			<id>generateHelpFromDocbook</id>
+			<activation>
+				<file>
+					<exists>${basedir}/help/src/docbkx</exists>
+				</file>
+			</activation>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-clean-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>clean-generated-help-files</id>
+								<goals>
+									<goal>clean</goal>
+								</goals>
+								<phase>clean</phase>
+								<configuration>
+									<filesets>
+										<fileset>
+											<directory>${basedir}/help/generated</directory>
+											<followSymlinks>false</followSymlinks>
+										</fileset>
+									</filesets>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+					<plugin>
+						<groupId>com.agilejava.docbkx</groupId>
+						<artifactId>docbkx-maven-plugin</artifactId>
+						<version>2.0.14</version>
+						<dependencies>
+							<dependency>
+								<groupId>org.docbook</groupId>
+								<artifactId>docbook-xml</artifactId>
+								<version>4.4</version>
+								<scope>runtime</scope>
+							</dependency>
+						</dependencies>
+						<executions>
+							<execution>
+								<id>generate-docbook-eclipse</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>generate-xhtml</goal>
+								</goals>
+								<configuration>
+									<postProcess>
+										<!-- ensure directory exists -->
+										<mkdir dir="help/generated/html" />
+									</postProcess>
+									<sourceDirectory>${basedir}/help/src/docbkx</sourceDirectory>
+									<targetDirectory>${basedir}/help/generated/html</targetDirectory>
+									<xhtmlCustomization>${basedir}/../de.rcenvironment.core.gui.help/resources/docbkx/stylesheets/docbkx_rce_xhtml.xsl</xhtmlCustomization>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
 		<profile>
 			<id>collectCoverageDataIfEnabled</id>
 			<activation>
@@ -117,7 +179,46 @@
 				</plugins>
 			</build>
 		</profile>
-
 	</profiles>
+	
+	<build>
+		<pluginManagement>
+			<plugins>
+				<!--This plugin's configuration is used to store Eclipse m2e settings only. It has no influence on the Maven build itself.-->
+				<plugin>
+					<groupId>org.eclipse.m2e</groupId>
+					<artifactId>lifecycle-mapping</artifactId>
+					<version>1.0.0</version>
+					<configuration>
+						<lifecycleMappingMetadata>
+							<pluginExecutions>
+								<pluginExecution>
+									<pluginExecutionFilter>
+										<groupId>
+											com.agilejava.docbkx
+										</groupId>
+										<artifactId>
+											docbkx-maven-plugin
+										</artifactId>
+										<versionRange>
+											[2.0.14,)
+										</versionRange>
+										<goals>
+											<goal>generate-xhtml</goal>
+										</goals>
+									</pluginExecutionFilter>
+									<action>
+										<execute>
+											<runOnIncremental>false</runOnIncremental>
+										</execute>
+									</action>
+								</pluginExecution>
+							</pluginExecutions>
+						</lifecycleMappingMetadata>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+	</build>
 
 </project>

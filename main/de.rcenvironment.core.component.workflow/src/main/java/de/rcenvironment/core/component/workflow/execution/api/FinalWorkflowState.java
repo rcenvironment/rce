@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,7 +27,7 @@ public enum FinalWorkflowState {
     
     private String displayName;
     
-    private FinalWorkflowState(String displayName) {
+    FinalWorkflowState(String displayName) {
         this.displayName = displayName;
     }
     

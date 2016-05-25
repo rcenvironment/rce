@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,10 +15,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.IContentProvider;
+import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.ITreeViewerListener;
 import org.eclipse.jface.viewers.TreeExpansionEvent;
 import org.eclipse.jface.viewers.TreeViewer;
@@ -27,10 +30,12 @@ import org.eclipse.swt.graphics.Image;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
+import de.rcenvironment.core.gui.communication.views.NetworkViewContentProvider;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
 import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNode;
 import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNodeWithParent;
 import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
+import de.rcenvironment.core.gui.communication.views.spi.SelfRenderingNetworkViewNode;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.monitoring.system.api.ProcessInformation;
@@ -159,7 +164,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
 
         private final NetworkGraphNodeWithContext instanceNode;
 
-        public MonitoringDataFolderRootNode(NetworkGraphNodeWithContext instanceNode) {
+        MonitoringDataFolderRootNode(NetworkGraphNodeWithContext instanceNode) {
             this.instanceNode = instanceNode;
         }
 
@@ -270,7 +275,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
 
         private final Object parentNode;
 
-        public InstanceResourceInfoNode(Object parentNode, InstanceNodeContext context, double cpuUsage, double otherCpuUsage,
+        InstanceResourceInfoNode(Object parentNode, InstanceNodeContext context, double cpuUsage, double otherCpuUsage,
             double idleCpu, String nodeId) {
             this.parentNode = parentNode;
             this.cpuUsage = cpuUsage;
@@ -281,7 +286,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             this.nodeIdString = nodeId;
         }
 
-        public InstanceResourceInfoNode(Object parentNode, InstanceNodeContext context, long ram, long ramTotal) {
+        InstanceResourceInfoNode(Object parentNode, InstanceNodeContext context, long ram, long ramTotal) {
             this.parentNode = parentNode;
             this.ramUsed = ram;
             this.ramTotal = ramTotal;
@@ -388,7 +393,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
 
         private Object parentNode;
 
-        public ProcessInfoNode(Object parentNode, ProcessInformation processInfo) {
+        ProcessInfoNode(Object parentNode, ProcessInformation processInfo) {
             this.parentNode = parentNode;
             this.processInfo = processInfo;
             this.pid = processInfo.getPid();
@@ -467,7 +472,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
 
         private final Object parentNode;
 
-        public RceNode(Object parentNode, boolean typeIsSubProcessRoot, double cpuUsage, List<ProcessInformation> children,
+        RceNode(Object parentNode, boolean typeIsSubProcessRoot, double cpuUsage, List<ProcessInformation> children,
             String nodeIdString) {
             this.parentNode = parentNode;
             this.typeIsSubProcessRoot = typeIsSubProcessRoot;
@@ -852,7 +857,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             result.addAll(nodeIdToRceNodeMap.get(nodeId));
             result.addAll(nodeIdToInstanceResourceInfoMap.get(nodeId));
         }
-
+        
         return result.toArray();
     }
 
@@ -887,60 +892,115 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             public void treeExpanded(TreeExpansionEvent expanded) {
                 Object element = expanded.getElement();
                 if (element instanceof MonitoringDataFolderRootNode) {
-                    final NodeIdentifier node = ((MonitoringDataFolderRootNode) element).getInstanceNode().getNode().getNodeId();
-                    // TODO check: this looks like a (minor) memory leak; the map is never reduced - misc_ro, Nov 2015
-                    idToNodeMap.put(node, (ContributedNetworkViewNode) element);
-                    if (node != null) {
-                        manager.startPollingTask(node, new SystemMonitoringDataSnapshotListener() {
-
-                            @Override
-                            public void onMonitoringDataChanged(final SystemMonitoringDataSnapshot monitoringModel) {
-                                if (display.isDisposed()) {
-                                    manager.cancelPollingTask(node);
-                                    return;
-                                }
-                                display.asyncExec(new Runnable() {
-
-                                    @Override
-                                    public void run() {
-                                        currentModel.monitoringDataModelMap.put(node, monitoringModel);
-                                        if (treeViewer.getControl().isDisposed()) {
-                                            manager.cancelPollingTask(node);
-                                            return;
-                                        }
-                                        final ContributedNetworkViewNode monitoringRootElementForInstance = idToNodeMap.get(node);
-                                        if (monitoringRootElementForInstance != null) {
-                                            treeViewer.refresh(monitoringRootElementForInstance, true);
-                                        } else {
-                                            log.debug("Root element is null for node " + node + " - skipping refresh");
-                                        }
-                                        ContributedNetworkViewNode expansionNode = expansionsMap.get(node);
-                                        if (expansionNode != null) {
-                                            treeViewer.expandToLevel(expansionNode, TreeViewer.ALL_LEVELS);
-                                        } else {
-                                            // this will currently happen most of the time until fixed - misc_ro
-                                            log.debug("Expansion node is null for node " + node + " - skipping auto-expansion");
-                                        }
-                                    }
-                                });
-
-                            }
-                        });
-                    }
+                    startSystemMonitoring(element);
+                } else {
+                    checkChildrenForSystemMonitoring(true, element);
                 }
             }
 
             @Override
-            // TODO open problem here: monitoring tasks are not stopped when a parent tree node is collapsed! - misc_ro, Nov 2015
             public void treeCollapsed(TreeExpansionEvent collapsed) {
                 Object element = collapsed.getElement();
                 if (element instanceof MonitoringDataFolderRootNode) {
-                    final NodeIdentifier nodeId = ((MonitoringDataFolderRootNode) element).getInstanceNode().getNode().getNodeId();
-                    manager.cancelPollingTask(nodeId);
-                    synchronized (nodeIdToInstanceResourceInfoMap) {
-                        nodeIdToInstanceResourceInfoMap.clear();
-                        nodeIdToRceNodeMap.clear();
+                    stopSystemMonitoring((MonitoringDataFolderRootNode) element);
+                } else {
+                    checkChildrenForSystemMonitoring(false, element);
+                }
+            }
+
+            /**
+             * Checks for an element of the network tree, if a direct or indirect child of this element is an instance of
+             * {@link MonitoringDataFolderRootNode} and starts or stops the system monitoring of the corresponding network instance if the
+             * node became visible respectively invisible in the network tree.
+             * 
+             * @param expanding True, if the node was expanded by the user. False, otherwise.
+             * @param element The element of the network tree whose state changed.
+             */
+            private void checkChildrenForSystemMonitoring(boolean expanding, Object element) {
+                
+                IContentProvider tmpProvider = treeViewer.getContentProvider();
+                if (tmpProvider instanceof ITreeContentProvider) {
+                    NetworkViewContentProvider provider = (NetworkViewContentProvider) tmpProvider;
+
+                    Stack<Object> children = new Stack<Object>();
+                    children.push(element);
+                    while (!children.isEmpty()) {
+                        Object child = children.pop();
+                        if (child instanceof MonitoringDataFolderRootNode) {
+                            if (treeViewer.getExpandedState(child)) {
+
+                                if (expanding) {
+                                    startSystemMonitoring(child);
+                                } else {
+                                    stopSystemMonitoring((MonitoringDataFolderRootNode) child);
+                                }
+                            }
+                        } else if (!(child instanceof SelfRenderingNetworkViewNode)){
+                            // add further children to the stack if they are expanded
+                            if (provider.hasChildren(child)) {
+                                for (Object tmpChild : provider.getChildren(child)) {
+                                    if (treeViewer.getExpandedState(tmpChild)) {
+                                        children.add(tmpChild);
+                                    }
+                                }
+                            }
+                        }
+
                     }
+                } else {
+                    log.debug("The current content provider is not an instance of ITreeContentProvider");
+                }
+            }
+
+            private void stopSystemMonitoring(MonitoringDataFolderRootNode element) {
+                final NodeIdentifier nodeId = (element).getInstanceNode().getNode().getNodeId();
+                manager.cancelPollingTask(nodeId);
+                synchronized (nodeIdToInstanceResourceInfoMap) {
+                    nodeIdToInstanceResourceInfoMap.clear();
+                    nodeIdToRceNodeMap.clear();
+                }
+            }
+
+            private void startSystemMonitoring(Object element) {
+                final NodeIdentifier node = ((MonitoringDataFolderRootNode) element).getInstanceNode().getNode().getNodeId();
+                // TODO check: this looks like a (minor) memory leak; the map is never reduced - misc_ro, Nov 2015
+                idToNodeMap.put(node, (ContributedNetworkViewNode) element);
+                if (node != null) {
+                    manager.startPollingTask(node, new SystemMonitoringDataSnapshotListener() {
+
+                        @Override
+                        public void onMonitoringDataChanged(final SystemMonitoringDataSnapshot monitoringModel) {
+                            if (display.isDisposed()) {
+                                manager.cancelPollingTask(node);
+                                return;
+                            }
+                            display.asyncExec(new Runnable() {
+
+                                @Override
+                                public void run() {
+                                    currentModel.monitoringDataModelMap.put(node, monitoringModel);
+                                    if (treeViewer.getControl().isDisposed()) {
+                                        manager.cancelPollingTask(node);
+                                        return;
+                                    }
+                                    final ContributedNetworkViewNode monitoringRootElementForInstance = idToNodeMap.get(node);
+                                    if (monitoringRootElementForInstance != null) {
+                                        treeViewer.refresh(monitoringRootElementForInstance, true);
+                                    } else {
+                                        log.debug("Root element is null for node " + node + " - skipping refresh");
+                                    }
+                                    ContributedNetworkViewNode expansionNode = expansionsMap.get(node);
+                                    if (expansionNode != null) {
+                                        treeViewer.expandToLevel(expansionNode, TreeViewer.ALL_LEVELS);
+                                    } else {
+                                        // this will currently happen most of the time until fixed - misc_ro
+                                        log.debug("Expansion node is null for node " + node + " - skipping auto-expansion");
+                                    }
+                                }
+                            });
+
+                        }
+                    });
                 }
             }
         };

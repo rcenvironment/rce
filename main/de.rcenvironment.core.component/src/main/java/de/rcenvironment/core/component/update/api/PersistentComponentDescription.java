@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,6 +23,7 @@ import org.codehaus.jackson.node.TextNode;
 
 import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Encapsulates information about a persistent component description as it is part of workflow files
@@ -54,14 +55,11 @@ public class PersistentComponentDescription implements Serializable {
     private String persistentComponentDescriptionString;
 
     /**
-     * Constructor with all class variables.
+     * Constructor.
      * 
-     * @param componentIdentifier
-     * @param componentVersion
-     * @param componentNodeIdentifier
-     * @param persistentComponentDescription
-     * @throws IOException
-     * @throws JsonParseException
+     * @param persistentComponentDescription JSON string of one single component stored und the 'nodes' key in the workflow file
+     * @throws IOException on unexpected error
+     * @throws JsonParseException on unexpected error
      */
     public PersistentComponentDescription(String persistentComponentDescription) throws JsonParseException, IOException {
 
@@ -71,7 +69,7 @@ public class PersistentComponentDescription implements Serializable {
         JsonFactory jsonFactory = new JsonFactory();
         JsonNode node;
         try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescription)) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             node = mapper.readTree(jsonParser);
         }
 
@@ -107,7 +105,7 @@ public class PersistentComponentDescription implements Serializable {
     private void setComponentValueInDescription(String componentKey, String value) {
         JsonFactory jsonFactory = new JsonFactory();
         try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString)) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
             JsonNode componentNode = node.get(COMPONENT);
             ((ObjectNode) componentNode).remove(componentKey);
@@ -131,7 +129,7 @@ public class PersistentComponentDescription implements Serializable {
         this.componentNodeIdentifier = nodeId;
         JsonFactory jsonFactory = new JsonFactory();
         try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString)) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
             ((ObjectNode) node).remove(PLATFORM);
             if (nodeId != null) {

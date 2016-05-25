@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -83,8 +83,9 @@ public interface DistributedNotificationService {
      * @param notificationId The notification identifier which represents the {@link Notification} to get.
      * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
      * @return the {@link Notification}s sorted by the matching notification identifier.
+     * @throws RemoteOperationException TODO
      */
-    Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform);
+    Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) throws RemoteOperationException;
 
     /**
      * Registers the specified {@link NotificationSubscriber} to receive {@link Notification}s represented by the given identifier.

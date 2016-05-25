@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -14,9 +14,6 @@ package de.rcenvironment.components.optimizer.generic.execution.internal;
  * @author Sascha Zur
  */
 public final class GenericOptimizerComponentConstants {
-
-    /** Constant. */
-    public static final String GENERIC_PYTHON = "genericPythonPath";
 
     private GenericOptimizerComponentConstants() {
 

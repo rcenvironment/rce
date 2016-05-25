@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Joiner Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para>The Joiner component joins multiple connections to a single one.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>It is forbidden to connect two outputs to one single input. The reason for that is the current approach how it is determined whether a workflow is finished. If a workflow component is finished it sends a dedicated data package to all of the inputs connected. As soon as such a data package is received the input is closed. A workflow component is considered as finish if all of its inputs are closed. If an input is connected to two outputs its workflow component might be considered as finished by mistake:</para>
+        <para><inlinegraphic fileref="../../images/image001.png"/></para>
+        <para>Here, workflow component C finishes as soon as A is finished. The Joiner component solves the
+            problem by joining multiple connections into a single one. It will send the dedicated data package closing the inputs of C only if it has received the data package from A and B:</para>
+        <para><inlinegraphic fileref="../../images/image003.png"/></para>
+        <para>Workflow component C will finish as soon as A and B are finished.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>In the Inputs/Outputs configuration tab choose the data type and the number of inputs to join. Note that the connections in RCE are typed. Thus, only connections of the same type can be joined.</para>
+        <para><inlinegraphic fileref="../../images/image004.png"/></para>
+    </sect1>
+</chapter>

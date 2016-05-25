@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -7,8 +7,6 @@
  */
 package de.rcenvironment.core.gui.communication.views;
 
-import java.awt.Toolkit;
-import java.awt.datatransfer.StringSelection;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -71,6 +69,7 @@ import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionN
 import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataPollingManager;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -83,6 +82,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Robert Mischke
  * @author Oliver Seebach
  * @author David Scholz
+ * @author Brigitte Boden
  */
 public class NetworkView extends ViewPart {
 
@@ -212,23 +212,24 @@ public class NetworkView extends ViewPart {
             @Override
             public void run() {
                 IStructuredSelection selection = (IStructuredSelection) viewer.getSelection();
-                NetworkGraphNodeWithContext selectionObject = (NetworkGraphNodeWithContext) selection.getFirstElement();
-                if (selectionObject.getContext() == Context.RAW_NODE_PROPERTY) {
-                    // single raw node selected
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(
-                        labelProvider.getText(selectionObject)), null);
-                } else if (selectionObject.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
-                    // all raw nodes folder selected
-                    String allRawNodeProperties = "RAW NODE PROPERTIES: \n\n";
-                    Map<NodeIdentifier, Map<String, String>> nodeProperties = model.getNodeProperties();
-                    for (NodeIdentifier identifier : nodeProperties.keySet()) {
-                        if (identifier.getAssociatedDisplayName() == selectionObject.getDisplayNameOfNode()) {
-                            for (String nodeProperty : nodeProperties.get(identifier).keySet()) {
-                                allRawNodeProperties += nodeProperty + ": " + nodeProperties.get(identifier).get(nodeProperty) + "\n";
+                if (selection.getFirstElement() instanceof NetworkGraphNodeWithContext) {
+                    NetworkGraphNodeWithContext selectionObject = (NetworkGraphNodeWithContext) selection.getFirstElement();
+                    if (selectionObject.getContext() == Context.RAW_NODE_PROPERTY) {
+                        // single raw node selected
+                        ClipboardHelper.setContent(labelProvider.getText(selectionObject));
+                    } else if (selectionObject.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
+                        // all raw nodes folder selected
+                        String allRawNodeProperties = "RAW NODE PROPERTIES: \n\n";
+                        Map<NodeIdentifier, Map<String, String>> nodeProperties = model.getNodeProperties();
+                        for (NodeIdentifier identifier : nodeProperties.keySet()) {
+                            if (identifier.getAssociatedDisplayName() == selectionObject.getDisplayNameOfNode()) {
+                                for (String nodeProperty : nodeProperties.get(identifier).keySet()) {
+                                    allRawNodeProperties += nodeProperty + ": " + nodeProperties.get(identifier).get(nodeProperty) + "\n";
+                                }
                             }
                         }
+                        ClipboardHelper.setContent(allRawNodeProperties);
                     }
-                    Toolkit.getDefaultToolkit().getSystemClipboard().setContents(new StringSelection(allRawNodeProperties), null);
                 }
             }
         };
@@ -527,7 +528,9 @@ public class NetworkView extends ViewPart {
                         // only update this specific label
                         Object node = networkConnectionsContributor.getTreeNodeForSetup(setup);
                         if (node != null) {
-                            updatePossibleActionsForSelection(node);
+                            if (node.equals(getSelectedTreeNode())) {
+                                updatePossibleActionsForSelection(node);
+                            }
                             viewer.update(node, null);
                         }
                     }

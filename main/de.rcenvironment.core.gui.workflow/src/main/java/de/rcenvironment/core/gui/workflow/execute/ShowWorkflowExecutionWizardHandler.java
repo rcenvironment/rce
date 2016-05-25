@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -71,6 +71,7 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileExcept
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
@@ -95,7 +96,7 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
 
     private static final Log LOGGER = LogFactory.getLog(ShowWorkflowExecutionWizardHandler.class);
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private WorkflowExecutionService workflowExecutionService;
 
@@ -412,9 +413,7 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
     }
 
     @SuppressWarnings("unchecked")
-    private IResource checkFileForDuplicateID(Map<String, Object> wfContent, String absoluteFilePath, IResource res) throws IOException,
-        JsonParseException,
-        JsonMappingException {
+    private IResource checkFileForDuplicateID(Map<String, Object> wfContent, String absoluteFilePath, IResource res) {
         try {
             File file = new File(res.getLocation().toString());
             if (file.exists()) {
@@ -425,8 +424,8 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
                     return res;
                 }
             }
-        } catch (JsonParseException e) {
-            LOGGER.debug("Skipped corrupted wf file: " + e.getMessage());
+        } catch (IOException e) {
+            LOGGER.warn(StringUtils.format("Skipped corrupted wf file: %s (%s)", e.getMessage(), res.getLocation().toString()));
         }
         return null;
     }
@@ -444,7 +443,7 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
          * @param activeShell the parent shell
          * @param workflowExecutionWizard the wizard this dialog is working on
          */
-        public WorkflowWizardDialog(Shell activeShell, Wizard workflowExecutionWizard) {
+        WorkflowWizardDialog(Shell activeShell, Wizard workflowExecutionWizard) {
             super(activeShell, workflowExecutionWizard);
         }
 

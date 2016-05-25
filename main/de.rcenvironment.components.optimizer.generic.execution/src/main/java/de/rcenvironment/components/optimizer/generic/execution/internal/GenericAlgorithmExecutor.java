@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2012 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,20 +10,13 @@ package de.rcenvironment.components.optimizer.generic.execution.internal;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.zip.ZipEntry;
 
 import org.apache.commons.compress.archivers.ArchiveException;
-import org.apache.commons.compress.archivers.ArchiveInputStream;
-import org.apache.commons.compress.archivers.ArchiveStreamFactory;
-import org.apache.commons.compress.archivers.zip.ZipArchiveEntry;
 import org.apache.commons.io.FileUtils;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
@@ -37,6 +30,7 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.utils.common.CompressingHelper;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 
@@ -51,11 +45,10 @@ public class GenericAlgorithmExecutor extends CommonPythonAlgorithmExecutor {
 
     private FileReferenceTD configurationFileReference;
 
-    public GenericAlgorithmExecutor(String algorithm, Map<String, MethodDescription> methodConfiguration,
-        Map<String, TypedDatum> outputValues,
-        Collection<String> input, ComponentContext ci,
-        Map<String, Double> upperMap, Map<String, Double> lowerMap) throws ComponentException {
-        super(algorithm, methodConfiguration, outputValues, input, ci, upperMap, lowerMap, "input.in");
+    public GenericAlgorithmExecutor(Map<String, MethodDescription> methodConfiguration,
+        Map<String, TypedDatum> outputValues, Collection<String> input, ComponentContext ci,
+        Map<String, Double> upperMap, Map<String, Double> lowerMap, Map<String, Double> stepValues) throws ComponentException {
+        super(methodConfiguration, outputValues, input, ci, upperMap, lowerMap, stepValues, "input.in");
     }
 
     @Override
@@ -67,7 +60,7 @@ public class GenericAlgorithmExecutor extends CommonPythonAlgorithmExecutor {
                     FileUtils.copyDirectoryToDirectory(sourceFolder, workingDir);
                 }
             }
-            unzip(GenericAlgorithmExecutor.class.getResourceAsStream("/resources/RCE_Optimizer_API.zip"),
+            CompressingHelper.unzip(GenericAlgorithmExecutor.class.getResourceAsStream("/resources/RCE_Optimizer_API.zip"),
                 new File(workingDir, "source/"));
         } catch (IOException | ArchiveException e) {
             throw new ComponentException("Failed to prepare generic algorithm", e);
@@ -83,38 +76,6 @@ public class GenericAlgorithmExecutor extends CommonPythonAlgorithmExecutor {
         File sourceFolder = new File(new File(configFolder, methodConfiguration.get(algorithm).getConfigValue("genericFolder")),
             OptimizerComponentConstants.GENERIC_SOURCE);
         return sourceFolder;
-    }
-
-    private void unzip(InputStream is, File destination) throws FileNotFoundException, IOException, ArchiveException {
-        try (ArchiveInputStream ais = new ArchiveStreamFactory().createArchiveInputStream("zip", is)) {
-            ZipEntry entry = null;
-            while ((entry = (ZipArchiveEntry) ais.getNextEntry()) != null) {
-                if (entry.getName().endsWith("/")) {
-                    File dir = new File(destination, entry.getName());
-                    if (!dir.exists()) {
-                        dir.mkdirs();
-                    }
-                    continue;
-                }
-
-                File outFile = new File(destination, entry.getName());
-                if (outFile.isDirectory()) {
-                    continue;
-                }
-                if (outFile.exists()) {
-                    continue;
-                }
-                FileOutputStream out = new FileOutputStream(outFile);
-                final int byteBuffer = 1024;
-                byte[] buffer = new byte[byteBuffer];
-                int length = 0;
-                while ((length = ais.read(buffer)) > 0) {
-                    out.write(buffer, 0, length);
-                    out.flush();
-                }
-                out.close();
-            }
-        }
     }
 
     @Override
@@ -137,18 +98,23 @@ public class GenericAlgorithmExecutor extends CommonPythonAlgorithmExecutor {
     public void run() {
         try {
             File pythonPathFile = new File(getSourceFolder(), "python_path");
-            List<String> lines = FileUtils.readLines(pythonPathFile);
-            if (lines.size() > 0 && lines.get(0) != null && !lines.get(0).isEmpty()) {
-                String pythonPath = lines.get(0);
-                if (pythonPath == null || pythonPath.isEmpty() || pythonPath.contains("$")) {
-                    LOGGER.warn("Failed to find path to Python; trying 'python'");
-                    pythonPath = "python";
+            if (pythonPathFile.exists()) {
+                List<String> lines = FileUtils.readLines(pythonPathFile);
+                if (lines.size() > 0 && lines.get(0) != null && !lines.get(0).isEmpty()) {
+                    String pythonPath = lines.get(0);
+                    if (pythonPath == null || pythonPath.isEmpty() || pythonPath.contains("$")) {
+                        LOGGER.warn("Failed to find path to Python; trying 'python'");
+                        pythonPath = "python";
+                    }
+                    startProgram(OptimizerComponentConstants.GENERIC_SOURCE
+                        + File.separator + OptimizerComponentConstants.GENERIC_MAIN_FILE,
+                        pythonPath);
+                } else {
+                    throw new ComponentException("Could not read python path from file: " + pythonPathFile.getAbsolutePath());
                 }
-                startProgram(OptimizerComponentConstants.GENERIC_SOURCE
-                    + File.separator + OptimizerComponentConstants.GENERIC_MAIN_FILE,
-                    pythonPath);
             } else {
-                throw new ComponentException("Could not read python path from file: " + pythonPathFile.getAbsolutePath());
+                throw new ComponentException(
+                    "Could not read python path from file, it does not exist: " + pythonPathFile.getAbsolutePath());
             }
         } catch (ComponentException | IOException e) {
             startFailed.set(true);

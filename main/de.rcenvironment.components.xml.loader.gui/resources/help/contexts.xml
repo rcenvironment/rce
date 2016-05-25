@@ -1,6 +1,0 @@
-<contexts>
-	<context id="xmlloader" title="XML Loader Component Help">
-		<description>The XML Loader component loads an XML file from the “Project” folder or file system into the workflow.</description>
-     	<topic href="resources/help/html/usage.xhtml" label="XML Loader Component Usage"></topic>
-	</context>
-</contexts>

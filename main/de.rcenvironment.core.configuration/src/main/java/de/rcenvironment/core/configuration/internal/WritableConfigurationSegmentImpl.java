@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,15 +9,16 @@
 package de.rcenvironment.core.configuration.internal;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.JsonNodeFactory;
 import org.codehaus.jackson.node.ObjectNode;
@@ -25,11 +26,13 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.WritableConfigurationSegment;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Default {@link WritableConfigurationSegment} implementation.
  * 
  * @author Robert Mischke
+ * @author David Scholz
  */
 class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
 
@@ -41,12 +44,12 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     @SuppressWarnings("unused")
     private final Log log = LogFactory.getLog(getClass());
 
-    public WritableConfigurationSegmentImpl(JsonNode treeRoot) {
+    WritableConfigurationSegmentImpl(JsonNode treeRoot) {
         this.segmentRootNode = treeRoot;
         this.rootSegment = this;
     }
 
-    public WritableConfigurationSegmentImpl(JsonNode treeRoot, WritableConfigurationSegmentImpl rootSegment) {
+    WritableConfigurationSegmentImpl(JsonNode treeRoot, WritableConfigurationSegmentImpl rootSegment) {
         this.segmentRootNode = treeRoot;
         this.rootSegment = rootSegment;
     }
@@ -181,6 +184,29 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         }
         ((ObjectNode) segmentRootNode).put(key, newArrayNode);
     }
+    
+    @Override
+    public void setInteger(String key, Integer value) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        ((ObjectNode) segmentRootNode).put(key, value);
+    }
+    
+    @Override
+    public void setLong(String key, Long value) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        ((ObjectNode) segmentRootNode).put(key, value);
+    }
+    
+    @Override
+    public List<String> getStringArray(String relativePath) throws ConfigurationException {
+        validateNodeExistsAndIsAnObjectNode();
+        List<String> list = new ArrayList<String>();
+        for (JsonNode node : segmentRootNode.path(relativePath)) {
+            list.add(node.asText());
+        }
+        
+        return list;
+    }
 
     @Override
     public Map<String, ConfigurationSegment> listElements(String relativePath) {
@@ -203,7 +229,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
             if (segmentRootNode == null) {
                 return clazz.newInstance();
             }
-            return new ObjectMapper().treeToValue(segmentRootNode, clazz);
+            return JsonUtils.getDefaultObjectMapper().treeToValue(segmentRootNode, clazz);
         } catch (RuntimeException | InstantiationException | IllegalAccessException e) {
             throw new IOException("Error parsing configuration", e);
         }
@@ -278,4 +304,5 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
             return defaultValue;
         }
     }
+
 }

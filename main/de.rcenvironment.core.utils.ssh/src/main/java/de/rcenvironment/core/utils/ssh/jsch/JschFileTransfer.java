@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,11 +47,6 @@ public final class JschFileTransfer {
      * @throws IOException on SCP operation failure
      */
     public static void uploadFile(Session session, File localFile, String remotePath) throws IOException, JSchException {
-        // Remote path must start with "/"
-        if (!remotePath.startsWith(SLASH)) {
-            remotePath = SLASH + remotePath;
-        }
-
         ScpToMessage message = new ScpToMessage(session, localFile, remotePath);
         message.execute();
     }
@@ -127,10 +122,6 @@ public final class JschFileTransfer {
      * @throws IOException on SCP operation failure
      */
     public static void downloadFile(Session session, String remotePath, File localFile) throws IOException, JSchException {
-        if (!remotePath.startsWith(SLASH)) {
-            remotePath = SLASH + remotePath;
-        }
-        
         // "false" = not recursive
         ScpFromMessage message = new ScpFromMessage(session, remotePath, localFile, false);
         message.execute();
@@ -146,10 +137,6 @@ public final class JschFileTransfer {
      * @throws IOException on SCP operation failure
      */
     public static void downloadDirectory(Session session, String remotePath, File localDir) throws IOException, JSchException {
-        if (!remotePath.startsWith(SLASH)) {
-            remotePath = SLASH + remotePath;
-        }
-        
         // "true" = recursive
         ScpFromMessage message = new ScpFromMessage(session, remotePath, localDir, true);
         message.execute();

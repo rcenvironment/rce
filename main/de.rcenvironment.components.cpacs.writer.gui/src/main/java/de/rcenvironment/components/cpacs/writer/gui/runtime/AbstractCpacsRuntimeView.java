@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -40,6 +40,7 @@ import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -185,21 +186,25 @@ public abstract class AbstractCpacsRuntimeView extends ViewPart implements Compo
      * @return The object or null if unavailable
      */
     private String getFileReference() {
-        final Map<String, List<Notification>> all =
-            notificationService.getNotifications(componentInstanceDescriptor.getExecutionIdentifier()
+        Map<String, List<Notification>> all;
+        try {
+            all = notificationService.getNotifications(componentInstanceDescriptor.getExecutionIdentifier()
                 + CpacsWriterComponentConstants.RUNTIME_CPACS_UUIDS, componentInstanceDescriptor.getNodeId());
-        if (all.size() >= 1) {
-            final List<Notification> notifications = all.values().iterator().next(); // get list of
-            // notifications
-            // for first (and
-            // only) id in map
-            if (notifications.size() < 1) {
-                return null; // no notification in queue
+            if (all.size() >= 1) {
+                final List<Notification> notifications = all.values().iterator().next(); // get list of
+                // notifications
+                // for first (and
+                // only) id in map
+                if (notifications.size() < 1) {
+                    return null; // no notification in queue
+                }
+                final Serializable object = notifications.get(0).getBody();
+                if (object instanceof String) {
+                    return (String) object;
+                }
             }
-            final Serializable object = notifications.get(0).getBody();
-            if (object instanceof String) {
-                return (String) object;
-            }
+        } catch (RemoteOperationException e) {
+            log.error("Getting CPACS file reference failed.");
         }
 
         return null;

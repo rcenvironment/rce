@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,7 +28,7 @@ public enum EndpointType {
      * 
      * @param title the title
      */
-    private EndpointType(final String title) {
+    EndpointType(final String title) {
         this.title = title;
     }
 

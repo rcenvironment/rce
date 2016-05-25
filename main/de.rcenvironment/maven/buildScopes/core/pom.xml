@@ -16,6 +16,7 @@
 	<modules>
 		<module>${modules-root}/core.combined</module>
 		<module>${modules-root}/cpacs.nonComponent</module>
+		<module>${modules-root}/documentation</module>
 	</modules>
 
 </project>

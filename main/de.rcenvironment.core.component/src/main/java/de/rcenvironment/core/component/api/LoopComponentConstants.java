@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,21 +29,24 @@ public final class LoopComponentConstants {
 
     /** Constant. */
     public static final String CONFIG_KEY_IS_NESTED_LOOP = "isNestedLoop_5e0ed1cd";
+
+    /** Constant. */
+    public static final String CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE = "loopFaultTolerance_5e0ed1cd";
     
     /** Constant. */
-    public static final String CONFIG_KEY_LOOP_FAULT_TOLERANCE = "loopFaultTolerance_5e0ed1cd";
-    
+    public static final String CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV = "faultTolerance-NAV_5e0ed1cd";
+
     /** Constant. */
-    public static final String CONFIG_KEY_LOOP_RERUN_FAIL = "loopRerunAndFail_5e0ed1cd";
-    
+    public static final String CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV = "maxRerunBeforeFail-NAV_5e0ed1cd";
+
     /** Constant. */
-    public static final String CONFIG_KEY_LOOP_RERUN_DISCARD = "loopRerunAndDiscard_5e0ed1cd";
-    
+    public static final String CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV = "maxRerunBeforeDiscard-NAV_5e0ed1cd";
+
     /** Constant. */
-    public static final String CONFIG_KEY_FAIL_LOOP = "failLoop_5e0ed1cd";
-    
+    public static final String CONFIG_KEY_FAIL_LOOP_ONLY_NAV = "failLoopOnly-NAV_5e0ed1cd";
+
     /** Constant. */
-    public static final String CONFIG_KEY_FINALLY_FAIL = "finallyFail_5e0ed1cd";
+    public static final String CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV = "finallyFailIfDiscarded-NAV_5e0ed1cd";
 
     /** Constant. */
     public static final String INPUT_ID_OUTER_LOOP_DONE = "outerLoopDone";
@@ -59,13 +62,13 @@ public final class LoopComponentConstants {
 
     /** Constant. */
     public static final String META_KEY_LOOP_ENDPOINT_TYPE = "loopEndpointType_5e0ed1cd";
-    
+
     /**
      * Type of endpoints concerning their relation to inner, outer and self-loop.
      * 
      * @author Doreen Seider
      */
-    public static enum LoopEndpointType {
+    public enum LoopEndpointType {
         /**
          * Endpoint connected to outer loop.
          */
@@ -78,7 +81,7 @@ public final class LoopComponentConstants {
          * Endpoint connected to self-loop.
          */
         SelfLoopEndpoint;
-        
+
         /**
          * @param type {@link LoopEndpointType} as string
          * @return appropriate {@link LoopBehaviLoopEndpointTypeorInCaseOfFailure}; if given string cannot be parsed to
@@ -92,18 +95,18 @@ public final class LoopComponentConstants {
             }
         }
     }
-    
+
     /** Private Constructor. */
     private LoopComponentConstants() {
         // NOP
     }
-    
+
     /**
-     * How a loop behaves in case of failure (certain component failed).
+     * How a loop behaves in case of failure (certain component sent not-a-value or failed).
      * 
      * @author Doreen Seider
      */
-    public static enum LoopBehaviorInCaseOfFailure {
+    public enum LoopBehaviorInCaseOfFailure {
         /**
          * Let the workflow fail.
          */
@@ -113,14 +116,16 @@ public final class LoopComponentConstants {
          */
         Discard,
         /**
-         * Rerun the evaluation run and fails if maximum of reruns exceeded.
+         * Rerun the evaluation run and fails if maximum of reruns exceeded. Only applicable for "not-a-value" failure. // TODO add separate
+         * behavior for component failures and "not-a-value" failures into two enums
          */
         RerunAndFail,
         /**
-         * Rerun the evaluation run and discard the evaluation run and continue with next one if maximum of reruns exceeded.
+         * Rerun the evaluation run and discard the evaluation run and continue with next one if maximum of reruns exceeded. Only applicable
+         * for "not-a-value" failure. // TODO add separate behavior for component failures and "not-a-value" failures into two enums
          */
         RerunAndDiscard;
-        
+
         /**
          * @param behavior {@link LoopBehaviorInCaseOfFailure} as string
          * @return appropriate {@link LoopBehaviorInCaseOfFailure}; if given string cannot be parsed to {@link LoopBehaviorInCaseOfFailure}
@@ -134,7 +139,7 @@ public final class LoopComponentConstants {
             }
         }
     }
-    
+
     /**
      * Creates a meta data map with key META_KEY_LOOP_ENDPOINT_TYPE and given value.
      * 
@@ -146,5 +151,5 @@ public final class LoopComponentConstants {
         metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, endpointType.name());
         return metaData;
     }
-    
+
 }

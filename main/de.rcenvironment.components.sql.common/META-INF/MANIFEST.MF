@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE SQL Component Common Bundle
 Bundle-SymbolicName: de.rcenvironment.components.sql.common
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Export-Package: de.rcenvironment.components.sql.common
 Bundle-ClassPath: .
 Bundle-Vendor: DLR

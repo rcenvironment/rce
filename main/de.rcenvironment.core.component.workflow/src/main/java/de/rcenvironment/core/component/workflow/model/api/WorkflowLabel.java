@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,23 +29,29 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     /** Constant for the default fonz size. */
     public static final int DEFAULT_FONT_SIZE = 9;
     
+    /** Constant for the default width. */
+    public static final int DEFAULT_WIDTH = 121;
+
+    /** Constant for the default height. */
+    public static final int DEFAULT_HEIGHT = 61;
+
     /** Constant for label initial text. */
     public static final String INITIAL_TEXT = "New label";
 
     /** Constant for label alpha. */
-    public static final int STANDARD_ALPHA = 128;
+    public static final int DEFAULT_ALPHA = 128;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_BLUE = 0x22;
+    public static final int DEFAULT_COLOR_BLUE = 0x22;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_GREEN = 0x92;
+    public static final int DEFAULT_COLOR_GREEN = 0x92;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_RED = 0x39;
+    public static final int DEFAULT_COLOR_RED = 0x39;
 
     /** Constant for label color. */
-    public static final int STANDARD_COLOR_BLACK = 0;
+    public static final int DEFAULT_COLOR_BLACK = 0;
 
     /** Property that is fired when a label property changes. */
     public static final String PROPERTY_CHANGE = "de.rcenvironment.rce.component.workflow.WorkflowLabelProperty";
@@ -79,7 +85,7 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     
     private int height;
 
-    private int alpha = STANDARD_ALPHA;
+    private int alpha = DEFAULT_ALPHA;
 
     private String identifier;
 
@@ -96,11 +102,12 @@ public class WorkflowLabel extends PropertiesChangeSupport implements Serializab
     public WorkflowLabel(String text) {
         this.text = text;
         identifier = UUID.randomUUID().toString();
-        setColorBackground(new int[] { STANDARD_COLOR_RED, STANDARD_COLOR_GREEN, STANDARD_COLOR_BLUE });
-        setColorText(new int[] { STANDARD_COLOR_BLACK, STANDARD_COLOR_BLACK, STANDARD_COLOR_BLACK });
+        setColorBackground(new int[] { DEFAULT_COLOR_RED, DEFAULT_COLOR_GREEN, DEFAULT_COLOR_BLUE });
+        setColorText(new int[] { DEFAULT_COLOR_BLACK, DEFAULT_COLOR_BLACK, DEFAULT_COLOR_BLACK });
         setAlignmentType(AlignmentType.CENTER);
         setHasBorder(false);
         setTextSize(DEFAULT_FONT_SIZE);
+        setSize(DEFAULT_WIDTH, DEFAULT_HEIGHT);
     }
 
     public String getText() {

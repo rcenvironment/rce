@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -25,16 +25,14 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 public interface OptimizerAlgorithmExecutorFactoryRegistry {
 
     /**
-     * Adds the given {@link OptimizerAlgorithmExecutorFactory} to the list of all provider
-     * registered.
+     * Adds the given {@link OptimizerAlgorithmExecutorFactory} to the list of all provider registered.
      * 
      * @param factory new factory
      */
     void addOptimizerAlgorithmExecutorFactory(OptimizerAlgorithmExecutorFactory factory);
 
     /**
-     * Removes the given {@link OptimizerAlgorithmExecutorFactory} from the list of all factories
-     * registered.
+     * Removes the given {@link OptimizerAlgorithmExecutorFactory} from the list of all factories registered.
      * 
      * @param algFactory to remove
      */
@@ -44,16 +42,17 @@ public interface OptimizerAlgorithmExecutorFactoryRegistry {
      * Returns an instance of the given providerPacke, if available.
      * 
      * @param algorithmPackage the package to look for (e.g. dakota ...)
-     * @param algorithm the actual method used
      * @param methodConfiguration :
      * @param outputValues :
      * @param input :
      * @param compContext :
      * @param boundMaps : maps "lower" and "upper" for the upper and lower bounds start values
+     * @param stepValues for the algorithm
      * @return instance of the algorithm class
      * @throws ComponentException on unexpected errors when creating instance of {@link OptimizerAlgorithmExecutor}
      */
-    OptimizerAlgorithmExecutor createAlgorithmProviderInstance(String algorithmPackage, String algorithm,
+    OptimizerAlgorithmExecutor createAlgorithmProviderInstance(String algorithmPackage,
         Map<String, MethodDescription> methodConfiguration, Map<String, TypedDatum> outputValues,
-        Collection<String> input, ComponentContext compContext, Map<String, Map<String, Double>> boundMaps) throws ComponentException;
+        Collection<String> input, ComponentContext compContext, Map<String, Map<String, Double>> boundMaps, Map<String, Double> stepValues)
+        throws ComponentException;
 }

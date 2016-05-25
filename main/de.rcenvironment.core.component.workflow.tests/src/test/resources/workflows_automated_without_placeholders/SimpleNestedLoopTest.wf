@@ -108,13 +108,16 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "4.1",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsA" : "0.1",
       "epsR" : "0.1",
-      "iterationsToConsider" : "1"
+      "iterationsToConsider" : "1",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "eaa18b6d-7e03-4cd3-be75-d1b1cc4be8b4",
@@ -198,6 +201,14 @@
         "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "hasStartValue" : "true"
       }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "2aeed808-093d-4a2c-a220-801cb32cd0c4",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
     } ]
   }, {
     "identifier" : "7ca9bf88-5981-4ece-b2cf-2fccd2b6b0e8",
@@ -206,14 +217,17 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "4.1",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsA" : "0.1",
       "epsR" : "0.1",
       "iterationsToConsider" : "1",
-      "isNestedLoop_5e0ed1cd" : "true"
+      "isNestedLoop_5e0ed1cd" : "true",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "ec8a1c89-9435-4580-b35b-603ba2a0eaf6",
@@ -355,6 +369,14 @@
       "metadata" : {
         "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
       }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "9531338b-f1d2-4ccc-91e4-1c433f3b2468",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
     } ]
   }, {
     "identifier" : "d108fa99-0c0b-4606-8bf4-8791500d4b98",
@@ -363,8 +385,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.2",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "3.4"
     },
     "configuration" : {
       "endSample" : "0",
@@ -385,7 +407,7 @@
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
     }, {
       "identifier" : "eb1f8153-e282-4bb5-a826-94e06c580395",
@@ -416,7 +438,7 @@
       "group" : "innerLoop",
       "datatype" : "Boolean",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
     } ],
     "staticOutputs" : [ {
@@ -477,8 +499,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.2",
-      "name" : "Design of Experiments"
+      "name" : "Design of Experiments",
+      "version" : "3.4"
     },
     "configuration" : {
       "endSample" : "0",
@@ -620,11 +642,10 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "6.2",
-      "name" : "Optimizer"
+      "name" : "Optimizer",
+      "version" : "7.1"
     },
     "configuration" : {
-      "genericPythonPath" : "${genericPythonPath}",
       "preCalcFilePath" : "${preCalcFilePath}",
       "CustomDakotaPath" : "false",
       "optimizerPackageCode" : "dakota",
@@ -705,7 +726,7 @@
       "group" : null,
       "datatype" : "Boolean",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
       }
     } ],
     "dynamicOutputs" : [ {
@@ -748,11 +769,10 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "6.2",
-      "name" : "Optimizer"
+      "name" : "Optimizer",
+      "version" : "7.1"
     },
     "configuration" : {
-      "genericPythonPath" : "${genericPythonPath}",
       "preCalcFilePath" : "${preCalcFilePath}",
       "CustomDakotaPath" : "false",
       "optimizerPackageCode" : "dakota",
@@ -785,7 +805,7 @@
       "group" : null,
       "datatype" : "Boolean",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
+        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
       }
     }, {
       "identifier" : "61be4f11-d256-446e-a7e8-0195d30b6b7b",
@@ -855,8 +875,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "219127bb-a31a-4b53-9162-563ed3a8c9c9",
@@ -909,8 +929,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "configuration" : {
       "isNestedLoop_5e0ed1cd" : "true"

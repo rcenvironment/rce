@@ -20,8 +20,8 @@
 
     <property name="rce.component.class" type="String" value="de.rcenvironment.components.excel.execution.ExcelComponent"/>
 
-    <property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.excel.common/resources/excel_16.png"/>
-    <property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.excel.common/resources/excel_32.png"/>
+    <property name="rce.component.icon-16" type="String" value="excel_16.png"/>
+    <property name="rce.component.icon-32" type="String" value="excel_32.png"/>
     <property name="rce.component.version" type="String" value="3.1"/>
 
 </scr:component>

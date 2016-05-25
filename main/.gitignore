@@ -14,3 +14,4 @@ sys$command
 # TODO check: these may be obsolete as they are located in <profile>/storage now 
 derby.log
 /de.rcenvironment.core.scripting.tests/cachedir
+help/generated/

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -191,7 +191,8 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
                 + WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER + "\"\r"
                 + "}";
 
-    
+        //Set project name to null in case it was set to invalid name before, which caused a bug.
+        projectNameToSet = null;
         // the project name to be set is the selected one, execept the "new" button is selected
         if ((getWorkbenchSelection() instanceof TreeSelection || getWorkbenchSelection() instanceof StructuredSelection)
                 && getWorkbenchSelection() != null && !usage.equals(ProjectUsages.NEW)) {

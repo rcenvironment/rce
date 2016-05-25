@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -116,7 +116,7 @@ final class WorkflowPage extends WizardPage {
 
     private boolean tableViewActive = true;
 
-    public WorkflowPage(WorkflowDescription workflowDescription, NodeIdentifierConfigurationHelper exeHelper) {
+    WorkflowPage(WorkflowDescription workflowDescription, NodeIdentifierConfigurationHelper exeHelper) {
 
         super(Messages.workflowPageName);
 
@@ -510,7 +510,7 @@ final class WorkflowPage extends WizardPage {
          * @param style The style.
          */
 
-        public WorkflowComposite(final Composite parent, int style) {
+        WorkflowComposite(final Composite parent, int style) {
             super(parent, style);
             final int defaultHeight = 200;
             final ScrolledComposite sc = new ScrolledComposite(this, SWT.BORDER | SWT.V_SCROLL | SWT.H_SCROLL);
@@ -565,6 +565,7 @@ final class WorkflowPage extends WizardPage {
 
                 search.addSelectionListener(new SelectionAdapter() {
 
+                    @Override
                     public void widgetDefaultSelected(SelectionEvent e) {
                         if (e.detail == SWT.CANCEL) {
                             if (componentsTableViewer.getTable().isVisible()) {
@@ -850,7 +851,6 @@ final class WorkflowPage extends WizardPage {
         }
 
         private void buildTree() {
-
             componentsTreeViewer = new TreeViewer(grpComponentsTp, SWT.H_SCROLL
                 | SWT.V_SCROLL | SWT.BORDER);
             componentsTreeViewer.getTree().addControlListener(new ResizeListener());
@@ -859,13 +859,13 @@ final class WorkflowPage extends WizardPage {
             checkboxProviderTree = new CheckboxLabelProvider();
             targetNodeLabelProviderTree.setPage(WorkflowPage.this);
             componentsTreeViewer.getTree().addListener(SWT.Expand, new Listener() {
-
+                @Override
                 public void handleEvent(Event e) {
                     componentsTreeViewer.getTree().redraw();
                 }
             });
             componentsTreeViewer.getTree().addListener(SWT.Collapse, new Listener() {
-
+                @Override
                 public void handleEvent(Event e) {
                     componentsTreeViewer.getTree().redraw();
                 }
@@ -875,7 +875,6 @@ final class WorkflowPage extends WizardPage {
             checkboxProviderTree.setUpdater(treeUpdater);
             componentsTreeViewer.setContentProvider(new TreeContentProvider());
             componentsTreeViewer.setInput(workflowDescription);
-
             componentsTreeViewer.getTree().setHeaderVisible(true);
             final int visibleRows = 5;
             GridData dataOfTree = new GridData(SWT.FILL, SWT.FILL,
@@ -887,25 +886,20 @@ final class WorkflowPage extends WizardPage {
                 * componentsTreeViewer.getTree().getItemHeight();
             componentsTreeViewer.getTree().setLayoutData(dataOfTree);
             componentsTreeViewer.getTree().setVisible(false);
-
             final TreeViewerColumn columnViewerBox =
                 createTreeColumn(componentsTreeViewer, checkboxProviderTree, "", WIDTH_BOX_COLUMN);
             columnViewerBox.getColumn().setImage(uncheckedImg);
             columnViewerBox.getColumn().setText(ALL);
             columnViewerBox.getColumn().addSelectionListener(new SelectionAdapter() {
-
                 @Override
                 public void widgetSelected(SelectionEvent e) {
-
                     treeUpdater.saveIndexOfComboBeforeRefresh();
 
                     if (treeUpdater.isCheckBoxColumnEnabled()) {
-
                         if (columnViewerBox.getColumn().getImage().equals(uncheckedImg)) {
                             TableBehaviour.allCheckboxesClicked = true;
                             columnViewerBox.getColumn().setImage(checkedImg);
                             for (Button btn : checkboxProviderTree.getBtnList()) {
-
                                 if (btn.isEnabled()) {
 
                                     TreeNode node = (TreeNode) btn.getData(TableBehaviour.KEY_CHECK);
@@ -917,9 +911,7 @@ final class WorkflowPage extends WizardPage {
                             }
 
                         } else {
-
                             for (Button btn : checkboxProviderTree.getBtnList()) {
-
                                 if (btn.isEnabled()) {
                                     TreeNode node = (TreeNode) btn.getData(TableBehaviour.KEY_CHECK);
                                     if (node.isChildElement()) {
@@ -943,26 +935,22 @@ final class WorkflowPage extends WizardPage {
             componentsTreeViewer.getTree().setSortColumn(columnViewer.getColumn());
             componentsTreeViewer.getTree().setSortDirection(SWT.UP);
             columnViewer.getColumn().addSelectionListener(new SelectionAdapter() {
-
                 @Override
                 public void widgetSelected(SelectionEvent e) {
                     treeUpdater.saveIndexOfComboBeforeRefresh();
                     int direction = componentsTreeViewer.getTree().getSortDirection();
-
                     if (direction == SWT.UP) {
                         direction = SWT.DOWN;
                     } else {
                         direction = SWT.UP;
                     }
                     componentsTreeViewer.getTree().setSortDirection(direction);
-
                     refreshTree();
                     treeUpdater.setSavedComboIndex();
                 }
             });
 
             componentsTreeViewer.setSorter(new ViewerSorter() {
-
                 @Override
                 public int compare(Viewer viewer, Object node, Object otherNode) {
 
@@ -986,6 +974,7 @@ final class WorkflowPage extends WizardPage {
             // Disabled Selection, as selection overrides the color of the background and it has no use in this case.
             componentsTreeViewer.getTree().addListener(SWT.EraseItem, new Listener() {
 
+                @Override
                 public void handleEvent(Event event) {
                     // Selection: ( On linux it highlights the text white if disabled, included white background it's bad).
                     event.detail &= ~SWT.SELECTED;
@@ -1196,7 +1185,7 @@ final class WorkflowPage extends WizardPage {
 
         private void refreshTable() {
 
-            componentsTableViewer.getTable().setRedraw(false);
+            // componentsTableViewer.getTable().setRedraw(false);
             tableUpdater.saveIndexOfComboBeforeRefresh();
 
             tableUpdater.disposeWidgets();
@@ -1206,7 +1195,7 @@ final class WorkflowPage extends WizardPage {
             componentsTableViewer.getTable().pack();
             repackTable();
 
-            componentsTableViewer.getTable().setRedraw(true);
+            // componentsTableViewer.getTable().setRedraw(true);
 
         }
 
@@ -1225,8 +1214,8 @@ final class WorkflowPage extends WizardPage {
 
             while (entries.hasNext()) {
                 Entry<WorkflowNode, Boolean> entry = entries.next();
-                WorkflowNode key = (WorkflowNode) entry.getKey();
-                Boolean value = (Boolean) entry.getValue();
+                WorkflowNode key = entry.getKey();
+                Boolean value = entry.getValue();
                 editingSupport.getHasVersionErrorMap().put(key, false);
 
                 if (!value) {
@@ -1241,14 +1230,11 @@ final class WorkflowPage extends WizardPage {
         }
 
         public void refreshContent() {
-
-            nodeIdConfigHelper.refreshInstallations();
             refreshControllersTargetInstance();
-
+            nodeIdConfigHelper.refreshInstallations();
             if (tableViewActive) {
                 refreshTable();
             } else {
-
                 refreshTree();
 
             }
@@ -1260,6 +1246,7 @@ final class WorkflowPage extends WizardPage {
          */
         public final class ResizeListener extends ControlAdapter {
 
+            @Override
             public void controlResized(ControlEvent event) {
 
                 resizeTables();

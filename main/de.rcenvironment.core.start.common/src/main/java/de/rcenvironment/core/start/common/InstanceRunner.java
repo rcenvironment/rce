@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -39,6 +39,7 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * 
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author David Scholz (minor change: added check for shutdown request)
  */
 public abstract class InstanceRunner {
 
@@ -85,6 +86,9 @@ public abstract class InstanceRunner {
             log.debug("JVM argument passed: " + vmArg);
         }
 
+        if (Instance.isShutdownRequested()) {
+            return IApplication.EXIT_OK;
+        }
         if (!validateInstance()) {
             return IApplication.EXIT_OK;
         } else {

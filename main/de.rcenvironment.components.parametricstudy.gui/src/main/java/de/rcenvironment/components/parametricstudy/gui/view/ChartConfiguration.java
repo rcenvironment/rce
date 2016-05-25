@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -548,7 +548,7 @@ public final class ChartConfiguration extends AbstractConfiguration {
              * 
              * @param title the title
              */
-            private Type(final String title) {
+            Type(final String title) {
                 this.title = title;
             }
 

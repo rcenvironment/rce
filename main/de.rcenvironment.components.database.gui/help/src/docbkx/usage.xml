@@ -1,0 +1,185 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Database Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para> With the database component databases can be accessed. Database management is not the
+            focus of this component.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>The database component executes one or more SQL statements and can write the result of
+            each statement into one output if specified.</para>
+        <para>The statement can be composed using placeholders for inputs configured in the
+            component (see "Inputs/Outputs").</para>
+        <para>Currently supported statement types are SELECT, INSERT, UPDATE, DELETE. Management
+            tasks, like creating users and handling their privileges as well as altering the
+            database structure are not the purpose of the component.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <sect2>
+            <title>Defining a database connection</title>
+            <para>In the properties view of the database component there is a <emphasis
+                    role="italic">"Database"</emphasis> tab. Here you can define the database
+                connection this component works on. Note that currently drivers for MySQL and
+                PostgreSQL databases are supported. The credentials required to access the database
+                can be entered later on when you execute the workflow.</para>
+        </sect2>
+        <sect2>
+            <title>Use the credentials</title>
+            <para>When you execute a workflow that contains a database component you are asked for
+                the username and password. Note that you can store the password in an encrypted
+                storage if you check the "save" check box.</para>
+        </sect2>
+        <sect2>
+            <title>Using your own connectors</title>
+            <para>As default a MySQL JDBC connector in version 5.1.17 is used and already shipped
+                with your RCE installation. You can find it in the subfolder
+                ".../extras/database_connectors" in your RCE installation folder. If you want to use
+                your own connector simply replace the connector file. It will automatically be
+                loaded when you restart RCE. As mentioned above: Only drivers for MySQL and
+                PostgreSQL database are supported currently. If you require a different driver class
+                feel free to contact us.</para>
+        </sect2>
+        <sect2>
+            <title>Database statements</title>
+            <para>For each database component you can enter multiple statements. They are defined in
+                the "Statement" tab. Pressing the "&lt; + &gt;" tab will open a new statement tab.
+                Every tab must not contain more than one statement. For every statement you can
+                define whether its result should be written to an output. To dynamically compose
+                database statements by using placeholders for inputs you can make use of the "Input"
+                group. A placeholder is added at the current caret position which will be replaced
+                by the actual input value at runtime. Likewise the "Templates" group will insert
+                templates for the given statement types which you can edit to fit your
+                purpose.</para>
+        </sect2>
+        <sect2>
+            <title>Writing multiple times to the same output</title>
+            <para>It is possible to configure multiple statements to write their result sets to the
+                same output. The results are queued. Note that this can cause subsequent components
+                to run multiple times to consume the queued values. Moreover subsequent must allow
+                queuing of input values.</para>
+        </sect2>
+        <sect2>
+            <title>Output "success"</title>
+            <para>There is a static output of type boolean named <emphasis role="italic"
+                    >"success"</emphasis>. It is set to <emphasis role="italic">true</emphasis> if
+                the given statement and result set distribution was successful. It is useful when a
+                database statement does not yield a result set (like an INSERT statement, for
+                instance) but should trigger the start of a succeeding component. If there are
+                multiple statements defined in a component instance then the "success" output is
+                written when all statements have been processed.</para>
+        </sect2>
+        <sect2>
+            <title>Valid statement types</title>
+            <para>The database component is designed to query and update databases on a lightweight
+                basis. As already mentioned above typical database management statements like
+                creating, altering and dropping tables or working on views and user account is not
+                the aim of this component. Thus, the following four database statement types are
+                supported. That means, each statement must begin with one of the following
+                phrases:</para>
+            <para>
+                <itemizedlist>
+                    <listitem>
+                        <para>SELECT</para>
+                    </listitem>
+                    <listitem>
+                        <para>INSERT</para>
+                    </listitem>
+                    <listitem>
+                        <para>UPDATE</para>
+                    </listitem>
+                    <listitem>
+                        <para>DELETE</para>
+                    </listitem>
+                </itemizedlist>
+            </para>
+        </sect2>
+        <sect2>
+            <title>Handling Small Tables</title>
+            <para>Inputs of type "Small Table" can only be used in INSERT statements.</para>
+            <para>Example:</para>
+            <para>
+                <programlisting>INSERT INTO table_name (id, col1, col2, col3) VALUES ${in:mySmallTable}</programlisting>
+            </para>
+            <para>Outputs of type "Small Table" are filled by converting the result set from the
+                database to RCE's data types. Note that small tables cannot be encapsulated in small
+                tables.</para>
+        </sect2>
+        <sect2>
+            <title>Handling Result Sets</title>
+            <para>If a result set is empty but configured to be written to an output, this is
+                interpreted as an error.</para>
+            <para>If a result set has exactly one row and one column, it is tried to be mapped to
+                the respective RCE data type.</para>
+            <para>If a result set has more than one entry and the respective output channel is small
+                table a mapping is executed.</para>
+            <para>If the respective output channel is boolean, short text, integer or float but the
+                result set has more than one entry this is interpreted as a potential erroneous
+                configuration and causes the component to fail.</para>
+            <para>If values in the result set are mapped to Java's data type "Big Decimal" it cannot
+                be processed as there is currently no data type of RCE that can represent it.</para>
+            <para>If values in the result set are mapped to Java's data type Timestamp it cannot be
+                processed as there is currently no data type of RCE that can represent it. As a
+                workaround you can cast or transfer the timestamp to some textual representation
+                with SQL functionalities and work on with this.</para>
+            <para>If values in the result set are null it is mapped to RCE's data type "Empty" has
+                the textual representation <emphasis role="italic">"nil"</emphasis>.</para>
+        </sect2>
+        <sect2>
+            <title>Local Execution Only</title>
+            <para>Please note that the database component cannot be published and remotely used. To
+                use the database in your local workflow make sure you can access the database from
+                your machine and configure the database component accordingly.</para>
+        </sect2>
+    </sect1>
+    <sect1>
+        <title>Examples</title>
+        <para>The following examples refer to the "world" example which can be found at the mysql
+            website: <ulink url="https://dev.mysql.com/doc/index-other.html"
+                >https://dev.mysql.com/doc/index-other.html</ulink></para>
+        <para>The following list gives examples for the statement types without inputs configured in
+            the component:</para>
+        <para>
+            <itemizedlist>
+                <listitem>
+                        <programlisting>SELECT * FROM City;</programlisting>
+                </listitem>
+                <listitem>
+                        <programlisting>DELETE FROM City WHERE ID = 3076;</programlisting>
+                </listitem>
+                <listitem>
+                        <programlisting>UPDATE City SET Population = 1000000 WHERE ID = 3071;</programlisting>
+                </listitem>
+                <listitem>
+                        <programlisting>INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES (4080, 'Cochem', 'DEU', 'Rheinland-Pfalz', 5213);</programlisting>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>The following examples demonstrate the usage of inputs configured in the
+            component:</para>
+        <para> <itemizedlist>
+            <listitem>
+                    <programlisting>SELECT * FROM City WHERE ID = ${in:id};</programlisting>
+            </listitem>
+            <listitem>
+                    <programlisting>DELETE FROM City WHERE ID = ${in:id}; </programlisting>
+            </listitem>
+            <listitem>
+                    <programlisting>UPDATE City SET Population = ${in:population} WHERE ID = ${in:id};</programlisting>
+            </listitem>
+            <listitem>
+                    <programlisting>INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES(${in:id}, ${in:name}, ${in:code}, ${in:district}, ${in:population});</programlisting>
+            </listitem>
+        </itemizedlist></para>
+        <para>Considering inputs of type small table, the example above in the context of the world
+            database would look as follows, assumed the input is properly
+            defined:<programlisting>INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES ${in:smallTable};</programlisting></para>
+        <para>For further information you may want to refer to the MySQL documentation: <ulink
+                url="https://dev.mysql.com/doc/refman/5.7/en/sql-syntax.html"
+                >https://dev.mysql.com/doc/refman/5.7/en/sql-syntax.html</ulink></para>
+    </sect1>
+</chapter>

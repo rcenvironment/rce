@@ -1,6 +1,0 @@
-<contexts>
-	<context id="v2" title="Design of Experiments Component Help">
-		<description>The DOE component is used for sampling in a bounded region. </description>
-     	<topic href="resources/help/html/usage.html" label="Design of Experiments Component Usage"></topic>
-	</context>
-</contexts>

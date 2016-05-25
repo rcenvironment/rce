@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,8 +28,12 @@ public class ConvergerEndpointSection extends EndpointPropertySection {
         EndpointSelectionPane outputToConvergePane = new EndpointSelectionPane("Outputs (to converge)", EndpointType.OUTPUT,
             this, true, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, true, true);
 
+        EndpointSelectionPane outputAuxiliaryPane = new EndpointSelectionPane("Outputs (auxiliary)", EndpointType.OUTPUT,
+            this, true, ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, true, true);
+
         EndpointSelectionPane inputToConvergePane = new ConvergerEndpointSelectionPane("Inputs (to converge)",
-            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, this, outputToConvergePane, false);
+            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY,
+            this, outputToConvergePane, outputAuxiliaryPane);
 
         EndpointSelectionPane outputForwardedPane = new EndpointSelectionPane("Outputs (forwarded)", EndpointType.OUTPUT,
             this, true, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, true, true);
@@ -48,7 +52,8 @@ public class ConvergerEndpointSection extends EndpointPropertySection {
             this, true, null, true, true);
 
         setColumns(2);
-        setPanes(inputToConvergePane, outputToConvergePane, inputToForwardPane, outputForwardedPane, outputPaneOthers);
+        setPanes(inputToConvergePane, outputToConvergePane, inputToForwardPane, outputForwardedPane, outputAuxiliaryPane,
+            outputPaneOthers);
     }
     
 }

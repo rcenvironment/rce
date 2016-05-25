@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,7 +47,7 @@ public class SwitchDataInputSelectionPane extends EndpointSelectionPane {
      */
     private class SwitchEditDynamicEndpointCommand extends EditDynamicEndpointCommand {
 
-        public SwitchEditDynamicEndpointCommand(EndpointType direction, EndpointDescription oldDescription,
+        SwitchEditDynamicEndpointCommand(EndpointType direction, EndpointDescription oldDescription,
             EndpointDescription newDescription, Refreshable[] refreshable) {
             super(direction, oldDescription, newDescription, refreshable);
         }

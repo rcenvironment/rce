@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -269,7 +269,7 @@ import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
         /** Guard next() to be invoked illegally - necessary as hasNext() actually does what next() implies (moving one row forward). */
         private boolean illegalNextGuard = true;
 
-        public ResultSetTypedValueArrayIterator(final ResultSet resultSet) {
+        ResultSetTypedValueArrayIterator(final ResultSet resultSet) {
             this.resultSet = resultSet;
             metaData = new ResultSetMetaData(resultSet);
         }

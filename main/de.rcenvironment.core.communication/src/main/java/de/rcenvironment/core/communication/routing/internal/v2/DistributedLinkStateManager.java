@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -121,8 +121,9 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
         return result;
     }
 
+    // linkStateKnowledgeSnapshot is defined as volatile
     public Map<NodeIdentifier, LinkState> getCurrentKnowledge() {
-        return linkStateKnowledgeSnapshot; // volatile
+        return linkStateKnowledgeSnapshot; 
     }
 
     /**

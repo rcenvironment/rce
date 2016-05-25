@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -64,7 +64,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
         alwaysDeleteTempDirectoryButton.addSelectionListener(new DeleteTempDirectorySelectionListener(
             ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS));
         onSuccessDeleteTempDirectoryButton = new Button(scriptComposite, SWT.CHECK);
-        onSuccessDeleteTempDirectoryButton.setText("Keep working directory(ies) in case of failure.");
+        onSuccessDeleteTempDirectoryButton.setText("Keep working directory(ies) in case of failure");
         onSuccessDeleteTempDirectoryButton.addSelectionListener(new SelectionListener() {
 
             @Override
@@ -155,7 +155,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
 
         private final String key;
 
-        public DeleteTempDirectorySelectionListener(String key) {
+        DeleteTempDirectorySelectionListener(String key) {
             this.key = key;
         }
 

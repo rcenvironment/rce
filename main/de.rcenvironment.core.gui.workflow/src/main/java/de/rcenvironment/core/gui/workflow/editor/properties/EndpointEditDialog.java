@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,6 +36,7 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
@@ -46,6 +47,7 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -98,6 +100,8 @@ public class EndpointEditDialog extends Dialog {
 
     protected EndpointDescriptionsManager epManager;
 
+    protected ConfigurationDescription configDesc;
+
     private final String id;
 
     private final boolean isStatic;
@@ -133,6 +137,7 @@ public class EndpointEditDialog extends Dialog {
         } else {
             epManager = configuration.getOutputDescriptionsManager();
         }
+        configDesc = configuration.getConfigurationDescription();
         this.title = StringUtils.format(Messages.title, actionType, direction);
         this.metaData = metaData;
         this.metadataValues = metadataValues;
@@ -585,7 +590,9 @@ public class EndpointEditDialog extends Dialog {
             String dataType = metaData.getDataType(key);
             String validation = metaData.getValidation(key);
             boolean visible = metaData.isDefinedForDataType(key, guiNameToDataType.get(comboDataType.getText()));
-            boolean enabled = checkActivationFilter(metaData.getGuiActivationFilter(key), metadataValues) && visible;
+            visible &= EndpointHelper.checkMetadataFilter(metaData.getGuiVisibilityFilter(key), metadataValues, configDesc);
+            boolean enabled =
+                EndpointHelper.checkMetadataFilter(metaData.getGuiActivationFilter(key), metadataValues, configDesc) && visible;
             if (!dataType.equals(EndpointMetaDataConstants.TYPE_BOOL)
                 && (metaData.getPossibleValues(key) == null || metaData.getPossibleValues(key).contains("*"))) {
                 if (((Text) widget).getText().equals("") && (visible && enabled)
@@ -633,26 +640,16 @@ public class EndpointEditDialog extends Dialog {
                 ((Button) widget).setEnabled(enabled);
             }
             if (!enabled) {
-                metadataValues.put(widgetToKeyMap.get(widget), MINUS);
+                if (widget instanceof Button) {
+                    metadataValues.put(widgetToKeyMap.get(widget), metaData.getDefaultValue(widgetToKeyMap.get(widget)));
+                } else {
+                    metadataValues.put(widgetToKeyMap.get(widget), MINUS);
+                }
             } else if (widget instanceof Text) {
                 metadataValues.put(widgetToKeyMap.get(widget), ((Text) widget).getText());
             }
         }
         return isValid;
-    }
-
-    static boolean checkActivationFilter(Map<String, List<String>> filter, Map<String, String> metaDataValues) {
-        if (filter != null && !filter.isEmpty()) {
-            for (String filterKey : filter.keySet()) {
-                for (String filterValues : filter.get(filterKey)) {
-                    if (metaDataValues.get(filterKey) != null && metaDataValues.get(filterKey).equals(filterValues)) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-        return true;
     }
 
     protected boolean checkValidation(double value, String validation) {

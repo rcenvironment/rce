@@ -13,8 +13,10 @@
 
 	<property name="rce.component.name" type="String" value="Encrypter"/>
 	<property name="rce.component.group" type="String" value="_Examples"/>
-	<property name="rce.component.icon-16" type="String" value="/resources/encrypter16.png"/>
-  	<property name="rce.component.icon-32" type="String" value="/resources/encrypter32.png"/>
+	
+	<property name="rce.component.icon.bundlename"  type="String" value="de.rcenvironment.components.examples.encrypter.common" />
+	<property name="rce.component.icon-16" type="String" value="encrypter16.png"/>
+  	<property name="rce.component.icon-32" type="String" value="encrypter32.png"/>
   	
   	<property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
 	<property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>

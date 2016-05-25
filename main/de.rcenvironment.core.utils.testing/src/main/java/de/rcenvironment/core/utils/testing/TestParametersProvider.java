@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,6 +24,14 @@ public interface TestParametersProvider {
      * @return the unmodified parameter String value
      */
     String getNonEmptyString(String key);
+    
+    /**
+     * Returns a parameter string, or null, if the parameter is undefined.
+     * 
+     * @param key the parameter key
+     * @return the unmodified parameter String value
+     */
+    String getOptionalString(String key);
 
     /**
      * Returns a parameter string, converted to a {@link File}. If it is undefined or empty, an {@link AssertionError} is thrown.

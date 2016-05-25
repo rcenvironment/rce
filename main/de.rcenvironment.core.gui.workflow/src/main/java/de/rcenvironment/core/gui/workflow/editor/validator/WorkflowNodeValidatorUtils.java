@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,7 +27,8 @@ import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidatio
  */
 public final class WorkflowNodeValidatorUtils {
 
-    private static WorkflowNodeValidatorsRegistry registry = WorkflowNodeValidatorsRegistry.Factory.getInstance();
+    // to make this code testable this static variable is initialized lazily
+    private static WorkflowNodeValidatorsRegistry registry;
 
     private static Map<String, List<WorkflowNodeValidationMessage>> messagesMap =
         new HashMap<String, List<WorkflowNodeValidationMessage>>();
@@ -76,7 +77,7 @@ public final class WorkflowNodeValidatorUtils {
     public static boolean hasWarnings() {
         return workflowWarnings > 0;
     }
-    
+
     /**
      * 
      * Calling the {@link AbstractWorkflowNodeValidator#validateOnStart()} and retrieve all {@link WorkflowNodeValidationMessage}s. Provides
@@ -114,14 +115,27 @@ public final class WorkflowNodeValidatorUtils {
         messagesMap.clear();
         for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
             if (node.isEnabled()) {
+
+                // to make this code testable this static variable is initialized lazily
+                if (registry == null) {
+                    registry = WorkflowNodeValidatorsRegistry.Factory.getInstance();
+                }
+
                 List<WorkflowNodeValidator> validatorsForWorkflowNode = registry.getValidatorsForWorkflowNode(node, true);
                 for (WorkflowNodeValidator workflowNodeValidator : validatorsForWorkflowNode) {
                     Collection<WorkflowNodeValidationMessage> validationMessages = workflowNodeValidator.getMessages();
-                    messagesMap.put(node.getName(), new LinkedList<WorkflowNodeValidationMessage>(validationMessages));
+
+                    String nodeName = node.getName();
+                    if (messagesMap.containsKey(nodeName)) {
+                        messagesMap.get(nodeName).addAll(validationMessages);
+                    } else {
+                        messagesMap.put(nodeName, new LinkedList<WorkflowNodeValidationMessage>(validationMessages));
+                    }
                 }
             }
         }
     }
+
     /**
      * Retrieve the component names, which have a {@link WorkflowNodeValidationMessage} for the specified type. Ignoring disabled
      * components.
@@ -145,5 +159,11 @@ public final class WorkflowNodeValidatorUtils {
         return componentNames;
     }
 
+    /**
+     * To make this code testable this static variable can be set independently.
+     */
+    static void setRegistry(WorkflowNodeValidatorsRegistry pRegistry) {
+        registry = pRegistry;
+    }
 
 }

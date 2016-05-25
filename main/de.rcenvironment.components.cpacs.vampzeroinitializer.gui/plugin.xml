@@ -55,7 +55,11 @@
     
     <!-- Dynamic Help -->
     <extension point="org.eclipse.help.contexts">
-        <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment" />
+        <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
     </extension>
+    
+    <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
    
 </plugin>

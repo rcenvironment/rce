@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,7 +34,7 @@ class GeneralSettings {
 
     private String tempDirectoryOverride;
 
-    public GeneralSettings(ConfigurationSegment configurationSegment) {
+    GeneralSettings(ConfigurationSegment configurationSegment) {
         instanceName = configurationSegment.getString("instanceName", ConfigurationService.DEFAULT_INSTANCE_NAME_VALUE);
         isWorkflowHost = configurationSegment.getBoolean("isWorkflowHost", false);
         isRelay = configurationSegment.getBoolean("isRelay", false);

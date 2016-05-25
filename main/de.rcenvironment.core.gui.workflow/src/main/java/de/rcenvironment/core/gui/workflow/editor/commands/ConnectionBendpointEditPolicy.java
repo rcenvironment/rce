@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2014 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,15 +15,20 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.draw2d.FigureCanvas;
 import org.eclipse.draw2d.geometry.Point;
+import org.eclipse.gef.ConnectionEditPart;
 import org.eclipse.gef.EditPart;
+import org.eclipse.gef.RequestConstants;
 import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.editparts.ScalableFreeformRootEditPart;
 import org.eclipse.gef.editpolicies.BendpointEditPolicy;
+import org.eclipse.gef.handles.BendpointCreationHandle;
+import org.eclipse.gef.handles.BendpointMoveHandle;
 import org.eclipse.gef.requests.BendpointRequest;
 
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.gui.workflow.parts.ConnectionWrapper;
+import de.rcenvironment.core.gui.workflow.parts.CustomConnectionBendpointTracker;
 
 /**
  * Policy to allow for adding bendpoints in connections.
@@ -34,6 +39,31 @@ import de.rcenvironment.core.gui.workflow.parts.ConnectionWrapper;
 public class ConnectionBendpointEditPolicy extends BendpointEditPolicy {
 
     private static final Log LOGGER = LogFactory.getLog(ConnectionBendpointEditPolicy.class);
+
+    @Override
+    protected List createSelectionHandles() {
+
+        List listOfHandles = super.createSelectionHandles();
+
+        // Custom bendpoint tracker required to enable snap to grid for bendpoints
+        for (Object selectionHandle : listOfHandles) {
+            if (selectionHandle instanceof BendpointCreationHandle){
+                BendpointCreationHandle bendpointCreationHandle = (BendpointCreationHandle) selectionHandle;
+                int index = bendpointCreationHandle.getIndex();
+                CustomConnectionBendpointTracker tracker = new CustomConnectionBendpointTracker((ConnectionEditPart) getHost(), index);
+                tracker.setType(RequestConstants.REQ_CREATE_BENDPOINT);
+                bendpointCreationHandle.setDragTracker(tracker);
+            } else if (selectionHandle instanceof BendpointMoveHandle){
+                BendpointMoveHandle bendpointMoveHandle = (BendpointMoveHandle) selectionHandle;
+                int index = bendpointMoveHandle.getIndex();
+                CustomConnectionBendpointTracker tracker = new CustomConnectionBendpointTracker((ConnectionEditPart) getHost(), index);
+                tracker.setType(RequestConstants.REQ_MOVE_BENDPOINT);
+                bendpointMoveHandle.setDragTracker(tracker);
+            }
+        }
+
+        return listOfHandles;
+    }
 
     @Override
     protected Command getCreateBendpointCommand(BendpointRequest request) {

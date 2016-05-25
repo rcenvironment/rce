@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -253,7 +253,7 @@ public class CommunicationServiceImplTest {
 
         private NetworkGraphImpl networkGraph;
 
-        public CustomNetworkRoutingServiceMock(NodeIdentifier ownNodeId) {
+        CustomNetworkRoutingServiceMock(NodeIdentifier ownNodeId) {
             networkGraph = new NetworkGraphImpl(ownNodeId);
         }
 

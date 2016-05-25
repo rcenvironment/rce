@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -51,6 +51,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -82,7 +83,7 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
 
     private Button loadTemplateButton;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private final Collection<ToolIntegrationContext> allIntegrationContexts;
 
@@ -217,6 +218,14 @@ public class ChooseConfigurationPage extends ToolIntegrationWizardPage {
             toolList.setBackground(Display.getDefault().getSystemColor(SWT.COLOR_WIDGET_LIGHT_SHADOW));
         }
         setControl(container);
+        IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
+
+        if (pageType.equals(ToolIntegrationConstants.NEW_WIZARD_COMMON)) {
+            helpSystem.setHelp(this.getControl(), "de.rcenvironment.core.gui.wizard.toolintegration.integration_chooseconfig");
+        } else {
+            helpSystem.setHelp(this.getControl(), "de.rcenvironment.core.gui.wizard.toolintegration.integration_editconfig");
+        }
+
     }
 
     private void createInactivePart(Composite container) {
@@ -623,7 +632,7 @@ class ToolIntegrationDoubleClickListener implements IDoubleClickListener {
 
     private ChooseConfigurationPage page;
 
-    public ToolIntegrationDoubleClickListener(ChooseConfigurationPage page) {
+    ToolIntegrationDoubleClickListener(ChooseConfigurationPage page) {
         this.page = page;
     }
 

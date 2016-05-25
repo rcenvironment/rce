@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Command
 Bundle-SymbolicName: de.rcenvironment.core.command
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: de.rcenvironment.core.command.api,
  de.rcenvironment.core.command.common,
@@ -12,6 +12,7 @@ Require-Bundle: org.eclipse.core.runtime;bundle-version="3.6.0",
  de.rcenvironment.platform.maven.ssh.server
 Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.textstream,

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,7 +34,6 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
@@ -72,7 +71,6 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     private Button selectFromProjectButton;
 
     private Button selectAtStartCheckbox;
-
 
     public InputProviderEndpointEditDialog(Shell parentShell, EndpointActionType actionType, ComponentInstanceProperties configuration,
         EndpointType direction, String id, boolean isStatic, Image icon, EndpointMetaDataDefinition metaData,
@@ -117,7 +115,7 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
     private void initializeWithValue(String value) {
         if (metadataValues.containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
             && metadataValues.get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                .equals(InputProviderComponentConstants.FileSourceType.atWorkflowStart.name())) {
+                .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
             selectAtStartCheckbox.setSelection(true);
             setSelectedAtStart();
         } else {
@@ -232,8 +230,6 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                 }
                 if (resource != null) {
                     textField.setText(resource.getFullPath().makeRelative().toPortableString());
-                    metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE,
-                        FileSourceType.fromProject.name());
                 }
             }
 
@@ -263,7 +259,6 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
                 }
                 if (path != null) {
                     textField.setText(path);
-                    metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE, FileSourceType.fromFileSystem.name());
                 }
             }
 
@@ -329,7 +324,8 @@ public class InputProviderEndpointEditDialog extends EndpointEditDialog implemen
             }
         }
         if (selectAtStart) {
-            metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE, FileSourceType.atWorkflowStart.name());
+            metadataValues.put(InputProviderComponentConstants.META_FILESOURCETYPE,
+                InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART);
         } else {
             metadataValues.remove(InputProviderComponentConstants.META_FILESOURCETYPE);
         }

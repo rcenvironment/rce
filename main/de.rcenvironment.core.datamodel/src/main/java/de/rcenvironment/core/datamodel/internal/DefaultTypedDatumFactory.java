@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,6 +17,7 @@ import de.rcenvironment.core.datamodel.types.api.EmptyTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
+import de.rcenvironment.core.datamodel.types.api.NotAValueTD.Cause;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
@@ -148,12 +149,22 @@ public class DefaultTypedDatumFactory implements TypedDatumFactory {
     
     @Override
     public NotAValueTD createNotAValue() {
-        return new NotAValueTDImpl();
+        return new NotAValueTDImpl(Cause.InvalidInputs);
     }
     
     @Override
     public NotAValueTD createNotAValue(String identifier) {
-        return new NotAValueTDImpl(identifier);
+        return new NotAValueTDImpl(identifier, Cause.InvalidInputs);
+    }
+    
+    @Override
+    public NotAValueTD createNotAValue(NotAValueTD.Cause cause) {
+        return new NotAValueTDImpl(cause);
+    }
+    
+    @Override
+    public NotAValueTD createNotAValue(String identifier, NotAValueTD.Cause cause) {
+        return new NotAValueTDImpl(identifier, cause);
     }
     
     @Override

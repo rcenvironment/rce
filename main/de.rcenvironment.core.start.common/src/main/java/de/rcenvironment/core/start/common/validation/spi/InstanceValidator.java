@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,12 +8,15 @@
  
 package de.rcenvironment.core.start.common.validation.spi;
 
+import java.util.List;
+
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 
 /**
  * Performs checks against the RCE instance upon startup.
  *
  * @author Christian Weiss
+ * @author Tobias Rodehutskors
  */
 public interface InstanceValidator {
     
@@ -24,4 +27,9 @@ public interface InstanceValidator {
      */
     InstanceValidationResult validate();
 
+    /**
+     * 
+     * @return A list of InstanceValidators which need to be executed prior to the execution of this InstanceValidator.
+     */
+    List<Class<? extends InstanceValidator>> getNecessaryPredecessors();
 }

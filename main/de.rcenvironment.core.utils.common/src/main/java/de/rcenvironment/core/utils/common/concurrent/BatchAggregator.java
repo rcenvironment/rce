@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,7 +36,7 @@ public class BatchAggregator<T> {
 
         private List<T> relevantBatch;
 
-        public MaxLatencyTimerCallback(List<T> relevantBatch) {
+        MaxLatencyTimerCallback(List<T> relevantBatch) {
             this.relevantBatch = relevantBatch;
         }
 
@@ -50,6 +50,8 @@ public class BatchAggregator<T> {
 
     /**
      * A Runnable to dispatch a completed batch to the configured {@link BatchProcessor}.
+     * 
+     * @param <T> the element type of the batch that should be dispatched;
      * 
      * @author Robert Mischke
      */

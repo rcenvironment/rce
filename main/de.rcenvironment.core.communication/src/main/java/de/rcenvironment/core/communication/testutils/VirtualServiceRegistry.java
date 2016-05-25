@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -60,7 +60,7 @@ public class VirtualServiceRegistry {
 
         private final Map<Class<?>, Method> bindMethods = new HashMap<Class<?>, Method>();
 
-        public VirtualService(Object implementation, boolean expectActivator, Class<?>[] serviceClasses) {
+        VirtualService(Object implementation, boolean expectActivator, Class<?>[] serviceClasses) {
             this.implementation = implementation;
             this.expectActivator = expectActivator;
             this.serviceClasses = serviceClasses;

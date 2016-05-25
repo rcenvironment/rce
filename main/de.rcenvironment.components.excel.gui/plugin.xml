@@ -111,12 +111,13 @@
     <!-- Dynamic Help -->
     <extension point="org.eclipse.help.contexts">
         <contexts 
-            file="resources/help/contexts.xml">
-         </contexts>
-        <contexts 
-            file="resources/help/contexts.xml" plugin="de.rcenvironment">
+            file="help/contexts.xml" plugin="de.rcenvironment">
          </contexts>
      </extension>
+     
+     <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>
    
     <!-- Component configuration validator -->
     <extension

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -183,11 +183,11 @@ public final class EditorsHelper {
 
         private IFile iFile;
 
-        public ObservedFile(IFile iFile) {
+        ObservedFile(IFile iFile) {
             this.iFile = iFile;
         }
 
-        public ObservedFile(File file) {
+        ObservedFile(File file) {
             this.file = file;
         }
 

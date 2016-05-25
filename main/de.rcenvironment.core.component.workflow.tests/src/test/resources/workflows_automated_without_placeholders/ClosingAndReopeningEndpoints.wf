@@ -1,6 +1,6 @@
 {
   "identifier" : "873af61b-2123-440b-8f3e-11bdf0da3cf9",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "TestClosingAndReopeningEndpoints_2014-06-30_15:21:06_01",
   "nodes" : [ {
     "identifier" : "77fd518e-3439-4b5a-a634-845b5e20acdd",
@@ -8,7 +8,7 @@
     "location" : "349:252",
     "component" : {
       "identifier" : "de.rcenvironment.joiner",
-      "version" : "3.2"
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "7d360776-3deb-4a60-af4c-d82f1d72563d",
@@ -26,14 +26,18 @@
       "name" : "Joined",
       "epIdentifier" : null,
       "datatype" : "Float"
-    } ]
+    } ],
+    "configuration" : {
+      "inputCount" : "2",
+      "datatype" : "Float"
+    }
   }, {
     "identifier" : "b69c6ca6-994d-489b-a6a2-68aa7f759727",
     "name" : "Script",
     "location" : "511:233",
     "component" : {
       "identifier" : "de.rcenvironment.script",
-      "version" : "3.3"
+      "version" : "3.4"
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
@@ -48,7 +52,8 @@
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
-        "usage" : "required"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ],
     "dynamicOutputs" : [ {
@@ -68,7 +73,7 @@
     "location" : "150:233",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.1"
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "c4d38e48-3fef-49f7-b67e-2358ea1242d6",
@@ -78,8 +83,7 @@
     } ],
     "staticOutputs" : [ {
       "identifier" : "700bcbbf-6f2e-4c67-907f-146932b6c90a",
-      "name" : "Design Variable",
-      "epIdentifier" : null,
+      "name" : "Design variable",
       "datatype" : "Float",
       "metadata" : {
         "FromValue" : "0",

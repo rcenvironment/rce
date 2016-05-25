@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -98,7 +98,7 @@ public class ConfigurationTextUI {
 
         private SshAccount account;
 
-        public SshAccountUIEntry(String displayText, SshAccount account) {
+        SshAccountUIEntry(String displayText, SshAccount account) {
             this.displayText = displayText;
             this.account = account;
         }
@@ -122,7 +122,7 @@ public class ConfigurationTextUI {
 
         private Action enterAction;
 
-        public CustomTextBox(String initialContent, int width, Action enterAction) {
+        CustomTextBox(String initialContent, int width, Action enterAction) {
             super(initialContent, width);
             this.enterAction = enterAction;
         }
@@ -148,7 +148,7 @@ public class ConfigurationTextUI {
 
         private Action enterAction;
 
-        public CustomPasswordBox(String initialContent, int width, Action enterAction) {
+        CustomPasswordBox(String initialContent, int width, Action enterAction) {
             super(initialContent, width);
             this.enterAction = enterAction;
         }
@@ -176,7 +176,7 @@ public class ConfigurationTextUI {
 
         private PasswordBox textBoxPassword;
 
-        public AddAccountWindow() {
+        AddAccountWindow() {
             super("Add a new Remote Access account");
 
             final Action okAction = new Action() {

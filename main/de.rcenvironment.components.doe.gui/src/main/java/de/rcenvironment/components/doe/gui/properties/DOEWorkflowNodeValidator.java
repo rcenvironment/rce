@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.workflow.editor.properties.LoopComponentWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Validator for DOE component.
@@ -98,7 +99,7 @@ public class DOEWorkflowNodeValidator extends LoopComponentWorkflowNodeValidator
             messages.add(startSampleErrorMessage);
         } else {
             if (getProperty(DOEConstants.KEY_TABLE) != null && !getProperty(DOEConstants.KEY_TABLE).isEmpty()) {
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
                 try {
                     Double[][] tableValues = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
                     if (tableValues != null && tableValues.length > 0

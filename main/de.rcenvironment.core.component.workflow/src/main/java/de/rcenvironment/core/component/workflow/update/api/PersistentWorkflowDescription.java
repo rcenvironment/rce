@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,9 +16,9 @@ import org.codehaus.jackson.JsonFactory;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonParser;
-import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Encapsulates information about a persistent workflow description (content of workflow files).
@@ -47,7 +47,7 @@ public class PersistentWorkflowDescription implements Serializable {
 
         // parse information for convenient access via getter
         try (JsonParser jsonParser = new JsonFactory().createJsonParser(workflowDescriptionString)) {
-            JsonNode node = new ObjectMapper().readTree(jsonParser);
+            JsonNode node = JsonUtils.getDefaultObjectMapper().readTree(jsonParser);
 
             if (node.get(WORKFLOW_VERSION) != null) {
                 workflowVersion = node.get(WORKFLOW_VERSION).getTextValue();

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -63,7 +63,7 @@ public class NotificationServiceImpl implements NotificationService {
         /**
          * @param batchAggregator the aggregator instance to use for this subscriber
          */
-        public LocalSubscriberMetaData(BatchAggregator<Notification> batchAggregator) {
+        LocalSubscriberMetaData(BatchAggregator<Notification> batchAggregator) {
             this.batchAggregator = batchAggregator;
             this.subscribedTopics = new HashSet<NotificationTopic>();
         }
@@ -116,7 +116,7 @@ public class NotificationServiceImpl implements NotificationService {
         /**
          * @param subscriber the subscriber to send received batches to
          */
-        public NotificationBatchSender(NotificationSubscriber subscriber) {
+        NotificationBatchSender(NotificationSubscriber subscriber) {
             this.subscriber = subscriber;
         }
 

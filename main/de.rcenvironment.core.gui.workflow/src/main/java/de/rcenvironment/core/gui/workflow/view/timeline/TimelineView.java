@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -65,6 +65,7 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -365,7 +366,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     private String getWorkflowRunTimelineAsJsonString(WorkflowRunTimline timeline) throws IOException {
         final String timeNodeName = "Time";
         final String typeNodeName = "Type";
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         rootNode.put("WorkflowName", timeline.getWorkflowRunName());
         rootNode.put("WorkflowStartTime", String.valueOf(timeline.getWorkflowRunInterval().getStartTime()));
@@ -440,7 +441,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         // read json file
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
             Map<String, Object> jsonStructureRoot = mapper.readValue(resource,
                 new HashMap<String, Object>().getClass());

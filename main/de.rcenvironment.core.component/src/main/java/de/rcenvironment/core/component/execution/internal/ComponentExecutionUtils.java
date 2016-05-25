@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,6 +10,7 @@ package de.rcenvironment.core.component.execution.internal;
 
 import org.apache.commons.logging.Log;
 
+import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -51,6 +52,22 @@ public final class ComponentExecutionUtils {
     protected static void logCallbackFailureAfterRetriesExceeded(Log log, String logMessage, Exception e) {
         log.error(logMessage + "; maximum number of failures (" + MAX_RETRIES
             + ") exceeded; last cause: " + e.toString());
+    }
+    
+    protected static String getStringWithInfoAboutComponentAndWorkflowUpperCase(ComponentExecutionContext compExeCtx) {
+        return StringUtils.format("Component '%s' (%s) of workflow '%s' (%s)",
+            compExeCtx.getInstanceName(),
+            compExeCtx.getExecutionIdentifier(),
+            compExeCtx.getWorkflowInstanceName(),
+            compExeCtx.getWorkflowExecutionIdentifier());
+    }
+    
+    protected static String getStringWithInfoAboutComponentAndWorkflowLowerCase(ComponentExecutionContext compExeCtx) {
+        return StringUtils.format("component '%s' (%s) of workflow '%s' (%s)",
+            compExeCtx.getInstanceName(),
+            compExeCtx.getExecutionIdentifier(),
+            compExeCtx.getWorkflowInstanceName(),
+            compExeCtx.getWorkflowExecutionIdentifier());
     }
 
 }

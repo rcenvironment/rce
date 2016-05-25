@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -60,7 +60,7 @@ public class ToolIntegrationWizard extends Wizard {
 
     protected static ToolIntegrationService integrationService;
 
-    private static final int MINIMUM_HEIGHT = 250;
+    private static final int MINIMUM_HEIGHT = 700;
 
     private static final int MINIMUM_WIDTH = 500;
 
@@ -270,6 +270,13 @@ public class ToolIntegrationWizard extends Wizard {
                                 TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(toolDocuTarget);
                             } catch (IOException e) {
                                 LOGGER.error("Could not copy icon from temporary tool directory.", e);
+                            }
+                        }
+                        if (configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH) == null
+                            || ((String) configurationMap.get(ToolIntegrationConstants.KEY_DOC_FILE_PATH)).isEmpty()) {
+                            File docsDir = new File(toolPath, ToolIntegrationConstants.DOCS_DIR_NAME);
+                            if (docsDir.exists()) {
+                                FileUtils.deleteQuietly(docsDir);
                             }
                         }
                         if (publish != null && publish) {
@@ -582,8 +589,7 @@ public class ToolIntegrationWizard extends Wizard {
     }
 
     /**
-     * Returns the current {@link ToolIntegrationContext} or, if not yet set, the common version of
-     * it.
+     * Returns the current {@link ToolIntegrationContext} or, if not yet set, the common version of it.
      * 
      * @return current {@link ToolIntegrationContext}
      */

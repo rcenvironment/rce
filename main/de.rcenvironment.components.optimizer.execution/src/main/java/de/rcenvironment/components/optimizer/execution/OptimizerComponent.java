@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -50,6 +50,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
@@ -95,7 +96,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private OptimizerAlgorithmExecutor optimizer;
 
-    private final ObjectMapper mapper = new ObjectMapper();
+    private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private Map<String, MethodDescription> methodConfigurations;
 
@@ -119,13 +120,15 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private Map<Integer, Map<String, TypedDatum>> dataForwarded = new HashMap<>();
 
+    private Map<String, Double> stepValues;
+
     private void prepareExternalProgram() throws ComponentException {
         Map<String, Map<String, Double>> boundMaps = new HashMap<String, Map<String, Double>>();
         boundMaps.put("lower", lowerBoundsStartValues);
         boundMaps.put("upper", upperBoundsStartValues);
         optimizer = optimizerAlgorithmExecutorFactoryRegistry.createAlgorithmProviderInstance(
             methodConfigurations.get(algorithm.split(COMMA)[0]).getOptimizerPackage(),
-            algorithm, methodConfigurations, outputValues, input, componentContext, boundMaps);
+            methodConfigurations, outputValues, input, componentContext, boundMaps, stepValues);
         programThreadInterrupted = false;
 
         SharedThreadPool.getInstance().execute(optimizer);
@@ -417,6 +420,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         boolean runInitial = true;
         for (String e : componentContext.getInputs()) {
             if (e.endsWith(OptimizerComponentConstants.STARTVALUE_SIGNATURE)
+                || e.endsWith(OptimizerComponentConstants.STEP_VALUE_SIGNATURE)
                 || e.endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
                 runInitial = false;
             }
@@ -561,32 +565,23 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         final String errorMessage = "Failed to start optimizer";
         outputValues = new HashMap<String, TypedDatum>();
         startValues = new HashMap<String, Double>();
+        stepValues = new HashMap<String, Double>();
         lowerBoundsStartValues = new HashMap<String, Double>();
         upperBoundsStartValues = new HashMap<String, Double>();
         for (String e : output) {
             String hasStartValue =
                 componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_HAS_STARTVALUE);
+            String hasStep =
+                componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_USE_STEP);
+            String hasUseUnifiedStep =
+                componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_USE_UNIFIED_STEP);
             String hasBoundValues =
                 componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_KEY_HAS_BOUNDS);
             String startValue = componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_STARTVALUE);
             if (startValue.equals("-")) {
                 startValue = "";
             }
-            if ((hasStartValue != null && Boolean.parseBoolean(hasStartValue) && !startValue.isEmpty())
-                || (hasStartValue == null && !startValue.isEmpty())) {
-                if (componentContext.getOutputDataType(e) == DataType.Vector) {
-                    for (int i = 0; i < Integer.parseInt(componentContext
-                        .getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
-                        startValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                            Double.parseDouble(componentContext
-                                .getOutputMetaDataValue(e, OptimizerComponentConstants.META_STARTVALUE)));
-                    }
-                } else {
-                    startValues.put(e, Double.parseDouble(startValue));
-                }
-            } else if (!Boolean.parseBoolean(hasStartValue)) {
-                outputValues.put(e, componentContext.readInput(e + OptimizerComponentConstants.STARTVALUE_SIGNATURE));
-            }
+            getStartAndStepValues(e, hasStartValue, hasStep, hasUseUnifiedStep, startValue);
             if (hasBoundValues != null && Boolean.parseBoolean(hasBoundValues)) {
                 if (componentContext.getOutputDataType(e) == DataType.Vector) {
                     for (int i = 0; i < Integer.parseInt(componentContext
@@ -681,6 +676,49 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         }
     }
 
+    private void getStartAndStepValues(String e, String hasStartValue, String hasStep, String hasUseUnifiedStep, String startValue) {
+        if ((hasStartValue != null && Boolean.parseBoolean(hasStartValue) && !startValue.isEmpty())
+            || (hasStartValue == null && !startValue.isEmpty())) {
+            if (componentContext.getOutputDataType(e) == DataType.Vector) {
+                for (int i = 0; i < Integer.parseInt(componentContext
+                    .getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                    startValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                        Double.parseDouble(componentContext
+                            .getOutputMetaDataValue(e, OptimizerComponentConstants.META_STARTVALUE)));
+                }
+            } else {
+                startValues.put(e, Double.parseDouble(startValue));
+            }
+        } else if (!Boolean.parseBoolean(hasStartValue)) {
+            outputValues.put(e, componentContext.readInput(e + OptimizerComponentConstants.STARTVALUE_SIGNATURE));
+        }
+        if (Boolean.parseBoolean(hasStep) && Boolean.parseBoolean(hasUseUnifiedStep)) {
+            if (componentContext.getOutputDataType(e) == DataType.Vector) {
+                for (int i = 0; i < Integer.parseInt(componentContext
+                    .getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                    stepValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                        Double.parseDouble(componentContext
+                            .getOutputMetaDataValue(e, OptimizerComponentConstants.META_STEP)));
+                }
+            } else {
+                stepValues.put(e, Double.parseDouble(componentContext
+                    .getOutputMetaDataValue(e, OptimizerComponentConstants.META_STEP)));
+            }
+        } else if (Boolean.parseBoolean(hasStep) && !Boolean.parseBoolean(hasUseUnifiedStep)) {
+            if (componentContext.getOutputDataType(e) == DataType.Vector) {
+                VectorTD stepVector = ((VectorTD) componentContext.readInput(e + OptimizerComponentConstants.STEP_VALUE_SIGNATURE));
+                for (int i = 0; i < Integer.parseInt(componentContext
+                    .getOutputMetaDataValue(e, OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                    stepValues.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                        stepVector.getFloatTDOfElement(i).getFloatValue());
+                }
+            } else {
+                stepValues.put(e,
+                    ((FloatTD) componentContext.readInput(e + OptimizerComponentConstants.STEP_VALUE_SIGNATURE)).getFloatValue());
+            }
+        }
+    }
+
     @Override
     protected void sendValuesNestedComponentSpecific() {
         if (optimizerStarted && optimizer != null && !optimizer.isStopped()) {
@@ -715,9 +753,10 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         programThreadInterrupted = false;
         outputValues.clear();
         runtimeViewValues.clear();
-        startValues = new HashMap<String, Double>();
-        lowerBoundsStartValues = new HashMap<String, Double>();
-        upperBoundsStartValues = new HashMap<String, Double>();
+        startValues = new HashMap<>();
+        lowerBoundsStartValues = new HashMap<>();
+        upperBoundsStartValues = new HashMap<>();
+        stepValues = new HashMap<>();
         iterationCount = 0;
         optimizerStarted = false;
     }

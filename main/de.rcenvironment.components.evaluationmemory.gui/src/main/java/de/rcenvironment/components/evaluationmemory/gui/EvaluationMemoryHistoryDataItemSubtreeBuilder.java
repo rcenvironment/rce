@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,15 +12,14 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentConstants;
 import de.rcenvironment.components.evaluationmemory.common.EvaluationMemoryComponentHistoryDataItem;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
@@ -35,19 +34,16 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * Implementation of {@link ComponentHistoryDataItemSubtreeBuilder} for Evaluation Memory component.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class EvaluationMemoryHistoryDataItemSubtreeBuilder implements ComponentHistoryDataItemSubtreeBuilder {
 
     private static final Image COMPONENT_ICON;
 
     static {
-        String iconPath = "platform:/plugin/de.rcenvironment.components.evaluationmemory.common/resources/evaluation_memory_16.png";
-        URL url = null;
-        try {
-            url = new URL(iconPath);
-        } catch (MalformedURLException e) {
-            LogFactory.getLog(EvaluationMemoryHistoryDataItemSubtreeBuilder.class).error("Component icon not found: " + iconPath);
-        }
+        String bundleName = "de.rcenvironment.components.evaluationmemory.common";
+        String iconName = "evaluation_memory_16.png";
+        URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();
         } else {

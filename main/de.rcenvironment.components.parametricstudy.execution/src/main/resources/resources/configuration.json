@@ -1,0 +1,28 @@
+{
+    "configuration": [
+        {
+            "key": "loopFaultTolerance_5e0ed1cd",
+            "defaultValue": "Fail"
+        },
+        {
+            "key": "faultTolerance-NAV_5e0ed1cd",
+            "defaultValue": "Fail"
+        },
+        {
+            "key": "maxRerunBeforeFail-NAV_5e0ed1cd",
+            "defaultValue": "1"
+        },
+        {
+            "key": "maxRerunBeforeDiscard-NAV_5e0ed1cd",
+            "defaultValue": "1"
+        },
+        {
+            "key": "failLoopOnly-NAV_5e0ed1cd",
+            "defaultValue": "false"
+        },
+        {
+            "key": "finallyFailIfDiscarded-NAV_5e0ed1cd",
+            "defaultValue": "false"
+        }
+    ]
+}

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -95,12 +95,12 @@ public class SshConfiguration {
         List<SshAccountImpl> valUsers = new ArrayList<SshAccountImpl>();
 
         if (host == null || host.isEmpty()) {
-            logger.info("SSH server host can not be empty");
+            logger.warn("SSH server host can not be empty");
         }
 
         // sshContactPoint valid
         if (port < SshConstants.MIN_PORT_NUMBER || port > SshConstants.MAX_PORT_NUMBER) {
-            logger.info("sshContactPoint must be between " + SshConstants.MIN_PORT_NUMBER + " and "
+            logger.warn("sshContactPoint must be between " + SshConstants.MIN_PORT_NUMBER + " and "
                 + SshConstants.MAX_PORT_NUMBER);
             isValid = false;
         }
@@ -113,7 +113,7 @@ public class SshConfiguration {
 
                 // distinct role names
                 if (valRoles.contains(role)) {
-                    logger.info("Role names must be distinct. found two roles with name: " + role.getRoleName());
+                    logger.warn("Role names must be distinct. found two roles with name: " + role.getRoleName());
                     isValid = false;
                 } else {
                     valRoles.add(role);
@@ -125,7 +125,7 @@ public class SshConfiguration {
             }
             List<String> defaultPrivileges = new ArrayList<String>();
             defaultPrivileges.add(SshConstants.DEFAULT_ROLE_PRIVILEGES);
-            logger.info("Warning: Configuration did not include roles. Creating default role with all privileges");
+            logger.warn("Warning: Configuration did not include roles. Creating default role with all privileges");
             roles.add(new SshAccountRole("", defaultPrivileges, new ArrayList<String>()));
         }
 
@@ -137,15 +137,18 @@ public class SshConfiguration {
 
                 // distinct user names (no empty string values)
                 if (valUsers.contains(user)) {
-                    logger.info("User names must be distinct. Found two users with name: " + user.getLoginName());
+                    logger.warn("User names must be distinct. Found two users with name: " + user.getLoginName());
                     isValid = false;
                 } else {
                     valUsers.add(user);
                 }
             }
         } else {
-            logger.info("Configuration did not include user definitions. At least one user must be defined.");
+            logger.warn("Configuration did not include user definitions. At least one user must be defined.");
             isValid = false;
+        }
+        if (!isValid) {
+            logger.error("Embedded SSH server will not be started due to an error in the configuration.");
         }
         return isValid;
     }

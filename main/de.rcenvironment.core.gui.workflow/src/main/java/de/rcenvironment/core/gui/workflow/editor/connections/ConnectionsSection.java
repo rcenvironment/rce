@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -88,9 +88,11 @@ public class ConnectionsSection extends AbstractPropertySection {
         }
 
         // initalize and register workflow description property change listener if not already done
-        if (workflowDescriptionPropertyListener == null){
+        if (workflowDescriptionPropertyListener == null) {
             workflowDescriptionPropertyListener = new WorkflowDescriptionPropertyListener();
-            workflowDescription.addPropertyChangeListener(workflowDescriptionPropertyListener);
+            if (workflowDescription != null) {
+                workflowDescription.addPropertyChangeListener(workflowDescriptionPropertyListener);
+            }
         }
     }
 
@@ -105,7 +107,7 @@ public class ConnectionsSection extends AbstractPropertySection {
             }
         }
     }
-    
+
     @Override
     public void aboutToBeShown() {
         connectionDialogComposite.markSectionAsInitialized();
@@ -119,11 +121,11 @@ public class ConnectionsSection extends AbstractPropertySection {
 
     @Override
     public void dispose() {
-        workflowDescription.removePropertyChangeListener(workflowDescriptionPropertyListener);
+        if (workflowDescription != null) {
+            workflowDescription.removePropertyChangeListener(workflowDescriptionPropertyListener);
+        }
         super.dispose();
     }
-
-
 
     @Override
     public void createControls(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {

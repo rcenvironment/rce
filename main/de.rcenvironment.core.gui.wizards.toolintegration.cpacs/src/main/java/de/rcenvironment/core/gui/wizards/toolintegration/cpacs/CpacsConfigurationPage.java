@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -38,6 +38,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.cpacs.CpacsToolIntegrationConstants;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Wizard page for cpacs specific tool integration configuration.
@@ -45,6 +46,8 @@ import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWiza
  * @author Jan Flink
  */
 public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
+
+    private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizards.toolintegration.cpacs.integration_cpacs";
 
     private static final String EMPTY_STRING = "";
 
@@ -122,7 +125,7 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
         if (configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE) != null
             && configurationMap.get(ToolIntegrationConstants.INTEGRATION_TYPE).equals(
                 CpacsToolIntegrationConstants.CPACS_TOOL_INTEGRATION_CONTEXT_TYPE)) {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 Map<String, List<Map<String, Object>>> inputs =
                     mapper.readValue(getClass().getResource("/resources/inputTemplate.json"),
@@ -213,6 +216,8 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
         new Label(alwaysRunGroup, SWT.NONE);
 
         setControl(container);
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
+            HELP_CONTEXT_ID);
         updatePageComplete();
         pageBuild = true;
     }
@@ -601,6 +606,12 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
 
     }
 
+    @Override
+    protected boolean isCurrentPage() {
+
+        return super.isCurrentPage();
+    }
+
     /**
      * Listener for the script text areas for saving the content to the correct key.
      * 
@@ -610,7 +621,7 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
 
         private final String key;
 
-        public TextAreaModifyListener(String key) {
+        TextAreaModifyListener(String key) {
             this.key = key;
         }
 
@@ -629,6 +640,6 @@ public class CpacsConfigurationPage extends ToolIntegrationWizardPage {
     public void performHelp() {
         super.performHelp();
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
-        helpSystem.displayHelp("de.rcenvironment.cpacs.gui.wizard.toolintegration.integration_cpacs");
+        helpSystem.displayHelp(HELP_CONTEXT_ID);
     }
 }

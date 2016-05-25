@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -84,7 +84,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
         private final Map<String, String> metaData;
 
-        public SimulatedEndpoint(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
+        SimulatedEndpoint(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
             this.name = name;
             this.endpointId = endpointId;
             this.dataType = dataType;
@@ -229,7 +229,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
         if (simulatedOutputs.get(outputName) == null) {
             throw new RuntimeException(StringUtils.format("Output \"%s\" is not defined.", outputName));
         }
-        if (value.getDataType() != simulatedOutputs.get(outputName).getDataType()
+        if (value.getDataType() != simulatedOutputs.get(outputName).getDataType() && !value.getDataType().equals(DataType.NotAValue)
             && !typedDatumService.getConverter().isConvertibleTo(value, simulatedOutputs.get(outputName).getDataType())) {
             throw new RuntimeException(StringUtils.format("DataType %s of given value not convertable to defined output DataType %s",
                 value.getDataType(), simulatedOutputs.get(outputName).getDataType()));

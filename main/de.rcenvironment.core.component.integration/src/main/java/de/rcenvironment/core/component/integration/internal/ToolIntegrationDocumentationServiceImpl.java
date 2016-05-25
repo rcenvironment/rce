@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,6 +34,7 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.utils.common.CompressingHelper;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
@@ -61,7 +62,7 @@ public class ToolIntegrationDocumentationServiceImpl implements ToolIntegrationD
 
     private Map<String, Map<String, Map<String, String>>> toolDocumentationCache;
 
-    private ObjectMapper mapper = new ObjectMapper();
+    private ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private ConfigurationService configService;
 

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.login</artifactId>
 	<name>RCE Core GUI Login Bundle</name>
-	<version>7.0.2.qualifier</version>
+	<version>7.1.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

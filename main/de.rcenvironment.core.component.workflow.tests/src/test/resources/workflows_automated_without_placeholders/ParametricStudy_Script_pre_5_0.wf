@@ -1,6 +1,6 @@
 {
   "identifier" : "697261b6-eaf5-44ab-af40-6c161a4f26f8",
-  "workflowVersion" : "3",
+  "workflowVersion" : "4",
   "name" : "ParametricStudy_Script_2013-08-21_12:45:40",
   "nodes" : [ {
     "identifier" : "fb19289d-7b59-4f5f-8bcd-049ba605f1c1",
@@ -8,7 +8,7 @@
     "location" : "186:129",
     "component" : {
       "identifier" : "de.rcenvironment.rce.components.parametricstudy.ParametricStudyComponent_Parametric Study",
-      "version" : "3.1"
+      "version" : "3.3"
     },
     "configuration" : {
       "FromValue" : "0.0",
@@ -23,8 +23,7 @@
     } ],
     "staticOutputs" : [ {
       "identifier" : "529959a7-9191-4619-ad03-58a541e54d08",
-      "name" : "Design Variable",
-      "epIdentifier" : null,
+      "name" : "Design variable",
       "datatype" : "Float",
       "metadata" : {
         "FromValue" : "0.0",
@@ -38,7 +37,7 @@
     "location" : "335:129",
     "component" : {
       "identifier" : "de.rcenvironment.components.script.execution.ScriptComponent_Script",
-      "version" : "3.3"
+      "version" : "3.4"
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
@@ -52,7 +51,8 @@
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
-        "usage" : "required"
+        "inputHandling_73b1056e" : "Single",
+        "inputExecutionConstraint_4aae3eea" : "Required"
       }
     } ],
     "dynamicOutputs" : [ {

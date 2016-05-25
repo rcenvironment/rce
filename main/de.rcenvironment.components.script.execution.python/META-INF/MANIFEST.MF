@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Python
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.python
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Export-Package: de.rcenvironment.components.script.execution.python
 Service-Component: OSGI-INF/*.xml
 Bundle-ClassPath: .
@@ -20,6 +20,7 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
+ de.rcenvironment.core.monitoring.system.api,
  de.rcenvironment.core.notification,
  de.rcenvironment.core.scripting.python,
  de.rcenvironment.core.utils.executor,

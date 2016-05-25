@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -126,6 +126,11 @@ public class XMLMapperServiceImpl implements XMLMapperService {
             final EMappingMode mappingMode = mapInfo.getMode();
             final String sourceXPath = mapInfo.getSourceXPath();
             final String targetXPath = mapInfo.getTargetXPath();
+
+            if (mappingMode == EMappingMode.DeleteOnly) {
+                xmlSupport.deleteElement(targetDoc, targetXPath);
+                continue;
+            }
 
             final NodeList sourceNodes = (NodeList) xpath.evaluate(sourceXPath, sourceDoc, XPathConstants.NODESET);
             if (sourceNodes.getLength() == 0) {
@@ -255,6 +260,8 @@ public class XMLMapperServiceImpl implements XMLMapperService {
                     if (mapAttr.getName().equals("mode")) {
                         if (mapAttr.getValue().equals("delete")) {
                             mapInfo.setMode(EMappingMode.Delete);
+                        } else if (mapAttr.getValue().equals("delete-only")) {
+                            mapInfo.setMode(EMappingMode.DeleteOnly);
                         } else if (mapAttr.getValue().equals("append")) {
                             mapInfo.setMode(EMappingMode.Append);
                         } else {
@@ -270,7 +277,7 @@ public class XMLMapperServiceImpl implements XMLMapperService {
                     if (mapInfo.getSourceXPath().length() == 0) {
                         throw new XMLException("Empty <map:source> element found in mapping file");
                     }
-                } else {
+                } else if (mapInfo.getMode() != EMappingMode.DeleteOnly) {
                     throw new XMLException("No <map:source> element found in mapping file");
                 }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,10 +19,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Christian Weiss
  * @author Robert Mischke
  * @author Doreen Seider
+ * @author David Scholz (minor change: added shutdown requested flag)
  */
 public class Instance {
 
     private static Boolean isHeadless;
+
+    private static Boolean shutdownRequested = false;
 
     private static CountDownLatch shutdownLatch = new CountDownLatch(1);
 
@@ -44,6 +47,18 @@ public class Instance {
     }
 
     /**
+     * 
+     * Returns whether the RCE instance should be shutdown. This is used to indicate shutdown requests before the {@link InstanceRunner} is
+     * created.
+     * 
+     * @return <code>true</code> if shutdown is requested, otherwise <code>false</code>
+     * @throws IllegalStateException if shutdown is requested flag not yet set
+     */
+    public static boolean isShutdownRequested() {
+        return shutdownRequested;
+    }
+
+    /**
      * Sets whether this RCE instance is started in headless mode.
      * 
      * @param isHeadlessOn <code>true</code> if started in headless mode, otherwise <code>false</code>
@@ -58,8 +73,8 @@ public class Instance {
     }
 
     /**
-     * Injects the {@link InstanceRunner} to use for startup. Trying to call this method twice
-     * throws an exception (to detect invalid setups).
+     * Injects the {@link InstanceRunner} to use for startup. Trying to call this method twice throws an exception (to detect invalid
+     * setups).
      * 
      * @param runner instance runner to inject
      * @throws IllegalStateException if this method is called twice (to detect invalid setups)
@@ -111,7 +126,11 @@ public class Instance {
      */
     public static void shutdown() {
         shutdownLatch.countDown();
-        getInstanceRunner().triggerShutdown();
+        if (instanceRunner == null) {
+            shutdownRequested = true;
+        } else {
+            getInstanceRunner().triggerShutdown();
+        }
     }
 
     /**

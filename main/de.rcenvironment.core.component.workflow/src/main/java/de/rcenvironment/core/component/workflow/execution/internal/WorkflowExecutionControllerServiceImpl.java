@@ -1,5 +1,5 @@
 /*
-s * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -158,7 +158,7 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
     }
 
     private void dispose(String executionId) {
-        synchronized (workflowExecutionInformations) {
+        synchronized (workflowServiceRegistrations) {
             if (workflowServiceRegistrations.containsKey(executionId)) {
                 workflowServiceRegistrations.get(executionId).unregister();
                 workflowServiceRegistrations.remove(executionId);
@@ -207,15 +207,29 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
     @AllowRemoteAccess
     public Collection<WorkflowExecutionInformation> getWorkflowExecutionInformations() throws ExecutionControllerException,
         RemoteOperationException {
+        Map<String, WorkflowExecutionInformation> wfExeInfoSnapshot = null;
         synchronized (workflowExecutionInformations) {
-            for (String executionId : workflowExecutionInformations.keySet()) {
-                ((WorkflowExecutionInformationImpl) workflowExecutionInformations.get(executionId))
-                    .setWorkflowState(getWorkflowState(executionId));
-                ((WorkflowExecutionInformationImpl) workflowExecutionInformations.get(executionId))
-                    .setWorkflowDataManagementId(getWorkflowDataManagementId(executionId));
-            }
-            return new HashSet<WorkflowExecutionInformation>(workflowExecutionInformations.values());
+            wfExeInfoSnapshot = new HashMap<>();
+            wfExeInfoSnapshot.putAll(workflowExecutionInformations);
         }
+        for (String executionId : wfExeInfoSnapshot.keySet()) {
+            WorkflowState state;
+            Long dmId;
+            try {
+                // TODO both of the calls delegate to the workflow execution controller service; should be optimized
+                state = getWorkflowState(executionId);
+                dmId = getWorkflowDataManagementId(executionId);
+            } catch (ExecutionControllerException e) {
+                log.debug(StringUtils.format("Removed workflow %s from temporary set of workflow execution infos: %s", executionId,
+                    e.getMessage()));
+                continue;
+            }
+            ((WorkflowExecutionInformationImpl) wfExeInfoSnapshot.get(executionId))
+                .setWorkflowState(state);
+            ((WorkflowExecutionInformationImpl) wfExeInfoSnapshot.get(executionId))
+                .setWorkflowDataManagementId(dmId);
+        }
+        return new HashSet<WorkflowExecutionInformation>(wfExeInfoSnapshot.values());
     }
 
     protected void bindWorkflowHostService(WorkflowHostService newService) {

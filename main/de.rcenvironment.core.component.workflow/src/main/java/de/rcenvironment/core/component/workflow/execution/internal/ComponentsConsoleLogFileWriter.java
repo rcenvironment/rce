@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -42,6 +42,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class ComponentsConsoleLogFileWriter {
     
+    private static final int WAIT_INTERVAL_FLUSHED_AND_DISPOSED = 60;
+
     private static final String VERSION = "1.0";
     
     private static final String UNDERSCORE = "_";
@@ -58,7 +60,7 @@ public class ComponentsConsoleLogFileWriter {
     private final Map<String, BatchingConsoleRowsForwarder> errorConsoleRowWriters
         = Collections.synchronizedMap(new HashMap<String, BatchingConsoleRowsForwarder>());
 
-    private AtomicReference<CountDownLatch> logFilesDisposedLatch = new AtomicReference<>();
+    private AtomicReference<CountDownLatch> logFilesFlushedAndDisposedLatch = new AtomicReference<>();
     
     protected ComponentsConsoleLogFileWriter(WorkflowExecutionStorageBridge wfDataManagementStorage) {
         this.wfDataManagementStorage = wfDataManagementStorage;
@@ -66,11 +68,11 @@ public class ComponentsConsoleLogFileWriter {
     
     protected void initializeWorkflowLogFile() throws IOException {
         errorWorkflowConsoleRowWriter.set(new BatchingConsoleRowsForwarder(new BactchedWorkflowErrorLogFileWriter("")));
-        logFilesDisposedLatch.set(new CountDownLatch(1));
+        logFilesFlushedAndDisposedLatch.set(new CountDownLatch(1));
     }
 
     protected void initializeComponentLogFile(String compExeId) throws IOException {
-        logFilesDisposedLatch.set(new CountDownLatch((int) logFilesDisposedLatch.get().getCount() + 2));
+        logFilesFlushedAndDisposedLatch.set(new CountDownLatch((int) logFilesFlushedAndDisposedLatch.get().getCount() + 2));
         completeConsoleRowWriters.put(compExeId, new BatchingConsoleRowsForwarder(new ComponentCompleteLogFileWriter(compExeId)));
         errorConsoleRowWriters.put(compExeId, new BatchingConsoleRowsForwarder(new ComponentErrorLogFileWriter(compExeId)));
     }
@@ -98,7 +100,7 @@ public class ComponentsConsoleLogFileWriter {
         errorWorkflowConsoleRowWriter.get().onConsoleRow(consoleRow);
     }
     
-    protected void disposeLogFiles() {
+    protected void flushAndDisposeLogFiles() {
         for (BatchingConsoleRowsForwarder writer : completeConsoleRowWriters.values()) {
             writer.onConsoleRow(null); // should be improved by dedicated ConsoleRow instance
         }
@@ -110,13 +112,13 @@ public class ComponentsConsoleLogFileWriter {
         try {
             boolean terminated;
             synchronized (this) {
-                terminated = logFilesDisposedLatch.get().await(10, TimeUnit.SECONDS);
+                terminated = logFilesFlushedAndDisposedLatch.get().await(WAIT_INTERVAL_FLUSHED_AND_DISPOSED, TimeUnit.SECONDS);
             }
             if (!terminated) {
-                LogFactory.getLog(getClass()).error("Time out exceeded while waiting for log files written");
+                LogFactory.getLog(getClass()).error("Time out exceeded while waiting for log files to be written");
             }
         } catch (InterruptedException e) {
-            LogFactory.getLog(getClass()).error("Failed to wait log files written", e);
+            LogFactory.getLog(getClass()).error("Failed to wait log files to be written", e);
         }
     }
     
@@ -264,6 +266,8 @@ public class ComponentsConsoleLogFileWriter {
         protected final ConsoleRowFormatter consoleRowFormatter = new ConsoleRowFormatter();
 
         protected File logFile;
+        
+        private volatile boolean logFileDisposed = false;
 
         private final TempFileService tempFileService;
         
@@ -278,6 +282,12 @@ public class ComponentsConsoleLogFileWriter {
         @Override
         public void processConsoleRows(ConsoleRow[] consoleRows) {
 
+            if (logFileDisposed) {
+                log.error(StringUtils.format("Log file '%s' already disposed; ignored %d incoming console rows", logFile.getName(),
+                    consoleRows.length));
+                return;
+            }
+            
             List<String> logFileEntries = new ArrayList<>();
             
             for (ConsoleRow consoleRow : consoleRows) {
@@ -344,7 +354,8 @@ public class ComponentsConsoleLogFileWriter {
             } catch (IOException e) {
                 log.error(FAILED_TO_DELETE_TEMPORARY_LOG_FILE + logFile.getAbsolutePath(), e);
             }
-            logFilesDisposedLatch.get().countDown();
+            logFileDisposed = true;
+            logFilesFlushedAndDisposedLatch.get().countDown();
         }
         
         protected abstract void storeLogFileInDataManagement(ConsoleRow triggerConsoleRow);

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -49,7 +49,10 @@ public final class SecurePreferencesFactory {
      */
     public static ISecurePreferences getSecurePreferencesStore() throws IOException {
         try {
-            return org.eclipse.equinox.security.storage.SecurePreferencesFactory.open(secureStorageFile.toURI().toURL(), null);
+            // The toURL() method is deprecated, because it does not automatically escape characters that are illegal in URLs. However, the
+            // Equinox documentation states that "Similarly to the rest of the Equinox, URLs passed as an argument must not be encoded,
+            // meaning that spaces should stay as spaces, not as "%x20"." Therefore, we are using this deprecated method here. - rode_to
+            return org.eclipse.equinox.security.storage.SecurePreferencesFactory.open(secureStorageFile.toURL(), null);
         } catch (MalformedURLException e) {
             LOGGER.error("Opening RCE's secure storage failed", e);
             throw new IOException(e);

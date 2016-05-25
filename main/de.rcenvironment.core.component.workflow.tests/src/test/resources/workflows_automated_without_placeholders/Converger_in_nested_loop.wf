@@ -2,23 +2,24 @@
   "identifier" : "493d807a-e203-48ec-bcab-de8f678d8bdf",
   "workflowVersion" : "4",
   "name" : "Converger_in_nested_loop_2013-09-03_15:40:54",
-  "platform" : "136db52cf2964047b85822ebead37d69",
   "nodes" : [ {
     "identifier" : "54fa2029-5a12-43b9-8ca2-54eb229b5554",
     "name" : "Inner Converger",
     "location" : "324:306",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "5",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsA" : "0.1",
       "epsR" : "1.0E-4",
       "isNestedLoop_5e0ed1cd" : "true",
-      "iterationsToConsider" : "1"
+      "iterationsToConsider" : "1",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "6b74bac8-6852-4389-a5e7-5ab5685fbe61",
@@ -120,22 +121,32 @@
       "metadata" : {
         "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
       }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "e22fdc75-1858-4293-b069-6cfccb3a6a77",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
     } ]
   }, {
     "identifier" : "c6a1dbd6-1ace-44f4-bf57-fe47b5afc036",
     "name" : "Outer Converger",
     "location" : "45:26",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "5",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsA" : "0.001",
       "epsR" : "0.001",
-      "iterationsToConsider" : "1"
+      "iterationsToConsider" : "1",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "f99fe5de-420a-422e-a9c3-d8e7b68cba3c",
@@ -214,13 +225,20 @@
       "metadata" : {
         "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
       }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "20f82e22-f650-48f5-9a46-80f654929a47",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
     } ]
   }, {
     "identifier" : "c9a11d14-25f5-4457-a370-8ca41ef35868",
     "name" : "Tool 1",
     "location" : "324:26",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -257,7 +275,6 @@
     "name" : "Tool 2",
     "location" : "452:306",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -294,7 +311,6 @@
     "name" : "Tool 3",
     "location" : "47:306",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",

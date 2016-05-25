@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -261,7 +261,7 @@ public class SystemMonitoringServiceImpl implements SystemMonitoringService, Rem
         Map<Long, String> processMap = new HashMap<>();
         try {
             List<Long> processList = Arrays.<Long> asList(ArrayUtils.toObject(Humidor.getInstance().getSigar().getProcList()));
-
+            
             for (Long pid : processList) {
                 synchronized (SIGAR) {
                     // this is necessary!
@@ -276,6 +276,8 @@ public class SystemMonitoringServiceImpl implements SystemMonitoringService, Rem
         } catch (SigarException e) {
             throw new OperatingSystemException(OperatingSystemException.ErrorType.FAILED_TO_GET_PROCESS_LIST);
         }
+        
+        
 
         return processMap;
     }
@@ -457,7 +459,8 @@ public class SystemMonitoringServiceImpl implements SystemMonitoringService, Rem
         try {
             return Humidor.getInstance().getSigar().getProcState(pid);
         } catch (SigarException e) {
-            throw new OperatingSystemException(OperatingSystemException.ErrorType.FAILED_TO_GET_PROCESS_STATE);
+            throw new OperatingSystemException(
+                OperatingSystemException.ErrorType.FAILED_TO_GET_PROCESS_STATE + " for process with pid: " + pid);
         }
     }
 

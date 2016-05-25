@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components DOE GUI
 Bundle-Vendor: DLR
 Bundle-SymbolicName: de.rcenvironment.components.doe.gui;singleton:=true
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.components.doe.common,
  de.rcenvironment.core.component.api,

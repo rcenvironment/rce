@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,7 +9,6 @@
 package de.rcenvironment.components.inputprovider.gui;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaDataConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -61,7 +60,7 @@ public class InputProviderEditDynamicEndpointCommand extends EditDynamicEndpoint
             .setConfigurationValue(first.getName() + PlaceholdersMetaDataConstants.DATA_TYPE, null);
         if (second.getMetaData().containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
             && second.getMetaData().get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                .equals(FileSourceType.atWorkflowStart.name())) {
+                .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
             InputProviderDynamicEndpointCommandUtils.setValueName(getWorkflowNode(), second.getDataType(), second.getName());
         }
 

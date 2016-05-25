@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -82,7 +82,7 @@ public class LinkStateRoutingProtocolManager {
 
         private LinkStateRoutingProtocolManager protocolManager;
 
-        public LSANetworkRequestHandler(LinkStateRoutingProtocolManager protocolManager) {
+        LSANetworkRequestHandler(LinkStateRoutingProtocolManager protocolManager) {
             this.protocolManager = protocolManager;
         }
 

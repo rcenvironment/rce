@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,12 +9,12 @@
 package de.rcenvironment.core.login;
 
 import java.security.cert.X509Certificate;
-import java.text.MessageFormat;
 
 import org.globus.gsi.OpenSSLKey;
 
 import de.rcenvironment.core.authentication.User.Type;
 import de.rcenvironment.core.login.internal.Messages;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -61,8 +61,8 @@ public class LoginInput {
      * @param password The password the private key is encrypted with.
      */
     public LoginInput(X509Certificate certificate, OpenSSLKey key, String password) {
-        Assertions.isDefined(certificate, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, Messages.certificate));
-        Assertions.isDefined(key, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, Messages.key));
+        Assertions.isDefined(certificate, StringUtils.format(ASSERTIONS_PARAMETER_NULL, Messages.certificate));
+        Assertions.isDefined(key, StringUtils.format(ASSERTIONS_PARAMETER_NULL, Messages.key));
 
         type = Type.certificate;
         this.certificate = certificate;
@@ -76,9 +76,9 @@ public class LoginInput {
      * @param password The password the private key is encrypted with.
      */
     public LoginInput(final String usernameLDAP, final String password) {
-        Assertions.isDefined(usernameLDAP, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, Messages.usernameLDAP));
-        Assertions.isDefined(password, MessageFormat.format(ASSERTIONS_PARAMETER_NULL, Messages.password));
-        Assertions.isTrue(usernameLDAP.length() > 0, MessageFormat.format(ASSERTIONS_STRING_EMPTY, Messages.usernameLDAP));
+        Assertions.isDefined(usernameLDAP, StringUtils.format(ASSERTIONS_PARAMETER_NULL, Messages.usernameLDAP));
+        Assertions.isDefined(password, StringUtils.format(ASSERTIONS_PARAMETER_NULL, Messages.password));
+        Assertions.isTrue(usernameLDAP.length() > 0, StringUtils.format(ASSERTIONS_STRING_EMPTY, Messages.usernameLDAP));
         
         type = Type.ldap;
         this.usernameLDAP = usernameLDAP;

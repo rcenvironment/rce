@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Output Writer Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The Output Writer stores outputs from other components on the local file system. </para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para> The Output Writer receives inputs from other workflow components and saves them in a
+            pre-configured folder. The inputs can either be files or directories, which are written
+            directly to the local file system, or inputs of simple data types (Boolean, Float,
+            Integer, Short Text), which are written into text files of a user-defined format. </para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>Output to save must be send to the Output Writer via inputs. If you add a new input of
+            type file or directory, you must define the desired target name and path (of the file or
+            directory). Both of them can be created using placeholders:</para>
+        <para><inlinegraphic fileref="../../images/image001.png"/></para>
+        <para><emphasis role="bold">Target file/directory:</emphasis> The name the file will be
+            given on the local file system. You can insert different placeholders by clicking the
+            “Insert” button. The provided placeholders are:<itemizedlist>
+                <listitem>
+                    <para>[Component name]: Name of the Output Writer component in the
+                        workflow.</para>
+                </listitem>
+                <listitem>
+                    <para>[Input name]: Name of the input you define at the top of this
+                        dialog.</para>
+                </listitem>
+                <listitem>
+                    <para>[Timestamp]: Date and time at file creation.</para>
+                </listitem>
+                <listitem>
+                    <para>[Timestamp at workflow start]: Date and time at workflow start.</para>
+                </listitem>
+                <listitem>
+                    <para>[Workflow name]: Name of the workflow.</para>
+                </listitem>
+                <listitem>
+                    <para>[Execution count]: Execution count of the Output Writer.</para>
+                </listitem>
+                <listitem>
+                    <para>[Original filename]: The name the file/directory had before it was sent to
+                        the Output Writer.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para>It is possible to combine placeholders within a single name.</para>
+        <para><emphasis role="bold">Target folder:</emphasis> The folder, where the file or
+            directory should be stored. It is relative to the [root] folder (see below). Currently,
+            only one sub folder below the [root] folder is supported. You can either select a
+            folder, which was already used for other inputs or you can “create” a new one just by
+            defining a new folder name within in the text box. Again, the folder name can contain
+            placeholders.</para>
+        <para><emphasis role="bold">Root folder:</emphasis> The files and directories received via
+            the inputs will be saved to the [root] folder. You can either select the [root] folder
+            at workflow start or you can define a “static” one within the component’s configuration
+            tab below the inputs table. This folder is used on every workflow execution. Note:
+            Defining a static folder might cause problems, if you execute the workflow on another
+            RCE node (e.g. the defined hard drive doesn’t exist on the other machine).</para>
+        <para> For inputs of simple data types, you only have to specify the type of the input in
+            the “add input” dialog. If you are using such inputs, you also have to specify targets
+            in the table below the “Inputs” table. A target receives the values of one or more
+            simple data inputs and writes them into a text file of user-specified format. Several
+            targets can be specified in one Output Writer. However, each input can only be written
+            into one target.<note>
+                <para>The Output Writer only writes output into a target file when values for ALL of
+                    the selected inputs have arrived. I.e. it is expected that for each iteration
+                    exactly one value for each of the inputs arrives. </para>
+            </note></para>
+        <para> In the “Add target” dialog you have to specify the following:</para>
+        <para><inlinegraphic fileref="../../images/image002.png"/></para>
+        <para><emphasis role="bold">Target file:</emphasis> The name the file will be given on the
+            local file system. You can insert different placeholders by clicking the “Insert”
+            button. The provided placeholders are:<itemizedlist>
+                <listitem>
+                    <para>[Component name]: Name of the Output Writer component in the
+                        workflow.</para>
+                </listitem>
+                <listitem>
+                    <para>[Timestamp at workflow start]: Date and time at workflow start.</para>
+                </listitem>
+                <listitem>
+                    <para>[Workflow name]: Name of the workflow.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para><emphasis role="bold">Target folder:</emphasis> The folder where the file should be
+            stored. It is relative to the [root] folder (see below). Currently, only one sub folder
+            below the [root] folder is supported. You can either select a folder, which was already
+            used for other inputs or you can “create” a new one just by defining a new folder name
+            within in the text box. Again, the folder name can contain placeholders.</para>
+        <para><emphasis role="bold">Inputs involved:</emphasis> Here you can select which inputs
+            should be written into the target file. Only inputs of simple data types are shown here.
+            Inputs that are already selected for another target are not selectable.</para>
+        <para><emphasis role="bold">File header:</emphasis> Here you can define the header of the
+            output file, which will be written once at the beginning of the target file (only if
+            “Append” is selected in the “file handling” dropdown). You can insert different
+            placeholders by clicking the “Insert” button. The provided placeholders are:<itemizedlist>
+                <listitem>
+                    <para>[Linebreak]: A linebreak.</para>
+                </listitem>
+                <listitem>
+                    <para>[Timestamp]: Date and time at file creation.</para>
+                </listitem>
+                <listitem>
+                    <para>[Execution count]: Execution count of the Output Writer.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para><emphasis role="bold">Value(s) format:</emphasis> Here you can define the format of
+            the input values for one iteration. You can insert different placeholders by clicking
+            the “Insert” button. The provided placeholders are:<itemizedlist>
+                <listitem>
+                    <para>[xy]: The received value for a selected input xy.</para>
+                </listitem>
+                <listitem>
+                    <para>[Linebreak]: A linebreak. (Linebreaks will not be inserted automatically
+                        between iterations).</para>
+                </listitem>
+                <listitem>
+                    <para>[Timestamp]: Date and time when the inputs were received .</para>
+                </listitem>
+                <listitem>
+                    <para>[Execution count]: Execution count of the Output Writer.</para>
+                </listitem>
+            </itemizedlist></para>
+        <para><emphasis role="bold">File handling:</emphasis> Here you can select one of the
+            following options:<itemizedlist>
+                <listitem>
+                    <para>Append: The standard option where the inputs of all iterations are written
+                        to the same file. </para>
+                </listitem>
+                <listitem>
+                    <para>Auto-Rename: For each iteration, a new file will be created for each
+                        iteration.</para>
+                </listitem>
+                <listitem>
+                    <para>Override: Like Auto-Rename, but the file from the previous iteration will
+                        be overwritten, so you have one file that only contains the inputs from the
+                        last iteration. </para>
+                </listitem>
+            </itemizedlist></para>
+    </sect1>
+</chapter>

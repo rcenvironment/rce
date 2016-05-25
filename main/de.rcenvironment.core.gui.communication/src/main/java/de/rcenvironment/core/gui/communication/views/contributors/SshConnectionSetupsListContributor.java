@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,6 +19,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.MessageBox;
 
+import de.rcenvironment.core.communication.sshconnection.SshConnectionContext;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListener;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListenerAdapter;
@@ -58,7 +59,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
         private final SshConnectionSetup sshConnectionSetup;
 
-        public SshConnectionSetupNode(String connectionId, SshConnectionSetup setup) {
+        SshConnectionSetupNode(String connectionId, SshConnectionSetup setup) {
             super();
             this.connectionId = connectionId;
             this.sshConnectionSetup = setup;
@@ -93,11 +94,11 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
 
                     @Override
                     public void run() {
-                        if (!sshConnectionSetup.getStorePassphrase()) {
+                        if (sshConnectionSetup.getUsePassphrase() && !sshConnectionSetup.getStorePassphrase()) {
                             EnterPassphraseDialog dialog = new EnterPassphraseDialog(treeViewer.getTree().getShell());
                             if (dialog.open() == Window.OK) {
-                                sshConnectionService.editAuthPhraseForSshConnection(connectionId, dialog.getPassphrase(),
-                                    dialog.getStorePassphrase(), false);
+                                sshConnectionService.setAuthPhraseForSshConnection(connectionId, dialog.getPassphrase(),
+                                    dialog.getStorePassphrase());
                                 sshConnectionService.connectSession(connectionId, dialog.getPassphrase());
                             }
                         } else {
@@ -124,7 +125,9 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             EditSshConnectionDialog dialog =
                 new EditSshConnectionDialog(treeViewer.getTree().getShell(), sshConnectionSetup.getDisplayName(),
                     sshConnectionSetup.getHost(), sshConnectionSetup.getPort(), sshConnectionSetup.getUsername(),
-                    sshConnectionSetup.getStorePassphrase(), sshConnectionSetup.getConnectOnStartUp());
+                    sshConnectionSetup.getKeyfileLocation(), sshConnectionSetup.getUsePassphrase(),
+                    sshConnectionSetup.getStorePassphrase(),
+                    sshConnectionSetup.getConnectOnStartUp());
             if (sshConnectionSetup.getStorePassphrase()) {
                 // Retrieve stored passphrase
                 String passphrase = sshConnectionService.retreiveSshConnectionPassword(sshConnectionSetup.getId());
@@ -142,15 +145,20 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 final int port = dialog.getPort();
                 final String username = dialog.getUsername();
                 final String passphrase = dialog.getPassphrase();
-                final boolean storePassphrase = dialog.getStorePassPhrase();
+                final boolean storePassphrase = dialog.shouldStorePassPhrase();
+                final String keyfileLocation = dialog.getKeyfileLocation();
+                final boolean usePassphrase = dialog.getUsePassphrase();
                 SharedThreadPool.getInstance().execute(new Runnable() {
 
                     @TaskDescription("Edit SSH Connection.")
                     @Override
                     public void run() {
-                        sshConnectionService.editSshConnection(id, connectionName, host, port,
-                            username);
-                        sshConnectionService.editAuthPhraseForSshConnection(id, passphrase, storePassphrase, connectImmediately);
+                        sshConnectionService.editSshConnection(new SshConnectionContext(id, connectionName, host, port, username,
+                            keyfileLocation, usePassphrase, connectImmediately));
+                        sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
+                        if (connectImmediately) {
+                            sshConnectionService.connectSession(id, passphrase);
+                        }
                     }
                 });
             }
@@ -248,15 +256,22 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             final int port = dialog.getPort();
             final String username = dialog.getUsername();
             final String passphrase = dialog.getPassphrase();
-            final boolean storePassphrase = dialog.getStorePassPhrase();
+            final boolean storePassphrase = dialog.shouldStorePassPhrase();
+            final String keyfileLocation = dialog.getKeyfileLocation();
+            final boolean usePassphrase = dialog.getUsePassphrase();
 
             SharedThreadPool.getInstance().execute(new Runnable() {
 
                 @TaskDescription("Create new SSH Connection.")
                 @Override
                 public void run() {
-                    sshConnectionService.addSshConnectionWithAuthPhrase(connectionName, host, port, username, passphrase, storePassphrase,
-                        connectImmediately);
+                    String id =
+                        sshConnectionService.addSshConnection(connectionName, host, port, username, keyfileLocation, usePassphrase,
+                            connectImmediately);
+                    sshConnectionService.setAuthPhraseForSshConnection(id, passphrase, storePassphrase);
+                    if (connectImmediately) {
+                        sshConnectionService.connectSession(id, passphrase);
+                    }
                 }
             });
         }

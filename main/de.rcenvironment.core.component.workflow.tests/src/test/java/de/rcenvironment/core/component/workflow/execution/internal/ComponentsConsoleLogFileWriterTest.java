@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -124,7 +124,7 @@ public class ComponentsConsoleLogFileWriterTest {
         assertTrue(logLines.get(1).contains(formatVersion));
         assertTrue(fileNameCapture3.getValue().equals(wfNameForFile + "-err.log"));
         
-        writer.disposeLogFiles();
+        writer.flushAndDisposeLogFiles();
         
         Thread.sleep(DELAY);
         

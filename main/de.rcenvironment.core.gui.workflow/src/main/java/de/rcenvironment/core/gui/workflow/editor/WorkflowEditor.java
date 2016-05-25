@@ -13,6 +13,7 @@ import java.beans.PropertyChangeListener;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -93,7 +94,6 @@ import org.eclipse.swt.events.MenuEvent;
 import org.eclipse.swt.events.MouseAdapter;
 import org.eclipse.swt.events.MouseEvent;
 import org.eclipse.swt.events.MouseListener;
-import org.eclipse.swt.events.MouseWheelListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
@@ -113,12 +113,15 @@ import org.eclipse.ui.contexts.IContextService;
 import org.eclipse.ui.ide.FileStoreEditorInput;
 import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.progress.IProgressService;
+import org.eclipse.ui.views.contentoutline.IContentOutlinePage;
 import org.eclipse.ui.views.properties.IPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.ITabbedPropertySheetPageContributor;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -126,6 +129,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.component.model.api.ComponentInstallationBuilder;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionService;
@@ -142,6 +146,7 @@ import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationEditWiza
 import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationRemoveHandler;
 import de.rcenvironment.core.gui.wizards.toolintegration.ShowIntegrationWizardHandler;
 import de.rcenvironment.core.gui.workflow.Activator;
+import de.rcenvironment.core.gui.workflow.EditorMouseWheelAndKeyListener;
 import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.WorkflowNodeLabelConnectionHelper;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeLabelConnectionCreateCommand;
@@ -152,6 +157,7 @@ import de.rcenvironment.core.gui.workflow.parts.ConnectionPart;
 import de.rcenvironment.core.gui.workflow.parts.EditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowPart;
+import de.rcenvironment.core.gui.workflow.view.Outline.OutlineView;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
@@ -166,6 +172,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Oliver Seebach
  * @author Robert Mischke
  * @author David Scholz
+ * @author Goekhan Guerkan
+ * @author Jan Flink
  */
 public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements ITabbedPropertySheetPageContributor,
     DistributedComponentKnowledgeListener {
@@ -196,11 +204,11 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
 
     private static final String MENU_LISTENER_MARKER = "MENU_LISTENER_MARKER";
 
-    private static final String TOOL_DEACTIVATE_LABEL = "Deactivate Tool";
+    private static final String TOOL_DEACTIVATE_LABEL = "Deactivate Tool...";
 
-    private static final String TOOL_EDIT_LABEL = "Edit Tool";
+    private static final String TOOL_EDIT_LABEL = "Edit Tool...";
 
-    private static final String TOOL_INTEGRATE_LABEL = "Integrate Tool";
+    private static final String TOOL_INTEGRATE_LABEL = "Integrate Tool...";
 
     private static final String TOOLINTEGRATION_ITEM = "toolIntegrationItem";
 
@@ -351,20 +359,9 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
 
         zoomManager = ((ScalableFreeformRootEditPart) getGraphicalViewer().getRootEditPart()).getZoomManager();
         zoomManager.setZoomAnimationStyle(ZoomManager.ANIMATE_ZOOM_IN_OUT);
-        viewer.getControl().addMouseWheelListener(new MouseWheelListener() {
-
-            @Override
-            public void mouseScrolled(MouseEvent arg0) {
-                if (arg0.stateMask == SWT.CONTROL) {
-                    int notches = arg0.count;
-                    if (notches < 0) {
-                        zoomManager.zoomOut();
-                    } else {
-                        zoomManager.zoomIn();
-                    }
-                }
-            }
-        });
+        EditorMouseWheelAndKeyListener editorMouseWheelKeyListener = new EditorMouseWheelAndKeyListener(zoomManager);
+        viewer.getControl().addMouseWheelListener(editorMouseWheelKeyListener);
+        viewer.getControl().addKeyListener(editorMouseWheelKeyListener);
 
         tabbedPropertySheetPage = new TabbedPropertySheetPage(this);
 
@@ -382,6 +379,22 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                             connectionPart.getConnectionFigure().setForegroundColor(ColorConstants.blue);
                             connectionPart.showLabel();
                         }
+                    }
+                    if (structuredSelectionObject instanceof WorkflowNodePart) {
+                        WorkflowNodePart nodePart = (WorkflowNodePart) structuredSelectionObject;
+                        ComponentInterface ci =
+                            ((WorkflowNode) nodePart.getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
+                                .getComponentInterface();
+                        String id = ci.getIdentifier().substring(0,
+                            ci.getIdentifier().lastIndexOf(ComponentConstants.ID_SEPARATOR));
+                        if (toolIntegrationRegistry.hasId(id)) {
+                            PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(),
+                                ToolIntegrationConstants.CONTEXTUAL_HELP_PLACEHOLDER_ID);
+                        } else {
+                            PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), id);
+                        }
+                    } else {
+                        PlatformUI.getWorkbench().getHelpSystem().setHelp(viewer.getControl(), null);
                     }
                 }
                 removeConnectionColorsAndLabel();
@@ -446,8 +459,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         getActionRegistry().registerAction(new ToggleSnapToGeometryAction(getGraphicalViewer()));
 
         getViewer().setProperty(SnapToGeometry.PROPERTY_SNAP_ENABLED, true);
-        getViewer().setProperty(SnapToGrid.PROPERTY_GRID_SPACING, new Dimension(WorkflowNodePart.SMALL_WORKFLOW_NODE_WIDTH - 1,
-            WorkflowNodePart.SMALL_WORKFLOW_NODE_WIDTH - 1));
+        getViewer().setProperty(SnapToGrid.PROPERTY_GRID_SPACING, new Dimension((WorkflowNodePart.SMALL_WORKFLOW_NODE_WIDTH - 1) / 2,
+            (WorkflowNodePart.SMALL_WORKFLOW_NODE_WIDTH - 1) / 2));
 
         // register activate context for context sensitive key bindings
         IContextService contextService = (IContextService) getSite().getService(IContextService.class);
@@ -694,8 +707,13 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             FileEditorInput fileEditorInput = (FileEditorInput) input;
             IFile workspaceWfFile = fileEditorInput.getFile();
             workflowDescriptionLoader = new GUIWorkflowDescriptionLoaderCallback(workspaceWfFile);
-            setPartName(workspaceWfFile.getName());
-            wfFile = new File(workspaceWfFile.getRawLocation().toOSString());
+            if (workspaceWfFile != null && workspaceWfFile.getRawLocation() != null) {
+                setPartName(workspaceWfFile.getName());
+                wfFile = new File(workspaceWfFile.getRawLocation().toOSString());
+            } else {
+                closeEditorAndShowMessage(StringUtils.format("Workflow file could not be found: %s", fileEditorInput.getFile()));
+                wfFile = null;
+            }
         } else if (input instanceof FileStoreEditorInput) {
             FileStoreEditorInput fileStoreEditorInput = (FileStoreEditorInput) input;
             wfFile = new File(fileStoreEditorInput.getURI());
@@ -707,57 +725,64 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                 "Workflow File Error", "Failed to load workflow file for an unknown reason.");
             return;
         }
+        if (wfFile != null) {
+            Job job = new Job(Messages.openWorkflow) {
 
-        Job job = new Job(Messages.openWorkflow) {
+                @Override
+                protected IStatus run(IProgressMonitor monitor) {
+                    try {
+                        monitor.beginTask(Messages.loadingComponents, 2);
+                        monitor.worked(1);
+                        WorkflowExecutionService workflowExecutionService =
+                            serviceRegistryAccess.getService(WorkflowExecutionService.class);
+                        workflowDescription = workflowExecutionService
+                            .loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, workflowDescriptionLoader);
+                        initializeWorkflowDescriptionListener();
+                        monitor.worked(1);
 
-            @Override
-            protected IStatus run(IProgressMonitor monitor) {
-                try {
-                    monitor.beginTask(Messages.loadingComponents, 2);
-                    monitor.worked(1);
-                    WorkflowExecutionService workflowExecutionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
-                    workflowDescription = workflowExecutionService
-                        .loadWorkflowDescriptionFromFileConsideringUpdates(wfFile, workflowDescriptionLoader);
-                    initializeWorkflowDescriptionListener();
-                    monitor.worked(1);
+                        Display.getDefault().asyncExec(new Runnable() {
 
-                    Display.getDefault().asyncExec(new Runnable() {
-
-                        @Override
-                        public void run() {
-                            if (viewer.getControl() != null) {
-                                viewer.setContents(workflowDescription);
-                                getGraphicalControl().setVisible(true);
-                                if (getEditorSite() != null) {
-                                    setFocus();
+                            @Override
+                            public void run() {
+                                if (viewer.getControl() != null) {
+                                    viewer.setContents(workflowDescription);
+                                    getGraphicalControl().setVisible(true);
+                                    if (getEditorSite() != null) {
+                                        setFocus();
+                                    }
+                                    firePropertyChange(PROP_FINAL_WORKFLOW_DESCRIPTION_SET);
+                                    doSave(null);
                                 }
-                                firePropertyChange(PROP_FINAL_WORKFLOW_DESCRIPTION_SET);
-                                doSave(null);
                             }
-                        }
-                    });
-                } catch (final WorkflowFileException e) {
-                    LogFactory.getLog(getClass()).error("Failed to open workflow: " + wfFile.getAbsolutePath(), e);
-                    Display.getDefault().asyncExec(new Runnable() {
+                        });
+                    } catch (final WorkflowFileException e) {
+                        LogFactory.getLog(getClass()).error("Failed to open workflow: " + wfFile.getAbsolutePath(), e);
+                        Display.getDefault().asyncExec(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            // do not use Display.getDefault().getActiveShell() as this might return
-                            // the progress monitor dialog
-                            MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
-                                "Workflow File Error", e.getMessage());
-                            WorkflowEditor.this.getSite().getPage().closeEditor(WorkflowEditor.this, false);
-                        }
-                    });
-                } finally {
-                    monitor.done();
-                }
-                return Status.OK_STATUS;
+                            @Override
+                            public void run() {
+                                // do not use Display.getDefault().getActiveShell() as this might return
+                                // the progress monitor dialog
+                                closeEditorAndShowMessage(e.getMessage());
+                            }
 
+                        });
+                    } finally {
+                        monitor.done();
+                    }
+                    return Status.OK_STATUS;
+
+                };
             };
-        };
-        job.setUser(true);
-        job.schedule();
+            job.setUser(true);
+            job.schedule();
+        }
+    }
+
+    private void closeEditorAndShowMessage(final String message) {
+        MessageDialog.openError(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(),
+            "Workflow File Error", message);
+        WorkflowEditor.this.getSite().getPage().closeEditor(WorkflowEditor.this, false);
     }
 
     /**
@@ -784,23 +809,23 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                 IFile file = ((IFileEditorInput) getEditorInput()).getFile();
                 if (file.exists()) {
                     WorkflowDescriptionPersistenceHandler wdHandler = new WorkflowDescriptionPersistenceHandler();
+                    workflowDescription = updateExecutionInformation(workflowDescription, wdHandler, file.getRawLocation().toFile());
                     file.setContents(
                         new ByteArrayInputStream(wdHandler.writeWorkflowDescriptionToStream(workflowDescription).toByteArray()),
                         true, // keep saving, even if IFile is out of sync with the Workspace
                         false, // dont keep history
                         monitor); // progress monitor
                 } else {
-
                     doSaveAs();
                 }
 
             } else if (getEditorInput() instanceof FileStoreEditorInput) {
                 File file = new File(((FileStoreEditorInput) getEditorInput()).getURI().getPath().replaceFirst("/", ""));
                 WorkflowDescriptionPersistenceHandler wdHandler = new WorkflowDescriptionPersistenceHandler();
-                ByteArrayOutputStream outStream = wdHandler.writeWorkflowDescriptionToStream(workflowDescription);
-                if (file.canWrite()) {
-                    FileUtils.writeByteArrayToFile(file, outStream.toByteArray());
-
+                try (ByteArrayOutputStream outStream = wdHandler.writeWorkflowDescriptionToStream(workflowDescription);) {
+                    if (file.canWrite()) {
+                        FileUtils.writeByteArrayToFile(file, outStream.toByteArray());
+                    }
                 }
             }
             getCommandStack().markSaveLocation();
@@ -816,6 +841,36 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
         getCommandStack().markSaveLocation();
         validateWorkflow();
 
+    }
+
+    // get the latest execution information (executing nodes for wf controller and components) from underlying .wf file and set this
+    // information to the given workflow description needed to ensure that changes made by the workflow execution wizard regarding executing
+    // nodes are not overwritten by the workflow editor which must not change those information at all (consequence of merging workflow and
+    // execution information in one .wf file which is intended to be changed anyway) --seid_do
+    private WorkflowDescription updateExecutionInformation(WorkflowDescription wd, WorkflowDescriptionPersistenceHandler wdHandler,
+        File file) {
+        try {
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                String workflowControllerNodeId = wdHandler.readWorkflowControllerNodeId(fileInputStream);
+                if (workflowControllerNodeId != null) {
+                    wd.setControllerNode(NodeIdentifierFactory.fromNodeId(workflowControllerNodeId));
+                } else {
+                    wd.setControllerNode(null);
+                }
+            }
+            try (FileInputStream fileInputStream = new FileInputStream(file)) {
+                Map<String, String> componentControllerNodeIds = wdHandler.readComponentControllerNodeIds(fileInputStream);
+                for (WorkflowNode wn : wd.getWorkflowNodes()) {
+                    ComponentInstallationBuilder builder =
+                        ComponentInstallationBuilder.fromComponentInstallation(wn.getComponentDescription().getComponentInstallation());
+                    builder.setNodeId(componentControllerNodeIds.get(wn.getIdentifier()));
+                    wn.getComponentDescription().setComponentInstallation(builder.build());
+                }
+            }
+        } catch (IOException e) {
+            LOGGER.error("Failed to consider stored execution information on workflow saving", e);
+        }
+        return wd;
     }
 
     private void validateWorkflow() {
@@ -922,6 +977,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
             return tabbedPropertySheetPage;
         } else if (type == IContextProvider.class) {
             return new WorkflowEditorHelpContextProvider(viewer);
+        } else if (type == IContentOutlinePage.class) {
+            return new OutlineView(getGraphicalViewer());
         }
         return super.getAdapter(type);
     }
@@ -1383,9 +1440,8 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
     }
 
     /**
-     * This class listens to changes to the file system in the workspace, and makes changes
-     * accordingly. An open, saved file gets deleted = close the editor. An open file gets renamed
-     * or moved = change the editor's input accordingly.
+     * This class listens to changes to the file system in the workspace, and makes changes accordingly. An open, saved file gets deleted =
+     * close the editor. An open file gets renamed or moved = change the editor's input accordingly.
      * 
      * @author Goekhan Guerkan
      */

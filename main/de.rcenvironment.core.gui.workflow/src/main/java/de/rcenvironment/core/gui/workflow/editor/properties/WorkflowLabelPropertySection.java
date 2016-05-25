@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -421,7 +421,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
 
         private AlignmentType type;
 
-        public AlignmentSelectionListener(AlignmentType type) {
+        AlignmentSelectionListener(AlignmentType type) {
             this.type = type;
         }
 
@@ -509,7 +509,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
 
         private Value.ValueType type;
 
-        public ColorMouseListener(final Value.ValueType type) {
+        ColorMouseListener(final Value.ValueType type) {
             this.type = type;
         }
 
@@ -687,21 +687,21 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
 
         private int textSize;
 
-        public Value(final ValueType type, final String value) {
+        Value(final ValueType type, final String value) {
             this.type = type;
             if (type == ValueType.TEXT) {
                 this.textValue = value;
             }
         }
 
-        public Value(final ValueType type, final int[] colorValues) {
+        Value(final ValueType type, final int[] colorValues) {
             this.type = type;
             if (type == ValueType.COLOR_BACKGROUND || type == ValueType.COLOR_TEXT) {
                 this.colorValues = colorValues;
             }
         }
 
-        public Value(final ValueType type, final int value) {
+        Value(final ValueType type, final int value) {
             this.type = type;
             if (type == ValueType.TEXT_SIZE) {
                 this.textSize = value;
@@ -710,12 +710,12 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
             }
         }
 
-        public Value(AlignmentType alignmentValue) {
+        Value(AlignmentType alignmentValue) {
             this.type = ValueType.ALIGNMENT;
             this.alignmentValue = alignmentValue;
         }
 
-        public Value(final ValueType type, boolean border) {
+        Value(final ValueType type, boolean border) {
             this.type = type;
             if (type == ValueType.BORDER) {
                 this.hasBorder = border;
@@ -770,7 +770,7 @@ public class WorkflowLabelPropertySection extends WorkflowPropertySection implem
 
         private WorkflowLabelCommand command;
 
-        public LabelCommandWrapper(WorkflowLabelCommand command) {
+        LabelCommandWrapper(WorkflowLabelCommand command) {
             super(command);
             this.command = command;
         }

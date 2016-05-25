@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,12 +8,12 @@
 
 package de.rcenvironment.components.outputwriter.execution;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.fail;
 import static org.easymock.EasyMock.anyObject;
 import static org.easymock.EasyMock.notNull;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
@@ -21,6 +21,17 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonMethod;
+import org.codehaus.jackson.map.ObjectMapper;
+import org.easymock.EasyMock;
+import org.easymock.IAnswer;
+import org.junit.Before;
+import org.junit.Test;
 
 import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
@@ -37,19 +48,9 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
-import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.easymock.EasyMock;
-import org.easymock.IAnswer;
-import org.junit.Before;
-import org.junit.Test;
 
 /**
  * Integration test for OutputWriter Components.
@@ -206,7 +207,7 @@ public class OutputWriterComponentTest {
         context.addService(ComponentDataManagementService.class, componentDataManagementServiceMock);
         context.setConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_ROOT, testRootDir.getAbsolutePath());
 
-        mapper = new ObjectMapper();
+        mapper = JsonUtils.getDefaultObjectMapper();
         mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
 
@@ -341,7 +342,7 @@ public class OutputWriterComponentTest {
             // from the mock component context instead of a "real" context.
             componentDataManagementServiceMock.copyReferenceToLocalFile(notNull(String.class),
                 notNull(File.class), anyObject(NodeIdentifier.class));
-            EasyMock.expectLastCall().andAnswer(copyReferenceToLocalFileAnswer).times(6);
+            EasyMock.expectLastCall().andAnswer(copyReferenceToLocalFileAnswer).times(7);
             EasyMock.replay(componentDataManagementServiceMock);
         } catch (IOException e1) {
             throw new ComponentException(EXCEPTION_MESSAGE);
@@ -364,6 +365,8 @@ public class OutputWriterComponentTest {
             generateMetadata(beginning + OutputWriterComponentConstants.PH_COMP_TYPE + end, null));
         context.addSimulatedInput("ts", "ts_id", DataType.FileReference, true,
             generateMetadata(beginning + "time" + OutputWriterComponentConstants.PH_TIMESTAMP + end, null));
+        context.addSimulatedInput("ec", "ec_id", DataType.FileReference, true,
+            generateMetadata(beginning + "execution_count" + OutputWriterComponentConstants.PH_EXECUTION_COUNT + end, null));
 
         // Send input file to each input and test if placeholders are replaced
         String fileReference = inputFile.getAbsolutePath();
@@ -379,8 +382,10 @@ public class OutputWriterComponentTest {
         component.processInputs();
         context.setInputValue("comp_type", typedDatumFactory.createFileReference(fileReference, inputFile.getName()));
         component.processInputs();
+        context.setInputValue("ec", typedDatumFactory.createFileReference(fileReference, inputFile.getName()));
+        component.processInputs();
 
-        assertEquals(8, testRootDir.listFiles().length); // input file, input directory + 6 output files
+        assertEquals(9, testRootDir.listFiles().length); // input file, input directory + 7 output files
 
         // Assert that filenames do not contain placeholders and the text besides the placeholders has not been changed.
         for (int i = 0; i < testRootDir.listFiles().length; i++) {

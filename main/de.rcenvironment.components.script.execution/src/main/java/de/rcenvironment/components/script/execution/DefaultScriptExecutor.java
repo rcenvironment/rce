@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -108,6 +108,9 @@ public abstract class DefaultScriptExecutor implements ScriptExecutor {
 
     @Override
     public abstract void runScript() throws ComponentException;
+    
+    @Override
+    public abstract void cancelScript();
 
     public long getCurrentRunNumber() {
         return componentContext.getExecutionCount();

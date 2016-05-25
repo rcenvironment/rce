@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,86 +20,107 @@ import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointTy
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputWithAnotherInputAndOutputsCommand;
-import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputWithOutputsCommand;
-import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputWithAnotherInputAndOutputsCommand;
-import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputWithOutputsCommand;
-import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicInputWithAnotherPossibleInputAndOutputsCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicInputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicOutputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicInputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.EditDynamicOutputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicInputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamicOutputCommand;
+import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.ProcessEndpointsGroupCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
-import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
 
 /**
  * Endpoint selection pane.
  * 
  * @author Doreen Seider
+ * @author Caslav Ilic
  */
 public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
 
-    private final String dynamicEndpointId;
+    private final String dynamicEndpointIdToConverge;
+    private final String dynamicEndpointIdAuxiliary;
+
+    private final Executor executor;
 
     private final EndpointSelectionPane outputPane;
+    private final EndpointSelectionPane auxiliaryPane;
 
-    public ConvergerEndpointSelectionPane(String title, String id, Executor executor, EndpointSelectionPane outputPane,
-        boolean toConverge) {
-        super(title, EndpointType.INPUT, executor, false, id, true);
-        this.dynamicEndpointId = id;
+    public ConvergerEndpointSelectionPane(String title, String idToConverge, String idAuxiliary, Executor executor,
+        EndpointSelectionPane outputPane, EndpointSelectionPane auxiliaryPane) {
+        super(title, EndpointType.INPUT, executor, false, idToConverge, true);
+        this.dynamicEndpointIdToConverge = idToConverge;
+        this.dynamicEndpointIdAuxiliary = idAuxiliary;
+        this.executor = executor;
         this.outputPane = outputPane;
+        this.auxiliaryPane = auxiliaryPane;
     }
 
     @Override
     protected void executeAddCommand(String name, DataType type, Map<String, String> metaData) {
-        WorkflowNodeCommand command = null;
         metaData.putAll(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        if (metaData.get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
-            && Boolean.parseBoolean(metaData.get(ConvergerComponentConstants.META_HAS_STARTVALUE))) {
-            command = new AddDynamicInputWithOutputsCommand(dynamicEndpointId, name, type,
-                metaData, ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, this, outputPane);
-
-        } else {
-            command = new AddDynamicInputWithAnotherInputAndOutputsCommand(dynamicEndpointId, name, type,
-                metaData, LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-                ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane);
-
-            ((AddDynamicInputWithAnotherInputAndOutputsCommand) command)
-                .addMetaDataToInputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+        ProcessEndpointsGroupCommand groupCommand = new ProcessEndpointsGroupCommand(executor, this, outputPane);
+        groupCommand.add(new AddDynamicInputCommand(dynamicEndpointIdToConverge, name, type, metaData, this, outputPane));
+        if (metaData.get(ConvergerComponentConstants.META_HAS_STARTVALUE) == null
+            || !Boolean.parseBoolean(metaData.get(ConvergerComponentConstants.META_HAS_STARTVALUE))) {
+            groupCommand.add(new AddDynamicInputCommand(dynamicEndpointIdToConverge,
+                name + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, type,
+                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint),
+                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
         }
-        ((AddDynamicInputWithOutputsCommand) command)
-            .setMetaDataOutput(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        ((AddDynamicInputWithOutputsCommand) command)
-            .setMetaDataOutputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        execute(command);
+        groupCommand.add(new AddDynamicOutputCommand(dynamicEndpointIdToConverge, name, type,
+            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint), this, outputPane));
+        groupCommand.add(new AddDynamicOutputCommand(dynamicEndpointIdAuxiliary,
+            name + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX, DataType.Boolean,
+            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint), this, auxiliaryPane));
+        groupCommand.add(new AddDynamicOutputCommand(dynamicEndpointIdToConverge,
+            name + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, type,
+            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint), this, outputPane));
+        execute(groupCommand);
     }
 
     @Override
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
-        boolean oldHasStartvalue = oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
+        String oldName = oldDescription.getName();
+        String newName = newDescription.getName();
+        DataType newType = newDescription.getDataType();
+        Map<String, String> newMetaData = newDescription.getMetaData();
+        ProcessEndpointsGroupCommand groupCommand = new ProcessEndpointsGroupCommand(executor, this, outputPane);
+        groupCommand.add(new EditDynamicInputCommand(dynamicEndpointIdToConverge,
+            oldName, newName, newType, newMetaData, this, outputPane));
+        boolean oldHasStartValue = oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
             && Boolean.parseBoolean(oldDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE));
-        boolean newHasStartvalue = newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
+        boolean newHasStartValue = newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE) != null
             && Boolean.parseBoolean(newDescription.getMetaData().get(ConvergerComponentConstants.META_HAS_STARTVALUE));
-        WorkflowNodeCommand command = null;
-        if (oldHasStartvalue && newHasStartvalue) {
-            command = new EditDynamicInputWithOutputsCommand(oldDescription, newDescription,
-                ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, this, outputPane);
-        } else if (!oldHasStartvalue && !newHasStartvalue) {
-            command = new EditDynamicInputWithAnotherInputAndOutputsCommand(oldDescription, newDescription,
-                LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, false, this, outputPane);
-            ((EditDynamicInputWithAnotherInputAndOutputsCommand) command)
-                .addMetaDataToInputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        } else {
-            command = new EditDynamicInputWithAnotherInputAndOutputsCommand(oldDescription, newDescription,
-                LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, true, this, outputPane);
-            ((EditDynamicInputWithAnotherInputAndOutputsCommand) command)
-                .addMetaDataToInputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+        if (!oldHasStartValue && !newHasStartValue) {
+            groupCommand.add(new EditDynamicInputCommand(dynamicEndpointIdToConverge,
+                oldName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+                newName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+                newType, LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint),
+                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
+        } else if (!oldHasStartValue && newHasStartValue) {
+            groupCommand.add(new RemoveDynamicInputCommand(dynamicEndpointIdToConverge,
+                oldName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, this, outputPane));
+        } else if (oldHasStartValue && !newHasStartValue) {
+            groupCommand.add(new AddDynamicInputCommand(dynamicEndpointIdToConverge,
+                newName + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, newType,
+                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint),
+                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
         }
-
-        ((EditDynamicInputWithOutputsCommand) command)
-            .setMetaDataOutput(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        ((EditDynamicInputWithOutputsCommand) command)
-            .setMetaDataOutputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        execute(command);
+        groupCommand.add(new EditDynamicOutputCommand(dynamicEndpointIdToConverge,
+            oldName, newName, newType, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint),
+            this, outputPane));
+        groupCommand.add(new EditDynamicOutputCommand(dynamicEndpointIdAuxiliary,
+            oldName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
+            newName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
+            DataType.Boolean, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint),
+            this, auxiliaryPane));
+        groupCommand.add(new EditDynamicOutputCommand(dynamicEndpointIdToConverge,
+            oldName + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
+            newName + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
+            newType, LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint),
+            this, outputPane));
+        execute(groupCommand);
     }
 
     @Override
@@ -113,9 +134,20 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
         for (String remove : removeNames) {
             names.remove(remove);
         }
-        WorkflowNodeCommand command = new RemoveDynamicInputWithAnotherPossibleInputAndOutputsCommand(dynamicEndpointId, names,
-            LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, this, outputPane);
-        execute(command);
+        ProcessEndpointsGroupCommand groupCommand = new ProcessEndpointsGroupCommand(executor, this, outputPane);
+        for (String name : names) {
+            groupCommand.add(new RemoveDynamicInputCommand(dynamicEndpointIdToConverge,
+                name, this, outputPane));
+            groupCommand.add(new RemoveDynamicInputCommand(dynamicEndpointIdToConverge,
+                name + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, this, outputPane));
+            groupCommand.add(new RemoveDynamicOutputCommand(dynamicEndpointIdToConverge,
+                name, this, outputPane));
+            groupCommand.add(new RemoveDynamicOutputCommand(dynamicEndpointIdAuxiliary,
+                name + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX, this, auxiliaryPane));
+            groupCommand.add(new RemoveDynamicOutputCommand(dynamicEndpointIdToConverge,
+                name + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, this, outputPane));
+        }
+        execute(groupCommand);
     }
 
     @Override

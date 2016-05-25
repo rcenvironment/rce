@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,8 +11,6 @@ package de.rcenvironment.components.evaluationmemory.execution;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Queue;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -61,11 +59,13 @@ public class EvaluationMemoryComponent extends DefaultComponent {
     
     private ComponentLog componentLog;
     
-    private EvaluationMemoryFileAccessService memoryFileHandlerService;
+    private EvaluationMemoryFileAccessService memoryFileAccessService;
     
     private ComponentDataManagementService dataManagementService;
     
     private ComponentContext componentContext;
+    
+    private boolean considerLoopFailures;
     
     private EvaluationMemoryAccess memoryAccess;
     
@@ -73,7 +73,7 @@ public class EvaluationMemoryComponent extends DefaultComponent {
 
     private SortedMap<String, DataType> outputsEvaluationResult = new TreeMap<>();
 
-    private Queue<SortedMap<String, TypedDatum>> valuesToEvaluate = new LinkedList<>();
+    private SortedMap<String, TypedDatum> valuesToEvaluate;
 
     private String memoryFilePath;
     
@@ -86,12 +86,14 @@ public class EvaluationMemoryComponent extends DefaultComponent {
         super.setComponentContext(componentContext);
         this.componentContext = componentContext;
         componentLog = componentContext.getLog();
+        considerLoopFailures = Boolean.valueOf(componentContext.getConfigurationValue(
+            EvaluationMemoryComponentConstants.CONFIG_CONSIDER_LOOP_FAILURES));
     }
     
     @Override
     public void start() throws ComponentException {
         
-        memoryFileHandlerService = componentContext.getService(EvaluationMemoryFileAccessService.class);
+        memoryFileAccessService = componentContext.getService(EvaluationMemoryFileAccessService.class);
         dataManagementService = componentContext.getService(ComponentDataManagementService.class);
         setInputsAndOutputs();
         
@@ -123,7 +125,7 @@ public class EvaluationMemoryComponent extends DefaultComponent {
         memoryFile = new File(path);
         memoryFilePath = memoryFile.getAbsolutePath();
         try {
-            memoryAccess = memoryFileHandlerService.acquireAccessToMemoryFile(memoryFilePath);
+            memoryAccess = memoryFileAccessService.acquireAccessToMemoryFile(memoryFilePath);
             if (memoryFile.exists() && FileUtils.sizeOf(memoryFile) > 0) { // exists and is not empty
                 memoryAccess.validateEvaluationMemory(inputsToEvaluate, outputsEvaluationResult);
             } else {
@@ -193,27 +195,49 @@ public class EvaluationMemoryComponent extends DefaultComponent {
     }
     
     private void processInputsInCheckMode(SortedMap<String, TypedDatum> inputValues) {
+        if (valuesToEvaluate != null) {
+            componentLog.componentWarn(StringUtils.format("Values to evaluate left: '%s' "
+                + "- no result values received (usually in case of component failure in loop) -> skip values", inputValues));
+            valuesToEvaluate = null;
+        }
+        
         SortedMap<String, TypedDatum> evaluationResults = null;
         try {
             evaluationResults = memoryAccess.getEvaluationResult(inputValues, outputsEvaluationResult);
         } catch (IOException e) {
             String errorMessage = StringUtils.format("Failed to get evaluation results for values '%s' from evaluation memory '%s';"
-                + " cause: %s - as it is not workflow critical, continue with execution...", inputValues, memoryFile, e.getMessage());
+                + " cause: %s - as it is not workflow-critical, continue with execution...", inputValues, memoryFile, e.getMessage());
             log.error(errorMessage, e);
             componentLog.componentError(errorMessage);
         }
         if (evaluationResults == null) {
-            componentLog.componentInfo(StringUtils.format("Forward values '%s' "
-                + "- no evaluation results in memory", inputValues));
+            componentLog.componentInfo(StringUtils.format("Forward values '%s' - no evaluation results in memory", inputValues));
             forwardValues(inputValues);
-            valuesToEvaluate.add(inputValues);
+            valuesToEvaluate = inputValues;
         } else {
-            componentLog.componentInfo(StringUtils.format("Found evaluation results for values '%s' "
-                + "in memory: %s -> directly feed back", inputValues, evaluationResults));
-            for (String output : evaluationResults.keySet()) {
-                componentContext.writeOutput(output, evaluationResults.get(output));
+            if (evaluationResultsContainValuesOfTypeNotAValue(evaluationResults) && !considerLoopFailures) {
+                componentLog.componentInfo(StringUtils.format("Forward values '%s' - found evaluation results "
+                    + "in memory, but they are ignored as they contain values of type not-a-value (loop failures) and component is "
+                    + "configured to not consider loop failures as loop result", inputValues, evaluationResults));
+                forwardValues(inputValues);
+                valuesToEvaluate = inputValues;
+            } else {
+                componentLog.componentInfo(StringUtils.format("Found evaluation results for values '%s' "
+                    + "in memory: %s -> directly feed back", inputValues, evaluationResults));
+                for (String output : evaluationResults.keySet()) {
+                    componentContext.writeOutput(output, evaluationResults.get(output));
+                }                
             }
         }
+    }
+    
+    private boolean evaluationResultsContainValuesOfTypeNotAValue(SortedMap<String, TypedDatum> evaluationResults) {
+        for (TypedDatum result : evaluationResults.values()) {
+            if (result.getDataType().equals(DataType.NotAValue)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void processInputsInStoreMode() throws ComponentException {
@@ -226,22 +250,24 @@ public class EvaluationMemoryComponent extends DefaultComponent {
             }
         }
         
-        if (valuesToEvaluate.isEmpty()) {
+        if (valuesToEvaluate == null) {
             throw new ComponentException(StringUtils.format("Failed to store evaluation results in evaluation memory file: %s"
                 + " - no values (to evaluate) stored from a previous run", memoryFilePath));
         }
-        SortedMap<String, TypedDatum> values = valuesToEvaluate.poll();
+        SortedMap<String, TypedDatum> values = valuesToEvaluate;
         try {
             memoryAccess.addEvaluationValues(values, evaluationResults);
             componentLog.componentInfo(StringUtils.format("Stored evaluation results for values '%s' "
                 + "in memory: %s", values, evaluationResults));
         } catch (IOException e) {
             String errorMessage = StringUtils.format("Failed to write evaluation values '%s' with '%s' to evaluation memory '%s';"
-                + " cause: %s - as it is not workflow critical, continue with execution...", values, evaluationResults, memoryFile,
+                + " cause: %s - as it is not workflow-critical, continue with execution...", values, evaluationResults, memoryFile,
                 e.getMessage());
             log.error(errorMessage, e);
             componentLog.componentError(errorMessage);
         }
+        
+        valuesToEvaluate = null;
     }
 
     private void processInputsInFinishMode() {
@@ -263,7 +289,11 @@ public class EvaluationMemoryComponent extends DefaultComponent {
     @Override
     public void tearDown(FinalComponentState state) {
         if (memoryAccess != null) {
-            memoryFileHandlerService.releaseAccessToMemoryFile(memoryFilePath);
+            if (!memoryFileAccessService.releaseAccessToMemoryFile(memoryFilePath)) {
+                log.warn("Access to memory file wasn't acquired earlier, but access to it should released anyway now: " + memoryFilePath);
+            }
+        } else {
+            log.debug("No need to release access to memory file as it wasn't acquired before: " + memoryFilePath);
         }
     }
     

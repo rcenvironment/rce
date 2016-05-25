@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -52,16 +52,23 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
 
     private boolean storePassphrase;
 
+    private boolean usePassphrase;
+
     private Log log = LogFactory.getLog(getClass());
 
-    public SshConnectionSetupImpl(String id, String displayName, String host, int port, String userName, boolean storePassphrase,
-        boolean connectOnStartUp, SshConnectionListener listener) {
-        config = SshSessionConfigurationFactory.createSshSessionConfigurationWithAuthPhrase(host, port, userName, null);
+    public SshConnectionSetupImpl(String id, String displayName, String host, int port, String userName, String keyFileLocation,
+        boolean usePassphrase, boolean storePassphrase, boolean connectOnStartUp, SshConnectionListener listener) {
+        if (keyFileLocation == null || keyFileLocation.isEmpty()) {
+            config = SshSessionConfigurationFactory.createSshSessionConfigurationWithAuthPhrase(host, port, userName, null);
+        } else {
+            config = SshSessionConfigurationFactory.createSshSessionConfigurationWithKeyFileLocation(host, port, userName, keyFileLocation);
+        }
         this.id = id;
         this.connectOnStartup = connectOnStartUp;
         this.listener = listener;
         this.displayName = displayName;
         this.storePassphrase = storePassphrase;
+        this.usePassphrase = usePassphrase;
         listener.onCreated(this);
     }
 
@@ -93,6 +100,11 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
     @Override
     public String getUsername() {
         return config.getSshAuthUser();
+    }
+
+    @Override
+    public String getKeyfileLocation() {
+        return config.getSshKeyFileLocation();
     }
 
     /**
@@ -134,8 +146,8 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
     @Override
     public Session connect(String passphrase) {
 
-        if (passphrase == null) {
-            log.warn(StringUtils.format("Connecting SSH session failed because of missing passphrase: host %s, port %s.",
+        if (config.getSshKeyFileLocation() == null && passphrase == null) {
+            log.warn(StringUtils.format("Connecting SSH session failed because no key file and no passphrase is given: host %s, port %s.",
                 config.getDestinationHost(),
                 config.getPort()));
             return null;
@@ -144,8 +156,8 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
         Logger logger = JschSessionFactory.createDelegateLogger(LogFactory.getLog(getClass()));
         try {
             session =
-                JschSessionFactory.setupSession(config.getDestinationHost(), config.getPort(), config.getSshAuthUser(), null, passphrase,
-                    logger);
+                JschSessionFactory.setupSession(config.getDestinationHost(), config.getPort(), config.getSshAuthUser(),
+                    config.getSshKeyFileLocation(), passphrase, logger);
         } catch (JSchException | SshParameterException e) {
             log.warn(StringUtils.format("Connecting SSH session failed: host %s, port %s: %s", config.getDestinationHost(),
                 config.getPort(), e.toString()));
@@ -157,7 +169,13 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
             } else if (cause != null && cause instanceof UnknownHostException) {
                 reason = "No host with this name could be found.";
             } else if (reason.equals("Auth fail")) {
-                reason = "Authentication failed. Probably the username or passphrase is wrong.";
+                reason =
+                    "Authentication failed. Probably the username or passphrase is wrong, the wrong key file was used or the account is "
+                    + "not enabled on the remote host.";
+            } else if (reason.equals("USERAUTH fail")) {
+                reason = "Authentication failed. The wrong passphrase for the key file " + config.getSshKeyFileLocation() + " was used.";
+            } else if (reason.startsWith("invalid privatekey")) {
+                reason = "Authentication failed. An invalid private key was used.";
             }
             listener.onConnectionAttemptFailed(this, reason, true, false);
             return null;
@@ -219,6 +237,11 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
     @Override
     public boolean getStorePassphrase() {
         return storePassphrase;
+    }
+
+    @Override
+    public boolean getUsePassphrase() {
+        return usePassphrase;
     }
 
 }

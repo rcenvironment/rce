@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -75,6 +75,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Section for all design of experiments configurations.
@@ -379,7 +380,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
                 }
                 count++;
             }
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             setProperty(DOEConstants.KEY_TABLE, mapper.writeValueAsString(values));
             setProperty(DOEConstants.KEY_START_SAMPLE, "0");
             setProperty(DOEConstants.KEY_END_SAMPLE, Integer.toString(count - 1));
@@ -592,7 +593,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
             tableValuesDouble = DOEAlgorithms.populateTableMonteCarlo(varCount, runCount, seedCount);
             break;
         case DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE:
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             try {
                 if (getProperty(DOEConstants.KEY_TABLE) != null && !getProperty(DOEConstants.KEY_TABLE).isEmpty()) {
                     tableValuesDouble = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
@@ -678,7 +679,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
                 outputsWarningLabel.setText(Messages.noTableLong);
             } else if (algorithmSelection.getText().equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)
                 && (getProperty(DOEConstants.KEY_TABLE) != null)) {
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
                 try {
                     Double[][] tableValuesDouble = mapper.readValue(getProperty(DOEConstants.KEY_TABLE), Double[][].class);
                     for (int i = 0; (i < Integer.parseInt(
@@ -768,7 +769,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
 
         private final ColumnViewer viewer;
 
-        public TextEditingSupport(ColumnViewer viewer, Table table, int columnNumber) {
+        TextEditingSupport(ColumnViewer viewer, Table table, int columnNumber) {
             super(viewer);
             this.editor = new TextCellEditor(table);
             editor.setValidator(new ICellEditorValidator() {
@@ -815,7 +816,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         @Override
         protected void setValue(Object arg0, Object arg1) {
             ((String[]) arg0)[columnNumber - 1] = (String) arg1;
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             String[][] eliminateNull = ((String[][]) viewer.getInput());
             for (int i = 0; i < eliminateNull.length; i++) {
                 for (int j = 0; j < eliminateNull[i].length; j++) {

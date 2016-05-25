@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,8 +17,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -30,6 +28,7 @@ import org.junit.Test;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
+import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
  * Tests for {@link ComponentExecutionPermitsServiceImpl}.
@@ -70,25 +69,29 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_2, UUID.randomUUID().toString()).get();
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
 
-        ExecutorService threadPool = Executors.newFixedThreadPool(2);
+        SharedThreadPool threadPool = SharedThreadPool.getInstance();
         Future<Integer> acquireTask1 = threadPool.submit(new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
-                componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
-                synchronized (order1) {
-                    return order1.incrementAndGet();
+                if (componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get()) {
+                    synchronized (order1) {
+                        return order1.incrementAndGet();
+                    }
                 }
+                return order1.get();
             }
         });
         Future<Integer> acquireTask2 = threadPool.submit(new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
-                componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_2, UUID.randomUUID().toString()).get();
-                synchronized (order2) {
-                    return order2.incrementAndGet();
+                if (componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_2, UUID.randomUUID().toString()).get()) {
+                    synchronized (order2) {
+                        return order2.incrementAndGet();
+                    }
                 }
+                return order2.get();
             }
         });
 
@@ -106,6 +109,32 @@ public class ComponentExecutionPermitsServiceImplTest {
 
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
+    }
+    
+    /**
+     * Tests if permits for component execution can be acquired and released as expected.
+     * 
+     * @throws ExecutionException on error
+     * @throws InterruptedException on error
+     */
+    @Test(timeout = TEST_TIMEOUT)
+    public void testCancelAcquiringPermits() throws InterruptedException, ExecutionException {
+        
+        DistributedComponentKnowledgeService componentKnowledgeServiceMock = 
+            createDistributedComponentKnowledgeServiceMock(createDistributedComponentKnowledgeMock(createSetOfComponentInstallations(
+                new String[] { COMPONENT_IDENTIFIER_1 }, new int[] { 1 })));
+
+        final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
+        componentExecutionPermitsService.bindDistributedComponentKnowledgeService(componentKnowledgeServiceMock);
+        
+        assertTrue(componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get());
+        
+        Future<Boolean> acquireTask = componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString());
+        acquireTask.cancel(true);
+        
+        componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
+        assertTrue(componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get());
+        
     }
 
     /**
@@ -132,8 +161,8 @@ public class ComponentExecutionPermitsServiceImplTest {
 
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
 
-        ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
-        Future<Integer> acquireTask = threadExecutor.submit(new Callable<Integer>() {
+        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -187,8 +216,8 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         
-        ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
-        Future<Integer> acquireTask = threadExecutor.submit(new Callable<Integer>() {
+        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -248,8 +277,8 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         
-        ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
-        Future<Integer> acquireTask = threadExecutor.submit(new Callable<Integer>() {
+        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
             @Override
             public Integer call() throws Exception {
@@ -285,8 +314,8 @@ public class ComponentExecutionPermitsServiceImplTest {
         final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
         componentExecutionPermitsService.bindDistributedComponentKnowledgeService(componentKnowledgeServiceMock);
 
-        ExecutorService threadExecutor = Executors.newSingleThreadExecutor();
-        Future<Void> acquireTask1 = threadExecutor.submit(new Callable<Void>() {
+        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        Future<Void> acquireTask1 = threadPool.submit(new Callable<Void>() {
 
             @Override
             public Void call() throws Exception {
@@ -294,7 +323,7 @@ public class ComponentExecutionPermitsServiceImplTest {
                 return null;
             }
         });
-        Future<Void> acquireTask2 = threadExecutor.submit(new Callable<Void>() {
+        Future<Void> acquireTask2 = threadPool.submit(new Callable<Void>() {
 
             @Override
             public Void call() throws Exception {

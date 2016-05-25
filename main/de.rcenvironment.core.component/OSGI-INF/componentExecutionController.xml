@@ -1,58 +1,12 @@
 <scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Component Execution Controller">
 
 	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutionControllerImpl"/>
-
+	
 	<reference
-        name="Component Execution Permits Service"
-        interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionPermitsService"
+        name="Component Execution Related Instances Factory"
+        interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionRelatedInstancesFactory"
         cardinality="1..1"
-        bind="bindComponentExecutionPermitsService"
+        bind="bindComponentExecutionRelatedInstancesFactory"
         policy="dynamic"
     />
-    
-	<reference name="Endpoint Datum Dispatcher"
-		interface="de.rcenvironment.core.component.execution.internal.EndpointDatumDispatcher"
-		cardinality="1..1"
-		bind="bindEndpointDatumDispatcher"
-		policy="dynamic"
-	/>
-	
-    <reference
-        name="Typed Datum Service"
-        interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
-        cardinality="1..1"
-        bind="bindTypedDatumService"
-        policy="dynamic"
-    />
-    
-    <reference
-        name="Configuration Service"
-        interface="de.rcenvironment.core.configuration.ConfigurationService"
-        cardinality="1..1"
-        bind="bindConfigurationService"
-        policy="dynamic"
-    />
-
-	<reference name="Meta Data Service"
-		interface="de.rcenvironment.core.datamanagement.MetaDataService"
-		cardinality="1..1"
-		bind="bindMetaDataService"
-		policy="dynamic"
-	/>
-	
-	<reference name="Endpoint Datum Serializer"
-		interface="de.rcenvironment.core.component.execution.api.EndpointDatumSerializer"
-		cardinality="1..1"
-		bind="bindEndpointDatumSerializer"
-		policy="dynamic"
-	/>
-	
-	<reference name="Component Execution Stats Service"
-		interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionStatsService"
-		bind="bindComponentExecutionStatsService"
-		cardinality="1..1"
-		policy="dynamic"
-	/>
-	
-	
 </scr:component>

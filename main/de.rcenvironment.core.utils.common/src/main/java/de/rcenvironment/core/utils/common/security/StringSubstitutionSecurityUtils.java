@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -63,7 +63,7 @@ public final class StringSubstitutionSecurityUtils {
 
         private final Pattern forbiddenCharactersRegexp;
 
-        private SubstitutionContext(String[] customPatterns) {
+        SubstitutionContext(String[] customPatterns) {
             String patternString = StringUtils.join(COMMON_FORBIDDEN_PATTERNS, REGEXP_ALTERNATIVES_JOINER);
             // don't break regexp if there are no custom patterns for a context
             if (customPatterns.length > 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,15 +9,18 @@
 package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.io.IOException;
+import java.security.PublicKey;
 import java.util.List;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.server.PasswordAuthenticator;
+import org.apache.sshd.server.PublickeyAuthenticator;
 import org.apache.sshd.server.session.ServerSession;
 import org.mindrot.jbcrypt.BCrypt;
 
@@ -33,8 +36,9 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * 
  * @author Sebastian Holtappels
  * @author Robert Mischke
+ * @author Brigitte Boden (added public key authentication)
  */
-public class SshAuthenticationManager implements PasswordAuthenticator, TemporarySshAccountControl {
+public class SshAuthenticationManager implements PasswordAuthenticator, TemporarySshAccountControl, PublickeyAuthenticator {
 
     private SshConfiguration configuration;
 
@@ -66,6 +70,25 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
         return loginCorrect;
     }
 
+    /*
+     * For public key authentication. Does not perform the actual authentication, but just checks if the given public key is allowed to
+     * authenticate.
+     *
+     */
+    @Override
+    public boolean authenticate(String userName, PublicKey key, ServerSession session) {
+        boolean loginCorrect = false;
+        //Check if account with this username exists
+        if (configuration.getAccountByName(userName, false) == null) {
+            return false;
+        }
+        PublicKey knownKey = configuration.getAccountByName(userName, false).getPublicKeyObj();
+        if (knownKey != null) {
+            loginCorrect = key.equals(knownKey);
+        }
+        return loginCorrect;
+    }
+
     /**
      * 
      * Used to determine if a user has the rights to execute a command.
@@ -77,8 +100,14 @@ public class SshAuthenticationManager implements PasswordAuthenticator, Temporar
     public boolean isAllowedToExecuteConsoleCommand(String username, String command) {
         boolean isAllowed = false;
         SshAccountRole userRole = getRoleForUser(username);
-        if (userRole != null && command.matches(userRole.getAllowedCommandRegEx())) {
-            isAllowed = true;
+        try {
+            if (userRole != null && command.matches(userRole.getAllowedCommandRegEx())) {
+                isAllowed = true;
+            }
+        } catch (PatternSyntaxException e) {
+            //Should never happen as the allowed command patterns are checked when the SSH server is started
+            log.error("Could not verify if user " + username + " is allowed to execute command " + command
+                + ". Probable cause: The allowed commands pattern is invalid.");
         }
         return isAllowed;
     }

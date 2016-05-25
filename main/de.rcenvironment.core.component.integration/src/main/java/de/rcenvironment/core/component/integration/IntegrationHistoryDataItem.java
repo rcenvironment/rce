@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -20,6 +20,7 @@ import org.codehaus.jackson.node.ObjectNode;
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -58,7 +59,7 @@ public class IntegrationHistoryDataItem extends CommonComponentHistoryDataItem {
     @Override
     public String serialize(TypedDatumSerializer serializer) throws IOException {
         String commonDataString = super.serialize(serializer);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode;
         try {
             rootNode = mapper.readTree(commonDataString);
@@ -80,7 +81,7 @@ public class IntegrationHistoryDataItem extends CommonComponentHistoryDataItem {
         throws IOException {
         IntegrationHistoryDataItem historyDataItem = new IntegrationHistoryDataItem(identifier);
         CommonComponentHistoryDataItem.initializeCommonHistoryDataFromString(historyDataItem, historyData, serializer);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             @SuppressWarnings("unchecked") Map<String, Object> tree =
                 mapper.readValue(historyData, new HashMap<String, Object>().getClass());

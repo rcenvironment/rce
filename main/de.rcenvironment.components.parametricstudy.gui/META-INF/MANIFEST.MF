@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Parametric Study Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.gui;singleton:=true
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.api,
@@ -14,6 +14,7 @@ Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.component.workflow.model.api,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
+ de.rcenvironment.core.gui.utils.common,
  de.rcenvironment.core.gui.utils.common.configuration,
  de.rcenvironment.core.gui.utils.incubator,
  de.rcenvironment.core.gui.workflow.editor.properties,

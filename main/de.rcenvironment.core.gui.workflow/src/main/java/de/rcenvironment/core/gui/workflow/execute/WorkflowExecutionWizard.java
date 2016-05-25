@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,7 +29,9 @@ import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.wizard.Wizard;
+import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.PlatformUI;
 
 import de.rcenvironment.core.communication.api.PlatformService;
@@ -37,7 +39,6 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
@@ -106,6 +107,8 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
     private String errorComponents;
 
+    private boolean errorVisible = false;
+
     public WorkflowExecutionWizard(final IFile workflowFile, WorkflowDescription workflowDescription) {
         serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
         workflowExecutionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
@@ -126,7 +129,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         wfDescription.setName(WorkflowExecutionUtils.generateDefaultNameforExecutingWorkflow(workflowFile.getName(), wfDescription));
         wfDescription.setFileName(workflowFile.getName());
-        
+
         // set the title of the wizard dialog
         setWindowTitle(Messages.workflowExecutionWizardTitle);
         // display a progress monitor
@@ -168,6 +171,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
             return false;
         }
 
+        WorkflowExecutionUtils.setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, localNodeId);
         saveWorkflow();
 
         grabDataFromPlaceholdersPage();
@@ -197,15 +201,25 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
      * @return true if all selected instances available.
      */
     public synchronized boolean performValidations() {
-
         WorkflowDescriptionValidationResult validationResult = workflowExecutionService.validateWorkflowDescription(wfDescription);
         workflowPage.getWorkflowComposite().refreshContent();
 
         if (getContainer().getCurrentPage() == placeholdersPage) {
 
             if (!validationResult.isSucceeded()) {
-                MessageDialog.openError(getShell(), "Instances Error", "Some instances selected, are not available anymore:\n\n"
-                    + validationResult.toString() + "\n\nCheck your connection(s) or select (an)other instance(s).");
+                // MessageDialog.openError(getShell(), "Instances Error", "Some instances selected, are not available anymore:\n\n"
+                // + validationResult.toString() + "\n\nCheck your connection(s) or select (an)other instance(s).");
+                if (!errorVisible) {
+                    errorVisible = true;
+                    MessageBox errorBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_ERROR | SWT.OK);
+                    errorBox.setMessage("Some instances selected, are not available anymore:\n\n"
+                        + validationResult.toString() + "\n\nCheck your connection(s) or select (an)other instance(s).");
+                    errorBox.setText("Instances Error");
+                    int id = errorBox.open();
+                    if (id == SWT.OK || id == SWT.CLOSE) {
+                        errorVisible = false;
+                    }
+                }
                 return false;
             }
 
@@ -310,12 +324,6 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
     private void saveWorkflow() {
         wfDescription.addWorkflowNodesAndConnections(disabledWorkflowNodes, disabledConnections);
-        for (WorkflowNode wfNode : wfDescription.getWorkflowNodes()) {
-            ComponentDescription cd = wfNode.getComponentDescription();
-            if (cd.getNode().equals(localNodeId)) {
-                cd.setIsNodeIdTransient(true);
-            }
-        }
         WorkflowDescriptionPersistenceHandler persistenceHandler = new WorkflowDescriptionPersistenceHandler();
         try (ByteArrayOutputStream content = persistenceHandler.writeWorkflowDescriptionToStream(wfDescription)) {
             ByteArrayInputStream input = new ByteArrayInputStream(content.toByteArray());
@@ -372,7 +380,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         } catch (InterruptedException e) {
             LOG.error("Failed initialize workflow console capturing for workflow: " + wfDescription.getName(), e);
         }
-        
+
         if (inputTabEnabled) {
             InputModel.ensureInputCaptureIsInitialized();
         }
@@ -398,7 +406,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
             }
         });
     }
-    
+
     @Override
     public void dispose() {
         serviceRegistryAccess.dispose();
@@ -414,7 +422,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
                 @Override
                 public void run() {
                     if (workflowPage != null && !workflowPage.getControl().isDisposed()) {
-                        performValidations();                            
+                        performValidations();
                     } else {
                         LogFactory.getLog(getClass()).warn("Got callback (onDistributedComponentKnowledgeChanged)"
                             + " but widget(s) already disposed; the listener might not be disposed properly");

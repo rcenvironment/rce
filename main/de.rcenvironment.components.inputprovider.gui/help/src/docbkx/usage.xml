@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Input Provider Component Usage</title>
+    <sect1>
+        <title>Synopsis</title>
+    <para>The Input Provider component sends values to inputs of other components.</para>
+    </sect1>
+    <sect1>
+        <title>Rationale</title>
+        <para>The Input Provider sends values to others component, e.g. starting values.
+            Therefore, the Input Provider writes specified values to its outputs. The outputs must be
+            connected to the inputs of the other components. The values are sent once and
+            immediately after the workflow has been started. Most of the data types are supported which
+            are available in RCE.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>For each value to send you need to create an output for the Input
+            Provider component by clicking the "Add" button next to the outputs table. For each
+            output you can decide whether to define the value directly or to define it at workflow
+            start by (un-)checking the check box "Define at workflow start".</para>
+        <para><inlinegraphic fileref="../../images/image001.png"/></para>
+        <para>If it is defined directly it is stored in the workflow file. If you share the
+            workflow with others the defined values will be shared as well.</para>
+        <para>If it is defined at workflow start only a placeholder is stored in the workflow file.
+            It will be replaced with the actual value defined at workflow start. If you share the workflow
+            with others only the placeholder will be shared and the other person needs to define
+            the value at workflow start by himself.</para>
+        <para>If you like to send files or directories to other components you have three options. You can choose the option that suits you best. In terms of workflow sharing, consider the following:<orderedlist>
+                <listitem>
+                    <para>Select the file/directory to send at workflow start (you will ask for
+                        selection in the workflow start wizard). Choose that option if you like to
+                        share the workflow (.wf file) with others and don't want to share the
+                        file/directory (e.g. because it contains sensitive data).</para>
+                    <para><inlinegraphic fileref="../../images/image004.png"/></para>
+                </listitem>
+                <listitem>
+                    <para>Select the file/directory from the project in the workspace where the
+                        workflow file is stored. Choose that option if you like to share the
+                        workflow (.wf file) as well as the file/directory with others. In that case,
+                        you need to share the whole project (e.g. as an archive file - right-click
+                        on the project and export it as an archive file). The other person needs to
+                        import that project into the RCE workspace. The workflow will run out-of-box
+                        using the file/directory of the shared project.</para>
+                    <para><inlinegraphic fileref="../../images/image002.png"/></para>
+                </listitem>
+                <listitem>
+                    <para>Select the file/directory from file system. Choose that options if you
+                        don't like to share the workflow with others at all and if the
+                        file/directory needs to remain at a specified place in the local file
+                        system.</para>
+                    <para><inlinegraphic fileref="../../images/image005.png"/></para>
+                </listitem>
+            </orderedlist></para>
+        <para>You will see your outputs in the table similar like this:</para>
+        <para><inlinegraphic fileref="../../images/image006.png"/></para>
+        <para>After that, you can connect the outputs from the Input Provider to any other
+            compatible input from other components. The values (either defined directly or defined
+            at workflow start) will be sent to the connected inputs of the other components
+            immediately after the workflow has been started.</para>
+    </sect1>
+</chapter>

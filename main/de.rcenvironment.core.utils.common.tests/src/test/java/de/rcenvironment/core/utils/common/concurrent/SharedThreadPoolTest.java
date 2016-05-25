@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,12 +9,16 @@
 package de.rcenvironment.core.utils.common.concurrent;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -121,4 +125,76 @@ public class SharedThreadPoolTest {
     // TODO add test for exception-throwing Callables
 
     // TODO add test for task canceling
+
+    /**
+     * Verifies that there is sufficient task throughput (and therefore, no unusual congestion) in the common thread pool.
+     * 
+     * @throws InterruptedException on test interruption
+     */
+    @Test
+    public void commonPoolTaskThroughput() throws InterruptedException {
+        final int taskCount = 10000; // must be significantly greater than the max thread pool size
+        final int waitTimeForCompletion = 5000;
+
+        final CountDownLatch counter = new CountDownLatch(taskCount);
+        for (int i = 0; i < taskCount; i++) {
+            threadPool.execute(new Runnable() {
+
+                @Override
+                public void run() {
+                    threadSleep(10);
+                    counter.countDown();
+                }
+            });
+        }
+        assertTrue(counter.await(waitTimeForCompletion, TimeUnit.MILLISECONDS));
+
+        final int waitTimeBeforeShutdown = 500;
+        threadSleep(waitTimeBeforeShutdown); // prevent irrelevant shutdown warnings
+    }
+
+    /**
+     * Verifies that scheduled tasks are actually executed concurrently, ie in more than one thread.
+     */
+    @Test
+    public void scheduledTasksRunConcurrently() {
+        final AtomicInteger counter = new AtomicInteger();
+        final AtomicBoolean success = new AtomicBoolean();
+        // test time scale; adjust if test fails on slow machines
+        final int waitTimeSlice = 300;
+        threadPool.scheduleAfterDelay(new Runnable() {
+
+            @Override
+            public void run() {
+                log.debug("Running in thread "
+                    + Thread.currentThread().getName());
+                counter.incrementAndGet();
+                threadSleep(2 * waitTimeSlice);
+                if (counter.get() == 2) {
+                    // only reached if the second task ran in parallel
+                    success.set(true);
+                }
+            }
+        }, 0);
+        threadPool.scheduleAfterDelay(new Runnable() {
+
+            @Override
+            public void run() {
+                log.debug("Running in thread "
+                    + Thread.currentThread().getName());
+                threadSleep(1 * waitTimeSlice);
+                counter.incrementAndGet();
+            }
+        }, 0);
+        threadSleep(3 * waitTimeSlice);
+        assertEquals(Boolean.TRUE, success.get());
+    }
+
+    private void threadSleep(int msec) {
+        try {
+            Thread.sleep(msec);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 }

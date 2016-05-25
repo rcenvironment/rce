@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -60,24 +60,19 @@ public class HeadlessShutdown {
     public void executeByLaunchConfiguration(BootstrapConfiguration bootstrapConfiguration) {
         this.bootstrapSettings = bootstrapConfiguration;
 
-        final File shutdownDataDir = bootstrapSettings.getShutdownDataDirectory();
-        if (!shutdownDataDir.exists()) {
-            shutdownDataDir.mkdirs();
-        }
-
         if (bootstrapSettings.isShutdownRequested()) {
             try {
                 writeToLog("Running this instance as a shutdown signal sender");
-                sendShutdownTokenInternal(shutdownDataDir);
+                sendShutdownTokenInternal(bootstrapSettings.getTargetShutdownDataDirectory());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             } finally {
-                tryToRemoveProfileStubDir();
+                tryToRemoveInternalProfileDir();
                 System.exit(0);
             }
         } else {
             try {
-                initReceiver(shutdownDataDir);
+                initReceiver(bootstrapSettings.getOwnShutdownDataDirectory());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -100,6 +95,10 @@ public class HeadlessShutdown {
 
     // RECEIVER PART
     private void initReceiver(File shutdownDataDir) throws IOException {
+
+        if (!shutdownDataDir.exists()) {
+            shutdownDataDir.mkdirs();
+        }
 
         // Automatically create socket on free port
         final ServerSocket serverSocket = new ServerSocket(0);
@@ -190,10 +189,10 @@ public class HeadlessShutdown {
         writeMessageToConnection(socket, message);
     }
 
-    private void tryToRemoveProfileStubDir() {
+    private void tryToRemoveInternalProfileDir() {
         // this will only delete the directory if it is empty, so there is no harm in trying
-        if (!bootstrapSettings.getProfileDirectory().delete()) {
-            logger.warn("Failed to remove temporary profile directory " + bootstrapSettings.getProfileDirectory()
+        if (!bootstrapSettings.getInternalDataDirectory().delete()) {
+            logger.warn("Failed to remove temporary profile directory " + bootstrapSettings.getInternalDataDirectory()
                 + " although it should not contain any files");
         }
 

@@ -13,7 +13,7 @@
             class="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard"
             icon="/icons/workflowProj16.gif"
             id="de.rcenvironment.core.gui.wizards.exampleproject.internal.RCEExampleProjectWizard"
-            name="Workflow Examples Project">
+            name="Workflow Examples Project...">
       </wizard>
    </extension>
    

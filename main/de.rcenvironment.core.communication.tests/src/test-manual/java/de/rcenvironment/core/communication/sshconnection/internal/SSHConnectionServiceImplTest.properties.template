@@ -1,7 +1,0 @@
-# Copy this file to "manualTest.properties" and fill in the test properties there.
-# Remember that property strings must be escaped, e.g. "\" in a path must be "\\".
-
-ip=
-port=
-username=
-passphrase=

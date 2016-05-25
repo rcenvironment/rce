@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,6 +33,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -54,18 +55,18 @@ public class OutputWriterComponent extends DefaultComponent {
     private static final String DATE_FORMAT = "yyyy-MM-dd_HH-mm-ss-S";
 
     private ComponentContext componentContext;
-    
+
     private ComponentLog componentLog;
 
     private ComponentDataManagementService dataManagementService;
-    
+
     private TempFileService tempFileService = TempFileServiceAccess.getInstance();
 
     private String root = "";
 
     private String wfStartTimeStamp;
 
-    private Map<String, OutputLocationWriter> inputNameToOutputLocationWriter;
+    private Map<String, OutputLocationWriter> inputNameToOutputLocationWriter = new HashMap<String, OutputLocationWriter>();
 
     @Override
     public void setComponentContext(ComponentContext componentContext) {
@@ -91,10 +92,9 @@ public class OutputWriterComponent extends DefaultComponent {
 
         // Parse list of outputLocations and initialize corresponding objects
         String jsonString = componentContext.getConfigurationValue(OutputWriterComponentConstants.CONFIG_KEY_OUTPUTLOCATIONS);
-        inputNameToOutputLocationWriter = new HashMap<String, OutputLocationWriter>();
         // For "old" outputWriters that only have file/directory inputs, the jsonString may not be set
         if (jsonString != null && !jsonString.isEmpty()) {
-            ObjectMapper jsonMapper = new ObjectMapper();
+            ObjectMapper jsonMapper = JsonUtils.getDefaultObjectMapper();
             jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
             try {
                 OutputLocationList outputList = jsonMapper.readValue(jsonString, OutputLocationList.class);
@@ -111,7 +111,7 @@ public class OutputWriterComponent extends DefaultComponent {
                     // files and directories), whereas the handling of files in later iterations is done in the OutputLocationWriter.
                     String path = out.getFolderForSaving() + File.separator + out.getFilename();
                     path = path.substring(OutputWriterComponentConstants.ROOT_DISPLAY_NAME.length() + 1);
-                    path = replacePlaceholder(path, "");
+                    path = replacePlaceholder(path, "", null);
                     File fileToWrite = new File(root + File.separator + path);
                     writer.initializeFile(fileToWrite);
 
@@ -138,7 +138,7 @@ public class OutputWriterComponent extends DefaultComponent {
             for (String name : componentContext.getInputsWithDatum()) {
                 inputMap.put(name, componentContext.readInput(name));
             }
-            inputNameToOutputLocationWriter.get(inputName).writeOutput(inputMap, df.format(dt));
+            inputNameToOutputLocationWriter.get(inputName).writeOutput(inputMap, df.format(dt), componentContext.getExecutionCount());
         } else {
             componentLog.componentWarn(StringUtils.format("Received value for input '%s' that is"
                 + " not associated with any target for simple data types", inputName));
@@ -151,7 +151,14 @@ public class OutputWriterComponent extends DefaultComponent {
             + File.separator
             + componentContext.getInputMetaDataValue(inputName, OutputWriterComponentConstants.CONFIG_KEY_FILENAME);
         path = path.substring(OutputWriterComponentConstants.ROOT_DISPLAY_NAME.length() + 1);
-        path = replacePlaceholder(path, inputName);
+        String origFilename = null;
+        if (input.getDataType().equals(DataType.DirectoryReference)) {
+            origFilename = ((DirectoryReferenceTD) input).getDirectoryName();
+        } else if (input.getDataType().equals(DataType.FileReference)) {
+            origFilename = ((FileReferenceTD) input).getFileName();
+        }
+        
+        path = replacePlaceholder(path, inputName, origFilename);
         File fileToWrite = new File(root + File.separator + path);
         if (!fileToWrite.exists()) {
             writeFile(input, root + File.separator + path, inputName);
@@ -194,10 +201,11 @@ public class OutputWriterComponent extends DefaultComponent {
      * 
      * @param pathinput contains a input
      * @param currentInputName contains a current input name
+     * @param filename TODO
      * @return the input without placeholder
      * @throws ComponentException when function was not able to replace all placeholders
      */
-    public String replacePlaceholder(String pathinput, String currentInputName) throws ComponentException {
+    public String replacePlaceholder(String pathinput, String currentInputName, String filename) throws ComponentException {
         String output = pathinput;
         output =
             output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_WORKFLOWNAME), componentContext.getWorkflowInstanceName()
@@ -210,6 +218,14 @@ public class OutputWriterComponent extends DefaultComponent {
             output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_COMP_NAME), componentContext.getInstanceName());
         output =
             output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_COMP_TYPE), componentContext.getComponentName());
+        output =
+            output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_EXECUTION_COUNT),
+                Integer.toString(componentContext.getExecutionCount()));
+        //In the case of simple data inputs, there is no initial filename, so this placeholder is only replaced for files/directories.
+        if (filename != null) {
+            output =
+                output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_FILE_NAME), filename);
+        }
         Date dt = new Date();
         SimpleDateFormat df = new SimpleDateFormat(DATE_FORMAT);
         output =

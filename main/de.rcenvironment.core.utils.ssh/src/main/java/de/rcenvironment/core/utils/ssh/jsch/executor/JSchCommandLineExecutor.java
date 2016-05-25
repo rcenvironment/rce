@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,6 +47,10 @@ public class JSchCommandLineExecutor extends AbstractCommandLineExecutor impleme
     private String remoteWorkDir;
 
     private ChannelExec executionChannel;
+    
+    private InputStream stdOutStream;
+    
+    private InputStream stdErrStream;
 
     private Log log = LogFactory.getLog(getClass());
 
@@ -65,7 +69,7 @@ public class JSchCommandLineExecutor extends AbstractCommandLineExecutor impleme
         if (executionChannel == null) {
             throw new IllegalStateException(EXCEPTION_MESSAGE_NOT_RUNNING);
         }
-        return executionChannel.getExtInputStream();
+        return stdErrStream;
     }
 
     @Override
@@ -73,7 +77,7 @@ public class JSchCommandLineExecutor extends AbstractCommandLineExecutor impleme
         if (executionChannel == null) {
             throw new IllegalStateException(EXCEPTION_MESSAGE_NOT_RUNNING);
         }
-        return executionChannel.getInputStream();
+        return stdOutStream;
     }
 
     @Override
@@ -113,6 +117,9 @@ public class JSchCommandLineExecutor extends AbstractCommandLineExecutor impleme
             if (stdinStream != null) {
                 executionChannel.setInputStream(stdinStream);
             }
+            // as stated in the JavaDoc of ChannelExec, 'getInputStream()' and 'getErrStream()' should be called before 'connect()'
+            stdOutStream = executionChannel.getInputStream();
+            stdErrStream = executionChannel.getExtInputStream();
             executionChannel.connect();
         } catch (JSchException e) {
             throw new IOException(e);

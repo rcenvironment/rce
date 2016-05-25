@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,6 +24,7 @@ import java.nio.file.Files;
  * 
  * @author Robert Mischke
  * @author Oliver Seebach
+ * @author Tobias Rodehutskors
  */
 public final class BootstrapConfiguration {
 
@@ -85,10 +86,12 @@ public final class BootstrapConfiguration {
     // note: not using the singleton pattern so it can be reset by unit tests - misc_ro
     private static volatile BootstrapConfiguration instance;
 
+    private static String introText;
+
     private final File originalProfileDirectory;
 
     private final boolean intendedProfileDirectoryLocked;
-    
+
     private final boolean hasIntendedProfileDirectoryValidVersion;
 
     private final File finalProfileDirectory;
@@ -100,14 +103,15 @@ public final class BootstrapConfiguration {
     // the temporary/stub profile location for the process sending the shutdown signal
     private final File shutdownProfileDirectory;
 
-    private final File shutdownDataDirectory;
+    // the shutdown.dat location of the process which should be terminated
+    private final File targetShutdownDataDirectory;
 
     private final boolean shutdownRequested;
 
     private final File profilesRootDirectory;
 
     private final boolean fallbackProfileDisabled;
-    
+
     /**
      * Performs the bootstrap profile initialization.
      * 
@@ -115,7 +119,6 @@ public final class BootstrapConfiguration {
      */
     private BootstrapConfiguration() throws IOException {
 
-        PrintStream stdOut = System.out;
         PrintStream stdErr = System.err;
 
         LaunchParameters launchParameters = LaunchParameters.getInstance();
@@ -132,15 +135,38 @@ public final class BootstrapConfiguration {
             System.getProperties().containsKey(DRCE_LAUNCH_EXIT_ON_LOCKED_PROFILE) || launchParameters.containsToken("--headless")
                 || launchParameters.containsToken("--batch");
 
-        // check profile version number. In case of error either start in fallback profile or don't start
-        hasIntendedProfileDirectoryValidVersion = validateProfileDirectoryVersionNumber(preliminaryProfileDir, stdErr);
-        if (!hasIntendedProfileDirectoryValidVersion) {
+        boolean isProfileAccessible = true;
+        boolean hasIntendedProfileDirectoryValidVersionTemp;
+        try {
+            // check profile version number.
+            // if the preliminary profile is not read and/or not writable this method will throw an IOException
+            hasIntendedProfileDirectoryValidVersionTemp = validateProfileDirectoryVersionNumber(preliminaryProfileDir, stdErr);
+        } catch (IOException e) {
+            isProfileAccessible = false;
+            hasIntendedProfileDirectoryValidVersionTemp = false;
+        }
+        // using a temporary local variable since the member variable should be final
+        hasIntendedProfileDirectoryValidVersion = hasIntendedProfileDirectoryValidVersionTemp;
+
+        // In case of error either start in fallback profile or don't start
+        if (!isProfileAccessible || !hasIntendedProfileDirectoryValidVersion) {
             // fail if fallback profile disabled
             if (fallbackProfileDisabled) {
-                String errorMessage = "The required version of the profile directory is " + BootstrapConfiguration.PROFILE_VERSION_NUMBER
-                    + " but the profile directory's current version is newer. Most likely, because it was used with a newer RCE version"
-                    + " before. As downgrade is not supported, the configured profile directory cannot be used with this RCE version."
-                    + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
+                String errorMessage;
+
+                if (!isProfileAccessible) {
+                    errorMessage = "The specified profile folder " + preliminaryProfileDir.getAbsolutePath()
+                        + " is either nor readable and/or not writeable. "
+                        + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
+                } else { // !hasIntendedProfileDirectoryValidVersion
+                    errorMessage =
+                        "The required version of the profile directory is "
+                            + BootstrapConfiguration.PROFILE_VERSION_NUMBER
+                            + " but the profile directory's current version is newer. Most likely, this is the case "
+                            + " because it has been used with a newer RCE version before. As downgrading of profiles is not supported,"
+                            + " the configured profile directory cannot be used with this RCE version."
+                            + " Choose another profile directory. (See the user guide for more information about the profile directory.)";
+                }
                 stdErr.println(errorMessage + " Fallback profile is disabled, shutting down.");
                 System.exit(1);
             } else {
@@ -149,13 +175,10 @@ public final class BootstrapConfiguration {
             }
         }
 
-        // FIXME 6.0.0 - in case of a profile dir collision, the fallback profile will still use this for shutdown data - misc_ro
+        // the temporary/stub profile location for the process sending the shutdown signal
         shutdownProfileDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR + "/shutdown");
 
-        // determine where shutdown data is stored
-        shutdownDataDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR);
-
-        String introText;
+        targetShutdownDataDirectory = new File(originalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR);
 
         if (shutdownRequested) {
             // if used as a shutdown trigger, use the shutdown data sub-directory as profile directory
@@ -189,7 +212,7 @@ public final class BootstrapConfiguration {
 
         internalDataDirectory = new File(finalProfileDirectory, PROFILE_INTERNAL_DATA_SUBDIR);
         // create internal data directory only if it was not already created by profile version checking procedure
-        if (!internalDataDirectory.exists()){
+        if (!internalDataDirectory.exists()) {
             internalDataDirectory.mkdirs();
             if (!internalDataDirectory.isDirectory()) {
                 throw new IOException("Failed to initialize internal data directory " + internalDataDirectory.getAbsolutePath());
@@ -197,8 +220,8 @@ public final class BootstrapConfiguration {
         }
 
         // circumvent CheckStyle rule to generate basic output before the log system is initialized
-
-        stdOut.println(String.format("%s %s (use -p/--profile <id or path> to override)", introText, finalProfileDirectoryPath));
+        PrintStream stdout = System.out;
+        stdout.println(String.format("%s %s (use -p/--profile <id or path> to override)", introText, finalProfileDirectoryPath));
 
         setLoggingParameters();
 
@@ -248,14 +271,19 @@ public final class BootstrapConfiguration {
         return shutdownRequested;
     }
 
-    public File getShutdownDataDirectory() {
-        return shutdownDataDirectory;
+    // the shutdown.dat location for the process sending the shutdown signal is within its own profile directory
+    public File getOwnShutdownDataDirectory() {
+        return internalDataDirectory;
+    }
+
+    public File getTargetShutdownDataDirectory() {
+        return targetShutdownDataDirectory;
     }
 
     public boolean isIntendedProfileDirectorySuccessfullyLocked() {
         return intendedProfileDirectoryLocked;
     }
-    
+
     /**
      * @return <code>true</code> if profile directory has valid version (<= current one)
      */
@@ -276,7 +304,7 @@ public final class BootstrapConfiguration {
         profilesRootDirectory.mkdirs();
         if (!profilesRootDirectory.isDirectory()) {
             throw new IOException(String.format(
-                "Failed to create the default default profile root directory \"%s\"", profilesRootDirectory.getAbsolutePath()));
+                "Failed to create the default profile root directory \"%s\"", profilesRootDirectory.getAbsolutePath()));
         }
     }
 
@@ -333,6 +361,12 @@ public final class BootstrapConfiguration {
         } else {
             initializeProfilesRootDirectory();
             profileDir = new File(profilesRootDirectory, profilePath).getAbsoluteFile();
+        }
+        if (profileDir.exists() && !profileDir.isDirectory()) {
+            throw new IOException(String.format(
+                "The configured profile directory \"%s\" points to a file, it must either point to an existing profile directory "
+                    + "or must be a path pointing to a not yet existing directory; please check your launch settings",
+                profileDir.getAbsolutePath()));
         }
         return profileDir;
     }
@@ -392,7 +426,7 @@ public final class BootstrapConfiguration {
 
     /**
      * Validates profile directory version number.
-     *
+     * 
      * @param profileFolder the profile folder
      * @param stdErr the std err
      * @return true, if successful
@@ -425,7 +459,7 @@ public final class BootstrapConfiguration {
 
     private void writeProfileVersionNumberToProfile(File versionFile, int versionNumber) throws IOException {
         // if version file's parent folder does not exist, create it
-        if (!versionFile.getParentFile().exists()){
+        if (!versionFile.getParentFile().exists()) {
             versionFile.getParentFile().mkdirs();
         }
         // if file does not exist, create it

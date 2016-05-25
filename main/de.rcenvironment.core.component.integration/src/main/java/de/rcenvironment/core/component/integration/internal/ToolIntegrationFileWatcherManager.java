@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -35,11 +35,11 @@ public class ToolIntegrationFileWatcherManager {
 
     private ToolIntegrationService integrationService;
 
-    private Map<ToolIntegrationContext, ToolIntegrationFileWatcher> watcher;
+    private Map<ToolIntegrationContext, ToolIntegrationFileWatcher> watchers;
 
     public ToolIntegrationFileWatcherManager(ToolIntegrationService integrationService) {
         this.integrationService = integrationService;
-        this.watcher = new HashMap<>();
+        this.watchers = new HashMap<>();
     }
 
     /**
@@ -59,13 +59,35 @@ public class ToolIntegrationFileWatcherManager {
 
             ToolIntegrationFileWatcher integrationWatcher = new ToolIntegrationFileWatcher(context,
                 integrationService);
-            SharedThreadPool.getInstance().execute(integrationWatcher);
+            SharedThreadPool.getInstance().execute(integrationWatcher, "FileWatcher " + context.getContextId());
             integrationWatcher.registerRecursive(toolIntegrationPath);
-            watcher.put(context, integrationWatcher);
-            LOGGER.debug("Created new watchter for context " + context.getContextType());
+            watchers.put(context, integrationWatcher);
+            LOGGER.debug("Created new watcher for context " + context.getContextType());
         } catch (IOException e) {
             LOGGER.warn(COULD_NOT_CREATE_A_WATCH_SERVICE_FOR_THE_FILE + integrationRootFolder.getAbsolutePath(), e);
         }
+    }
+
+    /**
+     * Unregister watcher for the given context.
+     * 
+     * @param context to unregister
+     */
+    public void unregisterRootDirectory(ToolIntegrationContext context) {
+        File integrationRootFolder =
+            new File(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
+        ToolIntegrationFileWatcher integrationWatcher = watchers.get(context);
+
+        if (integrationWatcher != null) {
+            try {
+                integrationWatcher.unregisterRecursive(FileSystems.getDefault().getPath(integrationRootFolder.getAbsolutePath()));
+            } catch (IOException e) {
+                LOGGER.warn("Could not unregister integration root folder: " + integrationRootFolder.getAbsolutePath(), e);
+            }
+            integrationWatcher.stop();
+            watchers.remove(integrationWatcher);
+        }
+        LOGGER.debug("Unregistered watcher for context " + context.getContextId());
     }
 
     /**
@@ -74,7 +96,7 @@ public class ToolIntegrationFileWatcherManager {
      * @param active value
      */
     public void setAllWatcherActivity(boolean active) {
-        for (ToolIntegrationFileWatcher current : watcher.values()) {
+        for (ToolIntegrationFileWatcher current : watchers.values()) {
             current.setWatcherActive(active);
         }
     }
@@ -86,11 +108,11 @@ public class ToolIntegrationFileWatcherManager {
      * @param integrationContext of the tool.
      */
     public void unregister(String previousToolName, ToolIntegrationContext integrationContext) {
-        if (watcher.get(integrationContext) != null) {
+        if (watchers.get(integrationContext) != null) {
             File path = new File(new File(integrationContext.getRootPathToToolIntegrationDirectory(),
                 integrationContext.getNameOfToolIntegrationDirectory()), previousToolName);
             try {
-                watcher.get(integrationContext).unregisterRecursive(FileSystems.getDefault().getPath(path.getAbsolutePath()));
+                watchers.get(integrationContext).unregisterRecursive(FileSystems.getDefault().getPath(path.getAbsolutePath()));
             } catch (IOException e) {
                 LOGGER.debug("Could not unregister tool directory of tool " + previousToolName, e);
             }
@@ -104,11 +126,11 @@ public class ToolIntegrationFileWatcherManager {
      * @param integrationContext of the tool.
      */
     public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {
-        if (watcher.get(integrationContext) != null) {
+        if (watchers.get(integrationContext) != null) {
             File path = new File(new File(integrationContext.getRootPathToToolIntegrationDirectory(),
                 integrationContext.getNameOfToolIntegrationDirectory()), toolName);
             try {
-                watcher.get(integrationContext).registerRecursive(FileSystems.getDefault().getPath(path.getAbsolutePath()));
+                watchers.get(integrationContext).registerRecursive(FileSystems.getDefault().getPath(path.getAbsolutePath()));
             } catch (IOException e) {
                 LOGGER.debug("Could not register tool directory of tool " + toolName, e);
             }

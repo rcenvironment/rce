@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,6 +32,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Implementation of {@link EndpointMetaDataDefinition}.
  * 
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMetaDataDefinition {
 
@@ -52,6 +53,8 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
     private static final String KEY_ENDPOINT_DATATYPES = "endpointDataTypes";
 
     private static final String KEY_PERSISTENT = "persistent";
+
+    private static final Object KEY_GUI_VISIBILITY_FILTER = "guiVisibilityFilter";
 
     // <meta data key, <meta data prop key, meta data prop value>>
     private Map<String, Map<String, Object>> rawMetaData;
@@ -98,7 +101,12 @@ public class EndpointMetaDataDefinitionImpl implements Serializable, EndpointMet
     public Map<String, List<String>> getGuiActivationFilter(String key) {
         return (Map<String, List<String>>) combinedRawMetaData.get(key).get(KEY_GUI_ACTIVATION_FILTER);
     }
-
+    @SuppressWarnings("unchecked")
+    @JsonIgnore
+    @Override
+    public Map<String, List<String>> getGuiVisibilityFilter(String key) {
+        return (Map<String, List<String>>) combinedRawMetaData.get(key).get(KEY_GUI_VISIBILITY_FILTER);
+    }
     @SuppressWarnings("unchecked")
     @JsonIgnore
     @Override

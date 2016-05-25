@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,7 @@ public enum InputMode {
 
     private final String label;
 
-    private InputMode(final String label) {
+    InputMode(final String label) {
         if (label == null || label.isEmpty()) {
             throw new IllegalArgumentException();
         }

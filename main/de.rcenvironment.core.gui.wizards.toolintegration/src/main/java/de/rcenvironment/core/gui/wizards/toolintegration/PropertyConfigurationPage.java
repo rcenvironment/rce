@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -50,6 +50,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
+
     /** Constant for the key "key" in the configuration map. */
     public static final String KEY_PROPERTY_KEY = ToolIntegrationConstants.KEY_PROPERTY_KEY;
 
@@ -70,6 +71,8 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
     private static final int NO_PROPERTY_TAB_SELECTION = -1;
 
     private static final String DEFAULT_CONFIGURATION_GROUP = "Default";
+
+    private static final String HELP_CONTEXT_ID = "de.rcenvironment.core.gui.wizard.toolintegration.integration_properties";
 
     protected Map<String, Object> configurationMap;
 
@@ -131,6 +134,8 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
         }
         updateSelection();
         setControl(container);
+        PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
+            HELP_CONTEXT_ID);
         setPageComplete(true);
 
     }
@@ -684,7 +689,7 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
 
         private final Table selectionTable;
 
-        public ButtonSelectionListener(Button button, Table table) {
+        ButtonSelectionListener(Button button, Table table) {
             this.button = button;
             this.selectionTable = table;
 
@@ -746,7 +751,7 @@ public class PropertyConfigurationPage extends ToolIntegrationWizardPage {
     public void performHelp() {
         super.performHelp();
         IWorkbenchHelpSystem helpSystem = PlatformUI.getWorkbench().getHelpSystem();
-        helpSystem.displayHelp("de.rcenvironment.core.gui.wizard.toolintegration.integration_properties");
+        helpSystem.displayHelp(HELP_CONTEXT_ID);
     }
 
     @Override

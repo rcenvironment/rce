@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -18,13 +18,16 @@ import org.codehaus.jackson.node.ObjectNode;
 
 import de.rcenvironment.components.doe.common.DOEConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
+import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
  * 
  * @author Sascha Zur
+ * @author Doreen Seider
  */
 public class DOEPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
@@ -39,12 +42,14 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
     private static final String V3_2 = "3.2";
 
     private static final String V3_3 = "3.3";
+    
+    private static final String V3_4 = "3.4";
 
     private static final String DYNAMIC_INPUTS = "dynamicInputs";
 
     private static final String STATIC_OUTPUTS = "staticOutputs";
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -56,7 +61,7 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
 
         int versionsToUpdate = PersistentDescriptionFormatVersion.NONE;
         if (silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V3_2) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V3_4) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         if (!silent && persistentComponentDescriptionVersion != null
@@ -69,22 +74,26 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
     @Override
     public PersistentComponentDescription performComponentDescriptionUpdate(int formatVersion, PersistentComponentDescription description,
         boolean silent) throws IOException {
-        if (silent) {
+        if (silent) { // called first (before non-silent)
             if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
                 switch (description.getComponentVersion()) {
                 case V3_0:
                     description = updateToVersion31(description);
                 case V3_1:
                     description = updateToVersion32(description);
+                case V3_2:
+                    description = updateToVersion33(description);
+                case V3_3:
+                    description = updateToVersion34(description);
                 default:
                     // nothing to do here
                 }
             }
-        } else {
+        } else { // called after "silent" was called
             if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
                 switch (description.getComponentVersion()) {
-                case V3_2:
-                    description = updateToVersion33(description);
+                case V3_3:
+                    description = updateToVersion34(description);
                     break;
                 default:
                 }
@@ -93,6 +102,14 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
         return description;
     }
 
+    private PersistentComponentDescription updateToVersion34(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        PersistentComponentDescription updatedDesc =
+            PersistentComponentDescriptionUpdaterUtils.updateFaultToleranceOfLoopDriver(description);
+        updatedDesc.setComponentVersion(V3_4);
+        return updatedDesc;
+    }
+    
     private PersistentComponentDescription updateToVersion33(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());

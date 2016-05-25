@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,7 +24,6 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -99,7 +98,8 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
             DataType type = dialog.getChosenDataType();
             metaData = dialog.getMetadataValues();
             if (metaData.containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
-                && metaData.get(InputProviderComponentConstants.META_FILESOURCETYPE).equals(FileSourceType.atWorkflowStart.name())) {
+                && metaData.get(InputProviderComponentConstants.META_FILESOURCETYPE).equals(
+                    InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
                 metaData.put(InputProviderComponentConstants.META_VALUE, "${" + name + "}");
             }
             executeAddCommand(name, type, metaData);
@@ -135,7 +135,8 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void executeAddCommand(String name, DataType type, Map<String, String> metaData) {
         if (metaData.containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
-            && metaData.get(InputProviderComponentConstants.META_FILESOURCETYPE).equals(FileSourceType.atWorkflowStart.name())) {
+            && metaData.get(InputProviderComponentConstants.META_FILESOURCETYPE).equals(
+                InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
 
             WorkflowNodeCommand command = new InputProviderAddDynamicEndpointCommand(endpointType, endpointIdToManage, name,
                 type, metaData, this); // null = this
@@ -149,10 +150,10 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
         if (oldDescription.getMetaData().containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
             && oldDescription.getMetaData().get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                .equals(FileSourceType.atWorkflowStart.name())
+                .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)
             || newDescription.getMetaData().containsKey(InputProviderComponentConstants.META_FILESOURCETYPE)
             && newDescription.getMetaData().get(InputProviderComponentConstants.META_FILESOURCETYPE)
-                .equals(FileSourceType.atWorkflowStart.name())) {
+                .equals(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
             WorkflowNodeCommand command = new InputProviderEditDynamicEndpointCommand(endpointType, oldDescription, newDescription, this);
             execute(command);
         } else {

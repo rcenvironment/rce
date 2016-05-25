@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -45,6 +45,8 @@ public class BatchAggregatorTest {
 
     /**
      * A dummy receiver for generated batches. Also provides a Semaphore for convenient waiting.
+     * 
+     * @param <T> the element type of the batches;
      * 
      * @author Robert Mischke
      */

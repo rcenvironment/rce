@@ -44,7 +44,8 @@
         "port" : 31005,
         "accounts" : {
             "admin" : {
-                "password" : "changeme!_adm",
+            	// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
                 "role" : "admin",
                 "enabled" : false
             },

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -178,7 +178,7 @@ public class ConfigurationInformationDialog extends Dialog {
             }
         });
         loadButton = new Button(examplesGroup, SWT.PUSH);
-        loadButton.setText("Open in Editor (read-only)");
+        loadButton.setText("Open in editor (read-only)");
         loadButton.setEnabled(false);
         loadButton.addSelectionListener(new LoadButtonSelectionListener());
 

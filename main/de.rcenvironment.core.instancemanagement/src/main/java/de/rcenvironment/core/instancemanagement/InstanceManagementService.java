@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,15 +9,21 @@
 package de.rcenvironment.core.instancemanagement;
 
 import java.io.IOException;
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.jcraft.jsch.JSchException;
+
+import de.rcenvironment.core.instancemanagement.internal.ConfigurationChangeSequence;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 
 /**
  * A service to set up, start, query and stop RCE instances from a running instance. Intended for multi-instance deployments (either in
  * production or testing), and automated test setups.
  * 
  * @author Robert Mischke
+ * @author David Scholz
  */
 public interface InstanceManagementService {
 
@@ -27,7 +33,7 @@ public interface InstanceManagementService {
      * @author Robert Mischke
      */
     // TODO split into download and installation policy enums?
-    public enum InstallationPolicy {
+    enum InstallationPolicy {
         /**
          * If an installation exists at the given location, do nothing.
          */
@@ -49,18 +55,109 @@ public interface InstanceManagementService {
     }
 
     /**
-     * Configures the given instance (ie, profile) from the template specified by "templateId", using the provided property map for
-     * configuration.
+     * 
+     * Maps config flag.
+     * 
+     * @author David Scholz
+     */
+    enum ConfigurationFlag {
+
+        // TODO decide what to do with the parameter strings in this enum; they differ from the updated commands
+
+        DUMMY(""),
+
+        SET_NAME("--name"),
+
+        ENABLE_RELAY("--enable-relay"),
+
+        DISABLE_RELAY("--disable-relay"),
+
+        ENABLE_WORKFLOWHOST("--enable-workflow-host"),
+
+        DISABLE_WORKFLOWHOST("--disable-workflow-host"),
+
+        SET_COMMENT("--add-comment"),
+
+        TEMP_DIR("--set-temp-dir"),
+
+        ENABLE_DEP_INPUT_TAB("--enable-deprecated-input-tab"),
+
+        DISABLE_DEP_INPUT_TAB("--disable-deprecated-input-tab"),
+
+        ENABLE_IP_FILTER("--enable-ip-filter"),
+
+        DISABLE_IP_FILTER("--disable-ip-filter"),
+
+        REQUEST_TIMEOUT("--set-request-timeout"),
+
+        FORWARDING_TIMEOUT("--set-forwarding-timeout"),
+
+        ADD_CONNECTION("--add-connection"),
+
+        REMOVE_CONNECTION("--remove-connection"),
+
+        ADD_SERVER_PORT("--add-server-port"),
+
+        REMOVE_SERVER_PORT("--remove-server-port"),
+
+        ADD_ALLOWED_IP("--add-allowed-ip"),
+
+        REMOVE_ALLOWED_IP("--remove-connection"),
+
+        ADD_SSH_CONNECTION("--add-ssh-connection"),
+
+        REMOVE_SSH_CONNECTION("--remove-ssh-connection"),
+
+        PUBLISH_COMPONENT("--publish-component"),
+
+        UNPUBLISH_COMPONENT("--unpublish-component"),
+
+        ENABLE_SSH_SERVER("--enable-ssh-server"),
+
+        DISABLE_SSH_SERVER("--disable-ssh-server"),
+
+        SET_SSH_SERVER_IP("--set-ssh-server-ip"),
+
+        SET_SSH_SERVER_PORT("--set-ssh-server-port"),
+
+        SET_BACKGROUND_MONITORING("--set-background-monitoring"),
+
+        ENABLE_IM_SSH_ACCESS("--enable-im-ssh-access"),
+
+        RESET_CONFIGURATION("--reset"),
+
+        APPLY_TEMPLATE("--use-template");
+
+        private final String flag;
+
+        ConfigurationFlag(String flag) {
+            this.flag = flag;
+        }
+
+        public String getFlag() {
+            return flag;
+        }
+
+        public List<String> getAllFlags() {
+            List<String> l = new ArrayList<String>();
+            for (ConfigurationFlag possibleValue : this.getDeclaringClass().getEnumConstants()) {
+                l.add(possibleValue.getFlag());
+            }
+            return l;
+        }
+    }
+
+    /**
+     * Configures the given instance (ie, profile) using the provided property map for configuration.
      * 
      * TODO check whether a property map is the most useful format here
      * 
-     * @param templateId the sub-folder of the root templates folder that contains the profile template to use
      * @param instanceId the sub-folder of the root profiles folder that contains the profile to use
-     * @param properties the substitution properties
-     * @param deleteOtherFiles is true, the instance/profile directory will be cleaned before writing the new configuration
+     * @param changeSequence the sequence to append changes to.
+     * @param userOutputReceiver the output receiver.
      * @throws IOException on configuration or I/O errors
      */
-    void configureInstanceFromTemplate(String templateId, String instanceId, Map<String, String> properties, boolean deleteOtherFiles)
+    void configureInstance(String instanceId, ConfigurationChangeSequence changeSequence, TextOutputReceiver userOutputReceiver)
         throws IOException;
 
     /**
@@ -69,21 +166,48 @@ public interface InstanceManagementService {
      * @param installationId the sub-folder of the root installation folder that contains the installation to use
      * @param instanceId the sub-folder of the root profiles folder that contains the profile to use
      * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
+     * @param timeout optional time for the command to be blocked. command will be canceled if time exceeds.
+     * @param startWithGui true if the instance shall be started with GUI.
      * @throws IOException on startup failure
      */
-    void startinstance(String installationId, String instanceId, TextOutputReceiver userOutputReceiver) throws IOException;
+    void startInstance(String installationId, List<String> instanceId, TextOutputReceiver userOutputReceiver, long timeout, 
+        boolean startWithGui)
+        throws IOException;
 
     /**
      * Attempts to stop/shutdown the profile specified by "instanceId".
      * 
      * @param instanceId the sub-folder of the root profiles folder that contains the profile to shut down
      * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
+     * @param timeout optional time for the command to be blocked. command will be canceled if time exceeds.
      * 
      * @throws IOException on shutdown failure
      */
-    void stopInstance(String instanceId, TextOutputReceiver userOutputReceiver) throws IOException;
-    
-    
+    void stopInstance(List<String> instanceId, TextOutputReceiver userOutputReceiver, long timeout) throws IOException;
+
+    /**
+     * 
+     * Attempts to start all instance with a specified profile with the installation specified by "installationId".
+     * 
+     * @param installationId the sub-folder of the root installation folder that contains the installation to use
+     * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
+     * @param timeout optional time for the command to be blocked. command will be canceled if time exceeds.
+     * @throws IOException if an instance has a startup failure
+     */
+    void startAllInstances(String installationId, TextOutputReceiver userOutputReceiver, long timeout) throws IOException;
+
+    /**
+     * 
+     * Attempts to stop/shutdown all running instances.
+     * 
+     * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
+     * @param installationId the sub-folder of the root installation folder that contains the installation. this optional paramater causes
+     *        all running instances using this installation to shutdown.
+     * @param timeout optional time for the command to be blocked. command will be canceled if time exceeds.
+     * @throws IOException on shutdown failure
+     */
+    void stopAllInstances(String installationId, TextOutputReceiver userOutputReceiver, long timeout) throws IOException;
+
     /**
      * List information about instances, installations or templates.
      * 
@@ -110,10 +234,24 @@ public interface InstanceManagementService {
      * @param urlQualifier the version part to insert into the configured URL template
      * @param installationPolicy the download/installation policy
      * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
+     * @param timeout timeout optional time for the command to be blocked. command will be canceled if time exceeds.
      * @throws IOException on I/O errors
      */
     void setupInstallationFromUrlQualifier(String installationId, String urlQualifier, InstallationPolicy installationPolicy,
-        TextOutputReceiver userOutputReceiver) throws IOException;
+        TextOutputReceiver userOutputReceiver, long timeout) throws IOException;
+    
+    /**
+     * Stops all instances running the given installation, replaces the installation and restarts the instances.
+     * 
+     * @param installationId the installation to (re-)install
+     * @param urlQualifier the version part to insert into the configured URL template
+     * @param installationPolicy the download/installation policy
+     * @param userOutputReceiver an optional {@link TextOutputReceiver} to send user progress information to
+     * @param timeout timeout optional time for the command to be blocked. command will be canceled if time exceeds.
+     * @throws IOException on I/O errors
+     */
+    void reinstallFromUrlQualifier(String installationId, String urlQualifier, InstallationPolicy installationPolicy,
+        TextOutputReceiver userOutputReceiver, long timeout) throws IOException;
 
     /**
      * Attempts to dispose the profile specified by "instanceId".
@@ -124,14 +262,27 @@ public interface InstanceManagementService {
      * @throws IOException on disposal failure
      */
     void disposeInstance(String instanceId, TextOutputReceiver outputReceiver) throws IOException;
-    
-    
+
     /**
      * Provides information about the instance management.
      * 
      * @param outputReceiver an optional {@link TextOutputReceiver} to send user progress information to
      */
     void showInstanceManagementInformation(TextOutputReceiver outputReceiver);
+
+    /**
+     * Attempts to execute a command on a managed instance via SSH.
+     * 
+     * @param instanceId The instance on which the command will be executed
+     * @param command The command to execute
+     * @param userOutputReceiver {@link TextOutputReceiver} where the output from the instance will be forwarded
+     * @throws SshParameterException on invalid SSH parameters
+     * @throws JSchException on SSH command execution errors
+     * @throws IOException on on SSH command execution errors
+     * @throws InterruptedException on SSH command execution errors
+     */
+    void executeCommandOnInstance(String instanceId, String command, TextOutputReceiver userOutputReceiver) throws JSchException,
+        SshParameterException, IOException, InterruptedException;
 
     // map: state -> list of instanceIds
     // Map<String, List<String>> listinstances(boolean onlyRunning) throws IOException;

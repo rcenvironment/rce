@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -29,9 +29,6 @@ import org.eclipse.jface.viewers.TableViewer;
 import org.eclipse.jface.viewers.TableViewerColumn;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.dnd.Clipboard;
-import org.eclipse.swt.dnd.TextTransfer;
-import org.eclipse.swt.dnd.Transfer;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -51,6 +48,7 @@ import de.rcenvironment.components.parametricstudy.common.Dimension;
 import de.rcenvironment.components.parametricstudy.common.Measure;
 import de.rcenvironment.components.parametricstudy.common.StudyDataset;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
+import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.utils.incubator.StudyDataExportMessageHelper;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
@@ -216,12 +214,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                 }
             }
             final String content = builder.toString();
-            final Clipboard clipboard = new Clipboard(Display
-                .getDefault());
-            final TextTransfer textTransfer = TextTransfer
-                .getInstance();
-            clipboard.setContents(new Object[] { content },
-                new Transfer[] { textTransfer });
+            ClipboardHelper.setContent(content);
         }
     }
 
@@ -254,7 +247,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
 
         private final Shell cdc;
 
-        public MySelectionListener(ChartDataComposite cd) {
+        MySelectionListener(ChartDataComposite cd) {
             cdc = cd.getShell();
         }
 
@@ -369,7 +362,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
              * 
              * @param key
              */
-            public ValueLabelProvider(final String key) {
+            ValueLabelProvider(final String key) {
                 this.key = key;
             }
 

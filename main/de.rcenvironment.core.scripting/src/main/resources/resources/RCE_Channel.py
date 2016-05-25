@@ -4,6 +4,7 @@ Created on 24.04.2013
 @author: Sascha Zur
 '''
 import simplejson as json
+import math
 
 def readinput_internal():
     """ 
@@ -102,7 +103,10 @@ def write_output(name, value):
         raise ValueError("Output '" + name + "' is not defined")
     if not name in RCE_CHANNEL_OUTPUT:
         RCE_CHANNEL_OUTPUT[name] = []
-    RCE_CHANNEL_OUTPUT[name].append(value)
+    if ((type(value) is float) and math.isinf(value) and value > 0 ):
+        RCE_CHANNEL_OUTPUT[name].append("+Infinity")
+    else:
+        RCE_CHANNEL_OUTPUT[name].append(value)
 
 def write_not_a_value_output(name):
     """ 

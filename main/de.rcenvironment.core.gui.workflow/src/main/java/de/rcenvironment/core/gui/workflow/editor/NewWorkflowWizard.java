@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -74,7 +74,7 @@ public class NewWorkflowWizard extends Wizard implements INewWizard {
          * Constructor.
          * @param selection The current selection in the navigator.
          */
-        public NewWorkflowPage(IStructuredSelection selection) {
+        NewWorkflowPage(IStructuredSelection selection) {
             super("NewWorkflowPage", selection); //$NON-NLS-1$
             setFileExtension("wf"); //$NON-NLS-1$
             setDescription(Messages.createWorkflow);

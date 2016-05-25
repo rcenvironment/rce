@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -34,6 +34,15 @@ public final class XmlMergerComponentConstants {
     public static final String MAPPINGTYPE_CONFIGNAME = "mappingType";
     
     /** Constant. */
+    public static final String MAPPINGFILE_DEPLOYMENT_CONFIGNAME = "mappingFileDeployment";
+    
+    /** Constant. */
+    public static final String MAPPINGFILE_DEPLOYMENT_INPUT = "input";
+    
+    /** Constant. */
+    public static final String MAPPINGFILE_DEPLOYMENT_LOADED = "loaded";
+    
+    /** Constant. */
     public static final String MAPPINGTYPE_XSLT = "XSLT";
     
     /** Constant. */
@@ -50,6 +59,12 @@ public final class XmlMergerComponentConstants {
     
     /** Constant. */
     public static final String INPUT_NAME_XML = "XML";
+    
+    /** Constant. */
+    public static final String INPUT_ID_MAPPING_FILE = "mappingFile";
+    
+    /** Constant. */
+    public static final String INPUT_NAME_MAPPING_FILE = "Mapping file";
     
     private XmlMergerComponentConstants() {}
  

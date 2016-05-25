@@ -46,7 +46,7 @@
 
 	<!--  New Workflow Dialog -->
 	<extension point="org.eclipse.ui.newWizards">
-		<wizard id="de.rcenvironment.core.gui.workflowproject.wizard" name="Workflow"
+		<wizard id="de.rcenvironment.core.gui.workflowproject.wizard" name="Workflow..."
 			category="de.rcenvironment.rce.wizard.category" icon="resources/icons/newWorkflow16.png"
 			class="de.rcenvironment.core.gui.workflow.editor.NewWorkflowProjectWizard">
 			<description>
@@ -386,6 +386,18 @@
          </command>
       </menuContribution>
       <menuContribution
+            allPopups="false"
+            locationURI="menu:org.eclipse.ui.run">
+         <command
+               commandId="de.rcenvironment.core.gui.workflow.execute"
+               disableIcon="resources/icons/states/run_disable.gif"
+               icon="resources/icons/states/run_enabled.gif"
+               label="%executeWorkflowLabel"
+               style="push"
+               tooltip="%executeWorkflowTooltip">
+         </command>
+      </menuContribution>
+      <menuContribution
             locationURI="menu:window?after=preferences">
  			<menu label="%advancedMenuName">
             <command
@@ -408,7 +420,7 @@
             locationURI="menu:file?before=new">
             <command
                   commandId="de.rcenvironment.core.gui.workflowproject.create"
-                  label="New Workflow"
+                  label="New Workflow..."
                	  icon="resources/icons/newWorkflow16.png"
                   style="push">
             </command>
@@ -435,7 +447,7 @@
                commandId="de.rcenvironment.core.gui.workflowproject.create" 
                disableIcon="resources/icons/states/failed.gif"
                icon="resources/icons/newWorkflow16.png"
-               label="New Workflow"
+               label="New Workflow..."
                style="push"
                tooltip="Create a new Workflow">
          </command>

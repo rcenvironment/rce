@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -53,7 +53,7 @@ public class RemoteFileConnectionSupportTest extends TestCase {
         EasyMock.expect(bundleMock.getSymbolicName()).andReturn("de.rcenvironment.rce.communication").anyTimes();
         EasyMock.replay(bundleMock);
 
-        ServiceReference ref = EasyMock.createNiceMock(ServiceReference.class);
+        ServiceReference<?> ref = EasyMock.createNiceMock(ServiceReference.class);
 
         RemoteFileConnectionFactory factoryMock = EasyMock.createStrictMock(RemoteFileConnectionFactory.class);
         EasyMock.expect(factoryMock.createRemoteFileConnection(new URI(URI)))
@@ -64,7 +64,10 @@ public class RemoteFileConnectionSupportTest extends TestCase {
         EasyMock.expect(contextMock.getBundles()).andReturn(new Bundle[] { bundleMock }).anyTimes();
         EasyMock.expect(contextMock.getAllServiceReferences(EasyMock.eq(RemoteFileConnectionFactory.class.getName()),
             EasyMock.eq((String) null))).andReturn(new ServiceReference[] { ref }).anyTimes();
-        EasyMock.expect(contextMock.getService(ref)).andReturn(factoryMock).anyTimes();
+        
+        contextMock.getService(ref);
+        EasyMock.expectLastCall().andReturn(factoryMock).anyTimes();
+        
         EasyMock.replay(contextMock);
 
         support.activate(contextMock);

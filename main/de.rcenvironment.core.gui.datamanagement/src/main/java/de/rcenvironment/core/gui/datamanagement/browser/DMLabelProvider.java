@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -33,6 +33,7 @@ public class DMLabelProvider extends ColumnLabelProvider {
         ImageManager imageManager = ImageManager.getInstance();
         Image result = DMBrowserImages.IMG_DEFAULT;
         DMBrowserNode node = (DMBrowserNode) element;
+
         if (node.getType() == DMBrowserNodeType.Workflow && node.getIcon() == null) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.WORKFLOW_16);
         } else if (node.getType() == DMBrowserNodeType.Workflow && node.getIcon() != null) {
@@ -87,6 +88,8 @@ public class DMLabelProvider extends ColumnLabelProvider {
             result = imageManager.getSharedImage(StandardImages.DATATYPE_FILE_16);
         } else if (node.getType() == DMBrowserNodeType.Directory) {
             result = imageManager.getSharedImage(StandardImages.DATATYPE_DIRECTORY_16);
+        } else if (node.getType() == DMBrowserNodeType.Matrix) {
+            result = imageManager.getSharedImage(StandardImages.DATATYPE_MATRIX_16);
         } else if (node.getType() == DMBrowserNodeType.Input) {
             result = imageManager.getSharedImage(StandardImages.INPUT_16);
         } else if (node.getType() == DMBrowserNodeType.Output) {
@@ -102,7 +105,7 @@ public class DMLabelProvider extends ColumnLabelProvider {
         } else if (node.getType() == DMBrowserNodeType.Custom && node.getIcon() != null) {
             result = node.getIcon();
         } else if (node.getType() == DMBrowserNodeType.SqlFolder) {
-            result =  imageManager.getSharedImage(StandardImages.SQL_STATEMENTS); 
+            result = imageManager.getSharedImage(StandardImages.SQL_STATEMENTS);
         }
         return result;
     }

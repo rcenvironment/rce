@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,14 +10,14 @@ package de.rcenvironment.core.start.validators.internal;
 
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
-import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
 
 /**
  * Ensures the length of the path to RCE's installation directory is not too long for the file system.
  * 
  * @author Sascha Zur
  */
-public class InstallationDirectoryPathLengthValidator implements InstanceValidator{
+public class InstallationDirectoryPathLengthValidator extends DefaultInstanceValidator {
     
     private static final int MAX_LENGTH_WINDOWS_7_UNIX = 255;
     

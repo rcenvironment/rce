@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany, 2006-2010 Fraunhofer SCAI, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -114,8 +114,10 @@ public class SimpleNotificationService {
      *        (can be regEx).
      * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
      * @return the {@link Notification}s sorted by the matching notification identifier.
+     * @throws RemoteOperationException if getting notifications fails.
      */
-    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) {
+    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform)
+        throws RemoteOperationException {
         return distrNotificationService.getNotifications(notificationId, publishPlatform);
     }
 

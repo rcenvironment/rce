@@ -29,9 +29,12 @@ DAEMON_NAME="rce-$INSTANCE_ID-daemon"
 
 ############################################################
 
+# time to wait for a shutdown response
+wait_for_termination=20
+
 # arguments
-start_arguments='--headless -nosplash'
-stop_arguments='--shutdown -nosplash'
+start_arguments='--headless --launcher.suppressErrors -nosplash'
+stop_arguments='--shutdown --launcher.suppressErrors -nosplash'
 
 # pid file
 pidfile="/var/run/${DAEMON_NAME}.pid"
@@ -54,6 +57,18 @@ eval_cmd() {
   return $rc
 }
 
+# executes the given arguments as command with user privileges
+executeAsUser() {
+  case `cat /proc/version` in
+	*Debian* | *Ubuntu*) 
+		sudo -u $USER $@ &	
+		;;
+	*Red\ Hat* | *SUSE*)
+		su --session-command '$@' $USER &
+		;;
+  esac
+}
+
 start() {
   # see if running
   local pid=$(pidof $RCE_BINARY)
@@ -74,11 +89,12 @@ start() {
   
   # make sure the daemon profile, startup log file and default temp directory are not readable by non-group users, 
   # as they may contain sensitive data
-  mkdir -p "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
-  touch $LOG_FILE
+  executeAsUser mkdir -p "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
+  executeAsUser touch $LOG_FILE
+
   chown --quiet $USER:$USER "$PROFILE_DIR" "$DEFAULT_TEMP_DIR"
   chmod --quiet o-rwx "$PROFILE_DIR" "$DEFAULT_TEMP_DIR" "$LOG_FILE"
-  
+
   # start RCE
   case `cat /proc/version` in
 	*Debian* | *Ubuntu*) 
@@ -88,7 +104,7 @@ start() {
 		su --session-command "$RCE_BINARY $start_arguments &>$LOG_FILE" $USER &
 		;;
   esac
-  
+
   # repeat some security settings after startup
   chmod --quiet o-rwx $LOG_FILE 
 
@@ -100,6 +116,27 @@ start() {
   pidof $RCE_BINARY >/dev/null 2>&1
   printf "%-${blanc_count}s" ''
   eval_cmd $?
+}
+
+killrce() {
+  # see if running
+  local pid=$(pidof $RCE_BINARY)
+  if [ -z "$pid" ]; then
+    echo "$DAEMON_NAME not running"
+    return 0
+  fi
+
+  # get the process group id
+  local pgid=$(ps -o pgid= $pid | grep -o '[0-9]*')
+
+  echo "Do you really want to kill $DAEMON_NAME and its associated processes?"
+  select yn in "Yes" "No"; do
+    case $yn in
+      # kill all processes with the given process group id
+      Yes ) kill -- -$pgid; break;;
+      No ) exit;;
+    esac
+  done
 }
 
 stop() {
@@ -116,7 +153,7 @@ stop() {
   PROFILE_DIR="$DAEMON_USER_HOME/.rce/$INSTANCE_ID"
   printf "Stopping RCE daemon (log file $LOG_FILE, RCE profile $PROFILE_DIR)"
   
-  touch $LOG_FILE
+  executeAsUser touch $LOG_FILE
   chmod --quiet o-rwx $LOG_FILE
 
   # stop RCE
@@ -134,8 +171,16 @@ stop() {
   chmod --quiet o-rwx $LOG_FILE 
   
   # check if RCE is stopped
+
+  COUNTER=0
   while [ $process_count -ne 0 ]
   do
+    if [ $COUNTER -gt $wait_for_termination ]; then
+      shutdown_failed="true"
+      break
+    fi
+    let COUNTER=COUNTER+1
+
     printf "."
     process_count=$(ps aux |grep -v grep |grep -c -e "$RCE_BINARY $start_arguments")
     blanc_count=$((blanc_count - 1))
@@ -144,7 +189,14 @@ stop() {
   if [ $blanc_count -gt 0 ]; then
     printf "%-${blanc_count}s" ''
   fi
-  eval_cmd $?
+
+  res=$?
+  if [ $shutdown_failed ]; then
+    eval_cmd 1
+    echo "Unable to stop the rce-daemon. You can kill it manually using: $1 kill"
+  else
+    eval_cmd $res
+  fi
 }
 
 status() {
@@ -163,7 +215,7 @@ case $1 in
     start
     ;;
   stop)
-    stop
+    stop $0
     ;;
   status)
     status
@@ -173,8 +225,11 @@ case $1 in
     sleep 3
     start
     ;;
+  kill)
+    killrce
+    ;;
   *)
-    echo "Usage: $0 {start|stop|status|restart}"
+    echo "Usage: $0 {start|stop|status|restart|kill}"
     exit 1
 esac
 

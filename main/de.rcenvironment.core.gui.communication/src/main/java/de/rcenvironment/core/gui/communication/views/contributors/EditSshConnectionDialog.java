@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -24,9 +24,9 @@ public class EditSshConnectionDialog extends AbstractSshConnectionDialog {
         + "Changes will be applied after restarting the connection.";
 
     public EditSshConnectionDialog(Shell parentShell, String connectionName, String host, int port, String username,
-        boolean storePassphrase,
+        String keyfileLocation, boolean usePassphrase, boolean storePassphrase,
         boolean connectImmediately) {
-        super(parentShell, connectionName, host, port, username, storePassphrase, connectImmediately);
+        super(parentShell, connectionName, host, port, username, keyfileLocation, usePassphrase, storePassphrase, connectImmediately);
         this.hint = HINT;
     }
 

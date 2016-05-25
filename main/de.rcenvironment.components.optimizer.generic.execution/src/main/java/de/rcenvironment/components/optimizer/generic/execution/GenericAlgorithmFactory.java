@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2013 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,11 +28,11 @@ public class GenericAlgorithmFactory implements OptimizerAlgorithmExecutorFactor
     }
 
     @Override
-    public OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(String algorithm,
+    public OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(
         Map<String, MethodDescription> methodConfiguration, Map<String, de.rcenvironment.core.datamodel.api.TypedDatum> outputValues,
         Collection<String> input, de.rcenvironment.core.component.execution.api.ComponentContext ci, Map<String, Double> upperMap,
-        Map<String, Double> lowerMap) throws ComponentException {
-        return new GenericAlgorithmExecutor(algorithm, methodConfiguration, outputValues, input, ci, upperMap, lowerMap);
+        Map<String, Double> lowerMap, Map<String, Double> stepValues) throws ComponentException {
+        return new GenericAlgorithmExecutor(methodConfiguration, outputValues, input, ci, upperMap, lowerMap, stepValues);
     }
 
 }

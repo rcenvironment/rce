@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,12 +8,12 @@
 
 package de.rcenvironment.core.component.execution.api;
 
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
 import java.util.UUID;
 
@@ -97,6 +97,14 @@ public class WorkflowGraphTest {
 
             driver = graph.getLoopDriver(nodeNamesToNodes.get(NODE2).getExecutionIdentifier());
             Assert.assertEquals(nodeNamesToNodes.get(SINK_NODE1).getExecutionIdentifier(), driver.getExecutionIdentifier());
+
+            graph = createReducedInputsWorkflowGraph();
+            driver = graph.getLoopDriver(nodeNamesToNodes.get(NODE0).getExecutionIdentifier());
+            Assert.assertEquals(nodeNamesToNodes.get(OUTER_LOOP_NODE).getExecutionIdentifier(), driver.getExecutionIdentifier());
+            Map<String, Set<Deque<WorkflowGraphHop>>> hops =
+                graph.getHopsToTraverseOnFailure(nodeNamesToNodes.get(NODE0).getExecutionIdentifier());
+            Assert.assertEquals(1, hops.keySet().size());
+            Assert.assertEquals(1, hops.get(hops.keySet().iterator().next()).size());
         } catch (ComponentExecutionException e) {
             Assert.fail("Unexpected exception");
         }
@@ -106,7 +114,7 @@ public class WorkflowGraphTest {
     @Test
     public void testWorkflowGraphReset() {
         WorkflowGraph graph = null;
-        Map<String, Set<Queue<WorkflowGraphHop>>> hops = null;
+        Map<String, Set<Deque<WorkflowGraphHop>>> hops = null;
         Map<String, List<Integer>> hopsCount = new HashMap<>();
         List<Integer> counts = new LinkedList<>();
         try {
@@ -150,8 +158,7 @@ public class WorkflowGraphTest {
 
     /**
      * 
-     * @return A graph were two sinks are in a row with no nested loop, so no resetting queue should
-     *         be produced.
+     * @return A graph were two sinks are in a row with no nested loop, so no resetting Deque should be produced.
      */
     private WorkflowGraph createTwoSinksWorkflowGraph() {
 
@@ -194,8 +201,47 @@ public class WorkflowGraphTest {
 
     /**
      * 
-     * @return A graph where two sinks are in a row and both have a nested loop. The reset should .
-     *         contain 2 hops.
+     * @return A graph were two sinks are in a row with no nested loop, so no resetting Deque should be produced.
+     */
+    private WorkflowGraph createReducedInputsWorkflowGraph() {
+
+        nodeNamesToNodes = new HashMap<>();
+        Map<String, WorkflowGraphNode> nodes = new HashMap<>();
+        WorkflowGraphNode driverNode = createNewNode(1, 1, true, true);
+        nodeNamesToNodes.put(OUTER_LOOP_NODE, driverNode);
+        nodes.put(driverNode.getExecutionIdentifier(), driverNode);
+
+        WorkflowGraphNode node0 = createNewNode(1, 2, false, false);
+        nodeNamesToNodes.put(NODE + 0, node0);
+        nodes.put(node0.getExecutionIdentifier(), node0);
+
+        WorkflowGraphNode node1 = createNewNode(2, 1, false, false);
+        nodeNamesToNodes.put(NODE + 1, node1);
+        nodes.put(node1.getExecutionIdentifier(), node1);
+
+        Map<String, Set<WorkflowGraphEdge>> edges = new HashMap<>();
+        Set<WorkflowGraphEdge> edgesSet = new HashSet<>();
+        edgesSet.add(createEdge(nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, LoopComponentConstants.LoopEndpointType.SelfLoopEndpoint.name(),
+            nodeNamesToNodes.get(NODE0), 0, LoopComponentConstants.LoopEndpointType.SelfLoopEndpoint.name()));
+        edgesSet.add(createEdge(nodeNamesToNodes.get(NODE0), 0, LoopComponentConstants.LoopEndpointType.OuterLoopEndpoint.name(),
+            nodeNamesToNodes.get(NODE1), 0, LoopComponentConstants.LoopEndpointType.OuterLoopEndpoint.name()));
+        edgesSet.add(createEdge(nodeNamesToNodes.get(NODE0), 1, LoopComponentConstants.LoopEndpointType.OuterLoopEndpoint.name(),
+            nodeNamesToNodes.get(NODE1), 1, LoopComponentConstants.LoopEndpointType.SelfLoopEndpoint.name()));
+        edgesSet.add(createEdge(nodeNamesToNodes.get(NODE1), 0, LoopComponentConstants.LoopEndpointType.SelfLoopEndpoint.name(),
+            nodeNamesToNodes.get(OUTER_LOOP_NODE), 0, LoopComponentConstants.LoopEndpointType.SelfLoopEndpoint.name()));
+
+        for (WorkflowGraphEdge e : edgesSet) {
+            String key = WorkflowGraph.createEdgeKey(e);
+            edges.put(key, new HashSet<WorkflowGraphEdge>());
+            edges.get(key).add(e);
+        }
+        return new WorkflowGraph(nodes, edges);
+
+    }
+
+    /**
+     * 
+     * @return A graph where two sinks are in a row and both have a nested loop. The reset should . contain 2 hops.
      */
     private WorkflowGraph createTwoSinksWithInnerLoopWorkflowGraph() {
 
@@ -353,33 +399,32 @@ public class WorkflowGraphTest {
      * 
      * @param hops calculated result
      * @param hopsSize size of the map's keys (should be number of outputs of starting node.
-     * @param outputQueueSize number of queues per output (array field 0 = 'output0', 1 = 'output1',
-     *        ..)
+     * @param outputDequeSize number of Deques per output (array field 0 = 'output0', 1 = 'output1', ..)
      * @param hopsCounts map of counts for hops for every output.
      */
-    private void checkResultCorrect(Map<String, Set<Queue<WorkflowGraphHop>>> hops, int hopsSize, int[] outputQueueSize,
+    private void checkResultCorrect(Map<String, Set<Deque<WorkflowGraphHop>>> hops, int hopsSize, int[] outputDequeSize,
         Map<String, List<Integer>> hopsCounts) {
         Assert.assertEquals(hopsSize, hops.size());
-        for (int i = 0; i < outputQueueSize.length; i++) {
-            Assert.assertEquals(outputQueueSize[i], hops.get(OUTPUT + i).size());
+        for (int i = 0; i < outputDequeSize.length; i++) {
+            Assert.assertEquals(outputDequeSize[i], hops.get(OUTPUT + i).size());
         }
         for (String hopsName : hops.keySet()) {
             List<Integer> hopsCount = hopsCounts.get(hopsName);
-            for (Queue<WorkflowGraphHop> hopQueue : hops.get(hopsName)) {
-                if (hopsCount.contains(hopQueue.size())) {
-                    hopsCount.remove((Integer) hopQueue.size());
+            for (Deque<WorkflowGraphHop> hopDeque : hops.get(hopsName)) {
+                if (hopsCount.contains(hopDeque.size())) {
+                    hopsCount.remove((Integer) hopDeque.size());
                 } else {
-                    Assert.fail("Expected result for " + hopsName + " does not contain hops count " + hopQueue.size());
+                    Assert.fail("Expected result for " + hopsName + " does not contain hops count " + hopDeque.size());
                 }
 
-                String startIdentifier = hopQueue.peek().getHopExecutionIdentifier();
-                String currentTargetIdentifier = hopQueue.poll().getTargetExecutionIdentifier();
-                while (hopQueue.size() > 1) {
-                    WorkflowGraphHop hop = hopQueue.poll();
+                String startIdentifier = hopDeque.peek().getHopExecutionIdentifier();
+                String currentTargetIdentifier = hopDeque.poll().getTargetExecutionIdentifier();
+                while (hopDeque.size() > 1) {
+                    WorkflowGraphHop hop = hopDeque.poll();
                     Assert.assertEquals(currentTargetIdentifier, hop.getHopExecutionIdentifier());
                     currentTargetIdentifier = hop.getTargetExecutionIdentifier();
                 }
-                WorkflowGraphHop lastHop = hopQueue.poll();
+                WorkflowGraphHop lastHop = hopDeque.poll();
                 Assert.assertEquals(currentTargetIdentifier, lastHop.getHopExecutionIdentifier());
                 Assert.assertEquals(startIdentifier, lastHop.getTargetExecutionIdentifier());
             }

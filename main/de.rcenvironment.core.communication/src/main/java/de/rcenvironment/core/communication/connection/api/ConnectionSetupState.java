@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,7 +47,7 @@ public enum ConnectionSetupState {
 
     private final boolean reasonableToAllowStop;
 
-    private ConnectionSetupState(String displayText, boolean reasonableToStart, boolean reasonableToStop) {
+    ConnectionSetupState(String displayText, boolean reasonableToStart, boolean reasonableToStop) {
         this.displayText = displayText;
         this.reasonableToAllowStart = reasonableToStart;
         this.reasonableToAllowStop = reasonableToStop;

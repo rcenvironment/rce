@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -25,16 +25,36 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient
  */
 public class ComponentExecutionContextDefaultStub implements ComponentExecutionContext {
 
+    /**
+     * Default execution identifier.
+     */
+    public static final String COMP_EXE_ID = "comp-exe-id";
+    
+    /**
+     * Default workflow execution identifier.
+     */
+    public static final String WF_EXE_ID = "wf-exe-id";
+    
+    /**
+     * Default component instance name.
+     */
+    public static final String COMP_INSTANCE_NAME = "comp instance name";
+    
+    /**
+     * Default workflow instance name.
+     */
+    public static final String WF_INSTANCE_NAME = "wf instance name";
+    
     private static final long serialVersionUID = -984226139258729791L;
 
     @Override
     public String getExecutionIdentifier() {
-        return null;
+        return COMP_EXE_ID;
     }
 
     @Override
     public String getInstanceName() {
-        return null;
+        return COMP_INSTANCE_NAME;
     }
 
     @Override
@@ -69,12 +89,12 @@ public class ComponentExecutionContextDefaultStub implements ComponentExecutionC
 
     @Override
     public String getWorkflowExecutionIdentifier() {
-        return null;
+        return WF_EXE_ID;
     }
 
     @Override
     public String getWorkflowInstanceName() {
-        return null;
+        return WF_INSTANCE_NAME;
     }
 
     @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -47,15 +47,16 @@ public class OptimizerAlgorithmExecutorFactoryRegistryImpl implements OptimizerA
     }
 
     @Override
-    public OptimizerAlgorithmExecutor createAlgorithmProviderInstance(String algorithmPackage, String algorithm,
+    public OptimizerAlgorithmExecutor createAlgorithmProviderInstance(String algorithmPackage,
         Map<String, MethodDescription> methodConfiguration, Map<String, TypedDatum> outputValues, Collection<String> input,
-        ComponentContext compContext, Map<String, Map<String, Double>> boundMaps) throws ComponentException {
+        ComponentContext compContext, Map<String, Map<String, Double>> boundMaps, Map<String, Double> stepValues)
+        throws ComponentException {
 
         OptimizerAlgorithmExecutor result = null;
         for (OptimizerAlgorithmExecutorFactory currentProvider : factories) {
             if (currentProvider.getOptimizerAlgorithmPackageIdentifier().equalsIgnoreCase(algorithmPackage)) {
-                result = currentProvider.createOptimizerAlgorithmExecutorInstance(algorithm,
-                    methodConfiguration, outputValues, input, compContext, boundMaps.get("upper"), boundMaps.get("lower"));
+                result = currentProvider.createOptimizerAlgorithmExecutorInstance(methodConfiguration, outputValues, input, compContext,
+                    boundMaps.get("upper"), boundMaps.get("lower"), stepValues);
             }
         }
         return result;

@@ -4,10 +4,6 @@
 	<sect2>
 		<title>Overview: Build and Versioning Scopes</title>
 		<para>TODO migrate/add content</para>
-		<para>Note that in 2.5.x, the "standard" and "example" component groups are
-			built as part of the core repository, and are therefore upgraded and
-			released along with it. This will probably change in a future release.
-		</para>
 	</sect2>
 	<sect2>
 		<title>Changing Version Dependencies</title>

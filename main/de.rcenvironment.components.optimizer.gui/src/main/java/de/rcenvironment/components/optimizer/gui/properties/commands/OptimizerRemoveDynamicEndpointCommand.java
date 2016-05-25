@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -69,9 +71,17 @@ public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpoint
                 if ((oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) == null
                     && oldDescription.getMetaData().get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
                     || (oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
-                    && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
+                        && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
                     getWorkflowNode().getInputDescriptionsManager().removeDynamicEndpointDescription(
                         name + OptimizerComponentConstants.STARTVALUE_SIGNATURE);
+                }
+                if ((oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_STEP) != null
+                    && !oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_STEP).isEmpty())) {
+                    if (oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_UNIFIED_STEP) != null
+                        && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_UNIFIED_STEP))) {
+                        workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(
+                            name + OptimizerComponentConstants.STEP_VALUE_SIGNATURE);
+                    }
                 }
                 OptimizerDynamicEndpointCommandHelper.removeUpperLowerBoundsEndpoints(oldDescription.getName(),
                     oldDescription.getMetaData(),
@@ -130,18 +140,30 @@ public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpoint
                             OptimizerDynamicEndpointCommandHelper.createGradientChannelName(function.getName(), name),
                             oldDescription.getDataType(), new HashMap<String, String>());
                     }
-                    getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
-                        name + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
-                        oldDescription.getDataType(), oldDescription.getMetaData());
+
                 }
+                getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
+                    name + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
+                    oldDescription.getDataType(), oldDescription.getMetaData());
                 if ((oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) == null
                     && oldDescription.getMetaData().get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
                     || (oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
-                    && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
+                        && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
                     getWorkflowNode().getInputDescriptionsManager().addDynamicEndpointDescription(
                         OptimizerComponentConstants.ID_STARTVALUES,
                         name + OptimizerComponentConstants.STARTVALUE_SIGNATURE, oldDescription.getDataType(),
                         new HashMap<String, String>());
+                }
+                if ((oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_STEP) != null
+                    && !oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_STEP).isEmpty())) {
+                    if (oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_UNIFIED_STEP) != null
+                        && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_UNIFIED_STEP))) {
+                        Map<String, String> stepValueMetaData = new HashMap<String, String>();
+                        stepValueMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE,
+                            LoopEndpointType.OuterLoopEndpoint.name());
+                        workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
+                            name + OptimizerComponentConstants.STEP_VALUE_SIGNATURE, oldDescription.getDataType(), stepValueMetaData);
+                    }
                 }
                 OptimizerDynamicEndpointCommandHelper.addLowerAndUpperBoundsEndpoints(oldDescription.getName(),
                     oldDescription.getDataType(),

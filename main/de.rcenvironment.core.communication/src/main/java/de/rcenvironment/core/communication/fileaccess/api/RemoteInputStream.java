@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -12,10 +12,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Serializable;
 import java.net.URI;
-import java.text.MessageFormat;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.fileaccess.internal.RemoteFileConnectionSupport;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -31,7 +31,7 @@ public class RemoteInputStream extends InputStream implements Serializable {
 
     private static final long serialVersionUID = 8592687526532347895L;
 
-    private static final String ERROR_PARAMETERS_NULL = "The parameter \"{0}\" must not be null.";
+    private static final String ERROR_PARAMETERS_NULL = "The parameter \"%s\" must not be null.";
 
     private static final String REMOTE_STREAMS_SHOULD_NOT_CALL_THIS_METHOD = "Remote streams should not call this method";
 
@@ -46,8 +46,8 @@ public class RemoteInputStream extends InputStream implements Serializable {
      */
     public RemoteInputStream(URI uri) throws IOException {
 
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, "uri"));
-        Assertions.isDefined(uri, MessageFormat.format(ERROR_PARAMETERS_NULL, "certificate"));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, "uri"));
+        Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, "certificate"));
 
         try {
             remoteFileConnection = RemoteFileConnectionSupport.getRemoteFileConnection(uri);

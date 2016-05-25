@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Data Model Tests
 Bundle-SymbolicName: de.rcenvironment.core.datamodel.tests
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Fragment-Host: de.rcenvironment.core.datamodel
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing

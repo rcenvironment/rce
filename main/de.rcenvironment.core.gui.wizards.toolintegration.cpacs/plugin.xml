@@ -4,9 +4,13 @@
 	
 <extension point="org.eclipse.help.contexts">
 <contexts
-	file="integrationContexts.xml"
+	file="help/context.xml"
 	plugin="de.rcenvironment.core.gui.wizards.toolintegration.cpacs">
 	</contexts>
 </extension>
+	
+   <extension point="org.eclipse.help.toc">
+   		<toc file="help/toc.xml"/>
+ 	</extension>	
 	
 </plugin>

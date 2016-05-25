@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -154,6 +154,8 @@ public class WorkflowNodeValidatorsRegistryImpl implements WorkflowNodeValidator
     /**
      * Factory interface to encapsulate the creation of new instances from
      * {@link IConfigurationElement}s.
+     * 
+     * @param <T> the type of the class which should be returned by a call to newInstance
      * 
      * @author Christian Weiss
      */

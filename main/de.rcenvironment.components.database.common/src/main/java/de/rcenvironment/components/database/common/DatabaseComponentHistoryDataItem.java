@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,6 +21,7 @@ import org.codehaus.jackson.node.ObjectNode;
 
 import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistoryDataItem;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * History data item.
@@ -52,7 +53,7 @@ public class DatabaseComponentHistoryDataItem extends CommonComponentHistoryData
     @Override
     public String serialize(TypedDatumSerializer serializer) throws IOException {
         String data = super.serialize(serializer);
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode;
 
         try {
@@ -72,7 +73,7 @@ public class DatabaseComponentHistoryDataItem extends CommonComponentHistoryData
     }
 
     private static void readReferenceFromString(String historyData, DatabaseComponentHistoryDataItem historyDataItem) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode rootNode;
         try {
             rootNode = mapper.readTree(historyData);

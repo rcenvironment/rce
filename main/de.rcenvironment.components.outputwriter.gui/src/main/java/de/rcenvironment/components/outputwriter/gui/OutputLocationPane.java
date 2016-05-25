@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,8 +17,8 @@ import java.util.Set;
 import java.util.TreeSet;
 
 import org.apache.commons.logging.LogFactory;
-import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.annotate.JsonAutoDetect.Visibility;
+import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.layout.TableColumnLayout;
@@ -55,6 +55,7 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * UI part to add and edit OutputLocations in the OutputWriter Component.
@@ -97,7 +98,7 @@ public class OutputLocationPane implements Refreshable {
     public OutputLocationPane(Executor executor) {
         super();
         this.executor = executor;
-        jsonMapper = new ObjectMapper();
+        jsonMapper = JsonUtils.getDefaultObjectMapper();
         jsonMapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
 

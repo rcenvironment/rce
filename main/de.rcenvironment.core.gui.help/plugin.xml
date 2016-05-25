@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?eclipse version="3.4"?>
 <plugin>
-
    <extension
          point="org.eclipse.help.toc">
-      <toc
-            file="resources/user_guide_toc.xml"
-            primary="true">
-      </toc>
-      <toc file="resources/eclipse_workbench_toc.xml"/>
+      <toc file="help/components_toc.xml" primary="true"/>
+      <toc file="help/tool_integration_toc.xml" primary="true"/>
    </extension>
    
 </plugin>

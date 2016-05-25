@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Tool Description</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>Define some characteristics of the tool such as name or icon and give some information
+            about yourself.</para>
+    </sect1>
+    <sect1>
+        <title>Usage</title>
+        <para>On this page, some characteristics of the tool for the integrated component are
+            defined. Information for the tool user or graphical elements is optional.</para>
+        <para>Required fields:<itemizedlist>
+                <listitem>                                
+                                <para><emphasis role="bold">Name:</emphasis> This field defines the
+                                    name of the component. The name is very important, because the
+                                    tool will be displayed in the workflow editor palette with this
+                                    name. Note that the name must not contain special characters.
+                                    The name will not be accepted if there is another locally
+                                    created tool with the same name. </para>
+                </listitem>
+            </itemizedlist></para>
+        <para>Optional fields:<itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Icon Path:</emphasis> An icon for the tool can be
+                        selected here. At best, it is larger than 32x32 pixels and has the same
+                        width and height. You can select to copy it into the configuration folder,
+                        so there is no absolute path link for it any more.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Group Name:</emphasis> This defines the group in the
+                        workflow editor palette in which the component will be shown.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Documentation:</emphasis> Here you can choose to add
+                        a documentation file for your tool. Note that the file must be a PDF
+                        document and it must not be greater than 50 MB.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Description:</emphasis> You can provide a
+                        description of your tool here, which can be seen by other users when
+                        configuring a workflow.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Name/E-Mail:</emphasis> You can provide some contact
+                        information about yourself in this field, for example if someone has
+                        questions or wants to provide suggestions.</para>
+                </listitem>
+            </itemizedlist></para> 
+    </sect1>
+</chapter>

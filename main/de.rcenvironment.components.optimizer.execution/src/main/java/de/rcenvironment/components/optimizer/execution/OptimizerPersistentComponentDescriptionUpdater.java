@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -40,6 +40,7 @@ import de.rcenvironment.core.component.update.api.PersistentComponentDescription
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -49,6 +50,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Doreen Seider
  */
 public class OptimizerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
+
+    private static final String PRE_CALC_FILE_PATH = "preCalcFilePath";
 
     private static final String SELF_LOOP_ENDPOINT = "SelfLoopEndpoint";
 
@@ -113,7 +116,9 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String V7_0 = "7.0";
 
-    private static ObjectMapper mapper = new ObjectMapper();
+    private static final String V7_1 = "7.1";
+
+    private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     @Override
     public String[] getComponentIdentifiersAffectedByUpdate() {
@@ -134,27 +139,11 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
         }
         if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V5_0) < 0) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
-        }
-        if (silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V5_1) < 0) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
-        }
-        if (silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V6_0) < 0) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
-        }
-        if (silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V6_1) < 0) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
-        }
-        if (silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V6_2) < 0) {
-            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
-        }
-        if (!silent && persistentComponentDescriptionVersion != null
             && persistentComponentDescriptionVersion.compareTo(V7_0) < 0) {
+            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+        }
+        if (silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V7_1) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         return versionsToUpdate;
@@ -163,36 +152,60 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
     @Override
     public PersistentComponentDescription performComponentDescriptionUpdate(int formatVersion, PersistentComponentDescription description,
         boolean silent) throws IOException {
-        if (!silent) {
+        if (!silent) { // called after "silent" was called
             if (formatVersion == PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE) {
                 description = updateBeforeVersion3(description);
-
             } else if (formatVersion == PersistentDescriptionFormatVersion.FOR_VERSION_THREE) {
                 description = updateToVersion3(description);
-            } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
-                && description.getComponentVersion().compareTo(V5_0) < 0) {
-                description = updateToVersion50(description);
-            } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE
-                && description.getComponentVersion().compareTo(V7_0) < 0) {
-                description = updateToVersion70(description);
-            }
-        } else {
-            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
-                if (description.getComponentVersion().compareTo(V5_1) < 0) {
+            } else if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+                switch (description.getComponentVersion()) {
+                case V3_0:
+                    description = updateToVersion50(description);
+                case V5_0:
                     description = updateToVersion51(description);
-                }
-                if (description.getComponentVersion().compareTo(V6_0) < 0) {
+                case V5_1:
                     description = updateToVersion60(description);
-                }
-                if (description.getComponentVersion().compareTo(V6_1) < 0) {
+                case V6_0:
                     description = updateToVersion61(description);
-                }
-                if (description.getComponentVersion().compareTo(V6_2) < 0) {
+                case V6_1:
                     description = updateFrom61To62(description);
+                case V6_2:
+                    description = updateToVersion70(description);
+                case V7_0:
+                    description = updateFrom70To71(description);
+                default:
+                    // nothing to do here
+                }
+            }
+        } else { // called first (before non-silent)
+            if (formatVersion == PersistentDescriptionFormatVersion.AFTER_VERSION_THREE) {
+                switch (description.getComponentVersion()) {
+                case V7_0:
+                    description = updateFrom70To71(description);
+                default:
+                    // nothing to do here
                 }
             }
         }
         return description;
+    }
+
+    private PersistentComponentDescription updateFrom70To71(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        PersistentComponentDescription updatedDesc =
+            PersistentComponentDescriptionUpdaterUtils.updateFaultToleranceOfLoopDriver(description);
+
+        JsonNode node = mapper.readTree(updatedDesc.getComponentDescriptionAsString());
+        JsonNode configuration = node.get(CONFIGURATION);
+        if (configuration != null) {
+            ObjectNode configNode = (ObjectNode) configuration;
+            configNode.put(OptimizerComponentConstants.USE_RESTART_FILE, "false");
+            configNode.put(PRE_CALC_FILE_PATH, "");
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        PersistentComponentDescription newdesc = new PersistentComponentDescription(writer.writeValueAsString(node));
+        newdesc.setComponentVersion(V7_1);
+        return newdesc;
     }
 
     private PersistentComponentDescription updateToVersion70(PersistentComponentDescription description)
@@ -278,7 +291,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
 
-        ((ObjectNode) node.get(CONFIGURATION)).put("preCalcFilePath", "${preCalcFilePath}");
+        ((ObjectNode) node.get(CONFIGURATION)).put(PRE_CALC_FILE_PATH, "${preCalcFilePath}");
         TextNode methodConfigurations = (TextNode) node.get(CONFIGURATION).get(METHOD_CONFIGURATIONS);
         Map<String, Object> configs = mapper.readValue(methodConfigurations.getTextValue(), new HashMap<String, Object>().getClass());
         ObjectNode accuracyNode = mapper.createObjectNode();
@@ -348,7 +361,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             }
         }
 
-        ((ObjectNode) node.get(CONFIGURATION)).put("preCalcFilePath", "${preCalcFilePath}");
+        ((ObjectNode) node.get(CONFIGURATION)).put(PRE_CALC_FILE_PATH, "${preCalcFilePath}");
         TextNode methodConfigurations = (TextNode) node.get(CONFIGURATION).get(METHOD_CONFIGURATIONS);
         Map<String, Object> configs = mapper.readValue(methodConfigurations.getTextValue(), new HashMap<String, Object>().getClass());
         if (configs != null && configs.get("Dakota Surrogate-Based Local") != null) {
@@ -446,7 +459,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
     @SuppressWarnings("unchecked")
     private <T extends JsonNode> T copy(T node) {
         try {
-            return (T) new ObjectMapper().readTree(node.traverse());
+            return (T) JsonUtils.getDefaultObjectMapper().readTree(node.traverse());
         } catch (IOException e) {
             throw new AssertionError(e);
         }
@@ -464,8 +477,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
         if (dynEndpoints != null) {
             for (JsonNode endpoint : dynEndpoints) {
                 if (endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER) == null
-                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).getTextValue().equals("null")
-                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).isNull()) {
+                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).isNull()
+                    || endpoint.get(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER).getTextValue().equals("null")) {
                     ObjectNode objectEndpoint = (ObjectNode) endpoint;
                     objectEndpoint.remove(PersistentComponentDescriptionUpdaterUtils.EP_IDENTIFIER);
                     String identifier = "";

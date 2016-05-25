@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -142,7 +142,7 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         placeholderComp2.setLayout(new GridLayout(2, false));
         placeholderComp2.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
         final Combo placeholderCombo2 =
-            OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp2, OutputWriterComponentConstants.WORDLIST);
+            OutputWriterGuiUtils.createPlaceholderCombo(placeholderComp2, OutputWriterComponentConstants.WORDLIST_SUBFOLDER);
         final Button insertButton2 =
             OutputWriterGuiUtils.createPlaceholderInsertButton(placeholderComp2, placeholderCombo2, additionalFolder);
 

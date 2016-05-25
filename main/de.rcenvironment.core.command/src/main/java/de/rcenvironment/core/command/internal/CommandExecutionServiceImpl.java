@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.command.internal;
 
+import java.io.File;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -18,6 +19,8 @@ import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.command.internal.handlers.BuiltInCommandPlugin;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
+import de.rcenvironment.core.configuration.ConfigurationService;
+import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
@@ -36,6 +39,8 @@ public class CommandExecutionServiceImpl implements CommandExecutionService {
     private final SharedThreadPool threadPool;
 
     private final Set<CommandDescription> commandDescriptions = new TreeSet<CommandDescription>();
+    
+    private ConfigurationService configurationService;
 
     public CommandExecutionServiceImpl() {
         commandPluginDispatcher = new CommandPluginDispatcher();
@@ -71,10 +76,21 @@ public class CommandExecutionServiceImpl implements CommandExecutionService {
         // right now, this only exists for symmetry
         commandPluginDispatcher.unregisterPlugin(plugin);
     }
+    
+    /**
+     * Bind configuration service method.
+     *
+     * @param service The service to bind.
+     */
+    public void bindConfigurationService(ConfigurationService service) {
+        configurationService = service;
+    }
 
     @Override
     public Future<CommandExecutionResult> asyncExecMultiCommand(List<String> tokens, TextOutputReceiver outputReceiver, Object initiator) {
-        MultiCommandHandler multiCommandHandler = new MultiCommandHandler(tokens, outputReceiver, commandPluginDispatcher);
+        
+        File profileOutput = configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_OUTPUT);
+        MultiCommandHandler multiCommandHandler = new MultiCommandHandler(tokens, outputReceiver, commandPluginDispatcher, profileOutput);
         multiCommandHandler.setInitiatorInformation(initiator);
         return threadPool.submit(multiCommandHandler);
     }

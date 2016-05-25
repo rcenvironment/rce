@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -186,7 +186,7 @@ public class MainGuiController {
 
         final Combo componentCombo = factory.createCombo(comboComposite, null, null);
         final Combo disciplineCombo = factory.createCombo(comboComposite, null, null);
-        final Button loadButton = factory.createButton(comboComposite, "Load configuration", new Listener() {
+        final Button loadButton = factory.createButton(comboComposite, "Load configuration...", new Listener() {
 
             @Override
             public void handleEvent(final Event event) {
@@ -357,7 +357,7 @@ public class MainGuiController {
                         }
                     }
                     final org.eclipse.swt.widgets.List paramList =
-                        (org.eclipse.swt.widgets.List) ((Composite) ((Composite) contentComposite).getChildren()[0]).getChildren()[0];
+                        (org.eclipse.swt.widgets.List) ((Composite) contentComposite.getChildren()[0]).getChildren()[0];
                     for (int i = 0, n = paramList.getItemCount(); i < n; i++) { // find the correct
                                                                                 // parameter in the
                                                                                 // list

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.start.headless</artifactId>
 	<name>RCE Core Start Headless Bundle</name>
-	<version>7.0.2.qualifier</version>
+	<version>7.1.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

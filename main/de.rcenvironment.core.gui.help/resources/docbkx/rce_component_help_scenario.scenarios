@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<serialized version="16.0" xml:space="preserve">
+	<map>
+		<entry>
+			<String>scenarios</String>
+			<scenario-array>
+				<scenario>
+					<field name="advancedOptionsMap">
+						<null/>
+					</field>
+					<field name="name">
+						<String>DocBook XHTML - RCE Component Help</String>
+					</field>
+					<field name="baseURL">
+						<String></String>
+					</field>
+					<field name="footerURL">
+						<String></String>
+					</field>
+					<field name="fOPMethod">
+						<String>pdf</String>
+					</field>
+					<field name="fOProcessorName">
+						<String>Apache FOP</String>
+					</field>
+					<field name="headerURL">
+						<String></String>
+					</field>
+					<field name="inputXSLURL">
+						<String>${frameworks}/docbook/xsl/xhtml/docbook_custom.xsl</String>
+					</field>
+					<field name="inputXMLURL">
+						<String>${currentFileURL}</String>
+					</field>
+					<field name="defaultScenario">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="isFOPPerforming">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="type">
+						<String>XSL</String>
+					</field>
+					<field name="saveAs">
+						<Boolean>true</Boolean>
+					</field>
+					<field name="openInBrowser">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="outputFile">
+						<File>${cfd}/../../generated/html/${cfn}.xhtml</File>
+					</field>
+					<field name="openOtherLocationInBrowser">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="locationToOpenInBrowserURL">
+						<null/>
+					</field>
+					<field name="openInEditor">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="showInHTMLPane">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="showInXMLPane">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="showInSVGPane">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="showInResultSetPane">
+						<Boolean>false</Boolean>
+					</field>
+					<field name="useXSLTInput">
+						<Boolean>true</Boolean>
+					</field>
+					<field name="xsltParams">
+						<list>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>admon.graphics.extension</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String></String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>admon.graphics.path</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String></String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>admon.style</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>margin-left: 0.5in; margin-right: 0.5in;</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>base.dir</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>${cfd}/generated/html/</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>callout.graphics.path</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>${frameworks}/docbook/xsl/images/callouts/</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>chapter.autolabel</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>0</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>draft.mode</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>no</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>generate.index</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>0</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>generate.toc</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>appendix  toc,title
+article/appendix  nop
+article   toc,title
+book      toc,title,figure,table,example,equation
+chapter   toc,title
+part      toc,title
+preface   toc,title
+qandadiv  toc
+qandaset  toc
+reference toc,title
+sect1     toc
+sect2     toc
+sect3     toc
+sect4     toc
+sect5     toc
+section   toc
+set       toc,title</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>highlight.source</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>1</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>highlight.xslthl.config</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>${frameworks}/docbook/xsl/highlighting/xslthl-config.xml</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>html.ext</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>.xhtml</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>section.autolabel</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>0</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+							<transformationParameter>
+								<field name="paramDescription">
+									<paramDescriptor>
+										<field name="localName">
+											<String>ulink.target</String>
+										</field>
+										<field name="prefix">
+											<null/>
+										</field>
+										<field name="namespace">
+											<null/>
+										</field>
+									</paramDescriptor>
+								</field>
+								<field name="value">
+									<String>_blanc</String>
+								</field>
+								<field name="hasXPathValue">
+									<Boolean>false</Boolean>
+								</field>
+							</transformationParameter>
+						</list>
+					</field>
+					<field name="cascadingStylesheets">
+						<String-array/>
+					</field>
+					<field name="xslTransformer">
+						<String>Saxon6.5.5</String>
+					</field>
+					<field name="extensionURLs">
+						<String-array>
+							<String>${frameworks}/docbook/xsl/extensions/xslthl-2.0.1.jar</String>
+							<String>${frameworks}/docbook/xsl/extensions/saxon65.jar</String>
+						</String-array>
+					</field>
+				</scenario>
+			</scenario-array>
+		</entry>
+		<entry>
+			<String>scenarios.load.from.project</String>
+			<Boolean>false</Boolean>
+		</entry>
+	</map>
+</serialized>

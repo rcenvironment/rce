@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,8 +21,10 @@ import org.eclipse.swt.events.VerifyListener;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
+import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
+import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
@@ -37,6 +39,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public abstract class AbstractSshConnectionDialog extends Dialog {
 
+    private static final String KEYFILE_AUTH_WITH_PASSPHRASE = "Keyfile with passphrase protection";
+
+    private static final String KEYFILE_AUTH_WITHOUT_PASSPHRASE = "Keyfile without passphrase protection";
+
+    private static final String PASSPHRASE_AUTH = "Passphrase";
+
     private static final int DIALOG_WINDOW_OFFSET_Y = 100;
 
     private static final int DIALOG_WINDOW_OFFSET_X = 150;
@@ -50,6 +58,10 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
     private static final String PORT_LABEL = "Port:";
 
     private static final String USERNAME_LABEL = "Username:";
+
+    private static final String AUTH_TYPE_LABEL = "Authentication type:";
+
+    private static final String KEYFILE_LABEL = "SSH key file:";
 
     private static final String PASSPHRASE_LABEL = "Passphrase:";
 
@@ -67,11 +79,17 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
 
     protected String passphrase = "";
 
+    protected String keyfileLocation = "";
+
     protected String hint = "";
+
+    protected boolean storePassphrase = true;
+
+    protected boolean useKeyFile = false;
 
     private boolean connectImmediately = true;
 
-    private boolean storePassphrase = true;
+    private boolean usePassphrase = true;
 
     private Button useDefaultNameButton;
 
@@ -86,7 +104,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
     }
 
     public AbstractSshConnectionDialog(Shell parentShell, String connectionName, String host, int port,
-        String username, boolean storePassphrase, boolean connectImmediately) {
+        String username, String keyfileLocation, boolean usePassphrase, boolean storePassphrase, boolean connectImmediately) {
         super(parentShell);
         this.connectionName = connectionName;
         this.host = host;
@@ -96,6 +114,12 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
         this.connectImmediately = connectImmediately;
         this.storePassphrase = storePassphrase;
         this.isDefaultName = (connectionName.equals(hostAndPortString));
+        this.keyfileLocation = keyfileLocation;
+        if (keyfileLocation == null) {
+            this.keyfileLocation = "";
+        }
+        this.useKeyFile = !this.keyfileLocation.isEmpty();
+        this.usePassphrase = usePassphrase;
     }
 
     @Override
@@ -113,7 +137,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
     }
 
     @Override
-    protected Control createDialogArea(Composite parent) {
+    protected Control createDialogArea(final Composite parent) {
         Composite container = (Composite) super.createDialogArea(parent);
 
         GridLayout layout = new GridLayout(2, false);
@@ -151,29 +175,6 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
             portTextField.setText(port);
         }
 
-        portTextField.addVerifyListener(new VerifyListener() {
-
-            @Override
-            public void verifyText(VerifyEvent e) {
-                String currentText = ((Text) e.widget).getText();
-                String portID = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
-
-                final int maxPort = 65535;
-                try {
-                    int portNum = Integer.valueOf(portID);
-                    if (portNum <= 0 || portNum > maxPort) {
-                        e.doit = false;
-                    }
-
-                } catch (NumberFormatException ex) {
-                    if (!portID.equals("")) {
-                        e.doit = false;
-
-                    }
-                }
-            }
-        });
-
         GridData separatorGridData = new GridData();
         separatorGridData.horizontalAlignment = GridData.FILL;
         separatorGridData.grabExcessHorizontalSpace = true;
@@ -202,13 +203,47 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
         usernameText.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         usernameText.setText(username);
 
-        Label passphraseLabel = new Label(container, SWT.NULL);
+        Label authTypeLabel = new Label(container, SWT.NULL);
+        authTypeLabel.setText(AUTH_TYPE_LABEL);
+
+        final Combo authTypeCombo = new Combo(container, SWT.READ_ONLY);
+        String[] authTypes = { PASSPHRASE_AUTH, KEYFILE_AUTH_WITH_PASSPHRASE, KEYFILE_AUTH_WITHOUT_PASSPHRASE };
+        authTypeCombo.setItems(authTypes);
+        if (useKeyFile) {
+            if (usePassphrase) {
+                authTypeCombo.select(1);
+            } else {
+                authTypeCombo.select(2);
+            }
+        } else {
+            authTypeCombo.select(0);
+        }
+
+        final Label keyfileLabel = new Label(container, SWT.NULL);
+        keyfileLabel.setText(KEYFILE_LABEL);
+        keyfileLabel.setVisible(useKeyFile);
+
+        final Composite keyfileComposite = new Composite(container, SWT.NONE);
+        GridLayout klayout = new GridLayout(2, false);
+        keyfileComposite.setLayout(klayout);
+        keyfileComposite.setVisible(useKeyFile);
+        keyfileComposite.setLayoutData((new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL)));
+
+        final Text keyfileText = new Text(keyfileComposite, SWT.SINGLE | SWT.BORDER);
+        keyfileText.setLayoutData(new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL));
+        keyfileText.setText(keyfileLocation);
+
+        createFileChooserButton(parent, keyfileComposite, keyfileText);
+
+        final Label passphraseLabel = new Label(container, SWT.NULL);
         passphraseLabel.setText(PASSPHRASE_LABEL);
+        passphraseLabel.setVisible(usePassphrase);
 
         final Text passphraseText = new Text(container, SWT.SINGLE | SWT.BORDER);
         passphraseText.setLayoutData(new GridData(GridData.HORIZONTAL_ALIGN_FILL));
         passphraseText.setText(passphrase);
         passphraseText.setEchoChar('*');
+        passphraseText.setVisible(usePassphrase);
 
         @SuppressWarnings("unused") final Label placeholderLabel2 = new Label(container, SWT.NONE); // used for layouting
 
@@ -217,6 +252,7 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
         storePasswordButton.setText("Store passphrase");
         storePasswordButton.setLayoutData(storePassphraseCheckboxGridData);
         storePasswordButton.setSelection(storePassphrase);
+        storePasswordButton.setVisible(usePassphrase);
 
         Label separator = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
         separator.setLayoutData(separatorGridData);
@@ -232,13 +268,87 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
         persistHint.setText(hint);
         persistHint.setLayoutData(hintGridData);
 
-        initVariablesAndCreateListeners(hostTextField, portTextField, nameText, usernameText, passphraseText, immediateConnectButton);
+        defineListenerForAuthenticationType(authTypeCombo, keyfileLabel, keyfileComposite, passphraseLabel, passphraseText);
+
+        initVariablesAndCreateListeners(hostTextField, portTextField, nameText, usernameText, passphraseText, keyfileText,
+            immediateConnectButton);
         return container;
+    }
+
+    private void defineListenerForAuthenticationType(final Combo authTypeCombo, final Label keyfileLabel, final Composite keyfileComposite,
+        final Label passphraseLabel, final Text passphraseText) {
+        authTypeCombo.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                useKeyFile =
+                    authTypeCombo.getText().equals(KEYFILE_AUTH_WITH_PASSPHRASE)
+                        || authTypeCombo.getText().equals(KEYFILE_AUTH_WITHOUT_PASSPHRASE);
+                usePassphrase = !authTypeCombo.getText().equals(KEYFILE_AUTH_WITHOUT_PASSPHRASE);
+                keyfileLabel.setVisible(useKeyFile);
+                keyfileComposite.setVisible(useKeyFile);
+                passphraseLabel.setVisible(usePassphrase);
+                passphraseText.setVisible(usePassphrase);
+                storePasswordButton.setVisible(usePassphrase);
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
+    }
+
+    private void createFileChooserButton(final Composite parent, Composite container, final Text keyfileText) {
+        final Button keyfileButton = new Button(container, SWT.NONE);
+        keyfileButton.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false,
+            false, 1, 1));
+        keyfileButton.setText("...");
+        keyfileButton.addSelectionListener(new SelectionListener() {
+
+            @Override
+            public void widgetSelected(SelectionEvent arg0) {
+                FileDialog dialog = new FileDialog(parent.getShell());
+                dialog.setText("Choose private key file");
+                String result = dialog.open();
+                if (result != null) {
+                    keyfileText.setText(result);
+                }
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent arg0) {
+                widgetSelected(arg0);
+            }
+        });
     }
 
     private void initVariablesAndCreateListeners(final Text hostTextField, final Text portTextField, final Text nameText,
         final Text usernameText,
-        final Text passphraseText, final Button immediateConnectButton) {
+        final Text passphraseText, final Text keyfileText, final Button immediateConnectButton) {
+
+        portTextField.addVerifyListener(new VerifyListener() {
+
+            @Override
+            public void verifyText(VerifyEvent e) {
+                String currentText = ((Text) e.widget).getText();
+                String portID = currentText.substring(0, e.start) + e.text + currentText.substring(e.end);
+
+                final int maxPort = 65535;
+                try {
+                    int portNum = Integer.valueOf(portID);
+                    if (portNum <= 0 || portNum > maxPort) {
+                        e.doit = false;
+                    }
+
+                } catch (NumberFormatException ex) {
+                    if (!portID.equals("")) {
+                        e.doit = false;
+
+                    }
+                }
+            }
+        });
 
         hostTextField.addModifyListener(new ModifyListener() {
 
@@ -298,6 +408,15 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
             @Override
             public void modifyText(ModifyEvent arg0) {
                 passphrase = passphraseText.getText();
+            }
+        });
+
+        keyfileLocation = keyfileText.getText();
+        keyfileText.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(ModifyEvent arg0) {
+                keyfileLocation = keyfileText.getText();
             }
         });
 
@@ -404,8 +523,28 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
         return username;
     }
 
+    /**
+     * Get entered passphrase.
+     * 
+     * @return the passphrase, or null, if key file authentication without passphrase is used.
+     */
     public String getPassphrase() {
-        return passphrase;
+        if (usePassphrase) {
+            return passphrase;
+        }
+        return null;
+    }
+
+    /**
+     * Get entered keyfile location.
+     * 
+     * @return the keyfile location, or null, if password authentication is used.
+     */
+    public String getKeyfileLocation() {
+        if (useKeyFile) {
+            return keyfileLocation;
+        }
+        return null;
     }
 
     public boolean getConnectImmediately() {
@@ -420,8 +559,20 @@ public abstract class AbstractSshConnectionDialog extends Dialog {
         isDefaultName = false;
     }
 
-    public boolean getStorePassPhrase() {
-        return storePassphrase;
+    /**
+     * If the passphrase should be stored in the secure store.
+     * 
+     * @return true, if a passphrase is used and should be stored in the secure store.
+     */
+    public boolean shouldStorePassPhrase() {
+        if (usePassphrase) {
+            return storePassphrase;
+        }
+        return false;
+    }
+
+    public boolean getUsePassphrase() {
+        return usePassphrase;
     }
 
     private void updateOkButtonActivation() {

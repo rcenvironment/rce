@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,16 +11,15 @@ package de.rcenvironment.components.switchcmp.gui;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.components.switchcmp.common.SwitchComponentConstants;
 import de.rcenvironment.components.switchcmp.common.SwitchComponentHistoryDataItem;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.CommonHistoryDataItemSubtreeBuilderUtils;
@@ -38,26 +37,23 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  *
  * @author David Scholz
  * @author Doreen Seider
+ * @author Sascha Zur
  */
 public class SwitchHistoryDataItemSubtreeBuilder implements ComponentHistoryDataItemSubtreeBuilder {
 
     private static final Image COMPONENT_ICON;
 
     static {
-        String iconPath = "platform:/plugin/de.rcenvironment.components.switch.common/resources/switch_16.png";
-        URL url = null;
-        try {
-            url = new URL(iconPath);
-        } catch (MalformedURLException e) {
-            LogFactory.getLog(SwitchHistoryDataItemSubtreeBuilder.class).error("Component icon not found: " + iconPath);
-        }
+        String bundleName = "de.rcenvironment.components.switch.common";
+        String iconName = "switch_16.png";
+        URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();
         } else {
             COMPONENT_ICON = null;
         }
     }
-    
+
     @Override
     public String[] getSupportedHistoryDataItemIdentifier() {
         return new String[] { SwitchComponentConstants.COMPONENT_ID };
@@ -86,11 +82,13 @@ public class SwitchHistoryDataItemSubtreeBuilder implements ComponentHistoryData
             conditionNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.QUESTION_MARK_16));
             DMBrowserNode actualConditionnode = DMBrowserNode.addNewLeafNode(
                 "Actual: " + StringUtils.abbreviate(historyData.getActualCondition(),
-                    CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH), DMBrowserNodeType.CommonText, conditionNode);
+                    CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH),
+                DMBrowserNodeType.CommonText, conditionNode);
             actualConditionnode.setFileContentAndName(historyData.getActualCondition(), "Actual condition");
             DMBrowserNode templateConditionnode = DMBrowserNode.addNewLeafNode(
                 "Pattern: " + StringUtils.abbreviate(historyData.getConditionPattern(),
-                    CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH), DMBrowserNodeType.CommonText, conditionNode);
+                    CommonHistoryDataItemSubtreeBuilderUtils.MAX_LABEL_LENGTH),
+                DMBrowserNodeType.CommonText, conditionNode);
             templateConditionnode.setFileContentAndName(historyData.getConditionPattern(), "Condition pattern");
         } else {
             String exceptionInformationText = "";
@@ -98,12 +96,12 @@ public class SwitchHistoryDataItemSubtreeBuilder implements ComponentHistoryData
                 exceptionInformationText =
                     de.rcenvironment.core.utils.common.StringUtils.format(
                         "Parsing history data point failed: Expected type %s, but was of type %s",
-                            String.class.getCanonicalName(), historyDataItem.getClass().getCanonicalName());
+                        String.class.getCanonicalName(), historyDataItem.getClass().getCanonicalName());
             } else {
                 exceptionInformationText =
                     de.rcenvironment.core.utils.common.StringUtils.format(
                         "Parsing history data point failed: Expected type %s, actual type not available.",
-                            String.class.getCanonicalName());
+                        String.class.getCanonicalName());
             }
             throw new IllegalArgumentException(exceptionInformationText);
         }

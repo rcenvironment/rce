@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,8 +17,7 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
- * Service for registering new user integrated tools and read the already integrated from the
- * configuration.
+ * Service for registering new user integrated tools and read the already integrated from the configuration.
  * 
  * @author Sascha Zur
  */
@@ -60,8 +59,7 @@ public interface ToolIntegrationService {
      * Writes a new description of a component to the configuration folder of the local RCE.
      * 
      * @param configurationMap : information about the component
-     * @param integrationInformation about the tool e.g. the component id prefix and all location
-     *        information
+     * @param integrationInformation about the tool e.g. the component id prefix and all location information
      * @throws IOException if writing tool fails
      */
     void writeToolIntegrationFile(Map<String, Object> configurationMap, ToolIntegrationContext integrationInformation) throws IOException;
@@ -71,16 +69,14 @@ public interface ToolIntegrationService {
      * 
      * @param folder : path to the folder where the config should be stored
      * @param configurationMap : information about the component
-     * @param integrationInformation about the tool e.g. the component id prefix and all location
-     *        information
+     * @param integrationInformation about the tool e.g. the component id prefix and all location information
      * @throws IOException if writing tool fails
      */
     void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
         ToolIntegrationContext integrationInformation) throws IOException;
 
     /**
-     * Returns the read in configuration of toolId, which has all information about the tool and for
-     * the component.
+     * Returns the read in configuration of toolId, which has all information about the tool and for the component.
      * 
      * @param toolId unique id from the component.
      * @return configuration
@@ -201,4 +197,5 @@ public interface ToolIntegrationService {
      * @param integrationContext of the tool
      */
     void registerRecursive(String toolName, ToolIntegrationContext integrationContext);
+
 }

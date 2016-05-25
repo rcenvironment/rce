@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -87,6 +87,18 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String noMaxIterations;
+
+    /** Constant. */
+    public static String notConvBehavior;
+
+    /** Constant. */
+    public static String notConvIgnore;
+
+    /** Constant. */
+    public static String notConvFail;
+
+    /** Constant. */
+    public static String notConvNotAValue;
 
     static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

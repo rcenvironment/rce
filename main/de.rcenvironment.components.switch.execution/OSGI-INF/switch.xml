@@ -20,9 +20,10 @@
 <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>
 <property name="rce.component.outputs" type="String" value="/resources/outputs.json"/>
 <property name="rce.component.configuration" type="String" value="/resources/configuration.json"/>
-<property name="rce.component.icon-16" type="String" value="platform:/plugin/de.rcenvironment.components.switch.common/resources/switch_16.png"/>
-<property name="rce.component.icon-24" type="String" value="platform:/plugin/de.rcenvironment.components.switch.common/resources/switch_24.png"/>
-<property name="rce.component.icon-32" type="String" value="platform:/plugin/de.rcenvironment.components.switch.common/resources/switch_32.png"/>
+<property name="rce.component.icon-16" type="String" value="switch_16.png"/>
+<property name="rce.component.icon-24" type="String" value="switch_24.png"/>
+<property name="rce.component.icon-32" type="String" value="switch_32.png"/>
 <property name="rce.component.size" type="String" value="small"/>
 <property name="rce.component.shape" type="String" value="circle"/>
 </scr:component>
+ 

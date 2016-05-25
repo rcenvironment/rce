@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,7 +16,7 @@ import org.eclipse.gef.commands.Command;
 import org.eclipse.gef.commands.CommandStack;
 import org.eclipse.ui.views.properties.IPropertyDescriptor;
 import org.eclipse.ui.views.properties.IPropertySource2;
-import org.eclipse.ui.views.properties.TextPropertyDescriptor;
+import org.eclipse.ui.views.properties.PropertyDescriptor;
 
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
@@ -57,7 +57,7 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
         List<IPropertyDescriptor> descriptors = new ArrayList<IPropertyDescriptor>();
 
         for (String key : configurationDesc.getConfiguration().keySet()) {
-            descriptors.add(new TextPropertyDescriptor(key, key));
+            descriptors.add(new PropertyDescriptor(key, key));
         }
 
         return descriptors.toArray(new IPropertyDescriptor[] {});
@@ -126,7 +126,7 @@ public class ComponentPropertySource implements IPropertySource2, ComponentInsta
 
         private ConfigurationDescription config;
 
-        public SetValueCommand(String label, WorkflowNode node, String id, String value) {
+        SetValueCommand(String label, WorkflowNode node, String id, String value) {
             super(label);
             target = node;
             propertyName = id;

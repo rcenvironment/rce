@@ -1,0 +1,43 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="Component Executor">
+
+	<implementation class="de.rcenvironment.core.component.execution.internal.ComponentExecutor"/>
+
+	<reference
+        name="Component Execution Permits Service"
+        interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionPermitsService"
+        cardinality="1..1"
+        bind="bindComponentExecutionPermitsService"
+        policy="dynamic"
+    />
+	
+    <reference
+        name="Typed Datum Service"
+        interface="de.rcenvironment.core.datamodel.api.TypedDatumService"
+        cardinality="1..1"
+        bind="bindTypedDatumService"
+        policy="dynamic"
+    />
+    
+    <reference
+        name="Configuration Service"
+        interface="de.rcenvironment.core.configuration.ConfigurationService"
+        cardinality="1..1"
+        bind="bindConfigurationService"
+        policy="dynamic"
+    />
+
+	<reference name="Endpoint Datum Serializer"
+		interface="de.rcenvironment.core.component.execution.api.EndpointDatumSerializer"
+		cardinality="1..1"
+		bind="bindEndpointDatumSerializer"
+		policy="dynamic"
+	/>
+	
+	<reference name="Component Execution Stats Service"
+		interface="de.rcenvironment.core.component.execution.internal.ComponentExecutionStatsService"
+		bind="bindComponentExecutionStatsService"
+		cardinality="1..1"
+		policy="dynamic"
+	/>
+
+</scr:component>

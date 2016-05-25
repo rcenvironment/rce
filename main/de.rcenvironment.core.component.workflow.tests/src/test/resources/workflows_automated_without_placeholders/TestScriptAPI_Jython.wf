@@ -2,13 +2,11 @@
   "identifier" : "eaa90fd6-875b-4d2b-b3e4-89d51e136a1e",
   "workflowVersion" : "4",
   "name" : "TestScriptAPI_2014-11-22_23:13:03_02",
-  "platform" : "136db52cf2964047b85822ebead37d69",
   "nodes" : [ {
     "identifier" : "07bf23ec-2682-4b8f-80a0-bb4aeea0387e",
     "name" : "API Jython",
     "location" : "342:38",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -60,7 +58,6 @@
     "name" : "API Python",
     "location" : "342:144",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -112,16 +109,16 @@
     "name" : "Parametric Study API Jython",
     "location" : "183:38",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "dynamicInputs" : [ {
       "identifier" : "f69b4a80-0238-4833-8567-f60c987964b4",
@@ -183,16 +180,16 @@
     "name" : "Parametric Study API Python",
     "location" : "183:144",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "dynamicInputs" : [ {
       "identifier" : "870ba87a-4f36-4792-b2a2-4d05b86266e9",
@@ -254,16 +251,16 @@
     "name" : "Parametric Study SUM Jython",
     "location" : "183:253",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "configuration" : {
-      "loopFaultTolerance_5e0ed1cd" : "Discard",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "loopFaultTolerance_5e0ed1cd" : "Fail",
+      "faultTolerance-NAV_5e0ed1cd" : "Discard",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "staticOutputs" : [ {
       "identifier" : "e3c076f8-ff90-47da-900a-8b69f5721fb6",
@@ -302,16 +299,16 @@
     "name" : "Parametric Study SUM Python",
     "location" : "183:358",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "configuration" : {
       "loopFaultTolerance_5e0ed1cd" : "Fail",
-      "loopRerunAndDiscard_5e0ed1cd" : "1",
-      "loopRerunAndFail_5e0ed1cd" : "1"
+      "faultTolerance-NAV_5e0ed1cd" : "Fail",
+      "maxRerunBeforeFail-NAV_5e0ed1cd" : "1",
+      "maxRerunBeforeDiscard-NAV_5e0ed1cd" : "1"
     },
     "staticOutputs" : [ {
       "identifier" : "19fac3c3-fd34-4ede-860a-fe3e5e1ff36e",
@@ -350,7 +347,6 @@
     "name" : "SUM Jython",
     "location" : "342:253",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -386,7 +382,6 @@
     "name" : "SUM Python",
     "location" : "342:358",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -422,7 +417,6 @@
     "name" : "Validation Jython",
     "location" : "500:38",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -451,7 +445,6 @@
     "name" : "Validation Python",
     "location" : "500:144",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -480,7 +473,6 @@
     "name" : "Validation SUM Jython",
     "location" : "500:253",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -509,7 +501,6 @@
     "name" : "Validation Sum Python",
     "location" : "500:358",
     "active" : "true",
-    "platform" : "136db52cf2964047b85822ebead37d69",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",

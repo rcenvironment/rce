@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Platform - Maven Plain Java Libraries - Database
 Bundle-SymbolicName: de.rcenvironment.platform.maven.database;singleton:=true
-Bundle-Version: 7.0.0.qualifier
+Bundle-Version: 7.1.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: lib/maven/commons-dbcp-1.4.jar,
  lib/maven/commons-pool-1.5.4.jar,

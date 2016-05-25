@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -176,6 +176,12 @@ public class PeriodicMonitoringServiceImpl {
                     }
                 }
                 intervalSec = configurationSegment.getInteger("intervalSeconds", DEFAULT_MONITORING_INTERVAL_SECS);
+                if (intervalSec < 1) {
+                    log.warn(StringUtils.format("Resource monitoring interval (configuration value 'intervalSeconds') is invalid: "
+                        + "it is %d seconds but must be >= 1 second; default value of %d seconds is applied",
+                        intervalSec, DEFAULT_MONITORING_INTERVAL_SECS));
+                    intervalSec = DEFAULT_MONITORING_INTERVAL_SECS;
+                }
                 if (activeTopics.isEmpty()) {
                     log.debug("No monitoring topics configured");
                 }

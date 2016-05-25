@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,8 +21,8 @@ import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 
 /**
- * Helper clss for data type related methods in all scripting bundles. Used for e.g. converting a
- * given {@link TypedDatum} into an java object.
+ * Helper clss for data type related methods in all scripting bundles. Used for e.g. converting a given {@link TypedDatum} into an java
+ * object.
  * 
  * @author Sascha Zur
  */
@@ -34,8 +34,7 @@ public final class ScriptDataTypeHelper {
     }
 
     /**
-     * Reads the value of a given {@link TypedDatum} and returns it as a java {@link Object}. Used
-     * for Python and Jython scripts.
+     * Reads the value of a given {@link TypedDatum} and returns it as a java {@link Object}. Used for Python and Jython scripts.
      * 
      * @param typedDatumOfCell to read
      * @return Object containing the value in its correct java type
@@ -76,7 +75,7 @@ public final class ScriptDataTypeHelper {
      * @param value to create the TypedDatum from
      * @param typedDatumFactory :
      * @return :
-     * */
+     */
     public static TypedDatum getTypedDatum(Object value, TypedDatumFactory typedDatumFactory) {
         TypedDatum returnValue = null;
         if (value == null) {
@@ -96,9 +95,13 @@ public final class ScriptDataTypeHelper {
         } else if (value instanceof List) {
             @SuppressWarnings("unchecked") List<Object> list = (List<Object>) value;
             boolean allFloat = true;
+            boolean allList = true;
             for (Object o : list) {
                 if (!(o instanceof Double || o instanceof Float || o instanceof Integer)) {
                     allFloat = false;
+                }
+                if (!(o instanceof List)) {
+                    allList = false;
                 }
             }
             if (allFloat) {
@@ -111,6 +114,21 @@ public final class ScriptDataTypeHelper {
                     }
                 }
                 returnValue = typedDatumFactory.createVector(values);
+            }
+            if (allList) {
+                FloatTD[][] values = new FloatTD[list.size()][];
+                for (int i = 0; i < list.size(); i++) {
+                    @SuppressWarnings("unchecked") List<Object> row = (List<Object>) list.get(i);
+                    values[i] = new FloatTD[row.size()];
+                    for (int j = 0; j < row.size(); j++) {
+                        if (row.get(j) instanceof Double) {
+                            values[i][j] = typedDatumFactory.createFloat((Double) row.get(j));
+                        } else {
+                            values[i][j] = typedDatumFactory.createFloat((Integer) row.get(j));
+                        }
+                    }
+                }
+                returnValue = typedDatumFactory.createMatrix(values);
             }
         } else {
             returnValue = typedDatumFactory.createShortText(value.toString());

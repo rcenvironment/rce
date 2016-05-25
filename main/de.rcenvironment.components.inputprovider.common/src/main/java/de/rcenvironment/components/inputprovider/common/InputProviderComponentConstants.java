@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -21,10 +21,10 @@ public final class InputProviderComponentConstants {
     public static final String META_VALUE = "startValue";
 
     /** Constant. */
-    public static final String META_STARTVALUEBOOLEAN = "startvalueboolean";
-
-    /** Constant. */
     public static final String META_FILESOURCETYPE = "fileSourceType";
+    
+    /** Constant value for the key META_FILESOURCETYPE. */
+    public static final String META_FILESOURCETYPE_ATWORKFLOWSTART = "atWorkflowStart";
     
     /** Identifier of the Joiner component. */
     public static final String COMPONENT_ID = ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "inputprovider";
@@ -35,23 +35,6 @@ public final class InputProviderComponentConstants {
 
     /** Constant. */
     public static final String PLACEHOLDER_FOMRAT = "%s (%s)";
-
-    /**
-     * Available sources for files.
-     * 
-     * @author Doreen Seider
-     */
-    public enum FileSourceType {
-
-        /** If file is chosen at workflow start. */
-        atWorkflowStart,
-
-        /** If file was chosen from workflow project. */
-        fromProject,
-
-        /** If file was chosen from file system. */
-        fromFileSystem;
-    }
 
     private InputProviderComponentConstants() {
 

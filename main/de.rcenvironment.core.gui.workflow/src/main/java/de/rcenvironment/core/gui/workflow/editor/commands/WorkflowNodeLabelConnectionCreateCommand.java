@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,10 +36,6 @@ public class WorkflowNodeLabelConnectionCreateCommand extends Command {
     private static final String OPEN_BRACKET = "(";
 
     private static final String CLOSE_BRACKET = ")";
-
-    private static final int LABEL_INITIAL_HEIGHT = 50;
-
-    private static final int LABEL_INITIAL_WIDTH = 100;
 
     /** The parent WorkflowDescription. */
     private final WorkflowDescription model;
@@ -115,17 +111,17 @@ public class WorkflowNodeLabelConnectionCreateCommand extends Command {
             for (int i = 0; i < labels.size(); i++) {
                 labels.get(i).setLocation(labelConstraints.get(positionCounter).getLocation().x,
                     labelConstraints.get(positionCounter).getLocation().y);
-                Dimension size = new Dimension(LABEL_INITIAL_WIDTH, LABEL_INITIAL_HEIGHT);
+                Dimension size = new Dimension(WorkflowLabel.DEFAULT_WIDTH, WorkflowLabel.DEFAULT_HEIGHT);
                 if (labelConstraints.get(positionCounter).getSize().width != MINUS_ONE
                     && labelConstraints.get(positionCounter).getSize().height != MINUS_ONE) {
                     size = new Dimension(labelConstraints.get(positionCounter).getSize().width,
                         labelConstraints.get(positionCounter).getSize().height);
                 }
                 if (size.width == 0) {
-                    size.width = LABEL_INITIAL_WIDTH;
+                    size.width = WorkflowLabel.DEFAULT_WIDTH;
                 }
                 if (size.height == 0) {
-                    size.height = LABEL_INITIAL_HEIGHT;
+                    size.height = WorkflowLabel.DEFAULT_HEIGHT;
                 }
                 labels.get(i).setSize(size.width, size.height);
                 positionCounter++;

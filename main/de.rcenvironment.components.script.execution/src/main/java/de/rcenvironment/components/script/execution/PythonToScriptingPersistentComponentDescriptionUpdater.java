@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -27,6 +27,7 @@ import de.rcenvironment.components.script.common.ScriptComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Implementation of {@link PersistentComponentDescriptionUpdater}.
@@ -67,7 +68,7 @@ public class PythonToScriptingPersistentComponentDescriptionUpdater implements P
         if (!silent) {
             JsonFactory jsonFactory = new JsonFactory();
             JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
             JsonNode node = mapper.readTree(jsonParser);
             if (formatVersion == PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE) {
                 return firstUpdate(node, mapper, description);

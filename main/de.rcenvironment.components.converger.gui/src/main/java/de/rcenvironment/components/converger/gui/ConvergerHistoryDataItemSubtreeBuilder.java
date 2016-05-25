@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,14 +8,13 @@
 
 package de.rcenvironment.components.converger.gui;
 
-import java.net.MalformedURLException;
 import java.net.URL;
 
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
+import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.ComponentHistoryDataItemSubtreeBuilder;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DefaultHistoryDataItemSubtreeBuilder;
 
@@ -29,13 +28,9 @@ public class ConvergerHistoryDataItemSubtreeBuilder extends DefaultHistoryDataIt
     private static final Image COMPONENT_ICON;
 
     static {
-        String iconPath = "platform:/plugin/de.rcenvironment.components.converger.common/resources/converger16.png";
-        URL url = null;
-        try {
-            url = new URL(iconPath);
-        } catch (MalformedURLException e) {
-            LogFactory.getLog(ConvergerHistoryDataItemSubtreeBuilder.class).error("Component icon not found: " + iconPath);
-        }
+        String bundleName = "de.rcenvironment.components.converger.common";
+        String iconName = "converger16.png";
+        URL url = ComponentUtils.readIconURL(bundleName, iconName);
         if (url != null) {
             COMPONENT_ICON = ImageDescriptor.createFromURL(url).createImage();
         } else {

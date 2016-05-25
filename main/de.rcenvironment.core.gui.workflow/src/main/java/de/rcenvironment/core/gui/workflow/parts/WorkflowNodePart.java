@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -92,13 +92,17 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  */
 public class WorkflowNodePart extends AbstractGraphicalEditPart implements PropertyChangeListener, NodeEditPart {
 
-    /** The width and height of a small workflow node's bounds. */
-    public static final int SMALL_WORKFLOW_NODE_WIDTH = 38;
+    /**
+     * The width and height of a small workflow node's bounds.
+     * Must be divisible by two after 1 is subtracted.
+     */
+    public static final int SMALL_WORKFLOW_NODE_WIDTH = 41;
 
     /**
      * The width and height of a medium sized workflow node.
+     * Must be divisible by four after 1 is subtracted.
      */
-    public static final int WORKFLOW_NODE_WIDTH = 75;
+    public static final int WORKFLOW_NODE_WIDTH = 81;
 
     private static final int MAX_LABELTEXT_SIZE = 30;
 
@@ -118,7 +122,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private final IFigure errorFigure = new ImageFigure(ERROR_IMAGE);
     {
-        final int offset = 1;
+        final int offset = 2;
         final int size = 16;
         errorFigure.setBounds(new Rectangle(offset, offset, size, size));
         errorFigure.setVisible(false);
@@ -126,8 +130,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private final IFigure warningFigure = new ImageFigure(WARNING_IMAGE);
     {
-        final int offsetX = 58;
-        final int offsetY = 1;
+        final int offsetX = 62;
+        final int offsetY = 2;
         final int size = 16;
         warningFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
         warningFigure.setVisible(false);
@@ -135,18 +139,20 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private final IFigure localFigure = new ImageFigure(LOCAL_IMAGE);
     {
-        final int offset = 58;
+        final int offsetX = 62;
+        final int offsetY = 62;
         final int size = 16;
-        localFigure.setBounds(new Rectangle(offset, offset, size, size));
+        localFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
         localFigure.setToolTip(new Label(Messages.localExecutionOnly));
         localFigure.setVisible(false);
     }
 
     private final IFigure deprecatedFigure = new ImageFigure(DEPRECATED_IMAGE);
     {
-        final int offset = 21;
+        final int offsetX = 23;
+        final int offsetY = 17;
         final int size = 32;
-        deprecatedFigure.setBounds(new Rectangle(offset, offset, size, size));
+        deprecatedFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
         deprecatedFigure.setToolTip(new Label(Messages.deprecated));
         deprecatedFigure.setVisible(false);
     }
@@ -337,6 +343,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     private Color getColor(ComponentInterface ci) {
+        // TODO this looks like a SWT resource leak (ie, missing dispose() calls)
         final int dr = 255;
         final int dg = 247;
         final int db = 231;
@@ -360,17 +367,17 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
      */
     private class IconLabel extends Label {
 
-        private static final int OFFSET_SMALL_SQUARE_COMPONENT_ICON_X = 7;
+        private static final int OFFSET_SMALL_SQUARE_COMPONENT_ICON_X = 8;
 
         private static final int OFFSET_SMALL_SQUARE_COMPONENT_ICON_Y = 10;
 
-        private static final int OFFSET_SMALL_CIRCLE_COMPONENT_ICON = 8;
+        private static final int OFFSET_SMALL_CIRCLE_COMPONENT_ICON = 9;
 
         private final Image icon;
 
         private final ComponentInterface ci;
 
-        public IconLabel(Image icon, ComponentInterface ci) {
+        IconLabel(Image icon, ComponentInterface ci) {
             this.icon = icon;
             this.ci = ci;
         }
@@ -716,7 +723,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
      */
     class ReconnectionSourceAnchor extends ChopboxAnchor {
 
-        public ReconnectionSourceAnchor(IFigure figure) {
+        ReconnectionSourceAnchor(IFigure figure) {
             super.setOwner(figure);
         }
 
@@ -739,7 +746,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
      */
     class ReconnectionTargetAnchor extends ChopboxAnchor {
 
-        public ReconnectionTargetAnchor(IFigure figure) {
+        ReconnectionTargetAnchor(IFigure figure) {
             super.setOwner(figure);
         }
 

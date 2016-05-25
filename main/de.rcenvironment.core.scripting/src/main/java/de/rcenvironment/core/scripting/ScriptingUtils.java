@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -13,9 +13,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLDecoder;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.script.ScriptEngine;
 
@@ -38,6 +40,9 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
@@ -51,14 +56,17 @@ import de.rcenvironment.core.utils.common.StringUtils;
 public final class ScriptingUtils {
 
     /**
-     * Execution of Jython scripts must be synchronized with this lock object to ensure that only
-     * one Jython script is executed at the same time within the entire JVM. The reason is that the
-     * Jython script engine is not thread safe (console outputs of multiple script executions are
-     * mixed).
+     * Execution of Jython scripts must be synchronized with this lock object to ensure that only one Jython script is executed at the same
+     * time within the entire JVM. The reason is that the Jython script engine is not thread safe (console outputs of multiple script
+     * executions are mixed).
      */
     public static final Object SCRIPT_EVAL_LOCK_OBJECT = new Object();
 
     protected static final Log LOGGER = LogFactory.getLog(ScriptingUtils.class);
+
+    private static final String RCE_NOT_A_VALUE_OUTPUT_LIST = "RCE_NotAValueOutputList";
+
+    private static final String USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING = " use Python as script language instead";
 
     private static String jythonPath = null;
 
@@ -250,11 +258,7 @@ public final class ScriptingUtils {
                 tempFiles.add(dirInputDir);
                 File dir = new File(dirInputDir, ((DirectoryReferenceTD) input).getDirectoryName());
                 try {
-                    // Since the code is shared for the script component and tool integration, there
-                    // must be some difference here:
-                    // In tool integration, copying the data is done by the component so at this
-                    // point, it is not needed any more (is already exists)
-                    // For the script component, this should always run.
+                    // see comment of file above
                     if (!dir.exists()) {
                         componentDatamanagementService.copyDirectoryReferenceTDToLocalDirectory(compContext,
                             (DirectoryReferenceTD) input, dirInputDir);
@@ -284,7 +288,15 @@ public final class ScriptingUtils {
                 nameAndValue += input;
                 break;
             case Float:
-                nameAndValue += input;
+                if (((FloatTD) input).getFloatValue() == Double.NEGATIVE_INFINITY) {
+                    nameAndValue += "float(\"-INF\")";
+                } else if (((FloatTD) input).getFloatValue() == Double.POSITIVE_INFINITY) {
+                    nameAndValue += "float(\"INF\")";
+                } else if (((FloatTD) input).toString().equals("NaN")) {
+                    nameAndValue += "float(\"nan\")";
+                } else {
+                    nameAndValue += ((FloatTD) input).getFloatValue();
+                }
                 break;
             case Empty:
                 nameAndValue = "None";
@@ -296,7 +308,7 @@ public final class ScriptingUtils {
                     throw new ComponentException(
                         StringUtils.format(
                             "Vector of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
-                            + " use Python as script language instead",
+                                + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
                             inputName,
                             vector.getRowDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
                 }
@@ -308,6 +320,14 @@ public final class ScriptingUtils {
                 }
                 nameAndValue += CLOSE_LIST_NEWLINE;
                 break;
+
+            case Matrix:
+                MatrixTD matrix = (MatrixTD) input;
+                nameAndValue += openBracket;
+                nameAndValue = getMatrix(openBracket, nameAndValue, inputName, matrix);
+                nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
+                nameAndValue += CLOSE_LIST_NEWLINE;
+                break;
             case SmallTable:
                 SmallTableTD table = (SmallTableTD) input;
                 nameAndValue += openBracket;
@@ -315,7 +335,7 @@ public final class ScriptingUtils {
                     throw new ComponentException(
                         StringUtils.format(
                             "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
-                                + " use Python as script language instead",
+                                + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
                             inputName,
                             table.getRowCount() * table.getColumnCount(), MAXIMUM_SMALL_TABLE_ENTRIES));
                 }
@@ -357,6 +377,41 @@ public final class ScriptingUtils {
         return dataDefinition;
     }
 
+    private static String getMatrix(final String openBracket, String nameAndValue, String inputName, MatrixTD matrix)
+        throws ComponentException {
+        if (matrix.getRowDimension() * matrix.getColumnDimension() > MAXIMUM_SMALL_TABLE_ENTRIES) {
+            throw new ComponentException(
+                StringUtils.format(
+                    "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                        + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
+                    inputName,
+                    matrix.getRowDimension() * matrix.getColumnDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
+        }
+        for (int i = 0; i < matrix.getRowDimension(); i++) {
+            if (matrix.getRowDimension() > 1) {
+                nameAndValue += openBracket;
+            }
+            for (int j = 0; j < matrix.getColumnDimension(); j++) {
+                if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
+                    matrix.getFloatTDOfElement(i, j)) instanceof String) {
+                    nameAndValue += QUOTE
+                        + ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j))
+                        + QUOTE + COMMA;
+                } else {
+                    nameAndValue +=
+                        ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j)) + COMMA;
+                }
+            }
+            nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
+            if (matrix.getRowDimension() > 1) {
+                nameAndValue += "],";
+            } else {
+                nameAndValue += COMMA;
+            }
+        }
+        return nameAndValue;
+    }
+
     /**
      * Write all output written with the RCE Script API.
      * 
@@ -385,8 +440,8 @@ public final class ScriptingUtils {
             }
         }
 
-        if (engine.get("RCE_NotAValueOutputList") != null) {
-            for (String endpointName : (List<String>) engine.get("RCE_NotAValueOutputList")) {
+        if (engine.get(RCE_NOT_A_VALUE_OUTPUT_LIST) != null) {
+            for (String endpointName : (List<String>) engine.get(RCE_NOT_A_VALUE_OUTPUT_LIST)) {
                 componentContext.writeOutput(endpointName, typedDatumFactory.createNotAValue());
             }
         }
@@ -397,6 +452,15 @@ public final class ScriptingUtils {
         for (String endpointName : (List<String>) engine.get("RCE_CloseOutputChannelsList")) {
             componentContext.closeOutput(endpointName);
         }
+    }
+
+    /**
+     * @param engine the {@link ScriptEngine} executing the script which should be considered
+     * @return set with names of those output for which a not-a-value {@link TypedDatum} was written
+     */
+    @SuppressWarnings("unchecked")
+    public static Set<String> getOutputsSendingNotAValue(ScriptEngine engine) {
+        return new HashSet<>((List<String>) engine.get(RCE_NOT_A_VALUE_OUTPUT_LIST));
     }
 
     @SuppressWarnings("unchecked")
@@ -441,6 +505,10 @@ public final class ScriptingUtils {
             int index = 0;
             for (Object element : vectorRow) {
                 double convertedValue = 0;
+                if (element instanceof List) {
+                    throw new ComponentException(StringUtils
+                        .format("Value for endpoint %s was a matrix, but endpoint is of type Vector", name));
+                }
                 if (element instanceof Integer) {
                     convertedValue = (Integer) element;
                 } else {
@@ -451,30 +519,12 @@ public final class ScriptingUtils {
             }
             outputValue = vector;
             break;
+        case Matrix:
+            outputValue = createResultMatrix(value, name);
+            break;
         case SmallTable:
-            List<Object> rowArray = (List<Object>) value;
-            TypedDatum[][] result = new TypedDatum[rowArray.size()][];
-            if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
-                int i = 0;
-                for (Object columnObject : rowArray) {
-                    List<Object> columnArray = (List<Object>) columnObject;
-                    result[i] = new TypedDatum[columnArray.size()];
-                    int j = 0;
-                    for (Object element : columnArray) {
-                        result[i][j++] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
-                    }
-                    i++;
-                }
-                outputValue = typedDatumFactory.createSmallTable(result);
-            } else {
-                int i = 0;
-                for (Object element : rowArray) {
-                    result[i] = new TypedDatum[1];
-                    result[i][0] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
-                    i++;
-                }
-                outputValue = typedDatumFactory.createSmallTable(result);
-            }
+            TypedDatum[][] result = createResultArray(value);
+            outputValue = typedDatumFactory.createSmallTable(result);
             break;
         default:
             outputValue = typedDatumFactory.createShortText(engine.get(name).toString());
@@ -483,6 +533,77 @@ public final class ScriptingUtils {
 
         componentContext.writeOutput(name, outputValue);
         addOutputToHistoryDataItem(name, outputValue, historyDataItem);
+    }
+
+    /**
+     * Converts the output of the script to a {@link MatrixTD}.
+     * 
+     * @param value result of script
+     * @param name of output
+     * @return created matrix
+     * @throws ComponentException if the dimensions are not correct.
+     */
+    @SuppressWarnings("unchecked")
+    public static MatrixTD createResultMatrix(Object value, String name) throws ComponentException {
+        List<Object> rowArray = (List<Object>) value;
+        if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
+            int columnDimension = ((List<Object>) rowArray.get(0)).size();
+            MatrixTD matrix = typedDatumFactory.createMatrix(rowArray.size(), columnDimension);
+            int i = 0;
+            for (Object columnObject : rowArray) {
+                List<Object> columnArray = (List<Object>) columnObject;
+                if (columnArray.size() == 0) {
+                    throw new ComponentException(StringUtils.format("Column %s of matrix \"%s\" does not contain any elements.", i, name));
+                }
+                if (columnArray.size() != columnDimension) {
+                    throw new ComponentException(
+                        StringUtils.format("Column %s of matrix %s has the wrong dimension (%s, should be %s).", i, name,
+                            columnArray.size(), columnDimension));
+                }
+                int j = 0;
+                for (Object element : columnArray) {
+                    TypedDatum cellValue = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
+                    if (cellValue instanceof FloatTD) {
+                        matrix.setFloatTDForElement((FloatTD) cellValue, i, j++);
+                    } else if (cellValue instanceof IntegerTD) {
+                        matrix.setFloatTDForElement(typedDatumFactory.createFloat(((IntegerTD) cellValue).getIntValue()), i, j++);
+                    } else {
+                        throw new ComponentException(
+                            StringUtils.format("Value \"%s\" of cell (%s, %s) of matrix \"%s\" is not an integer or a float value.",
+                                element.toString(), i, j, name));
+                    }
+                }
+                i++;
+            }
+            return matrix;
+        }
+        throw new ComponentException(StringUtils.format("Dimensions of %s not correct to convert to a Matrix", name));
+    }
+
+    @SuppressWarnings("unchecked")
+    private static TypedDatum[][] createResultArray(Object value) {
+        List<Object> rowArray = (List<Object>) value;
+        TypedDatum[][] result = new TypedDatum[rowArray.size()][];
+        if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
+            int i = 0;
+            for (Object columnObject : rowArray) {
+                List<Object> columnArray = (List<Object>) columnObject;
+                result[i] = new TypedDatum[columnArray.size()];
+                int j = 0;
+                for (Object element : columnArray) {
+                    result[i][j++] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
+                }
+                i++;
+            }
+        } else {
+            int i = 0;
+            for (Object element : rowArray) {
+                result[i] = new TypedDatum[1];
+                result[i][0] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
+                i++;
+            }
+        }
+        return result;
     }
 
     private static TypedDatum handeFileOrDirectoryOutput(Object value, String type, String name, String workingPath,
@@ -533,8 +654,8 @@ public final class ScriptingUtils {
      */
     public void unbindTypedDatumService(TypedDatumService oldTypedDatumService) {
         /*
-         * nothing to do here, this unbind method is only needed, because DS is throwing an
-         * exception when disposing otherwise. probably a bug
+         * nothing to do here, this unbind method is only needed, because DS is throwing an exception when disposing otherwise. probably a
+         * bug
          */
     }
 

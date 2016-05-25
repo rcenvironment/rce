@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -10,7 +10,6 @@ package de.rcenvironment.core.component.datamanagement.internal;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.MessageFormat;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.common.NodeIdentifier;
@@ -23,6 +22,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Implementation of {@link ComponentDataManagemenService}.
@@ -82,7 +82,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         try {
             dataManagementService.copyReferenceToLocalFile(reference, targetFile, nodeId);
         } catch (CommunicationException e) {
-            throw new RuntimeException(MessageFormat.format("Failed to copy data reference from remote node @{0} to local file: ",
+            throw new RuntimeException(StringUtils.format("Failed to copy data reference from remote node @%s to local file: ",
                 nodeId)
                 + e.getMessage(), e);
         }
@@ -93,7 +93,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         try {
             return dataManagementService.retrieveStringFromReference(reference, nodeId);
         } catch (CommunicationException e) {
-            throw new RuntimeException(MessageFormat.format("Failed to retrieve string from data reference from remote node @{0}: ",
+            throw new RuntimeException(StringUtils.format("Failed to retrieve string from data reference from remote node @%s: ",
                 nodeId)
                 + e.getMessage(), e);
         }
@@ -153,8 +153,8 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
             dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir,
                 componentContext.getDefaultStorageNodeId());
         } catch (CommunicationException e) {
-            throw new RuntimeException(MessageFormat.format(
-                "Failed to copy directory reference from remote node @{0} to local directory: ",
+            throw new RuntimeException(StringUtils.format(
+                "Failed to copy directory reference from remote node @%s to local directory: ",
                 componentContext.getNodeId())
                 + e.getMessage(), e);
         }
@@ -166,8 +166,8 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
         try {
             dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir, node);
         } catch (CommunicationException e) {
-            throw new RuntimeException(MessageFormat.format(
-                "Failed to copy directory reference from remote node @{0} to local directory: ",
+            throw new RuntimeException(StringUtils.format(
+                "Failed to copy directory reference from remote node @%s to local directory: ",
                 node)
                 + e.getMessage(), e);
         }

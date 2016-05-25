@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -23,6 +23,8 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.datamodel.api.TypedDatumConverter;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.utils.common.JsonUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Provides information about a single endpoint.
@@ -87,7 +89,8 @@ public class EndpointDescription extends EndpointGroupDescription {
      */
     public void setDataType(DataType type) {
         if (endpointDefinition != null && !endpointDefinition.getPossibleDataTypes().contains(type)) {
-            throw new IllegalArgumentException("Given data type is invalid: " + type);
+            throw new IllegalArgumentException(StringUtils.format("Given data type '%s' for endpoint '%s' is invalid",
+                type, getName()));
         }
         this.dataType = type;
     }
@@ -146,7 +149,7 @@ public class EndpointDescription extends EndpointGroupDescription {
      */
     public Map<String, String> getMetaDataToPersist() {
         Map<String, String> persistentMetaData = new HashMap<>();
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         for (String metaDataKey : metaData.keySet()) {
             if (endpointDefinition.getMetaDataDefinition().isPersistent(metaDataKey)) {
                 ObjectNode rootNode = mapper.createObjectNode();

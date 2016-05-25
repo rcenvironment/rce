@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -18,6 +18,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * It encapsulates the common component data such as inputs and outputs (by inheriting), or exit code and log files.
@@ -47,7 +48,7 @@ public abstract class CommonComponentHistoryDataItem extends DefaultComponentHis
     @Override
     public String serialize(TypedDatumSerializer serializer) throws IOException {
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         rootNode.put(FORMAT_VERSION, getFormatVersion());
         if (exitCode != null) {
@@ -75,7 +76,7 @@ public abstract class CommonComponentHistoryDataItem extends DefaultComponentHis
     }
     
     protected static Integer getExitCodeFromString(String exitCodeString) throws IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             JsonNode tree = mapper.readTree(exitCodeString);
             if (tree.get(EXIT_CODE) != null) {

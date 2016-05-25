@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -9,9 +9,10 @@
 package de.rcenvironment.core.embedded.ssh.internal;
 
 import java.util.List;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 
 import org.apache.commons.logging.Log;
-
 
 /**
  * Class to describe the different roles and their privileges.
@@ -51,25 +52,33 @@ public final class SshAccountRole {
         }
         // role has privileges
         if (allowedCommandPatterns == null || allowedCommandPatterns.isEmpty()) {
-            logger.info("Allowed command patterns must not be empty. (Role + " + roleName + ")");
+            logger.warn("Allowed command patterns must not be empty. (Role + " + roleName + ")");
             isValid = false;
         } else {
             // no privilege is null or an empty string
             for (String pattern : allowedCommandPatterns) {
                 if (pattern == null || pattern.isEmpty()) {
-                    logger.info("Found empty \"allowed command pattern\" for role " + roleName);
+                    logger.warn("Found empty \"allowed command pattern\" for role " + roleName);
                     isValid = false;
+                } else {
+                    try {
+                        Pattern.compile(pattern);
+                    } catch (PatternSyntaxException e) {
+                        logger.warn("Allowed command pattern " + pattern + " for role " + roleName
+                            + " is not a valid regular expression.");
+                        isValid = false;
+                    }
                 }
             }
         }
         if (allowedScpPath != null && !allowedScpPath.isEmpty()) {
             for (String path : allowedScpPath) {
                 if (path == null || path.isEmpty()) {
-                    logger.info("Found empty \"allowed scp path\" for role " + roleName);
+                    logger.warn("Found empty \"allowed scp path\" for role " + roleName);
                     isValid = false;
                 }
             }
-        } 
+        }
         return isValid;
     }
 

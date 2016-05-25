@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,7 @@ public interface InstanceValidationResult {
      * 
      * @author Doreen Seider
      */
-    public enum InstanceValidationResultType {
+    enum InstanceValidationResultType {
         /**
          * Instance passed validation.
          */

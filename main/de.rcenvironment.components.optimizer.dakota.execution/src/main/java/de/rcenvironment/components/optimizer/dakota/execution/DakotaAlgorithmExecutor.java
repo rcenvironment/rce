@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -32,11 +32,11 @@ public class DakotaAlgorithmExecutor implements OptimizerAlgorithmExecutorFactor
     }
 
     @Override
-    public OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(String algorithm,
+    public OptimizerAlgorithmExecutor createOptimizerAlgorithmExecutorInstance(
         Map<String, MethodDescription> methodConfiguration, Map<String, TypedDatum> outputValues,
         Collection<String> input, ComponentContext compContext,
-        Map<String, Double> upperMap, Map<String, Double> lowerMap) throws ComponentException {
-        return new DakotaAlgorithm(algorithm, methodConfiguration, outputValues, input, compContext, upperMap, lowerMap);
+        Map<String, Double> upperMap, Map<String, Double> lowerMap, Map<String, Double> stepValues) throws ComponentException {
+        return new DakotaAlgorithm(methodConfiguration, outputValues, input, compContext, upperMap, lowerMap, stepValues);
     }
 
 }

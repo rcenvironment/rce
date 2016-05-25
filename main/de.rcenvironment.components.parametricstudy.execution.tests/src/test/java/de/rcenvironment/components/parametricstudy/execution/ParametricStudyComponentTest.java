@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -572,6 +572,26 @@ public class ParametricStudyComponentTest {
         testOneLoopRun();
     }
 
+    /**
+     * Tests if values are forwarded as expected.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testDataTypes() throws ComponentException {
+        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(true));
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, "2.0", ONE, null);
+        addSimulatedOutputs(metadata);
+        
+        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, new HashMap<String, String>());
+        context.addSimulatedInput(RETURN_VALUE_2, "", DataType.Integer, true, new HashMap<String, String>());
+        final double value = 5.4;
+        context.setInputValue(RETURN_VALUE, typedDatumFactory.createFloat(value));
+        context.setInputValue(RETURN_VALUE_2, typedDatumFactory.createInteger(2));
+        component.start();
+        component.processInputs();
+    }
+    
     private void testOneLoopRun() throws ComponentException {
         assertEquals(0, context.getCapturedOutput(N).size());
         assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());

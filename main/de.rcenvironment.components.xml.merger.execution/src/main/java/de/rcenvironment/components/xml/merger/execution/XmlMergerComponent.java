@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -91,8 +91,38 @@ public class XmlMergerComponent extends DefaultComponent {
         initializeNewHistoryDataItem();
 
         TempFileService tempFileService = TempFileServiceAccess.getInstance();
-        String mappingContent = componentContext.getConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
-        String mappingType = componentContext.getConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME);
+
+        String mappingContent;
+        String mappingType;
+
+        if (componentContext.getConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME).equals(
+            XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED)) {
+            mappingContent = componentContext.getConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
+            mappingType = componentContext.getConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME);
+            // If no mapping file has been loaded in the XML Merger, content and type are null at this point.
+            if (mappingContent == null || mappingContent.isEmpty() || mappingType == null) {
+                throw new ComponentException("No mapping file and/or no mapping type defined for XML Merger.");
+            }
+        } else {
+            FileReferenceTD mappingFile = (FileReferenceTD) componentContext.readInput(XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE);
+            try {
+                File tempmappingFile = tempFileService.createTempFileFromPattern("XMLMappingFile*");
+
+                dataManagementService.copyReferenceToLocalFile(mappingFile.getFileReference(), tempmappingFile,
+                    componentContext.getDefaultStorageNodeId());
+                mappingContent = FileUtils.readFileToString(tempmappingFile);
+                if (mappingFile.getFileName().endsWith(XmlMergerComponentConstants.XMLFILEEND)) {
+                    mappingType = XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC;
+                } else {
+                    mappingType = XmlMergerComponentConstants.MAPPINGTYPE_XSLT;
+                }
+                if (mappingContent == null || mappingContent.isEmpty() || mappingType == null) {
+                    throw new ComponentException("No mapping file and/or no mapping type defined for XML Merger.");
+                }
+            } catch (IOException e) {
+                throw new ComponentException("Mapping file from input could not be read.");
+            }
+        }
 
         FileReferenceTD mainXML = (FileReferenceTD) componentContext.readInput(XmlMergerComponentConstants.INPUT_NAME_XML);
         FileReferenceTD xmlToIntegrate = (FileReferenceTD) componentContext
@@ -118,7 +148,7 @@ public class XmlMergerComponent extends DefaultComponent {
 
         Map<String, TypedDatum> variableInputs = new HashMap<>();
         for (String inputName : componentContext.getInputsWithDatum()) {
-            if (componentContext.isDynamicInput(inputName)) {
+            if (componentContext.isDynamicInput(inputName) && !inputName.equals(XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE)) {
                 variableInputs.put(inputName, componentContext.readInput(inputName));
             }
         }
@@ -165,7 +195,7 @@ public class XmlMergerComponent extends DefaultComponent {
             componentContext.getLog().componentInfo("XSL transformation successful");
         } else if (mappingType.equals(XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC)) {
             componentContext.getLog().componentInfo("XML mapping is applied");
-            resultFile = map(tempMainFile, tempIntegratingFile);
+            resultFile = map(tempMainFile, tempIntegratingFile, mappingContent);
 
             if (tempMainFile == null || tempIntegratingFile == null || resultFile == null) {
                 throw new ComponentException("Something does not perform correct in XML Merger component during classic mapping."
@@ -252,12 +282,12 @@ public class XmlMergerComponent extends DefaultComponent {
      * 
      * @param main The original XML data set
      * @param integrating The second data set to integrate
+     * @param mappingRules TODO
      * @return The combined data set
      * @throws ComponentException Thrown if XML mapping fails.
      */
-    private File map(final File main, final File integrating) throws ComponentException {
+    private File map(final File main, final File integrating, String mappingRules) throws ComponentException {
         if ((main != null) && (integrating != null)) {
-            final String mappingRules = componentContext.getConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
             if (mappingRules == null || mappingRules.equals("null")) {
                 throw new ComponentException("Failed to perform mapping as no mapping rules are given. Check the mapping file configured");
             }

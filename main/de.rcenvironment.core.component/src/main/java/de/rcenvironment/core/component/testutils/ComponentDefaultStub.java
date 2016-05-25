@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -36,48 +36,58 @@ public abstract class ComponentDefaultStub {
 
         @Override
         public void setComponentContext(ComponentContext componentContext) {
+            throw new UnsupportedOperationException();
         }
         
         @Override
         public void start() throws ComponentException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void onStartInterrupted(ThreadHandler executingThreadHandler) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void processInputs() throws ComponentException {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void tearDown(FinalComponentState state) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void dispose() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void onIntermediateHistoryDataUpdateTimer() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public void reset() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public boolean treatStartAsComponentRun() {
-            return false;
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public void completeStartOrProcessInputsAfterFailure() throws ComponentException {}
-
+        public void completeStartOrProcessInputsAfterFailure() throws ComponentException {
+            throw new UnsupportedOperationException();
+        }
 
     }
 }

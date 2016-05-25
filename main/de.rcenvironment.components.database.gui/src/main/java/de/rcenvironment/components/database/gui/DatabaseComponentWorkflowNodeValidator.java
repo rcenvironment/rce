@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -25,6 +25,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.workflow.editor.validator.AbstractWorkflowNodeValidator;
 import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -48,7 +49,7 @@ public class DatabaseComponentWorkflowNodeValidator extends AbstractWorkflowNode
         checkIfDatabaseDefinitionIsNotEmpty(messages);
         
         // READ STATEMENTS
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         List<DatabaseStatement> models = new ArrayList<>();
         try {
             String modelsString = getProperty(DatabaseComponentConstants.DB_STATEMENTS_KEY);

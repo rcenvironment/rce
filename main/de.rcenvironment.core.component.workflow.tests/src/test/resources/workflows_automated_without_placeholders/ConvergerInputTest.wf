@@ -47,13 +47,16 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "4.1",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsA" : "0.1",
       "epsR" : "0.1",
-      "iterationsToConsider" : "1"
+      "iterationsToConsider" : "1",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "ca2f7ad2-39a4-4654-846f-6ca8eadf5f89",
@@ -168,6 +171,22 @@
       "metadata" : {
         "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
       }
+    }, {
+      "name" : "y_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "64d9a427-3536-44e8-8989-21bf843564be",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "b2edd985-8caa-4f4a-9d36-069cce5aa083",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
     } ]
   }, {
     "identifier" : "1d72bb2b-fdfd-4d53-bb6a-912c5fffea82",
@@ -196,13 +215,16 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "4.1",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsR" : "0.1",
       "epsA" : "0.1",
-      "iterationsToConsider" : "1"
+      "iterationsToConsider" : "1",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "b5da2c68-dc78-497a-aa90-0e7926383fef",
@@ -376,6 +398,22 @@
       "epIdentifier" : "toForward",
       "group" : null,
       "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "855d705a-2228-446a-94b9-ffaf5fe9bcb7",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "name" : "y_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "1f878683-aca8-4956-b772-216b666fa33b",
       "metadata" : {
         "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }
@@ -585,13 +623,16 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.converger",
-      "version" : "4.1",
-      "name" : "Converger"
+      "name" : "Converger",
+      "version" : "5.1.1"
     },
     "configuration" : {
       "epsR" : "0.1",
       "epsA" : "0.1",
-      "iterationsToConsider" : "1"
+      "iterationsToConsider" : "1",
+      "notConvIgnore" : true,
+      "notConvFail" : false,
+      "notConvNotAValue" : false
     },
     "dynamicInputs" : [ {
       "identifier" : "39b2f59c-4afe-4f43-b5d2-da7796b7143c",
@@ -752,6 +793,22 @@
       "epIdentifier" : "toForward",
       "group" : null,
       "datatype" : "Float",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "name" : "x_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "61bf9b4b-6a93-4017-b0fc-7d8d514b6240",
+      "metadata" : {
+        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+      }
+    }, {
+      "name" : "y_is_converged",
+      "epIdentifier" : "auxiliaryValue",
+      "datatype" : "Boolean",
+      "identifier" : "9aef8849-a517-41b6-9e07-4f9a03f1f7ad",
       "metadata" : {
         "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
       }

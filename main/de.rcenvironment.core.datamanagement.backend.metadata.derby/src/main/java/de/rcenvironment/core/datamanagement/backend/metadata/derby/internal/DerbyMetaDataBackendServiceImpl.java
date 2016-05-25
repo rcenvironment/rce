@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -221,19 +221,35 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
      * @author Christian Weiss
      * @author Jan Flink
      * @author Robert Mischke
+     * @author Tobias Rodehutskors (catch InterruptedException)
      */
     protected abstract class SafeExecution<T> implements Callable<T> {
 
         @Override
         public final T call() {
+
             T result = null;
             try {
+                // If the current thread is interrupted before reaching this code,
+                // initializationLatch.await() will directly throw an InterruptedException.
                 if (!initializationLatch.await(INITIALIZATION_TIMEOUT, TimeUnit.SECONDS)) {
                     LOGGER.error(INITIALIZATION_TIMEOUT_ERROR_MESSAGE);
                     throw new RuntimeException(INITIALIZATION_TIMEOUT_ERROR_MESSAGE);
                 }
             } catch (InterruptedException e) {
-                throw new RuntimeException(INITIALIZATION_TIMEOUT_ERROR_MESSAGE, e);
+                // All SaveExecution Callables in this class are NOT executed in a separate thread, but instead they are executed by
+                // directly calling SaveExecution.call(). To be able to write to the database and exit the whole thread cleanly, we catch
+                // the InterruptedException and check again if the latch can be passed. This should be the case in this case. Therefore, a
+                // short timeout is no problem.
+                try {
+
+                    if (!initializationLatch.await(1, TimeUnit.SECONDS)) {
+                        LOGGER.error(INITIALIZATION_TIMEOUT_ERROR_MESSAGE);
+                        throw new RuntimeException(INITIALIZATION_TIMEOUT_ERROR_MESSAGE);
+                    }
+                } catch (InterruptedException e1) {
+                    throw new RuntimeException(INITIALIZATION_TIMEOUT_ERROR_MESSAGE);
+                }
             }
             final Connection connection = getConnection();
             if (connection == null) {
@@ -909,7 +925,8 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             final Connection connection = connectionPool.getConnection();
             connection.close();
         } catch (SQLException e) {
-            errorMessage = "Connecting to the database failed. Probably it is locked by another instance.";
+            errorMessage = "Failed to connect to the database. Most likely reasons: The database is used by another RCE "
+                + "instance or the database was not created successfully before then.";
             throw new IllegalStateException("Connecting to data management meta data db failed.", e);
         }
         initializeDatabase();

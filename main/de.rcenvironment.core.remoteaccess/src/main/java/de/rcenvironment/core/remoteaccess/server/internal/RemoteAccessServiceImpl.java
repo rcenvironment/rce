@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -28,6 +28,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -108,6 +109,8 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
     private HeadlessWorkflowExecutionService workflowExecutionService;
+    
+    private PlatformService platformService;
 
     private ConfigurationService configurationService;
 
@@ -130,7 +133,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
 
         private File outputFilesDir;
 
-        public ExecutionSetup(File wfFile, File placeholdersFile, File inputFilesDir, File outputFilesDir) {
+        ExecutionSetup(File wfFile, File placeholdersFile, File inputFilesDir, File outputFilesDir) {
             this.workflowFile = wfFile;
             this.placeholdersFile = placeholdersFile;
             this.inputFilesDir = inputFilesDir;
@@ -220,11 +223,14 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                     + "; the name contains characters that are not allowed anymore");
                 continue;
             }
+            String nodeId = platformService.getLocalNodeId().getIdString();
+            String nodeName = platformService.getLocalNodeId().getAssociatedDisplayName();
+            
             outputReceiver.addOutput(publishId);
             // TODO apply filtering too when versions are added
             outputReceiver.addOutput("1"); // version; hardcoded for now
-            outputReceiver.addOutput(""); // node id; not used yet
-            outputReceiver.addOutput(""); // node id; not used yet
+            outputReceiver.addOutput(nodeId); // node id
+            outputReceiver.addOutput(nodeName); // node name
         }
     }
 
@@ -467,6 +473,15 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      */
     public void bindWorkflowExecutionService(HeadlessWorkflowExecutionService newInstance) {
         this.workflowExecutionService = newInstance;
+    }
+    
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    public void bindPlatformService(PlatformService newInstance) {
+        this.platformService = newInstance;
     }
 
     /**
@@ -865,6 +880,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         exeContextBuilder.setPlaceholdersFile(executionSetup.getPlaceholderFile());
         exeContextBuilder.setTextOutputReceiver(outputReceiver);
         exeContextBuilder.setSingleConsoleRowsProcessor(customConsoleRowReceiver);
+        exeContextBuilder.setAbortIfWorkflowUpdateRequired(true); // fail on out-of-date templates
 
         WorkflowExecutionException executionException = null;
         FinalWorkflowState finalState = FinalWorkflowState.FAILED;

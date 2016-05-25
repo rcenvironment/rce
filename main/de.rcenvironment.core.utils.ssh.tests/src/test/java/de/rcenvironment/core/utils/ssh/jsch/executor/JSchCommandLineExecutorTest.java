@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -189,9 +189,9 @@ public class JSchCommandLineExecutorTest {
         executor.start(commandStdoutStderr);
         try (InputStream stdoutStream = executor.getStdout(); InputStream stderrStream = executor.getStderr();) {
             int exitValue = executor.waitForTermination();
+            assertEquals(0, exitValue);
             assertEquals(out, IOUtils.toString(stdoutStream));
             assertEquals(err, IOUtils.toString(stderrStream));
-            assertEquals(0, exitValue);
         }
     }
 

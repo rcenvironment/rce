@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -70,11 +70,11 @@ public final class OptimizerReceiverImpl implements OptimizerReceiver {
             if (missedNumber > OptimizerPublisher.BUFFER_SIZE - 1) {
                 missedNumber = new Long(OptimizerPublisher.BUFFER_SIZE - 1);
             }
-            final List<Notification> missedNotifications = notificationService
-                .getNotifications(notificationId, platform)
-                .get(notificationId)
-                .subList(0, missedNumber.intValue() + 1);
             try {
+                final List<Notification> missedNotifications = notificationService
+                    .getNotifications(notificationId, platform)
+                    .get(notificationId)
+                    .subList(0, missedNumber.intValue() + 1);
                 notificationSubscriber.receiveBatchedNotifications(missedNotifications);
             } catch (RemoteOperationException e) {
                 LogFactory.getLog(getClass()).warn("Failed to send notifications: " + e.toString());

@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Component Console Log File Writer Factory Service">
-
-	<implementation class="de.rcenvironment.core.component.workflow.execution.internal.ComponentConsoleLogFileWriterFactoryServiceImpl"/>
-	<service>
-		<provide interface="de.rcenvironment.core.component.workflow.execution.internal.ComponentConsoleLogFileWriterFactoryService"/>
-	</service>
- 		
-</scr:component>

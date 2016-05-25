@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -11,14 +11,14 @@ package de.rcenvironment.core.start.validators.internal;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResultFactory;
-import de.rcenvironment.core.start.common.validation.spi.InstanceValidator;
+import de.rcenvironment.core.start.common.validation.spi.DefaultInstanceValidator;
 
 /**
  * Validator to check if the meta data backend has been started correctly.
  *
  * @author Brigitte Boden
  */
-public class MetaDataBackendValidator implements InstanceValidator {
+public class MetaDataBackendValidator extends DefaultInstanceValidator {
 
     private static final String ERROR_PREFIX = "Failed to initialize database.";
     

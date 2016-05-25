@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -171,7 +171,7 @@ public class ConsoleView extends ViewPart {
         /**
          * Constructor.
          */
-        public ApplySnapshotRunnable(ConsoleModelSnapshot snapshot) {
+        ApplySnapshotRunnable(ConsoleModelSnapshot snapshot) {
             this.snapshot = snapshot;
         }
 

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core GUI Utils Common Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.utils.common;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy

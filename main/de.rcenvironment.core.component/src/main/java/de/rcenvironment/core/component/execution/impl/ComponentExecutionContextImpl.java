@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -62,6 +62,8 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     private Map<String, Long> inputDataManagementIds;
 
     private Map<String, Long> outputDataManagementIds;
+    
+    private Map<String, List<EndpointDatumRecipient>> cachedEndpointDatumRecipients;
 
     @Override
     public String getExecutionIdentifier() {
@@ -110,16 +112,19 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
 
     @Override
     public Map<String, List<EndpointDatumRecipient>> getEndpointDatumRecipients() {
-        Map<String, List<EndpointDatumRecipient>> edrs = new HashMap<>();
-        for (String output : serializedEndpointDatumRecipients.keySet()) {
-            edrs.put(output, new ArrayList<EndpointDatumRecipient>());
-            for (String sedr : serializedEndpointDatumRecipients.get(output)) {
-                String[] parts = StringUtils.splitAndUnescape(sedr);
-                edrs.get(output).add(EndpointDatumRecipientFactory.createEndpointDatumRecipient(
-                    parts[0], parts[1], parts[2], NodeIdentifierFactory.fromNodeId(parts[3])));
+        if (cachedEndpointDatumRecipients == null) {
+            Map<String, List<EndpointDatumRecipient>> edrs = new HashMap<>();
+            for (String output : serializedEndpointDatumRecipients.keySet()) {
+                edrs.put(output, new ArrayList<EndpointDatumRecipient>());
+                for (String sedr : serializedEndpointDatumRecipients.get(output)) {
+                    String[] parts = StringUtils.splitAndUnescape(sedr);
+                    edrs.get(output).add(EndpointDatumRecipientFactory.createEndpointDatumRecipient(
+                        parts[0], parts[1], parts[2], NodeIdentifierFactory.fromNodeId(parts[3])));
+                }
             }
+            cachedEndpointDatumRecipients = edrs;
         }
-        return edrs;
+        return cachedEndpointDatumRecipients;
     }
 
     @Override

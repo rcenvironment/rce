@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,6 +22,7 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * Interface to provide a scripting language to be executed.
  * 
  * @author Sascha Zur
+ * @author Tobias Rodehutskors (cancel)
  */
 public interface ScriptExecutor {
 
@@ -52,6 +53,16 @@ public interface ScriptExecutor {
      * @throws ComponentException if a run fails
      */
     void runScript() throws ComponentException;
+    
+    /**
+     * @return True, if the execution of the script can be canceled with a call of {@link ScriptExecutor#cancelScript()}; False otherwise.
+     */
+    boolean isCancelable();
+    
+    /**
+     * Cancels the execution of the script.
+     */
+    void cancelScript();
 
     /**
      * Method called after runScript.

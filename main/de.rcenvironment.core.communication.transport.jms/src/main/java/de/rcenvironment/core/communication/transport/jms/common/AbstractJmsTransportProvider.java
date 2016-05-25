@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -174,13 +174,17 @@ public abstract class AbstractJmsTransportProvider implements NetworkTransportPr
             throw new CommunicationException("Failed to start JMS broker for SCP " + scp, e);
         }
         // CHECKSTYLE:ENABLE (IllegalCatch)
-        serverEndpoints.put(scp, broker);
+        synchronized (serverEndpoints) {
+            serverEndpoints.put(scp, broker);
+        }
     }
 
     @Override
     public void stopServer(ServerContactPoint scp) {
-        JmsBroker broker = serverEndpoints.get(scp);
-        // FIXME this can be null on test shutdown; why? - misc_ro
+        final JmsBroker broker;
+        synchronized (serverEndpoints) {
+            broker = serverEndpoints.get(scp);
+        }
         broker.stop();
     }
 }

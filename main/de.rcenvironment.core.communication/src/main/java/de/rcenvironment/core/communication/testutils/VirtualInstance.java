@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -289,11 +289,12 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         return reachable.contains(targetNodeId);
     }
 
+    // TODO examine callers and check if they need to be adapted
+    // former return code:
+    // return NetworkFormatter.formatTopologyMap(getRoutingService().getProtocolManager().getTopologyMap(), true);
     @Deprecated
     public String getFormattedLegacyNetworkGraph() {
-        // TODO examine callers and check if they need to be adapted
         return getFormattedRawNetworkGraph();
-        // return NetworkFormatter.formatTopologyMap(getRoutingService().getProtocolManager().getTopologyMap(), true);
     }
 
     public String getFormattedRawNetworkGraph() {
@@ -353,9 +354,9 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         return networkRoutingService.getReachableNetworkGraph();
     }
 
+    // note: before migration to the new network code, it was kind of undefined whether this method should refer
+    // to the *raw* or *reachable* graph; now it does the former - misc_ro
     public int getKnownNodeCount() {
-        // note: before migration to the new network code, it was kind of undefined whether this method should refer
-        // to the *raw* or *reachable* graph; now it does the former - misc_ro
         return getReachableNetworkGraph().getNodeCount();
     }
 

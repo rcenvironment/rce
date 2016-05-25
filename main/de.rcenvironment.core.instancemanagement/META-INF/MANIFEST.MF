@@ -2,12 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Instance Management
 Bundle-SymbolicName: de.rcenvironment.core.instancemanagement
-Bundle-Version: 7.0.2.qualifier
+Bundle-Version: 7.1.0.qualifier
 Export-Package: de.rcenvironment.core.instancemanagement
-Import-Package: de.rcenvironment.core.command.common,
+Import-Package: com.jcraft.jsch;version="0.1.53",
+ de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.configuration.bootstrap,
+ de.rcenvironment.core.configuration.internal,
  de.rcenvironment.core.shutdown,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.concurrent,
@@ -15,8 +17,16 @@ Import-Package: de.rcenvironment.core.command.common,
  de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.core.utils.ssh.jsch,
+ de.rcenvironment.core.utils.ssh.jsch.executor,
+ org.apache.commons.collections4;version="4.0.0",
+ org.apache.commons.collections4.bidimap;version="4.0.0",
+ org.apache.commons.exec;version="1.1.0",
  org.apache.commons.io;version="2.0.1",
- org.apache.commons.logging;version="1.1.1"
+ org.apache.commons.lang3;version="3.1.0",
+ org.apache.commons.logging;version="1.1.1",
+ org.eclipse.equinox.app;version="1.1.0",
+ org.mindrot.jbcrypt;version="0.4.0"
 Service-Component: OSGI-INF/*.xml
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7

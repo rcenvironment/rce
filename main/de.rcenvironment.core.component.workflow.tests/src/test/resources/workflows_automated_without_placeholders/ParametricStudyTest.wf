@@ -44,8 +44,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "c9930774-a1a2-4366-b815-56a96c93ea95",
@@ -118,8 +118,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "10d6c7ac-79ae-4b93-88ee-0ef216842569",
@@ -291,8 +291,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "dynamicInputs" : [ {
       "identifier" : "74c6cbcc-14df-40f7-9da3-e5dd4756e6a1",
@@ -363,8 +363,8 @@
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.parametricstudy",
-      "version" : "3.2",
-      "name" : "Parametric Study"
+      "name" : "Parametric Study",
+      "version" : "3.3"
     },
     "staticOutputs" : [ {
       "identifier" : "6fa8c1b5-e282-4e6a-bc79-c2e61f33b491",

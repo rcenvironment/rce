@@ -30,6 +30,59 @@
                         ]
                     }
                 },
+                "useStep": {
+                    "guiName": "Use step size",
+                    "guiPosition": "0",
+                    "guiGroup": "Step values",
+                    "visibility": "shown",
+                    "defaultValue": "false",
+                    "dataType": "bool",
+                    "guiVisibilityFilter": {
+                        "configuration:optimizerPackageCode": [
+                            "generic"
+                        ]
+                    }
+                },
+                "useUnifiedStep": {
+                    "guiName": "Use unified step size",
+                    "guiPosition": "1",
+                    "guiGroup": "Step values",
+                    "visibility": "shown",
+                    "defaultValue": "true",
+                    "dataType": "bool",
+                    "guiActivationFilter": {
+                        "useStep": [
+                            "true"
+                        ]
+                    },
+                    "guiVisibilityFilter": {
+                        "configuration:optimizerPackageCode": [
+                            "generic"
+                        ]
+                    }
+                },
+                "step": {
+                    "guiName": "Step size",
+                    "guiPosition": "2",
+                    "guiGroup": "Step values",
+                    "visibility": "shown",
+                    "dataType": "float",
+                    "defaultValue": "1",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "useUnifiedStep": [
+                            "true"
+                        ],
+                        "useStep": [
+                            "true"
+                        ]
+                    },
+                    "guiVisibilityFilter": {
+                        "configuration:optimizerPackageCode": [
+                            "generic"
+                        ]
+                    }
+                },
                 "hasSingleBounds": {
                     "guiName": "Has unified bounds",
                     "guiPosition": "0",

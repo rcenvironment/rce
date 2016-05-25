@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -17,6 +17,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointChange;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointChange.Type;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -87,7 +88,25 @@ public class EndpointChangeListener implements PropertyChangeListener {
     
     private void onEndpointDataTypeChanged(EndpointChange epChange) {
         DataType newDataType = epChange.getEndpointDescription().getDataType();
-        if (!epChange.getOldEndpointDescription().isDataTypeValid(newDataType)) {
+        if (epChange.getOldEndpointDescription().isDataTypeValid(newDataType)) {
+            for (Connection connection : workflowDesc.getConnections()) {
+                if (connection.getInput().getIdentifier().equals(epChange.getEndpointDescription().getIdentifier())) {
+                    EndpointDescriptionsManager outputDescManager = workflowDesc.getWorkflowNode(connection.getSourceNode().getIdentifier())
+                        .getComponentDescription().getOutputDescriptionsManager();
+                    outputDescManager.removeConnectedDataType(connection.getOutput().getName(),
+                        epChange.getOldEndpointDescription().getDataType());
+                    outputDescManager.addConnectedDataType(connection.getOutput().getName(),
+                        epChange.getEndpointDescription().getDataType());
+                } else if (connection.getOutput().getIdentifier().equals(epChange.getEndpointDescription().getIdentifier())) {
+                    EndpointDescriptionsManager inputDescManager = workflowDesc.getWorkflowNode(connection.getTargetNode().getIdentifier())
+                        .getComponentDescription().getInputDescriptionsManager();
+                    inputDescManager.removeConnectedDataType(connection.getInput().getName(),
+                        epChange.getOldEndpointDescription().getDataType());
+                    inputDescManager.addConnectedDataType(connection.getInput().getName(),
+                        epChange.getEndpointDescription().getDataType());
+                }
+            }
+        } else {
             onRemoved(epChange);
         }
     }

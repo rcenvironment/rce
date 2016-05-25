@@ -1,6 +1,0 @@
-<contexts>
-	<context id="database" title="Database Component Help">
-		<description>The Database component is used for accessing databases. </description>
-     	<topic href="resources/help/html/usage.html" label="Database Component Usage"></topic>
-	</context>
-</contexts>

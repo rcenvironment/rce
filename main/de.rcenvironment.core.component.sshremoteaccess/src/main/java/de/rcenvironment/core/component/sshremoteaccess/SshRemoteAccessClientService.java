@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -16,14 +16,14 @@ package de.rcenvironment.core.component.sshremoteaccess;
 public interface SshRemoteAccessClientService {
 
     /**
-     * Registers all remote tools from a connection as a component on the local host.
+     * Registers all remote tools and workflows from a connection as components on the local host.
      * 
      * @param connectionId id of the ssh connection over which the tools are accessed.
      */
     void updateSshRemoteAccessComponents(String connectionId);
     
     /**
-     * Registers all remote tools from all available connections as a component on the local host.
+     * Registers all remote tools and workflows from all available connections as components on the local host.
      * 
      */
     void updateSshRemoteAccessComponents();

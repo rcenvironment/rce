@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -15,6 +15,8 @@ import java.util.List;
 
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
+
+import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Converter between {@link LinkState} objects and their string representation.
@@ -40,9 +42,9 @@ public final class LinkStateSerializer {
          * Constructor for JSON deserialization.
          */
         @SuppressWarnings("unused")
-        public LinkStateJsonStub() {}
+        LinkStateJsonStub() {}
 
-        public LinkStateJsonStub(Link link) {
+        LinkStateJsonStub(Link link) {
             id = link.getLinkId();
             node = link.getNodeIdString();
         }
@@ -70,7 +72,7 @@ public final class LinkStateSerializer {
      * @return the string representation
      */
     public static String serialize(Collection<Link> links) {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             List<LinkStateJsonStub> stubList = new ArrayList<LinkStateSerializer.LinkStateJsonStub>();
             for (Link link : links) {
@@ -92,7 +94,7 @@ public final class LinkStateSerializer {
      */
     public static LinkState deserialize(String serialized) throws IOException {
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         try {
             List<LinkStateJsonStub> stubList =
                 mapper.readValue(serialized, new TypeReference<List<LinkStateJsonStub>>() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.command.internal;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Deque;
 import java.util.LinkedList;
@@ -37,12 +38,30 @@ import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
  * the individual command parameters avoid the use of spaces; therefore, tokenization by spaces is usually sufficient.
  * 
  * @author Robert Mischke
+ * @author Tobias Rodehutskors (Injection of the FileLogger)
  */
 public class MultiCommandHandler implements Callable<CommandExecutionResult> {
+
+    // /**
+    // * The command string of the 'saveto' command.
+    // */
+    // public static final String SAVETO = "saveto";
+    //
+    // /**
+    // * TODO This function should be placed in a helper class FileUtils.
+    // *
+    // * These Strings are not allowed as filenames on the Windows platform.
+    // */
+    // private static final String[] FORBIDDEN_FILENAMES = { "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6",
+    // "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9" };
 
     private static final String DOUBLE_QUOTE = "\"";
 
     private static final String ESCAPED_DOUBLE_QUOTE = "\\\"";
+
+    // private static final String MIRROR = "-m";
+    //
+    // private static final String AUTO = "--auto";
 
     /**
      * Example of sequential execution syntax: <code>"command1 param1 ; command2 param2a param2b"</code>. Note the token separators (in this
@@ -54,17 +73,31 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
 
     private final Deque<String> remainingTokens;
 
-    private final TextOutputReceiver outputReceiver;
+    private TextOutputReceiver outputReceiver;
 
     private final SingleCommandHandler singleCommandHandler;
 
     private volatile Object initiatorInformation;
 
-    public MultiCommandHandler(List<String> tokens, TextOutputReceiver outputReceiver, SingleCommandHandler singleCommandHandler) {
+    // private final File profileOutputDirectory;
+
+    public MultiCommandHandler(List<String> tokens, TextOutputReceiver outputReceiver, SingleCommandHandler singleCommandHandler,
+        File profileOutput) {
+
         this.rawTokens = tokens;
         this.remainingTokens = new LinkedList<String>(); // empty list; filled after normalization
         this.outputReceiver = outputReceiver;
         this.singleCommandHandler = singleCommandHandler;
+        // this.profileOutputDirectory = profileOutput;
+    }
+
+    /**
+     * This constructor is manly intended for easing testing. As it does not specify the location of the profile output directory, this
+     * class will return an error if the 'saveto' command is encountered during command execution.
+     */
+    public MultiCommandHandler(List<String> tokens, TextOutputReceiver outputReceiver, SingleCommandHandler singleCommandHandler) {
+
+        this(tokens, outputReceiver, singleCommandHandler, null);
     }
 
     /**
@@ -75,9 +108,9 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
     @TaskDescription("Text command execution")
     @Override
     public CommandExecutionResult call() {
-        outputReceiver.onStart();
 
-        // outputReceiver.addOutput("Pre: " + tokens);
+        outputReceiver.onStart();
+        // outputReceiver.addOutput("Pre: " + rawTokens);
         try {
             List<String> normalizedTokens = normalizeTokens(rawTokens);
             remainingTokens.addAll(normalizedTokens);
@@ -87,7 +120,7 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
             outputReceiver.onFinished();
             return CommandExecutionResult.ERROR;
         }
-        // outputReceiver.addOutput("Post: " + tokens);
+        // outputReceiver.addOutput("Post: " + remainingTokens);
 
         if (remainingTokens.isEmpty()) {
             // empty command string -> trigger help output
@@ -96,6 +129,9 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
             return CommandExecutionResult.DEFAULT; // TODO add result key for this?
         }
         try {
+            // // we cannot invoke the file logger earlier, since we need to check the provided commands, which needs to be normalized first
+            // injectFileLoggerIfNecessary();
+
             List<String> collectedTokens = new LinkedList<String>();
             String token;
             do {
@@ -115,6 +151,103 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
             return CommandExecutionResult.ERROR;
         }
     }
+
+    // /**
+    // * TODO This function should be placed in a helper class FileUtils.
+    // *
+    // * This methods checks if a filename was supplied, which does not use directory traversal.
+    // */
+    // private static boolean isValidFilename(File profileOutputDirectory2, String filename) {
+    // if (filename == null) {
+    // return false;
+    // }
+    //
+    // // check for directory traversal
+    // if (!FilenameUtils.getName(filename).equals(filename)) {
+    // return false;
+    // }
+    //
+    // if (Arrays.asList(FORBIDDEN_FILENAMES).contains(filename)) {
+    // return false;
+    // }
+    //
+    // return true;
+    // }
+
+    // /**
+    // * Parses the first tokens to check whether 'saveto [-m] (<filename>|--auto) <command(s)>' was specified. If this is the case, it
+    // either
+    // * replaces the original output receiver with a {@link FileLoggingTextOutputReceiver} or adds a {@link FileLoggingTextOutputReceiver}
+    // to
+    // * the original receiver depending on the presence of the mirror option.
+    // *
+    // * @throws CommandException
+    // */
+    // private void injectFileLoggerIfNecessary() throws CommandException {
+    // // check if 'safeto' is specified and all necessary options are given
+    // if (SAVETO.equals(remainingTokens.peekFirst())) {
+    // List<String> collectedTokens = new LinkedList<String>();
+    // collectedTokens.add(remainingTokens.pollFirst());
+    //
+    // boolean mirror = false;
+    //
+    // // check if mirror option is set
+    // if (MIRROR.equals(remainingTokens.peekFirst())) {
+    // collectedTokens.add(remainingTokens.pollFirst());
+    // mirror = true;
+    // }
+    //
+    // String filename = remainingTokens.peekFirst();
+    // collectedTokens.add(remainingTokens.pollFirst());
+    // CommandContext commandContext = new CommandContext(collectedTokens, outputReceiver, initiatorInformation);
+    //
+    // if (profileOutputDirectory == null) {
+    // throw CommandException.executionError("Internal Error: The profile output directory is unkown.", commandContext);
+    // }
+    //
+    // if (AUTO.equals(filename)) {
+    // // It is unlikely that this file already exists
+    // filename = "cmd_" + System.currentTimeMillis() + ".txt";
+    // }
+    //
+    // if (!isValidFilename(profileOutputDirectory, filename)) {
+    // throw CommandException.syntaxError("You either need to specify the '--auto' option or supply a valid filename.",
+    // commandContext);
+    // }
+    //
+    // // construct the path to the file and create it
+    // Path filePath = profileOutputDirectory.toPath().resolve(filename);
+    // try {
+    // filePath = Files.createFile(filePath);
+    // // success
+    // } catch (FileAlreadyExistsException e) {
+    // throw CommandException.executionError("This file already exists. Please choose another file.", commandContext);
+    // } catch (IOException e) {
+    // throw CommandException.executionError(
+    // "Encountered an IO error. Please try again with another file." + System.lineSeparator() + "IO error: " + e.toString(),
+    // commandContext);
+    // }
+    //
+    // injectFileLogger(filePath, mirror);
+    // }
+    // }
+    //
+    // private void injectFileLogger(Path file, boolean mirror) {
+    // FileLoggingTextOutputReceiver fileLogger = new FileLoggingTextOutputReceiver(file);
+    // fileLogger.onStart();
+    //
+    // if (mirror) {
+    // // forward the received text to the original receiver and to the file logger
+    // MultiTextOutputReceiver multiOutputReceiver = new MultiTextOutputReceiver();
+    // multiOutputReceiver.addTextOutputReceiver(fileLogger);
+    // multiOutputReceiver.addTextOutputReceiver(outputReceiver);
+    // outputReceiver = multiOutputReceiver;
+    // } else {
+    // // replace the original receiver with the file logger
+    // outputReceiver.onFinished();
+    // outputReceiver = fileLogger;
+    // }
+    // }
 
     /**
      * Retrieves information about the source that invoked this command; see {@link #setInitiatorInformation(Object)}.
@@ -189,15 +322,7 @@ public class MultiCommandHandler implements Callable<CommandExecutionResult> {
         }
         // TODO parse for parallel sections
 
-        try {
-            executeSingleCommand(tokens);
-        } catch (CommandException e) {
-            if (e.getType().equals(CommandException.Type.HELP_REQUESTED)) {
-                outputReceiver.onFatalError(e);
-            } else {
-                throw e;
-            }
-        }
+        executeSingleCommand(tokens);
     }
 
     private void executeSingleCommand(List<String> tokens) throws CommandException {

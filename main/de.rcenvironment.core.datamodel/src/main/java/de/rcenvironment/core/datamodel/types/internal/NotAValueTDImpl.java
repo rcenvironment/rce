@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,23 +22,31 @@ public class NotAValueTDImpl extends AbstractTypedDatum implements NotAValueTD {
 
     private final String identifier;
     
-    public NotAValueTDImpl() {
-        this(UUID.randomUUID().toString());
+    private final Cause cause;
+    
+    public NotAValueTDImpl(Cause cause) {
+        this(UUID.randomUUID().toString(), cause);
     }
     
-    public NotAValueTDImpl(String identifier) {
+    public NotAValueTDImpl(String identifier, Cause cause) {
         super(DataType.NotAValue);
         this.identifier = identifier;
+        this.cause = cause;
     }
 
     @Override
     public String getIdentifier() {
         return identifier;
     }
-
+    
+    @Override
+    public Cause getCause() {
+        return cause;
+    }
+    
     @Override
     public String toString() {
         return "./.";
     }
-    
+
 }

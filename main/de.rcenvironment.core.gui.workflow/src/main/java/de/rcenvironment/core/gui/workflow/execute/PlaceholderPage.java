@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -88,6 +88,7 @@ public class PlaceholderPage extends WizardPage {
 
     private Tree componentPlaceholderTree;
 
+    // maps the hash code of a TreeItem to a control
     private Map<Integer, Control> controlMap;
 
     private final String dot = ".";
@@ -152,7 +153,6 @@ public class PlaceholderPage extends WizardPage {
             .size() == 0) {
             clearHistoryButton.setEnabled(false);
         }
-
     }
 
     private void addPlaceholderGroup(Composite container) {
@@ -331,8 +331,8 @@ public class PlaceholderPage extends WizardPage {
                     compPHTreeItem.hashCode(),
                     addSWTHandler(compPHTreeItem, componentName + dot
                         + componentPlaceholder, ComponentUtils
-                        .isEncryptedPlaceholder(currentPlaceholder,
-                            WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
+                            .isEncryptedPlaceholder(currentPlaceholder,
+                                WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
                         true));
             }
             List<String> instancesWithPlaceholder = placeholderHelper.getComponentInstances(componentID);
@@ -360,7 +360,8 @@ public class PlaceholderPage extends WizardPage {
                         if ((placeholderMetaData
                             .getGuiName(instancePlaceholder) != null
                             && !placeholderMetaData.getGuiName(
-                                instancePlaceholder).isEmpty() || placeholderMetaData
+                                instancePlaceholder).isEmpty()
+                            || placeholderMetaData
                                 .getGuiName("*") != null)) {
                             hasPlaceholderWithGUIName = true;
                         } else {
@@ -566,8 +567,8 @@ public class PlaceholderPage extends WizardPage {
         adapter.setProposalAcceptanceStyle(ContentProposalAdapter.PROPOSAL_REPLACE);
         adapter.setAutoActivationDelay(1);
         adapter.setPropagateKeys(true);
-        if (!isGlobal) {
-            addApplyToAllButton(item);
+        if (isPathField) {
+            addFileChooser(item, dataType, placeholderText);
         }
         if (isBoolean) {
             textEditor.setEditor(booleanCombo, item, 1);
@@ -590,8 +591,8 @@ public class PlaceholderPage extends WizardPage {
                 checkForSaveButton.setSelection(true);
             }
         }
-        if (isPathField) {
-            addFileChooser(item, dataType, placeholderText);
+        if (!isGlobal) {
+            addApplyToAllButton(item);
         }
         if (isFloat) {
             NumericalTextConstraintListener floatListener = new NumericalTextConstraintListener(
@@ -787,8 +788,8 @@ public class PlaceholderPage extends WizardPage {
                     for (String fullPlaceholder : placeholderHelper
                         .getPlaceholderOfComponent(getComponentIDByName(componentItems
                             .getText()))) {
-                        if (WorkflowPlaceholderHandler.getNameOfPlaceholder(fullPlaceholder).
-                            equals(treeItemNameToPlaceholder.get(componentIDItems.hashCode()))) {
+                        if (WorkflowPlaceholderHandler.getNameOfPlaceholder(fullPlaceholder)
+                            .equals(treeItemNameToPlaceholder.get(componentIDItems.hashCode()))) {
                             boolean addToHistory = true;
                             if (saveButtonMap.get(placeholder) != null) {
                                 addToHistory = saveButtonMap.get(placeholder)
@@ -831,7 +832,8 @@ public class PlaceholderPage extends WizardPage {
                                 placeholderHelper.setPlaceholderValue(
                                     fullPlaceholder,
                                     getComponentIDByName(componentIDItems
-                                        .getText()), treeItemToUUIDMap
+                                        .getText()),
+                                    treeItemToUUIDMap
                                         .get(instancePlaceholderItems
                                             .hashCode()),
                                     getControlText(instancePlaceholderItems
@@ -929,59 +931,71 @@ public class PlaceholderPage extends WizardPage {
      */
     private class ButtonListener extends SelectionAdapter {
 
-        private final TreeItem parentTreeItem;
+        // the tree item which represents the current line in the tree
+        private final TreeItem correspondingTreeItem;
 
-        public ButtonListener(TreeItem it) {
-            parentTreeItem = it;
+        ButtonListener(TreeItem it) {
+            correspondingTreeItem = it;
         }
 
         @Override
         public void widgetSelected(SelectionEvent event) {
-            Control current = getControl(parentTreeItem.hashCode());
-            if (current != null) {
-                String replaceText = null;
-                if (current instanceof Text) {
-                    replaceText = ((Text) current).getText();
-                } else if (current instanceof Combo) {
-                    replaceText = ((Combo) current).getText();
+            Control currentControl = getControl(correspondingTreeItem.hashCode());
+            if (currentControl != null) {
+                // the value which will be copied to the other placeholder entries
+                String value = null;
+                if (currentControl instanceof Text) {
+                    value = ((Text) currentControl).getText();
+                } else if (currentControl instanceof Combo) {
+                    value = ((Combo) currentControl).getText();
                 }
-                if (replaceText != null) {
-                    for (TreeItem componentIDItems : parentTreeItem
-                        .getParentItem().getParentItem().getItems()) {
-                        for (TreeItem instanceItems : componentIDItems
-                            .getItems()) {
-                            if (instanceItems.getText().equals(
-                                parentTreeItem.getText())) {
+                if (value != null) {
+
+                    String filledPlaceholderName = correspondingTreeItem.getText();
+
+                    // loop over all TreeItems of the parent level
+                    for (TreeItem componentIDItem : correspondingTreeItem.getParentItem().getParentItem().getItems()) {
+                        // loop over all TreeItems of the same level
+                        for (TreeItem instanceItem : componentIDItem.getItems()) {
+                            // only TreeItems which are named the same as the already filled placeholder should be considered, but the
+                            // placeholder whose value is used should be skipped
+                            String placeholderName = instanceItem.getText();
+                            if (placeholderName.equals(filledPlaceholderName) && correspondingTreeItem != instanceItem) {
                                 // FIXME: key used by getPlaceholdersDataType() is weird and should be reworked -- seid_do, Nov 2015
+
+                                // Why are two different methods necessary to get the data type of the placeholder? Why is it possible that
+                                // the type is null? It seem that this is happening if the value should be copied to the placeholder where
+                                // it was copied from. ~ rode_to, Mar 2016
+
                                 // Only apply placeholder if data types match
                                 String type1 = placeholderHelper.getPlaceholdersDataType().get(
-                                    parentTreeItem.getParentItem().getParentItem().getText() + dot + treeItemNameToPlaceholder
-                                    .get(parentTreeItem.hashCode()));
-                                
+                                    correspondingTreeItem.getParentItem().getParentItem().getText() + dot + treeItemNameToPlaceholder
+                                        .get(correspondingTreeItem.hashCode()));
+
                                 if (type1 == null) {
-                                    type1 = getPlaceholderAttributes(parentTreeItem.getParentItem().getParentItem().getText())
-                                        .getDataType(treeItemNameToPlaceholder.get(parentTreeItem.hashCode()));
+                                    type1 = getPlaceholderAttributes(correspondingTreeItem.getParentItem().getParentItem().getText())
+                                        .getDataType(treeItemNameToPlaceholder.get(correspondingTreeItem.hashCode()));
                                 }
-                                
+
                                 String type2 = placeholderHelper.getPlaceholdersDataType().get(
-                                    instanceItems.getParentItem().getParentItem().getText() + dot + treeItemNameToPlaceholder
-                                    .get(instanceItems.hashCode()));
-                                
+                                    instanceItem.getParentItem().getParentItem().getText() + dot + treeItemNameToPlaceholder
+                                        .get(instanceItem.hashCode()));
+
                                 if (type2 == null) {
-                                    type2 = getPlaceholderAttributes(instanceItems.getParentItem().getParentItem().getText())
-                                        .getDataType(treeItemNameToPlaceholder.get(instanceItems.hashCode()));
+                                    type2 = getPlaceholderAttributes(instanceItem.getParentItem().getParentItem().getText())
+                                        .getDataType(treeItemNameToPlaceholder.get(instanceItem.hashCode()));
                                 }
-                                
+
                                 if (type1 == null || type2 == null) {
                                     LOGGER.error("Missing attribut data type for component: "
-                                        + parentTreeItem.getParentItem().getParentItem().getText());
-                                    return;
+                                        + correspondingTreeItem.getParentItem().getParentItem().getText());
+                                    continue;
 
                                 }
                                 if (type1.equals(type2)) {
-                                    Control nextControl = getControl(instanceItems
+                                    Control nextControl = getControl(instanceItem
                                         .hashCode());
-                                    replaceText(nextControl, replaceText);
+                                    replaceText(nextControl, value);
                                 }
                             }
                         }

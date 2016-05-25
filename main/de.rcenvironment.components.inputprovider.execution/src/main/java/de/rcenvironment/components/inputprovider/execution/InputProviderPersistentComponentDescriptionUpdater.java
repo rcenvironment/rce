@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2015 DLR, Germany
+ * Copyright (C) 2006-2016 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -22,7 +22,6 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
-import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants.FileSourceType;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinitionConstants;
 import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaDataConstants;
@@ -32,6 +31,7 @@ import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVer
 import de.rcenvironment.core.component.update.spi.PersistentComponentDescriptionUpdater;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -111,7 +111,7 @@ public class InputProviderPersistentComponentDescriptionUpdater implements Persi
      * */
     private PersistentComponentDescription updateFrom30To31(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
         JsonNode configNode = node.get(WorkflowDescriptionPersistenceHandler.DYNAMIC_OUTPUTS);
@@ -124,7 +124,7 @@ public class InputProviderPersistentComponentDescriptionUpdater implements Persi
                     TextNode.valueOf(StringUtils.format(ConfigurationDefinitionConstants.PLACEHOLDER_FORMAT_STRING,
                         outputNode.get(WorkflowDescriptionPersistenceHandler.NAME).getTextValue())));
                 metaDataNode.put(InputProviderComponentConstants.META_FILESOURCETYPE,
-                    TextNode.valueOf(FileSourceType.atWorkflowStart.name()));
+                    TextNode.valueOf(InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART));
             }
         }
 
@@ -143,7 +143,7 @@ public class InputProviderPersistentComponentDescriptionUpdater implements Persi
         final String filePlaceholderRegex = "\\$\\{((\\w*)(\\.))?((\\*)(\\.))?(.*) \\(File\\)\\}";
         final String directoryPlaceholderRegex = "\\$\\{((\\w*)(\\.))?((\\*)(\\.))?(.*) \\(Directory\\)\\}";
 
-        ObjectMapper mapper = new ObjectMapper();
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         ObjectNode configurationsNode = (ObjectNode) node.get(WorkflowDescriptionPersistenceHandler.CONFIGURATION);
         if (configurationsNode != null) {
