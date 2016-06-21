@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Imput Provider Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.execution
-Bundle-Version: 7.1.1.qualifier
+Bundle-Version: 7.1.2.qualifier
 Import-Package: de.rcenvironment.components.inputprovider.common,
  de.rcenvironment.core.authentication,
  de.rcenvironment.core.communication.common,

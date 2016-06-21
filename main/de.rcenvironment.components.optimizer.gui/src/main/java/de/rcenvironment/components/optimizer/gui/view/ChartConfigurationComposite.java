@@ -124,8 +124,7 @@ public class ChartConfigurationComposite extends Composite implements
     }
 
     /**
-     * The {@link Action} displayed in the context menu of a trace providing the option to remove
-     * the trace from the chart.
+     * The {@link Action} displayed in the context menu of a trace providing the option to remove the trace from the chart.
      * 
      * @author Christian Weiss
      */
@@ -348,19 +347,6 @@ public class ChartConfigurationComposite extends Composite implements
             yAxis.setAutoScale(true);
             configuration.addYAxis(yAxis);
         }
-        // for (final StudyStructure.Dimension dimension : studyDatastore
-        // .getStructure().getDimensions()) {
-        // for (final StudyStructure.Measure measure : studyDatastore
-        // .getStructure().getMeasures()) {
-        // final ChartConfiguration.Trace trace = new ChartConfiguration.Trace(
-        // configuration);
-        // trace.setName(StringUtils.format("%s - %s", dimension.getName(),
-        // measure.getName()));
-        // trace.setXAxis(configuration.getXAxis(dimension.getName()));
-        // trace.setYAxis(configuration.getYAxis(measure.getName()));
-        // configuration.addTrace(trace);
-        // }
-        // }
         updateGraph();
         setSelection(new StructuredSelection(configuration));
     }
@@ -378,10 +364,6 @@ public class ChartConfigurationComposite extends Composite implements
         graph.setTitle(configuration.getTitle());
         graph.setShowTitle(configuration.getShowTitle());
         graph.setShowLegend(configuration.isShowLegend());
-        // return early, if there are no datasets
-        if (studyDatastore.getDatasetCount() == 0) {
-            return;
-        }
         createXAxes();
         createYAxes();
         createTraces();

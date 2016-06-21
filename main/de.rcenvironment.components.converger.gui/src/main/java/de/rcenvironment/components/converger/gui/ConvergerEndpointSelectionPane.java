@@ -15,8 +15,10 @@ import java.util.Map;
 import org.eclipse.swt.widgets.TableItem;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -63,9 +65,13 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
         groupCommand.add(new AddDynamicInputCommand(dynamicEndpointIdToConverge, name, type, metaData, this, outputPane));
         if (metaData.get(ConvergerComponentConstants.META_HAS_STARTVALUE) == null
             || !Boolean.parseBoolean(metaData.get(ConvergerComponentConstants.META_HAS_STARTVALUE))) {
+            // LoopComponentConstants.createMetaData should be extended to take InputExecutionContraint
+            Map<String, String> startMetaData = LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint);
+            startMetaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                EndpointDefinition.InputExecutionContraint.Required.name());
             groupCommand.add(new AddDynamicInputCommand(dynamicEndpointIdToConverge,
                 name + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, type,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint),
+                startMetaData,
                 LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane));
         }
         groupCommand.add(new AddDynamicOutputCommand(dynamicEndpointIdToConverge, name, type,

@@ -1,5 +1,5 @@
 {
-    "methodName":"Dakota Multi Objectiv Genetic Algorithm",
+    "methodName":"Dakota Multi Objective Genetic Algorithm",
     "methodCode":"moga",
     "optimizerPackage":"dakota",
     "followingMethods":"0",

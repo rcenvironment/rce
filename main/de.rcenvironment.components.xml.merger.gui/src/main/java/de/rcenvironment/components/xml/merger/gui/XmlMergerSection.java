@@ -8,8 +8,6 @@
 
 package de.rcenvironment.components.xml.merger.gui;
 
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.HashMap;
@@ -22,7 +20,7 @@ import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.custom.CLabel;
-import org.eclipse.swt.events.SelectionAdapter;
+import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.FillLayout;
 import org.eclipse.swt.layout.GridData;
@@ -31,7 +29,6 @@ import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.Text;
 import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
@@ -41,10 +38,14 @@ import de.rcenvironment.components.xml.merger.common.XmlMergerComponentConstants
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.AbstractWorkflowNodeCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
+import de.rcenvironment.core.gui.workflow.executor.properties.AbstractEditScriptRunnable;
+import de.rcenvironment.core.gui.workflow.executor.properties.AbstractScriptSection;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -56,6 +57,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Miriam Lenk
  * @author Jan Flink
  * @author Brigitte Boden
+ * @author Sascha Zur
  */
 public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
@@ -71,7 +73,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
     private CLabel fileContentLabel;
 
-    private Text fileContentText;
+    private StyledText fileContentText;
 
     private boolean mappingFileAsInput;
 
@@ -79,19 +81,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
     private Button loadMappingFileButton;
 
-    @Override
-    public void setInput(IWorkbenchPart part, ISelection selection) {
-        super.setInput(part, selection);
-        addPropertyChangeListener(new PropertyChangeListener() {
-
-            @Override
-            public void propertyChange(PropertyChangeEvent evt) {
-                if (!getComposite().isDisposed()) {
-                    refreshSection();
-                }
-            }
-        });
-    }
+    private EditScriptRunnable esr;
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
@@ -127,24 +117,8 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
         mappingFileAsInputButton = new Button(radioGroup, SWT.RADIO);
         mappingFileAsInputButton.setText(Messages.mappingFileAsInputButton);
-        mappingFileAsInputButton.setSelection(mappingFileAsInput);
         loadMappingFileButton = new Button(radioGroup, SWT.RADIO);
         loadMappingFileButton.setText(Messages.mappingFileLoadedButton);
-        mappingFileAsInputButton.addSelectionListener(new SelectionAdapter() {
-
-            @Override
-            public void widgetSelected(SelectionEvent e) {
-                mappingFileAsInput = mappingFileAsInputButton.getSelection();
-
-                if (getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
-                    .equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT) && !mappingFileAsInput) {
-                    execute(new ChangeToLoadedMappingFileCommand());
-                } else if (getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
-                    .equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED) && mappingFileAsInput) {
-                    execute(new ChangeToMappingFileAsInputCommand());
-                }
-            }
-        });
 
         fileGroup = toolkit.createComposite(client);
         fileGroup.setLayout(new GridLayout(2, false));
@@ -167,9 +141,10 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
         gridData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         gridData.heightHint = MINIMUM_HEIGHT_OF_FILE_CONTENT_TEXT;
-        fileContentText = toolkit.createText(contentGroup, "", SWT.V_SCROLL | SWT.H_SCROLL);
+        fileContentText = new StyledText(contentGroup, SWT.V_SCROLL | SWT.H_SCROLL | SWT.BORDER);
         fileContentText.setEditable(false);
         fileContentText.setLayoutData(gridData);
+        fileContentText.setData(CONTROL_PROPERTY_KEY, XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
 
         section.setClient(client);
     }
@@ -186,48 +161,90 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
             try {
                 IOUtils.copy(file.getContents(), writer);
                 String theString = writer.toString();
-                setProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, theString);
-                setMappingType(file.getName());
+                setScriptProperties(node, theString, getMappingType(file.getName()));
             } catch (IOException | CoreException e) {
                 logger.error(StringUtils.format(Messages.logReadFromFileError, Messages.cannotReadContentFromFile, e.getMessage()));
                 MessageDialog.openError(getComposite().getShell(), Messages.cannotReadContentFromFile,
                     StringUtils.format(Messages.dialogMessageReadFromFileError, e.getMessage(), Messages.refreshProjectExplorer));
             }
-
             refreshSection();
         }
     }
 
-    /**
-     * Open file Editor for Mapping file.
-     * 
-     */
-    private void fileEditing() {
-        Runnable editMappingFileRunnable = new EditMappingFileRunnable(node);
-        editMappingFileRunnable.run();
-        setXMLContent();
-        
-    }
-
-    private void setMappingType(final String fileName) {
+    private String getMappingType(final String fileName) {
         if (fileName.endsWith(XmlMergerComponentConstants.XMLFILEEND)) {
-            setProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC);
+            return XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC;
         } else {
-            setProperty(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, XmlMergerComponentConstants.MAPPINGTYPE_XSLT);
+            return XmlMergerComponentConstants.MAPPINGTYPE_XSLT;
         }
     }
 
     @Override
-    protected void refreshBeforeValidation() {
-        fileEditor.setEnabled(getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME) != null);
+    protected Updater createUpdater() {
+        return new MergerGUIUpdater();
+    }
+
+    @Override
+    protected Synchronizer createSynchronizer() {
+        return new MergerGUISynchronizer();
+    }
+
+    /**
+     * Implementation of {@link DefaultUpdater}.
+     * 
+     * @author Jan Flink
+     * @author Sascha Zur
+     *
+     */
+    private class MergerGUIUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            if (!propertyName.equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)) {
+                super.updateControl(control, propertyName, newValue, oldValue);
+            }
+            setXMLFileContent();
+        }
+
+    }
+
+    /**
+     * Implementation of {@link DefaultSynchronizer}.
+     * 
+     * @author Jan Flink
+     * @author Sascha Zur
+     *
+     */
+    private class MergerGUISynchronizer extends DefaultSynchronizer {
+
+        @Override
+        public void handlePropertyChange(String propertyName, String newValue, String oldValue) {
+            if (!propertyName.equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)) {
+                super.handlePropertyChange(propertyName, newValue, oldValue);
+            } else {
+                getUpdater().updateControl(null, propertyName, newValue, oldValue);
+            }
+        }
+
+        @Override
+        protected void handlePropertyChange(Control control, String key, String newValue, String oldValue) {
+            if (!key.equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)) {
+                super.handlePropertyChange(control, key, newValue, oldValue);
+            } else {
+                getUpdater().updateControl(control, key, newValue, oldValue);
+            }
+        }
+
+    }
+
+    private void setXMLFileContent() {
         mappingFileAsInput =
-            (getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
+            (node.getConfigurationDescription().getConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME)
                 .equals(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT));
-        setXMLContent();
         mappingFileAsInputButton.setSelection(mappingFileAsInput);
         loadMappingFileButton.setSelection(!mappingFileAsInput);
         fileChooser.setEnabled(!mappingFileAsInput);
-        fileEditor.setEnabled(!mappingFileAsInput && getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME) != null);
+        fileEditor.setEnabled(!mappingFileAsInput && !fileContentText.getText().equals(""));
         fileContentLabel.setEnabled(!mappingFileAsInput);
         fileContentText.setEnabled(!mappingFileAsInput);
         if (mappingFileAsInput) {
@@ -247,14 +264,17 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         fileGroup.pack(true);
     }
 
-    private void setXMLContent() {
-        if (!fileContentText.isDisposed()) {
-            if (getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME) != null) {
-                fileContentText.setText(getProperty(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME));
-                return;
-            }
-            fileContentText.setText("");
-        }
+    @Override
+    protected void refreshBeforeValidation() {
+        updateEditor(node);
+        setXMLFileContent();
+    }
+
+    @Override
+    public void setInput(IWorkbenchPart part, ISelection selection) {
+        super.setInput(part, selection);
+        setXMLFileContent();
+        updateEditor(node);
     }
 
     @Override
@@ -262,63 +282,100 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
         return new FileController();
     }
 
+    @Override
+    public void aboutToBeShown() {
+        super.aboutToBeShown();
+        refresh();
+    }
+
+    private void updateEditor(WorkflowNode node) {
+        if (esr != null && fileContentText != null && esr.getNode().equals(node)) {
+            esr.update(fileContentText.getText());
+        }
+    }
+
     /**
      * Custom {@link DefaultController} implementation to handle the activation of the GUI controls.
      * 
      * @author Markus Kunde
+     * 
      */
     private final class FileController extends DefaultController {
 
         @Override
         protected void widgetSelected(final SelectionEvent event, final Control source) {
-            super.widgetSelected(event, source);
-            if (source == fileChooser) {
-                fileChoosing();
-            } else if (source == fileEditor) {
-                fileEditing();
+            if (source == loadMappingFileButton && loadMappingFileButton.getSelection()) {
+                if (XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT
+                    .equals(getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME))) {
+                    execute(new ChangeToLoadedMappingFileCommand(node));
+                }
+            } else if (source == mappingFileAsInputButton && mappingFileAsInputButton.getSelection()) {
+                if (XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED
+                    .equals(getProperty(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME))) {
+                    execute(new ChangeToMappingFileAsInputCommand(node));
+                }
+            } else {
+                super.widgetSelected(event, source);
+                if (source == fileChooser) {
+                    fileChoosing();
+                } else if (source == fileEditor) {
+                    esr = new EditScriptRunnable(node);
+                    esr.run();
+                }
             }
         }
-
     }
 
     /**
      * Adds the input for the mapping file.
-     * 
+     *
      */
     private class ChangeToMappingFileAsInputCommand extends AbstractWorkflowNodeCommand {
 
         private String oldXmlContent;
 
+        private WorkflowNode node;
+
+        ChangeToMappingFileAsInputCommand(WorkflowNode node) {
+            this.node = node;
+        }
+
         @Override
         protected void execute2() {
-            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            ConfigurationDescription configDesc = node.getConfigurationDescription();
             configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
                 XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT);
             oldXmlContent = configDesc.getConfigurationValue((XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME));
-            configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, null);
-            addMappingFileInput(getWorkflowNode());
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, "");
+            addMappingFileInput(node);
         }
 
         @Override
         protected void undo2() {
-            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            ConfigurationDescription configDesc = node.getConfigurationDescription();
             configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
                 XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED);
             configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, oldXmlContent);
-            removeMappingFileInput(getWorkflowNode());
+            removeMappingFileInput(node);
         }
 
     }
 
     /**
      * Remove the input for the mapping file.
-     * 
+     *
      */
     private class ChangeToLoadedMappingFileCommand extends AbstractWorkflowNodeCommand {
 
+        private WorkflowNode node;
+
+        ChangeToLoadedMappingFileCommand(WorkflowNode node) {
+            this.node = node;
+        }
+
         @Override
         protected void execute2() {
-            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            ConfigurationDescription configDesc = node.getConfigurationDescription();
             configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
                 XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_LOADED);
             removeMappingFileInput(getWorkflowNode());
@@ -326,7 +383,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
 
         @Override
         protected void undo2() {
-            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            ConfigurationDescription configDesc = node.getConfigurationDescription();
             configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_CONFIGNAME,
                 XmlMergerComponentConstants.MAPPINGFILE_DEPLOYMENT_INPUT);
             addMappingFileInput(getWorkflowNode());
@@ -334,7 +391,7 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
     }
 
     private void addMappingFileInput(WorkflowNode workflowNode) {
-        EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
+        EndpointDescriptionsManager manager = workflowNode.getInputDescriptionsManager();
         Map<String, String> metaData = new HashMap<String, String>();
         manager.addDynamicEndpointDescription(XmlMergerComponentConstants.INPUT_ID_MAPPING_FILE,
             XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE, DataType.FileReference,
@@ -342,8 +399,111 @@ public class XmlMergerSection extends ValidatingWorkflowNodePropertySection {
     }
 
     private void removeMappingFileInput(WorkflowNode workflowNode) {
-        EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
+        EndpointDescriptionsManager manager = workflowNode.getInputDescriptionsManager();
         manager.removeDynamicEndpointDescription(XmlMergerComponentConstants.INPUT_NAME_MAPPING_FILE);
     }
 
+    /**
+     * Implementation of {@link AbstractEditScriptRunnable}.
+     * 
+     * @author Jan Flink
+     */
+    private class EditScriptRunnable extends AbstractEditScriptRunnable {
+
+        private final WorkflowNode node;
+
+        EditScriptRunnable(WorkflowNode node) {
+            this.node = node;
+        }
+
+        public WorkflowNode getNode() {
+            return node;
+        }
+
+        @Override
+        protected void setScript(String script) {
+            setScriptProperties(node, script,
+                node.getConfigurationDescription().getConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME));
+        }
+
+        @Override
+        protected String getScript() {
+            return node.getConfigurationDescription().getConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
+        }
+
+        @Override
+        protected String getScriptName() {
+            String suffix;
+            if (node.getConfigurationDescription().getConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME) != null
+                && node.getConfigurationDescription().getConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME)
+                    .equals(XmlMergerComponentConstants.MAPPINGTYPE_CLASSIC)) {
+                suffix = ".xml";
+            } else {
+                suffix = ".xsl";
+            }
+            return "Mapping" + suffix;
+        }
+
+    }
+
+    /**
+     * If a mapping is edited in an editor, the workflow editor must get dirty when the mapping is saved. To do so, a command must be
+     * executed, but it must contain the correct node.
+     * 
+     * TODO Let the {@link XmlMergerSection} extend the {@link AbstractScriptSection} to ensure quality and avoid duplicated code.
+     * 
+     * @param node to execute the save command to.
+     * @param newValue of the mapping.
+     * @author Jan Flink
+     */
+    private void setScriptProperties(WorkflowNode node, final String newScriptValue, final String newTypeValue) {
+        final String oldScriptValue = WorkflowNodeUtil.getConfigurationValue(node, XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME);
+        final String oldTypeValue = WorkflowNodeUtil.getConfigurationValue(node, XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME);
+        if ((oldScriptValue != null && !oldScriptValue.equals(newScriptValue))
+            || (oldScriptValue == null && oldScriptValue != newScriptValue)) {
+            final WorkflowNodeCommand command =
+                new SetScriptPropertiesValueCommand(oldScriptValue, newScriptValue, oldTypeValue, newTypeValue);
+            execute(node, command);
+        }
+    }
+
+    /**
+     * Command for setting every property if a file is loaded.
+     * 
+     *  @author Sascha Zur
+     */
+    protected static class SetScriptPropertiesValueCommand extends AbstractWorkflowNodeCommand {
+
+        private final String oldScriptValue;
+
+        private final String newScriptValue;
+
+        private String oldTypeValue;
+
+        private String newTypeValue;
+
+        public SetScriptPropertiesValueCommand(final String oldScriptValue, final String newScriptValue, final String oldTypeValue,
+            final String newTypeValue) {
+            this.oldScriptValue = oldScriptValue;
+            this.newScriptValue = newScriptValue;
+            this.oldTypeValue = oldTypeValue;
+            this.newTypeValue = newTypeValue;
+        }
+
+        @Override
+        public void execute2() {
+            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, newScriptValue);
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, newTypeValue);
+        }
+
+        @Override
+        public void undo2() {
+            ConfigurationDescription configDesc = getProperties().getConfigurationDescription();
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.XMLCONTENT_CONFIGNAME, oldScriptValue);
+            configDesc.setConfigurationValue(XmlMergerComponentConstants.MAPPINGTYPE_CONFIGNAME, oldTypeValue);
+
+        }
+
+    }
 }

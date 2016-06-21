@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Utils OLE
 Bundle-SymbolicName: de.rcenvironment.core.gui.utils.ole;singleton:=true
-Bundle-Version: 7.1.1.qualifier
+Bundle-Version: 7.1.2.qualifier
 Bundle-Vendor: DLR
 Import-Package: org.apache.commons.logging;version="1.1.1",
  org.eclipse.swt,

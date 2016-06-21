@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.communication</artifactId>
 	<name>RCE Core Communication Bundle</name>
-	<version>7.1.1.qualifier</version>
+	<version>7.1.2.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -10,6 +10,7 @@ package de.rcenvironment.core.gui.workflow.editor.properties;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,31 +63,23 @@ import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
  * To implement a new <code>WorkflowNodePropertySection}</code>:
  * <ol>
  * <li>Derive a new section from this class.</li>
- * <li>Implement the {@link #createCompositeContents(Composite, TabbedPropertySheetPage)} method to
- * create the GUI. Remember to use SWT Forms and appropriate styles to meet the GUI standards. Tag
- * {@link Control}s which are displaying certain configuration properties with the
- * {@link Control#setData(String, Object)} method, using {@link #CONTROL_PROPERTY_KEY} as key and
- * the property key as value.</li>
- * <li>Create a controller class implementing {@link Controller} or deriving from
- * {@link DefaultController}. Implement the controller functionality which should be reacting on
- * certain GUI-events in the appropriate {@link Controller} function. To integrate changes in the
- * Undo/Redo stack, implement any changes as instances of {@link WorkflowNodeCommand} and hand them
- * to the {@link #execute(WorkflowNodeCommand)} method. Within {@link WorkflowNodeCommand}s the
- * {@link WorkflowNode} can be retrieved via {@link WorkflowNodeCommand#getWorkflowNode()}. The
- * methods {@link #setProperty(String, Serializable)},
- * {@link #setProperty(String, Serializable, Serializable)} and {@link #editProperty(String)} are
- * convenience functions that integrate into the Undo/Redo stack. Overwrite the
- * {@link #createController()} method to return an instance of your {@link Controller}
- * implementation.</li>
- * <li>As changes to the model can be undone via the {@link CommandStack}, the GUI needs to be
- * synchronized with changes to the underlying model. This has to be realized in a custom
- * {@link Synchronizer}, which should ideally be derived from {@link DefaultSynchronizer}. Overwrite
- * the {@link #createSynchronizer()} method to return an instance of your {@link Synchronizer}
- * implementation.</li>
- * <li>All updates of the GUI, which reflect change events in the model, should happen through a
- * {@link Updater} instance. If functionality above those of the {@link DefaultUpdater} is required
- * this class has to be derived and extended. Overwrite the {@link #createUpdater()} method to
- * return an instance of your {@link Updater} implementation.</li>
+ * <li>Implement the {@link #createCompositeContents(Composite, TabbedPropertySheetPage)} method to create the GUI. Remember to use SWT
+ * Forms and appropriate styles to meet the GUI standards. Tag {@link Control}s which are displaying certain configuration properties with
+ * the {@link Control#setData(String, Object)} method, using {@link #CONTROL_PROPERTY_KEY} as key and the property key as value.</li>
+ * <li>Create a controller class implementing {@link Controller} or deriving from {@link DefaultController}. Implement the controller
+ * functionality which should be reacting on certain GUI-events in the appropriate {@link Controller} function. To integrate changes in the
+ * Undo/Redo stack, implement any changes as instances of {@link WorkflowNodeCommand} and hand them to the
+ * {@link #execute(WorkflowNodeCommand)} method. Within {@link WorkflowNodeCommand}s the {@link WorkflowNode} can be retrieved via
+ * {@link WorkflowNodeCommand#getWorkflowNode()}. The methods {@link #setProperty(String, Serializable)},
+ * {@link #setProperty(String, Serializable, Serializable)} and {@link #editProperty(String)} are convenience functions that integrate into
+ * the Undo/Redo stack. Overwrite the {@link #createController()} method to return an instance of your {@link Controller} implementation.
+ * </li>
+ * <li>As changes to the model can be undone via the {@link CommandStack}, the GUI needs to be synchronized with changes to the underlying
+ * model. This has to be realized in a custom {@link Synchronizer}, which should ideally be derived from {@link DefaultSynchronizer}.
+ * Overwrite the {@link #createSynchronizer()} method to return an instance of your {@link Synchronizer} implementation.</li>
+ * <li>All updates of the GUI, which reflect change events in the model, should happen through a {@link Updater} instance. If functionality
+ * above those of the {@link DefaultUpdater} is required this class has to be derived and extended. Overwrite the {@link #createUpdater()}
+ * method to return an instance of your {@link Updater} implementation.</li>
  * </ol>
  * 
  * @author Heinrich Wendel
@@ -151,8 +144,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Invoked, after a new input {@link WorkflowNode} has been set and the model binding is
-     * initialized.
+     * Invoked, after a new input {@link WorkflowNode} has been set and the model binding is initialized.
      * 
      * @param workflowNode the new input {@link WorkflowNode}
      */
@@ -169,8 +161,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Invoked after the model binding for the base {@link WorkflowNodePropertySection} has been
-     * initialized.
+     * Invoked after the model binding for the base {@link WorkflowNodePropertySection} has been initialized.
      * 
      */
     protected void afterInitializingModelBinding() {
@@ -200,8 +191,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Invoked before the model binding for the base {@link WorkflowNodePropertySection} is teared
-     * down.
+     * Invoked before the model binding for the base {@link WorkflowNodePropertySection} is teared down.
      * 
      */
     protected void beforeTearingDownModelBinding() {
@@ -210,8 +200,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
 
     @Override
     /*
-     * #createCompositeContent(Composite, TabbedPropertySheet) should be used to benefit from
-     * Controller, Synchronizer and Updater.
+     * #createCompositeContent(Composite, TabbedPropertySheet) should be used to benefit from Controller, Synchronizer and Updater.
      */
     @Deprecated
     // see comment above
@@ -427,14 +416,19 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         return command;
     }
 
-    @Override
-    public void execute(final WorkflowNodeCommand command) {
+    /**
+     * If the current node is not the node where the command should be executed, this method must be called.
+     * 
+     * @param workflowNode to execute the command from.
+     * @param command to execute.
+     */
+    public void execute(WorkflowNode workflowNode, WorkflowNodeCommand command) {
         if (openEditCommand != null) {
             openEditCommand.finishEditing();
             openEditCommand = null;
         }
         command.setCommandStack(getCommandStack());
-        command.setWorkflowNode(node);
+        command.setWorkflowNode(workflowNode);
         command.initialize();
         if (command.canExecute()) {
             getCommandStack().execute(new NodeCommandWrapper(command));
@@ -445,10 +439,14 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     @Override
+    public void execute(final WorkflowNodeCommand command) {
+        execute(node, command);
+    }
+
+    @Override
     public final void refresh() {
         /*
-         * Caching the configuration the refresh was executed for the last time, avoids executing
-         * the refresh twice.
+         * Caching the configuration the refresh was executed for the last time, avoids executing the refresh twice.
          */
         if (lastRefreshConfiguration == null || lastRefreshConfiguration != getConfiguration()) {
             refreshSection();
@@ -504,8 +502,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * {@link WorkflowNodeCommand} to change the value of a property in the backing
-     * <code>ComponentInstanceConfiguration</code>.
+     * {@link WorkflowNodeCommand} to change the value of a property in the backing <code>ComponentInstanceConfiguration</code>.
      * 
      * @author Christian Weiss
      */
@@ -538,8 +535,8 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * {@link WorkflowNodeCommand} to change the value of a property in the backing
-     * <code>ComponentInstanceConfiguration</code> through editing.
+     * {@link WorkflowNodeCommand} to change the value of a property in the backing <code>ComponentInstanceConfiguration</code> through
+     * editing.
      * 
      * @author Christian Weiss
      */
@@ -618,15 +615,13 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
 
     /**
      * Controller interface. Needs to be implemented by controllers which want to use the
-     * {@link WorkflowNodePropertySection#initializeController(Controller, Composite)} method to
-     * link the controller to {@link Control} components which are tagged with the
-     * {@link WorkflowNodePropertySection#CONTROL_PROPERTY_KEY}, indicating that they are displaying
+     * {@link WorkflowNodePropertySection#initializeController(Controller, Composite)} method to link the controller to {@link Control}
+     * components which are tagged with the {@link WorkflowNodePropertySection#CONTROL_PROPERTY_KEY}, indicating that they are displaying
      * certain properties.
      * 
      * <p>
-     * <b>Remember</b>, to only commit changes to the model in the {@link Controller} and not
-     * changes to the GUI. The reactions to changes in the model must be implemented in a
-     * {@link Synchronizer}.
+     * <b>Remember</b>, to only commit changes to the model in the {@link Controller} and not changes to the GUI. The reactions to changes
+     * in the model must be implemented in a {@link Synchronizer}.
      * </p>
      * 
      * @author Christian Weiss
@@ -638,8 +633,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     /**
      * Default implementation of a {@link Controller}.
      * 
-     * Implements some core functionality needed by controller components for
-     * {@link WorkflowNodePropertySection}s.
+     * Implements some core functionality needed by controller components for {@link WorkflowNodePropertySection}s.
      * 
      * @author Christian Weiss
      */
@@ -708,8 +702,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
          * 
          * Functionality:
          * <ul>
-         * <li>Finishes an open 'edit session' for a property encapsulated in a
-         * {@link EditConfigurationValueCommand}.</li>
+         * <li>Finishes an open 'edit session' for a property encapsulated in a {@link EditConfigurationValueCommand}.</li>
          * </ul>
          * 
          * @see org.eclipse.swt.events.FocusListener#focusLost(org.eclipse.swt.events.FocusEvent)
@@ -727,8 +720,8 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
          * 
          * Functionality:
          * <ul>
-         * <li>Editing in a {@link Text} control starts or continues an open 'edit session' for a
-         * property encapsulated in a {@link EditConfigurationValueCommand}.</li>
+         * <li>Editing in a {@link Text} control starts or continues an open 'edit session' for a property encapsulated in a
+         * {@link EditConfigurationValueCommand}.</li>
          * </ul>
          * 
          * @see org.eclipse.swt.events.ModifyListener#modifyText(org.eclipse.swt.events.ModifyEvent)
@@ -780,8 +773,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
          * 
          * Functionality:
          * <ul>
-         * <li>Pressing the ENTER key in a non-SWT.MULTI {@link Text} control forces a traversal.
-         * </li>
+         * <li>Pressing the ENTER key in a non-SWT.MULTI {@link Text} control forces a traversal.</li>
          * </ul>
          * 
          * @see org.eclipse.swt.events.KeyListener#keyPressed(org.eclipse.swt.events.KeyEvent)
@@ -826,8 +818,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         public void keyReleased(final KeyEvent event) {}
 
         /**
-         * Replaces the current selection or cursor position in a {@link Text} control with the
-         * specified replacement <code>String</code>.
+         * Replaces the current selection or cursor position in a {@link Text} control with the specified replacement <code>String</code>.
          * 
          * @param text the {@link Text} control with selected text or cursor position
          * @param replacement the replacement <code>String</code>
@@ -878,8 +869,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Adapter to listen to events in the backing model and translate it to events in the
-     * {@link Synchronizer}.
+     * Adapter to listen to events in the backing model and translate it to events in the {@link Synchronizer}.
      * 
      * @author Christian Weiss
      */
@@ -900,20 +890,18 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
      * Listener class responsible for keeping the GUI in sync with the model.
      * 
      * <p>
-     * The <code>Synchronizer</code> gets registered at the model to listen to change events
-     * (properties & channels) and executes appropriate actions to reflect those changes in the GUI.
+     * The <code>Synchronizer</code> gets registered at the model to listen to change events (properties & channels) and executes
+     * appropriate actions to reflect those changes in the GUI.
      * </p>
      * 
      * <p>
      * The integration of a <code>Synchronizer</code> is as follows:
      * <ul>
-     * <li>A {@link SynchronizerAdapter} gets registered to the backing model (a
-     * {@link ReadableComponentInstanceConfiguration}. This adapter filters events and converts the
-     * non-filtered to invocations of the {@link Synchronizer} instance created via
+     * <li>A {@link SynchronizerAdapter} gets registered to the backing model (a {@link ReadableComponentInstanceConfiguration}. This
+     * adapter filters events and converts the non-filtered to invocations of the {@link Synchronizer} instance created via
      * {@link WorkflowNodePropertySection#createSynchronizer()}.</li>
-     * <li>The {@link Synchronizer} receives those filtered events via its custom interface and
-     * reacts through updating the GUI appropriately. The default implementation
-     * {@link DefaultSynchronizer} forwards updates to the {@link Updater} instance created via
+     * <li>The {@link Synchronizer} receives those filtered events via its custom interface and reacts through updating the GUI
+     * appropriately. The default implementation {@link DefaultSynchronizer} forwards updates to the {@link Updater} instance created via
      * {@link WorkflowNodePropertySection#createUpdater()}.</li>
      * </ul>
      * </p>
@@ -934,12 +922,10 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Default implementation of a {@link Synchronizer}, forwarding all updates to the
-     * {@link Updater}.
+     * Default implementation of a {@link Synchronizer}, forwarding all updates to the {@link Updater}.
      * 
      * <p>
-     * It is adviced to derive from this class and call the super class implementation as the very
-     * first thing in overwritten methods.
+     * It is adviced to derive from this class and call the super class implementation as the very first thing in overwritten methods.
      * </p>
      * 
      * @author Christian Weiss
@@ -1012,14 +998,13 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
          * {@inheritDoc}
          * 
          * <p>
-         * The default implementation delegates to
-         * {@link #updateControl(Control, String, Serializable, Serializable)} with 'null' as
+         * The default implementation delegates to {@link #updateControl(Control, String, Serializable, Serializable)} with 'null' as
          * oldValue.
          * </p>
          * 
          * @see de.rcenvironment.core.gui.workflow.editor.
-         *      properties.WorkflowNodePropertySection.Updater#initializeControl(org.eclipse.swt.widgets.Control,
-         *      java.lang.String, java.io.Serializable)
+         *      properties.WorkflowNodePropertySection.Updater#initializeControl(org.eclipse.swt.widgets.Control, java.lang.String,
+         *      java.io.Serializable)
          */
         @Override
         public void initializeControl(final Control control, final String propertyName, final String value) {
@@ -1030,8 +1015,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         public void updateControl(final Control control, final String propertyName, final String newValue,
             final String oldValue) {
             /*
-             * Text inputs are only set, if the value is a String - otherwise a formatter should be
-             * used in a custom Updater.
+             * Text inputs are only set, if the value is a String - otherwise a formatter should be used in a custom Updater.
              */
             if (control instanceof Text && (newValue == null || newValue instanceof String)) {
                 final Text textControl = (Text) control;
@@ -1040,8 +1024,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
                     textControl.setText(valueOrDefault);
                 }
                 /*
-                 * Text inputs are only set, if the value is a String - otherwise a formatter should
-                 * be used in a custom Updater.
+                 * Text inputs are only set, if the value is a String - otherwise a formatter should be used in a custom Updater.
                  */
             } else if (control instanceof StyledText && (newValue == null || newValue instanceof String)) {
                 final StyledText textControl = (StyledText) control;
@@ -1059,8 +1042,7 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
                     labelControl.setText(valueOrDefault);
                 }
                 /*
-                 * Button inputs which are are of style CHECK or TOGGLE are set to the
-                 * selection-state, if the value is of type Boolean.
+                 * Button inputs which are are of style CHECK or TOGGLE are set to the selection-state, if the value is of type Boolean.
                  */
             } else if (control instanceof Button && isBooleanButton(control)) {
                 final Button buttonControl = (Button) control;
@@ -1138,14 +1120,12 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     /**
-     * Layout composite to allow for adapting the composite content to use optimal space in the
-     * containing <code>ScrolledComposite</code>.
+     * Layout composite to allow for adapting the composite content to use optimal space in the containing <code>ScrolledComposite</code>.
      * 
      * <p>
-     * The calculation of the width of this <code>Composite</code> is based on the hints provided by
-     * {@link #computeSize(int, int, boolean)} calls. Therefor such a hint is saved in a local
-     * variable ({@link #widthHint}) and used whenever {@link SWT#DEFAULT} is used instead of a
-     * meaningful width hint.
+     * The calculation of the width of this <code>Composite</code> is based on the hints provided by {@link #computeSize(int, int, boolean)}
+     * calls. Therefor such a hint is saved in a local variable ({@link #widthHint}) and used whenever {@link SWT#DEFAULT} is used instead
+     * of a meaningful width hint.
      * </p>
      * 
      * @author Christian Weiss
@@ -1155,8 +1135,8 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
         /**
          * State memorizer used to ignore the first with hint.
          * <p>
-         * The first width hint has to be ignored as the <code>ControlListener</code> gets
-         * registered too late to get the first meaningful width hint.
+         * The first width hint has to be ignored as the <code>ControlListener</code> gets registered too late to get the first meaningful
+         * width hint.
          * </p>
          */
         private boolean first = true;
@@ -1189,16 +1169,15 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
                 first = false;
             }
             /*
-             * Use the last meaningful width hint for size calculation. This way the (meaningful)
-             * hint is used to calculate the table size and not the actual width of the columns.
+             * Use the last meaningful width hint for size calculation. This way the (meaningful) hint is used to calculate the table size
+             * and not the actual width of the columns.
              */
             if (widthHint != null) {
                 wHint = Math.min(widthHint, getClientArea().width);
             }
             final Point result = super.computeSize(wHint, hHint, changed);
             /*
-             * Store the default (min) width of the tree, if this is the very first call using no
-             * width hint.
+             * Store the default (min) width of the tree, if this is the very first call using no width hint.
              */
             if (first && wHint == SWT.DEFAULT) {
                 this.widthHint = result.x;

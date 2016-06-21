@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.components.optimization.feature</artifactId>
 	<name>RCE Optimizer Component Feature</name>
-	<version>7.1.1.qualifier</version>
+	<version>7.1.2.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 		
 	<parent>

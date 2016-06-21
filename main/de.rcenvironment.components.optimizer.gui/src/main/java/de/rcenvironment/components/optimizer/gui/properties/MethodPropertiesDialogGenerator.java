@@ -40,8 +40,7 @@ import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 
 /**
- * This class is for generating a properties {@link Dialog} for a given optimization method based on
- * a json file.
+ * This class is for generating a properties {@link Dialog} for a given optimization method based on a json file.
  * 
  * @author Sascha Zur
  */
@@ -296,8 +295,11 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                 if (methodDescription.getCommonSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getCommonSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Text) source).getText());
-                } else {
+                } else if (methodDescription.getSpecificSettings().containsKey(widgetToKeyMap.get(source))) {
                     methodDescription.getSpecificSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
+                        ((Text) source).getText());
+                } else if (methodDescription.getResponsesSettings().containsKey(widgetToKeyMap.get(source))) {
+                    methodDescription.getResponsesSettings().get(widgetToKeyMap.get(source)).put(OptimizerComponentConstants.VALUE_KEY,
                         ((Text) source).getText());
                 }
             } else if (source instanceof Combo) {

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.xml.merger.execution</artifactId>
 	<name>RCE XML Merger Component Execution Bundle</name>
-	<version>7.1.1.qualifier</version>
+	<version>7.1.2.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

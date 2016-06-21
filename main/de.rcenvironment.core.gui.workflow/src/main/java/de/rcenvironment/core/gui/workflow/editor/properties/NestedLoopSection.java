@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.gui.workflow.editor.properties;
 
+import java.util.Map;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -19,8 +21,10 @@ import org.eclipse.ui.forms.widgets.Section;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -153,9 +157,12 @@ public class NestedLoopSection extends ValidatingWorkflowNodePropertySection {
 
     private void addOuterLoopInput(WorkflowNode node) {
         EndpointDescriptionsManager manager = node.getInputDescriptionsManager();
+        // LoopComponentConstants.createMetaData should be extended to take InputExecutionContraint
+        Map<String, String> metaData = LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint);
+        metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+            EndpointDefinition.InputExecutionContraint.Required.name());
         manager.addDynamicEndpointDescription(LoopComponentConstants.INPUT_ID_OUTER_LOOP_DONE,
-            LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, DataType.Boolean,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+            LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, DataType.Boolean, metaData);
         setProperty(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(true));
     }
 

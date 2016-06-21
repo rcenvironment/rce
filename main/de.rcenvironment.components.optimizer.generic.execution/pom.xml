@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.optimizer.generic.execution</artifactId>
 	<name>RCE Optimizer Component Generic Execution Bundle</name>
-	<version>7.1.1.qualifier</version>
+	<version>7.1.2.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

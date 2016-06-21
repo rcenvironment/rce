@@ -136,7 +136,7 @@ public class TIGLViewer extends ViewPart {
                 LOGGER.error(e);
             }
 
-            OS.SetWindowLong((int) handle, OS.GWL_STYLE, OS.WS_VISIBLE | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS);
+            OS.SetWindowLongPtr((int) handle, OS.GWL_STYLE, OS.WS_VISIBLE | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS);
             OS.SetParent((int) handle, nativeComposite.handle);
 
         } else {

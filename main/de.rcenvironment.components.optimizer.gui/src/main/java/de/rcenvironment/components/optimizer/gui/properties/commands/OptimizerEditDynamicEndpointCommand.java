@@ -15,6 +15,7 @@ import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -194,6 +195,8 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
             if (!oldCondition2Value && newCondition2Value) {
                 Map<String, String> metaData = new HashMap<String, String>();
                 metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                    EndpointDefinition.InputExecutionContraint.Required.name());
                 workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
                     toDescription.getName() + signature, toDescription.getDataType(), metaData);
             }
@@ -210,6 +213,8 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
             if (!condition2Active || (!oldCondition2Value && newCondition2Value)) {
                 Map<String, String> metaData = new HashMap<String, String>();
                 metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                    EndpointDefinition.InputExecutionContraint.Required.name());
                 workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
                     toDescription.getName() + signature, toDescription.getDataType(), metaData);
             }

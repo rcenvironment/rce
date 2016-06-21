@@ -123,20 +123,18 @@
                 "ShortText",
                 "Integer",
                 "Float",
-                "FileReference",
+                "FileReference", 
                 "DirectoryReference",
                 "SmallTable", 
                 "Vector"
             ],
             "defaultDataType":"FileReference",
             "inputHandlingOptions":[
-                "Single",
-                "Constant"
+                "Single"
             ],
             "defaultInputHandling":"Single",
             "inputExecutionConstraintOptions":[
-                "Required",
-                "RequiredIfConnected"
+                "Required"
             ],
             "defaultInputExecutionConstraint":"Required"
         },

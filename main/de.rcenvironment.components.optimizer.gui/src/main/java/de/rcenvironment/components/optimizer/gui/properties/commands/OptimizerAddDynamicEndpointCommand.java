@@ -15,6 +15,7 @@ import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -56,6 +57,8 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
             } else {
                 gradientMetadata.put(key, "-");
             }
+            gradientMetadata.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                EndpointDefinition.InputExecutionContraint.Required.name());
         }
         gradientMetadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
         switch (direction) {
@@ -83,6 +86,8 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
                         } else {
                             gradientMetadata.put(key, "-");
                         }
+                        gradientMetadata.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                            EndpointDefinition.InputExecutionContraint.Required.name());
                     }
                     gradientMetadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
 
@@ -104,7 +109,8 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
                     && !Boolean.parseBoolean(metaData.get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
                 Map<String, String> startValueMetaData = new HashMap<String, String>();
                 startValueMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
-
+                startValueMetaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                    EndpointDefinition.InputExecutionContraint.Required.name());
                 workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
                     name + OptimizerComponentConstants.STARTVALUE_SIGNATURE, type,
                     startValueMetaData);
@@ -115,6 +121,8 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
                     && !Boolean.parseBoolean(endpoint.getMetaDataValue(OptimizerComponentConstants.META_USE_UNIFIED_STEP))) {
                     Map<String, String> stepValueMetaData = new HashMap<String, String>();
                     stepValueMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                    stepValueMetaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
+                        EndpointDefinition.InputExecutionContraint.Required.name());
                     workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
                         name + OptimizerComponentConstants.STEP_VALUE_SIGNATURE, type, stepValueMetaData);
                 }

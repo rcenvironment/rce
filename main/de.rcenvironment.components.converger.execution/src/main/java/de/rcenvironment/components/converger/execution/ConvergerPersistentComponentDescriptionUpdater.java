@@ -46,6 +46,14 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  */
 public class ConvergerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
+    private static final String REQUIRED = "Required";
+
+    private static final String INPUT_EXECUTION_CONSTRAINT = "inputExecutionConstraint_4aae3eea";
+
+    private static final String VALUE_TO_CONVERGE = "valueToConverge";
+
+    private static final String SELF_LOOP_ENDPOINT = "SelfLoopEndpoint";
+
     private static final String LOOP_ENDPOINT_TYPE = "loopEndpointType_5e0ed1cd";
 
     private static final String OUTER_LOOP_ENDPOINT = "OuterLoopEndpoint";
@@ -194,14 +202,14 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
             for (JsonNode outputEndpoint : dynamicOutputs) {
                 String outputName = outputEndpoint.get(NAME).getTextValue();
                 String outputEndpointId = outputEndpoint.get(EP_IDENTIFIER).getTextValue();
-                if (outputEndpointId.equals("valueToConverge") && !outputName.endsWith("_converged")) {
+                if (outputEndpointId.equals(VALUE_TO_CONVERGE) && !outputName.endsWith("_converged")) {
                     ObjectNode convergedEndpoint = mapper.createObjectNode();
                     convergedEndpoint.put(NAME, TextNode.valueOf(outputName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX));
                     convergedEndpoint.put(EP_IDENTIFIER, ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY);
                     convergedEndpoint.put(DATATYPE, TextNode.valueOf(BOOLEAN));
                     convergedEndpoint.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
                     ObjectNode metaData = mapper.createObjectNode();
-                    metaData.put(LOOP_ENDPOINT_TYPE, "SelfLoopEndpoint");
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
                     convergedEndpoint.put(METADATA, metaData);
                     newOutputEndpoints.add(convergedEndpoint);
                 }
@@ -227,6 +235,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     metaData = (ObjectNode) outputEndpoint.get(METADATA);
                 } else {
                     metaData = mapper.createObjectNode();
+                    ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
                 if (outputEndpoint.get(NAME).getTextValue().equals("Outer loop done")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, "InnerLoopEndpoint");
@@ -237,22 +246,60 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                 } else if (outputEndpoint.get(NAME).getTextValue().equals("Converged relative")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                 }
-                ((ObjectNode) outputEndpoint).put(METADATA, metaData);
             }
         }
         JsonNode dynamicOutputs = node.get(DYNAMIC_OUTPUTS);
         if (dynamicOutputs != null) {
             for (JsonNode outputEndpoint : dynamicOutputs) {
-                if (outputEndpoint.get(NAME).getTextValue().endsWith("_converged")) {
-                    ObjectNode metaData;
-                    if (outputEndpoint.has(METADATA)) {
-                        metaData = (ObjectNode) outputEndpoint.get(METADATA);
-                    } else {
-                        metaData = mapper.createObjectNode();
-                    }
-                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                ObjectNode metaData;
+                if (outputEndpoint.has(METADATA)) {
+                    metaData = (ObjectNode) outputEndpoint.get(METADATA);
+                } else {
+                    metaData = mapper.createObjectNode();
                     ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
+                // not safe as a "normal" endpoint's name can also end with "_converged"
+                if (outputEndpoint.get(NAME).getTextValue().endsWith("_converged")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                } else {
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
+                }
+            }
+        }
+        JsonNode dynamicInputs = node.get(DYNAMIC_INPUTS);
+        if (dynamicInputs != null) {
+            List<JsonNode> startInputs = new ArrayList<>();
+            for (JsonNode inputEndpoint : dynamicInputs) {
+                ObjectNode metaData;
+                if (inputEndpoint.has(METADATA)) {
+                    metaData = (ObjectNode) inputEndpoint.get(METADATA);
+                } else {
+                    metaData = mapper.createObjectNode();
+                    ((ObjectNode) inputEndpoint).put(METADATA, metaData);
+                }
+                if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals(VALUE_TO_CONVERGE)) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
+                    if (Boolean.valueOf(metaData.get("hasStartValue").asText())) {
+                        continue;
+                    }
+                    ObjectNode startInput = JsonNodeFactory.instance.objectNode();
+                    startInput.put(IDENTIFIER, UUID.randomUUID().toString());
+                    startInput.put(NAME, inputEndpoint.get(NAME).asText() + "_start");
+                    startInput.put(EP_IDENTIFIER, VALUE_TO_CONVERGE);
+                    startInput.put("group", "startValues");
+                    startInput.put(DATATYPE, inputEndpoint.get(DATATYPE).asText());
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                    metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
+                    startInput.put(METADATA, metaData);
+                    
+                    startInputs.add(startInput);
+                } else if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("outerLoopDone")) {
+                    metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                    metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
+                }
+            }
+            for (JsonNode startInput : startInputs) {
+                ((ArrayNode) dynamicInputs).add(startInput);
             }
         }
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();

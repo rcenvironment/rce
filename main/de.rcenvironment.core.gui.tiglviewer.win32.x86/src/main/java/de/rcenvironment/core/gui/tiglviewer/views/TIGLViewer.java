@@ -134,7 +134,7 @@ public class TIGLViewer extends ViewPart {
                 LOGGER.error(e);
             }
 
-            OS.SetWindowLong(handle, OS.GWL_STYLE, OS.WS_VISIBLE | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS);
+            OS.SetWindowLongPtr(handle, OS.GWL_STYLE, OS.WS_VISIBLE | OS.WS_CLIPCHILDREN | OS.WS_CLIPSIBLINGS);
             OS.SetParent(handle, nativeComposite.handle);
         } else {
             Image image = ImageManager.getInstance().getSharedImage(StandardImages.TIGL_ICON);

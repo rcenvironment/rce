@@ -120,11 +120,12 @@ public final class OptimizerDatastore extends ResultSet {
             if (notificationSubscriber == null) {
                 notificationSubscriber = new LinkedList<DatasetNotificationSubscriber>();
             }
-            
+
             DatasetNotificationSubscriber newNotificationSubscriber = new DatasetNotificationSubscriber(datastore);
             receiver.setNotificationSubscriber(newNotificationSubscriber);
             receiver.initialize();
             notificationSubscriber.add(newNotificationSubscriber);
+            return datastore;
         } catch (RemoteOperationException e) {
             LogFactory.getLog(OptimizerDatastore.class).error("Failed to subscribe to remote notifications.");
         }

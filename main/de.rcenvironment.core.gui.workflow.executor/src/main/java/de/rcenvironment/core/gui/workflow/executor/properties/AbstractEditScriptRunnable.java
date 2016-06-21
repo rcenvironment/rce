@@ -66,7 +66,10 @@ public abstract class AbstractEditScriptRunnable implements Runnable {
      */
     public void update(String script) {
         try {
-            FileEncodingUtils.saveUnicodeStringToFile(script, tempFile);
+            String current = FileEncodingUtils.loadUnicodeStringFromFile(tempFile);
+            if (!current.equals(script)) {
+                FileEncodingUtils.saveUnicodeStringToFile(script, tempFile);
+            }
         } catch (IOException e) {
             LOGGER.error(e);
         }

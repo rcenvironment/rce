@@ -1,5 +1,5 @@
 {
-    "methodName":"Dakota Single Objectiv Genetic Algorithm",
+    "methodName":"Dakota Single Objective Genetic Algorithm",
     "methodCode":"soga",
     "optimizerPackage":"dakota",
     "followingMethods":"0",

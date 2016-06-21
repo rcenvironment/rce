@@ -27,10 +27,12 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
+import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 /**
@@ -251,6 +253,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
      * Implementation of {@link AbstractEditScriptRunnable}.
      * 
      * @author Doreen Seider
+     * @author Sascha Zur
      */
     private class EditScriptRunnable extends AbstractEditScriptRunnable {
 
@@ -266,8 +269,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
         @Override
         protected void setScript(String script) {
-            node.getComponentDescription().getConfigurationDescription()
-                .setConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT, script);
+            setScriptProperty(node, script);
         }
 
         @Override
@@ -283,4 +285,21 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     }
 
+    /**
+     * If the script is edited in an open editor, the workflow editor must get dirty when the script is saved. To do so, a command must be
+     * executed, but it must contain the correct node.
+     * 
+     * @param node to execute the save command to.
+     * @param newValue of the script.
+     * @author Sascha Zur
+     */
+    private void setScriptProperty(WorkflowNode node, final String newValue) {
+        final String oldValue = WorkflowNodeUtil.getConfigurationValue(node, SshExecutorConstants.CONFIG_KEY_SCRIPT);
+        if ((oldValue != null && !oldValue.equals(newValue))
+            || (oldValue == null && oldValue != newValue)) {
+            final WorkflowNodeCommand command =
+                new SetConfigurationValueCommand(SshExecutorConstants.CONFIG_KEY_SCRIPT, oldValue, newValue);
+            execute(node, command);
+        }
+    }
 }

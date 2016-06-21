@@ -51,6 +51,10 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class OptimizerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
 
+    private static final String REQUIRED = "Required";
+
+    private static final String INPUT_EXECUTION_CONSTRAINT = "inputExecutionConstraint_4aae3eea";
+
     private static final String PRE_CALC_FILE_PATH = "preCalcFilePath";
 
     private static final String SELF_LOOP_ENDPOINT = "SelfLoopEndpoint";
@@ -257,6 +261,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                 if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("startvalues")
                     || inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("outerLoopDone")) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
+                    metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
                 }
             }
         }

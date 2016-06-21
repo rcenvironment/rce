@@ -102,10 +102,12 @@ public class WfCommandPlugin implements CommandPlugin {
     public Collection<CommandDescription> getCommandDescriptions() {
         final Collection<CommandDescription> contributions = new ArrayList<CommandDescription>();
         contributions.add(new CommandDescription("wf", "", false, "short form of \"wf list\""));
-        contributions.add(new CommandDescription("wf run", "[--delete <onfinished|never|always>] [--compact-output] "
+        contributions.add(new CommandDescription("wf run", 
+            "[--dispose <onfinished|never|always>] [--delete <onfinished|never|always>] [--compact-output] "
             + "[-p <JSON placeholder file>] <workflow file>", false, "execute a workflow file"));
         contributions.add(new CommandDescription("wf verify",
-            "[--delete <onfinished|never|always>] [--pr <parallel runs>] [--sr <sequential runs>] [-p <JSON placeholder file>] "
+            "[--dispose <onfinished|never|always>] [--delete <onfinished|never|always>] "
+            + "[--pr <parallel runs>] [--sr <sequential runs>] [-p <JSON placeholder file>] "
                 + "([--basedir <root directory for all subsequent files>] (<workflow filename>|\"*\")+ )+",
             false, "batch test the specified workflow files"));
         contributions.add(new CommandDescription("wf list", "",
