@@ -25,7 +25,7 @@ class RCEBuildPreprocessor {
 			'intermediate': 'snapshots/trunk'
 		],
 		'rc_or_release': [
-			'platform': 'releases/7.1.0',
+			'platform': 'releases/7.1.1',
 			'dakotaBinaries': 'releases/6.0.0',
 			'tiglViewerBinaries': 'releases/7.0.0',
 			'intermediate': 'releases/7.1.0'

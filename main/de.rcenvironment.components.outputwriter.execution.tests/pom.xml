@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.outputwriter.execution.tests</artifactId>
 	<name>RCE OutputWriter Component Tests</name>
-	<version>7.1.0.qualifier</version>
+	<version>7.1.1.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

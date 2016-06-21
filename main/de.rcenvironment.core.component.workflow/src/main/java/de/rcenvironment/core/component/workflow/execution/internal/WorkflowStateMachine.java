@@ -751,7 +751,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      */
     private final class AsyncCancelTask implements Runnable {
 
-        private static final int WAIT_INTERVAL_CANCEL_SEC = 60;
+        private static final int WAIT_INTERVAL_CANCEL_SEC = 90;
         
         private final Future<?> future;
 

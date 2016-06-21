@@ -4,7 +4,7 @@
 	
 	<artifactId>de.rcenvironment.core.configuration</artifactId>
 	<name>RCE Core Configuration Bundle</name>
-	<version>7.1.0.qualifier</version>
+	<version>7.1.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

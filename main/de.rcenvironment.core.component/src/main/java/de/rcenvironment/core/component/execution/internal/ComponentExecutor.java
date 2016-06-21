@@ -59,11 +59,11 @@ import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
  */
 public class ComponentExecutor {
 
-    protected static final int DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_SEC = 10;
+    protected static final int DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_SEC = 60;
 
     protected static int waitIntervalAfterCacelledCalledSec = DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_SEC;
 
-    private static final int WAIT_INTERVAL_NOT_RUN_SEC = 10;
+    private static final int WAIT_INTERVAL_NOT_RUN_SEC = 60;
 
     private static final Log LOG = LogFactory.getLog(ComponentExecutor.class);
 
@@ -231,7 +231,8 @@ public class ComponentExecutor {
     private void awaitExecution() throws ComponentException {
         ComponentException exception = null;
         try {
-            if (compExeType == ComponentExecutionType.StartAsRun || compExeType == ComponentExecutionType.ProcessInputs) {
+            if (compExeType == ComponentExecutionType.StartAsInit || compExeType == ComponentExecutionType.StartAsRun
+                || compExeType == ComponentExecutionType.ProcessInputs) {
                 try {
                     exception = executeTask.get().get();
                 } catch (CancellationException e) {

@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.core.resources.ResourcesPlugin;
+import org.eclipse.core.runtime.IPath;
 
 import de.rcenvironment.components.inputprovider.common.InputProviderComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
@@ -153,8 +154,11 @@ public class InputProviderComponent extends DefaultComponent {
         if (!file.isAbsolute()) {
             String projectName = value.split(usedSeparator)[0];
             String pathToFileWithinProject = value.substring(projectName.length());
-            file = new File(ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).getLocation().toFile().getAbsolutePath()
-                + usedSeparator + pathToFileWithinProject);
+            IPath projectLocation = ResourcesPlugin.getWorkspace().getRoot().getProject(projectName).getLocation();
+            if (projectLocation == null) {
+                throw new ComponentException("Given project not found: " + projectName);
+            }
+            file = new File(projectLocation.toFile().getAbsolutePath() + usedSeparator + pathToFileWithinProject);
         }
         return file;
     }

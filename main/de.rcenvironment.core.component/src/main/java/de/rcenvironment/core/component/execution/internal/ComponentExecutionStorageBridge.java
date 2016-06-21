@@ -62,7 +62,8 @@ public class ComponentExecutionStorageBridge {
                 compExeCtx.getNodeId().getIdString(),
                 executionCount, System.currentTimeMillis() + timestampOffset,
                 compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
-        } catch (CommunicationException e) {
+        // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
+        } catch (CommunicationException | RuntimeException e) {
             throw new ComponentExecutionException("Failed to store component execution" + errorMessageSuffix, e);
         }
     }
@@ -73,7 +74,8 @@ public class ComponentExecutionStorageBridge {
             return metaDataService.addOutputDatum(compExeDmId,
                 compExeRelatedInstances.compExeCtx.getOutputDataManagementIds().get(outputName), datum,
                 outputCount.getAndIncrement(outputName), compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
-        } catch (CommunicationException e) {
+        // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
+        } catch (CommunicationException | RuntimeException e) {
             throw new ComponentExecutionException(StringUtils.format("Failed to store output '%s'", outputName) + errorMessageSuffix, e);
         }
     }
@@ -88,7 +90,8 @@ public class ComponentExecutionStorageBridge {
                 metaDataService.addInputDatum(compExeDmId, typedDatumId,
                     compExeRelatedInstances.compExeCtx.getInputDataManagementIds().get(inputName),
                     inputCount.getAndIncrement(inputName), compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
-            } catch (CommunicationException e) {
+            // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
+            } catch (CommunicationException | RuntimeException e) {
                 throw new ComponentExecutionException(StringUtils.format("Failed to store input '%s'", inputName) + errorMessageSuffix, e);
             }
         }
@@ -99,7 +102,8 @@ public class ComponentExecutionStorageBridge {
         try {
             metaDataService.setComponentRunFinished(compExeDmId, System.currentTimeMillis() + timestampOffset,
                 compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
-        } catch (CommunicationException e) {
+        // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
+        } catch (CommunicationException | RuntimeException e) {
             throw new ComponentExecutionException("Failed to store component execution" + errorMessageSuffix, e);
         }
         compExeDmId = null;
@@ -109,7 +113,8 @@ public class ComponentExecutionStorageBridge {
         try {
             metaDataService.setComponentInstanceFinalState(compExeRelatedInstances.compExeCtx.getInstanceDataManagementId(), finalState,
                 compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
-        } catch (CommunicationException e) {
+        // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
+        } catch (CommunicationException | RuntimeException e) {
             throw new ComponentExecutionException("Failed to store final state" + errorMessageSuffix, e);
         }
     }
@@ -119,7 +124,8 @@ public class ComponentExecutionStorageBridge {
         try {
             metaDataService.setOrUpdateHistoryDataItem(compExeDmId, historyDataItem,
                 compExeRelatedInstances.compExeCtx.getDefaultStorageNodeId());
-        } catch (CommunicationException e) {
+        // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
+        } catch (CommunicationException | RuntimeException e) {
             throw new ComponentExecutionException("Failed to add or update history data" + errorMessageSuffix, e);
         }
     }

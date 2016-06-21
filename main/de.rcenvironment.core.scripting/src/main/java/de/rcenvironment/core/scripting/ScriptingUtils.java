@@ -509,7 +509,10 @@ public final class ScriptingUtils {
                     throw new ComponentException(StringUtils
                         .format("Value for endpoint %s was a matrix, but endpoint is of type Vector", name));
                 }
-                if (element instanceof Integer) {
+                if (element == null) {
+                    throw new ComponentException(StringUtils
+                        .format("Value \"None\" of cell %s is not valid for type Vector \"%s\"", index, name));
+                } else if (element instanceof Integer) {
                     convertedValue = (Integer) element;
                 } else {
                     convertedValue = (Double) element;
@@ -545,12 +548,19 @@ public final class ScriptingUtils {
      */
     @SuppressWarnings("unchecked")
     public static MatrixTD createResultMatrix(Object value, String name) throws ComponentException {
+        if (!(value instanceof List)) {
+            throw new ComponentException(StringUtils.format("Value \"%s\" of output \"%s\" is not of type matrix.", value, name));
+        }
         List<Object> rowArray = (List<Object>) value;
         if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
             int columnDimension = ((List<Object>) rowArray.get(0)).size();
             MatrixTD matrix = typedDatumFactory.createMatrix(rowArray.size(), columnDimension);
             int i = 0;
             for (Object columnObject : rowArray) {
+                if (!(columnObject instanceof List)) {
+                    throw new ComponentException(
+                          StringUtils.format("Value \"%s\" of output \"%s\" is not of type matrix.", columnObject, name));
+                }
                 List<Object> columnArray = (List<Object>) columnObject;
                 if (columnArray.size() == 0) {
                     throw new ComponentException(StringUtils.format("Column %s of matrix \"%s\" does not contain any elements.", i, name));
@@ -568,9 +578,13 @@ public final class ScriptingUtils {
                     } else if (cellValue instanceof IntegerTD) {
                         matrix.setFloatTDForElement(typedDatumFactory.createFloat(((IntegerTD) cellValue).getIntValue()), i, j++);
                     } else {
+                        String elementString = "None";
+                        if (element != null){
+                            elementString = element.toString();
+                        }
                         throw new ComponentException(
                             StringUtils.format("Value \"%s\" of cell (%s, %s) of matrix \"%s\" is not an integer or a float value.",
-                                element.toString(), i, j, name));
+                                    elementString, i, j, name));
                     }
                 }
                 i++;
@@ -581,12 +595,18 @@ public final class ScriptingUtils {
     }
 
     @SuppressWarnings("unchecked")
-    private static TypedDatum[][] createResultArray(Object value) {
+    private static TypedDatum[][] createResultArray(Object value) throws ComponentException {
+        if (!(value instanceof List)) {
+            throw new ComponentException(StringUtils.format("Value \"%s\" is not of type small table.", value));
+        }
         List<Object> rowArray = (List<Object>) value;
         TypedDatum[][] result = new TypedDatum[rowArray.size()][];
         if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
             int i = 0;
             for (Object columnObject : rowArray) {
+                if (!(columnObject instanceof List)) {
+                    throw new ComponentException(StringUtils.format("Value \"%s\" is not of type small table.", columnObject));
+                }
                 List<Object> columnArray = (List<Object>) columnObject;
                 result[i] = new TypedDatum[columnArray.size()];
                 int j = 0;

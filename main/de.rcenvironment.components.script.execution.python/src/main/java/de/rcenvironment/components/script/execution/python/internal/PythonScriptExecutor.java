@@ -15,6 +15,9 @@ import java.util.List;
 
 import javax.script.ScriptException;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
 import de.rcenvironment.components.script.common.registry.ScriptExecutor;
 import de.rcenvironment.components.script.execution.DefaultScriptExecutor;
@@ -49,6 +52,8 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
     private static final String OS = "os";
 
     private PythonScriptContext scriptContext;
+
+    private Log log = LogFactory.getLog(PythonScriptExecutor.class);
 
     @Override
     public boolean prepareExecutor(ComponentContext compCtx) throws ComponentException {
@@ -148,6 +153,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             outputValue = factory.createEmpty();
                             break;
                         case Vector:
+                            if (!(o instanceof List)) {
+                                throw new ComponentException(
+                                    StringUtils.format("Value \"%s\" of output \"%s\" is not of type vector.", o, outputName));
+                            }
                             List<Object> resultVector = (List<Object>) o;
                             VectorTD vector = factory.createVector(resultVector.size());
                             int index = 0;
@@ -157,7 +166,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                         .format("Value for endpoint %s was a matrix, but endpoint is of type Vector", outputName));
                                 }
                                 double convertedValue = 0;
-                                if (element instanceof Integer) {
+                                if (element == null) {
+                                    throw new ComponentException(StringUtils
+                                        .format("Value \"None\" of cell %s is not valid for type Vector \"%s\"", index, outputName));
+                                } else if (element instanceof Integer) {
                                     convertedValue = (Integer) element;
                                 } else {
                                     convertedValue = (Double) element;
@@ -171,11 +183,20 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             outputValue = ScriptingUtils.createResultMatrix(o, outputName);
                             break;
                         case SmallTable:
+                            if (!(o instanceof List)) {
+                                throw new ComponentException(
+                                    StringUtils.format("Value \"%s\" of output \"%s\" is not of type small table.", o, outputName));
+                            }
                             List<Object> rowArray = (List<Object>) o;
                             TypedDatum[][] result = new TypedDatum[rowArray.size()][];
                             if (rowArray.size() > 0 && rowArray.get(0).getClass().getName().equals(ArrayList.class.getName())) {
                                 int i = 0;
                                 for (Object columnObject : rowArray) {
+                                    if (!(columnObject instanceof List)) {
+                                        throw new ComponentException(
+                                            StringUtils.format("Value \"%s\" of output \"%s\" is not of type small table.", columnObject,
+                                                outputName));
+                                    }
                                     List<Object> columnArray = (List<Object>) columnObject;
                                     result[i] = new TypedDatum[columnArray.size()];
                                     int j = 0;
@@ -266,6 +287,11 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
 
     @Override
     public void cancelScript() {
+        if (scriptEngine == null) {
+            // FIXME we need to delay the cancellation request, currently it is simple ignored in this case
+            log.error("Cannot cancel the execution, as the script engine (Script Component) is not propertly prepared.");
+            return;
+        }
         ((PythonScriptEngine) scriptEngine).cancel();
     }
 

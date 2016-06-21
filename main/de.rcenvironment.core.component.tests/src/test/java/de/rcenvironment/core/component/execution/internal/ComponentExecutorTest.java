@@ -26,6 +26,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.easymock.Capture;
 import org.easymock.EasyMock;
+import org.easymock.IAnswer;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.component.api.ComponentException;
@@ -51,6 +53,8 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  */
 public class ComponentExecutorTest {
 
+    private static final int TEST_TIMEOUT_70000_MSEC = 70000;
+    
     private static final int TEST_TIMEOUT_3000_MSEC = 3000;
 
     private static final int TEST_TIMEOUT_500_MSEC = 500;
@@ -92,6 +96,50 @@ public class ComponentExecutorTest {
         assertFalse(cancelTask.get());
         compExecutor.executeByConsideringLimitations();
         assertTrue(compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.get());
+    }
+
+    /**
+     * Tests if the execution of the {@link Component}'s start method has no timeout.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     * @throws ComponentException on unexpected error
+     */
+    // TODO use msec in component executor as unit for timeouts to reduce execution time here, make the timeout configurable
+    // WAIT_INTERVAL_NOT_RUN_SEC
+    @Ignore
+    @Test(timeout = TEST_TIMEOUT_70000_MSEC)
+    public void testSartAsInitHasNoTimeout() throws ComponentExecutionException, ComponentException {
+        final ComponentExecutionRelatedInstances compExeRelatedInstancesStub = createComponentExecutionRelatedInstancesStub();
+        
+        Component compMock = EasyMock.createStrictMock(Component.class);
+        compMock.start();
+        final int startMethodTime = 65000;
+        EasyMock.expectLastCall().andAnswer(new IAnswer<Void>() {
+
+            @Override
+            public Void answer() throws Throwable {
+                try {
+                    Thread.sleep(startMethodTime);
+                } catch (InterruptedException e) {
+                    throw new ComponentException("Unexpected error", e);
+                }
+                return null;
+            }
+        });
+        EasyMock.replay(compMock);
+        compExeRelatedInstancesStub.component.set(compMock);
+
+        Capture<ComponentStateMachineEvent> compStateMachineEventCapture = new Capture<>();
+        ComponentStateMachine compStateMachineMock = createComponentStateMachineEventForRuns(compStateMachineEventCapture);
+        compExeRelatedInstancesStub.compStateMachine = compStateMachineMock;
+
+        ComponentExecutor compExecutor =
+            new ComponentExecutor(compExeRelatedInstancesStub, ComponentExecutionType.StartAsInit);
+
+        ComponentExecutor.waitIntervalAfterCacelledCalledSec = 1;
+        compExecutor.executeByConsideringLimitations();
+        
+        assertFalse(compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.get());
     }
 
     /**

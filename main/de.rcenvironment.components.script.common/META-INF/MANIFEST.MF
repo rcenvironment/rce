@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Script Component Common Bundle
 Bundle-SymbolicName: de.rcenvironment.components.script.common
-Bundle-Version: 7.1.0.qualifier
+Bundle-Version: 7.1.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry

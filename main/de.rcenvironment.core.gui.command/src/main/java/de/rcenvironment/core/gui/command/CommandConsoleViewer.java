@@ -492,9 +492,12 @@ public class CommandConsoleViewer extends ViewPart {
             // letter e.
             if ((keyEvent.keyCode == SWT.CR || keyEvent.keyCode == SWT.KEYPAD_CR) && keyEvent.character == '\r') {
                 if (command.isEmpty()) {
-                    increaseCurrentLine();
-                    insertRCEPrompt();
-
+                    // If the prompt is selected and the selection ends at the current caret position, there occured an exception.
+                    // To quick fix it, if this kind of selection is done, pressing return won't enter a new empty line.
+                    if (styledtext.getSelectionCount() == 0) {
+                        increaseCurrentLine();
+                        insertRCEPrompt();
+                    }
                 } else {
 
                     if (command.equals(Messages.historyUsedCommand)) {

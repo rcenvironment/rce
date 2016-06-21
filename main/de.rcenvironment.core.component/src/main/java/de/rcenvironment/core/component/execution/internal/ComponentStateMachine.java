@@ -644,7 +644,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
      */
     private final class AsyncCancelTask implements Runnable {
 
-        private static final int WAIT_INTERVAL_CANCEL_SEC = 30;
+        private static final int WAIT_INTERVAL_CANCEL_SEC = 70;
 
         private final Future<?> task;
 

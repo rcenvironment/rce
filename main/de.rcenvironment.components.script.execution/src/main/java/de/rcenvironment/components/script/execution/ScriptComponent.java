@@ -124,9 +124,15 @@ public class ScriptComponent extends DefaultComponent {
     public void onProcessInputsInterrupted(ThreadHandler executingThreadHandler) {
         cancelScriptExecution(executingThreadHandler);
     }
-    
+
     private void cancelScriptExecution(ThreadHandler executingThreadHandler) {
         canceled = true;
+
+        if (executor == null) {
+            //FIXME we need to delay the cancellation request, currently it is simple ignored in this case
+            log.error("Cannot cancel the execution, as the script executor (Script Component) is not propertly prepared.");
+            return;
+        }
 
         if (executor.isCancelable()) {
             this.executor.cancelScript();
