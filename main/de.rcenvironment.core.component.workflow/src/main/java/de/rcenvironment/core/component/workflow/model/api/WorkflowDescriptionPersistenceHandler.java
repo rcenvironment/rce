@@ -206,6 +206,10 @@ public class WorkflowDescriptionPersistenceHandler {
     protected static ComponentDescriptionFactoryService componentDescriptionFactoryService = ServiceUtils
         .createFailingServiceProxy(ComponentDescriptionFactoryService.class);
 
+    private static final String STANDARD_STREAM_ENCODING = StandardCharsets.UTF_8.name();
+
+    private static final JsonEncoding STANDARD_JSON_ENCODING = JsonEncoding.UTF8;
+
     private static final String ERROR_WHEN_PARSING_WORKFLOW_FILE = "Error when parsing workflow file: ";
 
     private static final Log LOG = LogFactory.getLog(WorkflowDescriptionPersistenceHandler.class);
@@ -214,7 +218,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private static final ObjectMapper JSON_OBJECT_MAPPER = JsonUtils.getDefaultObjectMapper();
 
-    private final Map<String, Map<String, EndpointDescription>> endpointDescs = new HashMap<String, Map<String, EndpointDescription>>();
+    private final Map<String, Map<String, EndpointDescription>> endpointDescs = new HashMap<>();
 
     public WorkflowDescriptionPersistenceHandler() {}
 
@@ -253,7 +257,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         JsonFactory f = new JsonFactory();
-        JsonGenerator g = f.createJsonGenerator(outputStream, JsonEncoding.UTF8);
+        JsonGenerator g = f.createJsonGenerator(outputStream, STANDARD_JSON_ENCODING);
         g.setPrettyPrinter(new DefaultPrettyPrinter());
 
         g.writeStartObject();
@@ -289,18 +293,18 @@ public class WorkflowDescriptionPersistenceHandler {
             Map<String, String> connectionBendpointMapping = calculateUniqueBendpointList(wd.getConnections());
             if (!connectionBendpointMapping.isEmpty()) {
                 ByteArrayOutputStream bendpointsStream = new ByteArrayOutputStream();
-                JsonGenerator bendpointsGenerator = f.createJsonGenerator(bendpointsStream, JsonEncoding.UTF8);
+                JsonGenerator bendpointsGenerator = f.createJsonGenerator(bendpointsStream, STANDARD_JSON_ENCODING);
                 bendpointsGenerator.writeStartArray();
                 writeBendpoints(bendpointsGenerator, connectionBendpointMapping);
                 bendpointsGenerator.writeEndArray();
                 bendpointsGenerator.close();
-                g.writeStringField(BENDPOINTS, bendpointsStream.toString());
+                g.writeStringField(BENDPOINTS, bendpointsStream.toString(STANDARD_STREAM_ENCODING));
             }
         }
         if (wd.getWorkflowLabels().size() > 0) {
 
             ByteArrayOutputStream labelsStream = new ByteArrayOutputStream();
-            JsonGenerator labelsGenerator = f.createJsonGenerator(labelsStream, JsonEncoding.UTF8);
+            JsonGenerator labelsGenerator = f.createJsonGenerator(labelsStream, STANDARD_JSON_ENCODING);
             labelsGenerator.writeStartArray();
 
             List<WorkflowLabel> workflowLabels = wd.getWorkflowLabels();
@@ -310,7 +314,7 @@ public class WorkflowDescriptionPersistenceHandler {
             }
             labelsGenerator.writeEndArray();
             labelsGenerator.close();
-            g.writeStringField(LABELS, labelsStream.toString());
+            g.writeStringField(LABELS, labelsStream.toString(STANDARD_STREAM_ENCODING));
 
         }
         g.writeEndObject();
@@ -523,7 +527,7 @@ public class WorkflowDescriptionPersistenceHandler {
     }
 
     private ObjectNode workflowFileStreamToJsonNode(InputStream inputStream) throws IOException {
-        return (ObjectNode) JSON_OBJECT_MAPPER.readTree(IOUtils.toString(inputStream, StandardCharsets.UTF_8.name()));
+        return (ObjectNode) JSON_OBJECT_MAPPER.readTree(IOUtils.toString(inputStream, STANDARD_STREAM_ENCODING));
     }
 
     private void handleParseFailure(ParsingFailedFlagHolder parsingFailedFlag, String logMessage) {
@@ -651,7 +655,7 @@ public class WorkflowDescriptionPersistenceHandler {
     private Map<String, WorkflowNode> parseNodesEntry(ArrayNode nodesJsonNode, WorkflowDescription wd,
         ParsingFailedFlagHolder parsingFailedFlag) {
         Map<String, WorkflowNode> nodes = parseNodes(nodesJsonNode, parsingFailedFlag);
-        wd.addWorkflowNodes(new ArrayList<WorkflowNode>(nodes.values()));
+        wd.addWorkflowNodes(new ArrayList<>(nodes.values()));
         return nodes;
     }
 
@@ -672,7 +676,7 @@ public class WorkflowDescriptionPersistenceHandler {
     }
 
     private Map<String, WorkflowNode> parseNodes(ArrayNode nodesJsonNode, ParsingFailedFlagHolder parsingFailedFlag) {
-        Map<String, WorkflowNode> nodes = new HashMap<String, WorkflowNode>();
+        Map<String, WorkflowNode> nodes = new HashMap<>();
         final String message = "Failed to parse a workflow node; skip it";
 
         Iterator<JsonNode> nodeJsonNodeIterator = nodesJsonNode.getElements();
@@ -811,7 +815,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private ComponentDescription getComponentDecription(String identifier, String version, String name, NodeIdentifier node) {
         DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
-        List<ComponentInstallation> matchingInstallations = new ArrayList<ComponentInstallation>();
+        List<ComponentInstallation> matchingInstallations = new ArrayList<>();
         ComponentInstallation resultInstallation = null;
 
         // get all matching components
@@ -866,7 +870,7 @@ public class WorkflowDescriptionPersistenceHandler {
         ArrayNode endpointsJsonNode, EndpointDescriptionsManager endpointDescsManager, boolean isStaticEndpoint)
         throws WorkflowFileException {
 
-        Set<EndpointDescription> endpoints = new HashSet<EndpointDescription>();
+        Set<EndpointDescription> endpoints = new HashSet<>();
 
         Iterator<JsonNode> endpointsJsonNodeIterator = endpointsJsonNode.getElements();
         while (endpointsJsonNodeIterator.hasNext()) {
@@ -892,7 +896,7 @@ public class WorkflowDescriptionPersistenceHandler {
             if (endpointJsonNode.has(GROUP)) {
                 group = endpointJsonNode.get(GROUP).asText();
             }
-            Map<String, String> metaData = new HashMap<String, String>();
+            Map<String, String> metaData = new HashMap<>();
             if (endpointJsonNode.has(METADATA)) {
                 ObjectNode metaDataJsonNode = (ObjectNode) endpointJsonNode.get(METADATA);
                 Iterator<String> metaDataJsonNodeIterator = metaDataJsonNode.getFieldNames();
@@ -990,7 +994,7 @@ public class WorkflowDescriptionPersistenceHandler {
     private List<Connection> parseConnections(ArrayNode connectionsJsonNode, Map<String, WorkflowNode> nodes,
         ParsingFailedFlagHolder parsingFailedFlag) {
         final String message = "Failed to parse connection; skip it";
-        List<Connection> connections = new ArrayList<Connection>();
+        List<Connection> connections = new ArrayList<>();
 
         Iterator<JsonNode> connectionJsonNodeIterator = connectionsJsonNode.getElements();
         while (connectionJsonNodeIterator.hasNext()) {
@@ -1209,7 +1213,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private Map<String, String> parseConfigurationValues(ObjectNode configurationJsonNode) {
 
-        Map<String, String> configuration = new HashMap<String, String>();
+        Map<String, String> configuration = new HashMap<>();
 
         Iterator<String> configurationJsonNodeIterator = configurationJsonNode.getFieldNames();
         while (configurationJsonNodeIterator.hasNext()) {
@@ -1238,7 +1242,7 @@ public class WorkflowDescriptionPersistenceHandler {
     private Set<WorkflowLabel> parseLabels(ArrayNode labelsJsonNode, ParsingFailedFlagHolder parsingFailedFlag) {
         final String message = "Failed to parse label; skip it";
 
-        Set<WorkflowLabel> labels = new LinkedHashSet<WorkflowLabel>();
+        Set<WorkflowLabel> labels = new LinkedHashSet<>();
 
         Iterator<JsonNode> labelsJsonNodeIterator = labelsJsonNode.getElements();
         while (labelsJsonNodeIterator.hasNext()) {

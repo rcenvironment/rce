@@ -12,15 +12,23 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
+import org.junit.Assert;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.api.PlatformService;
@@ -39,6 +47,7 @@ import de.rcenvironment.core.component.testutils.DistributedComponentKnowledgeSe
 import de.rcenvironment.core.component.workflow.ComponentInstallationMockFactory;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
  * Test cases for {@link WorkflowDescriptionPersistenceHandler}.
@@ -97,6 +106,49 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         assertWorkflowLabels(workflowDescription);
     }
     
+    /**
+     * Test if loading a workflow file and saving it again produces the same file.
+     * 
+     * @throws IOException on test failure
+     * @throws WorkflowFileException on test failure
+     * @throws SecurityException on failure setting the encoding
+     * @throws NoSuchFieldException on failure setting the encoding
+     * @throws IllegalAccessException on failure setting the encoding
+     * @throws IllegalArgumentException on failure setting the encoding
+     */
+    @Test(timeout = TEST_TIMEOUT_MSEC)
+    public void testWritingWorkflow() throws IOException, WorkflowFileException, NoSuchFieldException, SecurityException,
+        IllegalArgumentException, IllegalAccessException {
+
+        setFileEncoding("Cp1252");
+        String filename = "Labels_old_style.wf";
+        TempFileServiceAccess.setupUnitTestEnvironment();
+
+        File tempFileOrig = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("Labels_orig.wf");
+        FileUtils.copyInputStreamToFile(getTestFileStream(filename), tempFileOrig);
+
+        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
+        WorkflowDescription workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream(filename));
+        ByteArrayOutputStream workflowStream = handler.writeWorkflowDescriptionToStream(workflowDescription);
+        File tempFileTest = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("Labels_test.wf");
+        try (OutputStream outputStream = new FileOutputStream(tempFileTest)) {
+            workflowStream.writeTo(outputStream);
+        }
+
+        setFileEncoding("UTF-8");
+        Assert.assertTrue(FileUtils.contentEqualsIgnoreEOL(tempFileOrig, tempFileTest, "Cp1252"));
+
+        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempFileOrig);
+        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempFileTest);
+    }
+
+    private static void setFileEncoding(String encoding) throws NoSuchFieldException, IllegalAccessException {
+        System.setProperty("file.encoding", encoding);
+        Field cs = Charset.class.getDeclaredField("defaultCharset");
+        cs.setAccessible(true);
+        cs.set(null, null);
+    }
+
     private void assertWorkflowNodes(WorkflowDescription wd, Map<String, ComponentInstallation> wfNodeIdToCompInstMapping) {
         assertEquals(3, wd.getWorkflowNodes().size());
         for (WorkflowNode wfNode : wd.getWorkflowNodes()) {
@@ -172,8 +224,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         return platformService;
     }
     
-    private DistributedComponentKnowledgeService createComponentKnowledgeServiceMock(Map<ComponentInstallation,
-        ComponentDescription> compInstToCompDescMapping) {
+    private DistributedComponentKnowledgeService createComponentKnowledgeServiceMock(
+        Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         DistributedComponentKnowledgeService compKnowledgeService = EasyMock.createStrictMock(DistributedComponentKnowledgeService.class);
         EasyMock.expect(compKnowledgeService.getCurrentComponentKnowledge())
             .andStubReturn(createComponentKnowledgeMock(compInstToCompDescMapping));
@@ -181,8 +233,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         return compKnowledgeService;
     }
     
-    private DistributedComponentKnowledge createComponentKnowledgeMock(Map<ComponentInstallation,
-        ComponentDescription> compInstToCompDescMapping) {
+    private DistributedComponentKnowledge createComponentKnowledgeMock(
+        Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         DistributedComponentKnowledge compKnowledge = EasyMock.createStrictMock(DistributedComponentKnowledge.class);
         EasyMock.expect(compKnowledge.getAllInstallations()).andStubReturn(compInstToCompDescMapping.keySet());
         EasyMock.replay(compKnowledge);
@@ -288,7 +340,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         assertEquals("697261b6-eaf5-44ab-af40-6c161a4f26f8", workflowDescription.getIdentifier());
         assertEquals(4, workflowDescription.getWorkflowVersion());
         assertEquals(1, workflowDescription.getWorkflowLabels().size());
-        assertEquals("A label", workflowDescription.getWorkflowLabels().get(0).getText());
+        assertEquals("A label with umlauts: öäüÖÄÜß", workflowDescription.getWorkflowLabels().get(0).getText());
         assertEquals(7, workflowDescription.getWorkflowLabels().get(0).getTextSize());
     }
 

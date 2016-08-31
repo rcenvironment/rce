@@ -751,7 +751,6 @@ public class WorkflowEditor extends GraphicalEditorWithFlyoutPalette implements 
                                         setFocus();
                                     }
                                     firePropertyChange(PROP_FINAL_WORKFLOW_DESCRIPTION_SET);
-                                    doSave(null);
                                 }
                             }
                         });

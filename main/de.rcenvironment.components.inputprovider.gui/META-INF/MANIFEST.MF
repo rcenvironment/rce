@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Input Provider Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.inputprovider.gui;singleton:=true
-Bundle-Version: 7.1.2.qualifier
+Bundle-Version: 7.1.3.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Bundle-Localization: plugin

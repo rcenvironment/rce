@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Jetty
 Bundle-SymbolicName: de.rcenvironment.core.jetty;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.1.2.qualifier
+Bundle-Version: 7.1.3.qualifier
 Export-Package: de.rcenvironment.core.jetty
 Bundle-ClassPath: .
 Bundle-ManifestVersion: 2

@@ -19,7 +19,6 @@ import de.rcenvironment.components.parametricstudy.common.StudyDataset;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
 import de.rcenvironment.core.component.api.ComponentException;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.model.api.LazyDisposal;
 import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
@@ -204,8 +203,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
             values.put(ParametricStudyComponentConstants.OUTPUT_NAME_DV, getLastDesignVariableNotFittingStepSizeToBounds());
         }
         for (String inputName : componentContext.getInputsWithDatum()) {
-            if (componentContext.isDynamicInput(inputName)
-                && !componentContext.getDynamicInputIdentifier(inputName).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
+            if (componentContext.isDynamicInput(inputName)) {
                 TypedDatum input = componentContext.readInput(inputName);
                 switch (input.getDataType()) {
                 case NotAValue:
@@ -218,7 +216,7 @@ public class ParametricStudyComponent extends AbstractNestedLoopComponent {
                     values.put(inputName, ((FloatTD) input).getFloatValue());
                     break;
                 default:
-                    throw new ComponentException(StringUtils.format("Data type '%s' not supported as input", input.getDataType()));
+                    values.put(inputName, "Not applicable");
                 }
             }
         }

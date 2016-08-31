@@ -8,8 +8,10 @@
 
 package de.rcenvironment.core.component.workflow.execution.internal;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
@@ -73,6 +75,8 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  */
 public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
+    protected static final String WORKFLOW_FILE_ENDING = ".wf";
+    
     private static final String FAILED_TO_LOAD_WORKFLOW_FILE = "Failed to load workflow file: ";
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionServiceImpl.class);
@@ -247,15 +251,22 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                         + " one (%d). Most likely reason: Internal error on workflow update.",
                         wfVersion, WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER));
             }
+            WorkflowDescriptionPersistenceHandler wdPesistenceHandler = new WorkflowDescriptionPersistenceHandler();
             WorkflowDescription wd;
             try (InputStream fileInputStream = new FileInputStream(wfFile)) {
-                wd = new WorkflowDescriptionPersistenceHandler().readWorkflowDescriptionFromStream(fileInputStream);
+                wd = wdPesistenceHandler.readWorkflowDescriptionFromStream(fileInputStream);
             } catch (WorkflowFileException e) {
                 if (e.getParsedWorkflowDescription() != null && callback.arePartlyParsedWorkflowConsiderValid()) {
-                    String backupFilename = PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + ".wf";
+                    // backup the orginal workflow file and overwrite it with the reduced but valid workflow description
+                    String backupFilename =
+                        PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + WORKFLOW_FILE_ENDING;
                     FileUtils.copyFile(wfFile, new File(wfFile.getParentFile().getAbsolutePath(), backupFilename));
-                    callback.onWorkflowFileParsingPartlyFailed(backupFilename);
                     wd = e.getParsedWorkflowDescription();
+                    try (FileOutputStream fos = new FileOutputStream(wfFile);
+                        ByteArrayOutputStream baos = wdPesistenceHandler.writeWorkflowDescriptionToStream(wd)) {
+                        baos.writeTo(fos);
+                    }
+                    callback.onWorkflowFileParsingPartlyFailed(backupFilename);
                 } else {
                     throw e;
                 }
