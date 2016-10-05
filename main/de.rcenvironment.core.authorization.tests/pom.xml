@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.authorization.tests</artifactId>
 	<name>RCE Core Authorization Bundle Tests</name>
-	<version>7.1.3.qualifier</version>
+	<version>7.1.4.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

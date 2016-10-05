@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.outputwriter.gui</artifactId>
 	<name>RCE OutputWriter Component GUI Bundle</name>
-	<version>7.1.3.qualifier</version>
+	<version>7.1.4.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

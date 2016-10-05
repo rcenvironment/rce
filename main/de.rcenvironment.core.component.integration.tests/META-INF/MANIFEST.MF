@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Integration Tests
 Bundle-SymbolicName: de.rcenvironment.core.component.integration.tests
-Bundle-Version: 7.1.3.qualifier
+Bundle-Version: 7.1.4.qualifier
 Fragment-Host: de.rcenvironment.core.component.integration
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing

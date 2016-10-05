@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.excel.execution
-Bundle-Version: 7.1.3.qualifier
+Bundle-Version: 7.1.4.qualifier
 Import-Package: de.rcenvironment.components.excel.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,

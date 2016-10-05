@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Instance Management
 Bundle-SymbolicName: de.rcenvironment.core.instancemanagement
-Bundle-Version: 7.1.3.qualifier
+Bundle-Version: 7.1.4.qualifier
 Export-Package: de.rcenvironment.core.instancemanagement
 Import-Package: com.jcraft.jsch;version="0.1.53",
  de.rcenvironment.core.command.common,

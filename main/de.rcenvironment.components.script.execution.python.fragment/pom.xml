@@ -13,5 +13,5 @@
 		<relativePath>../de.rcenvironment.componentgroups.standard/parent.pom</relativePath>
 	</parent>
 
-	<version>7.1.3.qualifier</version>
+	<version>7.1.4.qualifier</version>
 </project>

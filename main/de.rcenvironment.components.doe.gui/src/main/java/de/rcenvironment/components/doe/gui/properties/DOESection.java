@@ -367,7 +367,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
                         if (number.equals("null")) {
                             values[count][i] = "";
                         } else {
-                            Matcher matcher = Pattern.compile("\\d+(,|.)?\\d*").matcher(number);
+                            Matcher matcher = Pattern.compile("(\\+|-)?\\d+(,|.)?\\d*(e|E)?(\\+|-)?\\d*").matcher(number);
 
                             if (count == 0 && i == 0 && matcher.find()) {
                                 number = matcher.group();

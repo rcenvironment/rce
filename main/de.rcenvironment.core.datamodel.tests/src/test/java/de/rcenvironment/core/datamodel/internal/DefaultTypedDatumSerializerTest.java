@@ -138,11 +138,15 @@ public class DefaultTypedDatumSerializerTest {
         integer = factory.createInteger(1);
         assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), 1), serializer.serialize(integer));
 
-        integer = factory.createInteger(Integer.MAX_VALUE);
-        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MAX_VALUE), serializer.serialize(integer));
+        integer = factory.createInteger(Long.MAX_VALUE);
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Long.MAX_VALUE), serializer.serialize(integer));
 
-        integer = factory.createInteger(Integer.MIN_VALUE);
-        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MIN_VALUE), serializer.serialize(integer));
+        long anyLong = Integer.MAX_VALUE + Integer.MAX_VALUE/2;
+        integer = factory.createInteger(anyLong);
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), anyLong), serializer.serialize(integer));
+
+        integer = factory.createInteger(Long.MIN_VALUE);
+        assertEquals(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Long.MIN_VALUE), serializer.serialize(integer));
 
         // Serialization of FloatTD
         FloatTD floatData = factory.createFloat(0.0);
@@ -244,11 +248,15 @@ public class DefaultTypedDatumSerializerTest {
         IntegerTD integer = factory.createInteger(5);
         assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), 5)));
 
-        integer = factory.createInteger(Integer.MAX_VALUE);
-        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MAX_VALUE)));
+        integer = factory.createInteger(Long.MAX_VALUE);
+        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Long.MAX_VALUE)));
 
-        integer = factory.createInteger(Integer.MIN_VALUE);
-        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Integer.MIN_VALUE)));
+        long anyLong = Integer.MAX_VALUE + Integer.MAX_VALUE/2;
+        integer = factory.createInteger(anyLong);
+        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), anyLong)));
+
+        integer = factory.createInteger(Long.MIN_VALUE);
+        assertEquals(integer, serializer.deserialize(StringUtils.format(JSON_STRING, DataType.Integer.getShortName(), Long.MIN_VALUE)));
 
         // Deserialization of FloatTD
         FloatTD floatData = factory.createFloat(5.0);

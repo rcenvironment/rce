@@ -111,7 +111,7 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
                 "[--force-download] [--force-reinstall] [--timeout] <url version id/part> <installation id>",
                 true,
                 "stops all instances running the given installation id, downloads and installs the new RCE installation, and starts the "
-                + "instances again with the new installation",
+                    + "instances again with the new installation",
                 "--force-download - forces the download of the installation files even if they are present in the current cache",
                 "--force-reinstall - forces reinstallation even if the same version is already installed",
                 TIMEOUT_DESCRIPTION));
@@ -317,14 +317,14 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             throw CommandException.executionError("Error during installation setup process: " + e.getMessage(), context);
         }
     }
-    
+
     private void performReinstall(CommandContext context) throws CommandException {
         InstallationPolicy policy = InstallationPolicy.IF_PRESENT_CHECK_VERSION_AND_REINSTALL_IF_DIFFERENT;
         if (context.consumeNextTokenIfEquals(FORCE_DOWNLOAD)) {
             policy = InstallationPolicy.FORCE_NEW_DOWNLOAD_AND_REINSTALL;
         } else if (context.consumeNextTokenIfEquals(FORCE_REINSTALL)) {
             policy = InstallationPolicy.FORCE_REINSTALL;
-        } 
+        }
         String urlQualifier = context.consumeNextToken();
         String installationId = context.consumeNextToken();
         if (urlQualifier == null || installationId == null || context.hasRemainingTokens()) {
@@ -640,8 +640,9 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
             throw CommandException.wrongNumberOfParameters(context);
         }
         try {
-            instanceManagementService.stopInstance(instanceIdList, context.getOutputReceiver(), timeout);
-            instanceManagementService.startInstance(installationId, instanceIdList, context.getOutputReceiver(), timeout, startWithGui);
+            instanceManagementService.stopInstance(new LinkedList<String>(instanceIdList), context.getOutputReceiver(), timeout);
+            instanceManagementService.startInstance(installationId, new LinkedList<String>(instanceIdList), context.getOutputReceiver(),
+                timeout, startWithGui);
         } catch (IOException e) {
             throw CommandException.executionError(e.toString(), context);
         }

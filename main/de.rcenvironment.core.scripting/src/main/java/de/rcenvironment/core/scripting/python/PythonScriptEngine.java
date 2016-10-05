@@ -349,7 +349,7 @@ public class PythonScriptEngine implements ScriptEngine {
     }
 
     @SuppressWarnings("unchecked")
-    private void readOutputFromPython() {
+    private void readOutputFromPython() throws ScriptException{
         try {
             if (new File(tempDir.getAbsolutePath() + File.separator
                 + "pythonOutput.rced").exists()) {
@@ -372,12 +372,8 @@ public class PythonScriptEngine implements ScriptEngine {
                 stateOutput = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
                     + "pythonStateOutput.rces"), stateOutput.getClass());
             }
-        } catch (JsonParseException e) {
-            LOGGER.error(e.getMessage());
-        } catch (JsonMappingException e) {
-            LOGGER.error(e.getMessage());
         } catch (IOException e) {
-            LOGGER.error(e.getMessage());
+          	   throw new ScriptException(e);
         }
     }
 

@@ -93,7 +93,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
                 returnDatum = factory.createShortText(valueNode.getTextValue());
                 break;
             case Integer:
-                returnDatum = factory.createInteger(valueNode.getIntValue());
+                returnDatum = factory.createInteger(valueNode.getLongValue());
                 break;
             case Float:
                 returnDatum = factory.createFloat(valueNode.getDoubleValue());

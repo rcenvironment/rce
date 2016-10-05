@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_7.1.3.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="7.1.3.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.special.feature_7.1.3.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="7.1.3.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.standard.feature_7.1.3.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="7.1.3.qualifier"/>
-   <feature url="features/de.rcenvironment.core.combined.feature_7.1.3.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="7.1.3.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_7.1.3.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="7.1.3.qualifier"/>
-   <feature url="features/de.rcenvironment.documentation.core.feature_7.1.3.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="7.1.3.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_7.1.4.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="7.1.4.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.special.feature_7.1.4.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="7.1.4.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.standard.feature_7.1.4.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="7.1.4.qualifier"/>
+   <feature url="features/de.rcenvironment.core.combined.feature_7.1.4.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="7.1.4.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_7.1.4.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="7.1.4.qualifier"/>
+   <feature url="features/de.rcenvironment.documentation.core.feature_7.1.4.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="7.1.4.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="7.1.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.extras.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="7.1.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="7.1.0.qualifier"/>
