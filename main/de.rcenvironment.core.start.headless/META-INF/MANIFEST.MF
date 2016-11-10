@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Start Headless
 Bundle-SymbolicName: de.rcenvironment.core.start.headless;singleton:=true
-Bundle-Version: 7.1.4.qualifier
+Bundle-Version: 7.1.5.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: com.googlecode.lanterna;version="2.1.9",
  com.googlecode.lanterna.gui;version="2.1.9",

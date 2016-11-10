@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.doe.execution.tests</artifactId>
 	<name>RCE Components DOE Execution Tests</name>
-	<version>7.1.4.qualifier</version>
+	<version>7.1.5.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

@@ -154,7 +154,7 @@ public class DMContentProvider implements ITreeContentProvider {
     private Map<String, ComponentHistoryDataItemSubtreeBuilder> historySubtreeBuilders;
 
     /** Cached results for the MetaDataQuery. */
-    private Map<Long, WorkflowRun> workflowMetaDataMap = new HashMap<Long, WorkflowRun>();
+    private Map<DMBrowserNode, WorkflowRun> workflowMetaDataMap = new HashMap<DMBrowserNode, WorkflowRun>();
 
     /** Used to format timestamps in MetaData to readable dates. */
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
@@ -289,8 +289,8 @@ public class DMContentProvider implements ITreeContentProvider {
         final NodeIdentifier workflowNodeId = workflowNode.getNodeIdentifier(); // TODO review: not DM node id?
 
         synchronized (workflowMetaDataMap) {
-            if (workflowMetaDataMap.containsKey(workflowRunID)) {
-                return workflowMetaDataMap.get(workflowRunID);
+            if (workflowMetaDataMap.containsKey(workflowNode)) {
+                return workflowMetaDataMap.get(workflowNode);
             }
         }
 
@@ -303,7 +303,7 @@ public class DMContentProvider implements ITreeContentProvider {
         } catch (CommunicationException e) {
             // cache anyway to prevent repeated failing remote requests as this method is called multiple times when building the tree nodes
             synchronized (workflowMetaDataMap) {
-                workflowMetaDataMap.put(workflowRunID, null);
+                workflowMetaDataMap.put(workflowNode, null);
             }
             log.debug(StringUtils.format("Failed to fetch run data of workflow #%s from %s", workflowRunID, workflowNodeId));
             throw e; // throw exception to keep logic for 6.3; could be improved though - seid_do
@@ -322,7 +322,7 @@ public class DMContentProvider implements ITreeContentProvider {
         // cache even in case of 'null' result to prevent repeated failing requests as this method is called multiple times when
         // building the tree nodes
         synchronized (workflowMetaDataMap) {
-            workflowMetaDataMap.put(workflowRunID, result);
+            workflowMetaDataMap.put(workflowNode, result);
         }
         return result;
     }
@@ -1045,7 +1045,7 @@ public class DMContentProvider implements ITreeContentProvider {
         DMBrowserNode wfNode = node.getNodeWithTypeWorkflow();
         if (wfNode != null) {
             synchronized (workflowMetaDataMap) {
-                workflowMetaDataMap.remove(Long.valueOf(wfNode.getMetaData().getValue(METADATA_COMPONENT_CONTEXT_ID)));
+                workflowMetaDataMap.remove(node);
             }
         }
     }

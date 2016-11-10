@@ -59,15 +59,15 @@ public class RemoveToolIntegrationDialog extends Dialog {
         integrationMapping = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
 
         for (String config : integratedConfigs) {
-            String type = config.substring(0, config.lastIndexOf(SEPARATOR));
+            String type ="";
             for (ToolIntegrationContext c : contexts) {
                 if (config.contains(c.getPrefixForComponentId())) {
                     type = c.getContextType();
+                    integrationMapping.put(config.substring(c.getPrefixForComponentId().length()) 
+                    		+ " (Type: " + type.substring(type.lastIndexOf(SEPARATOR) + 1) + ")", config);
+                    break;
                 }
             }
-            integrationMapping.put(
-                config.substring(config.lastIndexOf(SEPARATOR) + 1) + " (Type: " + type.substring(type.lastIndexOf(SEPARATOR) + 1) + ")",
-                config);
         }
     }
 

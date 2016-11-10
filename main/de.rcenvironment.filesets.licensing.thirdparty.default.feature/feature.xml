@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.licensing.thirdparty.default.feature"
       label="RCE File Sets - Third-Party Licensing Information"
-      version="7.1.4.qualifier"
+      version="7.1.5.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

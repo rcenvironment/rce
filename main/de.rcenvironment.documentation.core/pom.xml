@@ -7,7 +7,7 @@
 	<!-- as a preliminary workaround, the POM version is used to transport root 
 		version information to the DocBook processor; it should work with normal 
 		properties as well, though - misc_ro -->
-	<version>7.1.4.qualifier</version>
+	<version>7.1.5.qualifier</version>
 	<packaging>pom</packaging>
 
 	<parent>

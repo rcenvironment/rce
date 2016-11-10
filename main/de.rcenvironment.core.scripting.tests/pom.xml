@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.scripting.tests</artifactId>
 	<name>RCE Core Scripting Bundle Tests</name>
-	<version>7.1.4.qualifier</version>
+	<version>7.1.5.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

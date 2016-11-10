@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Joiner Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.joiner.execution
-Bundle-Version: 7.1.4.qualifier
+Bundle-Version: 7.1.5.qualifier
 Import-Package: de.rcenvironment.components.joiner.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,

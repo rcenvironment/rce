@@ -46,6 +46,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.integration.RemoteToolIntegrationService;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
+import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInstallationBuilder;
@@ -72,6 +73,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.ImageResize;
+import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
  * Implementation of {@link ToolIntegrationService}.
@@ -79,8 +82,6 @@ import de.rcenvironment.core.utils.incubator.ImageResize;
  * @author Sascha Zur
  */
 public class ToolIntegrationServiceImpl implements ToolIntegrationService, RemoteToolIntegrationService {
-
-    private static final String SEPARATOR = ".";
 
     private static final String IDENTIFIER = "identifier";
 
@@ -355,7 +356,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     @Override
     public void removeTool(String componentID, ToolIntegrationContext information) {
         String toolComponentID = componentID;
-        if (!componentID.contains(SEPARATOR)) {
+        if (!componentID.startsWith(information.getPrefixForComponentId())) {
             toolComponentID = information.getPrefixForComponentId() + componentID;
         }
 
@@ -862,11 +863,18 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @Override
     public String getPathOfComponentID(String id) {
-        if (id.contains(SEPARATOR)) {
-            return toolNameToPath.get(id.substring(id.lastIndexOf(SEPARATOR) + 1));
-        } else {
-            return toolNameToPath.get(id);
+        ToolIntegrationContext result = null;
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        for (ToolIntegrationContext context : serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class)
+            .getAllIntegrationContexts()) {
+            if (id.startsWith(context.getPrefixForComponentId())) {
+                result = context;
+            }
         }
+        if (result != null) {
+            return toolNameToPath.get(id.substring(result.getPrefixForComponentId().length()));
+        }
+        return toolNameToPath.get(id);
     }
 
     @Override
@@ -954,8 +962,20 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     @Override
     @AllowRemoteAccess
     public byte[] getToolDocumentation(String identifier) throws RemoteOperationException {
-        String tmpName = identifier.substring(0, identifier.indexOf(ComponentConstants.ID_SEPARATOR));
-        String name = tmpName.substring(tmpName.lastIndexOf(".") + 1);
+        ToolIntegrationContext context = null;
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        for (ToolIntegrationContext ctx : serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class)
+            .getAllIntegrationContexts()) {
+            if (identifier.startsWith(ctx.getPrefixForComponentId())) {
+                context = ctx;
+            }
+        }
+
+        if (context == null) {
+            return null;
+        }
+        String name = identifier.substring(context.getPrefixForComponentId().length());
+        name = name.substring(0, name.indexOf(ComponentConstants.ID_SEPARATOR));
         try {
             return CompressingHelper
                 .createZippedByteArrayFromFolder(new File(toolNameToPath.get(name),

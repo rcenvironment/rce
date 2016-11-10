@@ -62,7 +62,7 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                         }
                     }
                     if (context != null) {
-                        String toolname = selectedTool.substring(selectedTool.lastIndexOf(".") + 1);
+                        String toolname = selectedTool.substring(context.getPrefixForComponentId().length());
                         integrationService.unregisterIntegration(toolname, context);
                         integrationService.removeTool(selectedTool, context);
                         integrationService.unpublishTool(context.getRootPathToToolIntegrationDirectory() + File.separator

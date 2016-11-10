@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Datamanagement
 Bundle-SymbolicName: de.rcenvironment.core.gui.datamanagement;singleton:=true
-Bundle-Version: 7.1.4.qualifier
+Bundle-Version: 7.1.5.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.authentication,
