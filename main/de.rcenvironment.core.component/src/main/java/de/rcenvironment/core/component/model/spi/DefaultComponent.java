@@ -63,4 +63,12 @@ public class DefaultComponent implements Component {
     public void setComponentContext(ComponentContext componentContext) {
     }
 
+    @Override
+    public void handleVerificationToken(String verificationToken) throws ComponentException {
+    }
+
+    @Override
+    public void completeStartOrProcessInputsAfterVerificationDone() throws ComponentException {
+    }
+
 }

@@ -14,6 +14,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.BIN
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_INSTANCE_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_INSTANCE_NAME;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_RUN_FINAL_STATE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_RUN_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPRESSION;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.CONTROLLER_NODE_ID;
@@ -65,6 +66,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIE
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_TYPEDDATUM;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.WORKFLOW_FILE_REFERENCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.WORKFLOW_RUN_ID;
+
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -74,8 +76,6 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Jan Flink
  */
 public abstract class DerbyDatabaseSetupSqlStatements {
-
-    private static final String ORDER_BY = " ORDER BY ";
 
     private static final String UNION = " UNION ";
 
@@ -114,6 +114,8 @@ public abstract class DerbyDatabaseSetupSqlStatements {
     private static final String CHAR_5 = " CHAR(5) ";
 
     private static final String CHAR_36 = " CHAR(36) ";
+    
+    private static final String VARCHAR_100 = " VARCHAR(100) ";
 
     private static final String VARCHAR_255 = " VARCHAR(255) ";
 
@@ -206,7 +208,7 @@ public abstract class DerbyDatabaseSetupSqlStatements {
     protected static String getSqlTableDataReference() {
         String sql = CREATE_TABLE + TABLE_DATA_REFERENCE + "("
             + DATA_REFERENCE_ID + BIGINT + NOT_NULL + AS_IDENTITY + COMMA
-            + DATA_REFERENCE_KEY + CHAR_36 + UNIQUE + COMMA + NODE_ID + CHAR_36 + NOT_NULL + COMMA
+            + DATA_REFERENCE_KEY + CHAR_36 + UNIQUE + COMMA + NODE_ID + VARCHAR_100 + NOT_NULL + COMMA
             + PRIMARY_KEY + "(" + DATA_REFERENCE_ID + ")"
             + ")";
         return sql;
@@ -276,7 +278,8 @@ public abstract class DerbyDatabaseSetupSqlStatements {
     protected static String getSqlTableComponentRun() {
         String sql = CREATE_TABLE + TABLE_COMPONENT_RUN + "("
             + COMPONENT_RUN_ID + BIGINT + NOT_NULL + AS_IDENTITY + COMMA
-            + COMPONENT_INSTANCE_ID + BIGINT + NOT_NULL + COMMA + NODE_ID + CHAR_36 + NOT_NULL + COMMA
+            + COMPONENT_INSTANCE_ID + BIGINT + NOT_NULL + COMMA 
+            + COMPONENT_RUN_FINAL_STATE + VARCHAR_255 + COMMA + NODE_ID + VARCHAR_100 + NOT_NULL + COMMA
             + COUNTER + INTEGER + NOT_NULL + COMMA + HISTORY_DATA_ITEM + LONG_VARCHAR + COMMA
             + REFERENCES_DELETED + BOOLEAN + COMMA
             + PRIMARY_KEY + "(" + COMPONENT_RUN_ID + ")" + COMMA
@@ -339,8 +342,8 @@ public abstract class DerbyDatabaseSetupSqlStatements {
     protected static String getSqlTableWorkflowRun() {
         String sql = CREATE_TABLE + TABLE_WORKFLOW_RUN + "("
             + WORKFLOW_RUN_ID + BIGINT + NOT_NULL + AS_IDENTITY + COMMA
-            + NAME + VARCHAR_255 + NOT_NULL + COMMA + CONTROLLER_NODE_ID + CHAR_36 + NOT_NULL + COMMA
-            + DATAMANAGEMENT_NODE_ID + LONG_VARCHAR + NOT_NULL + COMMA + FINAL_STATE + VARCHAR_255 + COMMA + TIMELINE_DATA_ITEM
+            + NAME + VARCHAR_255 + NOT_NULL + COMMA + CONTROLLER_NODE_ID + VARCHAR_100 + NOT_NULL + COMMA
+            + DATAMANAGEMENT_NODE_ID + VARCHAR_100 + NOT_NULL + COMMA + FINAL_STATE + VARCHAR_255 + COMMA + TIMELINE_DATA_ITEM
             + LONG_VARCHAR + COMMA + WORKFLOW_FILE_REFERENCE + LONG_VARCHAR + COMMA
             + TO_BE_DELETED + INTEGER + COMMA
             + PRIMARY_KEY + "(" + WORKFLOW_RUN_ID + ")"
@@ -411,6 +414,7 @@ public abstract class DerbyDatabaseSetupSqlStatements {
                     + TABLE_COMPONENT_RUN + DOT + COUNTER + COMMA
                     + TABLE_COMPONENT_RUN + DOT + REFERENCES_DELETED + COMMA
                     + TABLE_COMPONENT_RUN + DOT + HISTORY_DATA_ITEM + COMMA
+                    + TABLE_COMPONENT_RUN + DOT + COMPONENT_RUN_FINAL_STATE + COMMA
                     + TABLE_TIMELINE_INTERVAL + DOT + STARTTIME + COMMA
                     + TABLE_TIMELINE_INTERVAL + DOT + ENDTIME
                     + FROM + TABLE_COMPONENT_INSTANCE + COMMA + TABLE_COMPONENT_RUN + COMMA

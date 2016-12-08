@@ -10,6 +10,7 @@ package de.rcenvironment.core.component.update.api;
 
 import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import org.codehaus.jackson.JsonFactory;
@@ -42,7 +43,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
 
     /** json key. */
     public static final String EP_IDENTIFIER = "epIdentifier";
-    
+
     private static final String INITIAL = "initial";
 
     private static final String REQUIRED = "required";
@@ -53,20 +54,28 @@ public final class PersistentComponentDescriptionUpdaterUtils {
 
     private static final String NAME = "name";
 
+    private static final String STATIC_OUTPUTS = "staticOutputs";
+
     private static final String STATIC_INPUTS = "staticInputs";
-    
+
     private static final String DYNAMIC_INPUTS = "dynamicInputs";
+
+    private static final String DYNAMIC_OUTPUTS = "dynamicOutputs";
 
     private static final String METADATA = "metadata";
 
     private static final String DIRECTORY = "Directory";
-    
+
+    private static final String DATATYPE = "datatype";
+
+    private static final String IDENTIFIER = "identifier";
+
     private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     private PersistentComponentDescriptionUpdaterUtils() {}
 
     /**
-     * @param direction if it is in or outsputs (valid are "dynmaicInputs" and "dynamicOutputs")
+     * @param direction if it is in or outputs (valid are "dynmaicInputs" and "dynamicOutputs")
      * @param identifier that shall be used
      * @param description of the component
      * @return updated description
@@ -90,6 +99,107 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         // Add Static endpoints
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
+    }
+
+    /**
+     * Removes endpoints related to "outer loop done" approach. (RCE 7.1.2 -> 8.0.0).
+     * 
+     * @param description {@link PersistentComponentDescription} to update
+     * @return updated {@link PersistentComponentDescription}
+     * @throws JsonProcessingException on unexpected error
+     * @throws IOException on unexpected error
+     */
+    public static PersistentComponentDescription removeOuterLoopDoneEndpoints(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        removeOuterLoopDoneEndpoint(node, STATIC_OUTPUTS, NAME, "Outer loop done");
+        removeOuterLoopDoneEndpoint(node, DYNAMIC_INPUTS, EP_IDENTIFIER, "outerLoopDone");
+        return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
+    }
+
+    private static void removeOuterLoopDoneEndpoint(JsonNode node, String endpointGroup, String identifyingKey, String identifyingValue) {
+        if (node.has(endpointGroup)) {
+            ArrayNode endpointsJsonNode = (ArrayNode) node.get(endpointGroup);
+            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            while (elements.hasNext()) {
+                ObjectNode endpointJsonNode = (ObjectNode) elements.next();
+                if (endpointJsonNode.get(identifyingKey).getTextValue().equals(identifyingValue)) {
+                    elements.remove();
+                    break;
+                }
+            }
+        }
+    }
+
+    /**
+     * Removes endpoint character information from meta data. (RCE 7.1.2 -> 8.0.0).
+     * 
+     * @param description {@link PersistentComponentDescription} to update
+     * @return updated {@link PersistentComponentDescription}
+     * @throws JsonProcessingException on unexpected error
+     * @throws IOException on unexpected error
+     */
+    public static PersistentComponentDescription removeEndpointCharacterInfoFromMetaData(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        removeEndpointCharacterInfoFromMetaData(node, STATIC_INPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, STATIC_OUTPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, DYNAMIC_INPUTS);
+        removeEndpointCharacterInfoFromMetaData(node, DYNAMIC_OUTPUTS);
+        return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
+    }
+
+    private static void removeEndpointCharacterInfoFromMetaData(JsonNode node, String endpointGroup) {
+        if (node.has(endpointGroup)) {
+            ArrayNode endpointsJsonNode = (ArrayNode) node.get(endpointGroup);
+            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            while (elements.hasNext()) {
+                JsonNode endpointJsonNode = elements.next();
+                if (endpointJsonNode.has(METADATA)) {
+                    JsonNode metaDataJsonNode = endpointJsonNode.get(METADATA);
+                    Iterator<Entry<String, JsonNode>> metaDataFields = metaDataJsonNode.getFields();
+                    while (metaDataFields.hasNext()) {
+                        Entry<String, JsonNode> nextMetaDataField = metaDataFields.next();
+                        if (nextMetaDataField.getKey().equals("loopEndpointType_5e0ed1cd")) {
+                            metaDataFields.remove();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Reassigns new endpoint identifiers for certain entdpoints. (RCE 7.1.2 -> 8.0.0).
+     * 
+     * @param description {@link PersistentComponentDescription} to update
+     * @param endpointGroup e.g. "staticInputs", "dynamicOutputs", etc.
+     * @param epIdentifier identifier of the endpoint of request
+     * @param epIdentifierToReplace new identifier of endpoint
+     * @param epNameSuffix name suffix of endpoint of request
+     * @return updated {@link PersistentComponentDescription}
+     * @throws JsonProcessingException on unexpected error
+     * @throws IOException on unexpected error
+     */
+    public static PersistentComponentDescription reassignEndpointIdentifiers(PersistentComponentDescription description,
+        String endpointGroup, String epIdentifier, String epIdentifierToReplace, String epNameSuffix)
+        throws JsonProcessingException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+        if (node.has(endpointGroup)) {
+            ArrayNode endpointsJsonNode = (ArrayNode) node.get(endpointGroup);
+            Iterator<JsonNode> elements = endpointsJsonNode.getElements();
+            while (elements.hasNext()) {
+                JsonNode endpointJsonNode = elements.next();
+                if (endpointJsonNode.has(EP_IDENTIFIER)) {
+                    if (endpointJsonNode.get(EP_IDENTIFIER).getTextValue().equals(epIdentifier)
+                        && endpointJsonNode.get(NAME).getTextValue().endsWith(epNameSuffix)) {
+                        ((ObjectNode) endpointJsonNode).put(EP_IDENTIFIER, epIdentifierToReplace);
+                    }
+                }
+            }
+        }
+        return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
     }
 
     /**
@@ -139,7 +249,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         }
         return new PersistentComponentDescription(mapper.writerWithDefaultPrettyPrinter().writeValueAsString(node));
     }
-    
+
     /**
      * Replaces the usage meta data entries with input handling and input execution constraints entries.
      * 
@@ -150,21 +260,21 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription updateSchedulingInformation(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        
+
         JsonFactory jsonFactory = new JsonFactory();
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
-        
+
         updateInputNode(node.get(DYNAMIC_INPUTS));
         updateInputNode(node.get(STATIC_INPUTS));
-        
+
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
-        
+
         return description;
     }
-    
+
     /**
      * Updates the configuration key for "is nested loop".
      * 
@@ -175,12 +285,12 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription updateIsNestedLoop(PersistentComponentDescription description)
         throws JsonParseException, IOException {
-        
+
         JsonFactory jsonFactory = new JsonFactory();
         JsonParser jsonParser = jsonFactory.createJsonParser(description.getComponentDescriptionAsString());
         JsonNode node = mapper.readTree(jsonParser);
         jsonParser.close();
-        
+
         String oldConfigKey = "isNestedLoop";
         ObjectNode configurationsNode = (ObjectNode) node.get(CONFIGURATION);
         if (configurationsNode != null && configurationsNode.has(oldConfigKey)) {
@@ -188,19 +298,19 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             configurationsNode.remove(oldConfigKey);
             configurationsNode.put(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, isNestedLoop);
         }
-        
+
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         description = new PersistentComponentDescription(writer.writeValueAsString(node));
-        
+
         return description;
     }
-    
+
     private static void updateInputNode(JsonNode inputNode) {
         if (inputNode != null) {
             Iterator<JsonNode> nodeIterator = inputNode.getElements();
             while (nodeIterator.hasNext()) {
                 JsonNode dynInputNode = nodeIterator.next();
-                ObjectNode jsonNode = (ObjectNode) dynInputNode.get("metadata");
+                ObjectNode jsonNode = (ObjectNode) dynInputNode.get(METADATA);
                 JsonNode usageJsonNode = jsonNode.get(USAGE);
                 if (usageJsonNode != null) {
                     String usage = usageJsonNode.getTextValue();
@@ -231,7 +341,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             }
         }
     }
-    
+
     /**
      * Adding staticInput "CPACS".
      * 
@@ -256,16 +366,48 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ObjectNode metaDataNode = JsonNodeFactory.instance.objectNode();
         metaDataNode.put(USAGE, TextNode.valueOf(INITIAL));
         staticCPACSIn.put(NAME, TextNode.valueOf(inputName));
-        staticCPACSIn.put("datatype", TextNode.valueOf("FileReference"));
+        staticCPACSIn.put(DATATYPE, TextNode.valueOf("FileReference"));
         staticCPACSIn.put(METADATA, metaDataNode);
-        staticCPACSIn.put("identifier", TextNode.valueOf(UUID.randomUUID().toString()));
+        staticCPACSIn.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticInputs.add(staticCPACSIn);
-        
+
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
-    
-    
+
+    /**
+     * 
+     * Adds a static output.
+     * 
+     * @param description to change
+     * @param outputName of the output to add
+     * @param dataType of the output to add
+     * @return PersistentComponentDescription with added output
+     * @throws JsonParseException thrown on an error
+     * @throws JsonGenerationException thrown on an error
+     * @throws JsonMappingException thrown on an error
+     * @throws IOException thrown on an error
+     */
+    public static PersistentComponentDescription addStaticOutput(PersistentComponentDescription description, String outputName,
+        String dataType) throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
+        JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
+
+        ArrayNode staticOutputs = (ArrayNode) node.get(STATIC_OUTPUTS);
+        if (staticOutputs == null) {
+            staticOutputs = JsonNodeFactory.instance.arrayNode();
+            ((ObjectNode) node).put(STATIC_OUTPUTS, staticOutputs);
+        }
+        ObjectNode newOutput = JsonNodeFactory.instance.objectNode();
+        newOutput.put(NAME, TextNode.valueOf(outputName));
+        newOutput.put(DATATYPE, TextNode.valueOf(dataType));
+        newOutput.put(METADATA, JsonNodeFactory.instance.objectNode());
+        newOutput.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
+        staticOutputs.add(newOutput);
+
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        return new PersistentComponentDescription(writer.writeValueAsString(node));
+    }
+
     /**
      * Adding staticOutput "CPACS".
      * 
@@ -281,22 +423,22 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
 
-        ArrayNode staticOutputs = (ArrayNode) node.get("staticOutputs");
+        ArrayNode staticOutputs = (ArrayNode) node.get(STATIC_OUTPUTS);
         if (staticOutputs == null) {
             staticOutputs = JsonNodeFactory.instance.arrayNode();
-            ((ObjectNode) node).put("staticOutputs", staticOutputs);
+            ((ObjectNode) node).put(STATIC_OUTPUTS, staticOutputs);
         }
         ObjectNode staticCPACSOut = JsonNodeFactory.instance.objectNode();
         staticCPACSOut.put(NAME, TextNode.valueOf(outputName));
-        staticCPACSOut.put("datatype", TextNode.valueOf("FileReference"));
+        staticCPACSOut.put(DATATYPE, TextNode.valueOf("FileReference"));
         staticCPACSOut.put(METADATA, JsonNodeFactory.instance.objectNode());
-        staticCPACSOut.put("identifier", TextNode.valueOf(UUID.randomUUID().toString()));
+        staticCPACSOut.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
         staticOutputs.add(staticCPACSOut);
-        
+
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
-    
+
     /**
      * Updating "consumeCPACS" flag.
      * 
@@ -324,13 +466,13 @@ public final class PersistentComponentDescriptionUpdaterUtils {
                     metadata.put(USAGE, TextNode.valueOf(REQUIRED));
                 }
             }
-        }           
+        }
         configuration.remove(consumeCPACSInputsConfigVersion3);
-        
+
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
-    
+
     /**
      * Sets all dynamic input channels usage to "optional".
      * 
@@ -392,7 +534,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
             }
         }
         configuration.remove(consumeDirectoryInputsConfigVersion3);
-        
+
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
@@ -410,7 +552,7 @@ public final class PersistentComponentDescriptionUpdaterUtils {
      */
     public static PersistentComponentDescription updateDirectoryEndpointId(String direction, PersistentComponentDescription description)
         throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
-        
+
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());
         JsonNode dynEndpoints = node.get(direction);
         if (dynEndpoints != null) {
@@ -425,5 +567,5 @@ public final class PersistentComponentDescriptionUpdaterUtils {
         ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
         return new PersistentComponentDescription(writer.writeValueAsString(node));
     }
-    
+
 }

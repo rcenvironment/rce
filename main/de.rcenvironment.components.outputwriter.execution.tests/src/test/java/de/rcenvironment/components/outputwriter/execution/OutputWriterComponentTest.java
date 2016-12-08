@@ -30,6 +30,7 @@ import org.codehaus.jackson.annotate.JsonMethod;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -37,7 +38,7 @@ import de.rcenvironment.components.outputwriter.common.OutputLocation;
 import de.rcenvironment.components.outputwriter.common.OutputLocationList;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants.HandleExistingFile;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.Component;
@@ -210,6 +211,17 @@ public class OutputWriterComponentTest {
         mapper = JsonUtils.getDefaultObjectMapper();
         mapper.setVisibility(JsonMethod.ALL, Visibility.ANY);
     }
+    
+    /**
+     * Clean up temp files.
+     * 
+     * @throws IOException on Error.
+     */
+    @After
+    public void cleanup() throws IOException {
+        tempFileService.disposeManagedTempDirOrFile(testRootDir);
+    }
+
 
     /**
      * Test with no input.
@@ -234,7 +246,7 @@ public class OutputWriterComponentTest {
             // Set expectations for data management calls. Arguments should not be null, except for the NodeIdentifier, which is obtained
             // from the mock component context instead of a "real" context.
             componentDataManagementServiceMock.copyReferenceToLocalFile(notNull(String.class),
-                notNull(File.class), anyObject(NodeIdentifier.class));
+                notNull(File.class), anyObject(InstanceNodeSessionId.class));
             EasyMock.expectLastCall().andAnswer(copyReferenceToLocalFileAnswer);
             componentDataManagementServiceMock.copyDirectoryReferenceTDToLocalDirectory(notNull(ComponentContext.class),
                 notNull(DirectoryReferenceTD.class),
@@ -286,7 +298,7 @@ public class OutputWriterComponentTest {
             // Set expectations for data management calls. Arguments should not be null, except for the NodeIdentifier, which is obtained
             // from the mock component context instead of a "real" context.
             componentDataManagementServiceMock.copyReferenceToLocalFile(notNull(String.class),
-                notNull(File.class), anyObject(NodeIdentifier.class));
+                notNull(File.class), anyObject(InstanceNodeSessionId.class));
             EasyMock.expectLastCall().andAnswer(copyReferenceToLocalFileAnswer);
             componentDataManagementServiceMock.copyDirectoryReferenceTDToLocalDirectory(notNull(ComponentContext.class),
                 notNull(DirectoryReferenceTD.class),
@@ -341,7 +353,7 @@ public class OutputWriterComponentTest {
             // Set expectations for data management calls. Arguments should not be null, except for the NodeIdentifier, which is obtained
             // from the mock component context instead of a "real" context.
             componentDataManagementServiceMock.copyReferenceToLocalFile(notNull(String.class),
-                notNull(File.class), anyObject(NodeIdentifier.class));
+                notNull(File.class), anyObject(InstanceNodeSessionId.class));
             EasyMock.expectLastCall().andAnswer(copyReferenceToLocalFileAnswer).times(7);
             EasyMock.replay(componentDataManagementServiceMock);
         } catch (IOException e1) {

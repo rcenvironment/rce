@@ -54,14 +54,7 @@
          </propertyTab>
         </propertyTabs>
     </extension>
-    
-    <!--  Configuration validation -->
-    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.xml.merger.gui.XmlMergerWorkflowNodeValidator"
-            filter="de.rcenvironment.components.xml.merger.gui.XmlMergerComponentFilter">
-       </validator>
-    </extension>
+
     
     <!-- Data management browser subtree builder-->
    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">

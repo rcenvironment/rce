@@ -24,7 +24,7 @@ public final class SshConnectionConstants {
     /**
      * Required protocol version, for compatibility checking.
      */
-    public static final String REQUIRED_PROTOCOL_VERSION = "7.0.0";
+    public static final String REQUIRED_PROTOCOL_VERSION = "8.0.0";
 
     private SshConnectionConstants(){}
 }

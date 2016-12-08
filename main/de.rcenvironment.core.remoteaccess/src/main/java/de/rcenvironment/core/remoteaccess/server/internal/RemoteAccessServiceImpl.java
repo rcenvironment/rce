@@ -16,10 +16,14 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
@@ -29,7 +33,8 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
@@ -38,6 +43,7 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
@@ -50,7 +56,11 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
+import de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregationService;
+import de.rcenvironment.core.monitoring.system.api.model.AverageOfDoubles;
+import de.rcenvironment.core.monitoring.system.api.model.SystemLoadInformation;
 import de.rcenvironment.core.remoteaccess.common.RemoteAccessConstants;
+import de.rcenvironment.core.utils.common.InvalidFilenameException;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -65,6 +75,12 @@ import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutR
 // TODO @7.0.0: remove duplicate javadoc
 // TODO @7.0.0: use better exception class than WorkflowExecutionException
 public class RemoteAccessServiceImpl implements RemoteAccessService {
+
+    private static final int PERCENT_MULTIPLIER = 100;
+
+    private static final int INT_NO_DATA_PLACEHOLDER = -1;
+
+    private static final double DOUBLE_NO_DATA_PLACEHOLDER = -1.0;
 
     private static final String INTERFACE_ENDPOINT_NAME_INPUT = "input";
 
@@ -109,10 +125,12 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
     private HeadlessWorkflowExecutionService workflowExecutionService;
-    
+
     private PlatformService platformService;
 
     private ConfigurationService configurationService;
+
+    private LocalSystemMonitoringAggregationService localSystemMonitoringAggregationService;
 
     private File publishedWfStorageDir;
 
@@ -190,17 +208,31 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      */
     public void activate() {
         initAndRestoreFromPublishedWfStorage();
-        embeddedSshServerControl.setAnnouncedVersionOrProperty("RA", RemoteAccessConstants.PROTOCOL_VERSION);
+        embeddedSshServerControl.setAnnouncedVersionOrProperty("RemoteAccess", RemoteAccessConstants.PROTOCOL_VERSION_STRING);
     }
 
     @Override
-    public void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format) {
+    public void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format, boolean includeLoadData,
+        int timeSpanMsec, int timeLimitMsec) throws InterruptedException, ExecutionException, TimeoutException {
+
         List<ComponentInstallation> components = getMatchingPublishedTools();
 
+        final Map<LogicalNodeId, SystemLoadInformation> systemLoadData;
+        if (includeLoadData) {
+            final Set<LogicalNodeId> reachableInstanceNodes = new HashSet<>();
+            for (ComponentInstallation c : components) {
+                reachableInstanceNodes.add(c.fetchNodeIdAsObject());
+            }
+            systemLoadData = localSystemMonitoringAggregationService
+                .collectSystemMonitoringDataWithTimeLimit(reachableInstanceNodes, timeSpanMsec, timeLimitMsec);
+        } else {
+            systemLoadData = null;
+        }
+
         if ("csv".equals(format)) {
-            printComponentsListAsCsv(components, outputReceiver);
+            printComponentsListAsCsv(components, outputReceiver, systemLoadData);
         } else if ("token-stream".equals(format)) {
-            printComponentsListAsTokens(components, outputReceiver);
+            printComponentsListAsTokens(components, outputReceiver, systemLoadData);
         } else {
             throw new IllegalArgumentException("Unrecognized output format: " + format);
         }
@@ -223,9 +255,9 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
                     + "; the name contains characters that are not allowed anymore");
                 continue;
             }
-            String nodeId = platformService.getLocalNodeId().getIdString();
-            String nodeName = platformService.getLocalNodeId().getAssociatedDisplayName();
-            
+            String nodeId = platformService.getLocalDefaultLogicalNodeId().getLogicalNodeIdString(); // changed in 8.0: showing LNIds
+            String nodeName = platformService.getLocalInstanceNodeSessionId().getAssociatedDisplayName();
+
             outputReceiver.addOutput(publishId);
             // TODO apply filtering too when versions are added
             outputReceiver.addOutput("1"); // version; hardcoded for now
@@ -431,7 +463,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         // TODO once components are cached, optimize with map lookup
         for (ComponentInstallation compInst : availableTools) {
             ComponentInterface compInterface = compInst.getComponentRevision().getComponentInterface();
-            // TODO "display name" sounds odd here, but seems to be the public id; check
+            // TODO (p2) "display name" sounds odd here, but seems to be the public id; check
             if (toolId.equals(compInterface.getDisplayName())) {
                 if (toolVersion.equals(compInterface.getVersion())) {
                     if (nodeId != null) {
@@ -474,7 +506,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
     public void bindWorkflowExecutionService(HeadlessWorkflowExecutionService newInstance) {
         this.workflowExecutionService = newInstance;
     }
-    
+
     /**
      * OSGi-DS bind method.
      * 
@@ -491,6 +523,15 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
      */
     public void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newInstance) {
         this.componentKnowledgeService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the new service instance
+     */
+    public void bindLocalSystemMonitoringAggregationService(LocalSystemMonitoringAggregationService newInstance) {
+        this.localSystemMonitoringAggregationService = newInstance;
     }
 
     /**
@@ -605,37 +646,99 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         return components;
     }
 
-    private void printComponentsListAsCsv(List<ComponentInstallation> components, TextOutputReceiver outputReceiver) {
+    private void printComponentsListAsCsv(List<ComponentInstallation> components, TextOutputReceiver outputReceiver,
+        Map<LogicalNodeId, SystemLoadInformation> systemLoadData) {
         SortedSet<String> lines = new TreeSet<>();
         final CSVFormat csvFormat = CSVFormat.newFormat(' ').withQuote('"').withQuoteMode(QuoteMode.ALL);
         for (ComponentInstallation ci : components) {
             ComponentInterface compInterface = ci.getComponentRevision().getComponentInterface();
             String nodeId = ci.getNodeId();
-            String nodeName = NodeIdentifierFactory.fromNodeId(nodeId).getAssociatedDisplayName();
-            lines.add(csvFormat.format(compInterface.getDisplayName(), compInterface.getVersion(), nodeId, nodeName));
+            String nodeName = NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId).getAssociatedDisplayName();
+            if (systemLoadData != null) {
+                final SystemLoadInformation loadDataEntry = systemLoadData.get(ci.fetchNodeIdAsObject());
+                // two-step checking as there may be no load data available for that node
+                final double cpuAvg;
+                final int numSamples;
+                final int timeSpan;
+                final long availableRam;
+                if (loadDataEntry != null) {
+                    final AverageOfDoubles cpuLoadAvg = loadDataEntry.getCpuLoadAvg();
+                    cpuAvg = cpuLoadAvg.getAverage() * PERCENT_MULTIPLIER;
+                    numSamples = cpuLoadAvg.getNumSamples();
+                    timeSpan = cpuLoadAvg.getNumSamples()
+                        * LocalSystemMonitoringAggregationService.SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC;
+                    availableRam = loadDataEntry.getAvailableRam();
+                } else {
+                    cpuAvg = DOUBLE_NO_DATA_PLACEHOLDER;
+                    numSamples = INT_NO_DATA_PLACEHOLDER;
+                    timeSpan = INT_NO_DATA_PLACEHOLDER;
+                    availableRam = INT_NO_DATA_PLACEHOLDER;
+                }
+                lines.add(csvFormat.format(compInterface.getDisplayName(), compInterface.getVersion(), nodeId, nodeName,
+                    StringUtils.format("%.2f", cpuAvg), numSamples, timeSpan, availableRam));
+            } else {
+                lines.add(csvFormat.format(compInterface.getDisplayName(), compInterface.getVersion(), nodeId, nodeName));
+            }
         }
         for (String line : lines) {
             outputReceiver.addOutput(line);
         }
     }
 
-    private void printComponentsListAsTokens(List<ComponentInstallation> components, TextOutputReceiver outputReceiver) {
+    private void printComponentsListAsTokens(List<ComponentInstallation> components, TextOutputReceiver outputReceiver,
+        Map<LogicalNodeId, SystemLoadInformation> systemLoadData) {
         outputReceiver.addOutput(Integer.toString(components.size())); // number of entries
-        outputReceiver.addOutput("4"); // number of tokens per entry
+        // print number of tokens per entry
+        if (systemLoadData != null) {
+            outputReceiver.addOutput("8");
+        } else {
+            outputReceiver.addOutput("4");
+        }
         for (ComponentInstallation ci : components) {
             ComponentInterface compInterface = ci.getComponentRevision().getComponentInterface();
             String nodeId = ci.getNodeId();
-            String nodeName = NodeIdentifierFactory.fromNodeId(nodeId).getAssociatedDisplayName();
+            String nodeName =
+                NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(nodeId).getAssociatedDisplayName();
+
             outputReceiver.addOutput(compInterface.getDisplayName());
             outputReceiver.addOutput(compInterface.getVersion());
             outputReceiver.addOutput(nodeId);
             outputReceiver.addOutput(nodeName);
+
+            if (systemLoadData != null) {
+                // TODO (p3) extract common code with above method?
+                final SystemLoadInformation loadDataEntry = systemLoadData.get(ci.fetchNodeIdAsObject());
+                // two-step checking as there may be no load data available for that node
+                final double cpuAvg;
+                final int numSamples;
+                final int timeSpan;
+                final long availableRam;
+                if (loadDataEntry != null) {
+                    final AverageOfDoubles cpuLoadAvg = loadDataEntry.getCpuLoadAvg();
+                    cpuAvg = cpuLoadAvg.getAverage() * PERCENT_MULTIPLIER;
+                    numSamples = cpuLoadAvg.getNumSamples();
+                    timeSpan = cpuLoadAvg.getNumSamples()
+                        * LocalSystemMonitoringAggregationService.SYSTEM_LOAD_INFORMATION_COLLECTION_INTERVAL_MSEC;
+                    availableRam = loadDataEntry.getAvailableRam();
+                } else {
+                    cpuAvg = DOUBLE_NO_DATA_PLACEHOLDER;
+                    numSamples = INT_NO_DATA_PLACEHOLDER;
+                    timeSpan = INT_NO_DATA_PLACEHOLDER;
+                    availableRam = INT_NO_DATA_PLACEHOLDER;
+                }
+
+                outputReceiver.addOutput(StringUtils.format("%.2f", cpuAvg));
+                outputReceiver.addOutput(Integer.toString(numSamples));
+                outputReceiver.addOutput(Integer.toString(timeSpan));
+                outputReceiver.addOutput(Long.toString(availableRam));
+            }
+
         }
     }
 
     private boolean validateWorkflowFileAsTemplate(WorkflowDescription wd, TextOutputReceiver outputReceiver)
         throws WorkflowExecutionException {
-        validateEquals(Integer.valueOf(4), wd.getWorkflowVersion(), "Invalid workflow file version");
+        validateEquals(WorkflowConstants.CURRENT_WORKFLOW_VERSION_NUMBER, wd.getWorkflowVersion(), "Invalid workflow file version");
         MutableYesNoFlag foundInputDirSource = new MutableYesNoFlag();
         MutableYesNoFlag foundParametersSource = new MutableYesNoFlag();
         MutableYesNoFlag foundOutputReceiver = new MutableYesNoFlag();
@@ -820,7 +923,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
             .replace(WF_PLACEHOLDER_TIMESTAMP, timestampString)
             .replace(WF_PLACEHOLDER_INPUT_DIR, formatPathForWorkflowFile(inputFilesDir))
             // note: the name splitting is needed due to OutputWriter constraints - misc_ro
-            // FIXME 5.1: recheck after placeholder change
+            // TODO (p1) >8.0.0 - recheck after placeholder change (?)
             .replace(WF_PLACEHOLDER_OUTPUT_PARENT_DIR, formatPathForWorkflowFile(outputFilesDir.getParentFile()))
             .replace(WF_PLACEHOLDER_OUTPUT_FILES_FOLDER_NAME, outputFilesDir.getName());
         File wfFile = tempFileService.createTempFileFromPattern("rta-*.wf");
@@ -845,7 +948,7 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         }
 
         String workflowContent = template
-            .replace(WF_PLACEHOLDER_PARAMETERS, parameterString) // FIXME 5.1: escaping?!
+            .replace(WF_PLACEHOLDER_PARAMETERS, StringUtils.escapeAsJsonStringContent(parameterString, false)) // prevent injection
             .replace(WF_PLACEHOLDER_TIMESTAMP, timestampString)
             .replace(WF_PLACEHOLDER_INPUT_DIR, formatPathForWorkflowFile(inputFilesDir))
             .replace(WF_PLACEHOLDER_OUTPUT_PARENT_DIR, formatPathForWorkflowFile(outputFilesDir.getParentFile()));
@@ -875,8 +978,14 @@ public class RemoteAccessServiceImpl implements RemoteAccessService {
         CapturingTextOutReceiver outputReceiver = new CapturingTextOutReceiver("");
 
         // TODO specify log directory?
-        HeadlessWorkflowExecutionContextBuilder exeContextBuilder =
-            new HeadlessWorkflowExecutionContextBuilder(executionSetup.getWorkflowFile(), logDir);
+        HeadlessWorkflowExecutionContextBuilder exeContextBuilder;
+        try {
+            exeContextBuilder = new HeadlessWorkflowExecutionContextBuilder(executionSetup.getWorkflowFile(), logDir);
+        } catch (InvalidFilenameException e) {
+            // This exception should never occur since the name of the workflow file used here is generated by the
+            // generateWorkflowExecutionSetup method and is always valid
+            throw new IllegalStateException();
+        }
         exeContextBuilder.setPlaceholdersFile(executionSetup.getPlaceholderFile());
         exeContextBuilder.setTextOutputReceiver(outputReceiver);
         exeContextBuilder.setSingleConsoleRowsProcessor(customConsoleRowReceiver);

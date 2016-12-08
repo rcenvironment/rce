@@ -32,6 +32,14 @@ final class WorkflowStateMachineEvent {
         this.errorMessage = null;
         this.compExeId = null;
     }
+    
+    protected WorkflowStateMachineEvent(WorkflowStateMachineEventType type, String compExeId) {
+        this.type = type;
+        this.throwable = null;
+        this.errorId = null;
+        this.errorMessage = null;
+        this.compExeId = compExeId;
+    }
 
     protected WorkflowStateMachineEvent(WorkflowStateMachineEventType type, Throwable throwable) {
         this.type = type;

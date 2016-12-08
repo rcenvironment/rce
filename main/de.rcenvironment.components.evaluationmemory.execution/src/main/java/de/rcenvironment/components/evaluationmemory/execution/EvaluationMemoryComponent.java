@@ -10,7 +10,6 @@ package de.rcenvironment.components.evaluationmemory.execution;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.SortedSet;
@@ -33,7 +32,6 @@ import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
-import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -51,8 +49,7 @@ public class EvaluationMemoryComponent extends DefaultComponent {
      */
     private enum Mode {
         Check,
-        Store,
-        Finish;
+        Store;
     }
     
     private Log log = LogFactory.getLog(getClass());
@@ -152,9 +149,6 @@ public class EvaluationMemoryComponent extends DefaultComponent {
             initializeNewHistoryData();
             processInputsInStoreMode();
             break;
-        case Finish:
-            processInputsInFinishMode();
-            return;
         default:
             break;
         }
@@ -270,17 +264,6 @@ public class EvaluationMemoryComponent extends DefaultComponent {
         valuesToEvaluate = null;
     }
 
-    private void processInputsInFinishMode() {
-        if (((BooleanTD) componentContext.readInput(EvaluationMemoryComponentConstants.INPUT_NAME_LOOP_DONE)).getBooleanValue()) {
-            for (String output : getOutputsOfTypeToEvaluateSortedByName()) {
-                componentContext.closeOutput(output);
-            }
-        } else {
-            componentLog.componentInfo("Skip processing inputs - got just 'false' on the input " 
-                + EvaluationMemoryComponentConstants.INPUT_NAME_LOOP_DONE);
-        }
-    }
-    
     @Override
     public void completeStartOrProcessInputsAfterFailure() throws ComponentException {
         writeFinalHistoryData();
@@ -298,17 +281,13 @@ public class EvaluationMemoryComponent extends DefaultComponent {
     }
     
     private Mode getInputProcessingMode(Set<String> inputsWithDatum) throws ComponentException {
-        if (inputsWithDatum.contains(EvaluationMemoryComponentConstants.INPUT_NAME_LOOP_DONE)) {
-            return Mode.Finish;
-        } else {
-            String input = inputsWithDatum.iterator().next();
-            if (componentContext.isDynamicInput(input)) {
-                if (componentContext.getDynamicInputIdentifier(input).equals(EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE)) {
-                    return Mode.Check;
-                } else if (componentContext.getDynamicInputIdentifier(input).equals(
-                    EvaluationMemoryComponentConstants.ENDPOINT_ID_EVALUATION_RESULTS)) {
-                    return Mode.Store;
-                }
+        String input = inputsWithDatum.iterator().next();
+        if (componentContext.isDynamicInput(input)) {
+            if (componentContext.getDynamicInputIdentifier(input).equals(EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE)) {
+                return Mode.Check;
+            } else if (componentContext.getDynamicInputIdentifier(input).equals(
+                EvaluationMemoryComponentConstants.ENDPOINT_ID_EVALUATION_RESULTS)) {
+                return Mode.Store;
             }
         }
         // should never happen
@@ -321,17 +300,6 @@ public class EvaluationMemoryComponent extends DefaultComponent {
             inputValues.put(input, componentContext.readInput(input));
         }
         return inputValues;
-    }
-    
-    private Set<String> getOutputsOfTypeToEvaluateSortedByName() {
-        Set<String> outputs = new HashSet<>();
-        for (String output: componentContext.getOutputs()) {
-            if (componentContext.isDynamicOutput(output)
-                && componentContext.getDynamicOutputIdentifier(output).equals(EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE)) {
-                outputs.add(output);
-            }
-        }
-        return outputs;
     }
     
     private SortedSet<String> getOutputsOfTypeEvaluationResultsSortedByName() {

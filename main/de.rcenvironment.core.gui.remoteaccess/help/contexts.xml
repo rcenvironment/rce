@@ -1,0 +1,6 @@
+<contexts>
+	<context id="*" title="SSH Remote Access Component Help">
+		<description>This component represents a tool or workflow that is published by another RCE instance and is accessed via SSH. 
+		If the component is shown as unavailable in the workflow editor, the reason is either that there is no SSH connection to the remote RCE instance or that the tool was changed or deleted on the remote instance.</description>
+	</context>
+</contexts>

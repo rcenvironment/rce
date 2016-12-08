@@ -14,8 +14,8 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.monitoring.system.api.OperatingSystemException;
 import de.rcenvironment.core.monitoring.system.api.RemotableSystemMonitoringService;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshotListener;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link Runnable} for fetching monitoring data.

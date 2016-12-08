@@ -22,8 +22,9 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.datamanagement.RemotableFileDataService;
@@ -39,10 +40,11 @@ import de.rcenvironment.core.datamodel.api.CompressionFormat;
  * Test cases for {@link DataServiceImpl}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class DataServiceImplTest {
 
-    private NodeIdentifier pi;
+    private InstanceNodeId pi;
 
     private UUID drId;
 
@@ -55,7 +57,7 @@ public class DataServiceImplTest {
     /** Set up. */
     @Before
     public void setUp() {
-        pi = NodeIdentifierFactory.fromNodeId("na klar:6");
+        pi = NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("dummy");
         drId = UUID.randomUUID();
 
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
@@ -71,7 +73,7 @@ public class DataServiceImplTest {
         fileDataService.activate(EasyMock.createNiceMock(BundleContext.class));
 
         MetaDataBackendService dummyCatalogBackend = EasyMock.createNiceMock(MetaDataBackendService.class);
-        
+
         new BackendSupportTest().setUp();
         new BackendSupport().activate(BackendSupportTest.createBundleContext(dummyCatalogBackend, new DummyDataBackend()));
     }
@@ -89,9 +91,9 @@ public class DataServiceImplTest {
      */
     private class DummyCommunicationService extends CommunicationServiceDefaultStub {
 
+        @SuppressWarnings("unchecked")
         @Override
-        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-            throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
             T service = null;
             if (iface.equals(RemotableMetaDataService.class)) {
                 service = (T) EasyMock.createNiceMock(RemotableMetaDataService.class);

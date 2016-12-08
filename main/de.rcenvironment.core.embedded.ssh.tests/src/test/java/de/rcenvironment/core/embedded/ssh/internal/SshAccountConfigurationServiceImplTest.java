@@ -8,9 +8,7 @@
 
 package de.rcenvironment.core.embedded.ssh.internal;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
@@ -72,19 +70,6 @@ public class SshAccountConfigurationServiceImplTest {
         AdaptedSshAccountConfigurationServiceImpl testServive = new AdaptedSshAccountConfigurationServiceImpl();
         String error = testServive.verifyExpectedStateForConfigurationEditing();
         assertNull(error, error);
-    }
-
-    /**
-     * Tests initial state checks with an invalid RA role in the configuration file.
-     */
-    @Test
-    public void testInvalidRARole() {
-        setConfigurationSegment("invalidRARole");
-        AdaptedSshAccountConfigurationServiceImpl testServive = new AdaptedSshAccountConfigurationServiceImpl();
-        String error = testServive.verifyExpectedStateForConfigurationEditing();
-        assertNotNull(error);
-        assertTrue(error, error.contains("role"));
-        assertTrue(error, error.contains("unexpected configuration"));
     }
 
     private void setConfigurationSegment(String configFileName) {

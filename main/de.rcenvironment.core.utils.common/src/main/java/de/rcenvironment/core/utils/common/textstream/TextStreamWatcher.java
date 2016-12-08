@@ -15,20 +15,25 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.TeeInputStream;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
- * A utility class to read and forward line-based text data from an {@link InputStream}. The asynchronous task that performs is is created
- * using the {@link SharedThreadPool} singleton. (If necessary, a constructor that takes a custom ThreadPool could be added as well.)
+ * A utility class to read and forward line-based text data from an {@link InputStream}. As it requires an {@link AsyncTaskService} to run,
+ * an instance must be provided via the constructor. If available in the project scope, consider using
+ * de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory for convenience.
  * 
- * TODO add matching unit test
+ * TODO consider reworking this class to a plain {@link Runnable} to avoid this dependency, which would also allow using this class with a
+ * plain Java {@link Executor}.
+ * 
+ * TODO add more specific unit tests? currently covered indirectly by executor tests
  * 
  * @author Robert Mischke
  */
@@ -50,6 +55,8 @@ public class TextStreamWatcher {
     private volatile boolean streamClosed = false;
 
     private volatile FileOutputStream logFileStream;
+
+    private final AsyncTaskService asyncTaskService;
 
     /**
      * The actual {@link Runnable} that performs the output capture. Uses the outer class fields for delegation.
@@ -96,9 +103,10 @@ public class TextStreamWatcher {
      * @param input the {@link InputStream} to read from
      * @param receivers the {@link TextOutputReceiver} to send the generated events to
      */
-    public TextStreamWatcher(InputStream input, TextOutputReceiver... receivers) {
+    public TextStreamWatcher(InputStream input, AsyncTaskService asyncTaskService, TextOutputReceiver... receivers) {
         this.receivers = receivers;
         this.inputStream = input;
+        this.asyncTaskService = asyncTaskService;
 
         // guard against "null" listeners
         for (TextOutputReceiver r : receivers) {
@@ -147,7 +155,7 @@ public class TextStreamWatcher {
      */
     public TextStreamWatcher start() {
         this.bufferedReader = new BufferedReader(new InputStreamReader(inputStream));
-        watcherTaskFuture = SharedThreadPool.getInstance().submit(new WatcherRunnable());
+        watcherTaskFuture = asyncTaskService.submit(new WatcherRunnable());
         return this;
     }
 

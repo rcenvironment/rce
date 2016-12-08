@@ -22,8 +22,7 @@ import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
- * Base class for {@link MessageChannelServiceImpl} unit tests providing common tests that can be
- * performed with various network transports.
+ * Base class for {@link MessageChannelServiceImpl} unit tests providing common tests that can be performed with various network transports.
  * 
  * @author Robert Mischke
  */
@@ -55,8 +54,8 @@ public abstract class AbstractNetworkConnectionServiceImplTest {
     }
 
     /**
-     * Tests two nodes connecting to each other with duplex disabled. Each node should receive a
-     * single {@link MessageChannel} to the other node.
+     * Tests two nodes connecting to each other with duplex disabled. Each node should receive a single {@link MessageChannel} to the other
+     * node.
      * 
      * @throws Exception on unexpected test errors
      */
@@ -76,7 +75,8 @@ public abstract class AbstractNetworkConnectionServiceImplTest {
 
         MessageChannel node1SelfConnection = node1Service.connect(node1ContactPoint, false).get();
         node1Service.registerNewOutgoingChannel(node1SelfConnection);
-        assertEquals(node1Information.getNodeId(), node1SelfConnection.getRemoteNodeInformation().getNodeId());
+        assertEquals(node1Information.getInstanceNodeSessionId(),
+            node1SelfConnection.getRemoteNodeInformation().getInstanceNodeSessionId());
 
         EasyMock.verify(connectionListener);
         EasyMock.reset(connectionListener);
@@ -86,17 +86,16 @@ public abstract class AbstractNetworkConnectionServiceImplTest {
 
         MessageChannel node1To2Connection = node1Service.connect(node2ContactPoint, false).get();
         node1Service.registerNewOutgoingChannel(node1To2Connection);
-        assertEquals(node2Information.getNodeId(), node1To2Connection.getRemoteNodeInformation().getNodeId());
+        assertEquals(node2Information.getInstanceNodeSessionId(), node1To2Connection.getRemoteNodeInformation().getInstanceNodeSessionId());
 
         EasyMock.verify(connectionListener);
     }
 
     /**
-     * Tests two nodes, with one connecting to the other with duplex enabled. Each node should
-     * receive a single {@link MessageChannel} to the other node.
+     * Tests two nodes, with one connecting to the other with duplex enabled. Each node should receive a single {@link MessageChannel} to
+     * the other node.
      * 
-     * Note that the test behaviour expects the tested transport to support passive connections;
-     * future tests may need to adapt this.
+     * Note that the test behaviour expects the tested transport to support passive connections; future tests may need to adapt this.
      * 
      * @throws Exception on unexpected test errors
      */
@@ -114,7 +113,7 @@ public abstract class AbstractNetworkConnectionServiceImplTest {
 
         MessageChannel node1To2Connection = node1Service.connect(node2ContactPoint, true).get();
         node1Service.registerNewOutgoingChannel(node1To2Connection);
-        assertEquals(node2Information.getNodeId(), node1To2Connection.getRemoteNodeInformation().getNodeId());
+        assertEquals(node2Information.getInstanceNodeSessionId(), node1To2Connection.getRemoteNodeInformation().getInstanceNodeSessionId());
 
         EasyMock.verify(connectionListener);
     }

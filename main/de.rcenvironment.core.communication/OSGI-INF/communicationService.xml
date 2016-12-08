@@ -10,29 +10,31 @@
 	<reference
 		name="Platform Service"
 		interface="de.rcenvironment.core.communication.api.PlatformService"
-		cardinality="1..1"
 		bind="bindPlatformService"
-		policy="dynamic"
+	/>
+	<reference
+		bind="bindLiveNetworkIdResolutionService"
+		interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService"
+		name="LiveNetworkIdResolutionService"
+	/>
+	<reference
+		name="Local Service Resolver"
+		interface="de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver"
+		bind="bindLocalServiceResolver"
 	/>
 	<reference
 		name="Service Proxy Factory"
 		interface="de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory"
-		cardinality="1..1"
 		bind="bindServiceProxyFactory"
-		policy="dynamic"
 	/>
 	<reference
 		name="CommunicationManagementService"
 		interface="de.rcenvironment.core.communication.management.CommunicationManagementService"
-		cardinality="1..1"
 		bind="bindCommunicationManagementService"
-		policy="dynamic"
 	/>
 	<reference
 		name="NetworkRoutingService" 
 		interface="de.rcenvironment.core.communication.routing.NetworkRoutingService" 
-		cardinality="1..1" 
 		bind="bindNetworkRoutingService" 
-		policy="dynamic"
 	/>
 </scr:component>

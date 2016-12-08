@@ -11,15 +11,14 @@ package de.rcenvironment.core.communication.file.service.legacy.internal;
 import java.net.URI;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
- * Supportive class for URIs used to identify files. (rce://host:instance/dataReference or
- * file://host:instance/pathToFile)
+ * Supportive class for URIs used to identify files. (rce://host:instance/dataReference or file://host:instance/pathToFile)
  * 
  * @author Doreen Seider
  */
@@ -51,7 +50,7 @@ public final class RCEFileURIUtils {
         if (!uri.isAbsolute()) {
             throw new CommunicationException(ERROR_URI_IS_INVALID + "scheme is missing.");
         }
-        
+
         if (uri.getScheme().equals(RCE)) {
             return FileType.RCE_DM;
         } else {
@@ -66,13 +65,13 @@ public final class RCEFileURIUtils {
      * @return the host of the {@link URI}.
      * @throws CommunicationException if the {@link URI} does not contain a host.
      */
-    public static NodeIdentifier getNodeIdentifier(URI uri) throws CommunicationException {
+    public static InstanceNodeId getNodeIdentifier(URI uri) throws CommunicationException {
 
         Assertions.isDefined(uri, StringUtils.format(ERROR_PARAMETERS_NULL, PARAMETER_URI));
 
         validateURI(uri);
 
-        return NodeIdentifierFactory.fromNodeId(uri.getHost());
+        return NodeIdentifierUtils.parseInstanceNodeIdStringWithExceptionWrapping(uri.getHost());
     }
 
     /**
@@ -95,8 +94,7 @@ public final class RCEFileURIUtils {
      * Validates a given URI.
      * 
      * @param uri The URI to checks.
-     * @throws CommunicationException if the URI does not contain a path or the path does not
-     *         contain instance and path to the file.
+     * @throws CommunicationException if the URI does not contain a path or the path does not contain instance and path to the file.
      */
     private static void validateURI(URI uri) throws CommunicationException {
 

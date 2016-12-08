@@ -16,6 +16,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionController;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
@@ -23,11 +24,11 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionU
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
 
 /**
  * Implementation of {@link WorkflowExecutionController}.
@@ -56,9 +57,9 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
     private ComponentsConsoleLogFileWriter compConsoleLogFileWriter;
 
     private ComponentLostWatcher compLostWatcher;
-    
+
     private AsyncOrderedExecutionQueue notifSendingAsyncExecQueue =
-        new AsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED, SharedThreadPool.getInstance());
+        ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
     @Deprecated
     public WorkflowExecutionControllerImpl() {}
@@ -144,6 +145,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         Integer executionCount, final String executionCountOnResets, String errorId, String errorMessage) {
 
         notifSendingAsyncExecQueue.enqueue(new Runnable() {
+
             @Override
             public void run() {
                 notificationService.send(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, newState.name());
@@ -153,23 +155,27 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
 
         compStatesEntirelyChangedVerifier.announceComponentState(compExeId, newState);
 
-        if (newState == ComponentState.FAILED) {
-            wfStateMachine.postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED,
-                errorId, errorMessage, compExeId));
+        if (ComponentConstants.FAILED_COMPONENT_STATES.contains(newState)) {
+            WorkflowStateMachineEventType eventType = WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED;
+            if (newState == ComponentState.RESULTS_REJECTED) {
+                eventType = WorkflowStateMachineEventType.CANCEL_AFTER_RESULTS_REJECTED_REQUESTED;
+            }
+            wfStateMachine.postEvent(new WorkflowStateMachineEvent(eventType, errorId, errorMessage, compExeId));
+
         }
     }
 
     @Override
     public void onInputProcessed(String serializedEndpointDatum) {
-        notificationService.send(wfExeCtx.getExecutionIdentifier() + wfExeCtx.getNodeId().getIdString()
-            + ComponentConstants.PORCESSED_INPUT_NOTIFICATION_ID_SUFFIX, serializedEndpointDatum);
+        notificationService.send(StringUtils.format(ComponentConstants.NOTIFICATION_ID_PREFIX_PROCESSED_INPUT + "%s:%s", wfExeCtx
+            .getNodeId().getLogicalNodeIdString(), wfExeCtx.getExecutionIdentifier()), serializedEndpointDatum);
     }
 
     @Override
     public void processConsoleRows(ConsoleRow[] consoleRows) {
         for (ConsoleRow consoleRow : consoleRows) {
-            notificationService.send(wfExeCtx.getExecutionIdentifier() + wfExeCtx.getNodeId().getIdString()
-                + ConsoleRow.NOTIFICATION_SUFFIX, consoleRow);
+            notificationService.send(ConsoleRowUtils.composeConsoleNotificationId(wfExeCtx.getNodeId(), wfExeCtx.getExecutionIdentifier()),
+                consoleRow);
             try {
                 checkForLifecycleToolRunConsoleRow(consoleRow);
             } catch (WorkflowExecutionException e) {
@@ -190,7 +196,7 @@ public class WorkflowExecutionControllerImpl implements WorkflowExecutionControl
         }
         compLostWatcher.announceComponentHeartbeat(compExecutionId);
     }
-
+    
     private void checkForLifecycleInfoEndConsoleRow(ConsoleRow row) {
         if (row.getType() == ConsoleRow.Type.LIFE_CYCLE_EVENT
             && row.getPayload().startsWith(ConsoleRow.WorkflowLifecyleEventType.COMPONENT_TERMINATED.name())) {

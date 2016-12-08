@@ -30,10 +30,12 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
 public class InputCoupledWithAnotherInputAndOutputSelectionPane extends ForwardingEndpointSelectionPane {
 
     private final String dynEndpointId;
+    
+    private final String addDynInputId;
+    
+    private final String inputNameSuffix;
 
     private final Refreshable outputPane;
-
-    private final String inputNameSuffix;
 
     private Map<String, String> metaDataInput = new HashMap<>();
 
@@ -41,20 +43,22 @@ public class InputCoupledWithAnotherInputAndOutputSelectionPane extends Forwardi
 
     private Map<String, String> metaDataOutput = new HashMap<>();
 
-    public InputCoupledWithAnotherInputAndOutputSelectionPane(String title, String dynEndpointId,
+    public InputCoupledWithAnotherInputAndOutputSelectionPane(String title, String endpointId, String addDynInputId,
         String inputNameSuffix, WorkflowNodeCommand.Executor executor, Refreshable outputPane) {
-        super(title, EndpointType.INPUT, executor, false, dynEndpointId, true, true);
-        this.dynEndpointId = dynEndpointId;
-        this.outputPane = outputPane;
+        super(title, EndpointType.INPUT, endpointId, new String[] { endpointId, addDynInputId }, executor);
+        this.dynEndpointId = endpointId;
+        this.addDynInputId = addDynInputId;
         this.inputNameSuffix = inputNameSuffix;
+        this.outputPane = outputPane;
     }
 
     @Override
     protected void executeAddCommand(String name, DataType type, Map<String, String> metaData) {
         metaDataInput.putAll(metaData);
         metaDataInputWithSuffix.putAll(metaData);
-        WorkflowNodeCommand command = new AddDynamicInputWithAnotherInputAndOutputCommand(dynEndpointId, name, type, metaDataInput,
-            inputNameSuffix, LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane);
+        WorkflowNodeCommand command =
+            new AddDynamicInputWithAnotherInputAndOutputCommand(dynEndpointId, addDynInputId, inputNameSuffix, name, type, metaDataInput,
+                LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP, this, outputPane);
         ((AddDynamicInputWithAnotherInputAndOutputCommand) command).addMetaDataToInputWithSuffix(metaDataInputWithSuffix);
         ((AddDynamicInputWithAnotherInputAndOutputCommand) command).setMetaDataOutput(metaDataOutput);
         execute(command);

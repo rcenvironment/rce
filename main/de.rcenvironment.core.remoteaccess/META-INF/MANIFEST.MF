@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Component Tool Access
 Bundle-SymbolicName: de.rcenvironment.core.remoteaccess
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
@@ -23,11 +23,14 @@ Import-Package: de.rcenvironment.core.command.common,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.embedded.ssh.api,
+ de.rcenvironment.core.monitoring.system.api,
+ de.rcenvironment.core.monitoring.system.api.model,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.common.textstream.receivers,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.toolkit.utils.common,
  org.apache.commons.csv;version="1.1.0",
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.lang3;version="3.1.0",

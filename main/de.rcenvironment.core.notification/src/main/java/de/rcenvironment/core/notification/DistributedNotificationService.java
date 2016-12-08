@@ -12,7 +12,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
@@ -55,13 +56,13 @@ public interface DistributedNotificationService {
      * 
      * @param notificationId The identifier of the {@link Notification}s to receive.
      * @param subscriber The {@link NotificationSubscriber} for this {@link Notification}.
-     * @param publisherPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
+     * @param publisherPlatform The {@link InstanceNodeSessionId} of the corresponding publisher. <code>null</code> if local.
      * @return the number of the last notification, which was sent and missed by the new {@link NotificationSubscriber} sorted by the
      *         matching notification identifier.
      * 
      * @throws RemoteOperationException if the remote subscription fails
      */
-    Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publisherPlatform)
+    Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, ResolvableNodeId publisherPlatform)
         throws RemoteOperationException;
 
     /**
@@ -70,22 +71,23 @@ public interface DistributedNotificationService {
      * 
      * @param notificationId The identifier of the notification associated with the corresponding publisher.
      * @param subscriber The {@link NotificationSubscriber} to remove.
-     * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
+     * @param publishPlatform The {@link InstanceNodeSessionId} of the corresponding publisher. <code>null</code> if local.
      * 
      * @throws RemoteOperationException if the remote subscription cancellation fails
      */
-    void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+    void unsubscribe(String notificationId, NotificationSubscriber subscriber, ResolvableNodeId publishPlatform)
         throws RemoteOperationException;
 
     /**
      * Returns all stored {@link Notification}s represented by the given notification identifier.
      * 
      * @param notificationId The notification identifier which represents the {@link Notification} to get.
-     * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
+     * @param publishPlatform The {@link InstanceNodeSessionId} of the corresponding publisher. <code>null</code> if local.
      * @return the {@link Notification}s sorted by the matching notification identifier.
      * @throws RemoteOperationException TODO
      */
-    Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform) throws RemoteOperationException;
+    Map<String, List<Notification>> getNotifications(String notificationId, ResolvableNodeId publishPlatform)
+        throws RemoteOperationException;
 
     /**
      * Registers the specified {@link NotificationSubscriber} to receive {@link Notification}s represented by the given identifier.
@@ -95,5 +97,5 @@ public interface DistributedNotificationService {
      * @return the number of the last notification, which was sent and missed by the new {@link NotificationSubscriber} sorted by the
      *         matching notification identifier.
      */
-    Map<NodeIdentifier, Map<String, Long>> subscribeToAllReachableNodes(String notificationId, NotificationSubscriber subscriber);
+    Map<InstanceNodeSessionId, Map<String, Long>> subscribeToAllReachableNodes(String notificationId, NotificationSubscriber subscriber);
 }

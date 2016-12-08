@@ -249,7 +249,7 @@ public class SshAuthenticationManagerTest extends TestCase {
     }
 
     private void testRoleManagement(SshAccount user, String command, boolean expected) {
-        assertEquals("User (name=" + user.getLoginName() + ") is not allowed to execut COMMAND", expected,
+        assertEquals("User (name=" + user.getLoginName() + ") is not allowed to execute command " + command, expected,
             authenticationManager.isAllowedToExecuteConsoleCommand(user.getLoginName(), command));
     }
 }

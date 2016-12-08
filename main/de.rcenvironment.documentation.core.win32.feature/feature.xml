@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.documentation.core.win32.feature"
       label="RCE Documentation (Core) Deployment Feature for Windows Documentation"
-      version="7.1.5.qualifier"
+      version="8.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

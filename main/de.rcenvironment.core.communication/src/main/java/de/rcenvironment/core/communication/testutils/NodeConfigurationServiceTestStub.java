@@ -11,8 +11,13 @@ package de.rcenvironment.core.communication.testutils;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import org.apache.commons.logging.LogFactory;
+
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.communication.common.impl.NodeIdentifierServiceImpl;
 import de.rcenvironment.core.communication.configuration.CommunicationConfiguration;
 import de.rcenvironment.core.communication.configuration.CommunicationIPFilterConfiguration;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
@@ -20,10 +25,11 @@ import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.sshconnection.InitialSshConnectionConfig;
+import de.rcenvironment.toolkit.utils.common.IdGeneratorType;
 
 /**
- * Replacement {@link NodeConfigurationService} for {@link VirtualInstance} integrations tests.
- * Defines the configuration of {@link VirtualInstance}s.
+ * Replacement {@link NodeConfigurationService} for {@link VirtualInstance} integrations tests. Defines the configuration of
+ * {@link VirtualInstance}s.
  * 
  * @author Robert Mischke
  */
@@ -31,7 +37,7 @@ public class NodeConfigurationServiceTestStub implements NodeConfigurationServic
 
     private static final long TEST_INSTANCES_INITIAL_CONNECT_DELAY_MSEC = 300;
 
-    private final NodeIdentifier localNodeId;
+    private final InstanceNodeSessionId localInstanceSessionId;
 
     private final InitialNodeInformationImpl localNodeInformation;
 
@@ -41,9 +47,25 @@ public class NodeConfigurationServiceTestStub implements NodeConfigurationServic
 
     private final boolean isRelay;
 
-    public NodeConfigurationServiceTestStub(String nodeId, String displayName, boolean isRelay) {
-        localNodeId = NodeIdentifierFactory.fromNodeId(nodeId);
-        localNodeInformation = new InitialNodeInformationImpl(localNodeId);
+    private NodeIdentifierServiceImpl nodeIdentifierService;
+
+    public NodeConfigurationServiceTestStub(String predefinedInstanceId, String displayName, boolean isRelay) {
+        nodeIdentifierService = new NodeIdentifierServiceImpl(IdGeneratorType.FAST);
+
+        final InstanceNodeId localInstanceId;
+        if (predefinedInstanceId != null) {
+            try {
+                localInstanceId = nodeIdentifierService.parseInstanceNodeIdString(predefinedInstanceId);
+            } catch (IdentifierException e) {
+                throw NodeIdentifierUtils.wrapIdentifierException(e); // only used in testing, so use the simple wrapper
+            }
+        } else {
+            localInstanceId = nodeIdentifierService.generateInstanceNodeId();
+        }
+        localInstanceSessionId = nodeIdentifierService.generateInstanceNodeSessionId(localInstanceId);
+        LogFactory.getLog(getClass()).debug("Created instance session id " + localInstanceSessionId + " for provided instance id");
+
+        localNodeInformation = new InitialNodeInformationImpl(localInstanceSessionId);
         localNodeInformation.setDisplayName(displayName);
         serverContactPoints = new ArrayList<NetworkContactPoint>();
         initialNetworkPeers = new ArrayList<NetworkContactPoint>();
@@ -51,8 +73,13 @@ public class NodeConfigurationServiceTestStub implements NodeConfigurationServic
     }
 
     @Override
-    public NodeIdentifier getLocalNodeId() {
-        return localNodeId;
+    public NodeIdentifierServiceImpl getNodeIdentifierService() {
+        return nodeIdentifierService;
+    }
+
+    @Override
+    public InstanceNodeSessionId getInstanceNodeSessionId() {
+        return localInstanceSessionId;
     }
 
     @Override

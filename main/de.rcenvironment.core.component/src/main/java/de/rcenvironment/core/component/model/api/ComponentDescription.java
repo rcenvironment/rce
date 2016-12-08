@@ -18,8 +18,8 @@ import java.util.Map;
 
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.execution.api.Component;
@@ -41,7 +41,9 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
  */
 public class ComponentDescription implements Serializable, Cloneable, Comparable<ComponentDescription> {
 
-    /** Prefix for {@link java.beans.PropertyChangeEvent}s concerning properties. */
+    /**
+     * Prefix for {@link java.beans.PropertyChangeEvent}s concerning properties.
+     */
     public static final String PROPERTIES_PREFIX = "properties.";
 
     /** Key of default configuration map. */
@@ -70,22 +72,25 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
         this.componentInterface = componentRevision.getComponentInterface();
 
         inputDescriptionsManager = new EndpointDescriptionsManager(componentInterface.getInputDefinitionsProvider(),
-            EndpointType.INPUT);
+                EndpointType.INPUT);
 
         outputDescriptionsManager = new EndpointDescriptionsManager(componentInterface.getOutputDefinitionsProvider(),
-            EndpointType.OUTPUT);
+                EndpointType.OUTPUT);
 
         configurationDescription = new ConfigurationDescription(componentInterface.getConfigurationDefinition(),
-            componentInterface.getConfigurationExtensionDefinitions());
+                componentInterface.getConfigurationExtensionDefinitions());
+
     }
 
     /**
-     * Initializes the component with default initial values such as endpoints. May only be called for newly created components.
+     * Initializes the component with default initial values such as endpoints.
+     * May only be called for newly created components.
      */
     public void initializeWithDefaults() {
         inputDescriptionsManager.addInitialDynamicEndpointDescriptions();
         outputDescriptionsManager.addInitialDynamicEndpointDescriptions();
-        configurationDescription.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM, String.valueOf(true));
+        configurationDescription.setConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM,
+                String.valueOf(true));
     }
 
     public String getIdentifier() {
@@ -110,7 +115,7 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     public String getVersion() {
         return componentInterface.getVersion();
     }
-    
+
     public ComponentSize getSize() {
         return componentInterface.getSize();
     }
@@ -144,14 +149,16 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     }
 
     /**
-     * @return <code>true</code> if the component can technically only be executed locally, otherwise <code>false</code>
+     * @return <code>true</code> if the component can technically only be
+     *         executed locally, otherwise <code>false</code>
      */
     public boolean canOnlyBeExecutedLocally() {
         return componentInterface.getLocalExecutionOnly();
     }
 
     /**
-     * @return <code>true</code> if the component should be disposed workflow disposal, <code>false</code> if immediately when the component
+     * @return <code>true</code> if the component should be disposed workflow
+     *         disposal, <code>false</code> if immediately when the component
      *         had finished (default behavior)
      */
     public boolean performLazyDisposal() {
@@ -173,24 +180,25 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     /**
      * @return node to run on
      */
-    public NodeIdentifier getNode() {
+    public LogicalNodeId getNode() {
         if (componentInstallation.getNodeId() != null) {
-            return NodeIdentifierFactory.fromNodeId(componentInstallation.getNodeId());
+            return NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(componentInstallation.getNodeId());
         }
         return null;
     }
 
     /**
-     * @param installation new {@link ComponentInstallation} to set
+     * @param installation
+     *            new {@link ComponentInstallation} to set
      */
     public void setComponentInstallationAndUpdateConfiguration(ComponentInstallation installation) {
-        setComponentInstallation(installation);        
+        setComponentInstallation(installation);
         Map<String, String> config = configurationDescription.getConfiguration();
         Map<String, String> placeholders = configurationDescription.getPlaceholders();
 
-        configurationDescription = new ConfigurationDescription(installation.getComponentRevision()
-            .getComponentInterface().getConfigurationDefinition(),
-            installation.getComponentRevision().getComponentInterface().getConfigurationExtensionDefinitions());
+        configurationDescription = new ConfigurationDescription(
+                installation.getComponentRevision().getComponentInterface().getConfigurationDefinition(),
+                installation.getComponentRevision().getComponentInterface().getConfigurationExtensionDefinitions());
         configurationDescription.setConfiguration(config);
         configurationDescription.setPlaceholders(placeholders);
     }
@@ -198,27 +206,29 @@ public class ComponentDescription implements Serializable, Cloneable, Comparable
     public ComponentInstallation getComponentInstallation() {
         return componentInstallation;
     }
-    
+
     /**
      * Copies the execution information of the given component description.
      * 
-     * @param installation component installation with execution information to copy
+     * @param installation
+     *            component installation with execution information to copy
      */
     public void setComponentInstallation(ComponentInstallation installation) {
         String interfaceId = componentInterface.getIdentifier();
         String newInterfaceId = installation.getComponentRevision().getComponentInterface().getIdentifier();
-        if (!newInterfaceId.equals(interfaceId)
-            && !(newInterfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) && newInterfaceId.endsWith(interfaceId)
-            && !(interfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) && interfaceId.endsWith(newInterfaceId)) {
-            throw new IllegalArgumentException("Component installation doesn't refer to the interface: "
-                + componentInterface.getIdentifier());
+        if (!newInterfaceId.equals(interfaceId) && !(newInterfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
+                && newInterfaceId.endsWith(interfaceId)
+                && !(interfaceId.startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX))
+                && interfaceId.endsWith(newInterfaceId)) {
+            throw new IllegalArgumentException(
+                    "Component installation doesn't refer to the interface: " + componentInterface.getIdentifier());
         }
-        
+
         this.componentInstallation = installation;
         this.componentRevision = componentInstallation.getComponentRevision();
         this.componentInterface = componentRevision.getComponentInterface();
     }
-    
+
     @Override
     public String toString() {
         return getNode() + ":" + componentInterface.getIdentifier();

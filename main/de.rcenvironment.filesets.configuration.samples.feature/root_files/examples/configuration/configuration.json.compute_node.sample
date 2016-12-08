@@ -22,7 +22,6 @@
 			"de.rcenvironment.joiner",
 			"de.rcenvironment.optimizer",
 			"de.rcenvironment.parametricstudy",
-			"de.rcenvironment.sqlcommand",
 			"de.rcenvironment.xmlmerger"
 		]
 	}

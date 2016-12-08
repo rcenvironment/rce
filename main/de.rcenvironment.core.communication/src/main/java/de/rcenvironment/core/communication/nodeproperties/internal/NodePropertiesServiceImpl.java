@@ -21,10 +21,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListenerAdapter;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
@@ -35,7 +37,6 @@ import de.rcenvironment.core.communication.model.NetworkMessage;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkResponseHandler;
-import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertyConstants;
@@ -45,16 +46,17 @@ import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.RestartSafeIncreasingValueGenerator;
-import de.rcenvironment.core.utils.common.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
 
 /**
  * Default {@link NodePropertiesService} implementation.
@@ -96,11 +98,11 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
     private DirectMessagingSender directMessagingSender;
 
-    private NodeIdentifier localNodeId;
+    private InstanceNodeSessionId localNodeId;
 
     private NodeConfigurationService nodeConfigurationService;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
@@ -109,6 +111,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
     private final Log log = LogFactory.getLog(getClass());
 
     private boolean localNodeIsRelay;
+
+    private NodeIdentifierService nodeIdentifierService;
 
     /**
      * Represents the parsed form of a received update.
@@ -136,12 +140,20 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
             for (String part : rawParts) {
                 if (subtype == null) {
                     subtype = part;
-                    // log.info("  Message type: " + subtype);
+                    // log.info(" Message type: " + subtype);
                     continue;
                 }
-                // log.info("  extracted node property entry: " + part);
-                NodePropertyImpl entry = new NodePropertyImpl(part);
-                entries.add(entry);
+                // log.info(" extracted node property entry: " + part);
+                try {
+                    NodePropertyImpl entry = new NodePropertyImpl(part, nodeIdentifierService);
+                    entries.add(entry);
+                } catch (IdentifierException e) {
+                    log.error(StringUtils.format(
+                        "Ignoring a node property update from %s containing a malformed instance session id; content='%s'", request
+                            .accessMetaData().getSender(),
+                        part));
+                    continue;
+                }
             }
 
             if (MESSAGE_SUBTYPE_INITIAL.equals(subtype)) {
@@ -176,11 +188,11 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
         private final Collection<NodePropertyImpl> properties;
 
-        private final NodeIdentifier recipientExclusion;
+        private final InstanceNodeSessionId recipientExclusion;
 
         // note: currently, the fact that new neighbors may appear while this delta is being aggregated with others
         // is not considered a problem; if this changes, a snapshot of the current neighbors may be needed, too
-        UpdateDeltaForBroadcasting(Collection<NodePropertyImpl> properties, NodeIdentifier recipientExclusion) {
+        UpdateDeltaForBroadcasting(Collection<NodePropertyImpl> properties, InstanceNodeSessionId recipientExclusion) {
             this.properties = properties;
             this.recipientExclusion = recipientExclusion;
         }
@@ -190,20 +202,21 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
     public NodePropertiesServiceImpl() {
         this.completeKnowledgeRegistry = new NodePropertiesRegistry();
         this.locallyPublishedKnowledgeRegistry = new NodePropertiesRegistry();
-        this.callbackManager = new AsyncOrderedCallbackManager<RawNodePropertiesChangeListener>(threadPool,
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+        this.callbackManager =
+            ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
         this.networkRequestHandler = new NetworkRequestHandler() {
 
             @Override
-            public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier lastHopNodeId) throws InternalMessagingException {
-                return handleIncomingUpdate(request);
+            public NetworkResponse handleRequest(NetworkRequest request, InstanceNodeSessionId lastHopNodeId)
+                throws InternalMessagingException {
+                return handleIncomingPropertiesUpdate(request);
             }
         };
 
         this.deltaBroadcastAggregator =
-            new BatchAggregator<>(MAX_DELTA_BATCH_SIZE, MAX_DELTA_BATCH_LATENCY,
-                new BatchAggregator.BatchProcessor<UpdateDeltaForBroadcasting>() {
+            ConcurrencyUtils.getFactory().createBatchAggregator(MAX_DELTA_BATCH_SIZE, MAX_DELTA_BATCH_LATENCY,
+                new BatchProcessor<UpdateDeltaForBroadcasting>() {
 
                     private final AtomicInteger counter = new AtomicInteger();
 
@@ -233,22 +246,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     int i = 1;
                     for (NodeProperty property : newProperties) {
                         log.debug(StringUtils.format("Raw node property change (%d/%d) received by %s, published by %s: '%s' := '%s' [%d]",
-                            i++, newProperties.size(), localNodeId.getIdString(), property.getNodeIdString(),
-                            property.getKey(), property.getValue(), property.getSequenceNo()));
-                    }
-                }
-
-                // listen to "display name" property changes and apply them
-                // TODO move to better place?
-                for (NodeProperty property : newProperties) {
-                    if (NodePropertyConstants.KEY_DISPLAY_NAME.equals(property.getKey())) {
-                        String nodeIdString = property.getNodeIdString();
-                        String displayName = property.getValue();
-                        if (verboseLogging) {
-                            log.debug(StringUtils.format("Setting associated display name for node %s to '%s'", nodeIdString, displayName));
-                        }
-                        NodeInformationRegistryImpl.getInstance().getWritableNodeInformation(nodeIdString)
-                            .setDisplayName(displayName);
+                            i++, newProperties.size(), localNodeId.getInstanceNodeSessionIdString(),
+                            property.getInstanceNodeSessionIdString(), property.getKey(), property.getValue(), property.getSequenceNo()));
                     }
                 }
             }
@@ -259,7 +258,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
      * OSGi-DS lifecycle method.
      */
     public void activate() {
-        localNodeId = nodeConfigurationService.getLocalNodeId();
+        localNodeId = nodeConfigurationService.getInstanceNodeSessionId();
         if (localNodeId == null) {
             throw new NullPointerException();
         }
@@ -277,14 +276,14 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
             @Override
             public void onOutgoingChannelEstablished(MessageChannel channel) {
                 log.debug(localNodeId + ": established channel (" + channel.getInitiatedByRemote()
-                    + "), sending initial node property to " + channel.getRemoteNodeInformation().getNodeId());
+                    + "), sending initial node property to " + channel.getRemoteNodeInformation().getInstanceNodeSessionId());
                 if (channel.getState() == MessageChannelState.ESTABLISHED) {
                     // consistency check
                     Set<MessageChannel> allOutgoingChannels = connectionService.getAllOutgoingChannels();
                     if (!allOutgoingChannels.contains(channel)) {
                         log.warn("Channel " + channel + " established, but not contained in the 'all channels' set yet!");
                     }
-                    performInitialExchange(channel);
+                    performInitialPropertiesExchangeViaChannel(channel);
                 } else {
                     log.debug("Ignoring node property update for channel " + channel.getChannelId() + " as it is " + channel.getState());
                 }
@@ -310,6 +309,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
      */
     public void bindNodeConfigurationService(NodeConfigurationService newInstance) {
         this.nodeConfigurationService = newInstance;
+        this.nodeIdentifierService = nodeConfigurationService.getNodeIdentifierService();
     }
 
     @Override
@@ -324,8 +324,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
     @Override
     public void addOrUpdateLocalNodeProperties(Map<String, String> data) {
         if (data.isEmpty()) {
-            // FIXME 7.0.0: set to WARN for testing; reduce to DEBUG before release
-            log.warn(
+            log.debug(
                 "A node properties update was triggered with empty update data; logging stacktrace (no actual exception thrown)",
                 new IllegalArgumentException());
             return;
@@ -335,7 +334,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
             long newSequenceNo = timeKeeper.invalidateAndGet();
             List<NodePropertyImpl> newDelta = new ArrayList<NodePropertyImpl>();
             for (Entry<String, String> entry : data.entrySet()) {
-                newDelta.add(new NodePropertyImpl(localNodeId.getIdString(), entry.getKey(), newSequenceNo, entry.getValue()));
+                newDelta.add(new NodePropertyImpl(localNodeId, entry.getKey(), newSequenceNo, entry.getValue()));
             }
             // all entries are new, so the merging can be kept simple
             completeKnowledgeRegistry.mergeUnchecked(newDelta);
@@ -344,27 +343,29 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
             // broadcastToAllNeighbours(MESSAGE_SUBTYPE_INCREMENTAL, newDelta);
             // guard against modification
             newDelta = Collections.unmodifiableList(newDelta);
+            // register any local display name updates
+            registerContainedDisplayNameProperties(newDelta);
             // notify listeners
             reportImmutableDeltaToListeners(newDelta);
         }
     }
 
     @Override
-    public Map<String, String> getNodeProperties(NodeIdentifier nodeId) {
+    public Map<String, String> getNodeProperties(InstanceNodeSessionId nodeId) {
         synchronized (knowledgeLock) {
             return completeKnowledgeRegistry.getNodeProperties(nodeId);
         }
     }
 
     @Override
-    public Map<NodeIdentifier, Map<String, String>> getAllNodeProperties(Collection<NodeIdentifier> nodeIds) {
+    public Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties(Collection<InstanceNodeSessionId> nodeIds) {
         synchronized (knowledgeLock) {
             return completeKnowledgeRegistry.getAllNodeProperties(nodeIds);
         }
     }
 
     @Override
-    public Map<NodeIdentifier, Map<String, String>> getAllNodeProperties() {
+    public Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties() {
         synchronized (knowledgeLock) {
             return completeKnowledgeRegistry.getAllNodeProperties();
         }
@@ -394,8 +395,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
         return new NetworkRequestHandlerMap(ProtocolConstants.VALUE_MESSAGE_TYPE_NODE_PROPERTIES_UPDATE, networkRequestHandler);
     }
 
-    private void performInitialExchange(final MessageChannel channel) {
-        Collection<NodePropertyImpl> knowledgeToPublish;
+    private void performInitialPropertiesExchangeViaChannel(final MessageChannel channel) {
+        final Collection<NodePropertyImpl> knowledgeToPublish;
         synchronized (knowledgeLock) {
             if (localNodeIsRelay) {
                 knowledgeToPublish = completeKnowledgeRegistry.getDetachedCopyOfEntries();
@@ -409,7 +410,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
 
             @Override
             public void onResponseAvailable(NetworkResponse response) {
-                final NodeIdentifier sender = channel.getRemoteNodeInformation().getNodeId();
+                final InstanceNodeSessionId sender = channel.getRemoteNodeInformation().getInstanceNodeSessionId();
                 // sanity check
                 if (sender == null) {
                     log.error("Consistency error: empty remote node id for channel " + channel + " after initial properties exchange");
@@ -423,7 +424,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 try {
                     final IncomingUpdate parsedUpdate = new IncomingUpdate(response);
                     // TODO sanity/protocol check: test for proper subtype
-                    final Collection<NodePropertyImpl> effectiveSubset = mergeIntoFullKnowledgeAndGetEffectiveSubset(parsedUpdate);
+                    final Collection<NodePropertyImpl> effectiveSubset =
+                        mergeExternalUpdateIntoFullKnowledgeAndGetEffectiveSubset(parsedUpdate);
                     if (localNodeIsRelay) {
                         log.debug("Received initial node property response from " + sender
                             + "; forwarding to all other connected instances");
@@ -439,13 +441,13 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
         });
     }
 
-    private NetworkResponse handleIncomingUpdate(NetworkRequest request) throws InternalMessagingException {
+    private NetworkResponse handleIncomingPropertiesUpdate(NetworkRequest request) throws InternalMessagingException {
         try {
             IncomingUpdate parsedUpdate = new IncomingUpdate(request);
-            NodeIdentifier sender = request.accessMetaData().getSender();
+            InstanceNodeSessionId sender = request.accessMetaData().getSender();
 
             // TODO warn/fail on remote modification of local data?
-            Collection<NodePropertyImpl> effectiveSubset = mergeIntoFullKnowledgeAndGetEffectiveSubset(parsedUpdate);
+            Collection<NodePropertyImpl> effectiveSubset = mergeExternalUpdateIntoFullKnowledgeAndGetEffectiveSubset(parsedUpdate);
             if (localNodeIsRelay) {
                 forwardIfNotEmpty(sender, effectiveSubset);
             }
@@ -481,7 +483,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
         }
     }
 
-    private Collection<NodePropertyImpl> mergeIntoFullKnowledgeAndGetEffectiveSubset(IncomingUpdate parsedUpdate) {
+    private Collection<NodePropertyImpl> mergeExternalUpdateIntoFullKnowledgeAndGetEffectiveSubset(IncomingUpdate parsedUpdate) {
         Collection<NodePropertyImpl> effectiveSubset;
         synchronized (knowledgeLock) {
             Map<String, String> propertiesToRepublishOrCancel = checkForPropertiesToRepublishOrCancel(parsedUpdate.entries);
@@ -496,17 +498,36 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
             effectiveSubset = completeKnowledgeRegistry.mergeAndGetEffectiveSubset(parsedUpdate.entries);
             // guard against modification
             effectiveSubset = Collections.unmodifiableCollection(effectiveSubset);
+
+            // special treatment of display names; register them before invoking the asynchronous listeners
+            // to prevent "unknown" display names appearing in log and user messages
+            registerContainedDisplayNameProperties(effectiveSubset);
+
             // notify listeners
+            // TODO (p3) this call seems to rely on the knowledgeLock monitor to ensure proper ordering; verify and document
             reportImmutableDeltaToListeners(effectiveSubset);
-            return effectiveSubset;
+        }
+        return effectiveSubset;
+    }
+
+    private void registerContainedDisplayNameProperties(Collection<NodePropertyImpl> properties) {
+        for (NodeProperty property : properties) {
+            if (NodePropertyConstants.KEY_DISPLAY_NAME.equals(property.getKey())) {
+
+                String displayName = property.getValue();
+                if (verboseLogging) {
+                    log.debug(StringUtils.format("Setting associated display name for node %s to '%s'",
+                        property.getInstanceNodeSessionIdString(), displayName));
+                }
+                nodeIdentifierService.associateDisplayName(property.getInstanceNodeSessionId(), displayName);
+            }
         }
     }
 
     private Map<String, String> checkForPropertiesToRepublishOrCancel(List<NodePropertyImpl> entries) {
         Map<String, String> result = new HashMap<String, String>();
-        final String localNodeIdString = localNodeId.getIdString();
         for (NodePropertyImpl receivedProperty : entries) {
-            if (localNodeIdString.equals(receivedProperty.getNodeIdString())) {
+            if (localNodeId.isSameInstanceNodeSessionAs(receivedProperty.getInstanceNodeSessionId())) {
                 final String key = receivedProperty.getKey();
                 final NodeProperty existingProperty = locallyPublishedKnowledgeRegistry.getNodeProperty(localNodeId, key);
                 if (existingProperty == null) {
@@ -514,7 +535,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                         + "update will be published): " + receivedProperty);
                     result.put(key, null);
                 } else if (existingProperty.getSequenceNo() < receivedProperty.getSequenceNo()) {
-                    // should not usually happen
+                    // should not happen, especially with instance node session ids now in place
                     log.warn("Received a node property for the local node that is 'newer' than the actual local state; "
                         + "is there a node with the same id in the network? (attempting to re-publish the local value)");
                     log.warn("Local property: " + existingProperty);
@@ -542,7 +563,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
      * @param sender the sender that caused this update
      * @param effectiveSubset the subset of changes that caused local modifications (ie, that were unknown before)
      */
-    private void forwardIfNotEmpty(NodeIdentifier sender, Collection<NodePropertyImpl> effectiveSubset) {
+    private void forwardIfNotEmpty(InstanceNodeSessionId sender, Collection<NodePropertyImpl> effectiveSubset) {
         // always forward all new aspects to other neighbors
         if (!effectiveSubset.isEmpty()) {
             // broadcastToAllNeighboursExcept(MESSAGE_SUBTYPE_INCREMENTAL, effectiveSubset, sender, -1);
@@ -558,14 +579,14 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
         broadcastToAllNeighboursExcept(updateType, entries, null, batchId); // null = no exclusion
     }
 
-    private void broadcastToAllNeighboursExcept(String updateType, Collection<NodePropertyImpl> entries, NodeIdentifier exclusion,
+    private void broadcastToAllNeighboursExcept(String updateType, Collection<NodePropertyImpl> entries, InstanceNodeSessionId exclusion,
         final int batchId) {
         log.debug("Broadcasting non-batched node properties update " + batchId);
         final Set<MessageChannel> channels = connectionService.getAllOutgoingChannels();
         NetworkRequest request = null;
         boolean firstRecipient = true;
         for (final MessageChannel channel : channels) {
-            final NodeIdentifier remoteNodeId = channel.getRemoteNodeInformation().getNodeId();
+            final InstanceNodeSessionId remoteNodeId = channel.getRemoteNodeInformation().getInstanceNodeSessionId();
             if (exclusion == null || !remoteNodeId.equals(exclusion)) {
                 if (firstRecipient) {
                     // lazily construct request here in case there is no recipient at all
@@ -581,7 +602,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     public void onResponseAvailable(NetworkResponse response) {
                         if (!response.isSuccess()) {
                             log.warn(StringUtils.format("Failed to send node properties update %d to %s via channel %s: %s", batchId,
-                                channel.getRemoteNodeInformation().getNodeId(), channel.getChannelId(),
+                                channel.getRemoteNodeInformation().getInstanceNodeSessionId(), channel.getChannelId(),
                                 response.getResultCode().toString()));
                         }
                     }
@@ -602,7 +623,8 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 continue;
             }
             for (final MessageChannel channel : channels) {
-                if (delta.recipientExclusion == null || channel.getRemoteNodeInformation().getNodeId() != delta.recipientExclusion) {
+                if (delta.recipientExclusion == null
+                    || channel.getRemoteNodeInformation().getInstanceNodeSessionId() != delta.recipientExclusion) {
                     // channel should receive this delta; merge into outgoing state
                     Map<String, NodePropertyImpl> mergeMapForSingleRecipient = channelToMergedUpdateMap.get(channel);
                     if (mergeMapForSingleRecipient == null) {
@@ -619,10 +641,10 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                             && replacedPropertyState.getSequenceNo() > incomingPropertyState.getSequenceNo()) {
                             // restore newer entry into map
                             mergeMapForSingleRecipient.put(propertyKey, replacedPropertyState);
-                            // FIXME 7.0.0: set to WARN for testing; reduce to DEBUG before release
-                            log.warn(StringUtils.format(
+                            log.debug(StringUtils.format(
                                 "Prevented an outdated property value from overwriting a newer one in batch aggregation: "
-                                    + "prevented='%s', newer='%s'", incomingPropertyState, replacedPropertyState));
+                                    + "prevented='%s', newer='%s'",
+                                incomingPropertyState, replacedPropertyState));
                         }
                     }
                 }
@@ -642,7 +664,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                 request = constructNetworkRequest(updateType, mergeMapForSingleRecipient.values());
                 if (verboseLogging) {
                     log.debug(StringUtils.format("Sending aggregated node properties update %d to %s via channel %s",
-                        batchId, channel.getRemoteNodeInformation().getNodeId(), channel.getChannelId()));
+                        batchId, channel.getRemoteNodeInformation().getInstanceNodeSessionId(), channel.getChannelId()));
                 }
                 directMessagingSender.sendDirectMessageAsync(request, channel, new NetworkResponseHandler() {
 
@@ -650,7 +672,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     public void onResponseAvailable(NetworkResponse response) {
                         if (!response.isSuccess()) {
                             log.warn(StringUtils.format("Failed to send aggregated node properties update %d to %s via channel %s: %s",
-                                batchId, channel.getRemoteNodeInformation().getNodeId(),
+                                batchId, channel.getRemoteNodeInformation().getInstanceNodeSessionId(),
                                 channel.getChannelId(), response.getResultCode().toString()));
                         }
                     }

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Jetty Tests
 Bundle-SymbolicName: de.rcenvironment.core.jetty.tests
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Fragment-Host: de.rcenvironment.core.jetty
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing

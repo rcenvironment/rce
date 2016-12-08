@@ -28,6 +28,7 @@ import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.events.TraverseEvent;
 import org.eclipse.swt.events.TraverseListener;
+import org.eclipse.swt.graphics.Point;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -43,6 +44,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.gui.utils.incubator.AlphanumericalTextContraintListener;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
+import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -54,7 +56,11 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
     private static final String DOTS = "  ...  ";
 
-    private static final int LABEL_WIDTH = 90;
+    private static final String DOC_EXTENTION_NOT_VALID = "Documentation extension not valid. Valid extensions: ";
+
+    private static final String VALID_EXTENSION_SEPERATOR = ", ";
+
+    private static final String DOC_DOES_NOT_EXIST = "Documentation path is invalid.";
 
     private static final int TOOL_DESCRIPTION_TEXT_HEIGHT = 50;
 
@@ -89,6 +95,8 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
 
     private String iconValid = "";
 
+    private String nameValid = "";
+
     private PathChooserButtonListener docPathChooserButtonListener;
 
     protected ToolCharacteristicsPage(String pageName, Map<String, Object> configurationMap, List<String> usedToolnames,
@@ -111,7 +119,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         GridLayout layout = new GridLayout(2, false);
         container.setLayout(layout);
         GridData containerData =
-            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+            new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         container.setLayoutData(containerData);
 
         Composite toolDataComp = new Composite(container, SWT.NONE);
@@ -122,13 +130,21 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         toolPropertiesGroup.setText(Messages.toolPropGroup);
         toolPropertiesGroup.setLayout(new GridLayout(3, false));
         GridData toolPropertyData =
-            new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+            new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
         toolPropertiesGroup.setLayoutData(toolPropertyData);
         toolNameText =
             addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.nameRequired,
                 ToolIntegrationConstants.KEY_TOOL_NAME);
         ((GridData) toolNameText.getLayoutData()).horizontalSpan = 2;
         toolNameText.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
+        toolNameText.addModifyListener(new ModifyListener() {
+
+            @Override
+            public void modifyText(ModifyEvent arg0) {
+                nameValid = validateName();
+                validate(true);
+            }
+        });
         iconText =
             addLabelAndTextfieldForPropertyToComposite(toolPropertiesGroup, Messages.iconPath, ToolIntegrationConstants.KEY_TOOL_ICON_PATH);
         iconText.setMessage(Messages.iconSizeMessage);
@@ -211,7 +227,7 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         descriptionTextArea.addTraverseListener(new DescriptionTraverseListener());
 
         GridData descriptionData =
-            new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_HORIZONTAL | GridData.FILL_VERTICAL | GridData.GRAB_VERTICAL);
+            new GridData(GridData.GRAB_HORIZONTAL | GridData.FILL_BOTH | GridData.GRAB_VERTICAL);
         descriptionData.heightHint = TOOL_DESCRIPTION_TEXT_HEIGHT;
         descriptionData.horizontalSpan = 2;
         descriptionTextArea.setLayoutData(descriptionData);
@@ -248,10 +264,14 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             if (doc.exists()) {
                 String extension = FilenameUtils.getExtension(doc.getAbsolutePath());
                 if (!ArrayUtils.contains(ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS, extension)) {
-                    return "Documentation extension not valid.";
+                    String allowedExt = DOC_EXTENTION_NOT_VALID;
+                    for (String current : ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS) {
+                        allowedExt += current + VALID_EXTENSION_SEPERATOR;
+                    }
+                    return allowedExt.substring(0, allowedExt.length() - VALID_EXTENSION_SEPERATOR.length());
                 }
             } else {
-                return "Documentation does not exist. (If old documentation exists, it will not be deleted)";
+                return DOC_DOES_NOT_EXIST;
             }
         }
         return "";
@@ -281,6 +301,13 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         return "";
     }
 
+    private String validateName() {
+        if (!CrossPlatformFilenameUtils.isFilenameValid(toolNameText.getText())) {
+            return "The chosen filename is not valid.";
+        }
+        return "";
+    }
+
     private void showGroupSelectionDialog() {
         ElementListSelectionDialog dlg =
             new ElementListSelectionDialog(
@@ -304,8 +331,9 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
         String propertyMessage, String key) {
         Label propertyLabel = new Label(composite, SWT.NONE);
         propertyLabel.setText(propertyMessage);
+        Point prefSize = propertyLabel.computeSize(SWT.DEFAULT, SWT.DEFAULT);
         GridData labelData = new GridData();
-        labelData.widthHint = LABEL_WIDTH;
+        labelData.widthHint = prefSize.x;
         propertyLabel.setLayoutData(labelData);
         final Text propertyText = new Text(composite, SWT.BORDER);
         GridData gridDataText = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
@@ -362,7 +390,8 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             setMessage(iconValid, DialogPage.WARNING);
         }
         if (!docValid.isEmpty()) {
-            setMessage(docValid, DialogPage.WARNING);
+            setMessage(docValid, DialogPage.ERROR);
+            setPageComplete(false);
         }
         String name = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME);
         if (name == null
@@ -371,6 +400,10 @@ public class ToolCharacteristicsPage extends ToolIntegrationWizardPage {
             setPageComplete(false);
         } else if ((!update) && usedToolnames.contains((configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
             setMessage(Messages.toolFilenameUsed, DialogPage.ERROR);
+            setPageComplete(false);
+        }
+        if (!nameValid.isEmpty()) {
+            setMessage(nameValid, DialogPage.ERROR);
             setPageComplete(false);
         }
 

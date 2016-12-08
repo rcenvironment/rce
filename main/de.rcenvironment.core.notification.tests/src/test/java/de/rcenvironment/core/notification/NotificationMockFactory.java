@@ -17,7 +17,6 @@ import org.easymock.EasyMock;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.notification.api.RemotableNotificationService;
 import de.rcenvironment.core.notification.internal.NotificationServiceImpl;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -26,6 +25,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Factory for mock objects used by this bundle's test.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public final class NotificationMockFactory {
 
@@ -71,11 +71,13 @@ public final class NotificationMockFactory {
     private void createPlatformServiceMock() {
         platformServiceMock = EasyMock.createNiceMock(PlatformService.class);
 
-        EasyMock.expect(platformServiceMock.getLocalNodeId()).andReturn((NodeIdentifier) NotificationTestConstants.LOCALHOST)
+        EasyMock.expect(platformServiceMock.getLocalInstanceNodeSessionId()).andReturn(NotificationTestConstants.LOCAL_INSTANCE_SESSION)
             .anyTimes();
 
-        EasyMock.expect(platformServiceMock.isLocalNode(NotificationTestConstants.LOCALHOST)).andReturn(true).anyTimes();
-        EasyMock.expect(platformServiceMock.isLocalNode(NotificationTestConstants.REMOTEHOST)).andReturn(false).anyTimes();
+        EasyMock.expect(platformServiceMock.matchesLocalInstance(NotificationTestConstants.LOCAL_INSTANCE_SESSION)).andReturn(true)
+            .anyTimes();
+        EasyMock.expect(platformServiceMock.matchesLocalInstance(NotificationTestConstants.REMOTE_INSTANCE_SESSION)).andReturn(false)
+            .anyTimes();
 
         EasyMock.replay(platformServiceMock);
     }
@@ -108,10 +110,10 @@ public final class NotificationMockFactory {
         communicationServiceMock = EasyMock.createNiceMock(CommunicationService.class);
 
         EasyMock.expect(communicationServiceMock.getRemotableService(EasyMock.eq(NotificationService.class),
-            EasyMock.eq(NotificationTestConstants.REMOTEHOST))).andReturn(notificationServiceMock).anyTimes();
+            EasyMock.eq(NotificationTestConstants.REMOTE_INSTANCE_SESSION))).andReturn(notificationServiceMock).anyTimes();
 
         EasyMock.expect(communicationServiceMock.getRemotableService(EasyMock.eq(NotificationService.class),
-            EasyMock.eq(NotificationTestConstants.LOCALHOST))).andReturn(notificationServiceMock).anyTimes();
+            EasyMock.eq(NotificationTestConstants.LOCAL_INSTANCE_SESSION))).andReturn(notificationServiceMock).anyTimes();
 
         EasyMock.replay(communicationServiceMock);
     }

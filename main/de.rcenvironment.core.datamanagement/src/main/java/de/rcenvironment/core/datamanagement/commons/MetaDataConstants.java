@@ -115,6 +115,12 @@ public final class MetaDataConstants {
      * Name of column for holding component run IDs.
      */
     public static final String COMPONENT_RUN_ID = "COMPONENT_RUN_ID";
+    
+    /**
+     * Name of column for holding component run IDs.
+     */
+    public static final String COMPONENT_RUN_FINAL_STATE = "COMPONENT_RUN_FINAL_STATE";
+
 
     /**
      * Name of column for holding flag for deleted references.
@@ -180,6 +186,11 @@ public final class MetaDataConstants {
      * Name of column for holding types.
      */
     public static final String TYPE = "TYPE";
+
+    /**
+     * Name of column for holding data types.
+     */
+    public static final String DATA_TYPE = "DATA_TYPE";
 
     /**
      * Name of table holding typed datums.

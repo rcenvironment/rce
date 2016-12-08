@@ -127,7 +127,7 @@ public class VirtualTopology {
      * @throws TimeoutException on timeout
      */
     public void waitUntilReachable(int from, int to, int timeout) throws InterruptedException, TimeoutException {
-        getInstance(from).waitUntilContainsInReachableNodes(getInstance(to).getNodeId(), timeout);
+        getInstance(from).waitUntilContainsInReachableNodes(getInstance(to).getInstanceNodeSessionId(), timeout);
     }
 
     /**

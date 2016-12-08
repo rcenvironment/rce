@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -39,8 +40,9 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.util.DefaultPrettyPrinter;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -53,7 +55,8 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsMa
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDescription;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
-import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel.AlignmentType;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel.LabelPosition;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel.TextAlignmentType;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
@@ -66,11 +69,15 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Sascha Zur
  * @author Marc Stammerjohann
  * @author Oliver Seebach
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class WorkflowDescriptionPersistenceHandler {
 
     /** Field name. */
     public static final String COORDINATES = "coordinates";
+
+    /** Field name. */
+    public static final String COLOR_RGB_HEADER = "colorHeader";
 
     /** Field name. */
     public static final String COLOR_RGB_TEXT = "colorText";
@@ -79,13 +86,25 @@ public class WorkflowDescriptionPersistenceHandler {
     public static final String COLOR_RGB_BACKGROUND = "colorBackground";
 
     /** Field name. */
-    public static final String ALIGNMENT_TYPE = "alignmentType";
+    public static final String LABEL_POSITION = "labelPosition";
+
+    /** Field name. */
+    public static final String LABEL_POSITION_OLD = "alignmentType";
+
+    /** Field name. */
+    public static final String TEXT_ALIGNMENT = "textAlignmentType";
+
+    /** Field name. */
+    public static final String HEADER_ALIGNMENT = "headerAlignmentType";
 
     /** Field name. */
     public static final String ALPHA = "alpha";
 
     /** Field name. */
     public static final String BORDER = "border";
+
+    /** Field name. */
+    public static final String HEADER_SIZE = "headerSize";
 
     /** Field name. */
     public static final String TEXT_SIZE = "textSize";
@@ -97,7 +116,13 @@ public class WorkflowDescriptionPersistenceHandler {
     public static final String SIZE = "size";
 
     /** Field name. */
+    public static final String HEADER_TEXT = "headerText";
+
+    /** Field name. */
     public static final String TEXT = "text";
+
+    /** Field name. */
+    public static final String Z_INDEX = "zIndex";
 
     /** Field name. */
     public static final String BENDPOINTS = "bendpoints";
@@ -218,6 +243,8 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private static final ObjectMapper JSON_OBJECT_MAPPER = JsonUtils.getDefaultObjectMapper();
 
+    private static final Random RANDOM = new Random();
+
     private final Map<String, Map<String, EndpointDescription>> endpointDescs = new HashMap<>();
 
     public WorkflowDescriptionPersistenceHandler() {}
@@ -266,8 +293,9 @@ public class WorkflowDescriptionPersistenceHandler {
         g.writeStringField(WORKFLOW_VERSION, String.valueOf(wd.getWorkflowVersion()));
 
         writeOptionalValue(g, NAME, wd.getName());
-        if (wd.getControllerNode() != null && !wd.getIsControllerNodeIdTransient()) {
-            writeOptionalValue(g, PLATFORM, wd.getControllerNode().getIdString());
+        if (wd.getControllerNode() != null && !wd.getControllerNode().equals(platformService.getLocalDefaultLogicalNodeId())
+            && !wd.getIsControllerNodeIdTransient()) {
+            writeOptionalValue(g, PLATFORM, wd.getControllerNode().getLogicalNodeIdString());
         }
         writeOptionalValue(g, ADDITIONAL_INFORMATION, wd.getAdditionalInformation());
 
@@ -302,7 +330,6 @@ public class WorkflowDescriptionPersistenceHandler {
             }
         }
         if (wd.getWorkflowLabels().size() > 0) {
-
             ByteArrayOutputStream labelsStream = new ByteArrayOutputStream();
             JsonGenerator labelsGenerator = f.createJsonGenerator(labelsStream, STANDARD_JSON_ENCODING);
             labelsGenerator.writeStartArray();
@@ -335,6 +362,7 @@ public class WorkflowDescriptionPersistenceHandler {
     public void writeLabel(JsonGenerator g, WorkflowLabel label) throws IOException, JsonGenerationException {
         g.writeStartObject();
         g.writeStringField(IDENTIFIER, label.getIdentifier());
+        g.writeStringField(HEADER_TEXT, label.getHeaderText());
         g.writeStringField(TEXT, label.getText());
         g.writeStringField(LOCATION,
             StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getX()), String.valueOf(label.getY()) }));
@@ -342,15 +370,22 @@ public class WorkflowDescriptionPersistenceHandler {
             StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getWidth()),
                 String.valueOf(label.getHeight()) }));
         g.writeStringField(ALPHA, String.valueOf(label.getAlphaDisplay()));
+        g.writeStringField(COLOR_RGB_HEADER,
+            StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorHeader()[0]),
+                String.valueOf(label.getColorHeader()[1]), String.valueOf(label.getColorHeader()[2]) }));
         g.writeStringField(COLOR_RGB_TEXT,
             StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorText()[0]),
                 String.valueOf(label.getColorText()[1]), String.valueOf(label.getColorText()[2]) }));
         g.writeStringField(COLOR_RGB_BACKGROUND,
             StringUtils.escapeAndConcat(new String[] { String.valueOf(label.getColorBackground()[0]),
                 String.valueOf(label.getColorBackground()[1]), String.valueOf(label.getColorBackground()[2]) }));
-        g.writeStringField(ALIGNMENT_TYPE, label.getAlignmentType().name());
+        g.writeStringField(LABEL_POSITION, label.getLabelPosition().name());
+        g.writeStringField(TEXT_ALIGNMENT, label.getTextAlignmentType().name());
+        g.writeStringField(HEADER_ALIGNMENT, label.getHeaderAlignmentType().name());
         g.writeStringField(BORDER, String.valueOf(label.hasBorder()));
+        g.writeStringField(HEADER_SIZE, String.valueOf(label.getHeaderTextSize()));
         g.writeStringField(TEXT_SIZE, String.valueOf(label.getTextSize()));
+        g.writeStringField(Z_INDEX, String.valueOf(label.getZIndex()));
         g.writeEndObject();
     }
 
@@ -387,12 +422,13 @@ public class WorkflowDescriptionPersistenceHandler {
         g.writeStringField(NAME, node.getName());
         g.writeStringField(LOCATION,
             StringUtils.escapeAndConcat(new String[] { String.valueOf(node.getX()), String.valueOf(node.getY()) }));
+        g.writeStringField(Z_INDEX, String.valueOf(node.getZIndex()));
         g.writeStringField(ACTIVE, Boolean.toString(node.isEnabled()));
 
         ComponentDescription cd = node.getComponentDescription();
-        NodeIdentifier nodeId = cd.getNode();
-        if (nodeId != null && !cd.getIsNodeIdTransient()) {
-            g.writeStringField(PLATFORM, nodeId.getIdString());
+        LogicalNodeId nodeId = cd.getNode();
+        if (nodeId != null && !nodeId.equals(platformService.getLocalDefaultLogicalNodeId()) && !cd.getIsNodeIdTransient()) {
+            g.writeStringField(PLATFORM, nodeId.getLogicalNodeIdString());
         }
 
         g.writeObjectFieldStart(COMPONENT);
@@ -430,8 +466,12 @@ public class WorkflowDescriptionPersistenceHandler {
                 g.writeStartObject();
                 g.writeStringField(IDENTIFIER, desc.getIdentifier());
                 g.writeStringField(NAME, desc.getName());
-                g.writeStringField(EP_IDENTIFIER, desc.getDynamicEndpointIdentifier());
-                g.writeStringField(GROUP, desc.getParentGroupName());
+                if (desc.getDynamicEndpointIdentifier() != null) {
+                    g.writeStringField(EP_IDENTIFIER, desc.getDynamicEndpointIdentifier());
+                }
+                if (desc.getParentGroupName() != null) {
+                    g.writeStringField(GROUP, desc.getParentGroupName());
+                }
                 g.writeStringField(DATATYPE, desc.getDataType().name());
                 Map<String, String> metaData = desc.getMetaData();
                 if (metaData.size() > 0) {
@@ -537,10 +577,10 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private void handleParsingExceptions(Exception e, String message, JsonNode jsonNode, ParsingFailedFlagHolder parsingFailedFlag) {
         String logMessage = message;
-        if (e.getMessage() != null) {
-            logMessage = logMessage + "; cause: " + e.getMessage();
+        if (e != null) {
+            logMessage = logMessage + "; cause: " + e.toString();
         }
-        handleParseFailure(parsingFailedFlag, logMessage + "; " + jsonNode.toString());
+        handleParseFailure(parsingFailedFlag, logMessage + "; JSON data: " + jsonNode.toString());
     }
 
     private WorkflowDescription parseWorkflow(InputStream inputStream, ParsingFailedFlagHolder parsingFailedFlag)
@@ -553,7 +593,6 @@ public class WorkflowDescriptionPersistenceHandler {
         }
         WorkflowDescription wd = new WorkflowDescription(wfRootJsonNode.get(IDENTIFIER).asText());
         wd.setWorkflowVersion(WorkflowConstants.INITIAL_WORKFLOW_VERSION_NUMBER);
-        wd.setControllerNode(platformService.getLocalNodeId());
 
         wd.setWorkflowVersion(readWorkflowVersionNumber(wfRootJsonNode));
         if (wfRootJsonNode.has(NAME)) {
@@ -563,9 +602,7 @@ public class WorkflowDescriptionPersistenceHandler {
             wd.setAdditionalInformation(wfRootJsonNode.get(ADDITIONAL_INFORMATION).asText());
         }
         String wfControllerNodeId = readWorkflowControllerNodeId(wfRootJsonNode);
-        if (wfControllerNodeId != null) {
-            wd.setControllerNode(NodeIdentifierFactory.fromNodeId(wfControllerNodeId));
-        }
+        wd.setControllerNode(NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(wfControllerNodeId));
         Map<String, WorkflowNode> nodes = null;
         if (wfRootJsonNode.has(NODES) && wfRootJsonNode.get(NODES) instanceof ArrayNode) {
             nodes = parseNodesEntry((ArrayNode) wfRootJsonNode.get(NODES), wd, parsingFailedFlag);
@@ -606,7 +643,7 @@ public class WorkflowDescriptionPersistenceHandler {
      * Reads node identifier of workflow controller node of given persistent workflow description.
      * 
      * @param inputStream given persistent workflow description
-     * @return node identifier of workflow controller node; in case node is the local one <code>null</code> is returned
+     * @return node identifier of workflow controller node
      * @throws IOException if reading from {@link java.io.File} failed for some reason
      */
     public String readWorkflowControllerNodeId(InputStream inputStream) throws IOException {
@@ -614,9 +651,11 @@ public class WorkflowDescriptionPersistenceHandler {
     }
 
     private String readWorkflowControllerNodeId(ObjectNode wfRootJsonNode) throws IOException {
-        String controllerNode = null;
+        String controllerNode;
         if (wfRootJsonNode.has(PLATFORM)) {
             controllerNode = wfRootJsonNode.get(PLATFORM).asText();
+        } else {
+            controllerNode = platformService.getLocalDefaultLogicalNodeId().getLogicalNodeIdString();
         }
         return controllerNode;
     }
@@ -625,8 +664,7 @@ public class WorkflowDescriptionPersistenceHandler {
      * Reads node identifiers of component controller nodes of given persistent workflow description.
      * 
      * @param inputStream given persistent workflow description
-     * @return map with component identifier -> node identifier of controller node; in case node is the local one node identifier is
-     *         <code>null</code>
+     * @return map with component identifier -> node identifier of controller node
      * @throws IOException if reading from {@link java.io.File} failed for some reason
      */
     public Map<String, String> readComponentControllerNodeIds(InputStream inputStream) throws IOException {
@@ -644,7 +682,8 @@ public class WorkflowDescriptionPersistenceHandler {
                     if (controllerJsonNode != null) {
                         componentControllerNodes.put(identifierJsonNode.asText(), controllerJsonNode.asText());
                     } else {
-                        componentControllerNodes.put(identifierJsonNode.asText(), null);
+                        componentControllerNodes.put(identifierJsonNode.asText(),
+                            platformService.getLocalDefaultLogicalNodeId().getLogicalNodeIdString());
                     }
                 }
             }
@@ -677,7 +716,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private Map<String, WorkflowNode> parseNodes(ArrayNode nodesJsonNode, ParsingFailedFlagHolder parsingFailedFlag) {
         Map<String, WorkflowNode> nodes = new HashMap<>();
-        final String message = "Failed to parse a workflow node; skip it";
+        final String message = "Failed to parse a workflow node, skipping it";
 
         Iterator<JsonNode> nodeJsonNodeIterator = nodesJsonNode.getElements();
         while (nodeJsonNodeIterator.hasNext()) {
@@ -694,15 +733,20 @@ public class WorkflowDescriptionPersistenceHandler {
     }
 
     private WorkflowNode parseNode(ObjectNode nodeJsonNode, ParsingFailedFlagHolder parsingFailedFlag) throws WorkflowFileException {
-        NodeIdentifier nodeId = platformService.getLocalNodeId();
+        LogicalNodeId requestedNodeId = platformService.getLocalDefaultLogicalNodeId();
         if (nodeJsonNode.has(PLATFORM)) {
-            nodeId = NodeIdentifierFactory.fromNodeId(nodeJsonNode.get(PLATFORM).asText());
+            try {
+                final String explicitNodeIdSetting = nodeJsonNode.get(PLATFORM).asText();
+                requestedNodeId = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeId(explicitNodeIdSetting);
+            } catch (IdentifierException e) {
+                throw new WorkflowFileException("Invalid location id: " + e.toString());
+            }
         }
 
         if (!nodeJsonNode.has(COMPONENT)) {
             throw new WorkflowFileException("Component declaration not found");
         }
-        ComponentDescription cd = parseComponentDescription((ObjectNode) nodeJsonNode.get(COMPONENT), nodeId);
+        ComponentDescription cd = parseComponentDescription((ObjectNode) nodeJsonNode.get(COMPONENT), requestedNodeId);
 
         WorkflowNode node = new WorkflowNode(cd);
 
@@ -721,6 +765,9 @@ public class WorkflowDescriptionPersistenceHandler {
             } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
                 LOG.error(ERROR_WHEN_PARSING_WORKFLOW_FILE + "Failed to parse location of component; use default: " + e.getMessage());
             }
+        }
+        if (nodeJsonNode.has(Z_INDEX)) {
+            node.setZIndex(nodeJsonNode.get(Z_INDEX).asInt());
         }
         boolean active = true;
         if (nodeJsonNode.has(ACTIVE)) {
@@ -790,11 +837,11 @@ public class WorkflowDescriptionPersistenceHandler {
         return node;
     }
 
-    private ComponentDescription parseComponentDescription(ObjectNode componentJsonNode, NodeIdentifier pi)
+    private ComponentDescription parseComponentDescription(ObjectNode componentJsonNode, LogicalNodeId requestedNodeId)
         throws WorkflowFileException {
 
         if (!componentJsonNode.has(IDENTIFIER)) {
-            throw new WorkflowFileException("No component identifier found; skip workflow node");
+            throw new WorkflowFileException("No component identifier found, skipping workflow node");
         }
         String identifier = componentJsonNode.get(IDENTIFIER).asText();
         String version = "";
@@ -806,14 +853,14 @@ public class WorkflowDescriptionPersistenceHandler {
             name = componentJsonNode.get(NAME).asText();
         }
 
-        ComponentDescription cd = getComponentDecription(identifier + SEPARATOR + version, version, name, pi);
+        ComponentDescription cd = getComponentDecription(identifier + SEPARATOR + version, version, name, requestedNodeId);
         if (cd == null) {
             throw new WorkflowFileException("No component registered for: " + identifier);
         }
         return cd;
     }
 
-    private ComponentDescription getComponentDecription(String identifier, String version, String name, NodeIdentifier node) {
+    private ComponentDescription getComponentDecription(String identifier, String version, String name, LogicalNodeId requestedNodeId) {
         DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
         List<ComponentInstallation> matchingInstallations = new ArrayList<>();
         ComponentInstallation resultInstallation = null;
@@ -822,7 +869,7 @@ public class WorkflowDescriptionPersistenceHandler {
         for (ComponentInstallation installation : compKnowledge.getAllInstallations()) {
             ComponentInterface compInterface = installation.getComponentRevision().getComponentInterface();
             if (compInterface.getIdentifiers().contains(identifier) && compInterface.getVersion().equals(version)) {
-                if (installation.getNodeId() != null && installation.getNodeId().equals(node.getIdString())) {
+                if (installation.getNodeId() != null && installation.getNodeId().equals(requestedNodeId.getLogicalNodeIdString())) {
                     resultInstallation = installation;
                     break;
                 } else {
@@ -833,7 +880,7 @@ public class WorkflowDescriptionPersistenceHandler {
         }
         if (resultInstallation == null) {
             if (matchingInstallations.isEmpty()) {
-                resultInstallation = ComponentUtils.createPlaceholderComponentInstallation(identifier, version, name, node.getIdString());
+                resultInstallation = ComponentUtils.createPlaceholderComponentInstallation(identifier, version, name, requestedNodeId);
                 // update the identifier, because it starts with a pre-defined prefix now
                 identifier = resultInstallation.getInstallationId();
             } else {
@@ -841,17 +888,20 @@ public class WorkflowDescriptionPersistenceHandler {
                 for (ComponentInstallation inst : matchingInstallations) {
                     ComponentInterface compInterface = inst.getComponentRevision().getComponentInterface();
                     if (compInterface.getIdentifiers().contains(identifier) && compInterface.getVersion().equals(version)
-                        && inst.getNodeId() != null && node != null && inst.getNodeId().equals(node.getIdString())) {
+                        && inst.getNodeId() != null && requestedNodeId != null
+                        && inst.getNodeId().equals(requestedNodeId.getLogicalNodeIdString())) {
                         resultInstallation = inst;
                         break;
                     }
                 }
                 // check if one is installed locally
                 if (resultInstallation == null) {
+                    final String localLogicalNodeIdString = platformService.getLocalDefaultLogicalNodeId().getLogicalNodeIdString();
                     for (ComponentInstallation inst : matchingInstallations) {
                         ComponentInterface compInterface = inst.getComponentRevision().getComponentInterface();
                         if (compInterface.getIdentifiers().contains(identifier) && compInterface.getVersion().equals(version)
-                            && inst.getNodeId() != null && inst.getNodeId().equals(platformService.getLocalNodeId().getIdString())) {
+                            && inst.getNodeId() != null
+                            && inst.getNodeId().equals(localLogicalNodeIdString)) {
                             resultInstallation = inst;
                             break;
                         }
@@ -859,7 +909,7 @@ public class WorkflowDescriptionPersistenceHandler {
                 }
                 // take any component
                 if (resultInstallation == null) {
-                    resultInstallation = matchingInstallations.get(0);
+                    resultInstallation = matchingInstallations.get(RANDOM.nextInt(matchingInstallations.size()));
                 }
             }
         }
@@ -968,7 +1018,7 @@ public class WorkflowDescriptionPersistenceHandler {
             wd.addConnections(connections);
             return connections;
         } else {
-            handleParseFailure(parsingFailedFlag, "Failed to read connections (no workflow nodes defined); skip them");
+            handleParseFailure(parsingFailedFlag, "Failed to read connections (no workflow nodes defined), skipping them");
             return null;
         }
     }
@@ -993,7 +1043,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private List<Connection> parseConnections(ArrayNode connectionsJsonNode, Map<String, WorkflowNode> nodes,
         ParsingFailedFlagHolder parsingFailedFlag) {
-        final String message = "Failed to parse connection; skip it";
+        final String message = "Failed to parse connection, skipping it";
         List<Connection> connections = new ArrayList<>();
 
         Iterator<JsonNode> connectionJsonNodeIterator = connectionsJsonNode.getElements();
@@ -1066,7 +1116,7 @@ public class WorkflowDescriptionPersistenceHandler {
                     nodes, connections, parsingFailedFlag);
             }
         } else {
-            handleParseFailure(parsingFailedFlag, "Failed to read bendpoints (no workflow nodes or connections defined); skip them");
+            handleParseFailure(parsingFailedFlag, "Failed to read bendpoints (no workflow nodes or connections defined), skipping them");
         }
     }
 
@@ -1089,7 +1139,7 @@ public class WorkflowDescriptionPersistenceHandler {
 
     private void parseBendpoints(ArrayNode bendpointsJsonNode, Map<String, WorkflowNode> nodes, List<Connection> connections,
         ParsingFailedFlagHolder parsingFailedFlag) {
-        final String message = "Failed to parse bendpoint; skip it";
+        final String message = "Failed to parse bendpoint, skipping it";
 
         Iterator<JsonNode> bendpointJsonNodeIterator = bendpointsJsonNode.getElements();
         while (bendpointJsonNodeIterator.hasNext()) {
@@ -1134,13 +1184,13 @@ public class WorkflowDescriptionPersistenceHandler {
                 Location bendpoint = new Location(Integer.parseInt(bendpointParts[0]), Integer.parseInt(bendpointParts[1]));
                 bendpoints.add(bendpoint);
             } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
-                LOG.error(ERROR_WHEN_PARSING_WORKFLOW_FILE + "Failed to parse bendpoint; skip it: " + e.getMessage());
+                LOG.error(ERROR_WHEN_PARSING_WORKFLOW_FILE + "Failed to parse bendpoint, skipping it: " + e.getMessage());
             }
         }
 
         for (Connection connection : connections) {
-            if ((connection.getTargetNode().getIdentifier().equals(inputNode.getIdentifier())
-                && connection.getSourceNode().getIdentifier().equals(outputNode.getIdentifier()))) {
+            if ((connection.getTargetNode().getIdentifier().equals(inputNode.getIdentifier()) && connection.getSourceNode().getIdentifier()
+                .equals(outputNode.getIdentifier()))) {
                 connection.setBendpoints(bendpoints);
             } else if (connection.getTargetNode().getIdentifier().equals(outputNode.getIdentifier())
                 && connection.getSourceNode().getIdentifier().equals(inputNode.getIdentifier())) {
@@ -1240,7 +1290,7 @@ public class WorkflowDescriptionPersistenceHandler {
     }
 
     private Set<WorkflowLabel> parseLabels(ArrayNode labelsJsonNode, ParsingFailedFlagHolder parsingFailedFlag) {
-        final String message = "Failed to parse label; skip it";
+        final String message = "Failed to parse label, skipping it";
 
         Set<WorkflowLabel> labels = new LinkedHashSet<>();
 
@@ -1268,6 +1318,9 @@ public class WorkflowDescriptionPersistenceHandler {
         if (labelJsonNode.has(IDENTIFIER)) {
             label.setIdentifier(labelJsonNode.get(IDENTIFIER).asText());
         }
+        if (labelJsonNode.has(HEADER_TEXT)) {
+            label.setHeaderText(labelJsonNode.get(HEADER_TEXT).asText());
+        }
         if (labelJsonNode.has(LOCATION)) {
             String[] location = StringUtils.splitAndUnescape(labelJsonNode.get(LOCATION).asText());
             try {
@@ -1286,6 +1339,16 @@ public class WorkflowDescriptionPersistenceHandler {
         }
         if (labelJsonNode.has(ALPHA)) {
             label.setAlpha(labelJsonNode.get(ALPHA).asInt());
+        }
+        if (labelJsonNode.has(COLOR_RGB_HEADER)) {
+            String[] colorString = StringUtils.splitAndUnescape(labelJsonNode.get(COLOR_RGB_HEADER).asText());
+            try {
+                int[] color =
+                    new int[] { Integer.parseInt(colorString[0]), Integer.parseInt(colorString[1]), Integer.parseInt(colorString[2]) };
+                label.setColorHeader(color);
+            } catch (ArrayIndexOutOfBoundsException | NumberFormatException e) {
+                LOG.error(ERROR_WHEN_PARSING_WORKFLOW_FILE + "Failed to parse text color of label; use default: " + e.getMessage());
+            }
         }
         if (labelJsonNode.has(COLOR_RGB_TEXT)) {
             String[] colorString = StringUtils.splitAndUnescape(labelJsonNode.get(COLOR_RGB_TEXT).asText());
@@ -1307,15 +1370,32 @@ public class WorkflowDescriptionPersistenceHandler {
                 LOG.error(ERROR_WHEN_PARSING_WORKFLOW_FILE + "Failed to parse background color of label; use default: " + e.getMessage());
             }
         }
-        if (labelJsonNode.has(ALIGNMENT_TYPE)) {
-            AlignmentType alignmentType = AlignmentType.valueOf(labelJsonNode.get(ALIGNMENT_TYPE).asText());
-            label.setAlignmentType(alignmentType);
+        if (labelJsonNode.has(LABEL_POSITION)) {
+            LabelPosition labelPosition = LabelPosition.valueOf(labelJsonNode.get(LABEL_POSITION).asText());
+            label.setLabelPosition(labelPosition);
+        } else if (labelJsonNode.has(LABEL_POSITION_OLD)) {
+            LabelPosition labelPosition = LabelPosition.valueOf(labelJsonNode.get(LABEL_POSITION_OLD).asText());
+            label.setLabelPosition(labelPosition);
+        }
+        if (labelJsonNode.has(TEXT_ALIGNMENT)) {
+            TextAlignmentType textAlignmentType = TextAlignmentType.valueOf(labelJsonNode.get(TEXT_ALIGNMENT).asText());
+            label.setTextAlignmentType(textAlignmentType);
+        }
+        if (labelJsonNode.has(HEADER_ALIGNMENT)) {
+            TextAlignmentType headerAlignmentType = TextAlignmentType.valueOf(labelJsonNode.get(HEADER_ALIGNMENT).asText());
+            label.setHeaderAlignmentType(headerAlignmentType);
         }
         if (labelJsonNode.has(BORDER)) {
             label.setHasBorder(labelJsonNode.get(BORDER).asBoolean());
         }
+        if (labelJsonNode.has(HEADER_SIZE)) {
+            label.setHeaderTextSize(labelJsonNode.get(HEADER_SIZE).asInt());
+        }
         if (labelJsonNode.has(TEXT_SIZE)) {
             label.setTextSize(labelJsonNode.get(TEXT_SIZE).asInt());
+        }
+        if (labelJsonNode.has(Z_INDEX)) {
+            label.setZIndex(labelJsonNode.get(Z_INDEX).asInt());
         }
         return label;
     }

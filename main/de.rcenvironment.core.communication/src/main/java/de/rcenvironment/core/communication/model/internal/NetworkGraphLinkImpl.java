@@ -9,7 +9,7 @@ package de.rcenvironment.core.communication.model.internal;
 
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -21,11 +21,11 @@ public final class NetworkGraphLinkImpl implements NetworkGraphLink {
 
     private final String linkId;
 
-    private final NodeIdentifier source;
+    private final InstanceNodeSessionId source;
 
-    private final NodeIdentifier target;
+    private final InstanceNodeSessionId target;
 
-    public NetworkGraphLinkImpl(String linkId, NodeIdentifier source, NodeIdentifier target) {
+    public NetworkGraphLinkImpl(String linkId, InstanceNodeSessionId source, InstanceNodeSessionId target) {
         if (linkId == null || source == null || target == null) {
             throw new NullPointerException(StringUtils.format("%s / %s / %s", linkId, source, target));
         }
@@ -40,12 +40,12 @@ public final class NetworkGraphLinkImpl implements NetworkGraphLink {
     }
 
     @Override
-    public NodeIdentifier getSourceNodeId() {
+    public InstanceNodeSessionId getSourceNodeId() {
         return source;
     }
 
     @Override
-    public NodeIdentifier getTargetNodeId() {
+    public InstanceNodeSessionId getTargetNodeId() {
         return target;
     }
 

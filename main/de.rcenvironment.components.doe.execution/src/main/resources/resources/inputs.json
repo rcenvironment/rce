@@ -2,6 +2,7 @@
     "dynamicInputs": [
         {
             "identifier": "default",
+            "character": "sameLoop",
             "group" : "default",
             "dataTypes": [
                 "Float"
@@ -11,14 +12,7 @@
                 "Required",
                 "RequiredIfConnected"
             ],
-            "defaultInputExecutionConstraint": "Required",
-            "metaData": {
-                 "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "SelfLoopEndpoint"
-                }
-            }
+            "defaultInputExecutionConstraint": "Required"
         },
         {
             "identifier": "toForward",
@@ -44,13 +38,29 @@
             "defaultInputExecutionConstraint": "Required"
         },
         {
-            "identifier": "outerLoopDone",
-            "group": "innerLoop",
+            "identifier": "startToForward",
+            "character": "outerLoop",
+            "group" : "default",
             "dataTypes": [
-                "Boolean"
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
             ],
-            "readOnly": "true",
-            "defaultDataType": "Boolean"
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "readOnly": "true"
         }
     ],
     "dynamicInputGroups": [

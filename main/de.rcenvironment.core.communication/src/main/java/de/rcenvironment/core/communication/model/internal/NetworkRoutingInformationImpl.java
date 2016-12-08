@@ -18,12 +18,12 @@ import java.util.Set;
 
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRoutingInformation;
 import de.rcenvironment.core.communication.routing.internal.NetworkFormatter;
 import de.rcenvironment.core.communication.routing.internal.v2.NoRouteToNodeException;
-import de.rcenvironment.core.utils.common.AutoCreationMap;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
+import de.rcenvironment.toolkit.utils.common.AutoCreationMap;
 import edu.uci.ics.jung.algorithms.shortestpath.DijkstraShortestPath;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
@@ -34,30 +34,30 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
  */
 public final class NetworkRoutingInformationImpl implements NetworkRoutingInformation {
 
-    private Map<NodeIdentifier, NetworkGraphLink> routingTable;
+    private Map<InstanceNodeSessionId, NetworkGraphLink> routingTable;
 
-    private Map<NodeIdentifier, NetworkGraphLink> incomingEdgesById;
+    private Map<InstanceNodeSessionId, NetworkGraphLink> incomingEdgesById;
 
     private Set<NetworkGraphLink> spanningTreeLinkSet;
 
-    private Map<NodeIdentifier, List<NetworkGraphLink>> spanningTreeLinkMap;
+    private Map<InstanceNodeSessionId, List<NetworkGraphLink>> spanningTreeLinkMap;
 
     // for unit testing
     private int routingCacheMisses = 0;
 
-    private final NodeIdentifier localNodeId;
+    private final InstanceNodeSessionId localNodeId;
 
-    private final Map<NodeIdentifier, NetworkGraphLinkImpl> incomingEdgeMap;
+    private final Map<InstanceNodeSessionId, NetworkGraphLinkImpl> incomingEdgeMap;
 
-    private final DijkstraShortestPath<NodeIdentifier, NetworkGraphLinkImpl> shortestPathAlgorithm;
+    private final DijkstraShortestPath<InstanceNodeSessionId, NetworkGraphLinkImpl> shortestPathAlgorithm;
 
-    private final Set<NodeIdentifier> reachableNodes;
+    private final Set<InstanceNodeSessionId> reachableNodes;
 
     public NetworkRoutingInformationImpl(NetworkGraphImpl rawNetworkGraph) {
-        DirectedSparseMultigraph<NodeIdentifier, NetworkGraphLinkImpl> rawJungGraph = rawNetworkGraph.getJungGraph();
+        DirectedSparseMultigraph<InstanceNodeSessionId, NetworkGraphLinkImpl> rawJungGraph = rawNetworkGraph.getJungGraph();
         this.localNodeId = rawNetworkGraph.getLocalNodeId();
         // Note: unless edge weights are used, UnweightedShortestPath would work as well - misc_ro
-        this.shortestPathAlgorithm = new DijkstraShortestPath<NodeIdentifier, NetworkGraphLinkImpl>(rawJungGraph);
+        this.shortestPathAlgorithm = new DijkstraShortestPath<InstanceNodeSessionId, NetworkGraphLinkImpl>(rawJungGraph);
         try {
             this.incomingEdgeMap = shortestPathAlgorithm.getIncomingEdgeMap(rawNetworkGraph.getLocalNodeId());
         } catch (IllegalArgumentException e) {
@@ -67,12 +67,12 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
     }
 
     @Override
-    public Set<NodeIdentifier> getReachableNodes() {
+    public Set<InstanceNodeSessionId> getReachableNodes() {
         return reachableNodes;
     }
 
     @Override
-    public synchronized NetworkGraphLink getNextLinkTowards(NodeIdentifier targetNodeId) throws NoRouteToNodeException {
+    public synchronized NetworkGraphLink getNextLinkTowards(InstanceNodeSessionId targetNodeId) throws NoRouteToNodeException {
         StatsCounter.count("Network topology/routing", "Route requests");
 
         if (targetNodeId.equals(localNodeId)) {
@@ -83,8 +83,8 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
             StatsCounter.count("Network topology/routing", "Routing table calculations");
 
             // initialize basic structures
-            routingTable = new HashMap<NodeIdentifier, NetworkGraphLink>();
-            incomingEdgesById = new HashMap<NodeIdentifier, NetworkGraphLink>();
+            routingTable = new HashMap<InstanceNodeSessionId, NetworkGraphLink>();
+            incomingEdgesById = new HashMap<InstanceNodeSessionId, NetworkGraphLink>();
             for (NetworkGraphLinkImpl link : incomingEdgeMap.values()) {
                 if (link != null) {
                     incomingEdgesById.put(link.getTargetNodeId(), link);
@@ -98,7 +98,7 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
     }
 
     @Override
-    public synchronized List<? extends NetworkGraphLink> getRouteTo(NodeIdentifier destination) {
+    public synchronized List<? extends NetworkGraphLink> getRouteTo(InstanceNodeSessionId destination) {
         if (destination.equals(localNodeId)) {
             throw new IllegalArgumentException("Invalid route request to local node");
         }
@@ -132,7 +132,7 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
     }
 
     @Override
-    public synchronized Map<NodeIdentifier, List<NetworkGraphLink>> getSpanningTreeLinkMap() {
+    public synchronized Map<InstanceNodeSessionId, List<NetworkGraphLink>> getSpanningTreeLinkMap() {
         if (spanningTreeLinkMap == null) {
             // lazy init, as this is rarely called
             spanningTreeLinkMap = createSpanningTree();
@@ -149,7 +149,7 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
         routingCacheMisses = 0;
     }
 
-    private NetworkGraphLink determineRoutingTableEntryFor(NodeIdentifier targetNodeId) throws NoRouteToNodeException {
+    private NetworkGraphLink determineRoutingTableEntryFor(InstanceNodeSessionId targetNodeId) throws NoRouteToNodeException {
         NetworkGraphLink result = routingTable.get(targetNodeId);
         // cached entry present?
         if (result != null) {
@@ -162,7 +162,7 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
         if (incomingEdge == null) {
             throw new NoRouteToNodeException("No incoming edge for " + targetNodeId, targetNodeId);
         }
-        NodeIdentifier predecessorNodeId = incomingEdge.getSourceNodeId();
+        InstanceNodeSessionId predecessorNodeId = incomingEdge.getSourceNodeId();
         if (predecessorNodeId.equals(localNodeId)) {
             // source node reached; current target node is adjacent and reachable
             result = incomingEdge;
@@ -175,12 +175,12 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
         return result;
     }
 
-    private Map<NodeIdentifier, List<NetworkGraphLink>> createSpanningTree() {
-        AutoCreationMap<NodeIdentifier, List<NetworkGraphLink>> spanningTreeLinks =
-            new AutoCreationMap<NodeIdentifier, List<NetworkGraphLink>>() {
+    private Map<InstanceNodeSessionId, List<NetworkGraphLink>> createSpanningTree() {
+        AutoCreationMap<InstanceNodeSessionId, List<NetworkGraphLink>> spanningTreeLinks =
+            new AutoCreationMap<InstanceNodeSessionId, List<NetworkGraphLink>>() {
 
                 @Override
-                protected List<NetworkGraphLink> createNewEntry(NodeIdentifier key) {
+                protected List<NetworkGraphLink> createNewEntry(InstanceNodeSessionId key) {
                     return new ArrayList<NetworkGraphLink>();
                 }
             };
@@ -192,7 +192,7 @@ public final class NetworkRoutingInformationImpl implements NetworkRoutingInform
             }
         }
 
-        Map<NodeIdentifier, List<NetworkGraphLink>> temp = spanningTreeLinks.getImmutableShallowCopy();
+        Map<InstanceNodeSessionId, List<NetworkGraphLink>> temp = spanningTreeLinks.getImmutableShallowCopy();
         return temp;
     }
 

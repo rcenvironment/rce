@@ -2,9 +2,11 @@
 Created on 24.04.2013
 
 @author: Sascha Zur
+@author: Jascha Riedel (#14029)
 '''
 import simplejson as json
 import math
+from decimal import *
 
 def readinput_internal():
     """ 
@@ -67,8 +69,6 @@ def writeoutput_internal():
     json.dump(RCE_CHANNEL_CLOSE, closeoutputsfile)
     statevariablesfile = open("pythonStateOutput.rces", "w")
     json.dump(RCE_STATE_VARIABLES, statevariablesfile)
-    indefiniteOutputs = open("pythonSetOutputsIndefinit.rceo", "w")
-    json.dump(RCE_INDEFINITE_OUTPUTS, indefiniteOutputs)
     
    
 def read_input(name, defaultValue = None):
@@ -103,19 +103,32 @@ def write_output(name, value):
         raise ValueError("Output '" + name + "' is not defined")
     if not name in RCE_CHANNEL_OUTPUT:
         RCE_CHANNEL_OUTPUT[name] = []
-    if ((type(value) is float) and math.isinf(value) and value > 0 ):
+    if isinstance(value, list):
+        for index, elem in enumerate(value):
+             if isinstance(elem, list):
+                 for index2, elem2 in enumerate(elem):
+                     if (__isInf__(elem2)):
+                         elem[index2] = "+Infinity"
+             else:
+                 if (__isInf__(elem)):
+                     value[index] = "+Infinity"
+    if (__isInf__(value)):
         RCE_CHANNEL_OUTPUT[name].append("+Infinity")
     else:
         RCE_CHANNEL_OUTPUT[name].append(value)
 
+def __isInf__(value):
+    infinity = ((type(value) is float) and float(value) > 0 and not (float(value) < float('inf')));
+    if (type(value) is Decimal and value  == Decimal('Infinity')):
+        infinity = True;
+    return infinity;
+
 def write_not_a_value_output(name):
-    """ 
-    Sets the given output to indefinite data type
-    """
     if not (name in RCE_CHANNEL_OUTPUT_NAMES):
-        raise NameError("Output '" + name + "' is not defined")
-    if not name in RCE_INDEFINITE_OUTPUTS:
-        RCE_INDEFINITE_OUTPUTS.append(name)
+        raise ValueError("Output '" + name + "' is not defined")
+    if not (name in RCE_CHANNEL_OUTPUT):
+        RCE_CHANNEL_OUTPUT[name] = []
+    RCE_CHANNEL_OUTPUT[name].append("not_a_value_7fdc603e")
 
 def getallinputs():
     """
@@ -198,6 +211,5 @@ RCE_CHANNEL_REQ_IF_CONNECTED = readinput_req_if_connected_internal()
 RCE_CHANNEL_OUTPUT_NAMES = read_output_names_internal()
 RCE_CHANNEL_OUTPUT = {}
 RCE_CHANNEL_CLOSE = []
-RCE_INDEFINITE_OUTPUTS = []
 RCE_STATE_VARIABLES = read_state_variables_internal()
 RCE_CURRENT_RUN_NUMBER = read_run_number_internal()

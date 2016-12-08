@@ -54,7 +54,6 @@ public class PythonScriptExecutorTest extends ScriptExecutorTest {
     @Override
     protected ScriptEngine getScriptingEngine() {
         PythonScriptEngine pythonScriptEngine = EasyMock.createNiceMock(PythonScriptEngine.class);
-        EasyMock.expect(pythonScriptEngine.getNotAValueOutputsList()).andReturn(new LinkedList<String>());
         EasyMock.expect(pythonScriptEngine.getCloseOutputChannelsList()).andReturn(new LinkedList<String>());
         LocalApacheCommandLineExecutor executor = EasyMock.createNiceMock(LocalApacheCommandLineExecutor.class);
         EasyMock.expect(executor.getWorkDir()).andReturn(new File("")).anyTimes();

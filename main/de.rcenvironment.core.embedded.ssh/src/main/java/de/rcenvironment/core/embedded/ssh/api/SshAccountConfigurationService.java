@@ -46,10 +46,9 @@ public interface SshAccountConfigurationService {
      * 
      * @param loginName the new login name
      * @param plainTextPassword the new password (will be hashed before saving)
-     * @param setRemoteAccessRole TODO
      * @throws ConfigurationException if the account creation failed
      */
-    void createAccount(String loginName, String plainTextPassword, boolean setRemoteAccessRole) throws ConfigurationException;
+    void createAccount(String loginName, String plainTextPassword) throws ConfigurationException;
 
     /**
      * Updates the password for an existing account.

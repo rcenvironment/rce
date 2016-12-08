@@ -29,7 +29,6 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescriptionUpdaterUtils;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
@@ -45,6 +44,12 @@ import de.rcenvironment.core.utils.common.JsonUtils;
  * @author Doreen Seider
  */
 public class ConvergerPersistentComponentDescriptionUpdater implements PersistentComponentDescriptionUpdater {
+
+    private static final String START_SUFFIX = "_start";
+
+    private static final String CONVERGED_SUFFIX = "_converged";
+
+    private static final String OUTER_LOOP_DONE = "outerLoopDone";
 
     private static final String REQUIRED = "Required";
 
@@ -97,8 +102,10 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
     private static final String V5_0 = "5";
 
     private static final String V5_1 = "5.1";
-    
+
     private static final String V5_1_1 = "5.1.1";
+
+    private static final String V6 = "6";
 
     private static TypedDatumService typedDatumService;
 
@@ -124,7 +131,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         }
         // Update 3 non-silent : 3.0 -> latest
         if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V5_0) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V6) < 0) {
             versions = versions | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         // Update 3 silent : 3.0 -> latest
@@ -161,6 +168,8 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     description = updateFrom50To51(description);
                 case V5_1:
                     description = updateFrom51To511(description);
+                case V5_1_1:
+                    description = updateFrom511To6(description);
                 default:
                     // nothing to do here
                 }
@@ -179,7 +188,26 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         }
         return description;
     }
-    
+
+    private PersistentComponentDescription updateFrom511To6(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        description =
+            PersistentComponentDescriptionUpdaterUtils.removeOuterLoopDoneEndpoints(description);
+        description = PersistentComponentDescriptionUpdaterUtils.removeEndpointCharacterInfoFromMetaData(description);
+        description = PersistentComponentDescriptionUpdaterUtils.reassignEndpointIdentifiers(description, DYNAMIC_INPUTS, "toForward",
+            "startToForward", START_SUFFIX);
+        description = PersistentComponentDescriptionUpdaterUtils.reassignEndpointIdentifiers(description, DYNAMIC_OUTPUTS, "toForward",
+            "finalToForward", CONVERGED_SUFFIX);
+        description =
+            PersistentComponentDescriptionUpdaterUtils.reassignEndpointIdentifiers(description, DYNAMIC_INPUTS, VALUE_TO_CONVERGE,
+                "startToConverge", START_SUFFIX);
+        description =
+            PersistentComponentDescriptionUpdaterUtils.reassignEndpointIdentifiers(description, DYNAMIC_OUTPUTS, VALUE_TO_CONVERGE,
+                "finalToConverge", CONVERGED_SUFFIX);
+        description.setComponentVersion(V6);
+        return description;
+    }
+
     private PersistentComponentDescription updateFrom51To511(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         description =
@@ -187,7 +215,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         description.setComponentVersion(V5_1_1);
         return description;
     }
-    
+
     private PersistentComponentDescription updateFrom50To51(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
@@ -202,7 +230,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
             for (JsonNode outputEndpoint : dynamicOutputs) {
                 String outputName = outputEndpoint.get(NAME).getTextValue();
                 String outputEndpointId = outputEndpoint.get(EP_IDENTIFIER).getTextValue();
-                if (outputEndpointId.equals(VALUE_TO_CONVERGE) && !outputName.endsWith("_converged")) {
+                if (outputEndpointId.equals(VALUE_TO_CONVERGE) && !outputName.endsWith(CONVERGED_SUFFIX)) {
                     ObjectNode convergedEndpoint = mapper.createObjectNode();
                     convergedEndpoint.put(NAME, TextNode.valueOf(outputName + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX));
                     convergedEndpoint.put(EP_IDENTIFIER, ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY);
@@ -259,7 +287,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     ((ObjectNode) outputEndpoint).put(METADATA, metaData);
                 }
                 // not safe as a "normal" endpoint's name can also end with "_converged"
-                if (outputEndpoint.get(NAME).getTextValue().endsWith("_converged")) {
+                if (outputEndpoint.get(NAME).getTextValue().endsWith(CONVERGED_SUFFIX)) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                 } else {
                     metaData.put(LOOP_ENDPOINT_TYPE, SELF_LOOP_ENDPOINT);
@@ -284,16 +312,16 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                     }
                     ObjectNode startInput = JsonNodeFactory.instance.objectNode();
                     startInput.put(IDENTIFIER, UUID.randomUUID().toString());
-                    startInput.put(NAME, inputEndpoint.get(NAME).asText() + "_start");
+                    startInput.put(NAME, inputEndpoint.get(NAME).asText() + START_SUFFIX);
                     startInput.put(EP_IDENTIFIER, VALUE_TO_CONVERGE);
                     startInput.put("group", "startValues");
                     startInput.put(DATATYPE, inputEndpoint.get(DATATYPE).asText());
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                     metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
                     startInput.put(METADATA, metaData);
-                    
+
                     startInputs.add(startInput);
-                } else if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals("outerLoopDone")) {
+                } else if (inputEndpoint.get(EP_IDENTIFIER).getTextValue().equals(OUTER_LOOP_DONE)) {
                     metaData.put(LOOP_ENDPOINT_TYPE, OUTER_LOOP_ENDPOINT);
                     metaData.put(INPUT_EXECUTION_CONSTRAINT, REQUIRED);
                 }
@@ -408,7 +436,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
                         ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(
                             ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE));
                     } else {
-                        ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(LoopComponentConstants.INPUT_ID_OUTER_LOOP_DONE));
+                        ((ObjectNode) inputEndpoint).put(EP_IDENTIFIER, TextNode.valueOf(OUTER_LOOP_DONE));
                     }
                 }
             }
@@ -450,7 +478,7 @@ public class ConvergerPersistentComponentDescriptionUpdater implements Persisten
         if (statInputs == null) {
             statInputs = JsonNodeFactory.instance.arrayNode();
             ObjectNode inputEndpoint = JsonNodeFactory.instance.objectNode();
-            inputEndpoint.put(NAME, TextNode.valueOf("outerLoopDone"));
+            inputEndpoint.put(NAME, TextNode.valueOf(OUTER_LOOP_DONE));
             inputEndpoint.put(DATATYPE, TextNode.valueOf(BOOLEAN));
             inputEndpoint.put(IDENTIFIER, TextNode.valueOf(UUID.randomUUID().toString()));
             inputEndpoint.put("readonly", "true");

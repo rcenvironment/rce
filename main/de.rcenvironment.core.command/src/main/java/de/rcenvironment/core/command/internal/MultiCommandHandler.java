@@ -19,8 +19,8 @@ import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.SingleCommandHandler;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Handler/parser for a RCE multi-command. A multi-command may contain multiple commands which should be executed sequentially and/or in

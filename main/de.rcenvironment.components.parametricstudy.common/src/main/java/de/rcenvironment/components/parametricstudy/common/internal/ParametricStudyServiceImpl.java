@@ -18,7 +18,7 @@ import de.rcenvironment.components.parametricstudy.common.Study;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyReceiver;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
@@ -54,7 +54,7 @@ public class ParametricStudyServiceImpl implements ParametricStudyService {
     }
 
     @Override
-    public StudyReceiver createReceiver(final String identifier, final NodeIdentifier node) {
+    public StudyReceiver createReceiver(final String identifier, final ResolvableNodeId node) {
         final String notificationId = StringUtils.format(ParametricStudyUtils.STRUCTURE_PATTERN,
                 identifier);
         List<Notification> notifications;

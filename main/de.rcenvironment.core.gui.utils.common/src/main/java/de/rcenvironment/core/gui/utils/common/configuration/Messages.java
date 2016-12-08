@@ -29,6 +29,13 @@ public class Messages extends NLS {
     /** Constant. */
     public static String falseLabel;
 
+    /** Constant. */
+    public static String exportToExcelDialogTitle;
+    
+    /** Constant. */
+    public static String exportToExcelDialogText;
+    
+    
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 
     static {

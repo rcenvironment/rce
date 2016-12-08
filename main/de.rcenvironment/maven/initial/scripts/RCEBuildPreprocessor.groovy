@@ -20,19 +20,19 @@ class RCEBuildPreprocessor {
 	final defaultRepositoryUrlSuffixes = [
 		'snapshot': [
 			'platform': 'snapshots/trunk',
-			'dakotaBinaries': 'releases/6.0.0',
-			'tiglViewerBinaries': 'releases/7.0.0',
+			'dakotaBinaries': 'snapshots/trunk',
+			'tiglViewerBinaries': 'releases/8.0.0',
 			'intermediate': 'snapshots/trunk'
 		],
 		'rc_or_release': [
-			'platform': 'releases/7.1.1',
+			'platform': 'releases/8.0.0',
 			'dakotaBinaries': 'releases/6.0.0',
-			'tiglViewerBinaries': 'releases/7.0.0',
-			'intermediate': 'releases/7.1.0'
+			'tiglViewerBinaries': 'releases/8.0.0',
+			'intermediate': 'releases/8.0.0'
 		]
 	]
 	
-	final DEFAULT_REPOSITORIES_ROOT_URL = 'http://software.dlr.de/updates/rce/7.x/repositories/'
+	final DEFAULT_REPOSITORIES_ROOT_URL = 'https://software.dlr.de/updates/rce/8.x/repositories/'
 	
 	private maven
 	private buildType     // snapshot, rc, release
@@ -84,6 +84,7 @@ class RCEBuildPreprocessor {
 		buildVariant += ':default'  // set default value for empty build options
 		def parts = buildVariant.split(':')
 		def buildScope = parts[0]
+		// TODO rename to "buildVariant" for clarity?
 		def buildOptions = parts[1]
 		
 		setup.setBuildScope(buildScope)
@@ -129,22 +130,30 @@ class RCEBuildPreprocessor {
 			case 'default':
 				break
 			case 'withTests':
+			case 'withExtendedTests':
 				setup.setGoals('clean integration-test')
+				if (buildOptions == 'withExtendedTests') {
+					setup.addCustomArgument('-Drce.tests.runExtended')
+				}
+				setup.addCustomArgument('-P !generateHelpFromDocbook -P !buildDocumentation')
 				break
 			case 'withTestsAndReporting':
 				setup.addCustomArgument('-Drce.maven.generateCoverageReport -Drce.maven.collectJQAData')
 				// trigger report generation; must be run as a separate Maven step (invoked from second stage) - misc_ro
 				setup.addCustomArgument("-Drce.maven.generateJQAReport.triggeredByPreprocessor -Drce.maven.preprocessor.projectRoot=${projectRoot}")
+				setup.addCustomArgument('-P !generateHelpFromDocbook -P !buildDocumentation')
 				setup.setGoals('clean integration-test')
 				break
 			case 'withJqaAnalysisAndReport':
 				setup.addCustomArgument('-Drce.maven.collectJQAData')
 				setup.addCustomArgument("-Drce.maven.generateJQAReport.triggeredByPreprocessor -Drce.maven.preprocessor.projectRoot=${projectRoot}")
+				setup.addCustomArgument('-P !generateHelpFromDocbook -P !buildDocumentation')
 				break
 			case 'updateJqaAnalysisAndReport':
 				// do not clean or recollect, as this will delete the previous scan data
 				setup.addCustomArgument('-Drce.maven.preserveGlobalData')
 				setup.addCustomArgument("-Drce.maven.generateJQAReport.triggeredByPreprocessor -Drce.maven.preprocessor.projectRoot=${projectRoot}")
+				setup.addCustomArgument('-P !generateHelpFromDocbook -P !buildDocumentation')
 				break
 			case 'printEnvironment':
 				// replace the actual second-stage build with a system properties dump

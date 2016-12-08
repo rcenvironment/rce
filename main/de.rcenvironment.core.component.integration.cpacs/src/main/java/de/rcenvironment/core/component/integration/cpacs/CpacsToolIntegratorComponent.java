@@ -52,6 +52,7 @@ import de.rcenvironment.core.utils.common.xml.XMLException;
 import de.rcenvironment.core.utils.common.xml.XSLTErrorHandler;
 import de.rcenvironment.core.utils.common.xml.api.XMLMapperService;
 import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
+import de.rcenvironment.toolkit.utils.text.AbstractTextLinesReceiver;
 
 /**
  * Main class for the CPACS tool integration.
@@ -84,13 +85,13 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     private static final String STRING_MAPPING_TYPE_XML = "pairing";
 
     private static final String STRING_MAPPING_TYPE_XSL = "raw XSLT";
-    
+
     private static final String STRING_TOOL_MAPPING_DIRECTION_INPUT = "tool input";
 
     private static final String STRING_MAPPING_DIRECTION_INPUT = "input";
 
     private static final String STRING_TOOL_MAPPING_DIRECTION_OUTPUT = "tool output";
-    
+
     private static final String STRING_MAPPING_DIRECTION_OUTPUT = "output";
 
     private static final String STRING_MAPPING_DIRECTION_TOOLSPECIFIC = "tool specific input";
@@ -102,6 +103,19 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     private static final String CREATE_MAPPING_XSLT_FILEPATH = "/resources/CreateMapping.xslt";
 
     private static final String XMLFILE_SEPARATOR = "/";
+    
+    /**
+     * Implementation of TextLinesReceiver for CpacsToolIntegratorComponent.
+     *
+     * @author Brigitte Boden
+     */
+    private final class CpacsToolIntegratorTextLinesReceiver extends AbstractTextLinesReceiver {
+
+        @Override
+        public void addLine(String line) {
+            componentContext.getLog().componentInfo(line);
+        }
+    }
 
     private XMLMapperService xmlMapper;
 
@@ -143,7 +157,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 "Failed to read CPACS from input '%s'; input is not configured", getCpacsInitialEndpointName()));
         }
         performDynamicInputMapping(cpacsInitial, dynamicInputs);
-        
+
         if (!isMockMode()) {
             performInputMapping(cpacsInitial, dynamicInputs);
             if (getHistoryDataItem() != null) {
@@ -162,7 +176,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             }
         }
     }
-    
+
     private void performDynamicInputMapping(String cpacsInitial, Map<String, TypedDatum> dynamicInputs) throws ComponentException {
         try {
             dynamicEndpointMapper.updateXMLWithInputs(new File(cpacsInitial), dynamicInputs, componentContext);
@@ -184,7 +198,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     }
 
     private void performInputMapping(String cpacsInitial, Map<String, TypedDatum> dynamicInputs) throws ComponentException {
-        
+
         createIntermediateFolders();
         final File mappingFile = new File(getInputMapping());
 
@@ -208,7 +222,8 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 componentLog.componentInfo(StringUtils.format(STRING_MAPPING_USAGE, STRING_MAPPING_TYPE_XSL,
                     STRING_MAPPING_DIRECTION_INPUT));
                 try {
-                    xmlMapper.transformXMLFileWithXSLT(new File(cpacsInitial), new File(getToolInput()), mappingFile);
+                    xmlMapper.transformXMLFileWithXSLT(new File(cpacsInitial), new File(getToolInput()), mappingFile,
+                        new CpacsToolIntegratorTextLinesReceiver());
                 } catch (XMLException e) {
                     throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
                         STRING_TOOL_MAPPING_DIRECTION_INPUT), e);
@@ -265,7 +280,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     try {
                         FileUtils.copyFile(toolInput, toolInputMapped, true);
                         xmlMapper.transformXMLFileWithXSLT(new File(getToolInput() + SUFFIX_MAPPED), new File(getToolInput()),
-                            new File(getToolspecificInputMapping()));
+                            new File(getToolspecificInputMapping()), null);
                     } catch (IOException e) {
                         throw new ComponentException(StringUtils.format(
                             STRING_TOOL_INPUT_FILE_NOT_FOUND,
@@ -455,11 +470,11 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
             }
         }
     }
-    
+
     @Override
     protected void afterPostScriptExecution(Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
-        
+
         // if not-a-value was sent to the CPACS output, send not-a-value to all of the dynamic outputs and skip output mapping as no more
         // values must be sent to the CPACS output
         Set<String> outputsWithNotAValue = getOutputsWithNotAValueWritten();
@@ -470,7 +485,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                 + "sent to all of the dynamic outputs (if existent) which would extract some value from the resulting CPACS file");
             return;
         }
-        
+
         try {
             Boolean outputFileExists = new File(getToolOutput()).exists();
             componentLog.componentInfo(StringUtils.format(STRING_TOOL_OUTPUT_FILE_EXISTS, getToolOutput(),
@@ -518,7 +533,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
         }
 
     }
-    
+
     private void writeNotAValueToDynamicOutputs(Set<String> outputsWithNotAValue) {
         TypedDatumFactory typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
         for (String outputName : componentContext.getOutputs()) {
@@ -559,7 +574,8 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     STRING_MAPPING_TYPE_XSL,
                     STRING_MAPPING_DIRECTION_OUTPUT));
                 try {
-                    xmlMapper.transformXMLFileWithXSLT(new File(cpacsInitial), new File(getCpacsResult()), mappingFile);
+                    xmlMapper.transformXMLFileWithXSLT(new File(cpacsInitial), new File(getCpacsResult()), mappingFile,
+                        new CpacsToolIntegratorTextLinesReceiver());
                 } catch (XMLException e) {
                     throw new ComponentException(StringUtils.format(STRING_XML_ERROR_DURING_MAPPING,
                         STRING_MAPPING_DIRECTION_OUTPUT), e);
@@ -626,7 +642,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
         return outputDirectory + File.separator
             + componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_RESULT_FILENAME);
     }
-    
+
     protected String getCpacsOutputName() {
         return componentContext.getConfigurationValue(CpacsToolIntegrationConstants.KEY_CPACS_OUTGOING_ENDPOINTNAME);
     }
@@ -659,14 +675,13 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
     /**
      * --- MOVED HERE FROM OLD CPACSMAPPER ---
      * 
-     * Transforms a XML mapping stylesheet to the final mapping XML document by surrounding it with
-     * a XSLT header and executing this XSLT stylesheet. This method rearranges, e.g., xslt loops to
-     * simple source/target mappings.
+     * Transforms a XML mapping stylesheet to the final mapping XML document by surrounding it with a XSLT header and executing this XSLT
+     * stylesheet. This method rearranges, e.g., xslt loops to simple source/target mappings.
      * 
      * @param mappingFilename The file name of the mapping file to be transformed.
      * @param sourceFilename The file name of an input (source) file.
-     * @param targetFilename The file name of the target file, in which the source file should be
-     *        imported. If content is empty ("") a new file will be created.
+     * @param targetFilename The file name of the target file, in which the source file should be imported. If content is empty ("") a new
+     *        file will be created.
      * 
      * @return Returns the final mapping XML document as DOM document.
      * @throws ComponentException Thrown if mapping fails.

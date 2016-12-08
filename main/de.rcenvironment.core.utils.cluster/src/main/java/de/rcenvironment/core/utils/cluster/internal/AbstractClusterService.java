@@ -19,6 +19,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -92,9 +93,9 @@ public abstract class AbstractClusterService implements ClusterService {
                         sshConfiguration.getSshAuthPhrase(), null);
                     
                 } catch (JSchException e) {
-                    throw new IOException("Establishing connection to cluster failed", e);
+                    throw new IOException("Establishing connection to cluster failed: " + ExceptionUtils.getRootCauseMessage(e), e);
                 } catch (SshParameterException e) {
-                    throw new IOException("Establishing connection to cluster failed", e);
+                    throw new IOException("Establishing connection to cluster failed" + ExceptionUtils.getRootCauseMessage(e), e);
                 }
             }   
         }

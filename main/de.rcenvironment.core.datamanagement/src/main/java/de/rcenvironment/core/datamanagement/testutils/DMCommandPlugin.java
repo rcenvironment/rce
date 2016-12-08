@@ -38,25 +38,28 @@ import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamanagement.commons.PropertiesKeys;
+import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A {@link CommandPlugin} providing commands for testing the data management.
  *
  * @author Brigitte Boden
+ * @author Jascha Riedel (#13978)
  */
 public class DMCommandPlugin implements CommandPlugin {
 
@@ -71,6 +74,8 @@ public class DMCommandPlugin implements CommandPlugin {
     private static final int DEFAULT_NUMBER_OF_COMPONENTS = 10;
 
     private static final int DEFAULT_NUMBER_OF_WORKFLOWS = 10;
+
+    private static final String DEFAULT_WORKFLOWNAME_PREFIX = "dummy_workflow";
 
     /**
      * The values for number of iterations, number of components and number of inputs are varied for each workflow. This constant defines
@@ -129,8 +134,15 @@ public class DMCommandPlugin implements CommandPlugin {
         final int userDefinednumberOfWorkflows;
         final int userDefinednumberOfIterations;
         final double userDefinedAllowedDeviation;
+        final String userDefinedWorkflowNamePrefix;
 
         // Read optional parameters
+        String workflowPrefix = readOptionalStringParameter(context, "--prefix");
+        if (workflowPrefix != null) {
+            userDefinedWorkflowNamePrefix = workflowPrefix;
+        } else {
+            userDefinedWorkflowNamePrefix = DEFAULT_WORKFLOWNAME_PREFIX;
+        }
         Integer w = readOptionalIntParameter(context, "--workflows");
         if (w != null) {
             userDefinednumberOfWorkflows = w;
@@ -143,7 +155,6 @@ public class DMCommandPlugin implements CommandPlugin {
         } else {
             userDefinednumberOfIterations = DEFAULT_NUMBER_OF_ITERATIONS;
         }
-
         Double deviationInPercent = readOptionalDoubleParameter(context, "--allowedDeviation");
         if (deviationInPercent != null) {
             userDefinedAllowedDeviation = deviationInPercent / NUMBER_100;
@@ -159,7 +170,7 @@ public class DMCommandPlugin implements CommandPlugin {
         }
 
         List<String> fileTokens = context.consumeRemainingTokens();
-        
+
         FileCreationOption fileCreationOption = FileCreationOption.NONE;
         if (fileTokens.contains("--smallfiles")) {
             fileCreationOption = FileCreationOption.SMALL;
@@ -204,7 +215,7 @@ public class DMCommandPlugin implements CommandPlugin {
             dummyFile = null;
         }
 
-        String localNodeId = platformService.getLocalNodeId().getIdString();
+        final String localNodeId = platformService.getLocalInstanceNodeSessionId().getInstanceNodeSessionIdString();
         typedDatumFactory = typedDatumService.getFactory();
         typedDatumSerializer = typedDatumService.getSerializer();
 
@@ -214,7 +225,8 @@ public class DMCommandPlugin implements CommandPlugin {
         while (workflowIndex < userDefinednumberOfWorkflows) {
 
             // Create a CallablesGroup with WORKFLOWS_TO_CREATE_IN_PARALLEL threads
-            CallablesGroup<CommandException> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(CommandException.class);
+            CallablesGroup<CommandException> callablesGroup =
+                ConcurrencyUtils.getFactory().createCallablesGroup(CommandException.class);
 
             for (int i = 0; i < WORKFLOWS_TO_CREATE_IN_PARALLEL; i++) {
                 workflowIndex++;
@@ -226,7 +238,8 @@ public class DMCommandPlugin implements CommandPlugin {
                     randomizeValue(DEFAULT_NUMBER_OF_INPUTS, userDefinedAllowedDeviation);
                 int numberOfIterations = randomizeValue(userDefinednumberOfIterations, userDefinedAllowedDeviation);
                 CreateWorkflowCallableContext workflowCreationContext =
-                    new CreateWorkflowCallableContext(wfFile, localNodeId, context, dummyFile, logFile, numberOfComponents,
+                    new CreateWorkflowCallableContext(wfFile, userDefinedWorkflowNamePrefix, localNodeId, context, dummyFile,
+                        logFile, numberOfComponents,
                         numberOfInputs, workflowIndex, numberOfIterations, fileCreationOption);
 
                 callablesGroup.add(new CreateWorkflowCallable(workflowCreationContext));
@@ -264,6 +277,17 @@ public class DMCommandPlugin implements CommandPlugin {
             } catch (NumberFormatException e) {
                 throw CommandException.executionError(e.getMessage(), context);
             }
+        }
+        return null;
+    }
+
+    private String readOptionalStringParameter(CommandContext context, String parameter) throws CommandException {
+        if (context.consumeNextTokenIfEquals(parameter)) {
+            String prefix = context.consumeNextToken();
+            if (prefix == null) {
+                throw CommandException.syntaxError("Missing Workflow Name Prefix", context);
+            }
+            return prefix;
         }
         return null;
     }
@@ -352,6 +376,8 @@ public class DMCommandPlugin implements CommandPlugin {
 
         private File wfFile;
 
+        private String prefixName;
+
         private String localNodeId;
 
         private CommandContext context;
@@ -370,10 +396,11 @@ public class DMCommandPlugin implements CommandPlugin {
 
         private FileCreationOption fileCreationOption;
 
-        private CreateWorkflowCallableContext(File wfFile, String localNodeId, CommandContext context, File dummyFile,
+        private CreateWorkflowCallableContext(File wfFile, String prefixName, String localNodeId, CommandContext context, File dummyFile,
             File logFile, int numberOfComponents, int numberOfInputs,
             int workflowNumber, int numberOfIterations, FileCreationOption fileCreationOption) {
             this.wfFile = wfFile;
+            this.prefixName = prefixName;
             this.localNodeId = localNodeId;
             this.context = context;
             this.dummyFile = dummyFile;
@@ -404,7 +431,7 @@ public class DMCommandPlugin implements CommandPlugin {
         public CommandException call() {
             Map<String, Long> compInstDmIds;
             try {
-                final String workflowTitle = "dummy-workflow_" + workflowCreationContext.workflowNumber;
+                final String workflowTitle = workflowCreationContext.prefixName + "_" + workflowCreationContext.workflowNumber;
                 Long id =
                     metaDataService.addWorkflowRun(workflowTitle,
                         workflowCreationContext.localNodeId, workflowCreationContext.localNodeId,
@@ -415,7 +442,7 @@ public class DMCommandPlugin implements CommandPlugin {
                 try {
                     final String wfFileReference =
                         dataManagementService.createReferenceFromLocalFile(workflowCreationContext.wfFile, mds,
-                            platformService.getLocalNodeId());
+                            platformService.getLocalInstanceNodeSessionId());
                     TypedDatum fileRefTD = typedDatumFactory.createFileReference(wfFileReference,
                         workflowCreationContext.wfFile.getName());
                     metaDataService.addWorkflowFileToWorkflowRun(id, typedDatumSerializer.serialize(fileRefTD));
@@ -431,8 +458,10 @@ public class DMCommandPlugin implements CommandPlugin {
                 Set<EndpointInstance> endpointInstancesIn = new HashSet<>();
                 Set<EndpointInstance> endpointInstancesOut = new HashSet<>();
                 for (int z = 1; z <= workflowCreationContext.numberOfInputs; z++) {
-                    endpointInstancesIn.add(new EndpointInstance("input_" + z, EndpointType.INPUT));
-                    endpointInstancesOut.add(new EndpointInstance("output_" + z, EndpointType.OUTPUT));
+                    Map<String, String> metaData = new HashMap<String, String>();
+                    metaData.put(MetaDataKeys.DATA_TYPE, DataType.Float.getShortName());
+                    endpointInstancesIn.add(new EndpointInstance("input_" + z, EndpointType.INPUT, metaData));
+                    endpointInstancesOut.add(new EndpointInstance("output_" + z, EndpointType.OUTPUT, metaData));
                 }
                 for (Long componentInstanceId : compInstDmIds.values()) {
                     Map<String, Long> endpointIdsIn =
@@ -453,7 +482,7 @@ public class DMCommandPlugin implements CommandPlugin {
                                 try {
                                     dummyFileReference =
                                         dataManagementService.createReferenceFromLocalFile(workflowCreationContext.dummyFile, mds,
-                                            platformService.getLocalNodeId());
+                                            platformService.getLocalInstanceNodeSessionId());
                                 } catch (AuthorizationException | IOException | InterruptedException | CommunicationException e) {
                                     return CommandException.executionError("Could not create reference for dummy file.",
                                         workflowCreationContext.context);
@@ -470,14 +499,15 @@ public class DMCommandPlugin implements CommandPlugin {
                         for (Long endpointInstanceId : endpointIdsIn.values()) {
                             metaDataService.addInputDatum(componentRunId, typedDatumId, endpointInstanceId, j);
                         }
-                        metaDataService.setComponentRunFinished(componentRunId, System.currentTimeMillis());
+                        metaDataService
+                            .setComponentRunFinished(componentRunId, System.currentTimeMillis(), FinalComponentRunState.FINISHED);
 
                         Map<String, String> properties = new HashMap<String, String>();
                         String logFileReference;
                         try {
                             logFileReference =
                                 dataManagementService.createReferenceFromLocalFile(workflowCreationContext.logFile, mds,
-                                    platformService.getLocalNodeId());
+                                    platformService.getLocalInstanceNodeSessionId());
                         } catch (AuthorizationException | IOException | InterruptedException | CommunicationException e) {
                             return CommandException.executionError("Could not store dummy component log file.",
                                 workflowCreationContext.context);

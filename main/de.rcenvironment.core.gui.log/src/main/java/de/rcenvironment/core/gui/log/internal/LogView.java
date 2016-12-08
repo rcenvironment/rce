@@ -30,7 +30,6 @@ import org.eclipse.swt.events.MenuDetectEvent;
 import org.eclipse.swt.events.MenuDetectListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
-import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Font;
 import org.eclipse.swt.graphics.FontData;
 import org.eclipse.swt.layout.GridData;
@@ -53,9 +52,11 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
+import de.rcenvironment.core.gui.resources.api.ColorManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardColors;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.log.SerializableLogEntry;
@@ -287,10 +288,10 @@ public class LogView extends ViewPart {
         serviceRegistryAccess.registerService(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
 
             @Override
-            public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
-                Set<NodeIdentifier> removedWfHosts) {
+            public void onReachableWorkflowHostsChanged(Set<InstanceNodeSessionId> reachableWfHosts,
+                Set<InstanceNodeSessionId> addedWfHosts, Set<InstanceNodeSessionId> removedWfHosts) {
 
-                final List<NodeIdentifier> nodeIds = LogModel.getInstance().updateListOfLogSources();
+                final List<InstanceNodeSessionId> nodeIds = LogModel.getInstance().updateListOfLogSources();
                 display.asyncExec(new Runnable() {
 
                     @Override
@@ -308,7 +309,7 @@ public class LogView extends ViewPart {
      * 
      * @param platform Current selected platform.
      */
-    private void asyncRefresh(final NodeIdentifier platform) {
+    private void asyncRefresh(final InstanceNodeSessionId platform) {
         myLogEntryTableViewer.getTable().getDisplay().asyncExec(new Runnable() {
 
             @Override
@@ -343,8 +344,8 @@ public class LogView extends ViewPart {
         return myCheckboxWarn.getSelection();
     }
 
-    public NodeIdentifier getPlatform() {
-        return (NodeIdentifier) myPlatformCombo.getData(myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex()));
+    public InstanceNodeSessionId getPlatform() {
+        return (InstanceNodeSessionId) myPlatformCombo.getData(myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex()));
     }
 
     /**
@@ -443,15 +444,15 @@ public class LogView extends ViewPart {
 
         // platform listing combo box
         myPlatformCombo = new Combo(platformComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
-        for (NodeIdentifier nodeId : LogModel.getInstance().updateListOfLogSources()) {
+        for (InstanceNodeSessionId nodeId : LogModel.getInstance().updateListOfLogSources()) {
             myPlatformCombo.add(nodeId.getAssociatedDisplayName());
             myPlatformCombo.setData(nodeId.getAssociatedDisplayName(), nodeId);
         }
-        
+
         myPlatformCombo.select(0);
         myPlatformCombo.setLayoutData(new RowData(PLATFORM_WIDTH, SWT.DEFAULT));
 
-        LogModel.getInstance().setSelectedLogSource((NodeIdentifier) myPlatformCombo.getData(
+        LogModel.getInstance().setSelectedLogSource((InstanceNodeSessionId) myPlatformCombo.getData(
             myPlatformCombo.getItem(myPlatformCombo.getSelectionIndex())));
     }
 
@@ -480,11 +481,7 @@ public class LogView extends ViewPart {
         searchWarning = new Label(warningComp, SWT.CENTER | SWT.BORDER);
         searchWarning.setVisible(false);
 
-        final int r = 255;
-        final int g = 125;
-        final int b = 125;
-
-        searchWarning.setBackground(new Color(null, r, g, b));
+        searchWarning.setBackground(ColorManager.getInstance().getSharedColor(StandardColors.RCE_GERALDINE));
         searchWarning.setFont(new Font(null, new FontData("TimesNewRoman", 8, 1)));
         searchWarning.setText(" Only one ' * ' in a row allowed ");
     }
@@ -683,17 +680,17 @@ public class LogView extends ViewPart {
         return result;
     }
 
-    private void refreshPlatformCombo(List<NodeIdentifier> nodeIds) {
+    private void refreshPlatformCombo(List<InstanceNodeSessionId> nodeIds) {
         myPlatformCombo.removeAll();
-        for (NodeIdentifier nodeId : nodeIds) {
+        for (InstanceNodeSessionId nodeId : nodeIds) {
             myPlatformCombo.add(nodeId.getAssociatedDisplayName());
             myPlatformCombo.setData(nodeId.getAssociatedDisplayName(), nodeId);
         }
-        
+
         LogModel logModel = LogModel.getInstance();
         logModel.updateListOfLogSources();
         // select platform (previously selected)
-        NodeIdentifier currentPlatform = logModel.getCurrentLogSource();
+        InstanceNodeSessionId currentPlatform = logModel.getCurrentLogSource();
         if (currentPlatform != null) {
             String[] items = myPlatformCombo.getItems();
             for (int i = 0; i < items.length; i++) {
@@ -704,7 +701,7 @@ public class LogView extends ViewPart {
             }
         }
         myPlatformCombo.select(0);
-        logModel.setSelectedLogSource((NodeIdentifier) myPlatformCombo.getData(myPlatformCombo.getItem(0)));
+        logModel.setSelectedLogSource((InstanceNodeSessionId) myPlatformCombo.getData(myPlatformCombo.getItem(0)));
         asyncRefresh(logModel.getCurrentLogSource());
     }
 

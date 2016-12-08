@@ -5,7 +5,7 @@
     <title>VAMPzero Initializer Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-        <para>The VAMPzero initializer provides means to create an input data set for the conceptual
+        <para>The VAMPzero initializer provides a tool to create an input data set for the conceptual
             aircraft design tool VAMPzero via a user-friendly graphical interface. The output
             consists of a CPACS file that can be forwarded to a copy of VAMPzero.</para>
     </sect1>
@@ -16,15 +16,15 @@
             users to easily start their aircraft design. Hence, it is important to provide means to
             easily manipulate the input settings of VAMPzero without being forced to interact with
             the CPACS file directly. In consequence, the VAMPzero Initializer fulfils this task, as
-            it can create new or manipulate existing input data sets for VAMPzero.  The output of
+            it can create new or manipulate existing input data sets for VAMPzero. The output of
             the VAMPzero Initializer is a CPACS file that contains the &lt;toolspecific> input for
             VAMPzero. Hence, an identical file can be created manually. In a subsequent step the
             file needs to be forwarded to an instance of VAMPzero to perform the conceptual aircraft
             design.</para>
         <para>All input values of VAMPzero are available. Nevertheless, there is no check whether
             the input setting is actually reasonable or not. For further information on VAMPzero and
-            its parameters please visit: <ulink url="http://software.dlr.de/p/vampzero/home/"
-                >http://software.dlr.de/p/vampzero/home/</ulink></para>
+            its parameters please visit: <ulink url="https://software.dlr.de/p/vampzero/home/"
+                >https://software.dlr.de/p/vampzero/home/</ulink></para>
     </sect1>
     <sect1>
         <title>Usage</title>
@@ -32,7 +32,7 @@
             parameters to the aircraft. Each parameter, e.g., reference Area, is adjacent to a
             component, e.g., wing, and a discipline, e.g., geometry. Hence, first the component and
             the discipline must be selected to obtain a list of possible inputs. If you want to
-            remove a parameter from an input set the you may use the revert button.</para>
+            remove a parameter from an input set you may use the revert button.</para>
         <para>You may either enter a value or a factor. A value overwrites VAMPzero's initial value.
             A factor is simply multiplicated to the VAMPzero calculation method, much like a normal
             technology factor.</para>

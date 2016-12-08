@@ -16,12 +16,14 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.InitialDynamicEndpointDefinition;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -30,10 +32,13 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implements Serializable, EndpointDefinition {
 
+    private static final String KEY_CHARACTER = "character";
+
     private static final String KEY_DATATYPE = "datatype";
-    
+
     private static final String READ_ONLY_NAME = "readOnlyName";
 
     private static final String KEY_READ_ONLY = "readOnly";
@@ -41,41 +46,48 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     private static final String KEY_DATATYPES = "dataTypes";
 
     private static final String KEY_DEFAULT_DATATYPE = "defaultDataType";
-    
+
     private static final String KEY_INPUT_HANDLING_OPTIONS = "inputHandlingOptions";
 
     private static final String KEY_DEFAULT_INPUT_HANDLING = "defaultInputHandling";
-    
+
     private static final String KEY_EXECUTION_CONSTRAINT_OPTIONS = "inputExecutionConstraintOptions";
 
     private static final String KEY_DEFAULT_EXECUTION_CONSTRAINT = "defaultInputExecutionConstraint";
-    
+
     private static final String KEY_METADATA = "metaData";
-    
+
     private static final String KEY_INITIAL_ENDPOINTS = "initialEndpoints";
-    
+
     private static final long serialVersionUID = -3853446362359127472L;
 
     private Map<String, Object> rawEndpointDefinition;
-    
-    private Map<String, Object> definition;
-    
-    private Map<String, Object> rawEndpointDefinitionExtension = new HashMap<>();
 
-    private Map<String, Object> endpointDefinitionExtension;
+    private Map<String, Object> rawEndpointDefinitionExtension = new HashMap<>();
 
     private EndpointType endpointType;
 
+    @JsonIgnore
+    private Map<String, Object> definition;
+
+    @JsonIgnore
+    private Map<String, Object> endpointDefinitionExtension;
+
+    @JsonIgnore
     private List<DataType> dataTypes;
-    
+
+    @JsonIgnore
     private List<InputDatumHandling> inputDatumHandlings;
-    
+
+    @JsonIgnore
     private List<InputExecutionContraint> inputExecutionContraints;
 
+    @JsonIgnore
     private EndpointMetaDataDefinitionImpl metaDataDefinition;
-    
+
+    @JsonIgnore
     private List<InitialDynamicEndpointDefinitionImpl> initialEndpointDefinitions;
-    
+
     @JsonIgnore
     @Override
     public boolean isStatic() {
@@ -87,7 +99,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     public boolean isReadOnly() {
         return definition.containsKey(KEY_READ_ONLY) && Boolean.parseBoolean((String) definition.get(KEY_READ_ONLY));
     }
-    
+
     @JsonIgnore
     @Override
     public boolean isNameReadOnly() {
@@ -105,7 +117,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
     public DataType getDefaultDataType() {
         return DataType.valueOf((String) definition.get(KEY_DEFAULT_DATATYPE));
     }
-    
+
     @JsonIgnore
     @Override
     public List<InputDatumHandling> getInputDatumOptions() {
@@ -137,28 +149,44 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
             return getInputExecutionConstraintOptions().get(0);
         }
     }
-    
+
     @JsonIgnore
     @Override
     public EndpointMetaDataDefinition getMetaDataDefinition() {
         return metaDataDefinition;
+    }
+
+    @JsonIgnore
+    @Override
+    public EndpointCharacter getEndpointCharacter() {
+        if (definition.containsKey(KEY_CHARACTER)) {
+            return EndpointCharacter.fromEndpointDefinitionValue((String) definition.get(KEY_CHARACTER));
+        } else {
+            return EndpointCharacter.SAME_LOOP;
+        }
+    }
+
+    @JsonIgnore
+    @Override
+    public List<InitialDynamicEndpointDefinition> getInitialDynamicEndpointDefinitions() {
+        return new ArrayList<InitialDynamicEndpointDefinition>(initialEndpointDefinitions);
     }
     
     @Override
     public EndpointType getEndpointType() {
         return endpointType;
     }
-
-    public void setEndpointType(EndpointType type) {
-        this.endpointType = type;
-    }
     
     public Map<String, Object> getRawEndpointDefinition() {
         return rawEndpointDefinition;
     }
-    
+
     public Map<String, Object> getRawEndpointDefinitionExtension() {
         return rawEndpointDefinitionExtension;
+    }
+
+    public void setEndpointType(EndpointType type) {
+        this.endpointType = type;
     }
     
     /**
@@ -171,13 +199,13 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
         this.rawEndpointDefinition = rawEndpointDefinition;
         this.rawEndpointGroupDefinition = rawEndpointDefinition;
         this.definition = new HashMap<String, Object>(rawEndpointDefinition);
-        
+
         this.dataTypes = new ArrayList<DataType>();
         for (String dataType : (List<String>) definition.get(KEY_DATATYPES)) {
             dataTypes.add(DataType.valueOf(dataType));
         }
         Collections.sort(dataTypes);
-        
+
         this.inputDatumHandlings = new ArrayList<InputDatumHandling>();
         if (definition.containsKey(KEY_INPUT_HANDLING_OPTIONS)) {
             for (String inputDatumHandling : (List<String>) definition.get(KEY_INPUT_HANDLING_OPTIONS)) {
@@ -186,7 +214,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
         } else {
             inputDatumHandlings.add(InputDatumHandling.Single);
         }
-        
+
         this.inputExecutionContraints = new ArrayList<InputExecutionContraint>();
         if (definition.containsKey(KEY_EXECUTION_CONSTRAINT_OPTIONS)) {
             for (String inputExecutionContraint : (List<String>) definition.get(KEY_EXECUTION_CONSTRAINT_OPTIONS)) {
@@ -195,13 +223,13 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
         } else {
             inputExecutionContraints.add(InputExecutionContraint.Required);
         }
-        
+
         Map<String, Map<String, Object>> metaData = (Map<String, Map<String, Object>>) definition.get(KEY_METADATA);
         if (metaData == null) {
             metaData = new HashMap<String, Map<String, Object>>();
         }
         this.metaDataDefinition = new EndpointMetaDataDefinitionImpl();
-        ((EndpointMetaDataDefinitionImpl) metaDataDefinition).setRawMetaData(metaData);
+        metaDataDefinition.setRawMetaData(metaData);
 
         definition.remove(KEY_METADATA);
 
@@ -219,7 +247,7 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
                 + "declared list of allowed input execution constraint options '%s'", getDefaultInputExecutionConstraint(),
                 inputExecutionContraints));
         }
-        
+
         initialEndpointDefinitions = new ArrayList<InitialDynamicEndpointDefinitionImpl>();
         List<Map<String, Object>> rawInitialEndpoints = (List<Map<String, Object>>) definition.get(KEY_INITIAL_ENDPOINTS);
         if (rawInitialEndpoints != null) {
@@ -230,8 +258,9 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
                 }
                 initialEndpointDefinitions.add(new InitialDynamicEndpointDefinitionImpl((String) defaultEndpoint.get(
                     EndpointDefinitionConstants.KEY_NAME), dataType));
-            }            
+            }
         }
+
     }
 
     /**
@@ -248,15 +277,6 @@ public class EndpointDefinitionImpl extends EndpointGroupDefinitionImpl implemen
             metaData = new HashMap<String, Map<String, Object>>();
         }
         metaDataDefinition.setRawMetaDataExtensions(metaData);
-    }
-    
-    @Override
-    public List<InitialDynamicEndpointDefinition> getInitialDynamicEndpointDefinitions() {
-        return new ArrayList<InitialDynamicEndpointDefinition>(initialEndpointDefinitions);
-    }
-    
-    public void setInitialDynamicEndpointDefinitions(List<InitialDynamicEndpointDefinitionImpl> definitions) {
-        initialEndpointDefinitions = definitions;
     }
 
 }

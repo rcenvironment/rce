@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.components.cpacs.writer.gui</artifactId>
-	<version>7.1.5.qualifier</version>
+	<version>8.0.0.qualifier</version>
 	<name>RCE CPACS Writer Component GUI Bundle</name>
 	<packaging>eclipse-plugin</packaging>
 

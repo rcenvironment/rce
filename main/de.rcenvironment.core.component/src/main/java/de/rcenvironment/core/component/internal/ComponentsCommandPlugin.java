@@ -18,7 +18,7 @@ import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
@@ -80,7 +80,8 @@ public class ComponentsCommandPlugin implements CommandPlugin {
         }
 
         for (String nodeId : components.keySet()) {
-            context.println(StringUtils.format("Components available on %s:", NodeIdentifierFactory.fromNodeId(nodeId)));
+            context.println(StringUtils.format("Components available on %s:",
+                NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(nodeId)));
             for (String component : components.get(nodeId)) {
                 context.println("  " + component);
             }

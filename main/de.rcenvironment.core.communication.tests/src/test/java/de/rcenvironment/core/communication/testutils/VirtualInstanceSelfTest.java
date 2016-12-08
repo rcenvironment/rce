@@ -27,7 +27,7 @@ public class VirtualInstanceSelfTest extends AbstractVirtualInstanceTest {
      */
     @Test
     public void testMinimalSetup() throws InterruptedException {
-        VirtualInstance virtualInstance = new VirtualInstance("nodeId", "Node Name");
+        VirtualInstance virtualInstance = new VirtualInstance("The Node Name");
         log.debug("Starting virtual instance");
         virtualInstance.start();
         log.debug("Shutting down virtual instance");
@@ -48,31 +48,31 @@ public class VirtualInstanceSelfTest extends AbstractVirtualInstanceTest {
         VirtualInstanceGroup group = testTopology.getAsGroup();
 
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.INITIAL, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.INITIAL, vi.getCurrentState());
         }
         group.start();
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.STARTED, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.STARTED, vi.getCurrentState());
         }
         group.shutDown();
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.STOPPED, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.STOPPED, vi.getCurrentState());
         }
         group.start();
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.STARTED, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.STARTED, vi.getCurrentState());
         }
         group.simulateCrash();
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.STOPPED, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.STOPPED, vi.getCurrentState());
         }
         group.start();
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.STARTED, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.STARTED, vi.getCurrentState());
         }
         group.shutDown();
         for (VirtualInstance vi : allInstances) {
-            assertEquals(vi.getNodeId().toString(), VirtualInstanceState.STOPPED, vi.getCurrentState());
+            assertEquals(vi.getInstanceNodeSessionId().toString(), VirtualInstanceState.STOPPED, vi.getCurrentState());
         }
     }
 

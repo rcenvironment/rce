@@ -11,7 +11,8 @@ package de.rcenvironment.core.component.workflow.execution.api;
 import java.io.File;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.component.execution.api.ExecutionController;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.workflow.execution.spi.WorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
@@ -89,7 +90,7 @@ public interface WorkflowExecutionService {
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void cancel(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
+    void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Triggers workflow to pause.
@@ -100,7 +101,7 @@ public interface WorkflowExecutionService {
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void pause(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
+    void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Triggers workflow to resume when paused.
@@ -111,7 +112,7 @@ public interface WorkflowExecutionService {
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void resume(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
+    void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Triggers workflow to dispose.
@@ -122,7 +123,7 @@ public interface WorkflowExecutionService {
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void dispose(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
+    void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException;
 
     /**
      * Gets current workflow state.
@@ -134,7 +135,8 @@ public interface WorkflowExecutionService {
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
+    WorkflowState getWorkflowState(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+        RemoteOperationException;
 
     /**
      * Gets current workflow state.
@@ -146,7 +148,8 @@ public interface WorkflowExecutionService {
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    Long getWorkflowDataManagementId(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException;
+    Long getWorkflowDataManagementId(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
+        RemoteOperationException;
 
     /**
      * @return {@link WorkflowExecutionInformation} objects of all active and local workflows

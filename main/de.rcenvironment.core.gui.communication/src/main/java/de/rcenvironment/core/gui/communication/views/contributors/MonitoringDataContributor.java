@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.gui.communication.views.contributors;
 
-import static de.rcenvironment.core.monitoring.system.api.SystemMonitoringService.PERCENTAGE_TO_DISPLAY_VALUE_MULTIPLIER;
+import static de.rcenvironment.core.monitoring.system.api.SystemMonitoringConstants.PERCENTAGE_TO_DISPLAY_VALUE_MULTIPLIER;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,7 +27,8 @@ import org.eclipse.jface.viewers.TreeExpansionEvent;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.graphics.Image;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
 import de.rcenvironment.core.gui.communication.views.NetworkViewContentProvider;
@@ -38,13 +39,15 @@ import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
 import de.rcenvironment.core.gui.communication.views.spi.SelfRenderingNetworkViewNode;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
-import de.rcenvironment.core.monitoring.system.api.ProcessInformation;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataPollingManager;
-import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
 import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshotListener;
+import de.rcenvironment.core.monitoring.system.api.model.ProcessInformation;
+import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Contributes a subtree for node resource informations.
@@ -68,15 +71,15 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
 
     private static final int MONITORING_DATA_PRIORITY = 15;
 
-    private final Map<NodeIdentifier, ContributedNetworkViewNode> idToNodeMap;
+    private final Map<InstanceNodeSessionId, ContributedNetworkViewNode> idToNodeMap;
 
-    private final Map<NodeIdentifier, ContributedNetworkViewNode> expansionsMap;
+    private final Map<InstanceNodeSessionId, ContributedNetworkViewNode> expansionsMap;
 
-    private final Map<NodeIdentifier, List<RceNode>> nodeIdToRceNodeMap;
+    private final Map<InstanceNodeSessionId, List<RceNode>> nodeIdToRceNodeMap;
 
-    private final Map<NodeIdentifier, List<InstanceResourceInfoNode>> nodeIdToInstanceResourceInfoMap;
+    private final Map<InstanceNodeSessionId, List<InstanceResourceInfoNode>> nodeIdToInstanceResourceInfoMap;
 
-    private final SystemMonitoringDataPollingManager manager = new SystemMonitoringDataPollingManager();
+    private final SystemMonitoringDataPollingManager pollingManager;
 
     private final Image cpuMonitorImage0;
 
@@ -115,6 +118,12 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
     private final Log log = LogFactory.getLog(getClass());
 
     public MonitoringDataContributor() {
+
+        final ServiceRegistryAccess serviceAccess = ServiceRegistry.createAccessFor(this);
+        final CommunicationService communicationService = serviceAccess.getService(CommunicationService.class);
+        final AsyncTaskService asyncTaskService = serviceAccess.getService(AsyncTaskService.class);
+        pollingManager = new SystemMonitoringDataPollingManager(communicationService, asyncTaskService);
+
         sharedFolderImage = ImageManager.getInstance().getSharedImage(StandardImages.FOLDER_16);
         dummyImage = ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16);
         // TODO this should be handled via arrays, not copy&paste
@@ -758,7 +767,8 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
         List<Object> result = new ArrayList<>(7);
 
         MonitoringDataFolderRootNode rootNode = (MonitoringDataFolderRootNode) parentNode;
-        SystemMonitoringDataSnapshot model = currentModel.getMonitoringDataModelMap().get(rootNode.getInstanceNode().getNode().getNodeId());
+        FullSystemAndProcessDataSnapshot model =
+            currentModel.getMonitoringDataModelMap().get(rootNode.getInstanceNode().getNode().getNodeId());
 
         if (model == null) {
             Object[] placeHolder = new Object[1];
@@ -766,8 +776,8 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             return placeHolder;
         }
 
-        final NodeIdentifier nodeId = rootNode.getInstanceNode().getNode().getNodeId();
-        final String nodeIdString = nodeId.getIdString();
+        final InstanceNodeSessionId nodeId = rootNode.getInstanceNode().getNode().getNodeId();
+        final String nodeIdString = nodeId.getInstanceNodeSessionIdString();
         boolean keyExists = false;
         synchronized (nodeIdToInstanceResourceInfoMap) {
             keyExists = nodeIdToRceNodeMap.containsKey(nodeId);
@@ -857,7 +867,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             result.addAll(nodeIdToRceNodeMap.get(nodeId));
             result.addAll(nodeIdToInstanceResourceInfoMap.get(nodeId));
         }
-        
+
         return result.toArray();
     }
 
@@ -917,7 +927,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
              * @param element The element of the network tree whose state changed.
              */
             private void checkChildrenForSystemMonitoring(boolean expanding, Object element) {
-                
+
                 IContentProvider tmpProvider = treeViewer.getContentProvider();
                 if (tmpProvider instanceof ITreeContentProvider) {
                     NetworkViewContentProvider provider = (NetworkViewContentProvider) tmpProvider;
@@ -935,7 +945,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
                                     stopSystemMonitoring((MonitoringDataFolderRootNode) child);
                                 }
                             }
-                        } else if (!(child instanceof SelfRenderingNetworkViewNode)){
+                        } else if (!(child instanceof SelfRenderingNetworkViewNode)) {
                             // add further children to the stack if they are expanded
                             if (provider.hasChildren(child)) {
                                 for (Object tmpChild : provider.getChildren(child)) {
@@ -953,8 +963,8 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             }
 
             private void stopSystemMonitoring(MonitoringDataFolderRootNode element) {
-                final NodeIdentifier nodeId = (element).getInstanceNode().getNode().getNodeId();
-                manager.cancelPollingTask(nodeId);
+                final InstanceNodeSessionId nodeId = (element).getInstanceNode().getNode().getNodeId();
+                pollingManager.cancelPollingTask(nodeId);
                 synchronized (nodeIdToInstanceResourceInfoMap) {
                     nodeIdToInstanceResourceInfoMap.clear();
                     nodeIdToRceNodeMap.clear();
@@ -962,16 +972,16 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
             }
 
             private void startSystemMonitoring(Object element) {
-                final NodeIdentifier node = ((MonitoringDataFolderRootNode) element).getInstanceNode().getNode().getNodeId();
+                final InstanceNodeSessionId node = ((MonitoringDataFolderRootNode) element).getInstanceNode().getNode().getNodeId();
                 // TODO check: this looks like a (minor) memory leak; the map is never reduced - misc_ro, Nov 2015
                 idToNodeMap.put(node, (ContributedNetworkViewNode) element);
                 if (node != null) {
-                    manager.startPollingTask(node, new SystemMonitoringDataSnapshotListener() {
+                    pollingManager.startPollingTask(node, new SystemMonitoringDataSnapshotListener() {
 
                         @Override
-                        public void onMonitoringDataChanged(final SystemMonitoringDataSnapshot monitoringModel) {
+                        public void onMonitoringDataChanged(final FullSystemAndProcessDataSnapshot monitoringModel) {
                             if (display.isDisposed()) {
-                                manager.cancelPollingTask(node);
+                                pollingManager.cancelPollingTask(node);
                                 return;
                             }
                             display.asyncExec(new Runnable() {
@@ -980,7 +990,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
                                 public void run() {
                                     currentModel.monitoringDataModelMap.put(node, monitoringModel);
                                     if (treeViewer.getControl().isDisposed()) {
-                                        manager.cancelPollingTask(node);
+                                        pollingManager.cancelPollingTask(node);
                                         return;
                                     }
                                     final ContributedNetworkViewNode monitoringRootElementForInstance = idToNodeMap.get(node);
@@ -1010,10 +1020,10 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
         servicePublisher.registerService(NetworkTopologyChangeListener.class, new NetworkTopologyChangeListenerAdapter() {
 
             @Override
-            public void onReachableNodesChanged(Set<NodeIdentifier> reachableNodes, Set<NodeIdentifier> addedNodes,
-                Set<NodeIdentifier> removedNodes) {
+            public void onReachableNodesChanged(Set<InstanceNodeSessionId> reachableNodes, Set<InstanceNodeSessionId> addedNodes,
+                Set<InstanceNodeSessionId> removedNodes) {
                 synchronized (nodeIdToInstanceResourceInfoMap) {
-                    for (NodeIdentifier removedNode : removedNodes) {
+                    for (InstanceNodeSessionId removedNode : removedNodes) {
                         if (nodeIdToInstanceResourceInfoMap.containsKey(removedNode)) {
                             nodeIdToInstanceResourceInfoMap.remove(removedNode);
                         }
@@ -1022,7 +1032,7 @@ public class MonitoringDataContributor extends NetworkViewContributorBase {
                         }
                     }
                 }
-                manager.cancelPollingTasks(removedNodes);
+                pollingManager.cancelPollingTasks(removedNodes);
             }
         });
     }

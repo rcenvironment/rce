@@ -21,6 +21,7 @@ import de.rcenvironment.core.datamanagement.commons.TimelineInterval;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
@@ -177,9 +178,10 @@ public interface RemotableMetaDataService {
      * 
      * @param componentRunId The identifier of the {@link ComponentRun}.
      * @param endtime The end time.
+     * @param finalState the final state of the run.
      * @throws RemoteOperationException standard remote operation exception
      */
-    void setComponentRunFinished(Long componentRunId, Long endtime) throws RemoteOperationException;
+    void setComponentRunFinished(Long componentRunId, Long endtime, FinalComponentRunState finalState) throws RemoteOperationException;
 
     /**
      * Sets the final state a {@link ComponentInstance}.

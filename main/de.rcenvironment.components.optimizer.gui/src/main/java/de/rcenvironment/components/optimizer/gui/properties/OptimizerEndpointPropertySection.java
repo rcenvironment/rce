@@ -10,15 +10,13 @@ package de.rcenvironment.components.optimizer.gui.properties;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointPropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.InputCoupledWithAnotherInputAndOutputsSelectionPane;
 
 /**
- * An extended "Properties" view tab for configuring endpoints (ie inputs and outputs) and using
- * initial Variables.
+ * An extended "Properties" view tab for configuring endpoints (ie inputs and outputs) and using initial Variables.
  * 
  * @author Sascha Zur
  */
@@ -27,29 +25,32 @@ public class OptimizerEndpointPropertySection extends EndpointPropertySection {
     public OptimizerEndpointPropertySection() {
         super();
         OptimizerEndpointSelectionPane objectivePane = new OptimizerEndpointSelectionPane(Messages.targetFunction,
-            EndpointType.INPUT, this, OptimizerComponentConstants.ID_OBJECTIVE, false);
+            EndpointType.INPUT, OptimizerComponentConstants.ID_OBJECTIVE, this, false);
         OptimizerEndpointSelectionPane constraintsPane = new OptimizerEndpointSelectionPane(Messages.constraints,
-            EndpointType.INPUT, this, OptimizerComponentConstants.ID_CONSTRAINT, false);
+            EndpointType.INPUT, OptimizerComponentConstants.ID_CONSTRAINT, this, false);
         OptimizerEndpointSelectionPane designVariablePane = new OptimizerEndpointSelectionPane(Messages.designVariables,
-            EndpointType.OUTPUT, this, OptimizerComponentConstants.ID_DESIGN, false);
+            EndpointType.OUTPUT, OptimizerComponentConstants.ID_DESIGN, this, false);
         OptimizerEndpointSelectionPane gradientsPane = new OptimizerEndpointSelectionPane("Gradients (Inputs)",
-            EndpointType.INPUT, this, OptimizerComponentConstants.ID_GRADIENTS, true);
+            EndpointType.INPUT, OptimizerComponentConstants.ID_GRADIENTS, this, true);
         OptimizerEndpointSelectionPane startValuesPane = new OptimizerEndpointSelectionPane(Messages.startValueInput,
-            EndpointType.INPUT, this, OptimizerComponentConstants.ID_STARTVALUES, true);
+            EndpointType.INPUT, OptimizerComponentConstants.ID_STARTVALUES, this, true);
         OptimizerEndpointSelectionPane optimumPane = new OptimizerEndpointSelectionPane(Messages.optimalSolutionOutput,
-            EndpointType.OUTPUT, this, OptimizerComponentConstants.ID_OPTIMA, true);
+            EndpointType.OUTPUT, OptimizerComponentConstants.ID_OPTIMA, this, true);
 
-        EndpointSelectionPane outputForwardedPane = new EndpointSelectionPane("Outputs (forwarded)", EndpointType.OUTPUT,
-            this, true, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, true, true);
+        EndpointSelectionPane outputForwardedPane =
+            new EndpointSelectionPane("Outputs (forwarded)", EndpointType.OUTPUT, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD,
+                new String[] { LoopComponentConstants.ENDPOINT_ID_FINAL_TO_FORWARD }, new String[] {}, this, true, true);
 
         InputCoupledWithAnotherInputAndOutputsSelectionPane inputToForwardPane =
-            new InputCoupledWithAnotherInputAndOutputsSelectionPane("Inputs (to forward)",
-                LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-                OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
-                this, outputForwardedPane);
+            new InputCoupledWithAnotherInputAndOutputsSelectionPane("Inputs (to forward)", LoopComponentConstants.ENDPOINT_ID_TO_FORWARD,
+                LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+                LoopComponentConstants.ENDPOINT_ID_FINAL_TO_FORWARD, OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX, this,
+                outputForwardedPane);
 
-        EndpointSelectionPane outputPaneOthers = new EndpointSelectionPane("Other (Outputs)", EndpointType.OUTPUT,
-            this, true, null, true, true);
+        EndpointSelectionPane outputPaneOthers = new EndpointSelectionPane("Outputs (other)", EndpointType.OUTPUT,
+            null, new String[] {}, new String[] { LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE,
+                OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME, OptimizerComponentConstants.DERIVATIVES_NEEDED },
+            this, false, true);
 
         setColumns(1);
         setPanes(objectivePane, constraintsPane, designVariablePane, startValuesPane, optimumPane, gradientsPane,
@@ -60,11 +61,6 @@ public class OptimizerEndpointPropertySection extends EndpointPropertySection {
             optimumPane, gradientsPane });
         designVariablePane.setAllPanes(new EndpointSelectionPane[] { objectivePane, constraintsPane, designVariablePane, startValuesPane,
             optimumPane, gradientsPane });
-
-        inputToForwardPane.setMetaDataInput(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        inputToForwardPane.setMetaDataInputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        inputToForwardPane.setMetaDataOutput(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        inputToForwardPane.setMetaDataOutputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
 
     }
 }

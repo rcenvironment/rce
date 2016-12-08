@@ -12,8 +12,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
@@ -24,6 +25,7 @@ import de.rcenvironment.core.communication.rpc.internal.MethodCallTestInterface;
  * Test constants for the communication tests.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public final class CommunicationTestHelper {
 
@@ -65,12 +67,24 @@ public final class CommunicationTestHelper {
     /**
      * NodeIdentifier.
      */
-    public static final NodeIdentifier LOCAL_PLATFORM = NodeIdentifierFactory.fromHostAndNumber(LOCALHOST_IP, INSTANCE);
+    public static final InstanceNodeSessionId LOCAL_INSTANCE_SESSION_ID = NodeIdentifierTestUtils.createTestInstanceNodeSessionId();
+
+    /**
+     * Local {@link LogicalNodeSessionId}.
+     */
+    public static final LogicalNodeSessionId LOCAL_LOGICAL_NODE_SESSION_ID = LOCAL_INSTANCE_SESSION_ID
+        .convertToDefaultLogicalNodeSessionId();
 
     /**
      * NodeIdentifier.
      */
-    public static final NodeIdentifier REMOTE_PLATFORM = NodeIdentifierFactory.fromHostAndNumber(REMOTE_HOST_IP, INSTANCE);
+    public static final InstanceNodeSessionId REMOTE_INSTANCE_SESSION_ID = NodeIdentifierTestUtils.createTestInstanceNodeSessionId();
+
+    /**
+     * Remote {@link LogicalNodeSessionId}.
+     */
+    public static final LogicalNodeSessionId REMOTE_LOGICAL_NODE_SESSION_ID = REMOTE_INSTANCE_SESSION_ID
+        .convertToDefaultLogicalNodeSessionId();
 
     /**
      * Test RMI port.
@@ -105,14 +119,14 @@ public final class CommunicationTestHelper {
     /**
      * Test communication request.
      */
-    public static final ServiceCallRequest REQUEST = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM, SERVICE,
-        METHOD, PARAMETER_LIST);
+    public static final ServiceCallRequest REQUEST = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, REMOTE_LOGICAL_NODE_SESSION_ID,
+        SERVICE, METHOD, PARAMETER_LIST);
 
     /**
      * Test communication request.
      */
-    public static final ServiceCallRequest REMOTE_REQUEST = new ServiceCallRequest(REMOTE_PLATFORM, LOCAL_PLATFORM, SERVICE,
-        METHOD, PARAMETER_LIST);
+    public static final ServiceCallRequest REMOTE_REQUEST = new ServiceCallRequest(REMOTE_LOGICAL_NODE_SESSION_ID,
+        LOCAL_LOGICAL_NODE_SESSION_ID, SERVICE, METHOD, PARAMETER_LIST);
 
     /**
      * Test communication request.

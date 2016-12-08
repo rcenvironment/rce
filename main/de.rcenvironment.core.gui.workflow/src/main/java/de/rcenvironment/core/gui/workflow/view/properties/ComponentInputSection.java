@@ -15,7 +15,7 @@ import org.eclipse.ui.IWorkbenchPart;
 
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowExecutionInformationPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowPart;
 
@@ -44,9 +44,9 @@ public class ComponentInputSection extends AbstractInputSection {
     @Override
     protected void retrieveWorkflowInformation(IWorkbenchPart part, ISelection selection) {
         final Object firstSelectionElement = ((IStructuredSelection) selection).getFirstElement();
-        workflowNode = (WorkflowNode) ((ReadOnlyWorkflowNodePart) firstSelectionElement).getModel();
+        workflowNode = (WorkflowNode) ((WorkflowRunNodePart) firstSelectionElement).getModel();
         wfExeInfo = (WorkflowExecutionInformation) ((WorkflowExecutionInformationPart) ((WorkflowPart)
-            ((ReadOnlyWorkflowNodePart) firstSelectionElement)
+            ((WorkflowRunNodePart) firstSelectionElement)
                 .getParent()).getParent()).getModel();
         componentId = wfExeInfo.getComponentExecutionInformation(workflowNode.getIdentifier()).getExecutionIdentifier();
     }

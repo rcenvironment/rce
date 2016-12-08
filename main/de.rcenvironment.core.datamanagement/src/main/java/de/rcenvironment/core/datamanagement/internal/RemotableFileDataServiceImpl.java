@@ -41,12 +41,12 @@ import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamodel.api.CompressionFormat;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * Implementation of the {@link RemotableFileDataService}.
@@ -60,6 +60,8 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
     private static final Log LOGGER = LogFactory.getLog(RemotableFileDataServiceImpl.class);
 
     private static final int UPLOAD_TEMP_FILE_STREAM_BUFFER_SIZE = 64 * 1024; // arbitrary
+
+    private static final int UPLOAD_SESSION_ID_LENGTH = 32;
 
     protected PlatformService platformService;
 
@@ -197,7 +199,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
         binaryReferences.add(binaryReference);
         // create a new data reference
         DataReference dataReference = new DataReference(uuid.toString(),
-            platformService.getLocalNodeId(), binaryReferences);
+            platformService.getLocalInstanceNodeId(), binaryReferences);
 
         // get the meta data backend and add the newly created data reference
         MetaDataBackendService metaDataBackend = BackendSupport.getMetaDataBackend();
@@ -223,7 +225,8 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
     @Override
     @AllowRemoteAccess
     public String initializeUpload() throws IOException {
-        String id = IdGenerator.randomUUID();
+        // note: not using a secure id here as RPC session authentication should not rely on such an id's secrecy anyway
+        String id = IdGenerator.fastRandomHexString(UPLOAD_SESSION_ID_LENGTH);
         UploadHolder upload = new UploadHolder();
         uploads.put(id, upload);
         return id;
@@ -249,7 +252,7 @@ public class RemotableFileDataServiceImpl implements RemotableFileDataService {
         }
 
         // asynchronously transfer the upload file to data management
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Generate data reference from upload")

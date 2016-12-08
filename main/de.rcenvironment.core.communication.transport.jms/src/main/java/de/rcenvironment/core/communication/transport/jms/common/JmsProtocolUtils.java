@@ -28,7 +28,6 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
-import de.rcenvironment.core.communication.protocol.ProtocolConstants;
 import de.rcenvironment.core.communication.transport.spi.HandshakeInformation;
 import de.rcenvironment.core.communication.utils.MessageUtils;
 
@@ -224,7 +223,6 @@ public final class JmsProtocolUtils {
      */
     public static void configureMessageProducer(MessageProducer producer) throws JMSException {
         // set the maximum time that messages from this producer are preserved
-        producer.setTimeToLive(ProtocolConstants.JMS_MESSAGES_TTL_MSEC);
         producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
     }
 

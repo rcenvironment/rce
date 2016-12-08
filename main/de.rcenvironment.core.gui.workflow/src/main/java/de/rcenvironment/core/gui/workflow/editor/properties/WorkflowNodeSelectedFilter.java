@@ -12,7 +12,7 @@ import org.eclipse.jface.viewers.IFilter;
 
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.gui.workflow.AdvancedTabVisibilityHelper;
-import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 
 
@@ -27,7 +27,7 @@ public class WorkflowNodeSelectedFilter implements IFilter {
     @Override
     public boolean select(Object object) {
         // Always show info tab in read only workflow editor
-        if (object instanceof ReadOnlyWorkflowNodePart){
+        if (object instanceof WorkflowRunNodePart){
             return true;
         } else if (object instanceof WorkflowNodePart){
             // Show advanced tab when either globally enabled by flag or triggered at runtime

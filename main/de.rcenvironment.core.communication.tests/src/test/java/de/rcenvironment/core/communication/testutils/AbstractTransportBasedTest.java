@@ -18,8 +18,8 @@ import org.junit.Rule;
 import org.junit.rules.TestName;
 
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
  * Base class for JUnit tests related to {@link NetworkTransportProvider} behavior. This includes low-level tests as well as higher-level
@@ -85,10 +85,10 @@ public abstract class AbstractTransportBasedTest {
         // get execution time
         double testDuration = (System.nanoTime() - startTimeNano) / NANOS_PER_SEC;
         // get thread statistics
-        int threadPoolSize = SharedThreadPool.getInstance().getCurrentThreadCount();
+        int threadPoolSize = ConcurrencyUtils.getThreadPoolManagement().getCurrentThreadCount();
         int threadCount = Thread.activeCount();
         // clear thread pool
-        int queuedCount = SharedThreadPool.getInstance().reset();
+        int queuedCount = ConcurrencyUtils.getThreadPoolManagement().reset();
         if (queuedCount != 0) {
             log.warn("When resetting the thread pool, " + queuedCount + " Runnables were still queued");
         }

@@ -15,12 +15,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -29,10 +29,10 @@ import org.junit.Test;
 
 import de.rcenvironment.core.utils.common.validation.ValidationFailureException;
 import de.rcenvironment.core.utils.executor.CommandLineExecutor;
-import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
-import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
 import de.rcenvironment.core.utils.ssh.jsch.DummyCommand;
 import de.rcenvironment.core.utils.ssh.jsch.DummyPasswordAuthenticator;
+import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
+import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshTestUtils;
 
 /**
@@ -67,7 +67,7 @@ public class JschExecutorContextTest {
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPassword.Factory()); }});
+        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPasswordFactory()); }});
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
         sshServer.setCommandFactory(SshTestUtils.createDummyCommandFactory());
         sshServer.start();
@@ -85,10 +85,10 @@ public class JschExecutorContextTest {
     
     /**
      * Tear down test environment.
-     * @throws InterruptedException 
+     * @throws IOException 
      **/
     @AfterClass
-    public static void tearDown() throws InterruptedException {
+    public static void tearDown() throws IOException {
         sshServer.stop();
     }
     

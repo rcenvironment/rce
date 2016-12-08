@@ -18,7 +18,7 @@ import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -92,7 +92,7 @@ public class WorkflowExecutionStatsServiceImpl implements WorkflowExecutionStats
 
         boolean localOnly = true;
         for (WorkflowNode wn : wfExeCtx.getWorkflowDescription().getWorkflowNodes()) {
-            if (!platformService.isLocalNode(wn.getComponentDescription().getNode())) {
+            if (!platformService.matchesLocalInstance(wn.getComponentDescription().getNode())) {
                 localOnly = false;
                 break;
             }

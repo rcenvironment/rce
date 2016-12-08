@@ -25,7 +25,7 @@ public interface NetworkGraph {
     /**
      * @return the id of the local node
      */
-    NodeIdentifier getLocalNodeId();
+    InstanceNodeSessionId getLocalNodeId();
 
     /**
      * @return the number of nodes/vertices in this graph
@@ -33,9 +33,9 @@ public interface NetworkGraph {
     int getNodeCount();
 
     /**
-     * @return all {@link NodeIdentifier}s of the nodes (the vertices) of the network graph
+     * @return all {@link InstanceNodeSessionId}s of the nodes (the vertices) of the network graph
      */
-    Set<NodeIdentifier> getNodeIds();
+    Set<InstanceNodeSessionId> getNodeIds();
 
     /**
      * @return the number of links/edges in this graph
@@ -52,7 +52,7 @@ public interface NetworkGraph {
      * @param targetNodeId the target node's id
      * @return true if there is a direct link from "source" to "target"
      */
-    boolean containsLinkBetween(NodeIdentifier sourceNodeId, NodeIdentifier targetNodeId);
+    boolean containsLinkBetween(InstanceNodeSessionId sourceNodeId, InstanceNodeSessionId targetNodeId);
 
     /**
      * Creates a {@link NetworkGraphWithProperties} from this {@link NetworkGraph} by providing the node properties to attach.
@@ -62,7 +62,7 @@ public interface NetworkGraph {
      * @param nodeProperties the node properies to attach
      * @return the new graph
      */
-    NetworkGraphWithProperties attachNodeProperties(Map<NodeIdentifier, Map<String, String>> nodeProperties);
+    NetworkGraphWithProperties attachNodeProperties(Map<InstanceNodeSessionId, Map<String, String>> nodeProperties);
 
     /**
      * @return the (optional) routing information object, if available

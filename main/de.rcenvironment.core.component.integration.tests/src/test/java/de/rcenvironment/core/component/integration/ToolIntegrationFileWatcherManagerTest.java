@@ -128,8 +128,7 @@ public class ToolIntegrationFileWatcherManagerTest {
     }
 
     /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a
-     * configuration is copied.
+     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a configuration is copied.
      */
     @Test
     public void testCopyToolDirIntoFolder() {
@@ -147,12 +146,15 @@ public class ToolIntegrationFileWatcherManagerTest {
     }
 
     /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a
-     * configuration is copied.
+     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a configuration is copied.
      */
     @Test
     public void testCopyToolDirWithDocsIntoFolder() {
-        latch = new CountDownLatch(2);
+        if (OS.isFamilyWindows()) {
+            latch = new CountDownLatch(10);
+        } else {
+            latch = new CountDownLatch(2);
+        }
         currentToolName = "TestDirectoryWithDocs";
         try {
             FileUtils.copyDirectoryToDirectory(new File(toolDirectory, currentToolName), integrationDir);
@@ -161,17 +163,24 @@ public class ToolIntegrationFileWatcherManagerTest {
             Assert.fail(e.getMessage());
         }
         manager.unregister(currentToolName, mockContext);
-        Assert.assertEquals(2, getMethodCount());
+        if (OS.isFamilyWindows()) {
+            Assert.assertEquals(10, getMethodCount());
+        } else {
+            Assert.assertEquals(2, getMethodCount());
+        }
 
     }
 
     /**
-     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a
-     * configuration is copied.
+     * Test if the {@link ToolIntegrationFileWatcher} works correct if a directory with a configuration is copied.
      */
     @Test
     public void testCopyToolDirWithEmptyDocsIntoFolder() {
-        latch = new CountDownLatch(2);
+        if (OS.isFamilyWindows()) {
+            latch = new CountDownLatch(4);
+        } else {
+            latch = new CountDownLatch(2);
+        }
         currentToolName = "TestDirectoryWithEmptyDocs";
         try {
             FileUtils.copyDirectoryToDirectory(new File(toolDirectory, currentToolName), integrationDir);
@@ -180,8 +189,11 @@ public class ToolIntegrationFileWatcherManagerTest {
             Assert.fail(e.getMessage());
         }
         manager.unregister(currentToolName, mockContext);
-        Assert.assertEquals(2, getMethodCount());
-
+        if (OS.isFamilyWindows()) {
+            Assert.assertTrue(getMethodCount() >= 4);
+        } else {
+            Assert.assertEquals(2, getMethodCount());
+        }
     }
 
     /**

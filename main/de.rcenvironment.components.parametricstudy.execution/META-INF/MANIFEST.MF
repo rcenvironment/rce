@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Parametric Study Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.execution
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.execution.api,
@@ -13,6 +13,8 @@ Import-Package: de.rcenvironment.components.parametricstudy.common,
  de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.component.update.api,
  de.rcenvironment.core.component.update.spi,
+ de.rcenvironment.core.component.validation.api,
+ de.rcenvironment.core.component.validation.spi,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.utils.common,

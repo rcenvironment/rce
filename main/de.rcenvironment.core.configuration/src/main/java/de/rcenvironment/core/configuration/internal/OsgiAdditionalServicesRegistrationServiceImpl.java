@@ -15,11 +15,15 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.FrameworkUtil;
 
+import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesRegistrationService;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.toolkit.modules.statistics.api.CounterCategory;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsFilterLevel;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsTrackerService;
 
 /**
  * {@link AdditionalServicesRegistrationService} implementation that uses the global {@link ServiceRegistry} to register the requested
@@ -37,8 +41,13 @@ public class OsgiAdditionalServicesRegistrationServiceImpl implements Additional
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private final CounterCategory counterCategory;
+
     public OsgiAdditionalServicesRegistrationServiceImpl() {
         serviceRegistryAccessFactory = new OsgiServiceRegistryAccessFactory(FrameworkUtil.getBundle(this.getClass()).getBundleContext());
+        counterCategory =
+            StaticToolkitHolder.getService(StatisticsTrackerService.class).getCounterCategory(
+                "Additional Service registrations via AdditionalServicesProvider API", StatisticsFilterLevel.DEVELOPMENT);
     }
 
     @Override
@@ -58,6 +67,7 @@ public class OsgiAdditionalServicesRegistrationServiceImpl implements Additional
                 }
                 log.debug("Registering " + clazz.getSimpleName() + " listener on behalf of " + additionalServicesProvider);
                 sra.registerService(clazz, implementation);
+                counterCategory.count(clazz.getName());
             }
         }
     }

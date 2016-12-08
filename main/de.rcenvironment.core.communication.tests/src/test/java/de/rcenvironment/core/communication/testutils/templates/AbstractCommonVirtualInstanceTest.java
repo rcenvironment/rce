@@ -9,7 +9,9 @@ package de.rcenvironment.core.communication.testutils.templates;
 
 import static de.rcenvironment.core.communication.rpc.internal.MethodCallTestInterface.DEFAULT_RESULT_OR_MESSAGE_STRING;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -19,9 +21,14 @@ import java.util.Set;
 
 import org.junit.Test;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.api.ServiceCallContextUtils;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
 import de.rcenvironment.core.communication.connection.api.DisconnectReason;
@@ -37,8 +44,11 @@ import de.rcenvironment.core.communication.testutils.AbstractVirtualInstanceTest
 import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualTopology;
 import de.rcenvironment.core.communication.utils.MessageUtils;
+import de.rcenvironment.core.utils.common.rpc.RemotableService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
 /**
  * Base class providing common tests using virtual node instances. "Common" tests are those that do not depend on duplex vs. non-duplex
@@ -47,6 +57,33 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * @author Robert Mischke
  */
 public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualInstanceTest {
+
+    /**
+     * {@link DummyTestService} implementation that captures the {@link ServiceCallContext} of the last inbound method invocation.
+     * 
+     * @author Robert Mischke
+     */
+    public static final class ServiceCallContextCatcherImpl implements DummyTestService {
+
+        private volatile ServiceCallContext lastServiceCallContext;
+
+        @Override
+        @AllowRemoteAccess
+        public void dummyCall() {
+            lastServiceCallContext = ServiceCallContextUtils.getCurrentServiceCallContext();
+        }
+
+        public ServiceCallContext getLastServiceCallContext() {
+            return lastServiceCallContext;
+        }
+
+        /**
+         * Clears the last captured {@link ServiceCallContext} to prevent test artifacts.
+         */
+        public void reset() {
+            lastServiceCallContext = null;
+        }
+    }
 
     private static final int DEFAULT_TEST_TIMEOUT = 20000;
 
@@ -66,9 +103,9 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
 
         // TODO old test; could be improved by using new test utilities
 
-        VirtualInstance client1 = new VirtualInstance("Client1Id", "Client1");
-        VirtualInstance client2 = new VirtualInstance("Client2Id", "Client2");
-        VirtualInstance server = new VirtualInstance("ServerId", "Server");
+        VirtualInstance client1 = new VirtualInstance("Client1");
+        VirtualInstance client2 = new VirtualInstance("Client2");
+        VirtualInstance server = new VirtualInstance("Server");
 
         VirtualInstanceGroup allInstances = new VirtualInstanceGroup(server, client1, client2);
         VirtualInstanceGroup clients = new VirtualInstanceGroup(client1, client2);
@@ -173,10 +210,10 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
         MessageChannel channelSto1 = null;
         MessageChannel channelSto2 = null;
         for (MessageChannel channel : serverOutgoing) {
-            NodeIdentifier remoteNodeId = channel.getRemoteNodeInformation().getNodeId();
-            if (remoteNodeId.equals(client1.getNodeId())) {
+            InstanceNodeSessionId remoteNodeId = channel.getRemoteNodeInformation().getInstanceNodeSessionId();
+            if (remoteNodeId.equals(client1.getInstanceNodeSessionId())) {
                 channelSto1 = channel;
-            } else if (remoteNodeId.equals(client2.getNodeId())) {
+            } else if (remoteNodeId.equals(client2.getInstanceNodeSessionId())) {
                 channelSto2 = channel;
             } else {
                 fail();
@@ -247,10 +284,10 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
         // create a request from client1 to client2
         byte[] messageBody = MessageUtils.serializeSafeObject("dummy content");
         String messageType = "rpc"; // only relevant for sanity checks while routing (ie it must be a message type allowed for forwarding)
-        NodeIdentifier bogusTargetNodeId = NodeIdentifierFactory.fromNodeId("bogus_node_id");
+        InstanceNodeSessionId bogusTargetNodeId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("bogus_node_id");
 
         NetworkRequest testRequest =
-            NetworkRequestFactory.createNetworkRequest(messageBody, messageType, client1.getNodeId(), bogusTargetNodeId);
+            NetworkRequestFactory.createNetworkRequest(messageBody, messageType, client1.getInstanceNodeSessionId(), bogusTargetNodeId);
 
         // force sending the message from client1 to server, although a client would not usually do this (as it knows no route to the bogus
         // target id); this is expected to fail on the server, as the server does not know a valid route either
@@ -266,6 +303,101 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
                 channel.close();
             }
         }
+
+        testTopology.getAsGroup().shutDown();
+    }
+
+    /**
+     * Tests various aspects of connecting to a network with the same instance node id, but changing session parts, simulating node
+     * restarts.
+     * 
+     * @throws Exception on uncaught exceptions
+     */
+    @Test(timeout = DEFAULT_TEST_TIMEOUT)
+    public void testSessionIdHandling() throws Exception {
+
+        VirtualInstance server = new VirtualInstance("s", true);
+        NetworkContactPoint serverNCP = contactPointGenerator.createContactPoint();
+        server.addServerConfigurationEntry(serverNCP);
+
+        VirtualInstance client1 = new VirtualInstance("c1");
+        VirtualInstance client2a = new VirtualInstance("c2a");
+        VirtualInstance client2b = new VirtualInstance(client2a.getPersistentInstanceNodeId().getInstanceNodeIdString(), "c2b", true);
+        VirtualInstance client2c = new VirtualInstance(client2a.getPersistentInstanceNodeId().getInstanceNodeIdString(), "c2c", true);
+
+        testTopology = new VirtualTopology(client1, client2a, server, client2b, client2c);
+
+        testTopology.getAsGroup().registerNetworkTransportProvider(transportProvider);
+        testTopology.getAsGroup().start();
+
+        assertTrue(client2a.getPersistentInstanceNodeId().equals(client2b.getPersistentInstanceNodeId()));
+        assertFalse(client2a.getInstanceNodeSessionId().equals(client2b.getInstanceNodeSessionId()));
+        assertTrue(client2a.getPersistentInstanceNodeId().equals(client2c.getPersistentInstanceNodeId()));
+        assertFalse(client2a.getInstanceNodeSessionId().equals(client2c.getInstanceNodeSessionId()));
+        assertFalse(client2b.getInstanceNodeSessionId().equals(client2c.getInstanceNodeSessionId()));
+        log.debug(client2a.getInstanceNodeSessionId());
+        log.debug(client2b.getInstanceNodeSessionId());
+        log.debug(client2c.getInstanceNodeSessionId());
+
+        testTopology.connect(0, 2);
+        testTopology.connect(1, 2);
+
+        client1.waitUntilContainsInReachableNodes(client2a.getInstanceNodeSessionId(), DEFAULT_NODE_REACHABILITY_TIMEOUT);
+        client2a.waitUntilContainsInReachableNodes(client1.getInstanceNodeSessionId(), DEFAULT_NODE_REACHABILITY_TIMEOUT);
+
+        assertTrue(client1.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertTrue(client1.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        assertTrue(client2a.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertTrue(client2a.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(client2b.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertFalse(client2b.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(client2b.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+
+        // test the regular case first: disconnect the original client2a
+        client2a.shutDown();
+        // now connect client2b
+        testTopology.connect(3, 2);
+        client2b.waitUntilContainsInReachableNodes(client1.getInstanceNodeSessionId(), DEFAULT_NODE_REACHABILITY_TIMEOUT);
+        client1.waitUntilContainsInReachableNodes(client2b.getInstanceNodeSessionId(), DEFAULT_NODE_REACHABILITY_TIMEOUT);
+
+        assertTrue(client1.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertFalse(client1.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        assertTrue(client1.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+        assertTrue(client2b.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertTrue(client2b.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(client2b.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        assertTrue(server.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(server.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        assertTrue(server.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+
+        // now test the irregular case the connected client2b is *not* unregistered from the network
+        client2b.simulateCrash();
+        // connect client2c
+        testTopology.connect(4, 2);
+        client2c.waitUntilContainsInReachableNodes(client1.getInstanceNodeSessionId(), DEFAULT_NODE_REACHABILITY_TIMEOUT);
+        client1.waitUntilContainsInReachableNodes(client2c.getInstanceNodeSessionId(), DEFAULT_NODE_REACHABILITY_TIMEOUT);
+
+        // note: whether the commented-out lines should be true depends on the pending decision on how to handle
+        // id collisions in the network - let both ids, or the most recent id, or none of them be reachable? - misc_ro, 8.0.0
+        assertTrue(client1.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertFalse(client1.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        // assertTrue(client1.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+        assertTrue(client1.containsInReachableNodes(client2c.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+        assertFalse(client2a.containsInReachableNodes(client2c.getInstanceNodeSessionId()));
+        assertTrue(client2c.containsInReachableNodes(server.getInstanceNodeSessionId()));
+        assertTrue(client2c.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(client2c.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        // assertFalse(client2c.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+        assertTrue(server.containsInReachableNodes(client1.getInstanceNodeSessionId()));
+        assertFalse(server.containsInReachableNodes(client2a.getInstanceNodeSessionId()));
+        // assertTrue(server.containsInReachableNodes(client2b.getInstanceNodeSessionId()));
+        assertTrue(server.containsInReachableNodes(client2c.getInstanceNodeSessionId()));
 
         testTopology.getAsGroup().shutDown();
     }
@@ -305,10 +437,81 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
         testTopology.getAsGroup().shutDown();
     }
 
-    private void testRPCToUnreachableNode(VirtualInstance client1, VirtualInstance server) throws RemoteOperationException {
+    /**
+     * Tests that a {@link ServiceCallContext} is available both on local and remote calls to {@link RemotableService}s.
+     * 
+     * @throws Exception on uncaught exceptions
+     */
+    @Test(timeout = DEFAULT_TEST_TIMEOUT)
+    public void testServiceCallContextAvailability() throws Exception {
+        // 2 instances using duplex connections
+        setupInstances(2, true, true);
+
+        VirtualInstance client = testTopology.getInstance(0);
+        VirtualInstance server = testTopology.getInstance(1);
+
+        ServiceCallContextCatcherImpl clientServiceCallCatcher = new ServiceCallContextCatcherImpl();
+        client.injectService(DummyTestService.class, clientServiceCallCatcher);
+        ServiceCallContextCatcherImpl serverServiceCallCatcher = new ServiceCallContextCatcherImpl();
+        server.injectService(DummyTestService.class, serverServiceCallCatcher);
+
+        testTopology.connectAndWait(0, 1, DEFAULT_NODE_REACHABILITY_TIMEOUT);
+
+        // C->C (local)
+        client.getCommunicationService().getRemotableService(DummyTestService.class, client.getInstanceNodeSessionId()).dummyCall();
+        assertNull(serverServiceCallCatcher.lastServiceCallContext);
+        assertEquals(client.getInstanceNodeSessionId(), clientServiceCallCatcher.getLastServiceCallContext().getCallingNode()
+            .convertToInstanceNodeSessionId());
+        assertEquals(client.getInstanceNodeSessionId(), clientServiceCallCatcher.getLastServiceCallContext().getReceivingNode()
+            .convertToInstanceNodeSessionId());
+        clientServiceCallCatcher.reset();
+
+        // C->S
+        client.getCommunicationService().getRemotableService(DummyTestService.class, server.getInstanceNodeSessionId()).dummyCall();
+        assertNull(clientServiceCallCatcher.lastServiceCallContext);
+        assertEquals(client.getInstanceNodeSessionId(), serverServiceCallCatcher.getLastServiceCallContext().getCallingNode()
+            .convertToInstanceNodeSessionId());
+        assertEquals(server.getInstanceNodeSessionId(), serverServiceCallCatcher.getLastServiceCallContext().getReceivingNode()
+            .convertToInstanceNodeSessionId());
+        serverServiceCallCatcher.reset();
+
+        // S->S (local)
+        server.getCommunicationService().getRemotableService(DummyTestService.class, server.getInstanceNodeSessionId()).dummyCall();
+        assertNull(clientServiceCallCatcher.lastServiceCallContext);
+        assertEquals(server.getInstanceNodeSessionId(), serverServiceCallCatcher.getLastServiceCallContext().getCallingNode()
+            .convertToInstanceNodeSessionId());
+        assertEquals(server.getInstanceNodeSessionId(), serverServiceCallCatcher.getLastServiceCallContext().getReceivingNode()
+            .convertToInstanceNodeSessionId());
+        serverServiceCallCatcher.reset();
+
+        // S->C
+        server.getCommunicationService().getRemotableService(DummyTestService.class, client.getInstanceNodeSessionId()).dummyCall();
+        assertNull(serverServiceCallCatcher.lastServiceCallContext);
+        assertEquals(server.getInstanceNodeSessionId(), clientServiceCallCatcher.getLastServiceCallContext().getCallingNode()
+            .convertToInstanceNodeSessionId());
+        assertEquals(client.getInstanceNodeSessionId(), clientServiceCallCatcher.getLastServiceCallContext().getReceivingNode()
+            .convertToInstanceNodeSessionId());
+        clientServiceCallCatcher.reset();
+
+        testTopology.getAsGroup().shutDown();
+    }
+
+    private void testRPCToUnreachableNode(VirtualInstance caller, VirtualInstance receiver) throws RemoteOperationException,
+        IdentifierException {
+        // use id handling context of client1
+        NodeIdentifierService callerNodeIdService = caller.getService(NodeIdentifierService.class);
+        assertNotNull(callerNodeIdService);
+        NodeIdentifierContextHolder.setDeserializationServiceForCurrentThread(callerNodeIdService);
+
+        log.debug("Performing test RPC from " + caller + " to unreachable target node " + receiver);
+
+        // detach from the sender's id object by serializing and reconstructing it at the sender
+        InstanceNodeSessionId detachedReceiverInstanceNodeSessionId =
+            callerNodeIdService.parseInstanceNodeSessionIdString(receiver.getInstanceNodeSessionIdString());
+
         // this should succeed; the local proxy does not check for reachability
         RemoteBenchmarkService benchmarkServiceProxy =
-            client1.getCommunicationService().getRemotableService(RemoteBenchmarkService.class, server.getNodeId());
+            caller.getCommunicationService().getRemotableService(RemoteBenchmarkService.class, detachedReceiverInstanceNodeSessionId);
         try {
             benchmarkServiceProxy.respond("dummy", 1, 1);
             failWithExceptionExpectedMessage();
@@ -316,12 +519,12 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
             assertTrue(e.getMessage().contains(ResultCode.NO_ROUTE_TO_DESTINATION_AT_SENDER.toString())); // custom message
             assertTrue(e.getCause() == null); // there should be no stacktraces on the client side
         }
-
+        NodeIdentifierContextHolder.setDeserializationServiceForCurrentThread(null);
     }
 
     private void testBasicBenchmarkServiceRPC(VirtualInstance client1, VirtualInstance server) throws RemoteOperationException {
         RemoteBenchmarkService benchmarkServiceProxy =
-            client1.getCommunicationService().getRemotableService(RemoteBenchmarkService.class, server.getNodeId());
+            client1.getCommunicationService().getRemotableService(RemoteBenchmarkService.class, server.getInstanceNodeSessionId());
 
         // test basic RPC operation using the standard benchmark service
         assertNotNull(benchmarkServiceProxy);
@@ -332,7 +535,7 @@ public abstract class AbstractCommonVirtualInstanceTest extends AbstractVirtualI
 
     private void testCustomTestInterfaceRPC(VirtualInstance client1, VirtualInstance server) throws RemoteOperationException {
         MethodCallTestInterface remoteProxy =
-            client1.getCommunicationService().getRemotableService(MethodCallTestInterface.class, server.getNodeId());
+            client1.getCommunicationService().getRemotableService(MethodCallTestInterface.class, server.getInstanceNodeSessionId());
 
         assertNotNull(remoteProxy);
         assertEquals(DEFAULT_RESULT_OR_MESSAGE_STRING, remoteProxy.getString());

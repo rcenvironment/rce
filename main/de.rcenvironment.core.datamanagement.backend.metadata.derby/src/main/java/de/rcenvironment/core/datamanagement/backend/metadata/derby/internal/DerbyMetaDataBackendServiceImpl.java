@@ -53,20 +53,21 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Derby implementation of {@link RemotableMetaDataBackendService}.
@@ -117,8 +118,8 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
     private final ThreadLocal<PooledConnection> connections = new ThreadLocal<PooledConnection>();
 
-    private final AsyncOrderedExecutionQueue executionQueue = new AsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED,
-        SharedThreadPool.getInstance());
+    private final AsyncOrderedExecutionQueue executionQueue = ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(
+        AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
     private TypedDatumSerializer typedDatumSerializer;
 
@@ -151,7 +152,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             // note: the "else" path was not doing anything before; at least log if this happens
             LOGGER.warn("Unexpected state: Database URL already defined");
         }
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription(value = "Database initialization")
@@ -366,16 +367,16 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
     @Override
     @AllowRemoteAccess
-    public Long addComponentRun(final Long componentInstanceId, final String nodeId, final Integer count,
+    public Long addComponentRun(final Long componentInstanceDbId, final String nodeId, final Integer count,
         final Long starttime) {
         final SafeExecution<Long> execution = new SafeExecution<Long>() {
 
             @Override
             protected Long protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 Long cRunId =
-                    metaDataBackendOperations.addComponentRun(componentInstanceId, nodeId, count, starttime, connection, isRetry);
+                    metaDataBackendOperations.addComponentRun(componentInstanceDbId, nodeId, count, starttime, connection, isRetry);
                 Long wfRunId =
-                    metaDataBackendOperations.getWorkflowRunIdByComponentInstanceId(componentInstanceId, connection, isRetry);
+                    metaDataBackendOperations.getWorkflowRunIdByComponentInstanceId(componentInstanceDbId, connection, isRetry);
                 metaDataBackendOperations.addTimelineInterval(wfRunId, TimelineIntervalType.COMPONENT_RUN, starttime, cRunId,
                     connection,
                     isRetry);
@@ -418,7 +419,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
             @Override
             protected Void protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
-                metaDataBackendOperations.setWorklfowRunEndtime(workflowRunId, endtime, connection, isRetry);
+                metaDataBackendOperations.setWorkflowRunEndtime(workflowRunId, endtime, connection, isRetry);
                 metaDataBackendOperations.setWorkflowRunFinalState(workflowRunId, finalState, connection, isRetry);
                 return null;
             }
@@ -428,12 +429,12 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
 
     @Override
     @AllowRemoteAccess
-    public void setComponentRunFinished(final Long componentRunId, final Long endtime) {
+    public void setComponentRunFinished(final Long componentRunId, final Long endtime, final FinalComponentRunState finalState) {
         final SafeExecution<Void> execution = new SafeExecution<Void>() {
 
             @Override
             protected Void protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
-                metaDataBackendOperations.setComponentRunFinished(componentRunId, endtime, connection, isRetry);
+                metaDataBackendOperations.setComponentRunFinished(componentRunId, endtime, finalState, connection, isRetry);
                 return null;
             }
         };
@@ -691,6 +692,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
             @Override
             protected Boolean protectedCall(final Connection connection, final boolean isRetry) throws SQLException {
                 Boolean deleted = metaDataBackendOperations.deleteDataReferences(dataKeys, connection, isRetry);
+                LOGGER.debug(StringUtils.format("Deleted data references of workflow run id %d.", workflowRunId));
                 return deleted;
             }
         };
@@ -706,6 +708,8 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
                 }
             };
             execution3.call();
+        } else {
+            LOGGER.warn(StringUtils.format("Could not delete workflow run id %d.", workflowRunId));
         }
     }
 
@@ -989,7 +993,7 @@ public class DerbyMetaDataBackendServiceImpl implements MetaDataBackendService {
              * connection pool.
              */
             try {
-                final Future<Boolean> future = SharedThreadPool.getInstance().submit(new Callable<Boolean>() {
+                final Future<Boolean> future = ConcurrencyUtils.getAsyncTaskService().submit(new Callable<Boolean>() {
 
                     @Override
                     @TaskDescription("Close database connection pool")

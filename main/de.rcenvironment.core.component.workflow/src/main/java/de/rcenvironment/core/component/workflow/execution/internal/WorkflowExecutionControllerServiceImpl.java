@@ -36,8 +36,8 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowStateNotificationSubscriber;
 import de.rcenvironment.core.component.workflow.execution.impl.WorkflowExecutionInformationImpl;
 import de.rcenvironment.core.component.workflow.execution.spi.SingleWorkflowStateChangeListener;
-import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
+import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
@@ -56,7 +56,7 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
 
     private LocalExecutionControllerUtilsService exeCtrlUtilsService;
 
-    private DistributedNotificationService notificationService;
+    private NotificationService notificationService;
 
     private Map<String, ServiceRegistration<?>> workflowServiceRegistrations = Collections.synchronizedMap(
         new HashMap<String, ServiceRegistration<?>>());
@@ -75,7 +75,7 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
     public WorkflowExecutionInformation createExecutionController(WorkflowExecutionContext wfExeCtx,
         Map<String, String> executionAuthTokens, Boolean calledFromRemote) throws WorkflowExecutionException, RemoteOperationException {
 
-        if (calledFromRemote && !workflowHostService.getWorkflowHostNodes().contains(wfExeCtx.getNodeId())) {
+        if (calledFromRemote && !workflowHostService.getLogicalWorkflowHostNodes().contains(wfExeCtx.getNodeId())) {
             throw new WorkflowExecutionException(StringUtils.format("Workflow execution request refused, as the requested instance is "
                 + "not declared as workflow host: %s", wfExeCtx.getNodeId()));
         }
@@ -130,7 +130,7 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
                     if (WorkflowState.isWorkflowStateValid((String) notification.getBody())
                         && (!WorkflowState.valueOf((String) notification.getBody()).equals(WorkflowState.DISPOSING))) {
                         try {
-                            notificationService.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExecutionId, this, null);
+                            notificationService.unsubscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExecutionId, this);
                         } catch (RemoteOperationException e) {
                             log.warn(StringUtils.format("Failed to unsubscribe from state changes "
                                 + "for workflow %s: %s", wfExecutionId, e.getMessage()));
@@ -140,8 +140,7 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
             };
 
         try {
-            notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID
-                + wfExecutionId, workflowStateDisposedListener, null);
+            notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExecutionId, workflowStateDisposedListener);
         } catch (RemoteOperationException e) {
             log.error("Failed to subscribe for workflow state changes before disposing: " + e.getMessage());
             return; // preserve the "old" RTE behavior for now
@@ -240,7 +239,7 @@ public class WorkflowExecutionControllerServiceImpl implements RemotableWorkflow
         exeCtrlUtilsService = newService;
     }
 
-    protected void bindDistributedNotificationService(DistributedNotificationService newService) {
+    protected void bindNotificationService(NotificationService newService) {
         this.notificationService = newService;
     }
 }

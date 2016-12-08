@@ -16,16 +16,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.BenchmarkSetup;
 import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A {@link Runnable} that performs a communication layer benchmark.
@@ -45,7 +44,7 @@ public class BenchmarkProcess implements Runnable {
      */
     private final class SenderTask implements Runnable {
 
-        private NodeIdentifier targetNode;
+        private InstanceNodeSessionId targetNode;
 
         private AtomicInteger messageCounter;
 
@@ -53,7 +52,7 @@ public class BenchmarkProcess implements Runnable {
 
         private RemoteBenchmarkService remoteService;
 
-        SenderTask(BenchmarkSubtaskImpl subtask, NodeIdentifier nodeId, AtomicInteger messageCounter) {
+        SenderTask(BenchmarkSubtaskImpl subtask, InstanceNodeSessionId nodeId, AtomicInteger messageCounter) {
             this.targetNode = nodeId;
             this.messageCounter = messageCounter;
             this.subtask = subtask;
@@ -96,8 +95,7 @@ public class BenchmarkProcess implements Runnable {
     private CommunicationService communicationService;
 
     @SuppressWarnings("unchecked")
-    public BenchmarkProcess(BenchmarkSetup setup, TextOutputReceiver outputReceiver, CommunicationService communicationService,
-        BundleContext context) {
+    public BenchmarkProcess(BenchmarkSetup setup, TextOutputReceiver outputReceiver, CommunicationService communicationService) {
         this.subtasks = new ArrayList<BenchmarkSubtaskImpl>();
         // cast to expected BenchmarkSubtask implementation; rework if necessary
         subtasks.addAll((Collection<? extends BenchmarkSubtaskImpl>) setup.getSubtasks());
@@ -116,11 +114,11 @@ public class BenchmarkProcess implements Runnable {
         for (BenchmarkSubtaskImpl subtask : subtasks) {
             printOutput("  Task " + (index++) + ": " + subtask.formatDescription());
             subtask.recordStartTime();
-            for (NodeIdentifier nodeId : subtask.getTargetNodes()) {
+            for (InstanceNodeSessionId nodeId : subtask.getTargetNodes()) {
                 AtomicInteger messageCounter = new AtomicInteger(subtask.getNumMessages());
                 for (int senderIndex = 0; senderIndex < subtask.getThreadsPerTarget(); senderIndex++) {
                     SenderTask sender = new SenderTask(subtask, nodeId, messageCounter);
-                    SharedThreadPool.getInstance().execute(sender);
+                    ConcurrencyUtils.getAsyncTaskService().execute(sender);
                 }
             }
         }

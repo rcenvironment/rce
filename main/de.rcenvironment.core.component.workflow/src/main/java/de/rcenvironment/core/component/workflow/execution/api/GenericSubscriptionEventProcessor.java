@@ -20,8 +20,10 @@ import de.rcenvironment.core.notification.DefaultNotificationSubscriber;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProcessor;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
+import de.rcenvironment.toolkit.modules.concurrency.api.ConcurrencyUtilsFactory;
 
 /**
  * Subscriber implementation that attempts to "catch up" with notifications that were sent before the subscription, but are still buffered
@@ -52,16 +54,16 @@ public abstract class GenericSubscriptionEventProcessor extends DefaultNotificat
     // private final transient Log log = LogFactory.getLog(getClass());
 
     public GenericSubscriptionEventProcessor() {
-        batchAggregator =
-            new BatchAggregator<>(LOCAL_NOTIFICATION_BATCH_SIZE_LIMIT, LOCAL_NOTIFICATION_BATCH_TIME_LIMIT_MSEC,
-                new BatchProcessor<Notification>() {
+        final ConcurrencyUtilsFactory factory = ConcurrencyUtils.getFactory();
+        batchAggregator = factory.createBatchAggregator(LOCAL_NOTIFICATION_BATCH_SIZE_LIMIT,
+            LOCAL_NOTIFICATION_BATCH_TIME_LIMIT_MSEC, new BatchProcessor<Notification>() {
 
-                    @Override
-                    public void processBatch(List<Notification> batch) {
-                        processCollectedNotifications(batch);
-                    }
+                @Override
+                public void processBatch(List<Notification> batch) {
+                    processCollectedNotifications(batch);
+                }
 
-                });
+            });
     }
 
     @Override
@@ -94,7 +96,7 @@ public abstract class GenericSubscriptionEventProcessor extends DefaultNotificat
 
     private String createIdentifier(Notification notification) {
         return createIdentifier(notification.getHeader().getNotificationIdentifier(),
-            notification.getHeader().getPublishPlatform().getIdString());
+            notification.getHeader().getPublishPlatform().getInstanceNodeSessionIdString());
     }
 
     private String createIdentifier(String notifId, String nodeId) {

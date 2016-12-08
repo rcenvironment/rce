@@ -70,24 +70,5 @@ public class SshAccountImplTest extends TestCase {
         user.setPublicKey("some_invalid_key");
         assertFalse(SSH_USER_VALIDATE_USER_RETURNED_TRUE_BUT_FALSE_WAS_EXPECTED, user.validate(SshTestUtils.getValidRoles(), logger));
     }
-
-    // if (role == null)
-    /** Test. */
-    @Test
-    public void testValidationRole() {
-        SshAccountImpl user = SshTestUtils.getValidUser();
-        user.setRole(null);
-        assertFalse("SshUser.validateUser returned true but false was expected ", user.validate(SshTestUtils.getValidRoles(), logger));
-    }
-
-    // role of user exist
-    /** Test. */
-    @Test
-    public void testValidationExistingRoles() {
-        SshAccountImpl user = SshTestUtils.getValidUser();
-        user.setRole("hkjfhjgdfsghj");
-        assertFalse("SshUser.validateUser() returned true but false was expected. "
-            + "(Note: Do not define a test role with the name hkjfhjgdfsghj)",
-            user.validate(SshTestUtils.getValidRoles(), logger));
-    }
+  
 }

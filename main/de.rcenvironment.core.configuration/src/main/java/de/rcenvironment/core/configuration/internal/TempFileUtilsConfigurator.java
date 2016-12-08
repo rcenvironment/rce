@@ -44,7 +44,7 @@ public class TempFileUtilsConfigurator {
         if (isBound) {
             log.warn("Duplicate bind()");
         }
-        // FIXME @5.0: deactivated; rework or delete - misc_ro
+        // TODO (p3) deactivated; rework or delete - misc_ro
         // File globalTempDirectoryRoot = newConfigurationService.getGlobalTempDirectoryRoot();
         // TempFileManager.setupWithCustomRootDir(globalTempDirectoryRoot);
         isBound = true;

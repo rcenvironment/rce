@@ -77,7 +77,7 @@ public class DecrypterComponent extends DefaultComponent {
     public void processInputs() throws ComponentException {
 
         FileReferenceTD incEncryptedFileReference =
-            (FileReferenceTD) componentContext.readInput(DecrypterComponentConstants.INCOMING_ENPOINT_ENCRYPTED_FILE);
+            (FileReferenceTD) componentContext.readInput(DecrypterComponentConstants.INPUT_NAME_FILE);
 
         // The incoming value is just a reference to a file in the data management.
         // So, get the content of the file
@@ -116,7 +116,7 @@ public class DecrypterComponent extends DefaultComponent {
                 // to an output.
                 // An output is identified by its unique name
                 // Note: Closing an output means that no more values will be sent.
-                componentContext.writeOutput(DecrypterComponentConstants.OUTPUT_NAME, outputText);
+                componentContext.writeOutput(DecrypterComponentConstants.OUTPUT_NAME_RESULT, outputText);
 
                 // After sending the result to the output, it also should appear on the workflow
                 // console

@@ -18,10 +18,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
 import de.rcenvironment.core.monitoring.system.internal.AsyncSystemMonitoringDataFetchTask;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Fetches monitoring data asynchronously.
@@ -35,23 +35,25 @@ public class SystemMonitoringDataPollingManager {
 
     private final CommunicationService communicationService;
 
-    private final Map<NodeIdentifier, Future<?>> futureMap = new HashMap<>();
+    private final AsyncTaskService asyncTaskService;
 
-    private final SharedThreadPool threadPool = SharedThreadPool.getInstance();
+    private final Map<InstanceNodeSessionId, Future<?>> futureMap = new HashMap<>();
 
     private final Log log = LogFactory.getLog(getClass());
 
-    public SystemMonitoringDataPollingManager() {
-        communicationService = ServiceRegistry.createAccessFor(this).getService(CommunicationService.class);
+    public SystemMonitoringDataPollingManager(CommunicationService communicationService, AsyncTaskService asyncTaskService) {
+        this.communicationService = communicationService;
+        this.asyncTaskService = asyncTaskService;
     }
 
     /**
-     * Fetches data of the corresponding {@link SystemMonitoringDataSnapshot} from a given node.
+     * Fetches data of the corresponding {@link FullSystemAndProcessDataSnapshot} from a given node.
      * 
-     * @param nodeId The {@link NodeIdentifier} of the node whose data should be fetched.
+     * @param nodeId The {@link InstanceNodeSessionId} of the node whose data should be fetched.
      * @param callbackListener The {@link SystemMonitoringDataSnapshotListener}.
      */
-    public synchronized void startPollingTask(final NodeIdentifier nodeId, final SystemMonitoringDataSnapshotListener callbackListener) {
+    public synchronized void startPollingTask(final InstanceNodeSessionId nodeId,
+        final SystemMonitoringDataSnapshotListener callbackListener) {
         if (nodeId == null) {
             throw new IllegalArgumentException("Node id must not be null");
         }
@@ -64,18 +66,18 @@ public class SystemMonitoringDataPollingManager {
         }
         final AsyncSystemMonitoringDataFetchTask backgroundTask =
             new AsyncSystemMonitoringDataFetchTask(callbackListener, remoteService);
-        final Future<?> newFuture = threadPool.scheduleAtFixedRate(backgroundTask, REFRESH_INTERVAL_MSEC);
+        final Future<?> newFuture = asyncTaskService.scheduleAtFixedRate(backgroundTask, REFRESH_INTERVAL_MSEC);
         futureMap.put(nodeId, newFuture);
         log.debug("Started system monitoring background task for node " + nodeId);
     }
 
     /**
      * 
-     * Cancels monitoring task of specified {@link NodeIdentifier}.
+     * Cancels monitoring task of specified {@link InstanceNodeSessionId}.
      * 
-     * @param nodeId The {@link NodeIdentifier} of the node.
+     * @param nodeId The {@link InstanceNodeSessionId} of the node.
      */
-    public synchronized void cancelPollingTask(NodeIdentifier nodeId) {
+    public synchronized void cancelPollingTask(InstanceNodeSessionId nodeId) {
         removeAndCancelTask(nodeId);
     }
 
@@ -83,8 +85,8 @@ public class SystemMonitoringDataPollingManager {
      * Cancels all running {@link AsyncSystemMonitoringDataFetchTask} if rce instance is disposed.
      */
     public synchronized void cancelAllPollingTasks() {
-        for (Entry<NodeIdentifier, Future<?>> entry : futureMap.entrySet()) {
-            final NodeIdentifier nodeId = entry.getKey();
+        for (Entry<InstanceNodeSessionId, Future<?>> entry : futureMap.entrySet()) {
+            final InstanceNodeSessionId nodeId = entry.getKey();
             final Future<?> taskFuture = entry.getValue();
             cancelTaskFuture(nodeId, taskFuture);
         }
@@ -96,15 +98,15 @@ public class SystemMonitoringDataPollingManager {
      * 
      * @param nodes Set of disconnectedNodes.
      */
-    public synchronized void cancelPollingTasks(final Set<NodeIdentifier> nodes) {
+    public synchronized void cancelPollingTasks(final Set<InstanceNodeSessionId> nodes) {
         if (nodes != null) {
-            for (NodeIdentifier nodeId : nodes) {
+            for (InstanceNodeSessionId nodeId : nodes) {
                 removeAndCancelTask(nodeId);
             }
         }
     }
 
-    private void removeAndCancelTask(NodeIdentifier nodeId) {
+    private void removeAndCancelTask(InstanceNodeSessionId nodeId) {
         if (nodeId == null) {
             log.warn("Attempted to cancel a monitoring task with a null node id");
             return;
@@ -115,7 +117,7 @@ public class SystemMonitoringDataPollingManager {
         }
     }
 
-    private void cancelTaskFuture(NodeIdentifier nodeId, Future<?> future) {
+    private void cancelTaskFuture(InstanceNodeSessionId nodeId, Future<?> future) {
         future.cancel(false);
         log.debug("Stopped system monitoring background task for node " + nodeId);
     }

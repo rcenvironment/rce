@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.messaging;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
@@ -29,5 +29,5 @@ public interface NetworkRequestHandler {
      * @return the generated response, if the request could be handled; null, otherwise
      * @throws InternalMessagingException on unhandled errors
      */
-    NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier lastHopNodeId) throws InternalMessagingException;
+    NetworkResponse handleRequest(NetworkRequest request, InstanceNodeSessionId lastHopNodeId) throws InternalMessagingException;
 }

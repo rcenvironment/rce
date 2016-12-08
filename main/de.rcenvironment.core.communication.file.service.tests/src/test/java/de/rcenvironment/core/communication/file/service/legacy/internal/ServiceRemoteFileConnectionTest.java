@@ -8,19 +8,21 @@
 
 package de.rcenvironment.core.communication.file.service.legacy.internal;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 import java.io.IOException;
 import java.net.URI;
 import java.util.UUID;
 
-import junit.framework.TestCase;
-
-import org.easymock.EasyMock;
+import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
-import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.file.service.legacy.api.RemotableFileStreamAccessService;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
@@ -30,15 +32,33 @@ import de.rcenvironment.core.communication.testutils.CommunicationServiceDefault
  * Test cases for {@link ServiceRemoteFileConnection}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 @Deprecated
-public class ServiceRemoteFileConnectionTest extends TestCase {
+public class ServiceRemoteFileConnectionTest {
+
+    private static final String TEST_INSTANCE_ID_STRING = NodeIdentifierTestUtils.createTestInstanceNodeIdString();
 
     private final UUID dmUuid = UUID.randomUUID();
 
-    private final String nodeIdString = "node-id";
+    // TODO review/encapsulate
+    private final String uri = "rce://" + TEST_INSTANCE_ID_STRING + "/" + dmUuid + "/7";
 
-    private final String uri = "rce://" + nodeIdString + "/" + dmUuid + "/7";
+    /**
+     * Common setup.
+     */
+    @Before
+    public void setup() {
+        NodeIdentifierTestUtils.attachTestNodeIdentifierServiceToCurrentThread();
+    }
+
+    /**
+     * Common teardown.
+     */
+    @After
+    public void teardown() {
+        NodeIdentifierTestUtils.removeTestNodeIdentifierServiceFromCurrentThread();
+    }
 
     /**
      * Test.
@@ -46,10 +66,8 @@ public class ServiceRemoteFileConnectionTest extends TestCase {
      * @throws Exception if the test fails.
      */
     @Test
-    public void test() throws Exception {
-
-        RemoteFileConnection connection = new ServiceRemoteFileConnection(new URI(uri), new DummyCommunicationService(),
-            EasyMock.createNiceMock(BundleContext.class));
+    public void defaultTest() throws Exception {
+        RemoteFileConnection connection = new ServiceRemoteFileConnection(new URI(uri), new DummyCommunicationService());
         int read = connection.read();
         final int minusOne = -1;
         assertTrue(read > minusOne);
@@ -69,9 +87,11 @@ public class ServiceRemoteFileConnectionTest extends TestCase {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId2) throws IllegalStateException {
-            // TODO 3.0: recheck nodeId condition; changed during PlatformIdentifier elimination
-            if (nodeId2.equals(NodeIdentifierFactory.fromNodeId(nodeIdString)) && iface == RemotableFileStreamAccessService.class) {
+        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId2) throws IllegalStateException {
+            // TODO could be improved; uses unnecessary conversions
+            if (nodeId2.isSameInstanceNodeAs(NodeIdentifierUtils
+                .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(TEST_INSTANCE_ID_STRING))
+                && iface == RemotableFileStreamAccessService.class) {
                 return (T) new MockRemotableFileStreamAccessService();
             }
             return null;

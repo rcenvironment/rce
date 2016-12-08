@@ -23,9 +23,10 @@ import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListen
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.common.CommunicationException;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
@@ -73,39 +74,40 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     private CommunicationService communicationService;
 
     /**
-     * Creates a virtual instance with the same string as its id and log/display name, and its "relay" flag set to "true".
+     * Creates a virtual instance with a given log/display name, and its "relay" flag set to "true".
      * 
      * Note that enabling "is relay" by default is done for backward compatibility of integration tests; the actual default configuration
      * setting is "false".
      * 
-     * @param nodeId the string to use as node id and display/log name
+     * @param displayName the string to use as display/log name
      */
-    public VirtualInstance(String nodeId) {
-        this(nodeId, nodeId, true);
+    public VirtualInstance(String displayName) {
+        this(displayName, true);
     }
 
     /**
-     * Creates a virtual instance with the given log/display name, and its "relay" flag set to "true".
+     * Creates a virtual instance with a given log/display name, and a selectable "relay" flag value.
      * 
      * Note that enabling "is relay" by default is done for backward compatibility of integration tests; the actual default configuration
      * setting is "false".
      * 
-     * @param the node id string to use
-     * @param logName the log/display name to use
-     */
-    public VirtualInstance(String nodeId, String logName) {
-        this(nodeId, logName, true);
-    }
-
-    /**
-     * Creates a virtual instance with the given log/display name.
-     * 
-     * @param the node id string to use
-     * @param logName the log/display name to use
+     * @param displayName the string to use as display/log name
      * @param isRelay whether the "is relay" flag of this node should be set
      */
-    public VirtualInstance(String nodeId, String logName, boolean isRelay) {
-        super(nodeId, logName, isRelay);
+    public VirtualInstance(String displayName, boolean isRelay) {
+        this(null, displayName, isRelay); // null = assign a random instance id
+    }
+
+    /**
+     * Creates a virtual instance with the given log/display name, a custom {@link InstanceNodeSessionId}, and a selectable "relay" flag
+     * value.
+     * 
+     * @param predefinedInstanceId an optional predefined instance id's string form; if null, an instance id is created automatically
+     * @param displayName the string to use as display/log name
+     * @param isRelay whether the "is relay" flag of this node should be set
+     */
+    public VirtualInstance(String predefinedInstanceId, String displayName, boolean isRelay) {
+        super(predefinedInstanceId, displayName, isRelay);
 
         virtualCommunicationBundle = VirtualCommunicationBundleFactory.createFromNodeConfigurationService(getNodeConfigurationService());
         virtualCommunicationBundle.setAutoStartNetworkOnActivation(false);
@@ -121,7 +123,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
 
         // register custom test message type
         messageChannelService.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_TEST,
-            new TestNetworkRequestHandler(nodeConfigurationService.getLocalNodeId()));
+            new TestNetworkRequestHandler(nodeConfigurationService.getInstanceNodeSessionId()));
     }
 
     public static void setRememberRuntimePeersAfterRestarts(boolean rememberRuntimePeers) {
@@ -140,7 +142,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      * @throws ExecutionException on internal errors
      * @throws SerializationException on serialization failure
      */
-    public NetworkResponse performRoutedRequest(Serializable messageContent, String messageType, NodeIdentifier targetNodeId)
+    public NetworkResponse performRoutedRequest(Serializable messageContent, String messageType, InstanceNodeSessionId targetNodeId)
         throws CommunicationException, InterruptedException, ExecutionException, SerializationException {
         byte[] serializedBody = MessageUtils.serializeObject(messageContent);
         return messageRoutingService.performRoutedRequest(serializedBody, messageType, targetNodeId);
@@ -160,7 +162,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      * @throws ExecutionException on internal errors
      * @throws SerializationException on serialization failure
      */
-    public NetworkResponse performRoutedRequest(Serializable messageContent, NodeIdentifier targetNodeId, int timeoutMsec)
+    public NetworkResponse performRoutedRequest(Serializable messageContent, InstanceNodeSessionId targetNodeId, int timeoutMsec)
         throws CommunicationException, InterruptedException, ExecutionException, TimeoutException, SerializationException {
         // FIXME review: after API changes, the given timeout is ignored/overruled by the low-level messaging timeout here
         return performRoutedRequest(messageContent, ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, targetNodeId);
@@ -239,7 +241,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      * @throws InterruptedException on interruption
      * @throws TimeoutException on timeout
      */
-    public void waitUntilContainsInReachableNodes(final NodeIdentifier targetNodeId, int timeout) throws InterruptedException,
+    public void waitUntilContainsInReachableNodes(final InstanceNodeSessionId targetNodeId, int timeout) throws InterruptedException,
         TimeoutException {
         if (containsInReachableNodes(targetNodeId)) {
             return;
@@ -250,8 +252,8 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
         NetworkTopologyChangeListenerAdapter topologyChangeListener = new NetworkTopologyChangeListenerAdapter() {
 
             @Override
-            public void onReachableNodesChanged(Set<NodeIdentifier> reachableNodes, Set<NodeIdentifier> addedNodes,
-                Set<NodeIdentifier> removedNodes) {
+            public void onReachableNodesChanged(Set<InstanceNodeSessionId> reachableNodes, Set<InstanceNodeSessionId> addedNodes,
+                Set<InstanceNodeSessionId> removedNodes) {
                 // log.debug("Reachable nodes for " + getNodeId() + " have changed: " + Arrays.toString(reachableNodes.toArray()));
                 if (reachableNodes.contains(targetNodeId)) {
                     latch.countDown();
@@ -270,7 +272,8 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
             if (!latch.await(timeout, TimeUnit.MILLISECONDS)) {
                 throw new TimeoutException();
             }
-            log.debug(StringUtils.format("Node %s became reachable for node %s after waiting for %,d msec", targetNodeId, getNodeId(),
+            log.debug(StringUtils.format("Node %s became reachable for node %s after waiting for %,d msec", targetNodeId,
+                getInstanceNodeSessionId(),
                 System.currentTimeMillis() - startTime));
         } finally {
             networkRoutingServiceImpl.removeNetworkTopologyChangeListener(topologyChangeListener);
@@ -283,8 +286,8 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      * @param targetNodeId the node to check for
      * @return true if the given node is reachable via the current network
      */
-    public boolean containsInReachableNodes(NodeIdentifier targetNodeId) {
-        Set<NodeIdentifier> reachable = networkRoutingService.getReachableNetworkGraph().getNodeIds();
+    public boolean containsInReachableNodes(InstanceNodeSessionId targetNodeId) {
+        Set<InstanceNodeSessionId> reachable = networkRoutingService.getReachableNetworkGraph().getNodeIds();
         // log.debug("Current reachable nodes for " + getNodeId() + ": " + Arrays.toString(reachable.toArray()));
         return reachable.contains(targetNodeId);
     }
@@ -310,9 +313,10 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      */
     public String getFormattedLSAKnowledge() {
         StringBuilder buffer = new StringBuilder();
-        Map<NodeIdentifier, Map<String, String>> properties = getService(NodePropertiesService.class).getAllNodeProperties();
-        buffer.append(StringUtils.format("LSA properties as seen by %s (%d entries):", getNodeId(), properties.size()));
-        for (Entry<NodeIdentifier, Map<String, String>> entry : properties.entrySet()) {
+        Map<InstanceNodeSessionId, Map<String, String>> properties = getService(NodePropertiesService.class).getAllNodeProperties();
+        buffer
+            .append(StringUtils.format("LSA properties as seen by %s (%d entries):", getInstanceNodeSessionId(), properties.size()));
+        for (Entry<InstanceNodeSessionId, Map<String, String>> entry : properties.entrySet()) {
             buffer.append(StringUtils.format("\n  %s: %s", entry.getKey(), entry.getValue().get(NodePropertyConstants.KEY_LSA)));
         }
         return buffer.toString();
@@ -343,7 +347,7 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
      * @return the calculated sequence of {@link NetworkGraphLink}s
      */
     public List<? extends NetworkGraphLink> getRouteTo(VirtualInstance destination) {
-        return messageRoutingService.getRouteTo(destination.getConfigurationService().getLocalNodeId());
+        return messageRoutingService.getRouteTo(destination.getInstanceNodeSessionId());
     }
 
     public NetworkGraph getRawNetworkGraph() {
@@ -367,7 +371,8 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     public boolean knownTopologyContainsLinkTo(VirtualInstance targetInstance) {
         // note: before migration to the new network code, it was kind of undefined whether this method should refer
         // to the *raw* or *reachable* graph; now it does the former - misc_ro
-        return getReachableNetworkGraph().containsLinkBetween(this.getNodeId(), targetInstance.getNodeId());
+        return getReachableNetworkGraph().containsLinkBetween(this.getInstanceNodeSessionId(),
+            targetInstance.getInstanceNodeSessionId());
     }
 
     /**
@@ -490,16 +495,33 @@ public class VirtualInstance extends VirtualInstanceSkeleton implements CommonVi
     }
 
     /**
-     * @return the node identifier of this virtual instance
+     * @return the (pseudo-)persistent instance node id of this virtual instance; stable across the lifetime of this {@link VirtualInstance}
+     *         object
      */
-    public NodeIdentifier getNodeId() {
-        return nodeInformation.getNodeId();
+    public InstanceNodeId getPersistentInstanceNodeId() {
+        // TODO WIP
+        return getInstanceNodeSessionId().convertToInstanceNodeId();
+    }
+
+    /**
+     * @return the current instance node session id of this virtual instance; note that this is only defined and stable between calls to
+     *         {@link #start()} and {@link #shutDown()}.
+     */
+    public InstanceNodeSessionId getInstanceNodeSessionId() {
+        return nodeInformation.getInstanceNodeSessionId();
+    }
+
+    /**
+     * @return the equivalent of calling getInstanceNodeSessionId().getInstanceNodeSessionIdString()
+     */
+    public String getInstanceNodeSessionIdString() {
+        return nodeInformation.getInstanceNodeSessionId().getInstanceNodeSessionIdString();
     }
 
     @Override
     public String toString() {
         // TODO Auto-generated method stub
-        return getNodeId().toString();
+        return getInstanceNodeSessionId().toString();
     }
 
     /**

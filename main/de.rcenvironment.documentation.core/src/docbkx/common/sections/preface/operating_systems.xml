@@ -4,44 +4,53 @@
     <title>Compatible Operating Systems</title>
     <para>RCE releases are provided for Windows and Linux. It is regularly tested on<itemizedlist>
             <listitem>
-                <para>Red Hat Enterprise Linux 6 Workstation (64 bit)</para>
+                <para>CentOS 7</para>
             </listitem>
             <listitem>
-                <para>Debian 7 stable (64 bit)</para>
+                <para>Debian 8</para>
             </listitem>
             <listitem>
-                <para>SUSE Linux Enterprise Desktop ("SLED") 11 SP2 (64 bit)</para>
+                <para>SUSE Linux Enterprise Desktop ("SLED") 12 SP2</para>
             </listitem>
             <listitem>
-                <para>Windows 7 (64 bit)</para>
+                <para>Windows 7</para>
+            </listitem>
+            <listitem>
+                <para>Windows 10</para>
+            </listitem>
+            <listitem>
+                <para>Windows Server 2012 R2</para>
             </listitem>
         </itemizedlist>It is also confirmed to run (but not as thoroughly tested) on<itemizedlist>
             <listitem>
-                <para>Mint 17 (64 bit)</para>
+                <para>Mint 18</para>
             </listitem>
             <listitem>
-                <para>CentOS 7 (64 bit)</para>
+                <para>Red Hat Enterprise Linux 6</para>
             </listitem>
             <listitem>
-                <para>SUSE Linux Enterprise Server ("SLES") 11 SP2 (64 bit)</para>
+                <para>SUSE Linux Enterprise Desktop ("SLED") 11 SP2</para>
             </listitem>
             <listitem>
-                <para>Ubuntu 14 LTS (64 bit)</para>
+                <para>Ubuntu 16.04 LTS</para>
             </listitem>
             <listitem>
-                <para>Windows Server 2008 r2 (64 bit)</para>
+                <para>openSUSE Leap 42.1</para>
+            </listitem>
+            <listitem>
+                <para>Windows 8.1</para>
             </listitem>
         </itemizedlist></para>
     <sect2>
         <title>Support of 32 Bit Operating Systems</title>
-        <para>Starting with release 6.0.0, only the 64 bit versions of RCE are being fully tested.
-            The 32 bit packages are provided for backwards compatiblity and may be removed in a
-            future release. If you rely on up-to-date 32 bit versions of RCE, or encounter a problem
-            with these packages, please contact the RCE developers so we can take this into
-            account.</para>
+        <para>Starting with release 8.0.0, RCE is only shipped for 64 bit systems. If you still
+            require 32 bit packages, you can continue to use the the previous RCE version, but you
+            will not receive any new features or updates.</para>
     </sect2>
     <sect2>
         <title>Known Issues</title>
+        <sect3>
+            <title>KDE on Red Hat Enterprise Linux 7</title>
         <para>On Red Hat Enterprise Linux 7 with KDE 4, RCE (like any other Eclipse-based
             application) can cause a segmentation fault at startup. If you encounter such an issue,
             you can try choosing a different GTK2 theme:</para>
@@ -63,5 +72,13 @@
                 </listitem>
             </orderedlist>
         </para>
+        </sect3>
+        <sect3>
+         <title>KDE with Oxygen</title>
+        <para>On Unix Systems using KDE as desktop environment and Oxygen as theme it can happen that RCE crashes when certain GUI elements are shown.
+            It is a known issue in the theme Oxygen and happens on other Eclipse-based applications as well. If you encounter such an issue, 
+            please choose a different theme like "Raleigh" or "Adwaita".</para>
+            
+        </sect3>
     </sect2>
 </sect1>

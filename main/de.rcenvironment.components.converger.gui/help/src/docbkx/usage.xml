@@ -20,7 +20,7 @@
         <para>To prevent endless-running loops, a maximum number of convergence check can be
             defined.</para>
         <para>In the final run of the Converger component, the values most recently received are
-            sent to the ouputs with the suffix '_converged'.</para>
+            sent to the outputs with the suffix '_converged'.</para>
     </sect1>
     <sect1>
         <title>Usage</title>
@@ -33,7 +33,6 @@
                 the set of current plus previous k values are considered. So k = 1 means only
                 current and previous values are considered, k = 2 current and two previous, etc. You
                 can also limit the number of convergence checks.</para>
-            <para><inlinegraphic fileref="../../images/image001.png"/></para>
         </sect2>
         <sect2>
             <title>Inputs/Outputs tab</title>
@@ -41,7 +40,6 @@
                 output with the suffix '_converged' are created automatically. In the "Add" dialog
                 you can also decide whether to define a start value. In case if not, an additional
                 input is created with the suffix '_start'.</para>
-        <para><inlinegraphic fileref="../../images/image004.png"/></para>
         </sect2>
         <sect2>
             <title>Nested and Fault-tolerant Loop tab</title>

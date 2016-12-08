@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.management;
 
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Provides configuration parameters for a benchmark subtask. A subtask is a set of one or more
@@ -23,7 +23,7 @@ public interface BenchmarkSubtask {
     /**
      * @return the list of target nodes to contact
      */
-    List<NodeIdentifier> getTargetNodes();
+    List<InstanceNodeSessionId> getTargetNodes();
 
     /**
      * @return the number of messages to send to each target node

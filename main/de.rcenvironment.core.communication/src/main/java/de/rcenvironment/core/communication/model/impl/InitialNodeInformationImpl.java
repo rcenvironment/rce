@@ -8,8 +8,8 @@
 
 package de.rcenvironment.core.communication.model.impl;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -23,11 +23,11 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
     // note: this object is only deserialized *after* protocol version checking, so the serialization is safe
     private static final long serialVersionUID = 6729868652469869965L;
 
-    private String nodeIdString;
+    private transient InstanceNodeSessionId instanceSessionIdObject;
+
+    private String instanceSessionId;
 
     private String displayName;
-
-    private transient NodeIdentifier wrappedNodeId;
 
     /**
      * Default constructor for bean-style construction.
@@ -39,24 +39,25 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
     /**
      * Convenience constructor.
      * 
-     * @param nodeId
+     * @param localInstanceSessionId
      */
-    public InitialNodeInformationImpl(NodeIdentifier nodeId) {
-        this.nodeIdString = nodeId.getIdString();
+    public InitialNodeInformationImpl(InstanceNodeSessionId localInstanceSessionId) {
+        this.instanceSessionIdObject = localInstanceSessionId;
+        this.instanceSessionId = localInstanceSessionId.getInstanceNodeSessionIdString();
     }
 
     public InitialNodeInformationImpl(String id) {
-        this.nodeIdString = id;
+        this.instanceSessionId = id;
     }
 
     @Override
-    public String getNodeIdString() {
-        return nodeIdString;
+    public String getInstanceNodeSessionIdString() {
+        return instanceSessionId;
     }
 
     // setter for bean-style construction
     public void setNodeId(String nodeId) {
-        this.nodeIdString = nodeId;
+        this.instanceSessionId = nodeId;
     }
 
     @Override
@@ -69,12 +70,12 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
     }
 
     @Override
-    public synchronized NodeIdentifier getNodeId() {
+    public synchronized InstanceNodeSessionId getInstanceNodeSessionId() {
         // create the wrapped object on-the-fly to support bean-style construction
-        if (wrappedNodeId == null) {
-            wrappedNodeId = NodeIdentifierFactory.fromNodeId(nodeIdString);
+        if (instanceSessionIdObject == null) {
+            instanceSessionIdObject = NodeIdentifierUtils.parseInstanceNodeSessionIdStringWithExceptionWrapping(instanceSessionId);
         }
-        return wrappedNodeId;
+        return instanceSessionIdObject;
     }
 
     @Override
@@ -83,17 +84,17 @@ public class InitialNodeInformationImpl implements InitialNodeInformation {
         if (displayName == null) {
             displayName = "<unnamed>";
         }
-        return StringUtils.format("%s [%s]", name, nodeIdString);
+        return StringUtils.format("%s [%s]", name, instanceSessionId);
     }
 
     // NOTE: only intended for use in unit tests; not for production use!
     private String getInternalFingerprint() {
-        return StringUtils.format("%s#%s", nodeIdString, displayName);
+        return StringUtils.format("%s#%s", instanceSessionId, displayName);
     }
 
     @Override
     public String toString() {
-        return StringUtils.format("%s/%s", nodeIdString, displayName);
+        return StringUtils.format("%s/%s", instanceSessionId, displayName);
     }
 
     @Override

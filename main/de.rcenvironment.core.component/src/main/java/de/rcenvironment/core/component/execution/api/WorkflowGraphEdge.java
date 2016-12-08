@@ -10,6 +10,8 @@ package de.rcenvironment.core.component.execution.api;
 
 import java.io.Serializable;
 
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
+
 /**
  * Represents an edge in the workflow graph.
  * 
@@ -28,18 +30,18 @@ public class WorkflowGraphEdge implements Serializable {
 
     private final String inputIdentifier;
 
-    private final String outputEndpointType;
+    private final EndpointCharacter outputEndpointCharacter;
 
-    private final String inputEndpointType;
+    private final EndpointCharacter inputEndpointCharacter;
 
-    public WorkflowGraphEdge(String sourceExecutionIdentifier, String outputIdentifier, String outputEndpointType,
-        String targetExecutionIdentifier, String inputIdentifier, String inputEndpointType) {
+    public WorkflowGraphEdge(String sourceExecutionIdentifier, String outputIdentifier, EndpointCharacter outputEndpointCharacter,
+        String targetExecutionIdentifier, String inputIdentifier, EndpointCharacter inputEndpointCharacter) {
         this.sourceExecutionIdentifier = sourceExecutionIdentifier;
         this.outputIdentifier = outputIdentifier;
-        this.outputEndpointType = outputEndpointType;
+        this.outputEndpointCharacter = outputEndpointCharacter;
         this.targetExecutionIdentifier = targetExecutionIdentifier;
         this.inputIdentifier = inputIdentifier;
-        this.inputEndpointType = inputEndpointType;
+        this.inputEndpointCharacter = inputEndpointCharacter;
     }
 
     public String getSourceExecutionIdentifier() {
@@ -58,12 +60,12 @@ public class WorkflowGraphEdge implements Serializable {
         return inputIdentifier;
     }
 
-    public String getOutputEndpointType() {
-        return outputEndpointType;
+    public EndpointCharacter getOutputCharacter() {
+        return outputEndpointCharacter;
     }
 
-    public String getInputEndpointType() {
-        return inputEndpointType;
+    public EndpointCharacter getInputCharacter() {
+        return inputEndpointCharacter;
     }
 
 }

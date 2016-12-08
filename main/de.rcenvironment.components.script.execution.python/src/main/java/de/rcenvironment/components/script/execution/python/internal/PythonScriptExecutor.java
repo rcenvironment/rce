@@ -45,9 +45,11 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage;
  * and must be implemented manually. For this we require some different code for the {@link ScriptExecutor} methods.
  * 
  * @author Sascha Zur
- * 
+ * @author Jascha Riedel (#14029)
  */
 public class PythonScriptExecutor extends DefaultScriptExecutor {
+
+    private static final String NOT_VALUE_UUID = "not_a_value_7fdc603e";
 
     private static final String OS = "os";
 
@@ -60,11 +62,14 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         super.prepareExecutor(compCtx);
         componentContext = compCtx;
         String pythonInstallation = componentContext.getConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION);
+        if (pythonInstallation == null || pythonInstallation.isEmpty()) {
+            throw new ComponentException("No Python installation specified.");
+        }
         scriptContext = new PythonScriptContext();
         scriptContext.setAttribute(PythonComponentConstants.PYTHON_INSTALLATION, pythonInstallation, 0);
         scriptContext.setAttribute(OS, OSFamily.getLocal(), 0);
         scriptContext.setAttribute(PythonComponentConstants.COMPONENT_CONTEXT, componentContext, 0);
-        stateMap = new HashMap<String, Object>();
+        stateMap = new HashMap<>();
         scriptingService = compCtx.getService(ScriptingService.class);
 
         return true;
@@ -109,38 +114,42 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public boolean postRun() throws ComponentException {
         TypedDatumFactory factory = componentContext.getService(TypedDatumService.class).getFactory();
         for (String outputName : componentContext.getOutputs()) {
             DataType type = componentContext.getOutputDataType(outputName);
-            List<Object> resultList = (List<Object>) scriptEngine.get(outputName);
+            @SuppressWarnings("unchecked") List<Object> resultList = (List<Object>) scriptEngine.get(outputName);
             TypedDatum outputValue = null;
             if (scriptEngine.get(outputName) != null) {
                 for (Object o : resultList) {
-                    if (o != null) {
+                    if (o != null && !String.valueOf(o).equals(NOT_VALUE_UUID)) {
                         switch (type) {
                         case ShortText:
                             outputValue = factory.createShortText(String.valueOf(o));
                             break;
                         case Boolean:
-                            outputValue = factory.createBoolean(Boolean.parseBoolean(String.valueOf(o)));
+                            outputValue = convertBoolean(factory, o);
                             break;
                         case Float:
                             try {
                                 outputValue = factory.createFloat(Double.parseDouble(String.valueOf(o)));
                             } catch (NumberFormatException e) {
-                                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float",
-                                    o.toString()), e);
+                                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float."
+                                    + " Possible reasons (not restricted): Ouput value too big (max. %.1e),"
+                                    + " or ouput value contains non numeric characters.",
+                                    o.toString(), Double.MAX_VALUE));
                             }
                             break;
                         case Integer:
                             try {
                                 outputValue = factory.createInteger(Long.parseLong(String.valueOf(o)));
                             } catch (NumberFormatException e) {
-                                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Integer",
-                                    o.toString()), e);
+                                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Integer."
+                                    + " Possible reasons (not restricted): Ouput value too big (max. 2E"
+                                    + Long.toBinaryString(Long.MAX_VALUE).length() + " - 1),"
+                                    + " or ouput value contains non numeric characters.",
+                                    o.toString()));
                             }
                             break;
                         case FileReference:
@@ -171,8 +180,10 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                         .format("Value \"None\" of cell %s is not valid for type Vector \"%s\"", index, outputName));
                                 } else if (element instanceof Integer) {
                                     convertedValue = (Integer) element;
-                                } else {
+                                } else if (element instanceof Double) {
                                     convertedValue = (Double) element;
+                                } else if (element instanceof String && ((String) element).equals("+Infinity")) {
+                                    convertedValue = Double.POSITIVE_INFINITY;
                                 }
                                 vector.setFloatTDForElement(factory.createFloat(convertedValue), index);
                                 index++;
@@ -191,6 +202,8 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             TypedDatum[][] result = new TypedDatum[rowArray.size()][];
                             if (rowArray.size() > 0 && rowArray.get(0).getClass().getName().equals(ArrayList.class.getName())) {
                                 int i = 0;
+                                int size = 0;
+                                Object first = "";
                                 for (Object columnObject : rowArray) {
                                     if (!(columnObject instanceof List)) {
                                         throw new ComponentException(
@@ -198,7 +211,23 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                                                 outputName));
                                     }
                                     List<Object> columnArray = (List<Object>) columnObject;
-                                    result[i] = new TypedDatum[columnArray.size()];
+                                    if (size == 0) {
+                                        first = columnObject;
+                                        size = columnArray.size();
+                                    }
+                                    if (size != columnArray.size()) {
+                                        throw new ComponentException(StringUtils.format(
+                                            "Each row must have the same number of elements in a small table. "
+                                            + "Element count of \"%s\" and \"%s\" does not match.",
+                                            first, columnObject));
+                                    }
+                                    if (columnArray.size() == 0) {
+                                        result[i] = new TypedDatum[1];
+                                        result[i][0] = factory.createEmpty();
+                                    } else {
+                                        result[i] = new TypedDatum[columnArray.size()];
+                                    }
+
                                     int j = 0;
                                     for (Object element : columnArray) {
                                         result[i][j++] = getTypedDatum(element);
@@ -217,27 +246,51 @@ public class PythonScriptExecutor extends DefaultScriptExecutor {
                             }
                             break;
                         default:
-                            outputValue = factory.createShortText(o.toString()); // should
-                                                                                 // not
-                                                                                 // happen
+                            outputValue = factory.createShortText(o.toString()); // should not happen
                         }
+                        componentContext.writeOutput(outputName, outputValue);
+                    } else if (String.valueOf(o).equals(NOT_VALUE_UUID)) {
+                        outputValue = factory.createNotAValue(); // "not a value" value
                         componentContext.writeOutput(outputName, outputValue);
                     }
                 }
             }
         }
-
-        for (String outputName : ((PythonScriptEngine) scriptEngine).getNotAValueOutputsList()) {
-            componentContext.writeOutput(outputName, factory.createNotAValue());
-        }
-
         stateMap = ((PythonScriptEngine) scriptEngine).getStateOutput();
         for (String outputName : ((PythonScriptEngine) scriptEngine).getCloseOutputChannelsList()) {
             componentContext.closeOutput(outputName);
         }
-
         ((PythonScriptEngine) scriptEngine).dispose();
         return true;
+    }
+
+    private TypedDatum convertBoolean(TypedDatumFactory factory, Object o) throws ComponentException {
+        String stringValue = o.toString();
+        boolean isNumber = true;
+        TypedDatum outputValue = null;
+
+        try {
+            float numberValue = Float.parseFloat(stringValue);
+            if (Math.abs(numberValue) > 0) {
+                outputValue = factory.createBoolean(true);
+            } else {
+                outputValue = factory.createBoolean(false);
+            }
+        } catch (NumberFormatException e) {
+            isNumber = false;
+        }
+
+        if (!isNumber && (stringValue.equalsIgnoreCase("0") || stringValue.equalsIgnoreCase("0L") || stringValue.equalsIgnoreCase("0.0")
+            || stringValue.equalsIgnoreCase("0j") || stringValue.equalsIgnoreCase("()") || stringValue.equalsIgnoreCase("[]")
+            || stringValue.isEmpty() || stringValue.equalsIgnoreCase("{}") || stringValue.equalsIgnoreCase("false")
+            || stringValue.equalsIgnoreCase("none"))) {
+
+            outputValue = factory.createBoolean(false);
+
+        } else if (!isNumber) {
+            outputValue = factory.createBoolean(true);
+        }
+        return outputValue;
     }
 
     private TypedDatum handleFileOrDirectoryOutput(String outputName, TypedDatum outputValue, String type, Object o)

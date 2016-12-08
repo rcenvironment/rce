@@ -42,7 +42,10 @@ public final class EncrypterComponentConstants {
     public static final String DEFAULT_PASSWORD = "GoodNewsEveryone";
 
     /** Name of the static output. */
-    public static final String OUTPUT_NAME = "Encrypted result";
+    public static final String INPUT_NAME_TEXT = "Text";
+    
+    /** Name of the static output. */
+    public static final String OUTPUT_NAME_RESULT = "Encrypted result";
 
     /** Constant for reading a meta datum. */
     public static final String METADATUM_USAGE_OF_FILE = "usageOfFile";

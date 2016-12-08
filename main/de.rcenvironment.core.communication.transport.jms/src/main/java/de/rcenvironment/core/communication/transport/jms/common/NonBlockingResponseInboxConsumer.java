@@ -14,9 +14,9 @@ import javax.jms.Connection;
 import javax.jms.JMSException;
 import javax.jms.Message;
 
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A single-threaded consumer that listens for all responses sent to a shared queue.
@@ -63,7 +63,7 @@ public final class NonBlockingResponseInboxConsumer extends AbstractJmsQueueCons
         void onChannelClosed();
     }
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private final Map<String, JmsResponseCallback> responseListenerMap = new HashMap<>();
 

@@ -49,6 +49,8 @@ import org.eclipse.ui.part.FileEditorInput;
 import org.eclipse.ui.part.ISetSelectionTarget;
 
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
+import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
+import de.rcenvironment.core.utils.common.InvalidFilenameException;
 
 /**
  * Wizard to create a new workflow file and project if needed.
@@ -136,7 +138,7 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
             public void run(IProgressMonitor monitor) throws InvocationTargetException {
                 try {
                     doFinish(projectName, workflowName, monitor, usage);
-                } catch (CoreException e) {
+                } catch (CoreException | InvalidFilenameException e) {
                     throw new InvocationTargetException(e);
                 } finally {
                     monitor.done();
@@ -182,7 +184,7 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
     
 
     private void doFinish(String newProjectName, String newWorkflowName,
-            IProgressMonitor monitor, ProjectUsages usage) throws CoreException {
+            IProgressMonitor monitor, ProjectUsages usage) throws CoreException, InvalidFilenameException {
 
         // create content of empty workflow
         UUID id = UUID.randomUUID();
@@ -245,8 +247,8 @@ public class NewWorkflowProjectWizard extends Wizard implements INewWizard,
         }
         
         // create file and fill with content
-        newWorkflowFile = project.getFile(workspaceToFile
-                + newWorkflowName + ".wf");
+        newWorkflowFile = project.getFile(workspaceToFile + newWorkflowName + ".wf");
+        CrossPlatformFilenameUtils.throwExceptionIfFilenameNotValid(newWorkflowFile.getName());
         InputStream stream = new ByteArrayInputStream(workflowString.getBytes());
         newWorkflowFile.create(stream, true, monitor);
         

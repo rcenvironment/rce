@@ -25,7 +25,6 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.utils.common.configuration.VariableNameVerifyListener;
-import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.Executor;
@@ -38,33 +37,34 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.
  */
 public class SwitchConditionInputSelectionPane extends EndpointSelectionPane {
 
-    public SwitchConditionInputSelectionPane(String genericEndpointTitle, EndpointType direction, Executor executor, boolean readonly,
-        String dynamicEndpointIdToManage) {
-        super(genericEndpointTitle, direction, executor, readonly, dynamicEndpointIdToManage, true, true);
+    public SwitchConditionInputSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, Executor executor) {
+        super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
     }
 
     @Override
     protected void onAddClicked() {
         SwitchConditionEndpointEditDialog dialog =
             new SwitchConditionEndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD,
-                configuration, endpointType, endpointIdToManage, false,
-                endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
-                    .getMetaDataDefinition(), new HashMap<String, String>());
+                configuration, endpointType, dynEndpointIdToManage, false,
+                endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
+                    .getMetaDataDefinition(),
+                new HashMap<String, String>());
         onAddClicked(dialog);
     }
 
     @Override
     protected void onEditClicked() {
         final String name = (String) table.getSelection()[0].getData();
-        boolean isStaticEndpoint = EndpointHelper.getStaticEndpointNames(endpointType, configuration).contains(name);
+        boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         SwitchConditionEndpointEditDialog dialog =
             new SwitchConditionEndpointEditDialog(Display.getDefault().getActiveShell(),
                 EndpointActionType.EDIT, configuration, endpointType,
-                endpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
-                    .getMetaDataDefinition(), newMetaData);
+                dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
+                    .getMetaDataDefinition(),
+                newMetaData);
 
         onEditClicked(name, dialog, newMetaData);
     }

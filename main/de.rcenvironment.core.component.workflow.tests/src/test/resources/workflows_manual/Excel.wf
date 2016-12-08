@@ -1,14 +1,12 @@
 {
   "identifier" : "5baef56b-ca2b-4963-93b8-f806b8a79a50",
-  "workflowVersion" : "3",
-  "name" : "Excel_2013-08-01_11:01:50",
-  "platform" : "f5151e6266f649199a22f548d9906e18",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "7d8663a6-6145-4ee4-8960-8c2e92590844",
     "name" : "Big Old",
     "location" : "108:414",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -16,10 +14,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/BigData_Old.xls",
-      "postMacro" : ""
+      "runMacro" : "",
+      "xlFilename" : "workflows_test/files/BigData_Old.xls"
     },
     "dynamicOutputs" : [ {
       "identifier" : "b4f0e4dd-c662-4523-a68c-df65d2b2325d",
@@ -27,17 +25,17 @@
       "epIdentifier" : "default",
       "datatype" : "SmallTable",
       "metadata" : {
-        "address" : "Tabelle1!A1:M65536",
-        "pruning" : "false",
-        "expanding" : "false"
+        "address" : "Tabelle1!A1:M7692",
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   }, {
     "identifier" : "98f0e3e2-159d-4cf3-957f-25f951b30ff0",
     "name" : "Datenlieferant",
     "location" : "62:146",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -45,10 +43,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/ExcelTester.xls",
-      "postMacro" : ""
+      "runMacro" : "",
+      "xlFilename" : "workflows_test/files/ExcelTester.xls"
     },
     "dynamicOutputs" : [ {
       "identifier" : "35797a8b-093e-416a-9140-9843d298f695",
@@ -57,8 +55,8 @@
       "datatype" : "Float",
       "metadata" : {
         "address" : "Tabelle1!A5",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     }, {
       "identifier" : "d5e59c42-5ddb-4a12-aacd-e423550d1b3b",
@@ -67,8 +65,8 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "address" : "Tabelle1!A1:D8",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     }, {
       "identifier" : "0fa0f0f0-d573-4354-9f90-304244b4ac70",
@@ -77,16 +75,16 @@
       "datatype" : "ShortText",
       "metadata" : {
         "address" : "Tabelle1!C3",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   }, {
     "identifier" : "0e391359-4fdf-4a24-8c08-86cfe2f9430f",
     "name" : "KillOutgoingEmptyEndRows",
     "location" : "64:28",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -94,10 +92,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/ExcelTester.xls",
-      "postMacro" : ""
+      "runMacro" : "",
+      "xlFilename" : "workflows_test/files/ExcelTester.xls"
     },
     "dynamicOutputs" : [ {
       "identifier" : "beb1ad7d-a68f-4d20-bcee-84a5c591b5c3",
@@ -106,16 +104,16 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "address" : "Tabelle1!A1:D10",
-        "pruning" : "true",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "true"
       }
     } ]
   }, {
     "identifier" : "aa52e8ae-bb49-4f8b-8141-1f0a92d69506",
     "name" : "Macros",
     "location" : "479:317",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -123,10 +121,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "Modul1.Makro1",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/Macros.xls",
-      "postMacro" : ""
+      "runMacro" : "Modul1.Makro1",
+      "xlFilename" : "workflows_test/files/Macros.xls"
     },
     "dynamicInputs" : [ {
       "identifier" : "ca4a4917-0562-40b2-bbc0-e4344457f8db",
@@ -134,40 +132,40 @@
       "epIdentifier" : "default",
       "datatype" : "ShortText",
       "metadata" : {
+        "address" : "Tabelle1!A1",
+        "expanding" : "false",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "pruning" : "false",
-        "address" : "Tabelle1!A1",
-        "expanding" : "false"
+        "pruning" : "false"
       }
     } ],
     "dynamicOutputs" : [ {
-      "identifier" : "1f796c8a-ca5a-4240-b52b-824c978733ed",
-      "name" : "aus",
-      "epIdentifier" : "default",
-      "datatype" : "SmallTable",
-      "metadata" : {
-        "address" : "Tabelle1!A2",
-        "pruning" : "false",
-        "expanding" : "false"
-      }
-    }, {
       "identifier" : "77e69a79-d1de-4ae3-8e5c-a8e86fd18f6b",
       "name" : "Ausgang",
       "epIdentifier" : "default",
       "datatype" : "ShortText",
       "metadata" : {
         "address" : "Tabelle1!A1",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
+      }
+    }, {
+      "identifier" : "1f796c8a-ca5a-4240-b52b-824c978733ed",
+      "name" : "aus",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "address" : "Tabelle1!A2",
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   }, {
     "identifier" : "77ee3325-7da9-4f6d-9437-f2896a7fed36",
     "name" : "Macrotester",
     "location" : "262:293",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -175,10 +173,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/ExcelTester.xls",
-      "postMacro" : ""
+      "runMacro" : "",
+      "xlFilename" : "workflows_test/files/ExcelTester.xls"
     },
     "dynamicInputs" : [ {
       "identifier" : "3b441064-ae44-4b99-a7b9-2fcadea0eacb",
@@ -186,22 +184,32 @@
       "epIdentifier" : "default",
       "datatype" : "Float",
       "metadata" : {
+        "address" : "Tabelle1!A1",
+        "expanding" : "false",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "pruning" : "false",
-        "address" : "Tabelle1!A1",
-        "expanding" : "false"
+        "pruning" : "false"
       }
     } ],
     "dynamicOutputs" : [ {
+      "identifier" : "7acb7a73-cc1b-4ae8-a2a2-eaaad3ed9a8b",
+      "name" : "O_Ausgang",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "address" : "Tabelle1!A8",
+        "expanding" : "false",
+        "pruning" : "false"
+      }
+    }, {
       "identifier" : "09676e49-d4aa-41be-a3ff-1cb2e01a7962",
       "name" : "O_MakroAusgang",
       "epIdentifier" : "default",
       "datatype" : "SmallTable",
       "metadata" : {
         "address" : "Tabelle1!C8",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     }, {
       "identifier" : "bbc06e5c-8084-4a00-982d-0c6c6265f056",
@@ -210,26 +218,16 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "address" : "Tabelle1!A9",
-        "pruning" : "false",
-        "expanding" : "false"
-      }
-    }, {
-      "identifier" : "7acb7a73-cc1b-4ae8-a2a2-eaaad3ed9a8b",
-      "name" : "O_Ausgang",
-      "epIdentifier" : "default",
-      "datatype" : "SmallTable",
-      "metadata" : {
-        "address" : "Tabelle1!A8",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   }, {
     "identifier" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
     "name" : "Resulttester",
     "location" : "570:82",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.script",
       "version" : "3.4",
@@ -237,11 +235,20 @@
     },
     "configuration" : {
       "pythonExecutionPath" : "${pythonExecutionPath}",
-      "usageOfScript" : "NEW",
       "script" : "allRight = True \r\n\r\nif len(RCE.read_input('kills')) != 8:\r\n\tallRight = False\r\n\tprint 'Error in kills-channel'\r\n\t\r\nif len(RCE.read_input('expand')) != 8:\r\n\tallRight = False\r\n\tprint 'Error in expand-channel'\r\n\r\nif RCE.read_input('macros') != '654':\r\n\tallRight = False\r\n\tprint 'Error in macros-channel'\r\n\t\r\nif len(RCE.read_input('xlsx')) != 8:\r\n\tallRight = False\r\n\tprint 'Error in xlsx-channel'\r\n\t\r\nif RCE.read_input('xlsm') != '14.0':\r\n\tallRight = False\r\n\tprint 'Error in xlsm-channel'\r\n\t\r\nif len(RCE.read_input('big')) != 65536:\r\n\tallRight = False\r\n\tprint 'Error in big-channel'\r\n\r\nif allRight:\r\n\tprint 'Excel test is successful. General functionality available.'",
-      "scriptLanguage" : "Python"
+      "scriptLanguage" : "Python",
+      "usageOfScript" : "NEW"
     },
     "dynamicInputs" : [ {
+      "identifier" : "8e75d7a7-aec1-41fa-b479-148c8dce938a",
+      "name" : "big",
+      "epIdentifier" : "default",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
       "identifier" : "6b15de09-a020-41ca-8c90-bce360402e58",
       "name" : "expand",
       "epIdentifier" : "default",
@@ -251,8 +258,8 @@
         "inputHandling_73b1056e" : "Single"
       }
     }, {
-      "identifier" : "8e75d7a7-aec1-41fa-b479-148c8dce938a",
-      "name" : "big",
+      "identifier" : "fad15907-f8ac-4b04-a87e-0e25dfb5eb6c",
+      "name" : "kills",
       "epIdentifier" : "default",
       "datatype" : "SmallTable",
       "metadata" : {
@@ -264,15 +271,6 @@
       "name" : "macros",
       "epIdentifier" : "default",
       "datatype" : "ShortText",
-      "metadata" : {
-        "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single"
-      }
-    }, {
-      "identifier" : "fad15907-f8ac-4b04-a87e-0e25dfb5eb6c",
-      "name" : "kills",
-      "epIdentifier" : "default",
-      "datatype" : "SmallTable",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single"
@@ -300,8 +298,8 @@
     "identifier" : "63c011bd-66c6-4dc7-b618-4316ed54662b",
     "name" : "XLSM",
     "location" : "249:564",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -309,10 +307,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "Modul1.Makro1",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/Test.xlsm",
-      "postMacro" : ""
+      "runMacro" : "Modul1.Makro1",
+      "xlFilename" : "workflows_test/files/Test.xlsm"
     },
     "dynamicOutputs" : [ {
       "identifier" : "c4126698-571a-4689-96a5-5f18b4769c22",
@@ -321,16 +319,16 @@
       "datatype" : "ShortText",
       "metadata" : {
         "address" : "Tabelle1!B1",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   }, {
     "identifier" : "f938f176-2707-4337-bce9-f2546c8cfa77",
     "name" : "XLSX",
     "location" : "265:404",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -338,10 +336,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/ExcelTester_Link.xlsx",
-      "postMacro" : ""
+      "runMacro" : "",
+      "xlFilename" : "workflows_test/files/ExcelTester_Link.xlsx"
     },
     "dynamicInputs" : [ {
       "identifier" : "e43351c4-9e6b-4506-8f63-069124eaca5e",
@@ -349,11 +347,11 @@
       "epIdentifier" : "default",
       "datatype" : "ShortText",
       "metadata" : {
+        "address" : "Tabelle1!A1",
+        "expanding" : "false",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "pruning" : "false",
-        "address" : "Tabelle1!A1",
-        "expanding" : "false"
+        "pruning" : "false"
       }
     } ],
     "dynamicOutputs" : [ {
@@ -363,16 +361,16 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "address" : "Tabelle1!A1:D8",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   }, {
     "identifier" : "7bca626c-4b45-4f88-8cb1-db81ab8e2ba7",
     "name" : "ZellbereichErweitern",
     "location" : "253:154",
+    "zIndex" : "0",
     "active" : "true",
-    "platform" : "f5151e6266f649199a22f548d9906e18",
     "component" : {
       "identifier" : "de.rcenvironment.excel",
       "version" : "3.1",
@@ -380,10 +378,10 @@
     },
     "configuration" : {
       "Driver" : "false",
-      "runMacro" : "",
+      "postMacro" : "",
       "preMacro" : "",
-      "xlFilename" : "workflows_test/files/fooooo.xls",
-      "postMacro" : ""
+      "runMacro" : "",
+      "xlFilename" : "workflows_test/files/fooooo.xls"
     },
     "dynamicInputs" : [ {
       "identifier" : "39afec7f-7d73-49ed-ae30-98d8b0205d3f",
@@ -391,11 +389,11 @@
       "epIdentifier" : "default",
       "datatype" : "SmallTable",
       "metadata" : {
+        "address" : "Tabelle2!A16",
+        "expanding" : "true",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "pruning" : "false",
-        "address" : "Tabelle2!A16",
-        "expanding" : "true"
+        "pruning" : "false"
       }
     } ],
     "dynamicOutputs" : [ {
@@ -405,60 +403,60 @@
       "datatype" : "SmallTable",
       "metadata" : {
         "address" : "Tabelle2!A16:D23",
-        "pruning" : "false",
-        "expanding" : "false"
+        "expanding" : "false",
+        "pruning" : "false"
       }
     } ]
   } ],
   "connections" : [ {
+    "source" : "7d8663a6-6145-4ee4-8960-8c2e92590844",
+    "output" : "b4f0e4dd-c662-4523-a68c-df65d2b2325d",
+    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
+    "input" : "8e75d7a7-aec1-41fa-b479-148c8dce938a"
+  }, {
     "source" : "98f0e3e2-159d-4cf3-957f-25f951b30ff0",
     "output" : "35797a8b-093e-416a-9140-9843d298f695",
     "target" : "77ee3325-7da9-4f6d-9437-f2896a7fed36",
     "input" : "3b441064-ae44-4b99-a7b9-2fcadea0eacb"
   }, {
     "source" : "98f0e3e2-159d-4cf3-957f-25f951b30ff0",
-    "output" : "0fa0f0f0-d573-4354-9f90-304244b4ac70",
-    "target" : "f938f176-2707-4337-bce9-f2546c8cfa77",
-    "input" : "e43351c4-9e6b-4506-8f63-069124eaca5e"
+    "output" : "d5e59c42-5ddb-4a12-aacd-e423550d1b3b",
+    "target" : "7bca626c-4b45-4f88-8cb1-db81ab8e2ba7",
+    "input" : "39afec7f-7d73-49ed-ae30-98d8b0205d3f"
   }, {
     "source" : "98f0e3e2-159d-4cf3-957f-25f951b30ff0",
     "output" : "0fa0f0f0-d573-4354-9f90-304244b4ac70",
     "target" : "aa52e8ae-bb49-4f8b-8141-1f0a92d69506",
     "input" : "ca4a4917-0562-40b2-bbc0-e4344457f8db"
   }, {
-    "source" : "7bca626c-4b45-4f88-8cb1-db81ab8e2ba7",
-    "output" : "183eb1d2-e5e1-4c66-9320-773caac79182",
-    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
-    "input" : "6b15de09-a020-41ca-8c90-bce360402e58"
-  }, {
-    "source" : "f938f176-2707-4337-bce9-f2546c8cfa77",
-    "output" : "e954d14f-c018-4a41-860e-adbc655985aa",
-    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
-    "input" : "2f7d5ea4-387f-4d39-9346-c4a69813702d"
-  }, {
-    "source" : "63c011bd-66c6-4dc7-b618-4316ed54662b",
-    "output" : "c4126698-571a-4689-96a5-5f18b4769c22",
-    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
-    "input" : "0c27d7b0-74d4-4493-a441-772a72f32679"
+    "source" : "98f0e3e2-159d-4cf3-957f-25f951b30ff0",
+    "output" : "0fa0f0f0-d573-4354-9f90-304244b4ac70",
+    "target" : "f938f176-2707-4337-bce9-f2546c8cfa77",
+    "input" : "e43351c4-9e6b-4506-8f63-069124eaca5e"
   }, {
     "source" : "0e391359-4fdf-4a24-8c08-86cfe2f9430f",
     "output" : "beb1ad7d-a68f-4d20-bcee-84a5c591b5c3",
     "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
     "input" : "fad15907-f8ac-4b04-a87e-0e25dfb5eb6c"
   }, {
-    "source" : "7d8663a6-6145-4ee4-8960-8c2e92590844",
-    "output" : "b4f0e4dd-c662-4523-a68c-df65d2b2325d",
-    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
-    "input" : "8e75d7a7-aec1-41fa-b479-148c8dce938a"
-  }, {
     "source" : "aa52e8ae-bb49-4f8b-8141-1f0a92d69506",
     "output" : "77e69a79-d1de-4ae3-8e5c-a8e86fd18f6b",
     "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
     "input" : "cccf9a28-6803-4695-8b7d-8b72a1457a39"
   }, {
-    "source" : "98f0e3e2-159d-4cf3-957f-25f951b30ff0",
-    "output" : "d5e59c42-5ddb-4a12-aacd-e423550d1b3b",
-    "target" : "7bca626c-4b45-4f88-8cb1-db81ab8e2ba7",
-    "input" : "39afec7f-7d73-49ed-ae30-98d8b0205d3f"
+    "source" : "63c011bd-66c6-4dc7-b618-4316ed54662b",
+    "output" : "c4126698-571a-4689-96a5-5f18b4769c22",
+    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
+    "input" : "0c27d7b0-74d4-4493-a441-772a72f32679"
+  }, {
+    "source" : "f938f176-2707-4337-bce9-f2546c8cfa77",
+    "output" : "e954d14f-c018-4a41-860e-adbc655985aa",
+    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
+    "input" : "2f7d5ea4-387f-4d39-9346-c4a69813702d"
+  }, {
+    "source" : "7bca626c-4b45-4f88-8cb1-db81ab8e2ba7",
+    "output" : "183eb1d2-e5e1-4c66-9320-773caac79182",
+    "target" : "1f3f36aa-e7b5-4b3e-9045-e97af5f8de24",
+    "input" : "6b15de09-a020-41ca-8c90-bce360402e58"
   } ]
 }

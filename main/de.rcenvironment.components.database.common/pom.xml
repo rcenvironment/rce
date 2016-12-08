@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.database.common</artifactId>
 	<name>RCE Database Component Common Bundle</name>
-	<version>7.1.5.qualifier</version>
+	<version>8.0.0.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

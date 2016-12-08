@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" name="Mail Servivce">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" immediate="true" name="Mail Service">
 	<implementation class="de.rcenvironment.core.mail.internal.MailServiceImpl" /> 
 	<service>
 		<provide interface="de.rcenvironment.core.mail.MailService" /> 

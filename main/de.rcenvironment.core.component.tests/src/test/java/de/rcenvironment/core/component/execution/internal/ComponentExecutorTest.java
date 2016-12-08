@@ -27,7 +27,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.easymock.IAnswer;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.component.api.ComponentException;
@@ -43,8 +42,9 @@ import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.testutils.ComponentDefaultStub;
 import de.rcenvironment.core.datamodel.api.DataModelConstants;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Test cases for {@link ComponentExecutor}.
@@ -53,11 +53,9 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  */
 public class ComponentExecutorTest {
 
-    private static final int TEST_TIMEOUT_70000_MSEC = 70000;
-    
-    private static final int TEST_TIMEOUT_3000_MSEC = 3000;
+    private static final int WAIT_INTERVAL_100_MSEC = 100;
 
-    private static final int TEST_TIMEOUT_500_MSEC = 500;
+    private static final int TEST_TIMEOUT_500_MSEC = 800;
 
     private static final String COMP_ID = "comp-id";
 
@@ -84,7 +82,7 @@ public class ComponentExecutorTest {
         final ComponentExecutionRelatedInstances compExeRelatedInstancesStub = createComponentExecutionRelatedInstancesStub();
         final ComponentExecutor compExecutor =
             new ComponentExecutor(compExeRelatedInstancesStub, ComponentExecutionType.ProcessInputs);
-        Future<Boolean> cancelTask = SharedThreadPool.getInstance().submit(new Callable<Boolean>() {
+        Future<Boolean> cancelTask = ConcurrencyUtils.getAsyncTaskService().submit(new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
@@ -104,22 +102,19 @@ public class ComponentExecutorTest {
      * @throws ComponentExecutionException on unexpected error
      * @throws ComponentException on unexpected error
      */
-    // TODO use msec in component executor as unit for timeouts to reduce execution time here, make the timeout configurable
-    // WAIT_INTERVAL_NOT_RUN_SEC
-    @Ignore
-    @Test(timeout = TEST_TIMEOUT_70000_MSEC)
+    @Test(timeout = TEST_TIMEOUT_500_MSEC)
     public void testSartAsInitHasNoTimeout() throws ComponentExecutionException, ComponentException {
         final ComponentExecutionRelatedInstances compExeRelatedInstancesStub = createComponentExecutionRelatedInstancesStub();
-        
+
         Component compMock = EasyMock.createStrictMock(Component.class);
         compMock.start();
-        final int startMethodTime = 65000;
+        final int startMethodTimeMSec = 200;
         EasyMock.expectLastCall().andAnswer(new IAnswer<Void>() {
 
             @Override
             public Void answer() throws Throwable {
                 try {
-                    Thread.sleep(startMethodTime);
+                    Thread.sleep(startMethodTimeMSec);
                 } catch (InterruptedException e) {
                     throw new ComponentException("Unexpected error", e);
                 }
@@ -136,9 +131,10 @@ public class ComponentExecutorTest {
         ComponentExecutor compExecutor =
             new ComponentExecutor(compExeRelatedInstancesStub, ComponentExecutionType.StartAsInit);
 
-        ComponentExecutor.waitIntervalAfterCacelledCalledSec = 1;
+        ComponentExecutor.waitIntervalAfterCacelledCalledMSec = WAIT_INTERVAL_100_MSEC;
+        ComponentExecutor.waitIntervalNotRunMSec = WAIT_INTERVAL_100_MSEC;
         compExecutor.executeByConsideringLimitations();
-        
+
         assertFalse(compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.get());
     }
 
@@ -159,7 +155,7 @@ public class ComponentExecutorTest {
         final ComponentExecutor compExecutor = new ComponentExecutor(compExeRelatedInstancesStub, ComponentExecutionType.ProcessInputs);
         compExecutor.bindComponentExecutionPermitsService(compExePermitsService);
         compExecutor.acquireExecutionPermission();
-        Future<Boolean> cancelTask = SharedThreadPool.getInstance().submit(new Callable<Boolean>() {
+        Future<Boolean> cancelTask = ConcurrencyUtils.getAsyncTaskService().submit(new Callable<Boolean>() {
 
             @Override
             public Boolean call() throws Exception {
@@ -189,7 +185,7 @@ public class ComponentExecutorTest {
         final ComponentExecutor compExecutor = new ComponentExecutor(compExeRelatedInstancesStub, ComponentExecutionType.ProcessInputs);
         compExecutor.bindComponentExecutionPermitsService(compExePermitsService);
         final int delayMsec = 100;
-        SharedThreadPool.getInstance().scheduleAfterDelay(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().scheduleAfterDelay(new Runnable() {
 
             @TaskDescription("Delayed cancel call")
             @Override
@@ -201,7 +197,7 @@ public class ComponentExecutorTest {
         EasyMock.verify(compExePermitsService);
         assertTrue(compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.get());
     }
-    
+
     /**
      * Tests tearing down component in success case.
      * 
@@ -330,6 +326,86 @@ public class ComponentExecutorTest {
         assertEquals(ComponentState.PROCESSING_INPUTS, compStateMachineEventCapture.getValue().getNewComponentState());
         EasyMock.verify(compExeStorageBridgeMock);
         EasyMock.verify(consoleRowsSenderMock);
+    }
+
+    /**
+     * Tests executing of {@link Component#completeStartOrProcessInputsAfterVerificationDone()} in case results are rejected.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     * @throws ComponentException on unexpected error
+     * @throws InterruptedException on unexpected error
+     * @throws ExecutionException on unexpected error
+     */
+    @Test(timeout = TEST_TIMEOUT_500_MSEC)
+    public void testCompleteVerificationResultsRejected()
+        throws ComponentExecutionException, ComponentException, InterruptedException, ExecutionException {
+
+        ComponentExecutionRelatedInstances compExeRelatedInstancesStub = createComponentExecutionRelatedInstancesStub(true);
+
+        Component compMock = EasyMock.createStrictMock(Component.class);
+        compMock.completeStartOrProcessInputsAfterVerificationDone();
+        EasyMock.expectLastCall();
+        EasyMock.replay(compMock);
+        compExeRelatedInstancesStub.component.set(compMock);
+
+        ComponentExecutionStorageBridge compExeStorageBridgeMock = EasyMock.createStrictMock(ComponentExecutionStorageBridge.class);
+        compExeStorageBridgeMock.setComponentExecutionFinished(FinalComponentRunState.RESULTS_REJECTED);
+        EasyMock.expectLastCall();
+        EasyMock.replay(compExeStorageBridgeMock);
+        compExeRelatedInstancesStub.compExeStorageBridge = compExeStorageBridgeMock;
+
+        compExeRelatedInstancesStub.compExeScheduler = createComponentExecutionSchedulerMock(false);
+
+        ConsoleRowsSender consoleRowsSenderMock = createConsoleRowsSenderMock(null, null);
+        compExeRelatedInstancesStub.consoleRowsSender = consoleRowsSenderMock;
+
+        ComponentExecutionType compExeType = ComponentExecutionType.CompleteVerification;
+        compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_REJECTED);
+        ComponentExecutor compExecutor =
+            new ComponentExecutor(compExeRelatedInstancesStub, compExeType);
+        compExecutor.bindComponentExecutionPermitsService(createComponentExecutionPermitServiceMock());
+
+        compExecutor.executeByConsideringLimitations();
+
+        assertFalse(compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.get());
+        EasyMock.verify(compMock);
+        EasyMock.verify(compExeStorageBridgeMock);
+        EasyMock.verify(consoleRowsSenderMock);
+    }
+
+    /**
+     * Tests executing of {@link Component#handleVerificationToken(String)}: verification token passed properly and life cycle method call
+     * handled properly.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     * @throws ComponentException on unexpected error
+     * @throws InterruptedException on unexpected error
+     * @throws ExecutionException on unexpected error
+     */
+    @Test(timeout = TEST_TIMEOUT_500_MSEC)
+    public void testHandleVerificationToken()
+        throws ComponentExecutionException, ComponentException, InterruptedException, ExecutionException {
+
+        final String someToken = "some-token";
+
+        ComponentExecutionRelatedInstances compExeRelatedInstancesStub = createComponentExecutionRelatedInstancesStub(true);
+
+        Component compMock = EasyMock.createStrictMock(Component.class);
+        compMock.handleVerificationToken(someToken);
+        EasyMock.expectLastCall();
+        EasyMock.replay(compMock);
+        compExeRelatedInstancesStub.component.set(compMock);
+
+        ComponentExecutionType compExeType = ComponentExecutionType.HandleVerificationToken;
+        compExeType.setVerificationToken(someToken);
+        ComponentExecutor compExecutor =
+            new ComponentExecutor(compExeRelatedInstancesStub, compExeType);
+        compExecutor.bindComponentExecutionPermitsService(createComponentExecutionPermitServiceMock());
+
+        compExecutor.executeByConsideringLimitations();
+
+        assertFalse(compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.get());
+        EasyMock.verify(compMock);
     }
 
     /**
@@ -490,7 +566,7 @@ public class ComponentExecutorTest {
         compExecutor.bindComponentExecutionStatsService(compExeStatsServiceMock);
 
         final int delayMsec = 100;
-        SharedThreadPool.getInstance().scheduleAfterDelay(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().scheduleAfterDelay(new Runnable() {
 
             @TaskDescription("Delayed cancel call")
             @Override
@@ -518,7 +594,7 @@ public class ComponentExecutorTest {
      * @throws InterruptedException on unexpected error
      * @throws ExecutionException on unexpected error
      */
-    @Test(timeout = TEST_TIMEOUT_3000_MSEC)
+    @Test(timeout = TEST_TIMEOUT_500_MSEC)
     public void testCancelProcessingInputsFailure()
         throws ComponentExecutionException, ComponentException, InterruptedException, ExecutionException {
 
@@ -586,12 +662,12 @@ public class ComponentExecutorTest {
             new ComponentExecutor(compExeRelatedInstancesStub, ComponentExecutionType.ProcessInputs);
         compExecutor.bindComponentExecutionPermitsService(createComponentExecutionPermitServiceMock());
         compExecutor.bindComponentExecutionStatsService(compExeStatsServiceMock);
-        ComponentExecutor.waitIntervalAfterCacelledCalledSec = 1;
+        ComponentExecutor.waitIntervalAfterCacelledCalledMSec = WAIT_INTERVAL_100_MSEC;
 
         final AtomicReference<Exception> expectedExceptionRef = new AtomicReference<Exception>(null);
 
         final CountDownLatch executedLatch = new CountDownLatch(1);
-        final Future<?> executeTask = SharedThreadPool.getInstance().submit(new Runnable() {
+        final Future<?> executeTask = ConcurrencyUtils.getAsyncTaskService().submit(new Runnable() {
 
             @Override
             public void run() {
@@ -629,7 +705,8 @@ public class ComponentExecutorTest {
             compExeRelatedInstancesStub.compExeRelatedStates.executionCount.get());
         EasyMock.expectLastCall();
         EasyMock.expect(compExeStorageBridgeMock.hasUnfinishedComponentExecution()).andReturn(true);
-        compExeStorageBridgeMock.setComponentExecutionFinished();
+        Capture<FinalComponentRunState> finalStateCapture = new Capture<>();
+        compExeStorageBridgeMock.setComponentExecutionFinished(EasyMock.capture(finalStateCapture));
         EasyMock.expectLastCall();
         EasyMock.replay(compExeStorageBridgeMock);
         return compExeStorageBridgeMock;
@@ -650,7 +727,8 @@ public class ComponentExecutorTest {
         EasyMock.expect(compExeStorageBridgeMock.hasUnfinishedComponentExecution()).andReturn(false);
         compExeStorageBridgeMock.addComponentExecution(compExeRelatedInstancesStub.compExeCtx, exeCount);
         EasyMock.expectLastCall();
-        compExeStorageBridgeMock.setComponentExecutionFinished();
+        Capture<FinalComponentRunState> finalStateCapture = new Capture<>();
+        compExeStorageBridgeMock.setComponentExecutionFinished(EasyMock.capture(finalStateCapture));
         EasyMock.expectLastCall();
         EasyMock.replay(compExeStorageBridgeMock);
         return compExeStorageBridgeMock;
@@ -667,12 +745,19 @@ public class ComponentExecutorTest {
     }
 
     private ComponentExecutionStorageBridge createComponentExecutionStorageBridgeRunSuccess(
-        ComponentExecutionRelatedInstances compExeRelatedInstancesStub) throws ComponentExecutionException {
+        ComponentExecutionRelatedInstances compExeRelatedInstancesStub)
+        throws ComponentExecutionException {
+        return createComponentExecutionStorageBridgeRunSuccess(compExeRelatedInstancesStub, FinalComponentRunState.FINISHED);
+    }
+
+    private ComponentExecutionStorageBridge createComponentExecutionStorageBridgeRunSuccess(
+        ComponentExecutionRelatedInstances compExeRelatedInstancesStub, FinalComponentRunState finalState)
+        throws ComponentExecutionException {
         ComponentExecutionStorageBridge compExeStorageBridgeMock = EasyMock.createStrictMock(ComponentExecutionStorageBridge.class);
         compExeStorageBridgeMock.addComponentExecution(compExeRelatedInstancesStub.compExeCtx,
             compExeRelatedInstancesStub.compExeRelatedStates.executionCount.get());
         EasyMock.expectLastCall();
-        compExeStorageBridgeMock.setComponentExecutionFinished();
+        compExeStorageBridgeMock.setComponentExecutionFinished(finalState);
         EasyMock.expectLastCall();
         EasyMock.replay(compExeStorageBridgeMock);
         return compExeStorageBridgeMock;
@@ -682,7 +767,8 @@ public class ComponentExecutorTest {
         Capture<String> logMessageCapture) {
         ConsoleRowsSender consoleRowsSenderMock = EasyMock.createStrictMock(ConsoleRowsSender.class);
         if (consoleRowTypeCapture != null) {
-            consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCapture), EasyMock.capture(logMessageCapture));
+            consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCapture), EasyMock.capture(logMessageCapture),
+                EasyMock.anyInt());
             EasyMock.expectLastCall();
         }
         consoleRowsSenderMock.sendLogFileWriteTriggerAsConsoleRow();
@@ -701,7 +787,6 @@ public class ComponentExecutorTest {
         EasyMock.replay(compExeStatsServiceMock);
         return compExeStatsServiceMock;
     }
-    
 
     private ComponentExecutionPermitsService createComponentExecutionPermitServiceMock(boolean permitting)
         throws InterruptedException, ExecutionException {
@@ -721,8 +806,17 @@ public class ComponentExecutorTest {
     }
 
     private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstancesStub() throws ComponentExecutionException {
+        return createComponentExecutionRelatedInstancesStub(false);
+    }
+
+    private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstancesStub(boolean requiresOutputApproval)
+        throws ComponentExecutionException {
+
         ComponentDescription compDescMock = EasyMock.createStrictMock(ComponentDescription.class);
         EasyMock.expect(compDescMock.getIdentifier()).andStubReturn(COMP_ID);
+        EasyMock.expect(compDescMock.getConfigurationDescription())
+            .andStubReturn(ConfigurationDescriptionMockFactory.createConfigurationDescriptionMock(requiresOutputApproval));
+
         EasyMock.replay(compDescMock);
 
         ComponentExecutionContext compExeCtxMock = EasyMock.createStrictMock(ComponentExecutionContext.class);
@@ -761,11 +855,11 @@ public class ComponentExecutorTest {
      * @author Doreen Seider
      */
     private class FutureStub implements Future<Boolean> {
-        
+
         private final boolean permitting;
-        
+
         private final CountDownLatch waitingDoneLatch = new CountDownLatch(1);
-        
+
         protected FutureStub(boolean permitting) {
             this.permitting = permitting;
         }
@@ -799,6 +893,6 @@ public class ComponentExecutorTest {
         public Boolean get(long timeout, TimeUnit unit) throws InterruptedException, ExecutionException, TimeoutException {
             throw new UnsupportedOperationException();
         }
-        
+
     }
 }

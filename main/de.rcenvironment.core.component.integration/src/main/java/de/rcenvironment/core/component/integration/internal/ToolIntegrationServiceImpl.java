@@ -66,6 +66,7 @@ import de.rcenvironment.core.component.registration.api.ComponentRegistry;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.utils.common.CompressingHelper;
+import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -158,8 +159,8 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         EndpointDefinitionsProvider outputProvider;
         boolean isPublished = false;
         readPublishedComponents(context);
-        if ((publishedComponents.contains(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME))
-            || publishedComponents.contains(context.getRootPathToToolIntegrationDirectory() + File.separator
+        if ((publishedComponents.contains(configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)) || publishedComponents
+            .contains(context.getRootPathToToolIntegrationDirectory() + File.separator
                 + context.getNameOfToolIntegrationDirectory()
                 + File.separator + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME)))) {
             isPublished = true;
@@ -178,14 +179,14 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             inputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
             outputProvider = ComponentEndpointModelFactory.createEndpointDefinitionsProvider(new HashSet<EndpointDefinition>());
             configuration =
-                ComponentConfigurationModelFactory.createConfigurationDefinition(new LinkedList<Object>(), new LinkedList<Object>(),
-                    new LinkedList<Object>(), new HashMap<String, String>());
+                ComponentConfigurationModelFactory.createConfigurationDefinition(new LinkedList<>(), new LinkedList<>(),
+                    new LinkedList<>(), new HashMap<String, String>());
         }
         String groupName = (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_GROUPNAME);
         if (groupName == null || groupName.isEmpty()) {
             groupName = context.getComponentGroupId();
         }
-        List<String> supportedIds = new LinkedList<String>();
+        List<String> supportedIds = new LinkedList<>();
         supportedIds.add(toolComponentID);
         supportedIds.add(ToolIntegrationConstants.COMPONENT_IDS[1] + "_"
             + (String) configurationMap.get(ToolIntegrationConstants.KEY_TOOL_NAME));
@@ -239,7 +240,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     new ComponentRevisionBuilder()
                         .setComponentInterface(componentInterface)
                         .setClassName(toolClassName).build())
-                .setNodeId(platformService.getLocalNodeId().getIdString())
+                .setNodeId(platformService.getLocalDefaultLogicalNodeId())
                 .setInstallationId(componentInterface.getIdentifier())
                 .setIsPublished(isPublished)
                 .setMaximumCountOfParallelInstances(maxParallelCount)
@@ -261,7 +262,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         if (!docDir.exists()) {
             docDir.mkdirs();
         }
-        if (docDir.listFiles().length > 0) {
+        if (docDir.listFiles() != null && docDir.listFiles().length > 0) {
             if (docDir.exists() && validateDocumentationDirectory(docDir)) {
                 try {
                     byte[] zippedByteArray = CompressingHelper.createZippedByteArrayFromFolder(docDir);
@@ -287,6 +288,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 valid = false;
             } else if (!ArrayUtils.contains(
                 ToolIntegrationConstants.VALID_DOCUMENTATION_EXTENSIONS, FilenameUtils.getExtension(f.getName()))) {
+
+                // ignore .nfs files since they are an delete artifact
+                if (CrossPlatformFilenameUtils.isNFSFile(f.getName())) {
+                    continue;
+                }
+
                 LOGGER.error(
                     StringUtils.format("Invalid filetype of %s in documentation directory %s. (Valid filetypes: %s)", f.getName(),
                         docDir.getAbsolutePath(),
@@ -354,10 +361,10 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @SuppressWarnings("unchecked")
     @Override
-    public void removeTool(String componentID, ToolIntegrationContext information) {
+    public void removeTool(String componentID, ToolIntegrationContext context) {
         String toolComponentID = componentID;
-        if (!componentID.startsWith(information.getPrefixForComponentId())) {
-            toolComponentID = information.getPrefixForComponentId() + componentID;
+        if (!componentID.startsWith(context.getPrefixForComponentId())) {
+            toolComponentID = context.getPrefixForComponentId() + componentID;
         }
 
         if (integratedConfiguration.containsKey(toolComponentID)) {
@@ -374,11 +381,11 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     }
 
     private ConfigurationDefinition generateConfiguration(Map<String, Object> configurationMap) {
-        List<Object> configuration = new LinkedList<Object>();
-        List<Object> configurationMetadata = new LinkedList<Object>();
+        List<Object> configuration = new LinkedList<>();
+        List<Object> configurationMetadata = new LinkedList<>();
         readConfigurationWithMetaDataToLists(configurationMap, configuration, configurationMetadata);
         Map<String, String> readOnlyConfiguration = createReadOnlyConfiguration(configurationMap);
-        return ComponentConfigurationModelFactory.createConfigurationDefinition(configuration, new LinkedList<Object>(),
+        return ComponentConfigurationModelFactory.createConfigurationDefinition(configuration, new LinkedList<>(),
             configurationMetadata, readOnlyConfiguration);
     }
 
@@ -398,12 +405,12 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     int i = 0;
                     if (!(group.get(propertyOrConfigfile) instanceof String || group.get(propertyOrConfigfile) instanceof Boolean)) {
                         Map<String, String> property = (Map<String, String>) group.get(propertyOrConfigfile);
-                        Map<String, String> config = new HashMap<String, String>();
+                        Map<String, String> config = new HashMap<>();
                         config.put(ConfigurationDefinitionConstants.KEY_CONFIGURATION_KEY,
                             property.get(ToolIntegrationConstants.KEY_PROPERTY_KEY));
                         config.put(ComponentConstants.KEY_DEFAULT_VALUE, property.get(ToolIntegrationConstants.KEY_PROPERTY_DEFAULT_VALUE));
                         configuration.add(config);
-                        Map<String, String> configMetadata = new HashMap<String, String>();
+                        Map<String, String> configMetadata = new HashMap<>();
                         configMetadata.put(ConfigurationDefinitionConstants.KEY_METADATA_GUI_NAME,
                             property.get(ToolIntegrationConstants.KEY_PROPERTY_DISPLAYNAME));
                         if (configFileName != null) {
@@ -418,7 +425,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 }
             }
         }
-        Map<String, String> historyConfig = new HashMap<String, String>();
+        Map<String, String> historyConfig = new HashMap<>();
         historyConfig.put(ConfigurationDefinitionConstants.KEY_CONFIGURATION_KEY, ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM);
         historyConfig.put(ComponentConstants.KEY_DEFAULT_VALUE, "" + false);
         configuration.add(historyConfig);
@@ -426,7 +433,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @SuppressWarnings("unchecked")
     private Map<String, String> createReadOnlyConfiguration(Map<String, Object> configurationMap) {
-        Map<String, String> configuration = new HashMap<String, String>();
+        Map<String, String> configuration = new HashMap<>();
         for (String key : configurationMap.keySet()) {
             if (configurationMap.get(key) instanceof String) {
                 configuration.put(key, (String) configurationMap.get(key));
@@ -449,13 +456,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     private Set<EndpointDefinition> createOutputs(Map<String, Object> configurationMap) {
         List<Map<String, String>> definedOutputs =
             (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_OUTPUTS);
-        Set<EndpointDefinition> outputs = new HashSet<EndpointDefinition>();
+        Set<EndpointDefinition> outputs = new HashSet<>();
         if (definedOutputs != null) {
             for (Map<String, String> output : definedOutputs) {
-                Map<String, Object> description = new HashMap<String, Object>();
+                Map<String, Object> description = new HashMap<>();
                 description.put(NAME, output.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
                 description.put(DEFAULT_DATA_TYPE, output.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
-                List<String> dataTypes = new LinkedList<String>();
+                List<String> dataTypes = new LinkedList<>();
                 dataTypes.add(output.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
                 description.put(DATA_TYPES, dataTypes);
                 outputs.add(ComponentEndpointModelFactory.createEndpointDefinition(description, EndpointType.OUTPUT));
@@ -467,10 +474,10 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
         if (dynamicOutputs != null) {
             for (Map<String, Object> output : dynamicOutputs) {
-                Map<String, Object> description = new HashMap<String, Object>();
+                Map<String, Object> description = new HashMap<>();
                 description.put(IDENTIFIER, output.get(ToolIntegrationConstants.KEY_ENDPOINT_IDENTIFIER));
                 description.put(DEFAULT_DATA_TYPE, output.get(ToolIntegrationConstants.KEY_ENDPOINT_DEFAULT_TYPE));
-                List<String> dataTypes = new LinkedList<String>();
+                List<String> dataTypes = new LinkedList<>();
                 dataTypes.addAll((List<String>) output.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPES));
                 description.put(DATA_TYPES, dataTypes);
 
@@ -486,13 +493,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     private Set<EndpointDefinition> createInputs(Map<String, Object> configurationMap) {
         List<Map<String, String>> definedInputs =
             (List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_INPUTS);
-        Set<EndpointDefinition> inputs = new HashSet<EndpointDefinition>();
+        Set<EndpointDefinition> inputs = new HashSet<>();
         if (definedInputs != null) {
             for (Map<String, String> input : definedInputs) {
-                Map<String, Object> description = new HashMap<String, Object>();
+                Map<String, Object> description = new HashMap<>();
                 description.put(EndpointDefinitionConstants.KEY_NAME, input.get(ToolIntegrationConstants.KEY_ENDPOINT_NAME));
                 description.put(DEFAULT_DATA_TYPE, input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
-                List<String> dataTypes = new LinkedList<String>();
+                List<String> dataTypes = new LinkedList<>();
                 dataTypes.add(input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
                 description.put(DATA_TYPES, dataTypes);
                 description.put(DEFAULT_DATA_TYPE, input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE));
@@ -535,15 +542,15 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 }
                 description.put(INPUT_EXECUTION_CONSTRAINTS, Arrays.asList(inputExecutionConstraints));
 
-                Map<String, Map<String, Object>> metadata = new HashMap<String, Map<String, Object>>();
+                Map<String, Map<String, Object>> metadata = new HashMap<>();
                 if ((input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.FileReference.name())
                     || input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPE).equals(DataType.DirectoryReference.name()))
                     && input.get(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME) != null) {
-                    Map<String, Object> metadataFilename = new HashMap<String, Object>();
+                    Map<String, Object> metadataFilename = new HashMap<>();
                     metadataFilename.put(EndpointDefinitionConstants.KEY_GUI_NAME, "Filename");
                     metadataFilename.put(EndpointDefinitionConstants.KEY_GUI_POSITION, STRING_0);
                     metadataFilename.put(EndpointDefinitionConstants.KEY_GUIGROUP, "File");
-                    List<String> possibleValuesListFilename = new LinkedList<String>();
+                    List<String> possibleValuesListFilename = new LinkedList<>();
                     possibleValuesListFilename.add(input.get(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME));
                     metadataFilename.put(POSSIBLE_VALUES, possibleValuesListFilename);
                     metadataFilename.put(DEFAULT_VALUE, input.get(ToolIntegrationConstants.KEY_ENDPOINT_FILENAME));
@@ -559,10 +566,10 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             List<Map<String, Object>> dynamicInputs =
                 (List<Map<String, Object>>) configurationMap.get(ToolIntegrationConstants.KEY_ENDPOINT_DYNAMIC_INPUTS);
             for (Map<String, Object> input : dynamicInputs) {
-                Map<String, Object> description = new HashMap<String, Object>();
+                Map<String, Object> description = new HashMap<>();
                 description.put(IDENTIFIER, input.get(ToolIntegrationConstants.KEY_ENDPOINT_IDENTIFIER));
                 description.put(DEFAULT_DATA_TYPE, input.get(ToolIntegrationConstants.KEY_ENDPOINT_DEFAULT_TYPE));
-                List<String> dataTypes = new LinkedList<String>();
+                List<String> dataTypes = new LinkedList<>();
                 dataTypes.addAll((List<String>) input.get(ToolIntegrationConstants.KEY_ENDPOINT_DATA_TYPES));
                 description.put(DATA_TYPES, dataTypes);
 
@@ -573,13 +580,13 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 // and required vs. required if connected
                 if (metadata.containsKey("usage")) {
                     description.put(DEFAULT_INPUT_HANDLING, EndpointDefinition.InputDatumHandling.Single.name());
-                    List<String> inputHandlingOptions = new LinkedList<String>();
+                    List<String> inputHandlingOptions = new LinkedList<>();
                     inputHandlingOptions.add(EndpointDefinition.InputDatumHandling.Single.name());
                     inputHandlingOptions.add(EndpointDefinition.InputDatumHandling.Constant.name());
                     description.put(INPUT_HANDLINGS, inputHandlingOptions);
                     description.put(DEFAULT_INPUT_EXECUTION_CONSTRAINT,
                         EndpointDefinition.InputExecutionContraint.Required.name());
-                    List<String> inputinputExecutionConstraintOptions = new LinkedList<String>();
+                    List<String> inputinputExecutionConstraintOptions = new LinkedList<>();
                     inputinputExecutionConstraintOptions.add(EndpointDefinition.InputExecutionContraint.Required.name());
                     inputinputExecutionConstraintOptions.add(EndpointDefinition.InputExecutionContraint.RequiredIfConnected.name());
                     description.put(INPUT_EXECUTION_CONSTRAINTS, inputinputExecutionConstraintOptions);
@@ -587,7 +594,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 } else {
                     if (input.containsKey(ToolIntegrationConstants.KEY_INPUT_HANDLING_OPTIONS)) {
                         description.put(DEFAULT_INPUT_HANDLING, input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_HANDLING));
-                        List<String> inputHandlingOptions = new LinkedList<String>();
+                        List<String> inputHandlingOptions = new LinkedList<>();
                         inputHandlingOptions.addAll((List<String>) input.get(ToolIntegrationConstants.KEY_INPUT_HANDLING_OPTIONS));
                         description.put(INPUT_HANDLINGS, inputHandlingOptions);
                     }
@@ -595,7 +602,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     if (input.containsKey(ToolIntegrationConstants.KEY_INPUT_EXECUTION_CONSTRAINT_OPTIONS)) {
                         description.put(DEFAULT_INPUT_EXECUTION_CONSTRAINT,
                             input.get(ToolIntegrationConstants.KEY_DEFAULT_INPUT_EXECUTION_CONSTRAINT));
-                        List<String> inputinputExecutionConstraintOptions = new LinkedList<String>();
+                        List<String> inputinputExecutionConstraintOptions = new LinkedList<>();
                         inputinputExecutionConstraintOptions.addAll((List<String>) input
                             .get(ToolIntegrationConstants.KEY_INPUT_EXECUTION_CONSTRAINT_OPTIONS));
                         description.put(INPUT_EXECUTION_CONSTRAINTS, inputinputExecutionConstraintOptions);
@@ -669,7 +676,10 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     @Override
     public void writeToolIntegrationFileToSpecifiedFolder(String folder, Map<String, Object> configurationMap,
         ToolIntegrationContext information) throws IOException {
-
+        if (!configurationMap.containsKey(ToolIntegrationConstants.KEY_TOOL_INTEGRATION_VERSION)) {
+            configurationMap.put(ToolIntegrationConstants.KEY_TOOL_INTEGRATION_VERSION,
+                ToolIntegrationConstants.CURRENT_TOOLINTEGRATION_VERSION);
+        }
         // TODO : Code for removing deprecated key; should be removed in the future 8/3/16 zur_sa
         @SuppressWarnings("unchecked") Map<String, String> launchSettings =
             ((List<Map<String, String>>) configurationMap.get(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS)).get(0);
@@ -685,7 +695,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
         handleToolIcon(configurationMap, toolConfigFile);
         handleDoc(configurationMap, toolConfigFile);
         configurationMap.remove(ToolIntegrationConstants.TEMP_KEY_PUBLISH_COMPONENT);
-        Map<String, Object> sortedMap = new TreeMap<String, Object>();
+        Map<String, Object> sortedMap = new TreeMap<>();
         sortedMap.putAll(configurationMap);
         mapper.writerWithDefaultPrettyPrinter().writeValue(new File(toolConfigFile, information.getConfigurationFilename()),
             sortedMap);
@@ -764,7 +774,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             }
             synchronized (publishedComponents) {
                 if (publishedComponents != null) {
-                    Set<String> componentsToWrite = new HashSet<String>();
+                    Set<String> componentsToWrite = new HashSet<>();
                     for (String component : publishedComponents) {
                         if (component.startsWith(toolsfolder.getAbsolutePath())) {
                             componentsToWrite.add(component);
@@ -794,7 +804,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                 }
                 if (publishedComponentsFile.canWrite()) {
 
-                    Set<String> newPublishedComponents = new HashSet<String>(FileUtils.readLines(publishedComponentsFile));
+                    Set<String> newPublishedComponents = new HashSet<>(FileUtils.readLines(publishedComponentsFile));
                     for (String newComp : newPublishedComponents) {
                         String comp = newComp.trim();
                         if (!new File(newComp).isAbsolute()) {
@@ -828,7 +838,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @Override
     public synchronized Set<String> getActiveComponentIds() {
-        Set<String> activeIds = new HashSet<String>();
+        Set<String> activeIds = new HashSet<>();
         for (String key : integratedConfiguration.keySet()) {
             if (integratedConfiguration.get(key).get(ToolIntegrationConstants.IS_ACTIVE) == null
                 || (Boolean) integratedConfiguration.get(key).get(ToolIntegrationConstants.IS_ACTIVE)) {
@@ -862,17 +872,9 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     }
 
     @Override
-    public String getPathOfComponentID(String id) {
-        ToolIntegrationContext result = null;
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-        for (ToolIntegrationContext context : serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class)
-            .getAllIntegrationContexts()) {
-            if (id.startsWith(context.getPrefixForComponentId())) {
-                result = context;
-            }
-        }
-        if (result != null) {
-            return toolNameToPath.get(id.substring(result.getPrefixForComponentId().length()));
+    public String getPathOfComponentID(String id, ToolIntegrationContext context) {
+        if (id.startsWith(context.getPrefixForComponentId())) {
+            return toolNameToPath.get(id.substring(context.getPrefixForComponentId().length()));
         }
         return toolNameToPath.get(id);
     }
@@ -901,10 +903,10 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
 
     @Override
     public void updatePublishedComponents(ToolIntegrationContext context) {
-        Set<String> oldPublishedComponents = new HashSet<String>();
+        Set<String> oldPublishedComponents = new HashSet<>();
         synchronized (publishedComponents) {
             oldPublishedComponents.addAll(publishedComponents);
-            Set<String> toRemove = new HashSet<String>();
+            Set<String> toRemove = new HashSet<>();
             for (String path : publishedComponents) {
                 if (path.startsWith(context.getRootPathToToolIntegrationDirectory() + File.separator
                     + context.getNameOfToolIntegrationDirectory())) {
@@ -913,7 +915,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             }
             publishedComponents.removeAll(toRemove);
             readPublishedComponents(context);
-            Set<String> addPublished = new HashSet<String>();
+            Set<String> addPublished = new HashSet<>();
             for (String newComp : publishedComponents) {
                 if (!oldPublishedComponents.contains(newComp)
                     && newComp.startsWith(context.getRootPathToToolIntegrationDirectory() + File.separator
@@ -921,7 +923,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
                     addPublished.add(newComp);
                 }
             }
-            Set<String> removePublished = new HashSet<String>();
+            Set<String> removePublished = new HashSet<>();
             for (String oldComp : oldPublishedComponents) {
                 if (!publishedComponents.contains(oldComp)
                     && oldComp.startsWith(context.getRootPathToToolIntegrationDirectory() + File.separator
@@ -962,15 +964,7 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     @Override
     @AllowRemoteAccess
     public byte[] getToolDocumentation(String identifier) throws RemoteOperationException {
-        ToolIntegrationContext context = null;
-        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
-        for (ToolIntegrationContext ctx : serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class)
-            .getAllIntegrationContexts()) {
-            if (identifier.startsWith(ctx.getPrefixForComponentId())) {
-                context = ctx;
-            }
-        }
-
+        ToolIntegrationContext context = getContextForIdentifier(identifier);
         if (context == null) {
             return null;
         }
@@ -984,6 +978,18 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
             LOGGER.error("Could not create zip file for documentation: ", e);
         }
         return null;
+    }
+
+    private ToolIntegrationContext getContextForIdentifier(String identifier) {
+        ToolIntegrationContext result = null;
+        ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
+        for (ToolIntegrationContext context : serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class)
+            .getAllIntegrationContexts()) {
+            if (identifier.startsWith(context.getPrefixForComponentId())) {
+                result = context;
+            }
+        }
+        return result;
     }
 
     @Override
@@ -1000,6 +1006,11 @@ public class ToolIntegrationServiceImpl implements ToolIntegrationService, Remot
     public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {
         watchManager.registerRecursive(toolName, integrationContext);
 
+    }
+
+    @Override
+    public void deactivateIntegrationService() {
+        watchManager.shutdown();
     }
 
 }

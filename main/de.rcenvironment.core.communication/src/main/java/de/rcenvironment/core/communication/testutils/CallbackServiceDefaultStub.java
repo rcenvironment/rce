@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.testutils;
 import java.io.Serializable;
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -28,7 +28,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 public class CallbackServiceDefaultStub implements CallbackService {
 
     @Override
-    public String addCallbackObject(Object callBackObject, NodeIdentifier nodeId) {
+    public String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId) {
         return null;
     }
 
@@ -52,7 +52,7 @@ public class CallbackServiceDefaultStub implements CallbackService {
     }
 
     @Override
-    public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, NodeIdentifier proxyHome) {
+    public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, InstanceNodeSessionId proxyHome) {
         return null;
     }
 }

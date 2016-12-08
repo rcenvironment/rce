@@ -22,7 +22,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.integration.internal.ToolIntegrationDocumentationServiceImpl;
@@ -38,10 +39,11 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Tests for {@link ToolIntegrationDocumentationService}.
  * 
  * @author Sascha Zur
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class ToolIntegrationDocumentationServiceTest {
 
-    private static final String LOCAL_NODE_ID = "testID1";
+    private static final LogicalNodeId LOCAL_NODE_ID = NodeIdentifierTestUtils.createTestDefaultLogicalNodeId();
 
     private static final String TOOL_IDENTIFIER_1 = "identifier1";
 
@@ -75,8 +77,8 @@ public class ToolIntegrationDocumentationServiceTest {
         ToolIntegrationDocumentationServiceImpl service = new ToolIntegrationDocumentationServiceImpl();
 
         Set<ComponentInstallation> ciSet = new HashSet<ComponentInstallation>();
-        ciSet.add(createComponentInstallation(TOOL_IDENTIFIER_1, HASH_1, LOCAL_NODE_ID));
-        ciSet.add(createComponentInstallation(TOOL_IDENTIFIER_2, HASH_2, LOCAL_NODE_ID));
+        ciSet.add(createComponentInstallation(TOOL_IDENTIFIER_1, HASH_1, LOCAL_NODE_ID.getLogicalNodeIdString()));
+        ciSet.add(createComponentInstallation(TOOL_IDENTIFIER_2, HASH_2, LOCAL_NODE_ID.getLogicalNodeIdString()));
 
         DistributedComponentKnowledgeService dcks = createMockedKnowledgeService(ciSet);
         service.bindDistributedComponentKnowledgeService(dcks);
@@ -159,11 +161,11 @@ public class ToolIntegrationDocumentationServiceTest {
         return ci;
     }
 
-    private CommunicationService createRemoteServiceWithReturningByteArray(String nodeID, RemoteToolIntegrationService rtis) {
+    private CommunicationService createRemoteServiceWithReturningByteArray(LogicalNodeId nodeId, RemoteToolIntegrationService rtis) {
 
         CommunicationService commService = EasyMock.createNiceMock(CommunicationService.class);
         EasyMock.expect(
-            commService.getRemotableService(RemoteToolIntegrationService.class, NodeIdentifierFactory.fromNodeId(nodeID)))
+            commService.getRemotableService(RemoteToolIntegrationService.class, nodeId))
             .andReturn(rtis).anyTimes();
         EasyMock.replay(commService);
         return commService;

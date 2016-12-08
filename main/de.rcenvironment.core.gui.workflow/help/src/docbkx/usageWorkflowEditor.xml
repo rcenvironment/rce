@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE chapter PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+                         "http://docbook.org/xml/4.5/docbookx.dtd">
+<chapter>
+    <title>Workflow Editor</title>
+    <sect1>
+        <title>Synopsis</title>
+        <para>The Workflow Editor is the main view where you can define your workflow logic by
+            adding components and connecting them.</para>
+
+    </sect1>
+    <sect1>
+        <title>Options</title>
+        <para>
+            <itemizedlist>
+                <listitem>
+                    <para><emphasis role="bold">Snap to geometry</emphasis>: Components and labels
+                        snap to each other when the toolbar entry "Snap to geometry" is activated.
+                        Again, pressing "Alt" while dragging omits the snapping.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Fore- and background</emphasis>: You can send
+                        components and labels to back- or foreground using the context menu entries
+                        "Send Back", "Send Forward", "Send to Background" and "Send to Foreground".
+                        While the first two entries change the layer by one, the latter two put it
+                        to the front or to the back. Note that workflow components and labels are
+                        treated separately, i.e. components are always in front of labels.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Number of connections</emphasis>: The number of
+                        connections bundled within a single arrow can be shown. To see it either
+                        select a connection or select the toolbar entry "Show number of connections
+                        in workflow editor".</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Custom connection paths</emphasis>: They can be
+                        defined by selecting a connection and dragging the dot. You can reset the
+                        custom connection path in the context menu of the connection by clicking the
+                        entry "Reset Connection Path". Ctrl + Delete is the shortcut for resetting
+                        the connection path. </para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Disable/Enable workflow components</emphasis>: In a
+                        component's context menu you can disable components so they are ignored when
+                        you execute the workflow. That can be useful when you are in the process of
+                        creating the workflow and temporarily just want to execute a part of the
+                        workflow. Disabled components are greyed out.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Disable/Enable tool run imitation mode</emphasis>:
+                        User integrated tools can be configured to support a tool run imitation
+                        mode. This can be useful if you want to get your workflow logic straight but
+                        don't want to run the actual tool every time. In the context menu of an
+                        integrated component you can enable or diabled this mode. If the tool run
+                        imitation mode is enabled the component appears in blue and has an "I" for
+                        "Imitation" at the bottom right edge.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Open documentation:</emphasis> User integrated tools
+                        can be configured to have a text or PDF file as documentation. If there is
+                        such a documentation the context menu entry "Open documentation" will open
+                        it in an editor, otherwise a message is shown.</para>
+                </listitem>
+                <listitem>
+                    <para><emphasis role="bold">Undo/Redo</emphasis>: You can undo and redo actions
+                        in the workflow editor. It is restricted to 10 actions for technical
+                        reasons.</para>
+                </listitem>
+            </itemizedlist>
+        </para>
+        <para>Note that there is also a <emphasis role="bold">read-only</emphasis> pendant of the
+            Workflow Editor, where you can inspect a workflow without editing it. Workflows opened
+            from the Workflow Data Browser get displayed this way. Additionally, Workflows can also
+            be opened read-only from the Project Explorer by selecting "Open With"->"Read-only
+            Workflow Editor".</para>
+        <para/>
+    </sect1>
+</chapter>

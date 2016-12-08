@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.spi;
 import java.util.Set;
 
 import de.rcenvironment.core.communication.common.NetworkGraph;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Default {@link NetworkTopologyChangeListener} implementation to allow listeners to implement only the methods they are actually
@@ -28,7 +28,7 @@ public class NetworkTopologyChangeListenerAdapter implements NetworkTopologyChan
     public void onReachableNetworkChanged(NetworkGraph networkGraph) {}
 
     @Override
-    public void onReachableNodesChanged(Set<NodeIdentifier> reachableNodes, Set<NodeIdentifier> addedNodes,
-        Set<NodeIdentifier> removedNodes) {}
+    public void onReachableNodesChanged(Set<InstanceNodeSessionId> reachableNodes, Set<InstanceNodeSessionId> addedNodes,
+        Set<InstanceNodeSessionId> removedNodes) {}
 
 }

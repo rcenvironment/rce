@@ -39,6 +39,11 @@ public interface HeadlessWorkflowExecutionContext {
     File getLogDirectory();
 
     /**
+     * @return aggregated workflow log files (temporary and final ones if existent). Is optional and can be <code>null</code>
+     */
+    File[] getLogFiles();
+
+    /**
      * @return the {@link TextOutputReceiver} to write status messages to. Is optional and can be <code>null</code>
      */
     TextOutputReceiver getTextOutputReceiver();

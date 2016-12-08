@@ -1,0 +1,8 @@
+{
+		"host" : "smtp.dlr.de",
+		"port" : 587,
+		"username" : "f_functional@dlr.de",
+		"password" : "Y1k7YArdF6RN7AgWmCjQIg==",
+		"sender" : "tobias.rodehutskors@dlr.de",
+		"encryption" : "explicit"
+}

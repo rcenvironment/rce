@@ -110,14 +110,12 @@
 							<entry>Sets the configuration directory</entry>
 						</row>
 						<row>
-							<entry>Dcommunication.<?linebreak?>overrideNodeId =&lt;some-id></entry>
+							<entry>Drce.network.<?linebreak?>overrideNodeId =&lt;some-id></entry>
 							<entry align="center">VM</entry>
 							<entry><para>Sets the local node id, overriding any stored value. This
 									is mostly used for automated
 								testing.</para>Example:<?linebreak?>
-										"-Dcommunication.overrideNodeId=<?linebreak?>a96db8fa762d59f2d2782f3e5e9662d4"<para><emphasis>Note</emphasis>:
-									This setting's format will most likely change in
-								5.0.0.</para></entry>
+										"-Drce.network.overrideNodeId=<?linebreak?>a96db8fa762d59f2d2782f3e5e9662d4"</entry>
 						</row>
 						<row>
 							<entry>Dcommunication.<?linebreak?>uploadBlockSize=<?linebreak?>&lt;block
@@ -131,8 +129,6 @@
 								<para>Example:<?linebreak?> "-Dcommunication.uploadBlockSize=131072"
 									- sets the upload block size to 128kb (half the normal
 									size)</para>
-								<para><emphasis>Note</emphasis>: This setting's format will most
-									likely change in 5.0.0.</para>
 							</entry>
 						</row>
 					</tbody>
@@ -223,6 +219,12 @@
 								the id).</entry>
 						</row>
 						<row>
+							<entry>mail &lt;recipient> &lt;subject> &lt;body></entry>
+							<entry>
+								<para>Sends an email to the specified recipient.</para>
+							</entry>
+						</row>
+						<row>
 							<entry>net</entry>
 							<entry>
 								<para>Short form of "net info".</para>
@@ -293,13 +295,13 @@
 									completed. Workflow file paths containing spaces must be
 									enclosed in double quotes ("...").</para>
 								<para>The "--delete" option defines the deletion behavior after workflow completion.
-									Deleting a workflow deletes all files in the data management of it and
-									releases certain resources that may or may not be used after it has finished, 
-									for example data to be visualized in components' runtime views. 
-									The default of this setting is "onfinished": The workflow is deleted if it
-									terminates in state "Finished" (which means normal completion
-									without errors), otherwise it is left unchanged for
-									inspection.</para>
+									Deleting a workflow deletes all files in the data management of
+									it and releases certain resources that may or may not be used
+									after it has finished, for example data to be visualized in
+									component's runtime views. The default of this setting is
+									"onfinished": The workflow is deleted if it terminates in state
+									"Finished" (which means normal completion without errors),
+									otherwise it is left unchanged for inspection.</para>
 								<para>The "--compact-output" option reduces this command's output as
 									much as possible, which is intended to simplify scripted calls
 									of this command. The first line printed will either be the

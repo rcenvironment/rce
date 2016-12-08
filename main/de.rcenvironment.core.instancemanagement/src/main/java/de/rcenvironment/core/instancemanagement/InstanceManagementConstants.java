@@ -25,12 +25,13 @@ public final class InstanceManagementConstants {
     /**
      * Constant.
      */
-    public static final String IM_MASTER_ROLE = "master";
+    public static final String IM_MASTER_ROLE = "instance_management_delegate_user";
     
     /**
      * Constant.
      */
-    public static final String IM_MASTER_ROLE_ALLOWED_COMMANDS = ".*";
+    public static final String IM_MASTER_ROLE_ALLOWED_COMMANDS = "(version.*)|(cn.*)|(components.*)|(net.*)|restart|"
+        + "shutdown|stop|stats|(tasks.*)";
     
     /**
      * Constant.

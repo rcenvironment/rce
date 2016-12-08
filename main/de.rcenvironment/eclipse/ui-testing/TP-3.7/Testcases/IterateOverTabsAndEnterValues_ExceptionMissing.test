@@ -1,0 +1,93 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _DysjgCPgEeWMU9qdIQ2Zdw
+Element-Name: IterateOverTabsAndEnterValues_ExceptionMissing
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _1ZXyADF0EeaeH4-rLFMbKA
+Runtime-Version: 2.0.2.201511100828
+Save-Time: 6/13/16 4:40 PM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+with [get-view Properties | get-section Algorithm | get-combo -index 0] {
+	let [val size [get-property "getItemCount()" -raw]] {
+		loop [val count 0] {
+			if [$size | gt $count] {
+				let [val entry [get-view Properties | get-section Algorithm | get-combo -after [get-label "Main algor" +
+					"ithm"] | get-property [concat "getItems().String[" [$count | str] "]"] -raw]] {
+					log -message $entry
+					// entries have been determined
+					get-view Properties | get-section Algorithm | get-combo -index 0 | select $entry
+					get-button "Algorithm properties..." | click
+					with [get-window -index 0] {
+						// window has been opened. Do stuff here.
+						let [val tab_size [get-tab-folder | get-property "getItems().length" -raw]] {
+							loop [val tab_count 0] {
+								log -message [concat "TabCount: " $tab_count " - TabSize: " $tab_size]
+								if [$tab_size | gt $tab_count] {
+									get-window -index 0 | get-tab-folder | get-tab-item -index $tab_count | click
+									// 3 + tab_size because that's the index of the composite containing all the config elements
+									let [val element_size [get-window -index 0 | get-control Any -index [plus 3 $tab_size
+										| int] | get-property "getChildren().length" -raw]] {
+										loop [val element_count 0] {
+											if [$element_size | gt [minus $element_count 3]] {
+												let [val class [get-window -index 0 | get-control Any -index [plus [plus 3 $tab_size | int] $element_count | int]]]{
+													$class | get-property "getClassName()" -raw | switch [case "org.eclipse.swt.widgets.Label" {
+															log -message "Label found"
+															// ... ignore
+														}] [case "org.eclipse.swt.widgets.Text" {
+															log -message "Text found"
+															$class | type-text 123
+        													wait 50
+															// ...
+														}] [case "org.eclipse.swt.widgets.Combo" {
+															log -message "Combo found"
+															// ...
+															let [val inner_combo_size [$class | get-property "getItemCount()" -raw]] {
+																loop [val inner_combo_count 0] {
+																	if [$inner_combo_size | gt $inner_combo_count] {
+																		let [val inner_combo_entry [$class | get-property [concat "getItems().String[" [$inner_combo_count | str] "]"] -raw]] {
+																		$class | set-value -value $inner_combo_entry
+        																wait 50
+																		}
+																	recur [$inner_combo_count | plus 1]
+																	}
+																}
+															}
+														}] [case "org.eclipse.swt.widgets.Button" {
+															log -message "Button/Checkbox found"
+															// Enable and disable once
+															if [or[$class | get-property "getText()" -raw | eq "OK" ][$class | get-property "getText()" -raw | eq "Cancel" ]]{
+															 // do nothing
+															}  -else {
+																$class | click
+        														wait 50
+															}
+														}] - default {
+															log -message [concat "Different item found " [$class | get-property "getClassName()" -raw ]]
+															// ...
+														}
+												}
+												recur [$element_count | plus 1]
+											}
+										}
+									}
+									recur [$tab_count | plus 1]
+								}
+							}
+						}
+						get-button OK | click
+					}
+				}
+				recur [$count | plus 1]
+			}
+		}
+	}
+}
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

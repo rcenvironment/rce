@@ -6,15 +6,16 @@
 	<reference
  		name="Configuration Service"
  		interface="de.rcenvironment.core.configuration.ConfigurationService"
- 		cardinality="1..1"
- 		policy="dynamic"
  		bind="bindConfigurationService"
  	/>
 	<reference
 		name="Persistent Settings Service"
 		interface="de.rcenvironment.core.configuration.PersistentSettingsService"
-		cardinality="1..1"
-		policy="dynamic"
 		bind="bindPersistentSettingsService"
+	/>
+	<reference
+		name="NodeIdentifierService" 
+		interface="de.rcenvironment.core.communication.api.NodeIdentifierService" 
+		bind="bindNodeIdentifierService" 
 	/>
 </scr:component>

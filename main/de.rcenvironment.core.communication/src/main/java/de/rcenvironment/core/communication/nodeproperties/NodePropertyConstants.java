@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.nodeproperties;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Constants for standard keys and values of {@link NodeProperty}s.
@@ -18,7 +18,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 public final class NodePropertyConstants {
 
     /**
-     * Property key for the {@link NodeIdentifier} string of the publishing node.
+     * Property key for the {@link InstanceNodeSessionId} string of the publishing node.
      */
     public static final String KEY_NODE_ID = "nodeId";
 

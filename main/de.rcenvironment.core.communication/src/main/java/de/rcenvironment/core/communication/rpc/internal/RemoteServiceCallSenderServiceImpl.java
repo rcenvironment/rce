@@ -56,7 +56,7 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
             }
             NetworkResponse networkResponse =
                 routingService.performRoutedRequest(serializedRequest, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC,
-                    serviceCallRequest.getDestination());
+                    serviceCallRequest.getTargetNodeId().convertToInstanceNodeSessionId());
 
             // if a low-level network error occurred, the message's payload is either null, or a serialized String with additional error
             // information; in both cases, convert it into a synthetic ServiceCallResult that will cause a ROE to be thrown
@@ -103,9 +103,9 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
             final String errorMessage = serviceCallResult.getRemoteOperationExceptionMessage();
             // the exception will usually cause an upstream warning already, so log the details at DEBUG level
             log.debug(StringUtils.format("A remote call to %s#%s() on %s failed: %s", serviceCallRequest.getServiceName(),
-                serviceCallRequest.getMethodName(), serviceCallRequest.getDestination(), errorMessage));
+                serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(), errorMessage));
             throw new RemoteOperationException(StringUtils.format("%s; the destination instance was %s", errorMessage,
-                serviceCallRequest.getDestination()));
+                serviceCallRequest.getTargetNodeId()));
         } else {
             final Throwable methodException = reconstructMethodException(serviceCallRequest, serviceCallResult);
             log.debug(StringUtils.format("Re-throwing method exception returned from a from call to %s: %s",
@@ -114,7 +114,7 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
             if (methodException.getClass() == RemoteOperationException.class) {
                 // re-wrap ROEs to add destination node information to message
                 throw new RemoteOperationException(StringUtils.format("%s; the destination instance was %s", methodException.getMessage(),
-                    serviceCallRequest.getDestination()));
+                    serviceCallRequest.getTargetNodeId()));
             } else {
                 throw methodException;
             }
@@ -123,7 +123,7 @@ public final class RemoteServiceCallSenderServiceImpl implements RemoteServiceCa
 
     private String formatServiceRequest(ServiceCallRequest serviceCallRequest) {
         return StringUtils.format("%s#%s() on %s", serviceCallRequest.getServiceName(),
-            serviceCallRequest.getMethodName(), serviceCallRequest.getDestination());
+            serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId());
     }
 
     private Throwable reconstructMethodException(ServiceCallRequest serviceCallRequest, ServiceCallResult serviceCallResult)

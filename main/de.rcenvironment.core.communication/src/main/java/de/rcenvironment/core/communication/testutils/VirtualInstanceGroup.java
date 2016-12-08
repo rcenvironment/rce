@@ -14,8 +14,9 @@ import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListen
 import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Utility class to simplify the management of virtual node instances. Any methods called are delegated to each node in the group.
@@ -39,11 +40,12 @@ public class VirtualInstanceGroup implements CommonVirtualInstanceControl {
 
     @Override
     public void setTargetState(final VirtualInstanceState state) throws InterruptedException {
-        CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+        CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
         for (final CommonVirtualInstanceControl instance : instances) {
             callablesGroup.add(new Callable<Void>() {
 
                 @Override
+                @TaskDescription("Set individual target states in a virtual instance group")
                 public Void call() throws Exception {
                     instance.setTargetState(state);
                     return null;

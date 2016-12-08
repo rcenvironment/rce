@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.utils.common.xml.impl;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
 
@@ -98,6 +99,8 @@ public class XMLSupportImplTest {
     public void testReadXML() throws Exception {
         // Valid input should be parsed correctly
         assertNotNull(xmlSupport.readXMLFromFile(inputFile));
+        // test that all streams are properly closed
+        assertFalse(de.rcenvironment.core.utils.common.FileUtils.isLocked(inputFile));
         assertNotNull(xmlSupport.readXMLFromStream(inputStream));
         assertNotNull(xmlSupport.readXMLFromString(inputString));
 
@@ -109,6 +112,8 @@ public class XMLSupportImplTest {
 
         // Same for invalid inputs
         assertNull(xmlSupport.readXMLFromFile(invalidFile));
+        // test that all streams are properly closed
+        assertFalse(de.rcenvironment.core.utils.common.FileUtils.isLocked(invalidFile));
         assertNull(xmlSupport.readXMLFromStream(invalidStream));
         assertNull(xmlSupport.readXMLFromString(invalidString));
     }
@@ -123,6 +128,8 @@ public class XMLSupportImplTest {
         Document doc = xmlSupport.readXMLFromFile(inputFile);
         File file = tempFileService.createTempFileFromPattern("testfile*.xml");
         xmlSupport.writeXMLtoFile(doc, file);
+        // test that all streams are properly closed
+        assertFalse(de.rcenvironment.core.utils.common.FileUtils.isLocked(file));
         assertNotNull(FileUtils.readFileToString(file));
         String string = xmlSupport.writeXMLToString(doc);
         assertNotNull(string);
@@ -137,6 +144,8 @@ public class XMLSupportImplTest {
         assertNull(xmlSupport.writeXMLToString(nullDoc));
         assertNull(xmlSupport.writeXMLToString(nullElement));
         xmlSupport.writeXMLtoFile(null, file);
+        // test that all streams are properly closed
+        assertFalse(de.rcenvironment.core.utils.common.FileUtils.isLocked(file));
         xmlSupport.writeXMLtoFile(doc, null);
     }
 

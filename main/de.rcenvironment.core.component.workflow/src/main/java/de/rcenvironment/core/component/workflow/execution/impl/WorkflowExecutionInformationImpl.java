@@ -5,15 +5,15 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow.execution.impl;
 
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionInformationImpl;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
@@ -27,24 +27,24 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
  * 
  * @author Doreen Seider
  */
-public class WorkflowExecutionInformationImpl extends ComponentExecutionInformationImpl implements WorkflowExecutionInformation  {
+public class WorkflowExecutionInformationImpl extends ComponentExecutionInformationImpl implements WorkflowExecutionInformation {
 
     private static final long serialVersionUID = 8037878257248368500L;
 
     private long instantiationTime;
-    
+
     private WorkflowDescription workflowDescription;
-    
+
     private Map<String, ComponentExecutionInformation> componentExecutionInformations = new HashMap<>();
-    
-    private NodeIdentifier nodeIdentifierStartedExecution;
-    
+
+    private LogicalNodeId nodeIdentifierStartedExecution;
+
     private String additionalInformation;
-    
+
     private WorkflowState workflowState;
-    
+
     private Long workflowDataManagementId = null;
-    
+
     public WorkflowExecutionInformationImpl(WorkflowExecutionContext wfExeCtx) {
         setInstanceName(wfExeCtx.getInstanceName());
         setNodeId(wfExeCtx.getNodeId());
@@ -53,7 +53,7 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
         setWorkflowExecutionContext(wfExeCtx);
         instantiationTime = new Date().getTime();
     }
-    
+
     @Override
     public WorkflowDescription getWorkflowDescription() {
         return workflowDescription;
@@ -63,7 +63,7 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
     public long getStartTime() {
         return instantiationTime;
     }
-    
+
     @Override
     public ComponentExecutionInformation getComponentExecutionInformation(String wfNodeId) {
         return componentExecutionInformations.get(wfNodeId);
@@ -74,7 +74,7 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
     }
 
     @Override
-    public NodeIdentifier getNodeIdStartedExecution() {
+    public LogicalNodeId getNodeIdStartedExecution() {
         return nodeIdentifierStartedExecution;
     }
 
@@ -82,15 +82,15 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
     public String getAdditionalInformationProvidedAtStart() {
         return additionalInformation;
     }
-    
+
     private void setWorkflowExecutionContext(WorkflowExecutionContext wfExeCtx) {
         componentExecutionInformations.clear();
         for (WorkflowNode wfNode : wfExeCtx.getWorkflowDescription().getWorkflowNodes()) {
             ComponentExecutionInformationImpl componentExecutionInformation = new ComponentExecutionInformationImpl();
             componentExecutionInformation.setIdentifier(wfExeCtx.getCompExeIdByWfNodeId(wfNode.getIdentifier()));
             componentExecutionInformation.setInstanceName(wfNode.getName());
-            componentExecutionInformation.setNodeId(NodeIdentifierFactory.fromNodeId(wfNode.getComponentDescription()
-                .getComponentInstallation().getNodeId()));
+            componentExecutionInformation.setNodeId(NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(
+                wfNode.getComponentDescription().getComponentInstallation().getNodeId()));
             componentExecutionInformation.setComponentIdentifier(wfNode.getComponentDescription().getIdentifier());
             componentExecutionInformation.setDefaultStorageNodeId(wfExeCtx.getDefaultStorageNodeId());
             componentExecutionInformations.put(wfNode.getIdentifier(), componentExecutionInformation);
@@ -108,12 +108,12 @@ public class WorkflowExecutionInformationImpl extends ComponentExecutionInformat
     public WorkflowState getWorkflowState() {
         return workflowState;
     }
-    
+
     @Override
     public Long getWorkflowDataManagementId() {
         return workflowDataManagementId;
     }
-    
+
     public void setWorkflowState(WorkflowState workflowState) {
         this.workflowState = workflowState;
     }

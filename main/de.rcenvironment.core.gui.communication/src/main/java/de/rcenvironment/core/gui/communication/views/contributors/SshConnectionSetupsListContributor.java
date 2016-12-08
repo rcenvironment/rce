@@ -31,12 +31,12 @@ import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
 import de.rcenvironment.core.gui.communication.views.spi.SelfRenderingNetworkViewNode;
 import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionNode;
 import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionType;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Contributes the subtree showing the list of current SSH connections.
@@ -148,7 +148,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
                 final boolean storePassphrase = dialog.shouldStorePassPhrase();
                 final String keyfileLocation = dialog.getKeyfileLocation();
                 final boolean usePassphrase = dialog.getUsePassphrase();
-                SharedThreadPool.getInstance().execute(new Runnable() {
+                ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                     @TaskDescription("Edit SSH Connection.")
                     @Override
@@ -260,7 +260,7 @@ public class SshConnectionSetupsListContributor extends NetworkViewContributorBa
             final String keyfileLocation = dialog.getKeyfileLocation();
             final boolean usePassphrase = dialog.getUsePassphrase();
 
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @TaskDescription("Create new SSH Connection.")
                 @Override

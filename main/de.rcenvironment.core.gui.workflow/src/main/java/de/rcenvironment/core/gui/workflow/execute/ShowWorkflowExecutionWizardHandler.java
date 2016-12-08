@@ -71,6 +71,8 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileExcept
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.gui.workflow.GUIWorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
+import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
+import de.rcenvironment.core.utils.common.InvalidFilenameException;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -110,6 +112,7 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
         final boolean wfFileOpenedInEditor;
 
         IFile wfFile = tryToGetWorkflowFileFromProjectExplorer(event);
+        
 
         if (wfFile == null) {
             wfFile = tryToGetWorkflowFileFromWorkflowEditor();
@@ -126,6 +129,15 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
 
         searchAndReplaceDuplicateIDs(wfFile);
 
+        // Check if the filename is valid. If this is not the case, execution may fail. 
+        try {
+            CrossPlatformFilenameUtils.throwExceptionIfFilenameNotValid(wfFile.getName());
+        } catch (InvalidFilenameException e) {
+            MessageDialog.open(MessageDialog.WARNING, null, "Error during Workflow preparation",
+                "The workflow's file name is not valid on all supported platforms. Please rename the workflow.", SWT.NONE);
+            return null;
+        }
+        
         if (wfFileOpenedInEditor) {
             openWorkflowExecutionWizardWithWfFileFromEditor(wfFile);
         } else {
@@ -137,18 +149,19 @@ public class ShowWorkflowExecutionWizardHandler extends AbstractHandler {
     private void openWorkflowExecutionWizardWithWfFileFromEditor(IFile wfFile) {
         WorkflowDescription wfDescription = null;
         try {
-            File wfFile2 = new File(wfFile.getRawLocation().toOSString());
+            File wfFile2 = new File(wfFile.getLocation().toOSString());
             if (wfFile2.exists()) {
                 wfDescription = workflowExecutionService.loadWorkflowDescriptionFromFile(
                     wfFile2, new GUIWorkflowDescriptionLoaderCallback());
             }
         } catch (RuntimeException | WorkflowFileException e) {
             // caught and only logged as an error dialog already pops up if an error occur
-            LogFactory.getLog(getClass()).error("Failed to load workflow: " + wfFile.getRawLocation().toOSString(), e);
+            LogFactory.getLog(getClass()).error("Failed to load workflow: " + wfFile.getLocation().toOSString(), e);
             return;
         }
         if (wfDescription != null) {
             openWorkflowExecutionWizard(wfFile, wfDescription);
+
         } else {
             MessageDialog.open(MessageDialog.WARNING, null, "Error Loading Workflow",
                 "The workflow file could not be found.\nMaybe it was renamed?", SWT.NONE);

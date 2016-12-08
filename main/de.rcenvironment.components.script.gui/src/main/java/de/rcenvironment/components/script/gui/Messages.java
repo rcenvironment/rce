@@ -15,28 +15,10 @@ import org.eclipse.osgi.util.NLS;
  * @author Sascha Zur
  */
 public class Messages extends NLS {
-    
+
     /** Constant. */
     public static String chooseLanguage;
 
-    /** Constant. */
-    public static String noScript;
-
-    /** Constant. */
-    public static String defaultScript;
-
-    /** Constant. */
-    public static String noScriptMessage;
-
-    /** Constant. */
-    public static String defaultScriptMessage;
-
-    /** Constant. */
-    public static String wrongUsage;
-
-    /** Constant. */
-    public static String wrongUsageMessage;
-    
     /** Constant. */
     public static String scriptname;
 

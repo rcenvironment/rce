@@ -39,9 +39,9 @@ public class ConsoleRowsSender {
         }
     }
 
-    protected void sendLogMessageAsConsoleRow(Type consoleRowType, String message) {
+    protected void sendLogMessageAsConsoleRow(Type consoleRowType, String message, int compRun) {
         ConsoleRowBuilder consoleRowBuilder = createConsoleRowBuilder();
-        consoleRowBuilder.setType(consoleRowType).setPayload(message);
+        consoleRowBuilder.setType(consoleRowType).setPayload(message).setComponentRun(compRun);
         synchronized (logMessageLock) {
             consoleRowBuilder.setSequenceNumber(compExeRelatedInstances.compExeRelatedStates.consoleRowSequenceNumber.incrementAndGet());
             compExeRelatedInstances.batchingConsoleRowsForwarder.onConsoleRow(consoleRowBuilder.build());

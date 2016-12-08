@@ -23,7 +23,8 @@
             "key":"decryptionPassphrase",
             "guiName":"Decryption password",
             "guiPosition":"1",
-            "decode":"true"
+            "decode":"true",
+            "dataType": "Text"
         }
     ]
 }

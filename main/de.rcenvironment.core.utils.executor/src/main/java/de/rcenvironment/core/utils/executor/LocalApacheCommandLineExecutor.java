@@ -19,10 +19,14 @@ import org.apache.commons.exec.CommandLine;
 import org.apache.commons.exec.DefaultExecuteResultHandler;
 import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteWatchdog;
+import org.apache.commons.exec.OS;
 import org.apache.commons.exec.PumpStreamHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
  * A {@link CommandLineExecutor} that executes the given commands locally.
@@ -31,6 +35,11 @@ import org.apache.commons.logging.LogFactory;
  * 
  */
 public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor implements CommandLineExecutor {
+
+    /**
+     * Sets the execution flag for the specified file.
+     */
+    private static final String LINUX_MAKE_FILE_EXECUTABLE_TEMPLATE = "chmod +x %s";
 
     private File workDir;
 
@@ -73,9 +82,7 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
         start(commandString, null);
     }
 
-    @Override
-    public void start(String commandString, final InputStream stdinStream) throws IOException {
-
+    private void checkAndCreateWorkDir() throws IOException {
         if (!workDir.isDirectory()) {
             // try to create the work directory
             workDir.mkdirs();
@@ -83,9 +90,9 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
                 throw new IOException("Failed to create provided work directory " + workDir.getAbsolutePath());
             }
         }
+    }
 
-        CommandLine cmd = ProcessUtils.constructCommandLine(commandString);
-
+    private void executeCommand(CommandLine cmd, final InputStream stdinStream) throws IOException {
         pipedStdOutputStream = new PipedOutputStream();
         pipedErrOutputStream = new PipedOutputStream();
         pipedStdInputStream = new PipedInputStream(pipedStdOutputStream);
@@ -95,6 +102,7 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
         executor = new DefaultExecutor();
         executor.setWatchdog(watchdog);
         resultHandler = new DefaultExecuteResultHandler();
+
         streamHandler = new ExtendedPumpStreamHandler(pipedStdOutputStream, pipedErrOutputStream, stdinStream);
         executor.setStreamHandler(streamHandler);
         executor.setWorkingDirectory(workDir);
@@ -114,6 +122,78 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
                     executor.execute(cmd, env, resultHandler);
                 }
             }
+        }
+    }
+
+    @Override
+    public void start(String commandString, final InputStream stdinStream) throws IOException {
+
+        checkAndCreateWorkDir();
+
+        CommandLine cmd = ProcessUtils.constructCommandLine(commandString);
+
+        executeCommand(cmd, stdinStream);
+    }
+
+    // Executes a script by writing the script into a temporary file, setting the executable bit and executing the script.
+    private void executeShebangScript(String scriptString, final InputStream stdinStream) throws IOException, InterruptedException {
+
+        checkAndCreateWorkDir();
+
+        // write the scriptString into a file in the temp directory
+        final File scriptFile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("script");
+        log.debug(StringUtils.format("Writing script to %s", scriptFile.getAbsolutePath()));
+        FileUtils.writeStringToFile(scriptFile, scriptString, false);
+
+        log.debug(scriptFile.exists());
+        log.debug(scriptFile.length());
+        
+        // make the file executable
+        String makeExecutableCmd = StringUtils.format(LINUX_MAKE_FILE_EXECUTABLE_TEMPLATE, scriptFile.getAbsolutePath());
+        // we cannot call start on the same executor twice since the canceling does not support this yet
+        LocalApacheCommandLineExecutor makeExecutableExecutor = new LocalApacheCommandLineExecutor(workDir);
+        makeExecutableExecutor.start(makeExecutableCmd);
+        int exitCode = makeExecutableExecutor.waitForTermination();
+        log.debug(StringUtils.format("chmod +x finished with exit code %d", exitCode));
+
+        log.debug("scriptFile.exists(): " + scriptFile.exists());
+
+        // execute the script
+        CommandLine cmd = new CommandLine(scriptFile.getAbsolutePath());
+        executeCommand(cmd, stdinStream);
+        // if an interpreter is chosen, which is not available on the system, the streams are not closed correctly
+        // TODO check for errors during execution, e.g. interpreter is not available
+
+        // TODO if we dispose the script now, it might be deleted before it is executed 
+        //TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(scriptFile);
+    }
+
+    /**
+     * Executes a script by writing the script into a temporary file, setting the executable bit and executing the script.
+     * 
+     * On Linux, if the first line of the script starts either with "#!/bin/sh" or with "#!/bin/bash", the script temporarily will be
+     * written to a file and executed. Other interpreters are currently not supported, instead, all lines will be concatenated and executed
+     * as a single shell command.
+     * 
+     * @param scriptString The script that should be executed.
+     * @param stdinStream the input stream to read standard input data from, or "null" to disable
+     * @throws IOException On IO errors.
+     * @throws InterruptedException If interrupted while waiting for an operation to finish.
+     */
+    public void executeScript(String scriptString, final InputStream stdinStream) throws IOException, InterruptedException {
+
+        if (OS.isFamilyWindows()) {
+            this.startMultiLineCommand(scriptString.split("\r?\n|\r"));
+        } else if (OS.isFamilyUnix()) {
+
+            // check if the scriptString contains a shebang at its start
+            // we currently only support sh and bash, since these are available on all major Linux distributions
+            if (scriptString.startsWith("#!/bin/sh\n") || scriptString.startsWith("#!/bin/bash\n")) {
+                executeShebangScript(scriptString, stdinStream);
+            } else {
+                this.startMultiLineCommand(scriptString.split("\r?\n|\r"));
+            }
+
         }
     }
 
@@ -142,7 +222,8 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
     @Override
     public int waitForTermination() throws IOException, InterruptedException {
         resultHandler.waitFor();
-        return resultHandler.getExitValue();
+        int exitValue = resultHandler.getExitValue();
+        return exitValue;
     }
 
     public DefaultExecuteResultHandler getResultHandler() {
@@ -237,6 +318,8 @@ public class LocalApacheCommandLineExecutor extends AbstractCommandLineExecutor 
      * 
      * TODO This implementation currently only supports one call of start(). If it is necessary that multiple commands are started with the
      * same LocalApacheCommandLineExecutor, this method needs to be modified to receive the process object which should be killed. ~rode_to
+     * 
+     * TODO what happens if this is called multiple times?
      * 
      * @return true, if the process was canceled, otherwise false.
      */

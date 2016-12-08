@@ -12,7 +12,7 @@
 #
 # Examples:
 # - If you like to double an incoming value (x is an input of type Integer and y an output of type Integer):
-#       RCE.write_output("y", RCE.read_input(2 * x))
+#       RCE.write_output("y", 2 * RCE.read_input("x"))
 # - If you like to access an incoming file (f_in is an input of type File):
 #       file = open(RCE.read_input("f_in"),"r")
 # - If you like to send a file to an output (f_out is an output of type File):

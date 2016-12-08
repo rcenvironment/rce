@@ -13,7 +13,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -47,12 +47,12 @@ public class TestNetworkTrafficListener implements MessageChannelTrafficListener
     }
 
     @Override
-    public void onRequestReceivedFromChannel(NetworkRequest request, NodeIdentifier sourceId) {
+    public void onRequestReceivedFromChannel(NetworkRequest request, InstanceNodeSessionId sourceId) {
         onTraffic(false);
     }
 
     @Override
-    public void onResponseSentIntoChannel(NetworkResponse response, NetworkRequest request, NodeIdentifier sourceId) {
+    public void onResponseSentIntoChannel(NetworkResponse response, NetworkRequest request, InstanceNodeSessionId sourceId) {
         // note: strictly speaking, the traffic has not happened yet, but is about to
 
         // TODO restore statistics?

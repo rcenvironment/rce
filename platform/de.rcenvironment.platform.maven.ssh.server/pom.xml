@@ -17,14 +17,16 @@
 		<dependency>
 			<groupId>org.apache.mina</groupId>
 			<artifactId>mina-core</artifactId>
-			<version>2.0.9</version>
+			<!-- released 2016-02-12; latest as of 2016-07-11 bode_br -->
+			<version>2.0.13</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.sshd</groupId>
 			<artifactId>sshd-core</artifactId>
-			<version>0.14.0</version>
+			<!-- released 2016-03-09; latest as of 2016-07-11 bode_br -->
+			<version>1.2.0</version>
 		</dependency>
 	</dependencies>
 
-	<version>7.1.1.qualifier</version>
+	<version>8.0.0.qualifier</version>
 </project>

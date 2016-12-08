@@ -16,7 +16,6 @@ import org.eclipse.swt.widgets.Display;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
@@ -39,9 +38,9 @@ public class XPathChooserPropertyViewPane extends EndpointSelectionPane {
      * @param typeSelectionFactory type selector
      * @param executor executor
      */
-    public XPathChooserPropertyViewPane(String genericEndpointTitle, final EndpointType direction,
-        final WorkflowNodeCommand.Executor executor, String id) {
-        super(genericEndpointTitle, direction, executor, false, id, false);
+    public XPathChooserPropertyViewPane(String title, EndpointType direction, String dynEndpointIdToManage,
+        String[] dynEndpointIdsToShow, String[] statEndpointNamesToShow, WorkflowNodeCommand.Executor executor) {
+        super(title, direction, dynEndpointIdToManage, dynEndpointIdsToShow, statEndpointNamesToShow, executor);
     }
 
     public EndpointSelectionPane[] getAllPanes() {
@@ -56,24 +55,26 @@ public class XPathChooserPropertyViewPane extends EndpointSelectionPane {
     protected void onAddClicked() {
         EndpointEditDialog dialog =
             new XPathEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
-                endpointType, endpointIdToManage, false,
-                icon, endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
-                    .getMetaDataDefinition(), new HashMap<String, String>());
+                endpointType, dynEndpointIdToManage, false,
+                icon, endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
+                    .getMetaDataDefinition(),
+                new HashMap<String, String>());
         super.onAddClicked(dialog);
     }
 
     @Override
     protected void onEditClicked() {
         final String name = (String) table.getSelection()[0].getData();
-        boolean isStaticEndpoint = EndpointHelper.getStaticEndpointNames(endpointType, configuration).contains(name);
+        boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         EndpointEditDialog dialog =
             new XPathEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
-                endpointType, endpointIdToManage, isStaticEndpoint,
+                endpointType, dynEndpointIdToManage, isStaticEndpoint,
                 icon, endpoint.getEndpointDefinition()
-                    .getMetaDataDefinition(), newMetaData);
+                    .getMetaDataDefinition(),
+                newMetaData);
 
         super.onEditClicked(name, dialog, newMetaData);
     }

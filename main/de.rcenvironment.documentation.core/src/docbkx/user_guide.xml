@@ -13,8 +13,7 @@
 
 	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="user_guide/sections/setup/setup.xml"/>
 	
-	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
-			href="user_guide/sections/usage/usage.xml" />
+	<xi:include xmlns:xi="http://www.w3.org/2001/XInclude" href="user_guide/sections/usage/usage.xml"/>
 
 	<!--<xi:include xmlns:xi="http://www.w3.org/2001/XInclude"
 		href="user_guide/sections/miscellaneous/miscellaneous.xml" />-->

@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -22,7 +22,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public final class NetworkGraphNodeImpl implements NetworkGraphNode {
 
-    private final NodeIdentifier nodeId;
+    private final InstanceNodeSessionId nodeId;
 
     private final Map<String, String> nodeProperties;
 
@@ -30,7 +30,7 @@ public final class NetworkGraphNodeImpl implements NetworkGraphNode {
 
     // private Map<String, String> nodeProperties;
 
-    public NetworkGraphNodeImpl(NodeIdentifier nodeId, Map<String, String> nodeProperties) {
+    public NetworkGraphNodeImpl(InstanceNodeSessionId nodeId, Map<String, String> nodeProperties) {
         if (nodeId == null) {
             throw new NullPointerException(StringUtils.format("%s / %s", nodeId, nodeProperties));
         }
@@ -38,15 +38,15 @@ public final class NetworkGraphNodeImpl implements NetworkGraphNode {
         this.nodeProperties = nodeProperties;
     }
 
-    public NetworkGraphNodeImpl(NodeIdentifier nodeId) {
+    public NetworkGraphNodeImpl(InstanceNodeSessionId nodeId) {
         this.nodeId = nodeId;
         // implicit property map for unit test
         this.nodeProperties = new HashMap<String, String>();
-        nodeProperties.put("displayName", "<" + nodeId.getIdString() + ">");
+        nodeProperties.put("displayName", "<" + nodeId.getInstanceNodeSessionIdString() + ">");
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public InstanceNodeSessionId getNodeId() {
         return nodeId;
     }
 
@@ -81,7 +81,7 @@ public final class NetworkGraphNodeImpl implements NetworkGraphNode {
 
     @Override
     public String toString() {
-        return StringUtils.format("%s ('%s')", nodeId.getIdString(), getDisplayName());
+        return StringUtils.format("%s ('%s')", nodeId.getInstanceNodeSessionIdString(), getDisplayName());
     }
 
     @Override

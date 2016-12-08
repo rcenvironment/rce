@@ -19,17 +19,15 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
 
 /**
- * A specialized {@link Writer} for capturing the output of Jython, which does not seem to call
- * {@link Writer#close()} properly. It relies on the fact that Jython calls {@link Writer#flush()}
- * at the end of each line. Each line is forwarded to the appropriate notification call. If
- * {@link Writer#close()} is called from own code, {@link #CONSOLE_END} must be written at the end
- * of the console output to forward as {@link PythonOutputWriter#close()} waits until
- * this line is captured. This line won't be forwarded.
+ * A specialized {@link Writer} for capturing the output of Jython, which does not seem to call {@link Writer#close()} properly. It relies
+ * on the fact that Jython calls {@link Writer#flush()} at the end of each line. Each line is forwarded to the appropriate notification
+ * call. If {@link Writer#close()} is called from own code, {@link #CONSOLE_END} must be written at the end of the console output to forward
+ * as {@link PythonOutputWriter#close()} waits until this line is captured. This line won't be forwarded.
  * 
  * @author Robert Mischke
  * @author Sascha Zur
@@ -38,8 +36,7 @@ import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 public abstract class PythonOutputWriter extends Writer {
 
     /**
-     * Indicates the last console line sent. Must be sent by each consumer after the last productive
-     * line.
+     * Indicates the last console line sent. Must be sent by each consumer after the last productive line.
      */
     public static final String CONSOLE_END = "c02abd1c-67bc-4974-902b-439cd2b14efc";
 
@@ -59,13 +56,13 @@ public abstract class PythonOutputWriter extends Writer {
     private final Object logFileLock = new Object();
 
     private boolean isClosed;
-    
+
     private final CountDownLatch finishLatch = new CountDownLatch(1);
-    
+
     public PythonOutputWriter(Object lock, File logFile) {
         super(lock);
         isClosed = false; // redundant, but added to make it explicit
-        executionQueue = new AsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED, SharedThreadPool.getInstance());
+        executionQueue = ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
         if (logFile != null) {
             try {
@@ -75,7 +72,7 @@ public abstract class PythonOutputWriter extends Writer {
             }
         }
     }
-    
+
     protected abstract void onNewLineToForward(final String line);
 
     @Override
@@ -92,7 +89,7 @@ public abstract class PythonOutputWriter extends Writer {
             buffer.setLength(0);
             if (isClosed) {
                 if (!line.isEmpty()) {
-                    log.warn("Unexpected caller behavior: flush() called after close(); captured output=" + line);                    
+                    log.warn("Unexpected caller behavior: flush() called after close(); captured output=" + line);
                 }
             } else {
                 if (line.contains(CONSOLE_END)) {
@@ -112,7 +109,7 @@ public abstract class PythonOutputWriter extends Writer {
     }
 
     protected void forwardLine(final String line) {
-        
+
         executionQueue.enqueue(new Runnable() {
 
             @Override
@@ -128,7 +125,7 @@ public abstract class PythonOutputWriter extends Writer {
                 }
                 onNewLineToForward(line);
             }
-        });            
+        });
     }
 
     @Override
@@ -136,7 +133,8 @@ public abstract class PythonOutputWriter extends Writer {
         try {
             finishLatch.await(WAIT_FOR_CONSOLE_END_TIMEOUT_IN_MILI_SEC, TimeUnit.MILLISECONDS);
         } catch (InterruptedException e) {
-            log.error("Waiting for last console line failed. Writer instance will be closed immediately. Console lines might be lost.", e);
+            log.error(
+                "Waiting for last console line was interrupted. Writer instance will be closed immediately. Console lines might be lost");
         }
         synchronized (logFileLock) {
             if (logFileStream != null) {
@@ -148,5 +146,5 @@ public abstract class PythonOutputWriter extends Writer {
             isClosed = true;
         }
     }
-    
+
 }

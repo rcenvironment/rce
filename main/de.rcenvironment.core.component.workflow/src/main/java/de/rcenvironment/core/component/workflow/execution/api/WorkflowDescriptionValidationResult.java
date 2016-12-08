@@ -11,44 +11,45 @@ package de.rcenvironment.core.component.workflow.execution.api;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
  * Container for a workflow description validation result. It contains, whether the validation succeeded. If it didn't, it contains the
- * {@link NodeIdentifier} of the {@link WorkflowNode}s, which are not available (might be extended, if the validation covers others things
- * as well).
+ * {@link InstanceNodeSessionId} of the {@link WorkflowNode}s, which are not available (might be extended, if the validation covers others
+ * things as well).
  * 
  * @author Doreen Seider
  */
 public class WorkflowDescriptionValidationResult {
 
     private boolean succeeded;
-    
-    private NodeIdentifier missingControllerNodeId = null;
-    
-    private Map<String, NodeIdentifier> missingComponentsNodeIds = new HashMap<>();
 
-    public WorkflowDescriptionValidationResult(boolean validationSucceeded, NodeIdentifier missingControllerNodeId,
-        Map<String, NodeIdentifier> missingComponentsNodeIds) {
+    private LogicalNodeId missingControllerNodeId = null;
+
+    private Map<String, LogicalNodeId> missingComponentsNodeIds = new HashMap<>();
+
+    public WorkflowDescriptionValidationResult(boolean validationSucceeded, LogicalNodeId missingControllerNodeId,
+        Map<String, LogicalNodeId> missingComponentsNodeIds) {
         this.succeeded = validationSucceeded;
         this.missingControllerNodeId = missingControllerNodeId;
         this.missingComponentsNodeIds = missingComponentsNodeIds;
     }
-    
+
     public boolean isSucceeded() {
         return succeeded;
     }
 
-    public NodeIdentifier getMissingControllerNodeId() {
+    public LogicalNodeId getMissingControllerNodeId() {
         return missingControllerNodeId;
     }
 
-    public Map<String, NodeIdentifier> getMissingComponentsNodeIds() {
+    public Map<String, LogicalNodeId> getMissingComponentsNodeIds() {
         return missingComponentsNodeIds;
     }
-    
+
     @Override
     public String toString() {
         StringBuffer causeLogMsg = new StringBuffer();
@@ -63,23 +64,23 @@ public class WorkflowDescriptionValidationResult {
             causeLogMsg.append(StringUtils.format("target instance for component unknown: %s -> %s", compName,
                 missingComponentsNodeIds.get(compName)));
         }
-        
+
         return causeLogMsg.toString().trim();
     }
 
     /**
      * Creates {@link WorkflowDescriptionValidationResult} instance in case of failure.
      * 
-     * @param missingControllerNodeId {@link NodeIdentifier} if the controller {@link NodeIdentifier} is not available
-     * @param missingComponentsNodeIds all of the component's {@link NodeIdentifier}s which are not available (workflow node id ->
-     *        {@link NodeIdentifier})
+     * @param missingControllerNodeId {@link InstanceNodeSessionId} if the controller {@link InstanceNodeSessionId} is not available
+     * @param missingComponentsNodeIds all of the component's {@link InstanceNodeSessionId}s which are not available (workflow node id ->
+     *        {@link InstanceNodeSessionId})
      * @return {@link WorkflowDescriptionValidationResult} instance, initiated properly
      */
-    public static WorkflowDescriptionValidationResult createResultForFailure(NodeIdentifier missingControllerNodeId,
-        Map<String, NodeIdentifier> missingComponentsNodeIds) {
+    public static WorkflowDescriptionValidationResult createResultForFailure(LogicalNodeId missingControllerNodeId,
+        Map<String, LogicalNodeId> missingComponentsNodeIds) {
         return new WorkflowDescriptionValidationResult(false, missingControllerNodeId, missingComponentsNodeIds);
     }
-    
+
     /**
      * Creates {@link WorkflowDescriptionValidationResult} instance in case of success.
      * 
@@ -88,5 +89,5 @@ public class WorkflowDescriptionValidationResult {
     public static WorkflowDescriptionValidationResult createResultForSuccess() {
         return new WorkflowDescriptionValidationResult(true, null, null);
     }
-    
+
 }

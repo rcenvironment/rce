@@ -10,7 +10,7 @@ package de.rcenvironment.core.component.model.spi;
 
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.InternalTD;
 
@@ -62,12 +62,6 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
             isReset = true;
             sendReset();
         } else {
-            if (componentContext.getInputsWithDatum().contains(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
-                if (((BooleanTD) componentContext.readInput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)).getBooleanValue()) {
-                    outerLoopIsFinished();
-                }
-                return;
-            }
             processInputsNestedComponentSpecific();
             if (isDone()) {
                 loopIsFinished();
@@ -180,8 +174,7 @@ public abstract class AbstractNestedLoopComponent extends AbstractLoopComponent 
      */
     protected void sendReset() {
         for (String output : componentContext.getOutputs()) {
-            if (LoopEndpointType.fromString(componentContext.getOutputMetaDataValue(
-                output, LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE)) == LoopEndpointType.SelfLoopEndpoint) {
+            if (componentContext.getOutputCharacter(output).equals(EndpointCharacter.SAME_LOOP)) {
                 componentContext.resetOutput(output);
             }
         }

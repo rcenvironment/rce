@@ -19,6 +19,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  * same name as the input + given suffix.
  * 
  * @author Doreen Seider
+ * @author Martin Misiak
+ * FIXED 0014355: {@link #undo()} reverted to the datatype of the new @link {@link EndpointDescription} instead of the old
  */
 public class EditDynamicInputWithOutputsCommand extends EditDynamicInputWithOutputCommand {
 
@@ -36,8 +38,8 @@ public class EditDynamicInputWithOutputsCommand extends EditDynamicInputWithOutp
     public void execute() {
 
         EndpointDescriptionsManager outputManager = getProperties().getOutputDescriptionsManager();
-        EndpointDescription outputConvergedDesc = outputManager.getEndpointDescription(oldDesc.getName() + nameSuffix);
-        outputConvergedDesc.setName(newDesc.getName() + nameSuffix);
+        EndpointDescription addOutputDesc = outputManager.getEndpointDescription(oldDesc.getName() + nameSuffix);
+        addOutputDesc.setName(newDesc.getName() + nameSuffix);
         Map<String, String> metaData = new HashMap<>();
         metaData.putAll(newDesc.getMetaData());
         metaData.putAll(metaDataOutputWithSuffix);
@@ -56,7 +58,7 @@ public class EditDynamicInputWithOutputsCommand extends EditDynamicInputWithOutp
         metaData.putAll(oldDesc.getMetaData());
         metaData.putAll(metaDataOutputWithSuffix);
         outputManager.editDynamicEndpointDescription(newDesc.getName() + nameSuffix,
-            oldDesc.getName() + nameSuffix, outputConvergedDesc.getDataType(), metaData);
+            oldDesc.getName() + nameSuffix, oldDesc.getDataType(), metaData);
         super.undo();
     }
 

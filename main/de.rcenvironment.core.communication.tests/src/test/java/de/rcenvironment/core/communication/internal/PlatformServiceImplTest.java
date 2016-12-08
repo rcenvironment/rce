@@ -19,7 +19,9 @@ import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.CommonIdBase;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.impl.NodeIdentifierServiceImpl;
 import de.rcenvironment.core.communication.configuration.internal.NodeConfigurationServiceImpl;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -27,6 +29,7 @@ import de.rcenvironment.core.configuration.testutils.ConfigurationSegmentUtils;
 import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
 import de.rcenvironment.core.configuration.testutils.PersistentSettingsServiceDefaultStub;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.toolkit.utils.common.IdGeneratorType;
 
 /**
  * Test cases for {@link PlatformServiceImpl}.
@@ -36,7 +39,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class PlatformServiceImplTest {
 
-    private static final int EXPECTED_PLATFORM_ID_LENGTH = 32;
+    private static final int EXPECTED_NODE_ID_LENGTH = CommonIdBase.INSTANCE_PART_LENGTH + 1 + CommonIdBase.SESSION_PART_LENGTH;
 
     private PlatformServiceImpl service;
 
@@ -61,6 +64,7 @@ public class PlatformServiceImplTest {
         NodeConfigurationServiceImpl nodeConfigurationService = new NodeConfigurationServiceImpl();
         nodeConfigurationService.bindConfigurationService(new DummyConfigurationService());
         nodeConfigurationService.bindPersistentSettingsService(new PersistentSettingsServiceDefaultStub());
+        nodeConfigurationService.bindNodeIdentifierService(new NodeIdentifierServiceImpl(IdGeneratorType.FAST));
         nodeConfigurationService.activate(contextMock);
 
         service = new PlatformServiceImpl();
@@ -69,13 +73,13 @@ public class PlatformServiceImplTest {
     }
 
     /**
-     * Tests the returned {@link NodeIdentifier}.
+     * Tests the returned {@link InstanceNodeSessionId}.
      */
     @Test
     public void testNodeId() {
-        NodeIdentifier nodeId = service.getLocalNodeId();
+        InstanceNodeSessionId nodeId = service.getLocalInstanceNodeSessionId();
         // basic test: check that the persistent id is defined and of the expected length
-        assertEquals(EXPECTED_PLATFORM_ID_LENGTH, nodeId.getIdString().length());
+        assertEquals(CommonIdBase.INSTANCE_SESSION_ID_STRING_LENGTH, nodeId.getInstanceNodeSessionIdString().length());
     }
 
     /**

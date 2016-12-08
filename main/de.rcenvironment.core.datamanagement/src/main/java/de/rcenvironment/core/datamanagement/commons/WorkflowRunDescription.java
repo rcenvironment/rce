@@ -11,6 +11,9 @@ package de.rcenvironment.core.datamanagement.commons;
 import java.io.Serializable;
 import java.util.Map;
 
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 
 /**
@@ -28,9 +31,15 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
 
     private final String workflowTitle;
 
-    private final String controllerNodeID;
+    private final String controllerLogicalNodeId;
 
-    private final String datamanagementNodeID;
+    // as this object is created from a string for on the server side anyway, only parse this id on demand on the client side
+    private transient LogicalNodeId controllerLogicalNodeIdObject;
+
+    private final String storageLogicalNodeId;
+
+    // as this object is created from a string for on the server side anyway, only parse this id on demand on the client side
+    private transient LogicalNodeId storageLogicalNodeIdObject;
 
     private final Long startTime;
 
@@ -44,13 +53,13 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
 
     private final Map<String, String> metaData;
 
-    public WorkflowRunDescription(Long workflowRunID, String workflowTitle, String controllerNodeID,
-        String datamanagementNodeID, Long startTime, Long endTime, FinalWorkflowState finalState, Boolean areFilesDeleted,
+    public WorkflowRunDescription(Long workflowRunID, String workflowTitle, String controllerLogicalNodeId,
+        String storageLogicalNodeId, Long startTime, Long endTime, FinalWorkflowState finalState, Boolean areFilesDeleted,
         Boolean markedForDeletion, Map<String, String> metaData) {
         this.workflowRunID = workflowRunID;
         this.workflowTitle = workflowTitle;
-        this.controllerNodeID = controllerNodeID;
-        this.datamanagementNodeID = datamanagementNodeID;
+        this.controllerLogicalNodeId = controllerLogicalNodeId;
+        this.storageLogicalNodeId = storageLogicalNodeId;
         this.startTime = startTime;
         this.endTime = endTime;
         this.finalState = finalState;
@@ -61,11 +70,11 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
 
     /**
      * Returns a copy of the given {@link WorkflowRunDescription} that shares all field values with the original, except for
-     * {@link #controllerNodeID} and {@link #datamanagementNodeID}, which are replaced by a new value. This method is used to fix
+     * {@link #controllerLogicalNodeId} and {@link #storageLogicalNodeId}, which are replaced by a new value. This method is used to fix
      * inconsistent node ids received from remote nodes, as they are returned by the remote data management as-is with no further checks.
      * 
      * @param original the original to copy values from
-     * @param newNodeIdString the new {@link #controllerNodeID} and {@link #datamanagementNodeID} to set
+     * @param newNodeIdString the new {@link #controllerLogicalNodeId} and {@link #storageLogicalNodeId} to set
      * @return the copy
      */
     public static WorkflowRunDescription cloneAndReplaceNodeIds(WorkflowRunDescription original, String newNodeIdString) {
@@ -78,12 +87,45 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
         return workflowTitle;
     }
 
-    public String getControllerNodeID() {
-        return controllerNodeID;
+    public String getControllerLogicalNodeIdString() {
+        return controllerLogicalNodeId;
     }
 
-    public String getDatamanagementNodeID() {
-        return datamanagementNodeID;
+    /**
+     * @return returns the {@link LogicalNodeId} representation of the stored instance or logical node id representing the execution
+     *         location; this should be used in place of {@link #getLogicalNodeIdString()} for type safety
+     */
+    public synchronized LogicalNodeId getControllerLogicalNodeId() {
+        if (controllerLogicalNodeIdObject == null && controllerLogicalNodeId != null) { // also return null in case the string id is ever
+                                                                                        // null
+            try {
+                controllerLogicalNodeIdObject = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeId(controllerLogicalNodeId);
+            } catch (IdentifierException e) {
+                throw new RuntimeException("Failed to parse component run location string (expected an instance id or logical node id)", e);
+            }
+        }
+        return controllerLogicalNodeIdObject;
+    }
+
+    public String getStorageLogicalNodeIdString() {
+        return storageLogicalNodeId;
+    }
+
+    /**
+     * @return returns the {@link LogicalNodeId} representation of the stored instance or logical node id representing the execution
+     *         location; this should be used in place of {@link #getLogicalNodeIdString()} for type safety
+     */
+    public synchronized LogicalNodeId getStorageLogicalNodeId() {
+     // return null in case the string id is ever
+        // null
+        if (storageLogicalNodeIdObject == null && storageLogicalNodeId != null) { 
+            try {
+                storageLogicalNodeIdObject = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeId(storageLogicalNodeId);
+            } catch (IdentifierException e) {
+                throw new RuntimeException("Failed to parse component run location string (expected an instance id or logical node id)", e);
+            }
+        }
+        return storageLogicalNodeIdObject;
     }
 
     public Long getStartTime() {
@@ -125,7 +167,7 @@ public class WorkflowRunDescription implements Serializable, Comparable<Workflow
         }
         return null;
     }
-    
+
     /**
      * Checks if the properties contain a field with an error log file.
      * 

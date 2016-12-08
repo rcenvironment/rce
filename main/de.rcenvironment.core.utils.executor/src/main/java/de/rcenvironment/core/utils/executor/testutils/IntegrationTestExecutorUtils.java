@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
@@ -179,8 +180,8 @@ public class IntegrationTestExecutorUtils {
         executor.start(command);
         CapturingTextOutReceiver stdoutCapture = new CapturingTextOutReceiver("");
         CapturingTextOutReceiver stderrCapture = new CapturingTextOutReceiver("");
-        final TextStreamWatcher stdoutWatcher = new TextStreamWatcher(executor.getStdout(), stdoutCapture).start();
-        final TextStreamWatcher stderrWatcher = new TextStreamWatcher(executor.getStderr(), stderrCapture).start();
+        final TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(executor.getStdout(), stdoutCapture).start();
+        final TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(executor.getStderr(), stderrCapture).start();
         int exitCode = executor.waitForTermination();
         stdoutWatcher.waitForTermination();
         stderrWatcher.waitForTermination();

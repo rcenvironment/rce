@@ -10,11 +10,13 @@ package de.rcenvironment.core.component.workflow.execution.headless.internal;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
@@ -22,9 +24,10 @@ import org.codehaus.jackson.type.TypeReference;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
-import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.model.configuration.api.PlaceholdersMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
@@ -84,44 +87,51 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
     @Override
     public FinalWorkflowState executeWorkflowSync(HeadlessWorkflowExecutionContext wfExeContext) throws WorkflowExecutionException {
-
-        // create context
         final ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx = new ExtendedHeadlessWorkflowExecutionContext(wfExeContext);
+        executeWorkflow(headlessWfExeCtx);
+        FinalWorkflowState finalState = waitForWorkflowExecutionTermination(headlessWfExeCtx);
+        disposeOrDeleteWorkflowIfIntended(headlessWfExeCtx, finalState.equals(FinalWorkflowState.FINISHED));
+        headlessWfExeCtx.unsubscribeNotificationSubscribersQuietly(notificationService);
+        return finalState;
+    }
 
-        WorkflowState finalState = null; // = unknown
+    private void executeWorkflow(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx) throws WorkflowExecutionException {
+        headlessWfExeCtx.addOutput(null, StringUtils.format("Loading: '%s'; log directory: %s (full path: %s)",
+            headlessWfExeCtx.getWorkflowFile().getName(), headlessWfExeCtx.getLogDirectory().getAbsolutePath(),
+            headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
 
         final WorkflowDescription workflowDescription = loadWorkflowDescriptionAndPlaceholders(headlessWfExeCtx);
-
-        headlessWfExeCtx.addOutput(null, StringUtils.format("'%s' starting...; log directory: %s (full path: %s)",
-                headlessWfExeCtx.getWorkflowFile().getName(), headlessWfExeCtx.getLogDirectory().getAbsolutePath(),
-                headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
 
         try {
             executeWorkflow(workflowDescription, headlessWfExeCtx);
             headlessWfExeCtx.addOutput(headlessWfExeCtx.getWorkflowExecutionContext().getExecutionIdentifier(),
-                StringUtils.format("'%s' executing...; id: %s (full path: %s)",
+                StringUtils.format("Executing: '%s'; id: %s (full path: %s)",
                     headlessWfExeCtx.getWorkflowFile().getName(),
                     headlessWfExeCtx.getWorkflowExecutionContext().getExecutionIdentifier(),
                     headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
-            try {
-                finalState = headlessWfExeCtx.waitForTermination();
-            } catch (InterruptedException e) {
-                throw new WorkflowExecutionException("Received interruption signal while waiting for workflow to terminate");
-            }
         } catch (WorkflowExecutionException e) {
-            headlessWfExeCtx.getTextOutputReceiver().addOutput(StringUtils.format("'%s' failed: %s (full path: %s) ",
+            headlessWfExeCtx.getTextOutputReceiver().addOutput(StringUtils.format("Failed: '%s'; %s (full path: %s) ",
                 headlessWfExeCtx.getWorkflowFile().getName(), e.getMessage(), headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
-            throw e;
-        } finally {
             headlessWfExeCtx.closeResourcesQuietly();
             headlessWfExeCtx.unsubscribeNotificationSubscribersQuietly(notificationService);
+            throw e;
+        }
+    }
+
+    private FinalWorkflowState waitForWorkflowExecutionTermination(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx)
+        throws WorkflowExecutionException {
+        WorkflowState finalState = null; // = unknown
+        try {
+            finalState = headlessWfExeCtx.waitForTermination();
+        } catch (InterruptedException e) {
+            throw new WorkflowExecutionException("Received interruption signal while waiting for workflow to terminate");
         }
         headlessWfExeCtx.addOutput(StringUtils.format("%s: %s", headlessWfExeCtx.getWorkflowExecutionContext()
-            .getExecutionIdentifier(), finalState.getDisplayName()), StringUtils.format("'%s' terminated: %s (full path: %s)",
-                headlessWfExeCtx.getWorkflowFile().getName(), finalState.getDisplayName(),
-                headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
-        // map to reduced set of final workflow states (to avoid downstream checking for invalid
-        // values)
+            .getExecutionIdentifier(), finalState.getDisplayName()), StringUtils.format("%s: '%s'(full path: %s)",
+            finalState.getDisplayName(), headlessWfExeCtx.getWorkflowFile().getName(),
+            headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
+        headlessWfExeCtx.closeResourcesQuietly();
+        // map to reduced set of final workflow states (to avoid downstream checking for invalid values)
         switch (finalState) {
         case FINISHED:
             return FinalWorkflowState.FINISHED;
@@ -129,6 +139,8 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             return FinalWorkflowState.CANCELLED;
         case FAILED:
             return FinalWorkflowState.FAILED;
+        case RESULTS_REJECTED:
+            return FinalWorkflowState.RESULTS_REJECTED;
         case UNKNOWN:
             throw new WorkflowExecutionException(StringUtils.format("Final state of '%s' is %s. "
                 + "Most likely because the connection to the workflow host node was interupted. See logs for more details.",
@@ -137,6 +149,102 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             throw new WorkflowExecutionException(StringUtils.format("Unexpected value '%s' for final state for '%s'",
                 finalState.getDisplayName(), headlessWfExeCtx.getWorkflowFile().getAbsolutePath()));
         }
+    }
+
+    private void afterWorkflowExecutionTerminated(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx, boolean behavedAsExpected)
+        throws WorkflowExecutionException {
+        disposeOrDeleteWorkflowIfIntended(headlessWfExeCtx, behavedAsExpected);
+        headlessWfExeCtx.unsubscribeNotificationSubscribersQuietly(notificationService);
+    }
+
+    private void disposeOrDeleteWorkflowIfIntended(ExtendedHeadlessWorkflowExecutionContext wfHeadlessExeCtx, boolean behavedAsExpected) {
+        final String wfExecutionId = wfHeadlessExeCtx.getWorkflowExecutionContext().getExecutionIdentifier();
+
+        boolean dispose = wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.Always
+            || (behavedAsExpected
+            && wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.OnExpected);
+        boolean delete = wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.Always
+            || (behavedAsExpected
+            && wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.OnExpected);
+        if (delete) {
+            try {
+                LogicalNodeId nodeId = wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId();
+                delete(workflowExecutionService.getWorkflowDataManagementId(wfExecutionId,
+                    nodeId), nodeId);
+                dispose(wfExecutionId, nodeId);
+                wfHeadlessExeCtx.waitForDisposal();
+                try {
+                    FileUtils.deleteDirectory(wfHeadlessExeCtx.getLogDirectory());
+                } catch (IOException e) {
+                    log.error("Failed to delete log directory: " + wfHeadlessExeCtx.getLogDirectory(), e);
+                }
+                // catching RTE might be obsolete/wrong after ECE was introduced
+            } catch (ExecutionControllerException | RemoteOperationException | RuntimeException e) {
+                log.error(StringUtils.format("Failed to delete workflow '%s' (%s) ",
+                    wfHeadlessExeCtx.getWorkflowExecutionContext().getInstanceName(), wfExecutionId), e);
+                wfHeadlessExeCtx.reportWorkflowDisposed(WorkflowState.FAILED);
+            } catch (InterruptedException e) {
+                log.error(StringUtils.format("Received interruption signal while waiting for disposeal of workflow '%s' (%s) ",
+                    wfHeadlessExeCtx.getWorkflowExecutionContext().getInstanceName(), wfExecutionId), e);
+            }
+        } else {
+            if (dispose) {
+                try {
+                    dispose(wfExecutionId, wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId());
+                    wfHeadlessExeCtx.waitForDisposal();
+                } catch (ExecutionControllerException | RemoteOperationException | RuntimeException e) {
+                    log.error(StringUtils.format("Failed to dispose workflow '%s' (%s) ",
+                        wfHeadlessExeCtx.getWorkflowExecutionContext().getInstanceName(), wfExecutionId), e);
+                } catch (InterruptedException e) {
+                    log.error(StringUtils.format("Received interruption signal while waiting for disposeal of workflow '%s' (%s) ",
+                        wfHeadlessExeCtx.getWorkflowExecutionContext().getInstanceName(), wfExecutionId), e);
+                }
+            }
+        }
+
+    }
+
+    @Override
+    public HeadlessWorkflowExecutionVerificationResult executeWorkflowsAndVerify(Set<HeadlessWorkflowExecutionContext> headlessWfExeCtxs,
+        HeadlessWorkflowExecutionVerificationRecorder wfVerificationResultReorder) {
+
+        Set<ExtendedHeadlessWorkflowExecutionContext> extHeadlessWfExeCtxs = new HashSet<>();
+
+        Set<ExtendedHeadlessWorkflowExecutionContext> extHeadlessWfExeCtxsExpected = new HashSet<>();
+
+        for (HeadlessWorkflowExecutionContext headlessWfExeCtx : headlessWfExeCtxs) {
+            final ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx =
+                new ExtendedHeadlessWorkflowExecutionContext(headlessWfExeCtx);
+            try {
+                executeWorkflow(extHeadlessWfExeCtx);
+            } catch (WorkflowExecutionException e) {
+                wfVerificationResultReorder.addWorkflowError(headlessWfExeCtx.getWorkflowFile(), e.getMessage());
+                log.error(e.getMessage(), e);
+                continue;
+            }
+            extHeadlessWfExeCtxs.add(extHeadlessWfExeCtx);
+        }
+
+        for (ExtendedHeadlessWorkflowExecutionContext extHeadlessWfExeCtx : extHeadlessWfExeCtxs) {
+            try {
+                FinalWorkflowState finalState = waitForWorkflowExecutionTermination(extHeadlessWfExeCtx);
+                boolean behavedAsExpected = false;
+                try {
+                    behavedAsExpected = wfVerificationResultReorder.addWorkflowExecutionResult(extHeadlessWfExeCtx.getWorkflowFile(),
+                        extHeadlessWfExeCtx.getLogFiles(), finalState, extHeadlessWfExeCtx.getExecutionDuration());
+                } catch (IOException e) {
+                    wfVerificationResultReorder.addWorkflowError(extHeadlessWfExeCtx.getWorkflowFile(), e.getMessage());
+                }
+                if (behavedAsExpected) {
+                    extHeadlessWfExeCtxsExpected.add(extHeadlessWfExeCtx);
+                }
+                afterWorkflowExecutionTerminated(extHeadlessWfExeCtx, behavedAsExpected);
+            } catch (WorkflowExecutionException e) {
+                wfVerificationResultReorder.addWorkflowError(extHeadlessWfExeCtx.getWorkflowFile(), e.getMessage());
+            }
+        }
+
+        return (HeadlessWorkflowExecutionVerificationResult) wfVerificationResultReorder;
     }
 
     private WorkflowDescription loadWorkflowDescriptionAndPlaceholders(ExtendedHeadlessWorkflowExecutionContext headlessWfExeCtx)
@@ -161,10 +269,11 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
         setupLogDirectory(wfHeadlessExeCtx);
 
-        WorkflowExecutionUtils.replaceNullNodeIdentifiersWithActualNodeIdentifier(wfDescription, platformService.getLocalNodeId(),
-            compKnowledgeService.getCurrentComponentKnowledge());
-        WorkflowExecutionUtils.setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, platformService.getLocalNodeId());
-        
+        WorkflowExecutionUtils.replaceNullNodeIdentifiersWithActualNodeIdentifier(wfDescription,
+            platformService.getLocalDefaultLogicalNodeId(), compKnowledgeService.getCurrentComponentKnowledge());
+        WorkflowExecutionUtils
+            .setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, platformService.getLocalDefaultLogicalNodeId());
+
         wfDescription.setName(WorkflowExecutionUtils.generateDefaultNameforExecutingWorkflow(wfHeadlessExeCtx.getWorkflowFile().getName(),
             wfDescription));
         wfDescription.setFileName(wfHeadlessExeCtx.getWorkflowFile().getName());
@@ -175,7 +284,7 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
 
         WorkflowExecutionContextBuilder wfExeCtxBuilder = new WorkflowExecutionContextBuilder(wfDescription);
         wfExeCtxBuilder.setInstanceName(wfDescription.getName());
-        wfExeCtxBuilder.setNodeIdentifierStartedExecution(platformService.getLocalNodeId());
+        wfExeCtxBuilder.setNodeIdentifierStartedExecution(platformService.getLocalDefaultLogicalNodeId());
         if (wfDescription.getAdditionalInformation() != null && !wfDescription.getAdditionalInformation().isEmpty()) {
             wfExeCtxBuilder.setAdditionalInformationProvidedAtStart(wfDescription.getAdditionalInformation());
         }
@@ -208,8 +317,8 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
             ExtendedHeadlessWorkflowExecutionContext.NotificationSubscription subscriberContext =
                 wfHeadlessExeCtx.new NotificationSubscription();
             subscriberContext.subscriber = consoleRowSubscriber;
-            subscriberContext.notificationId = StringUtils.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
-                wfExeCtx.getExecutionIdentifier(), wfExeCtx.getNodeId().getIdString());
+            subscriberContext.notificationId = ConsoleRowUtils.composeConsoleNotificationId(wfExeCtx.getNodeId(),
+                wfExeCtx.getExecutionIdentifier());
             subscriberContext.nodeId = wfExeCtx.getNodeId();
             notificationService.subscribe(subscriberContext.notificationId, subscriberContext.subscriber, subscriberContext.nodeId);
             wfHeadlessExeCtx.registerNotificationSubscriptionsToUnsubscribeOnFinish(subscriberContext);
@@ -244,37 +353,9 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
                     switch (newState) {
                     case CANCELLED:
                     case FAILED:
+                    case RESULTS_REJECTED:
                     case FINISHED:
-                        boolean getDisposed = wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.Always
-                            || (newState == WorkflowState.FINISHED
-                            && wfHeadlessExeCtx.getDisposalBehavior() == DisposalBehavior.OnFinished);
-                        boolean getDeleted = wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.Always
-                            || (newState == WorkflowState.FINISHED
-                            && wfHeadlessExeCtx.getDeletionBehavior() == DeletionBehavior.OnFinished);
-                        wfHeadlessExeCtx.reportWorkflowTerminated(newState, getDisposed);
-                        if (getDeleted) {
-                            try {
-                                NodeIdentifier nodeId = wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId();
-                                delete(workflowExecutionService.getWorkflowDataManagementId(wfExecutionId,
-                                    nodeId), nodeId);
-                                dispose(wfExecutionId, wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId());
-                                // catching RTE might be obsolete/wrong after ECE was introduced
-                            } catch (ExecutionControllerException | RemoteOperationException | RuntimeException e) {
-                                log.error(StringUtils.format("Failed to delete workflow '%s' (%s) ",
-                                    wfHeadlessExeCtx.getWorkflowExecutionContext().getInstanceName(), wfExecutionId), e);
-                                wfHeadlessExeCtx.reportWorkflowDisposed(WorkflowState.FAILED);
-                            }
-                        } else {
-                            if (getDisposed) {
-                                try {
-                                    dispose(wfExecutionId, wfHeadlessExeCtx.getWorkflowExecutionContext().getNodeId());
-                                } catch (ExecutionControllerException | RemoteOperationException | RuntimeException e) {
-                                    log.error(StringUtils.format("Failed to dispose workflow '%s' (%s) ",
-                                        wfHeadlessExeCtx.getWorkflowExecutionContext().getInstanceName(), wfExecutionId), e);
-                                    wfHeadlessExeCtx.reportWorkflowDisposed(WorkflowState.FAILED);
-                                }
-                            }
-                        }
+                        wfHeadlessExeCtx.reportWorkflowTerminated(newState);
                         break;
                     case DISPOSED:
                         wfHeadlessExeCtx.reportWorkflowDisposed(newState);
@@ -397,36 +478,15 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     private void eliminateKnownIrrelevantPlaceholders(WorkflowNode wn, Set<String> missingCIPlaceholderKeys) {
-        Set<String> activeConfigKeys = wn.getComponentDescription().getConfigurationDescription()
-            .getActiveConfigurationDefinition().getConfigurationKeys();
 
         Iterator<String> phKeysIterator = missingCIPlaceholderKeys.iterator();
         while (phKeysIterator.hasNext()) {
             String phKey = phKeysIterator.next();
-            if (!activeConfigKeys.contains(phKey)) {
+            // Check if the key is active
+            if (!WorkflowPlaceholderHandler.isActivePlaceholder(phKey, wn.getComponentDescription().getConfigurationDescription())) {
                 phKeysIterator.remove();
             }
         }
-    }
-
-    /**
-     * Helper function, detects the workflow information for a given executionId.
-     * 
-     */
-    private WorkflowExecutionInformation getWfExecInfFromExecutionId(String executionId) {
-
-        WorkflowExecutionInformation wExecInf = null;
-        Set<WorkflowExecutionInformation> wis = workflowExecutionService.getWorkflowExecutionInformations();
-        for (WorkflowExecutionInformation workflow : wis) {
-            if (workflow.getExecutionIdentifier().equals(executionId)) {
-                wExecInf = workflow;
-                break;
-            }
-        }
-        if (wExecInf == null) {
-            log.error("Workflow with id '" + executionId + "' not found");
-        }
-        return wExecInf;
     }
 
     private Map<String, Map<String, String>> parsePlaceholdersFile(File placeholdersFile) throws WorkflowFileException {
@@ -479,47 +539,42 @@ public class HeadlessWorkflowExecutionServiceImpl implements HeadlessWorkflowExe
     }
 
     @Override
-    public void cancel(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         workflowExecutionService.cancel(executionId, node);
     }
 
     @Override
-    public void pause(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         workflowExecutionService.pause(executionId, node);
     }
 
     @Override
-    public void resume(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         workflowExecutionService.resume(executionId, node);
     }
 
     @Override
-    public void dispose(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         workflowExecutionService.dispose(executionId, node);
     }
 
-    /**
-     * Delete workflow run from data management.
-     * 
-     * @param wfId to delete
-     * @param node to delete from
-     */
-    public void delete(Long wfId, NodeIdentifier node) {
+    @Override
+    public void delete(Long wfDataManagementId, ResolvableNodeId nodeId) {
         try {
-            metaDataService.deleteWorkflowRun(wfId, node);
+            metaDataService.deleteWorkflowRun(wfDataManagementId, nodeId);
         } catch (CommunicationException e) {
-            log.error("Could not delete worklflow run " + wfId);
+            log.error("Could not delete worklflow run " + wfDataManagementId);
         }
     }
 
     @Override
-    public WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws ExecutionControllerException,
+    public WorkflowState getWorkflowState(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
         RemoteOperationException {
         return workflowExecutionService.getWorkflowState(executionId, node);
     }
 
     @Override
-    public Long getWorkflowDataManagementId(String executionId, NodeIdentifier node) throws ExecutionControllerException,
+    public Long getWorkflowDataManagementId(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
         RemoteOperationException {
         return workflowExecutionService.getWorkflowDataManagementId(executionId, node);
     }

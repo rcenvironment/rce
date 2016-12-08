@@ -12,6 +12,7 @@ import java.io.Serializable;
 import java.util.Map;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinition;
@@ -21,6 +22,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinitio
  * 
  * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EndpointGroupDefinitionImpl implements Serializable, EndpointGroupDefinition {
 
     private static final long serialVersionUID = -6777818685549261071L;

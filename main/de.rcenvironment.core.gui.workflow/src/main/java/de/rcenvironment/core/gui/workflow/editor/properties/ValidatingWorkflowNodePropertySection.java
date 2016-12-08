@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.editor.properties;
 
-import java.util.LinkedList;
 import java.util.List;
 
 import org.eclipse.swt.SWT;
@@ -18,13 +17,11 @@ import org.eclipse.swt.widgets.Control;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.ui.IPropertyListener;
 
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessage.Type;
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage.Type;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationSupport;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateEvent;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateListener;
 
 /**
  * {@link WorkflowNodePropertySection} with capabilities to validate controls.
@@ -33,6 +30,7 @@ import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityS
  * For information about how the validation works, see {@link WorkflowNodeValidatorSupport}.
  * </p>
  * 
+ * @author Jascha Riedel
  * @author Christian Weiss
  */
 public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNodePropertySection {
@@ -41,9 +39,13 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
 
     private static final String CONTROL_COLOR_KEY = "property.control.color";
 
-    private final WorkflowNodeValidityStateListener validatorStateListener = createErrorStateUpdateListener();
+//    private final WorkflowNodeValidityStateListener validatorStateListener = createErrorStateUpdateListener();
 
-    private final WorkflowNodeValidationSupport validationSupport = new WorkflowNodeValidationSupport();
+//    private final WorkflowNodeValidationSupport validationSupport = new WorkflowNodeValidationSupport();
+    
+    private String componentId;
+    
+    private final ComponentValidationMessageStore messageStore = ComponentValidationMessageStore.getInstance();
     
     private IPropertyListener propertyListener = new IPropertyListener() {
         
@@ -56,30 +58,12 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     };
 
     public ValidatingWorkflowNodePropertySection() {
-        validationSupport.addWorkflowNodeValidityStateListener(getErrorStateUpdateListener());
     }
 
-    /**
-     * Returns the {@link WorkflowNodeValidityStateListener} updating the error state of Controls.
-     * 
-     * @return a {@link WorkflowNodeValidityStateListener}
-     */
-    protected final WorkflowNodeValidityStateListener getErrorStateUpdateListener() {
-        return validatorStateListener;
-    }
-
-    /**
-     * Creates the {@link WorkflowNodeValidityStateListener} updating the error state of Controls.
-     * 
-     * @return a {@link WorkflowNodeValidityStateListener}
-     */
-    protected WorkflowNodeValidityStateListener createErrorStateUpdateListener() {
-        return new ErrorStateUpdateListener();
-    }
 
     @Override
     protected final void afterInitializingModelBinding() {
-        validationSupport.setWorkflowNode((WorkflowNode) getConfiguration());
+        componentId = ((WorkflowNode) getConfiguration()).getIdentifier();
         updateErrorStates();
         afterInitializingModelBindingWithValidation();
         getPart().addPropertyListener(propertyListener);
@@ -95,7 +79,6 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
             beforeTearingDownModelBindingWithValidation();
         } finally {
             getPart().removePropertyListener(propertyListener);
-            validationSupport.setWorkflowNode(null);
         }
     }
 
@@ -104,38 +87,40 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
     }
 
     protected void updateErrorStates() {
-        final List<WorkflowNodeValidationMessage> messages =
-            new LinkedList<WorkflowNodeValidationMessage>(validationSupport.getRecentMessages());
+        final List<ComponentValidationMessage> messages = messageStore.getMessagesByComponentId(componentId);
         updateErrorStates(messages);
     }
 
     /**
      * The controls are traversed to highlight those which are linked to error messages represented
-     * by {@link WorkflowNodeValidationMessage}s.
+     * by {@link ComponentValidationMessage}s.
      * 
-     * @param messages the {@link WorkflowNodeValidationMessage}s determined through validation
+     * @param messages the {@link ComponentValidationMessage}s determined through validation
      */
-    protected void updateErrorStates(final List<WorkflowNodeValidationMessage> messages) {
+    protected void updateErrorStates(final List<ComponentValidationMessage> messages) {
         updateErrorStates(messages, getComposite());
     }
 
     /**
      * The controls are traversed to highlight those which are linked to error messages represented
-     * by {@link WorkflowNodeValidationMessage}s.
+     * by {@link ComponentValidationMessage}s.
      * 
-     * @param messages the {@link WorkflowNodeValidationMessage}s determined through validation
+     * @param messages the {@link ComponentValidationMessage}s determined through validation
      * @param parent the actual parent composite
      */
-    protected void updateErrorStates(final List<WorkflowNodeValidationMessage> messages, final Composite parent) {
-        if (parent != null) {
+    protected void updateErrorStates(final List<ComponentValidationMessage> messages, final Composite parent) {
+        if (parent != null && !parent.isDisposed()) {
             for (final Control control : parent.getChildren()) {
+                if (control.isDisposed()) {
+                    continue;
+                }
                 if (control instanceof Composite) {
                     updateErrorStates(messages, (Composite) control);
                 }
                 final String key = (String) control.getData(CONTROL_PROPERTY_KEY);
                 if (key != null) {
                     boolean valid = true;
-                    for (final WorkflowNodeValidationMessage message : messages) {
+                    for (final ComponentValidationMessage message : messages) {
                         if (key.equals(message.getProperty())) {
                             control.setData(CONTROL_COLORIZED_KEY, true);
                             if (control.getData(CONTROL_COLOR_KEY) == null) {
@@ -174,19 +159,5 @@ public abstract class ValidatingWorkflowNodePropertySection extends WorkflowNode
         /* empty default implementation */
     }
 
-    /**
-     * {@link WorkflowNodeValidityStateListener} triggering the update of the the error states of
-     * the controls.
-     * 
-     * @author Christian Weiss
-     */
-    private class ErrorStateUpdateListener implements WorkflowNodeValidityStateListener {
-
-        @Override
-        public void handleWorkflowNodeValidityStateEvent(final WorkflowNodeValidityStateEvent event) {
-            updateErrorStates();
-        }
-
-    };
 
 }

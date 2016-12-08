@@ -16,10 +16,10 @@ import java.util.Set;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopBehaviorInCaseOfFailure;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
@@ -128,9 +128,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     }
 
     protected void writeOutput(String outputName, TypedDatum value) {
-        LoopEndpointType loopEndpointType = LoopEndpointType.fromString(
-            componentContext.getOutputMetaDataValue(outputName, LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE));
-        if (loopEndpointType.equals(LoopEndpointType.SelfLoopEndpoint)) {
+        if (componentContext.getOutputCharacter(outputName).equals(EndpointCharacter.SAME_LOOP)) {
             outputValuesSentInLastLoop.put(outputName, value);
         }
         componentContext.writeOutput(outputName, value);
@@ -146,9 +144,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
 
     protected boolean hasNaVInputValues(Set<String> inputsWithDatum, boolean causedByCompFailureOnly) {
         for (String inputName : inputsWithDatum) {
-            LoopEndpointType loopEndpointType = LoopEndpointType.fromString(
-                componentContext.getInputMetaDataValue(inputName, LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE));
-            if (loopEndpointType.equals(LoopEndpointType.SelfLoopEndpoint)) {
+            if (componentContext.getInputCharacter(inputName).equals(EndpointCharacter.SAME_LOOP)) {
                 TypedDatum typedDatum = componentContext.readInput(inputName);
                 if (typedDatum.getDataType().equals(DataType.NotAValue)) {
                     if (!causedByCompFailureOnly) {
@@ -317,9 +313,7 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     private Set<String> getOuterLoopOutputs() {
         Set<String> outerLoopOutputs = new HashSet<>();
         for (String outputName : componentContext.getOutputs()) {
-            LoopEndpointType loopEndpointType = LoopEndpointType.fromString(
-                componentContext.getOutputMetaDataValue(outputName, LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE));
-            if (loopEndpointType.equals(LoopEndpointType.OuterLoopEndpoint)) {
+            if (componentContext.getOutputCharacter(outputName).equals(EndpointCharacter.OUTER_LOOP)) {
                 outerLoopOutputs.add(outputName);
             }
         }
@@ -338,10 +332,9 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
     protected boolean hasForwardingStartInputs() {
         Set<String> inputs = componentContext.getInputs();
         for (String input : inputs) {
-            if (componentContext.getDynamicInputIdentifier(input).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
-                if (input.endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
-                    return true;
-                }
+            if (componentContext.isDynamicInput(input) 
+                && componentContext.getDynamicInputIdentifier(input).equals(LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD)) {
+                return true;
             }
         }
         return false;
@@ -351,7 +344,8 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         Set<String> inputs = componentContext.getInputsWithDatum();
         for (String input : inputs) {
             if (!componentContext.isStaticInput(input)
-                && componentContext.getDynamicInputIdentifier(input).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
+                && (componentContext.getDynamicInputIdentifier(input).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)
+                    || componentContext.getDynamicInputIdentifier(input).equals(LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD))) {
                 String output;
                 if (input.endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
                     output = input.substring(0, input.indexOf(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX));
@@ -372,10 +366,6 @@ public abstract class AbstractLoopComponent extends DefaultComponent {
         }
         if (isDone()) {
             sendLoopDoneValue(true);
-        }
-        if (isFinallyDone()) {
-            componentContext.writeOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE,
-                typedDatumFactory.createBoolean(true));
         }
     }
 

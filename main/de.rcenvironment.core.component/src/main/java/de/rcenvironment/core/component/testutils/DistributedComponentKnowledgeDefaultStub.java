@@ -11,7 +11,7 @@ package de.rcenvironment.core.component.testutils;
 import java.util.Collection;
 import java.util.HashSet;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 
@@ -23,7 +23,7 @@ import de.rcenvironment.core.component.model.api.ComponentInstallation;
 public class DistributedComponentKnowledgeDefaultStub implements DistributedComponentKnowledge {
 
     @Override
-    public Collection<ComponentInstallation> getPublishedInstallationsOnNode(NodeIdentifier nodeId) {
+    public Collection<ComponentInstallation> getPublishedInstallationsOnNode(ResolvableNodeId nodeId) {
         return new HashSet<>();
     }
 
@@ -41,6 +41,5 @@ public class DistributedComponentKnowledgeDefaultStub implements DistributedComp
     public Collection<ComponentInstallation> getAllInstallations() {
         return new HashSet<>();
     }
-
 
 }

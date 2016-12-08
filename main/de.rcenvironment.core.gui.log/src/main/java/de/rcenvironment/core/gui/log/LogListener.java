@@ -12,7 +12,7 @@ import java.io.Serializable;
 
 import org.osgi.service.log.LogService;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
 import de.rcenvironment.core.gui.log.internal.LogModel;
 import de.rcenvironment.core.log.SerializableLogEntry;
@@ -28,9 +28,9 @@ public class LogListener implements SerializableLogListener {
 
     private static final long serialVersionUID = 1L;
 
-    private NodeIdentifier platformId;
+    private InstanceNodeSessionId platformId;
 
-    public LogListener(NodeIdentifier aPlatformId) {
+    public LogListener(InstanceNodeSessionId aPlatformId) {
         platformId = aPlatformId;
     }
 

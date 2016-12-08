@@ -22,19 +22,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.channel.MessageChannelState;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.transport.jms.common.NonBlockingResponseInboxConsumer.JmsResponseCallback;
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.LogUtils;
-import de.rcenvironment.core.utils.common.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * The abstract superclass for both self-initiated and remote-initiated JMS connections.
@@ -43,11 +43,11 @@ import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
  */
 public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel implements JmsMessageChannel {
 
-    protected final ThreadPool threadPool = SharedThreadPool.getInstance();
+    protected final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     protected Connection connection;
 
-    protected NodeIdentifier localNodeId;
+    protected InstanceNodeSessionId localNodeId;
 
     protected final Log log = LogFactory.getLog(getClass());
 
@@ -149,7 +149,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
             enqueue(null, null, 0); // ensure that the dispatcher wakes up to "see" the shutdown flag
             if (numDiscarded != 0) {
                 log.debug(StringUtils.format("Discarded %d pending requests for %s as channel %s is shutting down", numDiscarded,
-                    getRemoteNodeInformation().getNodeId(), getChannelId()));
+                    getRemoteNodeInformation().getInstanceNodeSessionId(), getChannelId()));
             }
         }
     }
@@ -157,7 +157,7 @@ public abstract class AbstractJmsMessageChannel extends AbstractMessageChannel i
     /**
      * @param transportContext
      */
-    public AbstractJmsMessageChannel(NodeIdentifier localNodeId) {
+    public AbstractJmsMessageChannel(InstanceNodeSessionId localNodeId) {
         this.localNodeId = localNodeId;
     }
 

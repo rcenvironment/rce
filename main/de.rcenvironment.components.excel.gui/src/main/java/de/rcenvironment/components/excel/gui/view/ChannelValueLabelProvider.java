@@ -12,9 +12,9 @@ import org.eclipse.jface.viewers.ITableLabelProvider;
 import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.swt.graphics.Image;
 
+import de.rcenvironment.components.excel.common.ChannelValue;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
 
 
 /**

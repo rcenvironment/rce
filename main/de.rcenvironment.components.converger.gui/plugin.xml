@@ -69,14 +69,7 @@
         
 
    </extension>
-	<!--  Configuration validation -->
-    <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.converger.gui.ConvergerWorkflowNodeValidator"
-            filter="de.rcenvironment.components.converger.gui.ConvergerComponentFilter">
-       </validator>
-    </extension>
+
     <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />

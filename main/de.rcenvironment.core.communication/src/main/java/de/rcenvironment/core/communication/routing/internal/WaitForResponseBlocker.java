@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkResponseHandler;
@@ -37,7 +37,7 @@ public class WaitForResponseBlocker implements NetworkResponseHandler {
 
     private final NetworkRequest request;
 
-    private final NodeIdentifier eventNodeId;
+    private final InstanceNodeSessionId eventNodeId;
 
     private final CountDownLatch responseReceivedLatch;
 
@@ -45,7 +45,7 @@ public class WaitForResponseBlocker implements NetworkResponseHandler {
 
     private volatile String logMarker = null;
 
-    public WaitForResponseBlocker(NetworkRequest request, NodeIdentifier localNodeId) {
+    public WaitForResponseBlocker(NetworkRequest request, InstanceNodeSessionId localNodeId) {
         this.request = request;
         this.eventNodeId = localNodeId;
         this.responseReceivedLatch = new CountDownLatch(1);

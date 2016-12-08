@@ -12,16 +12,18 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.FileSystem;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.sshd.common.file.FileSystemAware;
-import org.apache.sshd.common.file.FileSystemView;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.command.ScpCommand;
-import org.apache.sshd.server.command.ScpCommandFactory;
+import org.apache.sshd.server.SessionAware;
+import org.apache.sshd.server.scp.ScpCommand;
+import org.apache.sshd.server.scp.ScpCommandFactory;
+import org.apache.sshd.server.session.ServerSession;
 
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.embedded.ssh.api.ScpContext;
@@ -36,8 +38,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Sebastian Holtappels
  * @author Robert Mischke
+ * @author Brigitte Boden
  */
-public class ScpCommandWrapper implements Command, FileSystemAware {
+public class ScpCommandWrapper implements Command, FileSystemAware, SessionAware {
 
     private static final int NOT_FOUND_INDEX = -1; // indexOf() result on no match
 
@@ -55,11 +58,13 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
 
     private ExitCallback callback;
 
-    private FileSystemView fileSystemView;
+    private FileSystem fileSystem;
 
     private ScpCommandFactory scpCommandFactory;
 
     private ScpContextManager scpContextManager;
+    
+    private ServerSession session;
 
     private final Log logger = LogFactory.getLog(getClass());
 
@@ -115,7 +120,8 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
         scpCommand.setExitCallback(callback);
         scpCommand.setInputStream(in);
         scpCommand.setOutputStream(out);
-        scpCommand.setFileSystemView(fileSystemView);
+        scpCommand.setSession(session);
+        scpCommand.setFileSystem(fileSystem);
         scpCommand.start(env);
     }
 
@@ -199,8 +205,13 @@ public class ScpCommandWrapper implements Command, FileSystemAware {
 
     @Override
     // TODO review: use this for additional security? - misc_ro
-    public void setFileSystemView(FileSystemView fileSystemViewParam) {
-        this.fileSystemView = fileSystemViewParam;
+    public void setFileSystem(FileSystem fileSystemParam) {
+        this.fileSystem = fileSystemParam;
+    }
+
+    @Override
+    public void setSession(ServerSession arg0) {
+        this.session = arg0;
     }
 
 }

@@ -1,0 +1,31 @@
+{
+  "identifier" : "0023e23d-6ffd-4dca-9e91-ed4d726cfc88",
+  "workflowVersion" : "4",
+  "name" : "Vector_expected_failure_2016-10-12_09:55:27_12",
+  "nodes" : [ {
+    "identifier" : "0b66b203-9841-46d5-a1b5-f5f7183e0663",
+    "name" : "Script",
+    "location" : "82:109",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 15\r\nrows = 15\r\n\r\ncontent = 1.7E+38\r\n\r\nvectorn = [[content]*cols for i in range(rows)]\r\n\r\nRCE.write_output(\"vector\", vectorn)\r\n\r\nprint content\r\nprint vectorn",
+      "scriptLanguage" : "Jython",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "c5f88373-7d95-496d-b521-945dc50a5126",
+      "name" : "vector",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Vector"
+    } ]
+  } ],
+  "labels" : "[{\"identifier\":\"b544f459-c0fe-49a9-9ae7-33f6abc42bd9\",\"text\":\"Writing Matrix to Vector will fail\",\"location\":\"23:18\",\"size\":\"205:74\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

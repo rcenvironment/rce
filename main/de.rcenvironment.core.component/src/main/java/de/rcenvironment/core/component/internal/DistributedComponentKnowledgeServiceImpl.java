@@ -16,6 +16,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -24,8 +25,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.map.ObjectMapper;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListener;
@@ -35,14 +37,14 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.JsonUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
 
 /**
  * Default {@link DistributedComponentKnowledgeService} implementation.
@@ -58,8 +60,7 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
     private NodePropertiesService nodePropertiesService;
 
     private final AsyncOrderedCallbackManager<DistributedComponentKnowledgeListener> componentKnowledgeCallbackManager =
-        new AsyncOrderedCallbackManager<DistributedComponentKnowledgeListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+        ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
     private volatile DistributedComponentKnowledge currentSnapshot;
 
@@ -80,8 +81,8 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
         private List<ComponentInstallation> immutableLocalState =
             Collections.unmodifiableList(new ArrayList<ComponentInstallation>());
 
-        private Map<NodeIdentifier, Map<String, ComponentInstallation>> dynamicReceivedState =
-            new HashMap<NodeIdentifier, Map<String, ComponentInstallation>>();
+        private Map<InstanceNodeSessionId, Map<String, ComponentInstallation>> dynamicReceivedState =
+            new HashMap<InstanceNodeSessionId, Map<String, ComponentInstallation>>();
 
         private Map<String, String> dynamicPublishedState =
             new HashMap<String, String>();
@@ -102,7 +103,8 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
 
         private final List<ComponentInstallation> distributedStateAsList;
 
-        private final Map<NodeIdentifier, Collection<ComponentInstallation>> distributedStateAsMap;
+        // keys are instance id strings for now; switch to logical node ids to enable publishing by logical node id
+        private final Map<String, Collection<ComponentInstallation>> distributedStateAsMap;
 
         DistributedComponentKnowledgeSnapshot(InternalModel internalModel) {
             synchronized (internalModel) {
@@ -112,15 +114,27 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
                 // convert the dynamic received state into a thread-safe, immutable copy
                 List<ComponentInstallation> tempGlobalList = new ArrayList<ComponentInstallation>();
                 // flatten map to list; make lists in map unmodifiable
-                Map<NodeIdentifier, Collection<ComponentInstallation>> tempMap =
-                    new HashMap<NodeIdentifier, Collection<ComponentInstallation>>();
-                for (Map.Entry<NodeIdentifier, Map<String, ComponentInstallation>> entry : internalModel.dynamicReceivedState.entrySet()) {
+                Map<String, Collection<ComponentInstallation>> tempMap =
+                    new HashMap<String, Collection<ComponentInstallation>>();
+                // extracted to fix formatter/checkstyle issue in for() line
+                final Set<Entry<InstanceNodeSessionId, Map<String, ComponentInstallation>>> entrySet =
+                    internalModel.dynamicReceivedState.entrySet();
+                for (Map.Entry<InstanceNodeSessionId, Map<String, ComponentInstallation>> entry : entrySet) {
                     // extract
-                    NodeIdentifier nodeId = entry.getKey();
+                    InstanceNodeSessionId nodeId = entry.getKey();
                     Collection<ComponentInstallation> componentsOfNode = entry.getValue().values();
                     // copy/convert
                     tempGlobalList.addAll(componentsOfNode);
-                    tempMap.put(nodeId, Collections.unmodifiableCollection(new ArrayList<ComponentInstallation>(componentsOfNode)));
+                    
+                    //FIXME temporary fix for the problem that published components for a node were overwritten by an empty components
+                    //list if older instance session ids for the same node were contained in the internal model
+                    //It should be checked if the old instance session ids should be in the model at all (bode_br)
+                    ArrayList<ComponentInstallation> componentsToAdd = new ArrayList<ComponentInstallation>(componentsOfNode);
+                    if (tempMap.get(nodeId.getInstanceNodeIdString()) != null) {
+                        componentsToAdd.addAll(tempMap.get(nodeId.getInstanceNodeIdString()));
+                    }
+                    tempMap.put(nodeId.getInstanceNodeIdString(),
+                        Collections.unmodifiableCollection(componentsToAdd));
                 }
 
                 distributedStateAsList = Collections.unmodifiableList(tempGlobalList);
@@ -129,8 +143,8 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
         }
 
         @Override
-        public Collection<ComponentInstallation> getPublishedInstallationsOnNode(NodeIdentifier nodeId) {
-            return distributedStateAsMap.get(nodeId); // contains immutable collection
+        public Collection<ComponentInstallation> getPublishedInstallationsOnNode(ResolvableNodeId nodeId) {
+            return distributedStateAsMap.get(nodeId.getInstanceNodeIdString()); // contains immutable collection
         }
 
         @Override
@@ -240,7 +254,7 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
             // delta.put(LIST_OF_INSTALLATIONS_PROPERTY,
             // StringUtils.escapeAndConcat(uniqueIds.toArray(new String[uniqueIds.size()])));
 
-            if (!delta.isEmpty()){
+            if (!delta.isEmpty()) {
                 nodePropertiesService.addOrUpdateLocalNodeProperties(delta);
             }
         }
@@ -324,17 +338,19 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
     }
 
     private boolean processAddedOrUpdatedProperty(NodeProperty property, boolean isUpdate) {
-        NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(property.getNodeIdString());
-        String propertyKey = property.getKey().substring(SINGLE_INSTALLATION_PROPERTY_PREFIX.length());
-        String value = property.getValue();
+        final InstanceNodeSessionId sourceNodeId = property.getInstanceNodeSessionId();
+        final String propertyKey = property.getKey().substring(SINGLE_INSTALLATION_PROPERTY_PREFIX.length());
+        final String value = property.getValue();
         ComponentInstallation componentInstallation = deserializeComponentInstallationData(value);
         if (componentInstallation == null) {
-            log.warn("Ignoring invalid component installation entry published by " + nodeId);
+            log.warn("Ignoring invalid component installation entry published by " + sourceNodeId);
             return false;
         }
         // sanity check: installation property published by same node?
-        if (!nodeId.getIdString().equals(componentInstallation.getNodeId())) {
-            log.error("Ignoring invalid component installation entry: published by node " + nodeId
+        final LogicalNodeId declaredNodeIdObject = componentInstallation.fetchNodeIdAsObject();
+        // TODO >=8.0: improve in case of potential instance id collisions?
+        if (!declaredNodeIdObject.isSameInstanceNodeAs(sourceNodeId)) {
+            log.error("Ignoring invalid component installation entry: published by node " + sourceNodeId
                 + ", but allegedly installed on node " + componentInstallation.getNodeId());
             return false;
         }
@@ -358,11 +374,11 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
             log.warn("Parsed component installation data caused a NPE; ignoring", e);
             return false;
         }
-        log.debug("Successfully parsed component installation published by " + nodeId + ": " + componentDescriptionId);
-        Map<String, ComponentInstallation> nodeState = internalModel.dynamicReceivedState.get(nodeId);
+        log.debug("Successfully parsed component installation published by " + sourceNodeId + ": " + componentDescriptionId);
+        Map<String, ComponentInstallation> nodeState = internalModel.dynamicReceivedState.get(sourceNodeId);
         if (nodeState == null) {
             nodeState = new HashMap<String, ComponentInstallation>();
-            internalModel.dynamicReceivedState.put(nodeId, nodeState);
+            internalModel.dynamicReceivedState.put(sourceNodeId, nodeState);
         }
         ComponentInstallation previousEntry = nodeState.put(propertyKey, componentInstallation);
         // internal consistency checks
@@ -381,8 +397,8 @@ public class DistributedComponentKnowledgeServiceImpl implements DistributedComp
     }
 
     private boolean processRemovedProperty(NodeProperty property) {
-        NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(property.getNodeIdString());
-        String propertyKey = property.getKey().substring(SINGLE_INSTALLATION_PROPERTY_PREFIX.length());
+        final InstanceNodeSessionId nodeId = property.getInstanceNodeSessionId();
+        final String propertyKey = property.getKey().substring(SINGLE_INSTALLATION_PROPERTY_PREFIX.length());
 
         Map<String, ComponentInstallation> nodeState = internalModel.dynamicReceivedState.get(nodeId);
         if (nodeState == null) {

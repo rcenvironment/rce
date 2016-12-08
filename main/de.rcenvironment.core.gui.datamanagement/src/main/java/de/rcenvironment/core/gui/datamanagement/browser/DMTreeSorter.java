@@ -11,16 +11,15 @@ package de.rcenvironment.core.gui.datamanagement.browser;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 
-import de.rcenvironment.core.component.datamanagement.history.HistoryMetaDataKeys;
-import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNode;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
-import de.rcenvironment.core.utils.common.ComparatorUtils;
+import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeUtils;
 
 /**
- * Class for sorting the DMItems. 
+ * Class for sorting the DMItems.
  * 
  * @author Sascha Zur
+ * @author Jan Flink
  */
 public class DMTreeSorter extends ViewerSorter{
 
@@ -33,9 +32,6 @@ public class DMTreeSorter extends ViewerSorter{
     /** Constant. */
     public static final int SORT_BY_TIMESTAMP_DESC = 3;
     
-    private static final MetaData METADATA_HISTORY_TIMESTAMP = new MetaData(
-        HistoryMetaDataKeys.HISTORY_TIMESTAMP, true, true);
-
     private static boolean enableSorting;
     
     private int sortingType;
@@ -46,6 +42,7 @@ public class DMTreeSorter extends ViewerSorter{
     }
     @Override
     public int compare(Viewer viewer, Object e1, Object e2) {
+
         DMBrowserNode o1 = (DMBrowserNode) e1;
         DMBrowserNode o2 = (DMBrowserNode) e2;
         if (!enableSorting || !isSortable(o1, sortingType) || !isSortable(o2, sortingType)) {
@@ -53,32 +50,17 @@ public class DMTreeSorter extends ViewerSorter{
         }
         switch (sortingType) {
         case SORT_BY_NAME_ASC:
-            return o1.getTitle().compareToIgnoreCase(o2.getTitle());
+            return DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE.compare(o1, o2);
         case SORT_BY_NAME_DESC:
-            return o2.getTitle().compareToIgnoreCase(o1.getTitle());
+            return DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE_DESC.compare(o1, o2);
         case SORT_BY_TIMESTAMP:
+            return DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP.compare(o1, o2);
         case SORT_BY_TIMESTAMP_DESC:
-            if (o1.getMetaData() != null && o2.getMetaData() != null) {
-                String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-                String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-                long time1 = nullSafeLongValue(val1);
-                long time2 = nullSafeLongValue(val2);
-                if (sortingType == SORT_BY_TIMESTAMP_DESC) {
-                    return ComparatorUtils.compareLong(time2, time1);
-                }
-                return ComparatorUtils.compareLong(time1, time2);
-            }
+            return DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP_DESC.compare(o1, o2);
         default:
             return 0;
         }
 
-    }
-
-    private long nullSafeLongValue(String val1) {
-        if (val1 == null) {
-            return 0L;
-        }
-        return Long.parseLong(val1);
     }
 
     /**
@@ -102,7 +84,7 @@ public class DMTreeSorter extends ViewerSorter{
             if (type == SORT_BY_NAME_ASC || type == SORT_BY_NAME_DESC) {
                 sortable = true;
             }
-        } else if (nodeType.equals(DMBrowserNodeType.HistoryObject)) {
+        } else if (nodeType.equals(DMBrowserNodeType.HistoryObject) && node.getParent().getType().equals(DMBrowserNodeType.Components)) {
             if (type == SORT_BY_TIMESTAMP || type == SORT_BY_TIMESTAMP_DESC) {
                 sortable = true;
             }

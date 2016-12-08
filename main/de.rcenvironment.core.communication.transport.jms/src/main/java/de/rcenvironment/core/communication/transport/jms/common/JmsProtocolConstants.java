@@ -17,12 +17,6 @@ import de.rcenvironment.core.communication.model.NetworkResponse;
 public abstract class JmsProtocolConstants {
 
     /**
-     * The maximum time JMS messages are preserved after creation by their producer; applied via {@link MessageProducer#setTimeToLive(long)
-     * ). Its main purpose in RCE is to prevent stale messages from remaining in abandoned queues forever.
-     */
-    public static final int JMS_MESSAGES_TTL_MSEC = 60 * 1000;
-
-    /**
      * JMS property key for the message type.
      */
     public static final String MESSAGE_FIELD_MESSAGE_TYPE = "messageType";

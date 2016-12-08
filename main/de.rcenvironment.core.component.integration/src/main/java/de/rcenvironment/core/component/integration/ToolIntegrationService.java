@@ -99,9 +99,10 @@ public interface ToolIntegrationService {
      * Returns the absolute path for the given componet id.
      * 
      * @param id of the component
+     * @param context of the tool
      * @return path
      */
-    String getPathOfComponentID(String id);
+    String getPathOfComponentID(String id, ToolIntegrationContext context);
 
     /**
      * @return ids of all currently active components.
@@ -198,4 +199,8 @@ public interface ToolIntegrationService {
      */
     void registerRecursive(String toolName, ToolIntegrationContext integrationContext);
 
+    /**
+     * Deactivate the service (e.g. unregister watcher).
+     */
+    void deactivateIntegrationService();
 }

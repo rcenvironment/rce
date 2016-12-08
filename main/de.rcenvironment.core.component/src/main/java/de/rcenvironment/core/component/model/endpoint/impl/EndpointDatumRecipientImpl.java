@@ -5,10 +5,10 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.model.endpoint.impl;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 
 /**
@@ -19,13 +19,13 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient
 public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
 
     private String inputIdentifier;
-    
+
     private String inputsComponentExecutionIdentifier;
-    
+
     private String inputsComponentInstanceName;
-    
-    private NodeIdentifier inputsNodeId;
-    
+
+    private LogicalNodeId inputsNodeId;
+
     @Override
     public String getInputName() {
         return inputIdentifier;
@@ -40,8 +40,9 @@ public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
     public String getInputsComponentInstanceName() {
         return inputsComponentInstanceName;
     }
+
     @Override
-    public NodeIdentifier getInputsNodeId() {
+    public LogicalNodeId getInputsNodeId() {
         return inputsNodeId;
     }
 
@@ -52,12 +53,12 @@ public class EndpointDatumRecipientImpl implements EndpointDatumRecipient {
     public void setInputsComponentExecutionIdentifier(String inputsComponentExecutionIdentifier) {
         this.inputsComponentExecutionIdentifier = inputsComponentExecutionIdentifier;
     }
-    
+
     public void setInputsComponentInstanceName(String inputsComponentInstanceName) {
         this.inputsComponentInstanceName = inputsComponentInstanceName;
     }
 
-    public void setInputsNodeId(NodeIdentifier inputsNodeId) {
+    public void setInputsNodeId(LogicalNodeId inputsNodeId) {
         this.inputsNodeId = inputsNodeId;
     }
 

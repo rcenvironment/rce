@@ -8,7 +8,7 @@
  
 package de.rcenvironment.core.component.model.endpoint.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
 /**
@@ -31,7 +31,7 @@ public interface EndpointDatum extends EndpointDatumAddressor, EndpointDatumReci
     /**
      * @return node the associated workflow (controller)
      */
-    NodeIdentifier getWorkflowNodeId();
+    LogicalNodeId getWorkflowNodeId();
     
     /**
      * @return node the associated workflow (controller)

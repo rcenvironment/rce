@@ -28,7 +28,8 @@ import org.junit.Test;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Tests for {@link ComponentExecutionPermitsServiceImpl}.
@@ -69,7 +70,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_2, UUID.randomUUID().toString()).get();
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
 
-        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Integer> acquireTask1 = threadPool.submit(new Callable<Integer>() {
 
             @Override
@@ -161,7 +162,7 @@ public class ComponentExecutionPermitsServiceImplTest {
 
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
 
-        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
             @Override
@@ -216,7 +217,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         
-        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
             @Override
@@ -277,7 +278,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         componentExecutionPermitsService.release(COMPONENT_IDENTIFIER_1);
         componentExecutionPermitsService.acquire(COMPONENT_IDENTIFIER_1, UUID.randomUUID().toString()).get();
         
-        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Integer> acquireTask = threadPool.submit(new Callable<Integer>() {
 
             @Override
@@ -314,7 +315,7 @@ public class ComponentExecutionPermitsServiceImplTest {
         final ComponentExecutionPermitsServiceImpl componentExecutionPermitsService = new ComponentExecutionPermitsServiceImpl();
         componentExecutionPermitsService.bindDistributedComponentKnowledgeService(componentKnowledgeServiceMock);
 
-        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         Future<Void> acquireTask1 = threadPool.submit(new Callable<Void>() {
 
             @Override

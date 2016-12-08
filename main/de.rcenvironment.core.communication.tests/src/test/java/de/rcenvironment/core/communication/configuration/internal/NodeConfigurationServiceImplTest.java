@@ -8,8 +8,8 @@
 
 package de.rcenvironment.core.communication.configuration.internal;
 
-import static org.junit.Assert.fail;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
@@ -19,6 +19,8 @@ import org.junit.Test;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 
+import de.rcenvironment.core.communication.common.CommonIdBase;
+import de.rcenvironment.core.communication.common.impl.NodeIdentifierServiceImpl;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NodeIdentityInformation;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
@@ -27,6 +29,7 @@ import de.rcenvironment.core.configuration.testutils.ConfigurationSegmentUtils;
 import de.rcenvironment.core.configuration.testutils.MockConfigurationService;
 import de.rcenvironment.core.configuration.testutils.PersistentSettingsServiceDefaultStub;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.toolkit.utils.common.IdGeneratorType;
 
 /**
  * Unit test for {@link NodeConfigurationServiceImpl}.
@@ -35,8 +38,6 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * @author Robert Mischke
  */
 public class NodeConfigurationServiceImplTest {
-
-    private static final int EXPECTED_PLATFORM_ID_LENGTH = 32;
 
     private NodeConfigurationServiceImpl service;
 
@@ -126,6 +127,7 @@ public class NodeConfigurationServiceImplTest {
         service = new NodeConfigurationServiceImpl();
         service.bindConfigurationService(new DummyConfigurationService());
         service.bindPersistentSettingsService(new PersistentSettingsServiceDefaultStub());
+        service.bindNodeIdentifierService(new NodeIdentifierServiceImpl(IdGeneratorType.FAST));
         service.activate(contextMock);
     }
 
@@ -136,7 +138,7 @@ public class NodeConfigurationServiceImplTest {
     public void testGetIdentityInformation() {
         InitialNodeInformation initialNodeInformation = service.getInitialNodeInformation();
         // basic test: check that the persistent id is defined and of the expected length
-        assertEquals(EXPECTED_PLATFORM_ID_LENGTH, initialNodeInformation.getNodeIdString().length());
+        assertEquals(CommonIdBase.INSTANCE_SESSION_ID_STRING_LENGTH, initialNodeInformation.getInstanceNodeSessionIdString().length());
     }
 
 }

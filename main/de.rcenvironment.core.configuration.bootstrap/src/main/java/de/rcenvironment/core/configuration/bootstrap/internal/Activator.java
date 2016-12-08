@@ -22,11 +22,22 @@ import de.rcenvironment.core.configuration.bootstrap.LogArchiver;
  * Bundle activator that triggers the {@link BootstrapConfiguration} initialization.
  * 
  * @author Robert Mischke
+ * @author Tobias Rodehutskors (added check for custom RCE launcher)
  */
 public class Activator implements BundleActivator {
 
+    // TODO this constant is also define in the de.rce.launcher.RCELauncherHelper, but we cannot import it from there. but why?
+    private static final String PROP_RCE_LAUNCHER = "de.rcenvironment.launcher";
+
     @Override
     public void start(BundleContext arg0) {
+
+        String schibboleth = System.getProperty(PROP_RCE_LAUNCHER);
+        if (schibboleth == null || !schibboleth.equals(PROP_RCE_LAUNCHER)) {
+            Logger.getLogger("bootstrap").log(Level.SEVERE, "RCE was not started with the RCE launcher.");
+            System.exit(1);
+        }
+        
         try {
             BootstrapConfiguration.initialize();
             LogArchiver.run(BootstrapConfiguration.getInstance().getProfileDirectory());

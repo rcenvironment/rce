@@ -14,6 +14,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,6 +34,7 @@ import javax.script.ScriptException;
 import org.apache.commons.exec.OS;
 import org.apache.commons.io.FileDeleteStrategy;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.Platform;
@@ -42,6 +44,9 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.execution.api.ComponentEventAnnouncement;
+import de.rcenvironment.core.component.execution.api.ComponentEventAnnouncement.WorkflowEventType;
+import de.rcenvironment.core.component.execution.api.ComponentEventAnnouncementDispatcher;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
@@ -67,16 +72,25 @@ import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUti
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
+import de.rcenvironment.toolkit.utils.text.TextLinesReceiver;
 
 /**
  * Main class for the generic tool integration.
  * 
  * @author Sascha Zur
+ * @author Jascha Riedel (#14029)
+ * @author Doreen Seider (tool run imitation, verification token handling)
  */
 public class CommonToolIntegratorComponent extends DefaultComponent {
 
+    private static final Object PLATFORM_ACCESS_LOCK = new Object();
+
+    private static final Object VERIFICATION_TOKEN_WRITE_LOCK = new Object();
+
+    private static final String CURRENT_DIR = ".";
+
     private static final String KEEP_ON_FAILURE_ERROR_MSG =
-        "Tool %s : \"Keep working directory(ies) in case of failure\" was active but is not supported by the tool, so it was deactivated.";
+        "\"Keep working directory(ies) in case of failure\" was active but is not supported by the tool, so it was deactivated.";
 
     private static final String DELETION_BEHAVIOR_ERROR_WARNING_MSG =
         "Chosen working directory deletion behavior not supported for tool %s. Valid one is automatically chosen: %s";
@@ -115,6 +129,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     protected ComponentLog componentLog;
 
     protected ComponentDataManagementService datamanagementService;
+
+    protected ComponentEventAnnouncementDispatcher compEventAnnouncementDispatcher;
 
     protected File executionToolDirectory;
 
@@ -177,7 +193,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     private Map<String, String> outputMapping;
 
     private LocalApacheCommandLineExecutor executor;
-    
+
     private Set<String> outputsWithNotAValueWritten = new HashSet<>();
 
     private volatile boolean canceled;
@@ -186,6 +202,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
     public void setComponentContext(ComponentContext componentContext) {
         this.componentContext = componentContext;
         componentLog = componentContext.getLog();
+        compEventAnnouncementDispatcher = componentContext.getService(ComponentEventAnnouncementDispatcher.class);
     }
 
     @Override
@@ -207,12 +224,33 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         rootWDPath = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_ROOT_WORKING_DIRECTORY);
         String toolDirPath = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DIRECTORY);
 
+        URL platformUrl = null;
+        // Avoid concurrent access as there is a known bug in Eclipse 3.7 when invoking Platform.getInstallLocation() from multiple threads
+        synchronized (PLATFORM_ACCESS_LOCK) {
+            platformUrl = Platform.getInstallLocation().getURL();
+        }
+
+        // Should not happen
+        if (platformUrl == null) {
+            throw new ComponentException(
+                "Unable to access the platform installation location. "
+                    + "This points to an error in the underlying eclipse platform. Please try to execute this component again.");
+        }
+
+        if (toolDirPath.equals(CURRENT_DIR) || toolDirPath.startsWith("./")) {
+            try {
+                toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.toURI().toString());
+            } catch (URISyntaxException e) {
+                LOG.debug("Could not get installation dir with URI, trying URL. ", e);
+                toolDirPath.replaceFirst(CURRENT_DIR, platformUrl.getPath().toString());
+            }
+        }
         sourceToolDirectory = new File(toolDirPath);
         if (!sourceToolDirectory.isAbsolute()) {
             try {
-                sourceToolDirectory = new File(new File(Platform.getInstallLocation().getURL().toURI()), toolDirPath);
+                sourceToolDirectory = new File(new File(platformUrl.toURI()), toolDirPath);
             } catch (URISyntaxException e) {
-                sourceToolDirectory = new File(new File(Platform.getInstallLocation().getURL().getPath()), toolDirPath);
+                sourceToolDirectory = new File(new File(platformUrl.getPath()), toolDirPath);
             }
         }
         useIterationDirectories = Boolean.parseBoolean(componentContext.getConfigurationValue(
@@ -258,7 +296,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         prepareJythonForUsingModules();
         initializeNewHistoryDataItem();
 
-        stateMap = new HashMap<String, Object>();
+        stateMap = new HashMap<>();
         if (treatStartAsComponentRun()) {
             processInputs();
             if (historyDataItem != null) {
@@ -283,7 +321,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         return isMockMode;
     }
 
-    private void getToolDeleteBehaviour() throws ComponentException {
+    private void getToolDeleteBehaviour() {
         boolean deleteAlwaysActive =
             Boolean.parseBoolean(componentContext
                 .getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS));
@@ -313,7 +351,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             keepOnFailure = Boolean.parseBoolean(componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_KEEP_ON_FAILURE));
             if (keepOnFailure) {
                 keepOnFailure = false;
-                componentLog.componentWarn(StringUtils.format(KEEP_ON_FAILURE_ERROR_MSG, componentContext.getInstanceName()));
+                componentLog.componentWarn(StringUtils.format(KEEP_ON_FAILURE_ERROR_MSG));
             }
         }
     }
@@ -365,7 +403,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
         }
         // create a list with used input values to delete them afterwards
-        Map<String, String> inputNamesToLocalFile = new HashMap<String, String>();
+        Map<String, String> inputNamesToLocalFile = new HashMap<>();
         for (String inputName : inputValues.keySet()) {
             if (componentContext.getInputDataType(inputName) == DataType.FileReference) {
                 inputNamesToLocalFile.put(inputName, copyInputFileToInputFolder(inputName, inputValues));
@@ -374,7 +412,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
         }
         // Create Conf files
-        Set<String> configFileNames = new HashSet<String>();
+        Set<String> configFileNames = new HashSet<>();
         for (String configKey : componentContext.getConfigurationKeys()) {
             String configFilename = componentContext.getConfigurationMetaDataValue(configKey,
                 ToolIntegrationConstants.KEY_PROPERTY_CONFIG_FILENAME);
@@ -406,8 +444,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         String preScript = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_PRE_SCRIPT);
         beforePreScriptExecution(inputValues, inputNamesToLocalFile);
         needsToRun = needToRun(inputValues, inputNamesToLocalFile);
-        lastRunStaticInputValues = new HashMap<String, TypedDatum>();
-        lastRunStaticOutputValues = new HashMap<String, TypedDatum>();
+        lastRunStaticInputValues = new HashMap<>();
+        lastRunStaticOutputValues = new HashMap<>();
         if (needsToRun) {
 
             for (String inputName : inputValues.keySet()) {
@@ -429,14 +467,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         }
         afterPostScriptExecution(inputValues, inputNamesToLocalFile);
 
-        if (useIterationDirectories
-            && ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS.equals(deleteToolBehaviour)) {
-            try {
-                FileUtils.deleteDirectory(currentWorkingDirectory);
-            } catch (IOException e) {
-                LOG.error(StringUtils.format("Failed to delete current workfing directory: %s",
-                    currentWorkingDirectory.getAbsolutePath()), e);
-            }
+        // Not that nice to look for a certain value as this is more workflow engine than component knowledge
+        if (!Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL))) {
+            deleteCurrentWorkingDirectoryIfRequired();
         }
 
         if (needsToRun) {
@@ -452,6 +485,18 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         storeHistoryDataItem();
     }
 
+    private void deleteCurrentWorkingDirectoryIfRequired() {
+        if (useIterationDirectories
+            && ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_ALWAYS.equals(deleteToolBehaviour)) {
+            try {
+                FileUtils.deleteDirectory(currentWorkingDirectory);
+            } catch (IOException e) {
+                LOG.error(StringUtils.format("Failed to delete current working directory: %s",
+                    currentWorkingDirectory.getAbsolutePath()), e);
+            }
+        }
+    }
+
     private void performRunInNormalMode(String preScript, Map<String, TypedDatum> inputValues, Map<String, String> inputNamesToLocalFile)
         throws ComponentException {
         runScript(preScript, inputValues, inputNamesToLocalFile, "Pre");
@@ -464,7 +509,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         } finally {
             componentContext.announceExternalProgramTermination();
         }
-        
+
         afterCommandExecution(inputValues, inputNamesToLocalFile);
 
         // do not execute the post script if the execution was canceled prior
@@ -567,13 +612,12 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 } else {
                     executor = new LocalApacheCommandLineExecutor(currentWorkingDirectory);
                 }
-
                 // if cancel was called before the executor was created, we cancel it now before the actual execution
                 if (canceled) {
                     executor.cancel();
                 }
 
-                executor.startMultiLineCommand(commScript.split("\r?\n|\r"));
+                executor.executeScript(commScript, null);
                 stdoutWatcher = ConsoleRowUtils.logToWorkflowConsole(componentLog, executor.getStdout(),
                     ConsoleRow.Type.TOOL_OUT, null, false);
                 stderrWatcher = ConsoleRowUtils.logToWorkflowConsole(componentLog, executor.getStderr(),
@@ -629,7 +673,9 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 engine.put("config", scriptExecConfig);
                 prepareScriptOutputForRun(engine);
                 componentLog.componentInfo(StringUtils.format("Executing %s script...", scriptPrefix.toLowerCase()));
-
+                if (useIterationDirectories) {
+                    workingPath = createJythonPath(currentWorkingDirectory);
+                }
                 script = replacePlaceholder(script, inputValues, inputNamesToLocalFile, SubstitutionContext.JYTHON);
                 try {
                     engine.eval("RCE_Bundle_Jython_Path = " + QUOTE + jythonPath + QUOTE);
@@ -644,7 +690,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                     engine.eval(prepareTableInput(inputValues));
                     exitCode = engine.eval(script);
                     String footerScript = "\nRCE_Dict_OutputChannels = RCE.get_output_internal()\nRCE_CloseOutputChannelsList = "
-                        + "RCE.get_closed_outputs_internal()\n" + "RCE_NotAValueOutputList = RCE.get_indefinite_outputs_internal()\n"
+                        + "RCE.get_closed_outputs_internal()\n"
                         + StringUtils.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                             WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
                     engine.eval(footerScript);
@@ -771,8 +817,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             }
         }
         ScriptingUtils.writeAPIOutput(stateMap, componentContext, engine, workingPath, historyDataItem);
-        outputsWithNotAValueWritten.addAll(ScriptingUtils.getOutputsSendingNotAValue(engine));
-        
+        outputsWithNotAValueWritten.addAll(ScriptingUtils.getOutputsSendingNotAValue(engine, componentContext));
+
         for (String outputName : (List<String>) engine.get("RCE_CloseOutputChannelsList")) {
             componentContext.closeOutput(outputName);
         }
@@ -1072,7 +1118,139 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
             executor.cancel();
         }
     }
-    
+
+    @Override
+    public void handleVerificationToken(String verificationToken) throws ComponentException {
+        String tokenLocation = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_VERIFICATION_TOKEN_LOCATION);
+        if (tokenLocation == null) {
+            tokenLocation = currentWorkingDirectory.getAbsolutePath();
+        }
+        boolean verificationTokenAnnounced = false;
+
+        String verificationTokenFileContent = createVerificationFileContent(verificationToken);
+        File verificationTokenFile = writeVerificationTokenToFile(tokenLocation, verificationTokenFileContent);
+        if (verificationTokenFile != null) {
+            verificationTokenAnnounced = true;
+        }
+        String[] recipients = getEmailRecipientsForApprovalRequestAnnouncement();
+        if (recipients.length > 0) {
+            String verificationTokenFilePath;
+            if (verificationTokenFile == null) {
+                verificationTokenFilePath = "n/a";
+            } else {
+                verificationTokenFilePath = verificationTokenFile.getAbsolutePath();
+            }
+            if (announceRequestForOutputApprovalViaMail(verificationTokenFileContent, verificationTokenFilePath, recipients)) {
+                verificationTokenAnnounced = true;
+            }
+        }
+        if (!verificationTokenAnnounced) {
+            throw new ComponentException("Failed to announce verification key; neither file was created nor an email was sent");
+        }
+        componentLog.componentInfo("Waiting for approval...");
+    }
+
+    private String createVerificationFileContent(String verificationToken) {
+        String contentTemplate;
+        try {
+            contentTemplate = IOUtils.toString(getClass().getResourceAsStream("/file_template_result_verification.txt"));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load file template for verification key file", e);
+        }
+        return StringUtils.format(contentTemplate, verificationToken,
+            componentContext.getComponentName(), componentContext.getExecutionCount(), currentWorkingDirectory,
+            componentContext.getWorkflowInstanceName());
+    }
+
+    private File writeVerificationTokenToFile(String tokenLocation, String verificationTokenFileContent) {
+        File verificationTokenFile;
+
+        String baseVerificationFileName = "verification-key";
+        String verificationFileName = baseVerificationFileName;
+
+        synchronized (VERIFICATION_TOKEN_WRITE_LOCK) {
+            int i = 1;
+            while (new File(new File(tokenLocation), verificationFileName).exists()) {
+                verificationFileName = baseVerificationFileName + " (" + i++ + ")";
+            }
+            verificationTokenFile = new File(new File(tokenLocation), verificationFileName);
+            try {
+                FileUtils.write(verificationTokenFile, verificationTokenFileContent);
+            } catch (IOException e) {
+                String message = "Failed to create file with verification key";
+                LOG.error(message, e);
+                componentLog.componentError(message + "; " + e.getMessage());
+                return null;
+            }
+        }
+        componentLog.componentInfo("File with verification key created");
+        return verificationTokenFile;
+    }
+
+    private String[] getEmailRecipientsForApprovalRequestAnnouncement() {
+        String recipientsString = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_VERIFICATION_TOKEN_RECIPIENTS);
+        if (recipientsString == null) {
+            return new String[0];
+        }
+        return recipientsString.trim().split(ToolIntegrationConstants.VERIFICATION_TOKEN_RECIPIENTS_SEPARATOR);
+    }
+
+    private boolean announceRequestForOutputApprovalViaMail(String verificationTokenFileContent, String verificationTokenFilePath,
+        String[] recipients) {
+        for (int i = 0; i < recipients.length; i++) {
+            recipients[i] = recipients[i].trim();
+        }
+        String subject = StringUtils.format("Request for result approval for tool '%s'", componentContext.getComponentName());
+
+        String contentTemplate;
+        try {
+            contentTemplate = IOUtils.toString(getClass().getResourceAsStream("/mail_template_result_verification.txt"));
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load file template for verification key email", e);
+        }
+
+        final String verificationTokenMailContent = StringUtils.format(contentTemplate, componentContext.getComponentName(),
+            verificationTokenFileContent, verificationTokenFilePath);
+
+        ComponentEventAnnouncement compEventAnnouncement =
+            ComponentEventAnnouncement.createAnnouncement(WorkflowEventType.REQUEST_FOR_OUTPUT_APPROVAL, subject,
+                verificationTokenMailContent);
+
+        if (compEventAnnouncementDispatcher.dispatchWorkflowEventAnnouncementViaMail(recipients, compEventAnnouncement,
+            new TextLinesReceiver() {
+
+                @Override
+                public void addLines(List<String> lines) {
+                    for (String line : lines) {
+                        addLine(line);
+                    }
+                }
+
+                @Override
+                public void addLines(String... lines) {
+                    for (String line : lines) {
+                        componentLog.componentError(line);
+                        LOG.error(line);
+                    }
+                }
+
+                @Override
+                public void addLine(String line) {
+                    addLines(line);
+                }
+            })) {
+            componentLog.componentInfo("Email with verification key sent");
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public void completeStartOrProcessInputsAfterVerificationDone() throws ComponentException {
+        deleteCurrentWorkingDirectoryIfRequired();
+    }
+
     protected Set<String> getOutputsWithNotAValueWritten() {
         return outputsWithNotAValueWritten;
     }

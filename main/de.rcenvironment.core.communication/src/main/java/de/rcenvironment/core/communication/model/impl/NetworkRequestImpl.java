@@ -14,7 +14,7 @@ import java.util.Map;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.internal.AbstractNetworkMessage;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * Implementation of a transport-independent network request.
@@ -27,12 +27,12 @@ public class NetworkRequestImpl extends AbstractNetworkMessage implements Networ
     private static final long serialVersionUID = 1608492229624555125L;
 
     public NetworkRequestImpl(byte[] contentBytes, Map<String, String> metaData) {
-        this(contentBytes, metaData, IdGenerator.randomUUID());
+        this(contentBytes, metaData, generateMessageId());
     }
 
     // TODO comment: parameters are wrapped, not cloned
     public NetworkRequestImpl(Serializable body, Map<String, String> metaData) throws SerializationException {
-        this(body, metaData, IdGenerator.randomUUID());
+        this(body, metaData, generateMessageId());
     }
 
     // TODO comment: parameters are wrapped, not cloned
@@ -48,4 +48,9 @@ public class NetworkRequestImpl extends AbstractNetworkMessage implements Networ
         setContent(body);
         setRequestId(requestId);
     }
+
+    private static String generateMessageId() {
+        return IdGenerator.fastRandomHexString(REQUEST_ID_LENGTH);
+    }
+
 }

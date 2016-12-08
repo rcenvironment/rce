@@ -33,7 +33,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.codehaus.jackson.JsonGenerationException;
-import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -64,6 +63,7 @@ import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
  * Implementation of {@link ScriptEngine} for the python language.
  * 
  * @author Sascha Zur
+ * @author Jascha Riedel (#14029)
  */
 public class PythonScriptEngine implements ScriptEngine {
 
@@ -91,19 +91,17 @@ public class PythonScriptEngine implements ScriptEngine {
 
     private final ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
-    private Map<String, Serializable> output = new HashMap<String, Serializable>();
+    private Map<String, Serializable> output = new HashMap<>();
 
-    private final List<File> tempFiles = new LinkedList<File>();
+    private final List<File> tempFiles = new LinkedList<>();
 
-    private List<String> closeOutputChannelsList = new LinkedList<String>();
+    private List<String> closeOutputChannelsList = new LinkedList<>();
 
     private TextStreamWatcher stdoutWatcher;
 
     private TextStreamWatcher stderrWatcher;
 
     private Map<String, Object> stateOutput;
-
-    private List<String> notAValueOutputsList = new LinkedList<String>();
 
     /**
      * This latch is used to ensure that a cancellation request is not performed during the preparation of the script execution is executed,
@@ -112,11 +110,22 @@ public class PythonScriptEngine implements ScriptEngine {
     private CountDownLatch initializationSignal;
 
     /**
+     * Set to true, if the script engine was canceled before it is properly initialized.
+     */
+    private boolean canceledBeforeInitialization = false;
+
+    /**
      * Creates a new executor.
      * 
      * @param dataItem {@link ScriptComponentHistoryDataItem} object for this script execution
      */
     public synchronized void createNewExecutor(CommonComponentHistoryDataItem dataItem) {
+
+        if (canceledBeforeInitialization) {
+            LOGGER.error("Failed to create executor for python, since the SriptEngine was already canceled.");
+            return;
+        }
+
         // This method is synchronized to avoid a race condition with cancel
         try {
             executor = new LocalApacheCommandLineExecutor(null);
@@ -201,7 +210,7 @@ public class PythonScriptEngine implements ScriptEngine {
 
     private void writeInputForPython() {
         ComponentContext compContext = (ComponentContext) context.getAttribute(PythonComponentConstants.COMPONENT_CONTEXT);
-        Map<String, Object> inputsToWrite = new HashMap<String, Object>();
+        Map<String, Object> inputsToWrite = new HashMap<>();
         for (String inputName : compContext.getInputsWithDatum()) {
             switch (compContext.getInputDataType(inputName)) {
             case FileReference:
@@ -299,7 +308,7 @@ public class PythonScriptEngine implements ScriptEngine {
                 break;
             }
         }
-        List<String> inputsNotConnected = new LinkedList<String>();
+        List<String> inputsNotConnected = new LinkedList<>();
         for (String input : compContext.getInputsNotConnected()) {
             if (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
                 && (compContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
@@ -333,7 +342,7 @@ public class PythonScriptEngine implements ScriptEngine {
             LOGGER.error(e.getMessage());
         }
 
-        List<String> outputNames = new LinkedList<String>();
+        List<String> outputNames = new LinkedList<>();
         for (String outputName : compContext.getOutputs()) {
             outputNames.add(outputName);
         }
@@ -349,31 +358,27 @@ public class PythonScriptEngine implements ScriptEngine {
     }
 
     @SuppressWarnings("unchecked")
-    private void readOutputFromPython() throws ScriptException{
+    private void readOutputFromPython() throws ScriptException {
         try {
             if (new File(tempDir.getAbsolutePath() + File.separator
                 + "pythonOutput.rced").exists()) {
                 output = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
                     + "pythonOutput.rced"), output.getClass());
             }
+
             if (new File(tempDir.getAbsolutePath() + File.separator
                 + "pythonCloseOutputChannelsList.rced").exists()) {
                 closeOutputChannelsList = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
                     + "pythonCloseOutputChannelsList.rced"), closeOutputChannelsList.getClass());
             }
-            if (new File(tempDir.getAbsolutePath() + File.separator
-                + "pythonSetOutputsIndefinit.rceo").exists()) {
-                notAValueOutputsList = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
-                    + "pythonSetOutputsIndefinit.rceo"), notAValueOutputsList.getClass());
-            }
-            stateOutput = new HashMap<String, Object>();
+            stateOutput = new HashMap<>();
             if (new File(tempDir.getAbsolutePath() + File.separator
                 + "pythonStateOutput.rces").exists()) {
                 stateOutput = mapper.readValue(new File(tempDir.getAbsolutePath() + File.separator
                     + "pythonStateOutput.rces"), stateOutput.getClass());
             }
         } catch (IOException e) {
-          	   throw new ScriptException(e);
+            throw new ScriptException(e);
         }
     }
 
@@ -453,10 +458,6 @@ public class PythonScriptEngine implements ScriptEngine {
         return closeOutputChannelsList;
     }
 
-    public List<String> getNotAValueOutputsList() {
-        return notAValueOutputsList;
-    }
-
     @Override
     public Bindings getBindings(int scope) {
         return null;
@@ -496,10 +497,14 @@ public class PythonScriptEngine implements ScriptEngine {
      */
     public void dispose() {
         try {
-            TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempDir);
-            for (File f : tempFiles) {
-                if (f.exists()) {
-                    FileUtils.forceDelete(f);
+            if (tempDir != null) {
+                TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempDir);
+            }
+            if (tempFiles != null) {
+                for (File f : tempFiles) {
+                    if (f.exists()) {
+                        FileUtils.forceDelete(f);
+                    }
                 }
             }
         } catch (IOException e) {
@@ -516,7 +521,12 @@ public class PythonScriptEngine implements ScriptEngine {
      */
     public synchronized void cancel() {
         // This method is synchronized to avoid a race condition with createNewExecutor
-        
+
+        if (initializationSignal == null) {
+            canceledBeforeInitialization = true;
+            return;
+        }
+
         try {
             initializationSignal.await();
         } catch (InterruptedException e) {

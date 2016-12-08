@@ -14,8 +14,10 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.model.NetworkMessage;
 
 /**
@@ -136,11 +138,11 @@ public class MessageMetaData {
     /**
      * Sets the final recipient of a message. Can be omitted for non-routed messages.
      * 
-     * @param receiver The receiver {@link NodeIdentifier}
+     * @param receiver The receiver {@link InstanceNodeSessionId}
      * @return Itself.
      */
-    public MessageMetaData setFinalRecipient(NodeIdentifier receiver) {
-        setValue(KEY_FINAL_RECIPIENT, receiver.getIdString());
+    public MessageMetaData setFinalRecipient(InstanceNodeSessionId receiver) {
+        setValue(KEY_FINAL_RECIPIENT, receiver.getInstanceNodeSessionIdString());
         return this;
     }
 
@@ -150,8 +152,8 @@ public class MessageMetaData {
      * @param sender the sender to set
      * @return self
      */
-    public MessageMetaData setSender(NodeIdentifier sender) {
-        setValue(KEY_SENDER, sender.getIdString());
+    public MessageMetaData setSender(InstanceNodeSessionId sender) {
+        setValue(KEY_SENDER, sender.getInstanceNodeSessionIdString());
         return this;
     }
 
@@ -203,17 +205,17 @@ public class MessageMetaData {
         return getValue(KEY_TRACE);
     }
 
-    public String getFinalRecipientString() {
+    public String getFinalRecipientIdString() {
         return getValue(KEY_FINAL_RECIPIENT);
     }
 
     /**
      * @return The receiver.
      */
-    public NodeIdentifier getFinalRecipient() {
-        String idString = getFinalRecipientString();
+    public InstanceNodeSessionId getFinalRecipient() {
+        String idString = getFinalRecipientIdString();
         if (idString != null) {
-            return NodeIdentifierFactory.fromNodeId(idString);
+            return NodeIdentifierUtils.parseInstanceNodeSessionIdStringWithExceptionWrapping(idString);
         } else {
             return null;
         }
@@ -226,10 +228,15 @@ public class MessageMetaData {
     /**
      * @return The sender.
      */
-    public NodeIdentifier getSender() {
+    public InstanceNodeSessionId getSender() {
         String idString = getSenderIdString();
         if (idString != null) {
-            return NodeIdentifierFactory.fromNodeId(idString);
+            try {
+                return NodeIdentifierContextHolder.getDeserializationServiceForCurrentThread().parseInstanceNodeSessionIdString(idString);
+            } catch (IdentifierException e) {
+                // TODO >=8.0 improve?
+                throw NodeIdentifierUtils.wrapIdentifierException(e);
+            }
         } else {
             // TODO review handling of sender field - misc_ro
             log.debug("Returning 'null' node id for empty 'sender' field; message type=" + getMessageType());

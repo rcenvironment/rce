@@ -15,8 +15,8 @@ import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.ControlEvent;
 import org.eclipse.swt.events.ControlListener;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.layout.GridData;
@@ -191,22 +191,15 @@ public class ConnectionsSection extends AbstractPropertySection {
         targetFilterModeButtonStartsWith.addSelectionListener(targetListener);
         targetFilterModeButtonIsExactly.addSelectionListener(targetListener);
 
-        // Register listener for filter string
-        targetFilterText.addKeyListener(new KeyListener() {
-
+        targetFilterText.addModifyListener(new ModifyListener() {
+            
             @Override
-            public void keyPressed(KeyEvent arg0) {
+            public void modifyText(ModifyEvent e) {
                 connectionDialogComposite.setTargetFilterString(targetFilterText.getText());
-                connectionDialogComposite.applyTargetFilter();
-            }
-
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-                keyPressed(arg0);
-
+                connectionDialogComposite.applyTargetFilter();                
             }
         });
-
+        
         // Source filter
         GridData gridDataSourceFilterText = new GridData();
         gridDataSourceFilterText.grabExcessHorizontalSpace = true;
@@ -241,22 +234,15 @@ public class ConnectionsSection extends AbstractPropertySection {
         sourceFilterModeButtonStartsWith.addSelectionListener(sourceListener);
         sourceFilterModeButtonIsExactly.addSelectionListener(sourceListener);
 
-        // Register listener for filter string
-        sourceFilterText.addKeyListener(new KeyListener() {
-
+        sourceFilterText.addModifyListener(new ModifyListener() {
+            
             @Override
-            public void keyPressed(KeyEvent arg0) {
+            public void modifyText(ModifyEvent e) {
                 connectionDialogComposite.setSourceFilterString(sourceFilterText.getText());
-                connectionDialogComposite.applySourceFilter();
-            }
-
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-                keyPressed(arg0);
-
+                connectionDialogComposite.applySourceFilter();                
             }
         });
-
+        
         // Add resize listener to handle large endpoint trees
         aTabbedPropertySheetPage.getControl().addControlListener(new ConnectionSectionResizeListener());
 

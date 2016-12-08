@@ -29,6 +29,7 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
+import de.rcenvironment.core.component.execution.api.ThreadHandler;
 import de.rcenvironment.core.component.model.spi.AbstractNestedLoopComponent;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
@@ -43,6 +44,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  * 
  * @author Sascha Zur
  * @author Doreen Seider (logging)
+ * @author Jascha Riedel (#14117)
  */
 public class DOEComponent extends AbstractNestedLoopComponent {
 
@@ -72,9 +74,11 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     private File tableFile;
 
+    private volatile boolean canceled = false;
+
     @Override
     public void startNestedComponentSpecific() throws ComponentException {
-        outputs = new LinkedList<String>(componentContext.getOutputs());
+        outputs = new LinkedList<>(componentContext.getOutputs());
         removeOutputsNotConsidered();
         Collections.sort(outputs);
         int runNumberCount = Integer.parseInt(componentContext.getConfigurationValue(DOEConstants.KEY_RUN_NUMBER));
@@ -111,6 +115,9 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                 if (componentContext.getConfigurationValue(DOEConstants.KEY_TABLE) != null
                     && !componentContext.getConfigurationValue(DOEConstants.KEY_TABLE).isEmpty()) {
                     this.valuesTable = mapper.readValue(componentContext.getConfigurationValue(DOEConstants.KEY_TABLE), Double[][].class);
+                    if (valuesTable == null) {
+                        throw new ComponentException("No table given");
+                    }
                 } else {
                     throw new ComponentException("No table given");
                 }
@@ -163,8 +170,10 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             for (String output : outputs) {
                 Double low = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_LOWER));
                 Double up = Double.valueOf(componentContext.getOutputMetaDataValue(output, DOEConstants.META_KEY_UPPER));
-                for (int run = 0; run < valuesTable.length; run++) {
-                    codedValues[run][i] = DOEAlgorithms.convertValue(low, up, valuesTable[run][i]);
+                for (int run = 0; run < valuesTable.length && run <= endSample; run++) {
+                    if (valuesTable[run][i] != null) {
+                        codedValues[run][i] = DOEAlgorithms.convertValue(low, up, valuesTable[run][i]);
+                    }
                 }
                 i++;
             }
@@ -177,6 +186,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             componentLog.componentError(StringUtils.format(PLACEHOLDER_STRING, errorMessage, e.getMessage()));
             LOGGER.error(errorMessage, e);
         }
+
         if (treatStartAsComponentRun()) {
             processInputsNestedComponentSpecific();
         }
@@ -184,7 +194,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     private void removeOutputsNotConsidered() {
         outputs.remove(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
-        outputs.remove(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
+        outputs.remove(DOEConstants.OUTPUT_NAME_NUMBER_OF_SAMPLES);
         Iterator<String> outputsIterator = outputs.iterator();
         while (outputsIterator.hasNext()) {
             String outputName = outputsIterator.next();
@@ -209,8 +219,13 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             createTableFileReference();
         }
         processInput();
+
+        if (runNumber == 0) {
+            componentContext.writeOutput(DOEConstants.OUTPUT_NAME_NUMBER_OF_SAMPLES, typedDatumFactory.createInteger(valuesTable.length));
+        }
         writeNewOutput();
         writeResultFile();
+
     }
 
     private void createTableFileReference() {
@@ -242,7 +257,12 @@ public class DOEComponent extends AbstractNestedLoopComponent {
         writeResultFile();
         writeFinalHistoryDataItem();
     }
-    
+
+    @Override
+    public void onStartInterrupted(ThreadHandler executingThreadHandler) {
+        canceled = true;
+    }
+
     @Override
     public void tearDown(FinalComponentState state) {
         super.tearDown(state);
@@ -346,6 +366,9 @@ public class DOEComponent extends AbstractNestedLoopComponent {
                 componentLog.componentInfo(StringUtils.format(WROTE_VALUE_TO_OUTPUT_TEXT, output, value));
             }
             runNumber++;
+            if (canceled) {
+                break;
+            }
         }
         setLoopDone();
     }

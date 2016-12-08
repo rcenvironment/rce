@@ -19,12 +19,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.model.NetworkRoutingInformation;
 import de.rcenvironment.core.communication.routing.internal.v2.NoRouteToNodeException;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
 
 /**
  * {@link NetworkGraphImpl} unit test.
@@ -33,15 +33,15 @@ import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
  */
 public class NetworkGraphImplTest {
 
-    private NodeIdentifier node1;
+    private InstanceNodeSessionId node1;
 
-    private NodeIdentifier node2;
+    private InstanceNodeSessionId node2;
 
-    private NodeIdentifier node3;
+    private InstanceNodeSessionId node3;
 
-    private NodeIdentifier node4;
+    private InstanceNodeSessionId node4;
 
-    private NodeIdentifier node5;
+    private InstanceNodeSessionId node5;
 
     private NetworkGraphLinkImpl link12;
 
@@ -56,11 +56,11 @@ public class NetworkGraphImplTest {
      */
     @Before
     public void setUp() {
-        node1 = NodeIdentifierFactory.fromNodeId("1");
-        node2 = NodeIdentifierFactory.fromNodeId("2");
-        node3 = NodeIdentifierFactory.fromNodeId("3");
-        node4 = NodeIdentifierFactory.fromNodeId("4");
-        node5 = NodeIdentifierFactory.fromNodeId("5");
+        node1 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("1");
+        node2 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("2");
+        node3 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("3");
+        node4 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("4");
+        node5 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("5");
         link12 = new NetworkGraphLinkImpl("12s-x", node1, node2);
         link23 = new NetworkGraphLinkImpl("23s-x", node2, node3);
         link34 = new NetworkGraphLinkImpl("34s-x", node3, node4);
@@ -73,9 +73,9 @@ public class NetworkGraphImplTest {
     @Test
     public void testReductionToReachable() {
         int n = 5;
-        NodeIdentifier[] nodes = new NodeIdentifier[n];
+        InstanceNodeSessionId[] nodes = new InstanceNodeSessionId[n];
         for (int i = 0; i < n; i++) {
-            nodes[i] = NodeIdentifierFactory.fromNodeId("Node" + i);
+            nodes[i] = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("Node" + i);
         }
         // test with linear chains
         for (int i = 0; i < n; i++) {
@@ -143,7 +143,7 @@ public class NetworkGraphImplTest {
      */
     @Test
     public void testChainWithRootInMiddle() throws NoRouteToNodeException {
-        NodeIdentifier rootNode = node3;
+        InstanceNodeSessionId rootNode = node3;
         NetworkGraphImpl rawGraph = createFiveNodeChainWithRootAt(rootNode);
 
         NetworkRoutingInformation routingInformation = rawGraph.generateRoutingInformation();
@@ -191,7 +191,7 @@ public class NetworkGraphImplTest {
      */
     @Test
     public void testChainWithRootAtStartGoingForward() throws NoRouteToNodeException {
-        NodeIdentifier rootNode = node1;
+        InstanceNodeSessionId rootNode = node1;
         NetworkGraphImpl rawGraph = createFiveNodeChainWithRootAt(rootNode);
 
         NetworkGraphImpl processedGraph = rawGraph.reduceToReachableGraph();
@@ -220,7 +220,7 @@ public class NetworkGraphImplTest {
      */
     @Test
     public void testChainWithRootAtStartGoingBackward() throws NoRouteToNodeException {
-        NodeIdentifier rootNode = node1;
+        InstanceNodeSessionId rootNode = node1;
         NetworkGraphImpl rawGraph = createFiveNodeChainWithRootAt(rootNode);
 
         NetworkGraphImpl processedGraph = rawGraph.reduceToReachableGraph();
@@ -289,14 +289,15 @@ public class NetworkGraphImplTest {
     public void testMultiThreadedGraphCreationFromAddedEdges() {
         final NetworkGraphImpl rawGraph = new NetworkGraphImpl(node1);
         int n = 10 * 10; // yay for Checkstyle :)
-        CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+        CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
         for (int i = 0; i < n; i++) {
             final int i2 = i;
             callablesGroup.add(new Callable<Void>() {
 
                 @Override
                 public Void call() throws Exception {
-                    NodeIdentifier tempNode = NodeIdentifierFactory.fromNodeId("tempNode" + i2);
+                    InstanceNodeSessionId tempNode =
+                        NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("tempNode" + i2);
                     if (i2 % 2 == 0) {
                         rawGraph.addLink("link" + i2, node1, tempNode);
                     } else {
@@ -312,7 +313,7 @@ public class NetworkGraphImplTest {
         assertEquals(n * 2, rawGraph.getLinkCount());
     }
 
-    private NetworkGraphImpl createFiveNodeChainWithRootAt(NodeIdentifier rootNodeId) {
+    private NetworkGraphImpl createFiveNodeChainWithRootAt(InstanceNodeSessionId rootNodeId) {
         NetworkGraphImpl rawGraph = new NetworkGraphImpl(rootNodeId);
         rawGraph.addNode(node1);
         rawGraph.addNode(node2);
@@ -329,7 +330,7 @@ public class NetworkGraphImplTest {
     /**
      * Common test method to verify that trying to route to the local node fails.
      */
-    private void assertRoutingToLocalNodeFails(NetworkRoutingInformation routingInformation, NodeIdentifier rootNode) {
+    private void assertRoutingToLocalNodeFails(NetworkRoutingInformation routingInformation, InstanceNodeSessionId rootNode) {
         try {
             routingInformation.getNextLinkTowards(rootNode);
             fail("Routing to local node should have failed");

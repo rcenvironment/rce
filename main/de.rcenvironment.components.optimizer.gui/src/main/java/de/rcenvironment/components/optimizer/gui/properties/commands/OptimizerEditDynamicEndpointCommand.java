@@ -13,8 +13,6 @@ import java.util.Map;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -28,6 +26,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  * @author Sascha Zur
  */
 public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointCommand {
+
+    private static final String DESIGN_VARIABLE = "Design";
 
     private static final String DASH = "-";
 
@@ -48,7 +48,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                     executeBothHaveGradients(workflowNode);
                 } else {
                     for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                        if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                        if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                             String oldGradientName =
                                 OptimizerDynamicEndpointCommandHelper.createGradientChannelName(oldDesc.getName(), variable.getName());
                             workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(oldGradientName);
@@ -59,10 +59,10 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
             } else {
                 if (hasGradient(newDesc)) {
                     for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                        if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                        if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                             String newGradientName =
                                 OptimizerDynamicEndpointCommandHelper.createGradientChannelName(newDesc.getName(), variable.getName());
-                            Map<String, String> metaData = new HashMap<String, String>();
+                            Map<String, String> metaData = new HashMap<>();
                             for (String key : newDesc.getMetaData().keySet()) {
                                 if (key.equals(OptimizerComponentConstants.METADATA_VECTOR_SIZE)
                                     || key.startsWith(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING)
@@ -72,7 +72,6 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                                     metaData.put(key, DASH);
                                 }
                             }
-                            metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
 
                             workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(
                                 OptimizerComponentConstants.ID_GRADIENTS, newGradientName,
@@ -110,7 +109,6 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                 }
                 Map<String, String> metadata = new HashMap<>();
                 metadata.putAll(newDesc.getMetaData());
-                metadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
                 getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
                     newDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
                     newDesc.getDataType(), metadata);
@@ -193,8 +191,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                 }
             }
             if (!oldCondition2Value && newCondition2Value) {
-                Map<String, String> metaData = new HashMap<String, String>();
-                metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                Map<String, String> metaData = new HashMap<>();
                 metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                     EndpointDefinition.InputExecutionContraint.Required.name());
                 workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
@@ -211,8 +208,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
 
         if (!oldConditionValue && newConditionValue) {
             if (!condition2Active || (!oldCondition2Value && newCondition2Value)) {
-                Map<String, String> metaData = new HashMap<String, String>();
-                metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                Map<String, String> metaData = new HashMap<>();
                 metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                     EndpointDefinition.InputExecutionContraint.Required.name());
                 workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
@@ -234,7 +230,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                     newDesc.setName(newGradientName);
                     newDesc.setDataType(this.newDesc.getDataType());
 
-                    Map<String, String> gradientMetadata = new HashMap<String, String>();
+                    Map<String, String> gradientMetadata = new HashMap<>();
                     for (String key : this.newDesc.getMetaData().keySet()) {
                         if (key.equals(OptimizerComponentConstants.METADATA_VECTOR_SIZE)
                             || key.startsWith(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING)
@@ -244,7 +240,6 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                             gradientMetadata.put(key, DASH);
                         }
                     }
-                    gradientMetadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
                     newDesc.setMetaData(gradientMetadata);
                     workflowNode.getInputDescriptionsManager().editDynamicEndpointDescription(oldGradientName, newGradientName,
                         newDesc.getDataType(), newDesc.getMetaData());
@@ -272,7 +267,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                     undoBothHaveGradients(workflowNode);
                 } else {
                     for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                        if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                        if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                             String newGradientName =
                                 OptimizerDynamicEndpointCommandHelper.createGradientChannelName(newDesc.getName(), variable.getName());
                             workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(newGradientName);
@@ -282,10 +277,10 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
             } else {
                 if (hasGradient(oldDesc)) {
                     for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                        if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                        if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                             String oldGradientName =
                                 OptimizerDynamicEndpointCommandHelper.createGradientChannelName(oldDesc.getName(), variable.getName());
-                            Map<String, String> metaData = new HashMap<String, String>();
+                            Map<String, String> metaData = new HashMap<>();
                             for (String key : newDesc.getMetaData().keySet()) {
                                 if (key.equals(OptimizerComponentConstants.METADATA_VECTOR_SIZE)
                                     || key.startsWith(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING)
@@ -295,7 +290,6 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                                     metaData.put(key, DASH);
                                 }
                             }
-                            metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
                             workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(
                                 OptimizerComponentConstants.ID_GRADIENTS, oldGradientName,
                                 oldDesc.getDataType(), metaData);
@@ -326,7 +320,6 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                         newDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX);
                 }
                 Map<String, String> metadata = oldDesc.getMetaData();
-                metadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
                 getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
                     oldDesc.getName() + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
                     newDesc.getDataType(), metadata);
@@ -371,7 +364,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
     private void undoBothHaveGradients(final WorkflowNode workflowNode) {
         if (!oldDesc.getName().equals(newDesc.getName()) || oldDesc.getDataType() != newDesc.getDataType()) {
             for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                     String oldGradientName =
                         OptimizerDynamicEndpointCommandHelper.createGradientChannelName(oldDesc.getName(), variable.getName());
                     String newGradientName =
@@ -379,7 +372,7 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                     EndpointDescription desc =
                         workflowNode.getInputDescriptionsManager().getEndpointDescription(newGradientName);
                     desc.setName(oldGradientName);
-                    Map<String, String> gradientMetadata = new HashMap<String, String>();
+                    Map<String, String> gradientMetadata = new HashMap<>();
                     for (String key : this.oldDesc.getMetaData().keySet()) {
                         if (key.equals(OptimizerComponentConstants.METADATA_VECTOR_SIZE)
                             || key.startsWith(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING)
@@ -389,7 +382,6 @@ public class OptimizerEditDynamicEndpointCommand extends EditDynamicEndpointComm
                             gradientMetadata.put(key, DASH);
                         }
                     }
-                    gradientMetadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
                     desc.setMetaData(gradientMetadata);
                     workflowNode.getInputDescriptionsManager().editDynamicEndpointDescription(newGradientName, oldGradientName,
                         oldDesc.getDataType(), gradientMetadata);

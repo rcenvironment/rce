@@ -13,7 +13,6 @@ import java.io.File;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 
 /**

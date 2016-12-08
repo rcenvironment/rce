@@ -19,8 +19,8 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NetworkGraph;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.impl.InitialNodeInformationImpl;
 import de.rcenvironment.core.communication.model.internal.NetworkGraphImpl;
@@ -56,7 +56,7 @@ public final class TopologyMap {
 
     private final InitialNodeInformation localNodeInformation;
 
-    private final NodeIdentifier localNodeId;
+    private final InstanceNodeSessionId localNodeId;
 
     /**
      * The constructor.
@@ -65,7 +65,7 @@ public final class TopologyMap {
      */
     public TopologyMap(InitialNodeInformation ownNodeInformation) {
         this.localNodeInformation = ownNodeInformation;
-        this.localNodeId = ownNodeInformation.getNodeId();
+        this.localNodeId = ownNodeInformation.getInstanceNodeSessionId();
         TopologyNode localNode = addNode(localNodeId);
         // initialize sequence number
         localNode.invalidateSequenceNumber();
@@ -74,7 +74,7 @@ public final class TopologyMap {
     /**
      * Convenience constructor for unit tests.
      */
-    protected TopologyMap(NodeIdentifier nodeId) {
+    protected TopologyMap(InstanceNodeSessionId nodeId) {
         this(new InitialNodeInformationImpl(nodeId));
     }
 
@@ -84,8 +84,8 @@ public final class TopologyMap {
      * @param networkNodes List of network nodes.
      * @return The list of platform identifiers.
      */
-    public static Collection<NodeIdentifier> toNodeIdentifiers(Collection<TopologyNode> networkNodes) {
-        Collection<NodeIdentifier> result = new ArrayList<NodeIdentifier>();
+    public static Collection<InstanceNodeSessionId> toNodeIdentifiers(Collection<TopologyNode> networkNodes) {
+        Collection<InstanceNodeSessionId> result = new ArrayList<InstanceNodeSessionId>();
         for (TopologyNode networkNode : networkNodes) {
             result.add(networkNode.getNodeIdentifier());
         }
@@ -101,7 +101,7 @@ public final class TopologyMap {
     public synchronized boolean update(LinkStateAdvertisement lsa) {
         // TODO optimize algorithm --krol_ph
 
-        NodeIdentifier lsaOwner = lsa.getOwner();
+        InstanceNodeSessionId lsaOwner = lsa.getOwner();
 
         if (lsaOwner.equals(localNodeId)) {
             TopologyNode ownNode = getNode(localNodeId);
@@ -177,13 +177,13 @@ public final class TopologyMap {
      * @param destination The destination platform
      * @return The shortest path between source and destination.
      */
-    public synchronized NetworkRoute getShortestPath(NodeIdentifier source, NodeIdentifier destination) {
+    public synchronized NetworkRoute getShortestPath(InstanceNodeSessionId source, InstanceNodeSessionId destination) {
         // TODO optimization: provide method that only returns the next step (if rest is irrelevant)
         // TODO optimization: add caching!
         long elapsed = 0;
 
         List<TopologyLink> path = new ArrayList<TopologyLink>();
-        List<NodeIdentifier> nodes = new ArrayList<NodeIdentifier>();
+        List<InstanceNodeSessionId> nodes = new ArrayList<InstanceNodeSessionId>();
 
         TopologyNode sourceNode = getNode(source);
         if (sourceNode == null) {
@@ -215,8 +215,8 @@ public final class TopologyMap {
      * @param restrictToWorkflowHostsAndSelf No description available.
      * @return Set of platform identifiers.
      */
-    public synchronized Set<NodeIdentifier> getIdsOfReachableNodes(boolean restrictToWorkflowHostsAndSelf) {
-        Set<NodeIdentifier> result = new HashSet<NodeIdentifier>();
+    public synchronized Set<InstanceNodeSessionId> getIdsOfReachableNodes(boolean restrictToWorkflowHostsAndSelf) {
+        Set<InstanceNodeSessionId> result = new HashSet<InstanceNodeSessionId>();
         // get the map of reachable nodes by (ab)using the Dijkstra algorithm;
         // TODO is there a more efficient approach available in JUNG?
         DijkstraShortestPath<TopologyNode, TopologyLink> alg =
@@ -230,7 +230,7 @@ public final class TopologyMap {
                 }
             }
             // TODO remove typecast once NetworkIdentifier vs. NodeIdentifier is done
-            result.add((NodeIdentifier) node.getNodeIdentifier());
+            result.add((InstanceNodeSessionId) node.getNodeIdentifier());
         }
         return result;
     }
@@ -256,7 +256,7 @@ public final class TopologyMap {
         return lsaCache;
     }
 
-    private synchronized LinkStateAdvertisement generateLsa(NodeIdentifier root, boolean incSequenceNumber) {
+    private synchronized LinkStateAdvertisement generateLsa(InstanceNodeSessionId root, boolean incSequenceNumber) {
         TopologyNode rootNode = getNode(root);
         // TODO This is not the right place to update the graph hash code
         // TODO review: shouldn't this happen *after* incrementing the sequence number? -- misc_ro
@@ -378,7 +378,7 @@ public final class TopologyMap {
      * @param nodeId The node identifier.
      * @return The network node.
      */
-    public synchronized TopologyNode getNode(NodeIdentifier nodeId) {
+    public synchronized TopologyNode getNode(InstanceNodeSessionId nodeId) {
         // TODO use map instead of linear search here! -- misc_ro
         for (TopologyNode networkNode : networkModel.getVertices()) {
             if (networkNode.getNodeIdentifier().equals(nodeId)) {
@@ -395,10 +395,10 @@ public final class TopologyMap {
      * @param id the id of the node
      * @return the current sequence number of that node
      */
-    public long getSequenceNumberOfNode(NodeIdentifier id) {
+    public long getSequenceNumberOfNode(InstanceNodeSessionId id) {
         TopologyNode node = getNode(id);
         if (node == null) {
-            throw new IllegalArgumentException("No such node: " + id.getIdString());
+            throw new IllegalArgumentException("No such node: " + id.getInstanceNodeSessionIdString());
         }
         return node.getSequenceNumber();
     }
@@ -407,7 +407,7 @@ public final class TopologyMap {
      * @param nodeId The node identifier.
      * @return Whether graph contains the node.
      */
-    public synchronized boolean containsNode(NodeIdentifier nodeId) {
+    public synchronized boolean containsNode(InstanceNodeSessionId nodeId) {
         return containsNode(new TopologyNode(nodeId));
     }
 
@@ -425,7 +425,7 @@ public final class TopologyMap {
      * @return Whether the graph contains <code>source</code> and <code>destination</code> platform AND at least one edge between both
      *         platforms.
      */
-    public synchronized boolean containsLinkBetween(NodeIdentifier source, NodeIdentifier destination) {
+    public synchronized boolean containsLinkBetween(InstanceNodeSessionId source, InstanceNodeSessionId destination) {
         TopologyNode sourceNode = getNode(source);
         TopologyNode destinationNode = getNode(destination);
         if (sourceNode != null && destinationNode != null) {
@@ -442,7 +442,7 @@ public final class TopologyMap {
      * @param connectionId The id of the connection.
      * @return Whether the graph contains the link.
      */
-    public synchronized boolean containsLink(NodeIdentifier source, NodeIdentifier destination, String connectionId) {
+    public synchronized boolean containsLink(InstanceNodeSessionId source, InstanceNodeSessionId destination, String connectionId) {
         return networkModel.containsEdge(new TopologyLink(source, destination, connectionId));
     }
 
@@ -464,7 +464,7 @@ public final class TopologyMap {
      * @param string
      * @return Whether adding the link was successful.
      */
-    public synchronized TopologyLink addLink(NodeIdentifier source, NodeIdentifier destination, String connectionId) {
+    public synchronized TopologyLink addLink(InstanceNodeSessionId source, InstanceNodeSessionId destination, String connectionId) {
         TopologyLink newLink = new TopologyLink(source, destination, connectionId);
         if (!addLink(newLink)) {
             throw new IllegalStateException("Failed to add new topology link");
@@ -516,7 +516,7 @@ public final class TopologyMap {
      * @param connectionId The connection id
      * @return Whether adding the link was successful.
      */
-    public synchronized boolean removeLink(NodeIdentifier source, NodeIdentifier destination, String connectionId) {
+    public synchronized boolean removeLink(InstanceNodeSessionId source, InstanceNodeSessionId destination, String connectionId) {
         return removeLink(new TopologyLink(source, destination, connectionId));
     }
 
@@ -548,7 +548,7 @@ public final class TopologyMap {
      * 
      * @param node The node
      */
-    public synchronized void removeNode(NodeIdentifier node) {
+    public synchronized void removeNode(InstanceNodeSessionId node) {
         removeNode(new TopologyNode(node));
     }
 
@@ -556,7 +556,7 @@ public final class TopologyMap {
      * @param nodeId The platform identifier.
      * @return Whether the platform existed in the graph before.
      */
-    public synchronized TopologyNode addNode(NodeIdentifier nodeId) {
+    public synchronized TopologyNode addNode(InstanceNodeSessionId nodeId) {
         TopologyNode existingNetworkNode = getNode(nodeId);
         if (existingNetworkNode == null) {
             TopologyNode node = new TopologyNode(nodeId);
@@ -639,7 +639,7 @@ public final class TopologyMap {
      * @param nodeId The platform identifier.
      * @return All successor nodes (platforms) in the current graph.
      */
-    public synchronized Collection<TopologyNode> getSuccessors(NodeIdentifier nodeId) {
+    public synchronized Collection<TopologyNode> getSuccessors(InstanceNodeSessionId nodeId) {
         return getSuccessors(getNode(nodeId));
     }
 
@@ -647,7 +647,7 @@ public final class TopologyMap {
      * @param nodeId the id of the queried node
      * @return all links starting at the given node
      */
-    public synchronized Collection<TopologyLink> getAllOutgoingLinks(NodeIdentifier nodeId) {
+    public synchronized Collection<TopologyLink> getAllOutgoingLinks(InstanceNodeSessionId nodeId) {
         return getOutgoingLinks(getNode(nodeId));
     }
 
@@ -674,7 +674,7 @@ public final class TopologyMap {
     /**
      * @return Returns the owner.
      */
-    public synchronized NodeIdentifier getLocalNodeId() {
+    public synchronized InstanceNodeSessionId getLocalNodeId() {
         return localNodeId;
     }
 
@@ -685,7 +685,7 @@ public final class TopologyMap {
         NetworkGraphImpl rawGraph = new NetworkGraphImpl(localNodeId);
 
         for (TopologyNode node : getNodes()) {
-            NodeIdentifier nodeId = node.getNodeIdentifier();
+            InstanceNodeSessionId nodeId = node.getNodeIdentifier();
             rawGraph.addNode(nodeId);
         }
 

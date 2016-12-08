@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.integration.tools.templates.common.feature</artifactId>
 	<name>RCE Common Tool Integration Templates</name>
-	<version>7.1.5.qualifier</version>
+	<version>8.0.0.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

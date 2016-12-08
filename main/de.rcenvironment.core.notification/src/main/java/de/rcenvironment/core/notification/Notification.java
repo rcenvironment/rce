@@ -10,7 +10,7 @@ package de.rcenvironment.core.notification;
 
 import java.io.Serializable;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.utils.incubator.Assertions;
 
 /**
@@ -38,7 +38,7 @@ public class Notification implements Serializable {
      * @param nodeId The platform where the notification was created.
      * @param body The payload of this notification.
      */
-    public <T extends Serializable> Notification(String identifier, long sequenceNumber, NodeIdentifier nodeId, T body) {
+    public <T extends Serializable> Notification(String identifier, long sequenceNumber, InstanceNodeSessionId nodeId, T body) {
         Assertions.isDefined(identifier, "The notification identifier" + ASSERT_MUST_NOT_BE_NULL);
         final int sequenceBarrier = -1;
         Assertions.isBiggerThan(sequenceNumber, sequenceBarrier,

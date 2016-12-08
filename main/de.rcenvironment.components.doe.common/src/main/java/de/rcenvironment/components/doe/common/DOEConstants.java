@@ -49,6 +49,9 @@ public final class DOEConstants {
     /** Constant. */
     public static final String KEY_RUN_NUMBER = "runNumber";
 
+    /** Constants. */
+    public static final String OUTPUT_NAME_NUMBER_OF_SAMPLES = "Number of samples";
+
     /** Constant. */
     public static final String KEY_SEED_NUMBER = "seedNumber";
 

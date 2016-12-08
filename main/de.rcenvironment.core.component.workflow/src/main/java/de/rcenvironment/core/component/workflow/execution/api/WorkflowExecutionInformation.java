@@ -8,7 +8,8 @@
  
 package de.rcenvironment.core.component.workflow.execution.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.component.execution.api.ExecutionInformation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
@@ -38,9 +39,9 @@ public interface WorkflowExecutionInformation extends ExecutionInformation, Comp
     ComponentExecutionInformation getComponentExecutionInformation(String identifier);
     
     /**
-     * @return {@link NodeIdentifier} of the instance the execution was started from
+     * @return {@link InstanceNodeSessionId} of the instance the execution was started from
      */
-    NodeIdentifier getNodeIdStartedExecution();
+    LogicalNodeId getNodeIdStartedExecution();
     
     /**
      * @return additional information optionally provided at workflow start

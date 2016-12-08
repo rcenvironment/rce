@@ -56,7 +56,7 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.datamanagement.MetaDataService;
@@ -74,17 +74,17 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * 
  * @author Hendrik Abbenhaus
  * @author David Scholz
- *
+ * 
  */
 public class TimelineView extends ViewPart implements AreaChangedListener, ResizeListener, ControlListener, SelectionListener {
 
     /** Identifier used to find the this view within the workbench. */
     public static final String ID = "de.rcenvironment.gui.TimeTable";
 
-    private static final  Map<String, Image> COMPONENT_ICON_CACHE = new HashMap<>();
+    private static final Map<String, Image> COMPONENT_ICON_CACHE = new HashMap<>();
 
     private Composite rootComposite = null;
-    
+
     private TimelineNavigationControl navigation = null;
 
     private SashForm sashMiddle = null;
@@ -125,16 +125,16 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     private Long workflowDmId;
 
-    private NodeIdentifier workflowCtrlNode;
-    
+    private ResolvableNodeId workflowCtrlNode;
+
     private boolean workflowTerminated = false;
-    
+
     private Composite parentComposite;
-    
+
     private boolean actualContentSet = false;
 
     private Label refreshLabel;
-    
+
     public TimelineView() {
         metaDataService = ServiceRegistry.createAccessFor(this).getService(MetaDataService.class);
     }
@@ -143,10 +143,10 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     public void createPartControl(Composite parent) {
         parentComposite = parent;
         parentComposite.setBackground(backgroundColorWhite);
-        
+
         refreshLabel = new Label(parentComposite, SWT.NONE);
         refreshLabel.setText("Fetching workflow timeline...");
-        
+
         rootComposite = new Composite(new Shell(), SWT.NONE);
         rootComposite.setBackground(backgroundColorWhite);
         GridLayout mainLayout = new GridLayout(1, false);
@@ -168,10 +168,10 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
         makeActions(rootComposite);
         initGUI(rootComposite);
         contributeToActionBars();
-        
+
         rootComposite.setEnabled(false);
     }
-    
+
     private void initGUI(Composite parent) {
         GridData gridData = new GridData();
         gridData.horizontalAlignment = GridData.FILL;
@@ -208,6 +208,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                 label.setText("   " + current.getDisplayName() + " ");
                 Label colorLabel = new Label(colorLegend, SWT.None);
                 colorLabel.setText("      ");
+                // FIXME: the newly created color object will never be disposed
                 colorLabel.setBackground(new Color(label.getDisplay(), current.getColor()));
             }
         }
@@ -295,9 +296,9 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
      * Sets dm id and controller node of workflow related to this view instance.
      * 
      * @param wfDmId dm id of workflow run
-     * @param wfCtrlNode {@link NodeIdentifier} of workflow controller
+     * @param wfCtrlNode a generic or specific id referring to the workflow controller instance
      */
-    public void initialize(Long wfDmId, NodeIdentifier wfCtrlNode) {
+    public void initialize(Long wfDmId, ResolvableNodeId wfCtrlNode) {
         workflowDmId = wfDmId;
         workflowCtrlNode = wfCtrlNode;
         updateContent();
@@ -332,11 +333,11 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                                     actualContentSet = true;
                                 }
                                 rootComposite.setEnabled(true);
-                                
+
                                 // update the scrollbars (needed if new components were contributing to the timeline)
                                 list.setMinSize(list.computeSize(SWT.DEFAULT, SWT.DEFAULT, true));
                                 list.layout();
-                                
+
                                 refreshAction.setEnabled(!workflowTerminated);
                             }
                         }
@@ -350,7 +351,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
                             PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().hideView(TimelineView.this);
                             MessageDialog.openError(getSite().getShell(), "Workflow Timeline",
                                 "Failed to load the timeline. Did you get disconnected from a remote instance?\n\n"
-                                + "Please refresh the workflow data browser and try again.\n\nSee log for more details.");
+                                    + "Please refresh the workflow data browser and try again.\n\nSee log for more details.");
                         }
                     });
                 } finally {
@@ -636,7 +637,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             .createFromURL(TimelineView.class
                 .getResource("/resources/icons/zoom_in.gif")));
         zoomInAction.setEnabled(false);
-        
+
         zoomOutAction = new Action(Messages.zoomout) {
 
             @Override
@@ -654,7 +655,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
             .createFromURL(TimelineView.class
                 .getResource("/resources/icons/zoom_out.gif")));
         zoomOutAction.setEnabled(false);
-        
+
         filterAction = new Action("Filter") {
 
             @Override
@@ -700,6 +701,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     /**
      * Get an component Icon by its component type Id.
+     * 
      * @param identifier the id
      * @param caller the caller
      * @return the image
@@ -727,6 +729,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     /**
      * Get a component group Name by an id.
+     * 
      * @param identifier the id
      * @param caller the caller
      * @return the display name
@@ -751,6 +754,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     /**
      * Calculates the current zoom level.
+     * 
      * @param zoom The current zoomfactor 10000 == 100%
      */
     public void setZoom(int zoom) {
@@ -787,6 +791,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     /**
      * Converts a Pixel to a Date.
+     * 
      * @param xPixel Contains the pixel which should be converted to Date
      * @param canvasSizeX Contains the size of the Canvas in the x direction or the possible maximum size of selection
      * @param currentWorkflowStartTime Contains the start time of the current workflow
@@ -805,6 +810,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
     /**
      * 
      * Converts a Date to a pixel.
+     * 
      * @param date the date
      * @param canvasSizeX the canvas size
      * @param currentWorkflowStartTime the current workflowstarttime
@@ -821,7 +827,7 @@ public class TimelineView extends ViewPart implements AreaChangedListener, Resiz
 
     /**
      * {@inheritDoc}
-     *
+     * 
      * @see org.eclipse.ui.part.WorkbenchPart#setFocus()
      */
     @Override

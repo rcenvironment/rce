@@ -21,9 +21,9 @@ import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ComponentExecutionPermitsService}.
@@ -66,7 +66,7 @@ public class ComponentExecutionPermitsServiceImpl implements ComponentExecutionP
             updateSemaphores(componentKnowledgeService.getCurrentComponentKnowledge());
         }
         final ResizableSemaphore semaphore = semaphores.get(componentIdentifier);
-        return SharedThreadPool.getInstance().submit(new Callable<Boolean>() {
+        return ConcurrencyUtils.getAsyncTaskService().submit(new Callable<Boolean>() {
 
             @TaskDescription("Acquire component execution permit")
             @Override

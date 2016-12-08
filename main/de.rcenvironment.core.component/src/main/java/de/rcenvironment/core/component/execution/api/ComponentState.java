@@ -28,8 +28,11 @@ public enum ComponentState {
     /** Starting. */
     STARTING("Starting"),
     
-    /** Waiting. */
-    WAITING("Waiting for resources"),
+    /** Waiting for resources. */
+    WAITING_FOR_RESOURCES("Waiting for resources"),
+    
+    /** Waiting for approval. */
+    WAITING_FOR_APPROVAL("Waiting for approval"),
     
     /** Running. */
     PROCESSING_INPUTS("Processing inputs"),
@@ -61,14 +64,14 @@ public enum ComponentState {
     /** Resuming. */
     RESUMING("Resuming"),
     
-    /** Cancelling. */
-    CANCELLING("Cancelling"),
+    /** Canceling. */
+    CANCELLING("Canceling"),
     
-    /** Cancelling after failure. */
-    CANCELLING_AFTER_FAILURE("Cancelling after failure"),
-
+    /** Canceling after failure. */
+    CANCELLING_AFTER_FAILURE("Canceling after failure"),
+    
     /** Canceled. */
-    CANCELED("Cancelled"),
+    CANCELED("Canceled"),
     
     /** Tearing down. */
     TEARING_DOWN("Tearing down"),
@@ -78,6 +81,9 @@ public enum ComponentState {
     
     /** Disposed. */
     DISPOSED("Disposed"),
+
+    /** Verification failed. */
+    RESULTS_REJECTED("Results rejected"),
     
     /** Unkown. */
     UNKNOWN("Unknown");

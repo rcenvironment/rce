@@ -8,9 +8,6 @@
 
 package de.rcenvironment.core.component.api;
 
-import java.util.HashMap;
-import java.util.Map;
-
 /**
  * Class holding constants for loop components.
  * 
@@ -25,14 +22,11 @@ public final class LoopComponentConstants {
     public static final String ENDPOINT_NAME_LOOP_DONE = "Done";
 
     /** Constant. */
-    public static final String ENDPOINT_NAME_OUTERLOOP_DONE = "Outer loop done";
-
-    /** Constant. */
     public static final String CONFIG_KEY_IS_NESTED_LOOP = "isNestedLoop_5e0ed1cd";
 
     /** Constant. */
     public static final String CONFIG_KEY_LOOP_FAULT_TOLERANCE_COMP_FAILURE = "loopFaultTolerance_5e0ed1cd";
-    
+
     /** Constant. */
     public static final String CONFIG_KEY_LOOP_FAULT_TOLERANCE_NAV = "faultTolerance-NAV_5e0ed1cd";
 
@@ -49,10 +43,13 @@ public final class LoopComponentConstants {
     public static final String CONFIG_KEY_FINALLY_FAIL_IF_DISCARDED_NAV = "finallyFailIfDiscarded-NAV_5e0ed1cd";
 
     /** Constant. */
-    public static final String INPUT_ID_OUTER_LOOP_DONE = "outerLoopDone";
+    public static final String ENDPOINT_ID_TO_FORWARD = "toForward";
 
     /** Constant. */
-    public static final String ENDPOINT_ID_TO_FORWARD = "toForward";
+    public static final String ENDPOINT_ID_START_TO_FORWARD = "startToForward";
+
+    /** Constant. */
+    public static final String ENDPOINT_ID_FINAL_TO_FORWARD = "finalToForward";
 
     /** Constant. */
     public static final String ENDPOINT_STARTVALUE_SUFFIX = "_start";
@@ -62,39 +59,6 @@ public final class LoopComponentConstants {
 
     /** Constant. */
     public static final String META_KEY_LOOP_ENDPOINT_TYPE = "loopEndpointType_5e0ed1cd";
-
-    /**
-     * Type of endpoints concerning their relation to inner, outer and self-loop.
-     * 
-     * @author Doreen Seider
-     */
-    public enum LoopEndpointType {
-        /**
-         * Endpoint connected to outer loop.
-         */
-        OuterLoopEndpoint,
-        /**
-         * Endpoint connected to inner loop.
-         */
-        InnerLoopEndpoint,
-        /**
-         * Endpoint connected to self-loop.
-         */
-        SelfLoopEndpoint;
-
-        /**
-         * @param type {@link LoopEndpointType} as string
-         * @return appropriate {@link LoopBehaviLoopEndpointTypeorInCaseOfFailure}; if given string cannot be parsed to
-         *         {@link LoopEndpointType} {@link LoopEndpointType#SelfLoopEndpoint} is returned as default
-         */
-        public static LoopEndpointType fromString(String type) {
-            try {
-                return LoopEndpointType.valueOf(type);
-            } catch (RuntimeException e) {
-                return LoopEndpointType.SelfLoopEndpoint;
-            }
-        }
-    }
 
     /** Private Constructor. */
     private LoopComponentConstants() {
@@ -126,30 +90,24 @@ public final class LoopComponentConstants {
          */
         RerunAndDiscard;
 
+        private static LoopBehaviorInCaseOfFailure defaultBehavior = LoopBehaviorInCaseOfFailure.Fail;
+
         /**
          * @param behavior {@link LoopBehaviorInCaseOfFailure} as string
-         * @return appropriate {@link LoopBehaviorInCaseOfFailure}; if given string cannot be parsed to {@link LoopBehaviorInCaseOfFailure}
-         *         {@link LoopBehaviorInCaseOfFailure#Fail} is returned as default
+         * @return appropriate {@link LoopBehaviorInCaseOfFailure}; if given string is <code>null</code> or cannot be parsed to
+         *         {@link LoopBehaviorInCaseOfFailure} {@link LoopBehaviorInCaseOfFailure#Fail} is returned as default
          */
         public static LoopBehaviorInCaseOfFailure fromString(String behavior) {
-            try {
-                return LoopBehaviorInCaseOfFailure.valueOf(behavior);
-            } catch (RuntimeException e) {
-                return LoopBehaviorInCaseOfFailure.Fail;
+            if (behavior == null) {
+                return defaultBehavior;
+            } else {
+                try {
+                    return LoopBehaviorInCaseOfFailure.valueOf(behavior);
+                } catch (IllegalArgumentException e) {
+                    return defaultBehavior;
+                }
             }
         }
-    }
-
-    /**
-     * Creates a meta data map with key META_KEY_LOOP_ENDPOINT_TYPE and given value.
-     * 
-     * @param endpointType value for key META_KEY_LOOP_ENDPOINT_TYPE
-     * @return meta data map
-     */
-    public static Map<String, String> createMetaData(LoopComponentConstants.LoopEndpointType endpointType) {
-        Map<String, String> metaData = new HashMap<>();
-        metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, endpointType.name());
-        return metaData;
     }
 
 }

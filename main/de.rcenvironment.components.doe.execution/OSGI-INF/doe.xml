@@ -9,7 +9,7 @@
 	
 	<property name="rce.component.id" type="String" value="de.rcenvironment.doe.v2"/>
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.doe.execution.DOEComponent"/>
-	<property name="rce.component.version" type="String" value="3.4"/>
+	<property name="rce.component.version" type="String" value="4.1"/>
 
 	<property name="rce.component.name" type="String" value="Design of Experiments"/>
 	<property name="rce.component.group" type="String" value="Evaluation"/>
@@ -25,4 +25,5 @@
 	
     <property name="rce.component.canHandleNotAValueDataTypes" type="String" value="true"/>
   	<property name="rce.component.isDriverComponent" type="String" value="true"/>
+   <property name="rce.component.validator.identifier" type="String" value="DOEValidator_1.0"/>
 </scr:component>

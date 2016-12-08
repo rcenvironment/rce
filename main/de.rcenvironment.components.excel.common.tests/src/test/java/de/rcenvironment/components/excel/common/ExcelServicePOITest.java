@@ -34,7 +34,6 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 /**
  * Test class for ExcelFile.
@@ -151,7 +150,7 @@ public class ExcelServicePOITest {
     /**
      * Test method for
      * {@link de.rcenvironment.rce.components.excel.commons.internal.ExcelServicePOI
-     * #setValues(de.rcenvironment.rce.components.excel.commons.ExcelAddress, de.rcenvironment.rce.component.datatype.ITable)}.
+     * #setValues(de.rcenvironment.components.excel.common.ExcelAddress, de.rcenvironment.rce.component.datatype.ITable)}.
      */
     @Test
     public void testSetValuesExcelAddressITable() {
@@ -170,7 +169,7 @@ public class ExcelServicePOITest {
     /**
      * Test method for
      * {@link de.rcenvironment.rce.components.excel.commons.internal.ExcelServicePOI
-     * #setValues(de.rcenvironment.rce.components.excel.commons.ExcelAddress, java.io.File, de.rcenvironment.rce.component.datatype.ITable)}
+     * #setValues(de.rcenvironment.components.excel.common.ExcelAddress, java.io.File, de.rcenvironment.rce.component.datatype.ITable)}
      * .
      */
     @Test
@@ -200,7 +199,7 @@ public class ExcelServicePOITest {
     /**
      * Test method for
      * {@link de.rcenvironment.rce.components.excel.commons.internal.ExcelServicePOI
-     * #getValueOfCells(de.rcenvironment.rce.components.excel.commons.ExcelAddress)}
+     * #getValueOfCells(de.rcenvironment.components.excel.common.ExcelAddress)}
      * .
      * @throws IOException io error
      * @throws IllegalArgumentException illegal argument

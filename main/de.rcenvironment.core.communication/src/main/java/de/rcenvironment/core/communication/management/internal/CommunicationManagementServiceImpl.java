@@ -36,7 +36,6 @@ import de.rcenvironment.core.communication.messaging.internal.MessageEndpointHan
 import de.rcenvironment.core.communication.messaging.internal.RPCNetworkRequestHandler;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
-import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertyConstants;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
@@ -45,10 +44,10 @@ import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerServi
 import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.configuration.CommandLineArguments;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default {@link CommunicationManagementService} implementation.
@@ -68,7 +67,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
     private InitialNodeInformation ownNodeInformation;
 
-    private NodeConfigurationService configurationService;
+    private NodeConfigurationService nodeConfigurationService;
 
     private List<ServerContactPoint> initializedServerContactPoints = new ArrayList<ServerContactPoint>();
 
@@ -99,7 +98,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
         // start server contact points
         log.debug("Starting server contact points");
-        for (NetworkContactPoint ncp : configurationService.getServerContactPoints()) {
+        for (NetworkContactPoint ncp : nodeConfigurationService.getServerContactPoints()) {
             // log.debug(StringUtils.format("Virtual instance '%s': Starting server at %s",
             // ownNodeInformation.getLogName(), ncp));
             try {
@@ -115,7 +114,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         // without this, simultaneous startup of instance groups will usually fail,
         // because some instances will try to connect before others have fully started
         try {
-            Thread.sleep(configurationService.getDelayBeforeStartupConnectAttempts());
+            Thread.sleep(nodeConfigurationService.getDelayBeforeStartupConnectAttempts());
         } catch (InterruptedException e1) {
             log.error("Interrupted while waiting during startup; not connecting to neighbors", e1);
             return;
@@ -125,7 +124,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
         // trigger connections to initial peers
         log.debug("Starting preconfigured connections");
-        for (final NetworkContactPoint ncp : configurationService.getInitialNetworkContactPoints()) {
+        for (final NetworkContactPoint ncp : nodeConfigurationService.getInitialNetworkContactPoints()) {
             // TODO add custom display name when available; move string reconstruction into NCP
             final String displayName = StringUtils.format("%s:%s", ncp.getHost(), ncp.getPort());
             boolean connectOnStartup = !"false".equals(ncp.getAttributes().get("connectOnStartup"));
@@ -137,7 +136,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
             }
         }
 
-        connectionHealthCheckTaskHandle = SharedThreadPool.getInstance().scheduleAtFixedRate(new Runnable() {
+        connectionHealthCheckTaskHandle = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
 
             @Override
             @TaskDescription("Communication Layer: Connection health check (trigger task)")
@@ -169,7 +168,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
     @Override
     @Deprecated
     public void asyncConnectToNetworkPeer(final NetworkContactPoint ncp) {
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Communication Layer: Connect to remote node (trigger task)")
@@ -273,10 +272,10 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      */
     public void bindNodeConfigurationService(NodeConfigurationService newService) {
         // do not allow rebinding for now
-        if (this.configurationService != null) {
+        if (this.nodeConfigurationService != null) {
             throw new IllegalStateException();
         }
-        this.configurationService = newService;
+        this.nodeConfigurationService = newService;
     }
 
     /**
@@ -310,10 +309,10 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
      * OSGi-DS lifecycle method.
      */
     public void activate() {
-        ownNodeInformation = configurationService.getInitialNodeInformation();
-        NodeInformationRegistryImpl.getInstance().updateFrom(ownNodeInformation);
+        ownNodeInformation = nodeConfigurationService.getInitialNodeInformation();
 
-        MessageEndpointHandler messageEndpointHandler = new MessageEndpointHandlerImpl();
+        MessageEndpointHandler messageEndpointHandler = new MessageEndpointHandlerImpl(nodeConfigurationService.getNodeIdentifierService());
+
         messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCNetworkRequestHandler(
             serviceCallHandler));
         messageEndpointHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK,
@@ -329,7 +328,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
         // "autoStartNetworkOnActivation" is true by default; only disabled in test code
         if (autoStartNetworkOnActivation && !CommandLineArguments.isDoNotStartNetworkRequested()) {
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override
                 @TaskDescription("Communication Layer: Main startup")
@@ -359,7 +358,7 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
 
     private Map<String, String> createLocalMetadataContribution() {
         Map<String, String> localData = new HashMap<String, String>();
-        localData.put(NodePropertyConstants.KEY_NODE_ID, ownNodeInformation.getNodeIdString());
+        localData.put(NodePropertyConstants.KEY_NODE_ID, ownNodeInformation.getInstanceNodeSessionIdString());
         localData.put(NodePropertyConstants.KEY_DISPLAY_NAME, ownNodeInformation.getDisplayName());
         localData.put(NodePropertyConstants.KEY_SESSION_START_TIME, Long.toString(sessionStartTimeMsec));
 
@@ -374,14 +373,15 @@ public class CommunicationManagementServiceImpl implements CommunicationManageme
         }
         localData.put("debug.osInfo", StringUtils.format("%s (%s/%s)",
             System.getProperty("os.name"), System.getProperty("os.version"), System.getProperty("os.arch")));
-        localData.put("debug.isRelay", Boolean.toString(configurationService.isRelay()));
-        if (configurationService.getLocationCoordinates() != null) {
+        localData.put("debug.isRelay", Boolean.toString(nodeConfigurationService.isRelay()));
+        if (nodeConfigurationService.getLocationCoordinates() != null) {
             localData.put("coordinates",
-                "[" + configurationService.getLocationCoordinates()[0] + "," + configurationService.getLocationCoordinates()[1] + "]");
+                "[" + nodeConfigurationService.getLocationCoordinates()[0] + "," + nodeConfigurationService.getLocationCoordinates()[1]
+                    + "]");
         }
-        localData.put("locationName", configurationService.getLocationName());
-        localData.put("contact", configurationService.getInstanceContact());
-        localData.put("additionalInformation", configurationService.getInstanceAdditionalInformation());
+        localData.put("locationName", nodeConfigurationService.getLocationName());
+        localData.put("contact", nodeConfigurationService.getInstanceContact());
+        localData.put("additionalInformation", nodeConfigurationService.getInstanceAdditionalInformation());
         return localData;
     }
 }

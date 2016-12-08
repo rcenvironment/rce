@@ -24,17 +24,17 @@ import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.RemotableFileDataService;
 import de.rcenvironment.core.datamanagement.backend.DataBackend;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of the {@link FileDataService}.
@@ -250,26 +250,25 @@ public class FileDataServiceImpl implements FileDataService {
         throws AuthorizationException, CommunicationException {
 
         try {
-            InputStream rawStream = getRemoteFileDataService(dataReference.getNodeIdentifier()).getStreamFromDataReference(dataReference,
-                !platformService.isLocalNode(dataReference.getNodeIdentifier()));
+            InputStream rawStream = getRemoteFileDataService(dataReference.getInstanceId()).getStreamFromDataReference(dataReference,
+                !platformService.matchesLocalInstance(dataReference.getInstanceId()));
             return new BufferedInputStream(rawStream, DOWNLOAD_STREAM_BUFFER_SIZE);
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(StringUtils.format("Failed to get stream from data reference from remote node @%s: ",
-                dataReference.getNodeIdentifier())
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to get stream from data reference from remote node %s: ",
+                dataReference.getInstanceId()) + e.getMessage());
         }
     }
 
     @Override
-    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, NodeIdentifier platform)
+    public DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet, ResolvableNodeId platform)
         throws AuthorizationException, IOException, InterruptedException, CommunicationException {
 
         if (platform == null) {
-            platform = platformService.getLocalNodeId();
+            platform = platformService.getLocalInstanceNodeSessionId();
         }
 
         // local case: upload to local data store and return reference
-        if (platformService.isLocalNode(platform)) {
+        if (platformService.matchesLocalInstance(platform)) {
             try {
                 return getRemoteFileDataService(platform).newReferenceFromStream(inputStream, metaDataSet);
             } catch (RemoteOperationException e) {
@@ -283,7 +282,7 @@ public class FileDataServiceImpl implements FileDataService {
     }
 
     private DataReference performRemoteUpload(InputStream inputStream, MetaDataSet metaDataSet,
-        final NodeIdentifier remoteNodeId) throws InterruptedException, IOException, CommunicationException {
+        final ResolvableNodeId remoteNodeId) throws InterruptedException, IOException, CommunicationException {
         final RemotableFileDataService remoteDataService =
             (RemotableFileDataService) communicationService.getRemotableService(RemotableFileDataService.class, remoteNodeId);
         try {
@@ -333,7 +332,7 @@ public class FileDataServiceImpl implements FileDataService {
                         }
                     }
                 };
-                SharedThreadPool.getInstance().execute(asyncUploader);
+                ConcurrencyUtils.getAsyncTaskService().execute(asyncUploader);
 
                 long totalRead2 = 0; // other counter is held by writer thread; duplicate to avoid sync
                 do {
@@ -341,8 +340,8 @@ public class FileDataServiceImpl implements FileDataService {
                     readBuffer = asyncUploader.swapBuffersWhenReady(readBuffer);
                 } while (readBuffer.fillFromStream(inputStream));
                 if (readBuffer.getContentSize() > 0) {
-                    //Because the fillFromStream method tries reading from the stream again if not the full buffer size was read,
-                    //it is possible that in the last iteration fillFromStream returns false, but the last content is still in the buffer.
+                    // Because the fillFromStream method tries reading from the stream again if not the full buffer size was read,
+                    // it is possible that in the last iteration fillFromStream returns false, but the last content is still in the buffer.
                     totalRead2 += readBuffer.getContentSize();
                     readBuffer = asyncUploader.swapBuffersWhenReady(readBuffer);
                 }
@@ -375,16 +374,15 @@ public class FileDataServiceImpl implements FileDataService {
 
         try {
             for (BinaryReference br : dataReference.getBinaryReferences()) {
-                getRemoteFileDataService(dataReference.getNodeIdentifier()).deleteReference(br.getBinaryReferenceKey());
+                getRemoteFileDataService(dataReference.getInstanceId()).deleteReference(br.getBinaryReferenceKey());
             }
         } catch (RemoteOperationException e) {
-            throw new CommunicationException(StringUtils.format("Failed to delete data reference on remote node @%s: ",
-                dataReference.getNodeIdentifier())
-                + e.getMessage());
+            throw new CommunicationException(StringUtils.format("Failed to delete data reference on remote node %s: ",
+                dataReference.getInstanceId()) + e.getMessage());
         }
     }
 
-    private RemotableFileDataService getRemoteFileDataService(NodeIdentifier nodeId) throws RemoteOperationException {
+    private RemotableFileDataService getRemoteFileDataService(ResolvableNodeId nodeId) throws RemoteOperationException {
         return (RemotableFileDataService) communicationService.getRemotableService(RemotableFileDataService.class, nodeId);
     }
 

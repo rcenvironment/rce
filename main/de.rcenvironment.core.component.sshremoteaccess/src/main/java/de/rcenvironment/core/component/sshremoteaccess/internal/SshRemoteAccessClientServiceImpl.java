@@ -37,6 +37,9 @@ import org.apache.commons.io.LineIterator;
 import com.jcraft.jsch.Session;
 
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
@@ -55,11 +58,11 @@ import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessConstants;
 import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientService;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.ssh.jsch.executor.JSchRCECommandLineExecutor;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default implementation of {@link SshRemoteAccessClientService}.
@@ -87,9 +90,12 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
     private ScheduledFuture<?> taskFuture;
 
     private volatile boolean started;
+    
+    private Map<String, LogicalNodeId> logicalNodeMap;
 
     public SshRemoteAccessClientServiceImpl() {
         registeredComponentsPerConnection = new HashMap<String, Map<String, ComponentInstallation>>();
+        logicalNodeMap = new HashMap<String, LogicalNodeId>();
     }
 
     @Override
@@ -137,17 +143,21 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                     toolVersion = record.get(1);
                     hostId = record.get(2);
                     hostName = record.get(3);
-                    String toolAndHostId = toolName + "_" + hostId;
+                    // TODO Review, for now just use the toolName as ID
+                    String toolId = toolName;
+                    // Id containing tool id and host id; used as unique key for hashmap because the same tool can be available on different
+                    // remote nodes
+                    String toolAndHostId = createUniqueToolAndHostId(toolId, hostId, connectionId);
                     // If this component was not registered before, register it now.
                     if (!registeredComponents.containsKey(toolAndHostId)) {
                         LOG.info(StringUtils.format("Detected new SSH tool %s (version %s) on host %s.", toolName, toolVersion, hostName));
-                        registerToolAccessComponent(toolAndHostId, toolName, toolVersion, hostName, hostId, connectionId, false);
+                        registerToolAccessComponent(toolId, toolName, toolVersion, hostName, hostId, connectionId, false);
                     } else {
                         // If this is a new version of a component, replace the old installation by the new one.
                         if (!registeredComponents.get(toolAndHostId).getComponentRevision().getComponentInterface().getVersion()
                             .equals(toolVersion)) {
                             removeToolAccessComponent(toolAndHostId, connectionId);
-                            registerToolAccessComponent(toolAndHostId, toolName, toolVersion, hostName, hostId, connectionId, false);
+                            registerToolAccessComponent(toolId, toolName, toolVersion, hostName, hostId, connectionId, false);
                             LOG.info(StringUtils.format("SSH tool %s changed to version %s on host %s.", toolName, toolVersion,
                                 hostName));
                         }
@@ -186,12 +196,13 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                                 String hostId = it.nextLine();
                                 String hostName = it.nextLine();
                                 String componentId = wfName + "_wf_" + hostId;
-                                if (!registeredComponents.containsKey(componentId)) {
+                                String toolAndHostId = createUniqueToolAndHostId(componentId, hostId, connectionId);
+                                if (!registeredComponents.containsKey(toolAndHostId)) {
                                     LOG.info(StringUtils.format("Detected new remote workflow %s (version %s) on host %s.", wfName,
                                         wfVersion, hostName));
                                     registerToolAccessComponent(componentId, wfName, wfVersion, hostName, hostId, connectionId, true);
                                 }
-                                componentIdsReceived.add(componentId);
+                                componentIdsReceived.add(toolAndHostId);
                             }
                         }
                     }
@@ -211,6 +222,10 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             }
 
         }
+    }
+    
+    private String createUniqueToolAndHostId(String toolId, String hostId, String connectionId) {
+        return toolId + "/" + connectionId + "/" + hostId;
     }
 
     protected void registerToolAccessComponent(String componentId, String toolName, String toolVersion, String hostName, String hostId,
@@ -232,7 +247,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
             componentInterface = new ComponentInterfaceBuilder()
                 .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + componentId)
                 // Add "WORKFLOW" to display name
-                .setDisplayName(StringUtils.format("%s (%s) - WORKFLOW - %s", toolName, toolVersion, hostName))
+                .setDisplayName(StringUtils.format("%s (%s) [workflow on %s]", toolName, toolVersion, hostName))
                 .setIcon16(readDefaultToolIcon(SIZE_16))
                 .setIcon32(readDefaultToolIcon(SIZE_32))
                 .setGroupName(SshRemoteAccessConstants.GROUP_NAME_WFS)
@@ -247,7 +262,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
         } else {
             componentInterface = new ComponentInterfaceBuilder()
                 .setIdentifier(SshRemoteAccessConstants.COMPONENT_ID + "." + componentId)
-                .setDisplayName(StringUtils.format("%s (%s) - %s", toolName, toolVersion, hostName))
+                .setDisplayName(StringUtils.format("%s [SSH forwarded]", toolName))
                 .setIcon16(readDefaultToolIcon(SIZE_16))
                 .setIcon32(readDefaultToolIcon(SIZE_32))
                 .setGroupName(SshRemoteAccessConstants.GROUP_NAME_TOOLS)
@@ -267,12 +282,30 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
                     new ComponentRevisionBuilder()
                         .setComponentInterface(componentInterface)
                         .setClassName("de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessClientComponent").build())
-                .setNodeId(platformService.getLocalNodeId().getIdString())
-                .setInstallationId(componentInterface.getIdentifier())
+                .setNodeId(getLocalLogicalNodeIdForRemoteNode(hostId))
+                .setInstallationId(createUniqueToolAndHostId(componentInterface.getIdentifier(), hostId, connectionId))
                 .setIsPublished(true)
                 .build();
         registry.addComponent(ci);
-        registeredComponentsPerConnection.get(connectionId).put(componentId, ci);
+        registeredComponentsPerConnection.get(connectionId).put(createUniqueToolAndHostId(componentId, hostId, connectionId), ci);
+    }
+    
+    private LogicalNodeId getLocalLogicalNodeIdForRemoteNode(String remoteNodeId) {
+        if (logicalNodeMap.containsKey(remoteNodeId)) {
+            return logicalNodeMap.get(remoteNodeId);
+        }
+        
+        try {
+            LogicalNodeId remoteId = NodeIdentifierUtils.parseLogicalNodeIdString(remoteNodeId);
+            String recPart = remoteId.getInstanceNodeIdString();
+            // If there is no local node yet representing the given remote node, create a new one
+            LogicalNodeId logicalNode = platformService.createRecognizableLocalLogicalNodeId(recPart);
+            logicalNodeMap.put(remoteNodeId, logicalNode);
+            return logicalNode;
+        } catch (IdentifierException e) {
+            return platformService.getLocalDefaultLogicalNodeId();
+        }
+        
     }
 
     protected void removeToolAccessComponent(String toolAndHostId, String connectionId) {
@@ -419,7 +452,7 @@ public class SshRemoteAccessClientServiceImpl implements SshRemoteAccessClientSe
      * OSGi-DS life cycle method.
      */
     public void activate() {
-        taskFuture = SharedThreadPool.getInstance()
+        taskFuture = ConcurrencyUtils.getAsyncTaskService()
             .scheduleAtFixedRate(new UpdateSSHToolsTask(), TimeUnit.SECONDS.toMillis(UPDATE_TOOLS_INTERVAL_SECS));
         started = true;
     }

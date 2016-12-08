@@ -76,7 +76,7 @@ public class NotificationTopic {
         // harmless, as regexp compilation is deterministic, the assignment is atomic,
         // and the performance cost of duplicate compilation is negligible. -- misc_ro
         if (compiledRegExp == null) {
-            compiledRegExp = Pattern.compile(notificationId);
+            compiledRegExp = Pattern.compile("^" + notificationId + "$");
         }
         return compiledRegExp;
     }

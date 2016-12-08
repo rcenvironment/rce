@@ -8,7 +8,8 @@
  
 package de.rcenvironment.core.component.workflow.execution.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ExecutionContext;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 
@@ -31,9 +32,9 @@ public interface WorkflowExecutionContext extends ExecutionContext {
     String getCompExeIdByWfNodeId(String wfNodeId);
     
     /**
-     * @return {@link NodeIdentifier} of the instance the execution was started from
+     * @return {@link InstanceNodeSessionId} of the instance the execution was started from
      */
-    NodeIdentifier getNodeIdStartedExecution();
+    LogicalNodeId getNodeIdStartedExecution();
     
     /**
      * @return additional information optionally provided at workflow start

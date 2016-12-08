@@ -8,13 +8,19 @@
 
 package de.rcenvironment.core.communication.internal;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.CommonIdBase;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.Assertions;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * Implementation of {@link PlatformService}.
@@ -26,22 +32,34 @@ public class PlatformServiceImpl implements PlatformService {
 
     private InitialNodeInformation localInitialNodeInformation;
 
-    private NodeIdentifier localNodeIdentifier;
+    private InstanceNodeSessionId localInstanceSessionId;
+
+    private LogicalNodeSessionId localDefaultLogicalNodeSessionId;
 
     private NodeConfigurationService nodeConfigurationService;
+
+    private InstanceNodeId localInstanceId;
+
+    private LogicalNodeId localDefaultLogicalNodeId;
 
     // private final Log log = LogFactory.getLog(getClass());
 
     /**
-     * Constructor; called by OSGi-DS and integration tests.
+     * Initialization; called by OSGi-DS and integration tests.
      */
     public void activate() {
         localInitialNodeInformation = nodeConfigurationService.getInitialNodeInformation();
-        localNodeIdentifier = localInitialNodeInformation.getNodeId();
 
-        // register own name for own node id for proper log output
-        // TODO refactor/move elsewhere? - misc_ro
-        NodeInformationRegistryImpl.getInstance().updateFrom(localInitialNodeInformation);
+        // perform all conversions once as they may be fetched frequently
+        localInstanceSessionId = localInitialNodeInformation.getInstanceNodeSessionId();
+        localInstanceId = localInstanceSessionId.convertToInstanceNodeId();
+        localDefaultLogicalNodeId = localInstanceSessionId.convertToDefaultLogicalNodeId();
+        localDefaultLogicalNodeSessionId = localInstanceSessionId.convertToDefaultLogicalNodeSessionId();
+
+        // register a preliminary name for proper log output (instead of <unknown> or similar); this is replaced with the
+        // actual display name when the local node receives the callback for its own node properties (as from any other node)
+        final NodeIdentifierService nodeIdentifierService = nodeConfigurationService.getNodeIdentifierService();
+        nodeIdentifierService.associateDisplayName(localInstanceSessionId, "<local instance>");
     }
 
     /**
@@ -54,15 +72,42 @@ public class PlatformServiceImpl implements PlatformService {
     }
 
     @Override
-    @AllowRemoteAccess
-    public NodeIdentifier getLocalNodeId() {
-        return (NodeIdentifier) localNodeIdentifier;
+    public InstanceNodeId getLocalInstanceNodeId() {
+        return localInstanceId;
     }
 
     @Override
-    public boolean isLocalNode(NodeIdentifier identifier) {
+    @AllowRemoteAccess
+    public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+        return localInstanceSessionId;
+    }
+
+    @Override
+    public LogicalNodeId getLocalDefaultLogicalNodeId() {
+        return localDefaultLogicalNodeId;
+    }
+
+    @Override
+    public LogicalNodeSessionId getLocalDefaultLogicalNodeSessionId() {
+        return localDefaultLogicalNodeSessionId;
+    }
+
+    @Override
+    public LogicalNodeId createRecognizableLocalLogicalNodeId(String qualifier) {
+        return localInstanceId.expandToLogicalNodeId(CommonIdBase.RECOGNIZABLE_LOGICAL_NODE_PART_PREFIX + qualifier);
+    }
+
+    @Override
+    public LogicalNodeId createTransientLocalLogicalNodeId() {
+        // FIXME not collision-free at all, only for testing; restricted to not require DM field adaptations (36 chars)
+        return localInstanceId.expandToLogicalNodeId(CommonIdBase.TRANSIENT_LOGICAL_NODE_PART_PREFIX + IdGenerator.fastRandomHexString(2));
+    }
+
+    @Override
+    public boolean matchesLocalInstance(ResolvableNodeId identifier) {
         Assertions.isDefined(identifier, "NodeIdentifier must not be null.");
-        return localInitialNodeInformation.getNodeIdString().equals(identifier.getIdString());
+        // TODO >=8.0: review whether this is the best possible implementation considering possible InstanceId collisionss - misc_ro
+        return localInitialNodeInformation.getInstanceNodeSessionId().isSameInstanceNodeAs(identifier);
     }
 
 }

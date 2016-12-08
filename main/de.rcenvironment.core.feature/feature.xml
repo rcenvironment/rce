@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.feature"
       label="RCE Core  Feature"
-      version="7.1.5.qualifier"
+      version="8.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -129,7 +129,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <import plugin="de.rcenvironment.platform.maven.testing"/>
       <import plugin="org.eclipse.draw2d"/>
       <import plugin="org.eclipse.equinox.preferences"/>
-      <import plugin="javax.mail"/>
       <import plugin="org.eclipse.equinox.app"/>
       <import plugin="de.rcenvironment.platform.maven.ssh.server"/>
       <import plugin="de.rcenvironment.platform.maven.jms"/>
@@ -328,7 +327,14 @@ This Agreement is governed by the laws of the State of New York and the intellec
          install-size="0"
          version="0.0.0"
          unpack="false"/>
-
+         
+    <plugin
+         id="de.rcenvironment.core.utils.encryption"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+         
    <plugin
          id="de.rcenvironment.core.mail"
          download-size="0"
@@ -446,6 +452,42 @@ This Agreement is governed by the laws of the State of New York and the intellec
          download-size="0"
          install-size="0"
          version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.toolkitbridge"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.toolkit.core"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.toolkit.modules.common"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.launcher"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         unpack="false"/>
+
+   <plugin
+         id="de.rcenvironment.core.component.workflow.testworkflows"
+         download-size="0"
+         install-size="0"
+         version="0.0.0"
+         fragment="true"
          unpack="false"/>
 
 </feature>

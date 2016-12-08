@@ -21,13 +21,12 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPan
 public class InputProviderInputSection extends DefaultEndpointPropertySection {
 
     public InputProviderInputSection() {
-        EndpointSelectionPane inputPane = new InputProviderEndpointSelectionPane(Messages.outputs,
-            EndpointType.OUTPUT, this, false, "default", false);
+
+        EndpointSelectionPane inputPane = new InputProviderEndpointSelectionPane(Messages.outputs, EndpointType.OUTPUT, "default", this);
 
         setColumns(1);
         setPanes(inputPane);
-        
-    }
 
+    }
 
 }

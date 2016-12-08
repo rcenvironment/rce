@@ -24,6 +24,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.api.ServiceCallContextUtils;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
@@ -34,6 +35,7 @@ import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.spi.LocalServiceLookupResult;
 import de.rcenvironment.core.communication.rpc.spi.LocalServiceResolver;
 import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
+import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemotableService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -41,6 +43,10 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheck;
 import de.rcenvironment.core.utils.common.security.MethodPermissionCheckHasAnnotation;
 import de.rcenvironment.core.utils.incubator.Assertions;
+import de.rcenvironment.toolkit.modules.concurrency.api.threadcontext.ThreadContextMemento;
+import de.rcenvironment.toolkit.modules.statistics.api.CounterCategory;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsFilterLevel;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsTrackerService;
 
 /**
  * Implementation of the {@link RemoteServiceCallHandlerService}.
@@ -66,8 +72,16 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
 
     private final Log log = LogFactory.getLog(getClass());
 
+    private final CounterCategory parameterTypesCounter;
+
     public ServiceCallHandlerServiceImpl() {
         serviceCache = new HashMap<>();
+
+        // not injecting this via OSGi-DS as this service is planned to move to the toolkit layer anyway - misc_ro
+        final StatisticsTrackerService statisticsService =
+            StaticToolkitHolder.getServiceWithUnitTestFallback(StatisticsTrackerService.class);
+        parameterTypesCounter =
+            statisticsService.getCounterCategory("Remote service calls (received): parameter types", StatisticsFilterLevel.DEVELOPMENT);
     }
 
     /**
@@ -109,17 +123,20 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
     @Override
     public ServiceCallResult handle(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
 
-        if (!platformService.isLocalNode(serviceCallRequest.getDestination())) {
+        if (!platformService.matchesLocalInstance(serviceCallRequest.getTargetNodeId())) {
             throw new IllegalStateException("Internal consistency error: called to handle a ServiceCallResult for another node");
         }
 
         Assertions.isDefined(serviceCallRequest, "The parameter \"serviceCallRequest\" must not be null.");
 
-        // LOGGER.debug("Received a service call request: " +
-        // serviceCallRequest.getRequestedPlatform() + COLON
-        // + serviceCallRequest.getService() + COLON + serviceCallRequest.getServiceMethod());
-
-        return invokeLocalService(serviceCallRequest);
+        final ThreadContextMemento previousThreadContext =
+            ServiceCallContextUtils.attachServiceCallDataToThreadContext(serviceCallRequest.getCallerNodeId(),
+                serviceCallRequest.getTargetNodeId(), serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName());
+        try {
+            return invokeLocalService(serviceCallRequest);
+        } finally {
+            previousThreadContext.restore();
+        }
     }
 
     /**
@@ -135,6 +152,12 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
         List<Serializable> parameterList = new ArrayList<>();
         for (Object parameter : parameters) {
             parameterList.add((Serializable) CallbackUtils.handleCallbackProxy(parameter, callbackService, callbackProxyService));
+        }
+        // count parameter types if enabled
+        if (parameterTypesCounter.isEnabled()) {
+            for (Object parameter : parameterList) {
+                parameterTypesCounter.countClass(parameter);
+            }
         }
 
         final String serviceName = serviceCallRequest.getServiceName();
@@ -183,7 +206,9 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
                     final String message = StringUtils.format("Return value is not serializable: " + returnValue.getClass().getName());
                     return ServiceCallResultFactory.representInternalErrorAtHandler(serviceCallRequest, message);
                 }
-                returnValue = CallbackUtils.handleCallbackObject(returnValue, serviceCallRequest.getSender(), callbackService);
+                returnValue =
+                    CallbackUtils.handleCallbackObject(returnValue, serviceCallRequest.getCallerNodeId().convertToInstanceNodeSessionId(),
+                        callbackService);
                 return ServiceCallResultFactory.wrapReturnValue((Serializable) returnValue);
             } else {
                 return ServiceCallResultFactory.wrapReturnValue(null);
@@ -200,7 +225,7 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
             serviceInterface = Class.forName(serviceName);
         } catch (ClassNotFoundException e) {
             log.warn(StringUtils.format("Found no interface for service '%s' requested from '%s'", serviceName,
-                serviceCallRequest.getSender()));
+                serviceCallRequest.getCallerNodeId()));
             return LocalServiceLookupResult.createInvalidServicePlaceholder();
         }
         if (!serviceInterface.isAnnotationPresent(RemotableService.class)) {
@@ -214,7 +239,7 @@ public class ServiceCallHandlerServiceImpl implements RemoteServiceCallHandlerSe
         if (serviceImplementation == null) {
             log.warn(StringUtils
                 .format("Found the service interface '%s' requested by %s, but no registered implementation",
-                    serviceName, serviceCallRequest.getSender()));
+                    serviceName, serviceCallRequest.getCallerNodeId()));
             return LocalServiceLookupResult.createInvalidServicePlaceholder();
         }
         if (!serviceInterface.isAssignableFrom(serviceImplementation.getClass())) {

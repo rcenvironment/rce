@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.filesets.extras.feature"
       label="RCE File Sets - Extra files"
-      version="7.1.5.qualifier"
+      version="8.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">

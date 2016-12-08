@@ -52,10 +52,10 @@ import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.instancemanagement.InstanceManagementConstants;
 import de.rcenvironment.core.instancemanagement.InstanceManagementService;
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
-import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.AbstractTextOutputReceiver;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
@@ -1198,8 +1198,8 @@ public class InstanceManagementServiceImpl implements InstanceManagementService 
                 JSchRCECommandLineExecutor rceExecutor = new JSchRCECommandLineExecutor(session);
                 rceExecutor.start(command);
                 try (InputStream stdoutStream = rceExecutor.getStdout(); InputStream stderrStream = rceExecutor.getStderr();) {
-                    new TextStreamWatcher(stdoutStream, userOutputReceiver).start();
-                    new TextStreamWatcher(stderrStream, userOutputReceiver).start();
+                    TextStreamWatcherFactory.create(stdoutStream, userOutputReceiver).start();
+                    TextStreamWatcherFactory.create(stderrStream, userOutputReceiver).start();
                     rceExecutor.waitForTermination();
                 }
                 session.disconnect();

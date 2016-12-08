@@ -19,10 +19,10 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptionEventProcessor;
 import de.rcenvironment.core.component.workflow.execution.internal.ConsoleRowProcessor;
 import de.rcenvironment.core.notification.Notification;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
 
 /**
  * Subscriber for all console notifications in the overall system.
@@ -39,7 +39,8 @@ public class ConsoleSubscriptionEventProcessor extends GenericSubscriptionEventP
     private final transient AsyncOrderedCallbackManager<ConsoleRowProcessor> callbackManager;
 
     public ConsoleSubscriptionEventProcessor(ConsoleRowProcessor... processors) {
-        callbackManager = new AsyncOrderedCallbackManager<>(SharedThreadPool.getInstance(), AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
+        callbackManager =
+            ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
         for (ConsoleRowProcessor processor : processors) {
             callbackManager.addListener(processor);
         }

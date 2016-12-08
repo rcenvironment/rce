@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Cluster
 Bundle-SymbolicName: de.rcenvironment.core.gui.cluster;singleton:=true
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-Vendor: DLR
 Require-Bundle: org.eclipse.ui,
  org.eclipse.core.runtime
@@ -13,7 +13,6 @@ Import-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.utils.cluster,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.incubator,
- org.apache.commons.lang3.exception;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
  org.codehaus.jackson;version="1.9.13",
  org.codehaus.jackson.map;version="1.9.13",

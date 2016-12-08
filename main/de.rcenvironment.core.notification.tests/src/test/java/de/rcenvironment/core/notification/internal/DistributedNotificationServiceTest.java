@@ -26,7 +26,7 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationHeader;
@@ -40,7 +40,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link DistributedNotificationServiceImpl}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (adapted for 7.0.0)
+ * @author Robert Mischke (adapted for 7.0.0; 8.0.0 id adaptations)
  */
 public class DistributedNotificationServiceTest {
 
@@ -50,9 +50,11 @@ public class DistributedNotificationServiceTest {
 
     private DistributedNotificationServiceImpl notificationService;
 
-    private Notification remoteNotification = new Notification("identifier", 0, NotificationTestConstants.REMOTEHOST, new String());
+    private Notification remoteNotification = new Notification("identifier", 0, NotificationTestConstants.REMOTE_INSTANCE_SESSION,
+        new String());
 
-    private Notification anotherRemoteNotification = new Notification("id", 0, NotificationTestConstants.REMOTEHOST, new String());
+    private Notification anotherRemoteNotification = new Notification("id", 0, NotificationTestConstants.REMOTE_INSTANCE_SESSION,
+        new String());
 
     private Map<String, List<Notification>> notifications = new HashMap<String, List<Notification>>();
 
@@ -94,20 +96,23 @@ public class DistributedNotificationServiceTest {
         }
     }
 
-    /** Test. 
-     * @throws RemoteOperationException on error*/
+    /**
+     * Test.
+     * 
+     * @throws RemoteOperationException on error
+     */
     @Test
     public void testGetNotifications() throws RemoteOperationException {
         assertEquals(notifications, notificationService.getNotifications(NotificationTestConstants.NOTIFICATION_ID,
-            NotificationTestConstants.LOCALHOST));
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION));
 
         assertEquals(remoteNotifications,
             notificationService.getNotifications(remoteNotification.getHeader().getNotificationIdentifier(),
-                NotificationTestConstants.REMOTEHOST));
+                NotificationTestConstants.REMOTE_INSTANCE_SESSION));
 
         try {
             notificationService.getNotifications(NotificationTestConstants.NOTIFICATION_ID,
-                NotificationTestConstants.REMOTEHOST);
+                NotificationTestConstants.REMOTE_INSTANCE_SESSION);
             fail(EXPECTED_EXCEPTION_FAILING);
         } catch (IllegalStateException e) {
             assertTrue(EXPECTED_EXCEPTION, true);
@@ -134,7 +139,7 @@ public class DistributedNotificationServiceTest {
     public void testSubscribe() throws RemoteOperationException {
         assertNotNull(notificationService.subscribe(NotificationTestConstants.NOTIFICATION_ID,
             NotificationTestConstants.NOTIFICATION_SUBSCRIBER,
-            NotificationTestConstants.LOCALHOST));
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION));
     }
 
     /**
@@ -145,10 +150,14 @@ public class DistributedNotificationServiceTest {
         try {
             notificationService.unsubscribe(NotificationTestConstants.NOTIFICATION_ID,
                 NotificationTestConstants.NOTIFICATION_SUBSCRIBER,
-                NotificationTestConstants.LOCALHOST);
+                NotificationTestConstants.LOCAL_INSTANCE_SESSION);
             fail("Expected exception");
         } catch (RemoteOperationException e) {
-            assertEquals("Failed to unsubscribe from remote publisher @\"<unnamed>\" [localhost:1]: unsubscribed", e.getMessage());
+            final String expectedMessage =
+                "Failed to unsubscribe from publisher \"local\" ["
+                    + NotificationTestConstants.LOCAL_INSTANCE_SESSION.getInstanceNodeSessionIdString()
+                    + "]: unsubscribed";
+            assertEquals(expectedMessage, e.getMessage());
         }
     }
 
@@ -298,28 +307,12 @@ public class DistributedNotificationServiceTest {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
+        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
             if (iface == RemotableNotificationService.class
-                && nodeId.equals(NotificationTestConstants.LOCALHOST)) {
+                && nodeId.equals(NotificationTestConstants.LOCAL_INSTANCE_SESSION)) {
                 return (T) new DummyLocalNotificationService();
             } else if (iface == RemotableNotificationService.class
-                && nodeId.equals(NotificationTestConstants.REMOTEHOST)) {
-                return (T) new DummyRemoteNotificationService();
-            } else {
-                return null;
-            }
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-            throws IllegalStateException {
-
-            if (iface == NotificationService.class
-                && nodeId.equals(NotificationTestConstants.LOCALHOST)) {
-                return (T) new DummyLocalNotificationService();
-            } else if (iface == NotificationService.class
-                && nodeId.equals(NotificationTestConstants.REMOTEHOST)) {
+                && nodeId.equals(NotificationTestConstants.REMOTE_INSTANCE_SESSION)) {
                 return (T) new DummyRemoteNotificationService();
             } else {
                 return null;

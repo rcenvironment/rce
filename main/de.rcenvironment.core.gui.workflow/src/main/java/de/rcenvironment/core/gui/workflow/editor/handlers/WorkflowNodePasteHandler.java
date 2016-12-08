@@ -31,6 +31,8 @@ import org.eclipse.draw2d.geometry.Dimension;
 import org.eclipse.draw2d.geometry.Point;
 import org.eclipse.draw2d.geometry.Rectangle;
 import org.eclipse.gef.EditPart;
+import org.eclipse.swt.widgets.Event;
+import org.eclipse.swt.widgets.MenuItem;
 
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentSize;
@@ -46,7 +48,7 @@ import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.ConnectionUtils;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeLabelConnectionCreateCommand;
-import de.rcenvironment.core.gui.workflow.parts.EditorEditPartFactory;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowEditorEditPartFactory;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart;
 import de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -97,7 +99,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
 
     private Point editorOffsetPoint = null;
 
-    private boolean pasteTriggeredByMouse = false;
+    private boolean pasteTriggeredByMouse;
 
     @Override
     void edit() {
@@ -114,12 +116,14 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
         List<Rectangle> nodeConstraintsToCreate = new LinkedList<>();
         List<Rectangle> labelConstraintsToCreate = new LinkedList<>();
 
-        // determines whether the pasting was triggered via hotkey ctrl+v or via mouse (i.e.
-        // editor's context menu)
-        if (viewer.getContextMenu().isDirty()) {
-            pasteTriggeredByMouse = false;
-        } else {
-            pasteTriggeredByMouse = true;
+        pasteTriggeredByMouse = false;
+        // determines whether the pasting was triggered via hotkey ctrl+v or via mouse (
+            // editor's context menu)
+        if (event.getTrigger() instanceof Event) {
+            Event ev = (Event) event.getTrigger();
+            if (ev.widget instanceof MenuItem) {
+                pasteTriggeredByMouse = true;
+            }
         }
         // determines the offset of the visible part of the editor from the editor's origin
         if (viewer.getControl() instanceof FigureCanvas) {
@@ -412,7 +416,7 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
     private List parseJson(ObjectNode rootJsonNode) throws IOException, JsonParseException, ParseException {
         List combinedList = new ArrayList();
         WorkflowDescriptionPersistenceHandler descriptionHandler = new WorkflowDescriptionPersistenceHandler();
-        EditorEditPartFactory factory = new EditorEditPartFactory();
+        WorkflowEditorEditPartFactory factory = new WorkflowEditorEditPartFactory();
         Map<String, WorkflowNode> parsedNodes = null;
         if (rootJsonNode.has(WorkflowDescriptionPersistenceHandler.NODES)) {
             // parsing content to WorkflowNode
@@ -455,13 +459,18 @@ public class WorkflowNodePasteHandler extends AbstractWorkflowNodeEditHandler {
      */
     private WorkflowLabel createCopiedWorkflowLabel(WorkflowLabel origin) {
         WorkflowLabel copied = new WorkflowLabel(origin.getText());
+        copied.setHeaderText(origin.getHeaderText());
         copied.setAlpha(origin.getAlphaDisplay());
         copied.setColorBackground(origin.getColorBackground());
         copied.setColorText(origin.getColorText());
         copied.setSize(origin.getWidth(), origin.getHeight());
-        copied.setAlignmentType(origin.getAlignmentType());
+        copied.setLabelPosition(origin.getLabelPosition());
+        copied.setTextAlignmentType(origin.getTextAlignmentType());
+        copied.setHeaderAlignmentType(origin.getHeaderAlignmentType());
         copied.setHasBorder(origin.hasBorder());
         copied.setTextSize(origin.getTextSize());
+        copied.setHeaderTextSize(origin.getHeaderTextSize());
+        copied.setColorHeader(origin.getColorHeader());
 
         // copied.setLocation(origin.getX(), origin.getY());
         return copied;

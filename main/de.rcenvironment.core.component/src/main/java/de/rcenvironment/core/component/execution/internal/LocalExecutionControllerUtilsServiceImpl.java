@@ -8,6 +8,9 @@
 
 package de.rcenvironment.core.component.execution.internal;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
@@ -57,5 +60,26 @@ public class LocalExecutionControllerUtilsServiceImpl implements LocalExecutionC
     
     private static String createPropertyFilter(String executionId) {
         return StringUtils.format("(%s=%s)", ExecutionConstants.EXECUTION_ID_OSGI_PROP_KEY, executionId);
+    }
+
+    @Override
+    public <T extends ExecutionController> Map<String, T> getExecutionControllers(Class<T> controllerInterface,
+        BundleContext bundleContext) {
+        Map<String, T> exeControllers = new HashMap<>();
+
+        String filter = null;
+        try {
+            ServiceReference<?>[] serviceReferences = bundleContext.getServiceReferences(controllerInterface.getName(), filter);
+            if (serviceReferences != null) {
+                for (ServiceReference<?> serviceRef : serviceReferences) {
+                    exeControllers.put((String) serviceRef.getProperty(ExecutionConstants.EXECUTION_ID_OSGI_PROP_KEY),
+                        (T) bundleContext.getService(serviceRef));
+                }
+            }
+        } catch (InvalidSyntaxException e) {
+            // should not happen as filter is null
+            LogFactory.getLog(LocalExecutionControllerUtilsServiceImpl.class).error(StringUtils.format("Unexpected error"), e);
+        }
+        return exeControllers;
     }
 }

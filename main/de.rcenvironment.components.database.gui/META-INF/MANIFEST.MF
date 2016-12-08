@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Database Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.database.gui;singleton:=true
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Require-Bundle: org.eclipse.ui,
@@ -12,7 +12,6 @@ Require-Bundle: org.eclipse.ui,
  org.eclipse.swt
 Import-Package: de.rcenvironment.components.database.common,
  de.rcenvironment.components.database.common.jdbc,
- de.rcenvironment.components.sql.common,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.model.configuration.api,

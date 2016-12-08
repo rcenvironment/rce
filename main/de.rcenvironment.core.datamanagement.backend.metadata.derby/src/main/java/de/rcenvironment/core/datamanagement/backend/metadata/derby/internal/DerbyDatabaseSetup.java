@@ -38,6 +38,10 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIE
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_DATAREFERENCE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.VIEW_WORKFLOWRUN_TYPEDDATUM;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.WORKFLOW_FILE_REFERENCE;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_RUN_FINAL_STATE;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.NODE_ID;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.CONTROLLER_NODE_ID;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.DATAMANAGEMENT_NODE_ID;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -68,25 +72,27 @@ public abstract class DerbyDatabaseSetup {
 
     private static final String VERSION_ZERO = "0";
 
+    private static final String VERSION_7_0 = "7.0";
+
     /**
      * For release versions, the version is the release number (e.g. "7.0") For versions during development phases, the release number is
      * followed by "dev[number]", e.g. "7.0dev1".
      */
-    // private static final String CURRENT_DB_VERSION = "7.0dev2";
+    //private static final String CURRENT_DB_VERSION = "8.0dev2";
 
-    private static final String CURRENT_DB_VERSION = "7.0";
+    private static final String CURRENT_DB_VERSION = "8.0";
 
     /**
      * This array contains all former database versions which can be updated to the current version, in ascending order. For each of those
      * versions, an update path must be defined in the update method below.
      */
-    private static final String[] UPDATABLE_VERSIONS = { VERSION_ZERO, VERSION_6_1 };
+    private static final String[] UPDATABLE_VERSIONS = { VERSION_ZERO, VERSION_6_1, VERSION_7_0 };
 
     /**
      * This array contains all former database versions which are equivalent to the current version. No update is required, just the db
      * version in the database will be set to the current version.
      */
-    private static final String[] VERSIONS_REQUIRING_NO_UPDATE = { "7.0dev1" };
+    private static final String[] VERSIONS_REQUIRING_NO_UPDATE = {"8.0dev2"};
 
     private static final int QUERY_EXECUTION_TIMEOUT = 600000;
 
@@ -108,7 +114,7 @@ public abstract class DerbyDatabaseSetup {
         final List<String> versionsRequiringNoUpdate = Arrays.asList(VERSIONS_REQUIRING_NO_UPDATE);
         if (!tableExists(statement, MetaDataConstants.TABLE_DB_VERSION_INFO)) {
             if (tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)) {
-                // if DB version is 0 - table version info does not exist - update to version 7.0
+                // if DB version is 0 - table version info does not exist - update to current version
                 deleteViews(connection);
                 updateDatabaseToCurrentVersion(connection, new LinkedList<String>(updatableVersions));
                 createViews(connection);
@@ -122,6 +128,7 @@ public abstract class DerbyDatabaseSetup {
             }
         } else if (!getDBVersion(connection).equals(CURRENT_DB_VERSION)) {
             String formerVersion = getDBVersion(connection);
+
             if (versionsRequiringNoUpdate.contains(formerVersion)) {
                 LOGGER.debug("Updating database version: v " + formerVersion + " --> " + CURRENT_DB_VERSION + " . No change required.");
                 setDBVersion(CURRENT_DB_VERSION, connection);
@@ -135,9 +142,9 @@ public abstract class DerbyDatabaseSetup {
             } else {
                 // Database has an unknown (probably future) version.
                 throw new RuntimeException(StringUtils.format("Failed to update the database from version %s to %s"
-                        + ". Most likely reason: It was used with a newer version of RCE before. Use a newer version "
-                        + "of RCE or choose another profile directory. (See the user guide for more information "
-                        + "about the profile directory.)", getDBVersion(connection), CURRENT_DB_VERSION));
+                    + ". Most likely reason: It was used with a newer version of RCE before. Use a newer version "
+                    + "of RCE or choose another profile directory. (See the user guide for more information "
+                    + "about the profile directory.)", getDBVersion(connection), CURRENT_DB_VERSION));
             }
         } else if (!tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN)
             || !tableExists(statement, MetaDataConstants.TABLE_WORKFLOW_RUN_PROPERTIES)
@@ -230,6 +237,8 @@ public abstract class DerbyDatabaseSetup {
             updateFrom0To61(connection);
         } else if (startVersion.equals(VERSION_6_1)) {
             updateFrom61To70(connection);
+        } else if (startVersion.equals(VERSION_7_0)) {
+            updateFrom70To80(connection);
         }
         // Recursively call update method do perform the next update in the queue.
         updateDatabaseToCurrentVersion(connection, requiredUpdates);
@@ -265,6 +274,64 @@ public abstract class DerbyDatabaseSetup {
             }
             throw new RuntimeException("Failed to update data management meta data db.", e);
         }
+    }
+
+    private static void updateFrom70To80(Connection connection) throws SQLTransientConnectionException {
+        LOGGER.debug("Updating database: v 7.0 --> v 8.0");
+        try {
+            DatabaseMetaData dbm = connection.getMetaData();
+            ResultSet rs = dbm.getColumns(null, null, TABLE_COMPONENT_RUN, COMPONENT_RUN_FINAL_STATE);
+            if (!rs.next()) {
+                // Add colums for wfFile to WorkflowRun table
+                Statement stmt = connection.createStatement();
+                String sql = "ALTER TABLE %s ADD %s LONG VARCHAR";
+                stmt.execute(StringUtils.format(sql, TABLE_COMPONENT_RUN, COMPONENT_RUN_FINAL_STATE));
+                LOGGER.debug("Added column COMPONENT_RUN_FINAL_STATE to COMPONENT_RUN table.");
+                stmt.close();
+            }
+            // Modify datatype of columns containing node ids to varchar(100) to allow storing new logical node ids
+            modifyColumnToVarchar100(connection, TABLE_COMPONENT_RUN, NODE_ID);
+            modifyColumnToVarchar100(connection, TABLE_DATA_REFERENCE, NODE_ID);
+            modifyColumnToVarchar100(connection, TABLE_WORKFLOW_RUN, CONTROLLER_NODE_ID);
+            modifyColumnToVarchar100(connection, TABLE_WORKFLOW_RUN, DATAMANAGEMENT_NODE_ID);
+
+        } catch (SQLException e) {
+            if (e instanceof SQLTransientConnectionException) {
+                throw (SQLTransientConnectionException) e;
+            }
+            throw new RuntimeException("Failed to update data management meta data db.", e);
+        }
+    }
+
+    private static void modifyColumnToVarchar100(Connection connection, String table, String column)
+        throws SQLTransientConnectionException {
+        
+        //It is not possible to change the datatype of "CHAR" columns in a derby DB.
+        //Thus, we create a new column, copy the data and rename it to the old name.
+        
+        String tempColumn = "TEMP_NODE_ID";
+        try {
+            Statement stmt = connection.createStatement();
+            String sql1 = "ALTER TABLE %s ADD COLUMN %s VARCHAR(100)";
+            String sql2 = "UPDATE %s SET %s = %s";
+            String sql3 = "ALTER TABLE %s DROP COLUMN %s";
+            String sql4 = "RENAME COLUMN %s.%s TO %s";
+            
+            stmt.execute(StringUtils.format(sql1, table, tempColumn));
+            stmt.execute(StringUtils.format(sql2, table, tempColumn, column));
+            stmt.execute(StringUtils.format(sql3, table, column));
+            stmt.execute(StringUtils.format(sql4, table, tempColumn, column));
+            stmt.close();
+
+            LOGGER.debug(StringUtils.format("Replaced column NODE_ID of table COMPNENT_RUN with column of type VARCHAR(100).", column,
+                table));
+        } catch (SQLException e) {
+            if (e instanceof SQLTransientConnectionException) {
+                throw (SQLTransientConnectionException) e;
+            }
+            throw new RuntimeException("Failed to change column data type.", e);
+        }
+
     }
 
     private static void createTableDBVersionInfo(final Connection connection, final String dbVersion) {

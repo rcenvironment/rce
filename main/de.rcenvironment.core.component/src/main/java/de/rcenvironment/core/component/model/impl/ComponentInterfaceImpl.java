@@ -8,11 +8,15 @@
 
 package de.rcenvironment.core.component.model.impl;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.api.ComponentColor;
@@ -33,6 +37,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ComponentInterfaceImpl implements ComponentInterface, Serializable {
 
     private static final long serialVersionUID = 778538723444342052L;
@@ -82,6 +87,8 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
 
     private String documentationHash = "";
 
+    private String iconHash;
+
     @Override
     public String getDisplayName() {
         return displayName;
@@ -105,8 +112,14 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
         return icon16;
     }
 
+    /**
+     * Sets the new icon and updates the icon hash.
+     * 
+     * @param icon16 The new icon.
+     */
     public void setIcon16(byte[] icon16) {
         this.icon16 = icon16;
+        updateIconHash();
     }
 
     @Override
@@ -114,8 +127,14 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
         return icon24;
     }
 
+    /**
+     * Sets the new icon and updates the icon hash.
+     * 
+     * @param icon24 The new icon.
+     */
     public void setIcon24(byte[] icon24) {
         this.icon24 = icon24;
+        updateIconHash();
     }
 
     @Override
@@ -128,8 +147,14 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
         return documentationHash;
     }
 
+    /**
+     * Sets the new icon and updates the icon hash.
+     * 
+     * @param icon32 The new icon.
+     */
     public void setIcon32(byte[] icon32) {
         this.icon32 = icon32;
+        updateIconHash();
     }
 
     public void setDocumentationHash(String docuHash) {
@@ -285,6 +310,28 @@ public class ComponentInterfaceImpl implements ComponentInterface, Serializable 
     @Override
     public String toString() {
         return StringUtils.format("ComponentInterface(id=%s)", getIdentifier());
+    }
+
+    private void updateIconHash() {
+
+        // concatenate all icons into a single byte array
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        for (byte[] iconX : new byte[][] { icon16, icon24, icon32 }) {
+            if (iconX != null) {
+                // call the write method with specified range as it overrides OutputStream's implementation and does not throw an
+                // IOException in contrast to the simple write method.
+                outputStream.write(iconX, 0, iconX.length);
+            }
+        }
+
+        // calculate and set the MD5 hash of the concatenated icons
+        byte[] concatenated = outputStream.toByteArray();
+        this.iconHash = DigestUtils.md5Hex(concatenated);
+    }
+
+    @Override
+    public String getIconHash() {
+        return iconHash;
     }
 
 }

@@ -19,14 +19,14 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.ServiceUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Background task which sets the time to live (TTL) for call back objects and call back proxy objects which are held by
@@ -55,8 +55,6 @@ public class CleanJob {
     /** Key for the platforms (to call) map contained in the job context. */
     public static final String PLATFORMS_MAP = "de.rcenvironment.rce.communication.callback.platforms";
 
-    private static BundleContext context;
-
     private static CommunicationService communicationService;
 
     private static Map<String, ScheduledFuture<?>> scheduleAtFixedRate = new HashMap<String, ScheduledFuture<?>>();
@@ -65,9 +63,7 @@ public class CleanJob {
     @Deprecated
     public CleanJob() {}
 
-    protected void activate(BundleContext bundleContext) {
-        context = bundleContext;
-    }
+    protected void activate(BundleContext bundleContext) {}
 
     protected void bindCommunicationService(CommunicationService newCommunicationService) {
         communicationService = newCommunicationService;
@@ -88,12 +84,12 @@ public class CleanJob {
 
         private final Map<String, WeakReference<Object>> objects;
 
-        private final Map<String, NodeIdentifier> nodes;
+        private final Map<String, InstanceNodeSessionId> nodes;
 
         private final Map<String, Long> ttls;
 
         protected CleanRunnable(Class<?> iface, Map<String, WeakReference<Object>> objects,
-            Map<String, Long> ttls, Map<String, NodeIdentifier> nodes) {
+            Map<String, Long> ttls, Map<String, InstanceNodeSessionId> nodes) {
 
             this.iface = iface;
             this.objects = objects;
@@ -152,13 +148,13 @@ public class CleanJob {
     public static void scheduleJob(Class iface,
         Map<String, WeakReference<Object>> objects,
         Map<String, Long> ttls,
-        Map<String, NodeIdentifier> platforms) {
+        Map<String, InstanceNodeSessionId> platforms) {
 
         synchronized (CleanJob.class) {
             if (!scheduleAtFixedRate.containsKey(iface.getCanonicalName())) {
                 CleanRunnable runnable = new CleanRunnable(iface, objects, ttls, platforms);
                 scheduleAtFixedRate.put(iface.getCanonicalName(),
-                    SharedThreadPool.getInstance().scheduleAtFixedRate(runnable, CleanJob.UPDATE_INTERVAL_MSEC));
+                    ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(runnable, CleanJob.UPDATE_INTERVAL_MSEC));
             }
 
         }

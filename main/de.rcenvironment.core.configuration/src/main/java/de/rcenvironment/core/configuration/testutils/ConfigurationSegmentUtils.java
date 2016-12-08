@@ -61,7 +61,9 @@ public final class ConfigurationSegmentUtils {
         }
         File tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("*.json");
         FileUtils.copyInputStreamToFile(is, tempFile);
-        return new ConfigurationStoreImpl(tempFile).getSnapshotOfRootSegment();
+        ConfigurationSegment segment = new ConfigurationStoreImpl(tempFile).getSnapshotOfRootSegment();
+        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempFile);
+        return segment;
     }
 
     /**
@@ -77,7 +79,9 @@ public final class ConfigurationSegmentUtils {
         }
         File tempFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("*.json");
         FileUtils.write(tempFile, data);
-        return new ConfigurationStoreImpl(tempFile).getSnapshotOfRootSegment();
+        ConfigurationSegment segment =  new ConfigurationStoreImpl(tempFile).getSnapshotOfRootSegment();
+        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(tempFile);
+        return segment;
     }
 
 }

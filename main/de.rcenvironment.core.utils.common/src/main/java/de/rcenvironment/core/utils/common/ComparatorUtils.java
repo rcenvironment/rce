@@ -36,6 +36,7 @@ public abstract class ComparatorUtils {
      * @param val2 value 2
      * @return see {@link Comparator#compare(Object, Object)}
      */
+    @Deprecated // as we use Java 7+, we can replace this with Integer.compare()
     public static int compareInt(int val1, int val2) {
         // Note: this is rather verbose as Checkstyle forbids the conditional operator ("a?b:c")
         if (val1 > val2) {
@@ -54,6 +55,7 @@ public abstract class ComparatorUtils {
      * @param val2 value 2
      * @return see {@link Comparator#compare(Object, Object)}
      */
+    @Deprecated // as we use Java 7+, we can replace this with Long.compare()
     public static int compareLong(long val1, long val2) {
         // Note: this is rather verbose as Checkstyle forbids the conditional operator ("a?b:c")
         if (val1 > val2) {

@@ -9,7 +9,6 @@
 package de.rcenvironment.core.start;
 
 import java.io.PrintStream;
-import java.util.List;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,8 +20,8 @@ import org.osgi.framework.FrameworkUtil;
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.start.common.InstanceRunner;
-import de.rcenvironment.core.utils.common.StatsCounter;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
+import de.rcenvironment.toolkit.modules.introspection.api.StatusCollectionService;
 
 /**
  * This class represents the default application.
@@ -76,14 +75,15 @@ public class Application implements IApplication {
         PrintStream sysOut = System.out;
         sysOut.println(STDOUT_MESSAGE_EARLY_STARTUP_COMPLETE);
 
+        final StatusCollectionService statusCollectionService = StaticToolkitHolder.getService(StatusCollectionService.class);
+        final String statusLineOutputIndent = "  ";
+        final String statusLineOutputSeparator = "\n";
+
+        log.debug(statusCollectionService.getCollectedDefaultStateInformation().asMultilineString(
+            "Application state after early startup:", statusLineOutputIndent, statusLineOutputSeparator, null));
+
         InstanceRunner instanceRunner = Instance.getInstanceRunner();
         int runnerResult = instanceRunner.run();
-
-        final List<String> statsLines = StatsCounter.getFullReportAsStandardTextRepresentation();
-        final String mergedStatsLines = org.apache.commons.lang3.StringUtils.join(statsLines, "\n");
-        log.debug("Statistics counters on Application shutdown:\n" + mergedStatsLines);
-
-        log.debug("Thread pool state on Application shutdown:\n" + SharedThreadPool.getInstance().getFormattedStatistics(true, true));
 
         return runnerResult;
     }

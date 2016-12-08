@@ -26,12 +26,15 @@ import org.easymock.CaptureType;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphHop;
 import de.rcenvironment.core.component.execution.internal.ComponentExecutionScheduler.State;
 import de.rcenvironment.core.component.execution.internal.InternalTDImpl.InternalTDType;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
+import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipientFactory;
@@ -40,6 +43,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinitio
 import de.rcenvironment.core.component.testutils.ComponentExecutionContextMock;
 import de.rcenvironment.core.component.testutils.EndpointDatumDefaultStub;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.testutils.NotAValueTDStub;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumServiceDefaultStub;
@@ -66,7 +70,7 @@ public class ComponentExecutionSchedulerTest {
 
     private static final String INPUT_6 = "input_6";
 
-    private static final String INPUT_7 = "input_6";
+    private static final String INPUT_7 = "input_7";
 
     private static final String OR_GROUP = "orGroup";
 
@@ -80,7 +84,7 @@ public class ComponentExecutionSchedulerTest {
      * Set up: one input (single, required); one value and 'finish value' received. Expected: Scheduling state become
      * {@link State#PROCESS_INPUT_DATA} and {@link State#FINISHED}.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testSingleRequiredInputForSuccess() throws Exception {
@@ -108,7 +112,7 @@ public class ComponentExecutionSchedulerTest {
      * Set up: one input (single, required); two values received, which are queued. Expected: Failure event posted to
      * {@link ComponentStateMachine}.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testSingleRequiredInputForFailure() throws Exception {
@@ -131,7 +135,7 @@ public class ComponentExecutionSchedulerTest {
      * Set up: one input (queue, required); multiple values and 'finish value' received. Expected: Scheduling state become multiple times
      * {@link State#PROCESS_INPUT_DATA} and finally {@link State#FINISHED}.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testQueuedInputForSuccess() throws Exception {
@@ -167,7 +171,7 @@ public class ComponentExecutionSchedulerTest {
      * Set up: one input (constant, required); one value and 'finish value' received. Expected: Scheduling state become
      * {@link State#PROCESS_INPUT_DATA} and {@link State#FINISHED}.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testConstantInputForSuccess() throws Exception {
@@ -194,7 +198,7 @@ public class ComponentExecutionSchedulerTest {
     /**
      * Set up: one input (constant, required); two values received. Expected: Failure event posted to {@link ComponentStateMachine}.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testConstantInputForFailure() throws Exception {
@@ -208,6 +212,8 @@ public class ComponentExecutionSchedulerTest {
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
+        endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
+        endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
 
         sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsSent);
         assertNewSchedulingStateAndSchedulingFailureEventPosted(capturedEvent);
@@ -216,7 +222,7 @@ public class ComponentExecutionSchedulerTest {
     /**
      * Setup: different kind of inputs; multiple values received. Expected: Appropriate scheduling.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testMultipleInputsForSuccess() throws Exception {
@@ -261,7 +267,7 @@ public class ComponentExecutionSchedulerTest {
         endpointDatumsToSend2.add(new EndpointDatumMock(INPUT_2, new InternalTDImpl(InternalTDType.WorkflowFinish)));
         endpointDatumsToSend2.add(new EndpointDatumMock(INPUT_3, new InternalTDImpl(InternalTDType.WorkflowFinish)));
         endpointDatumsToSend2.add(new EndpointDatumMock(INPUT_4, new InternalTDImpl(InternalTDType.WorkflowFinish)));
-        endpointDatumsToSend2.add(new EndpointDatumMock(INPUT_5, new InternalTDImpl(InternalTDType.WorkflowFinish)));
+        endpointDatumsToSend2.add(new EndpointDatumMock(INPUT_6, new InternalTDImpl(InternalTDType.WorkflowFinish)));
 
         sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsToSend2);
 
@@ -276,7 +282,7 @@ public class ComponentExecutionSchedulerTest {
     /**
      * Setup: different kind of inputs; multiple values received. Expected: Appropriate scheduling.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testHandlingIfInputValuesAreLeftAfterFinished() throws Exception {
@@ -307,7 +313,7 @@ public class ComponentExecutionSchedulerTest {
     /**
      * Setup: different kind of inputs; multiple values received. Expected: Appropriate scheduling.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testHandlingIfInputsAreRequiredButNotConnected() throws Exception {
@@ -335,7 +341,7 @@ public class ComponentExecutionSchedulerTest {
      * Expected: {@link State#PROCESS_INPUT_DATA} 1) after both of the inputs have received values for the first time, 2) after value at
      * input of type single was received, 3) after both of the inputs have received values after reset was performed
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testResetComponentForSuccess() throws Exception {
@@ -392,7 +398,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: Failure due to wrong execution identifier
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testResetComponentForFailure() throws Exception {
@@ -423,7 +429,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: {@link State#LOOP_RESET} 1) after both of the reset values were received
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testResetLoopForSuccess() throws Exception {
@@ -444,8 +450,7 @@ public class ComponentExecutionSchedulerTest {
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
         String executionId = UUID.randomUUID().toString();
         ComponentExecutionScheduler compExeScheduler =
-            setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos,
-                capturedEvent, executionId);
+            setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, executionId);
 
         sendAndCheckSendingDataToLoopDriverComponent(compExeScheduler, capturedEvent);
 
@@ -515,39 +520,11 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: Failure due to wrong reset value identifier received
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testResetLoopForFailure() throws Exception {
-        List<InputMockInformation> inputMockInfos = new ArrayList<>();
-        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Constant,
-            EndpointDefinition.InputExecutionContraint.Required));
-        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Queue,
-            EndpointDefinition.InputExecutionContraint.Required));
-        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>();
-        String executionId = UUID.randomUUID().toString();
-        ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, executionId);
 
-        String id = UUID.randomUUID().toString();
-        compExeScheduler.addResetDataIdSent(id);
-        List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
-
-        Queue<WorkflowGraphHop> resetCycleHops = new LinkedList<>();
-        WorkflowGraphHop workflowGraphHopMock = EasyMock.createStrictMock(WorkflowGraphHop.class);
-        EasyMock.expect(workflowGraphHopMock.getHopExecutionIdentifier()).andReturn(executionId).anyTimes();
-        EasyMock.replay(workflowGraphHopMock);
-        resetCycleHops.add(workflowGraphHopMock);
-
-        endpointDatumsSent.add(new EndpointDatumMock(INPUT_2,
-            new InternalTDImpl(InternalTDType.NestedLoopReset, id, resetCycleHops)));
-
-        compExeScheduler.addResetDataIdSent(UUID.randomUUID().toString());
-
-        endpointDatumsSent.add(new EndpointDatumMock(INPUT_2,
-            new InternalTDImpl(InternalTDType.NestedLoopReset, UUID.randomUUID().toString(), resetCycleHops)));
-        sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsSent);
-
-        assertSchedulingFailureEventPosted(capturedEvent);
     }
 
     /**
@@ -555,7 +532,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: {@link State#FAILURE_FORWARD} 1) after failure values were received
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testFailureValueAtComponentForSuccess() throws Exception {
@@ -595,7 +572,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: {@link State#FAILURE_FORWARD} 1) after failure values were received
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testFailureValueAtLoopDriverForSuccess() throws Exception {
@@ -632,7 +609,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: {@link State#PROCESS_INPUT_DATA} 1) after each value received
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testOrGroupForSuccess() throws Exception {
@@ -673,7 +650,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: {@link State#PROCESS_INPUT_DATA_WITH_NOT_A_VALUE_DATA} after value was received
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testNotAValueDataForSuccess() throws Exception {
@@ -698,7 +675,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: Failure because 'not a value' was received again or twice
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testNotAValueDataForFailure() throws Exception {
@@ -716,7 +693,9 @@ public class ComponentExecutionSchedulerTest {
         sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsSent);
 
         assertSchedulingFailureEventPosted(capturedEvent);
-        compExeScheduler.enable();
+
+        capturedEvent.reset();
+        compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
 
         endpointDatumsSent.clear();
         id = UUID.randomUUID().toString();
@@ -737,7 +716,7 @@ public class ComponentExecutionSchedulerTest {
      * 
      * Expected: 1, 2: not failure; 3: failure
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testDataTypeCheck() throws Exception {
@@ -764,11 +743,11 @@ public class ComponentExecutionSchedulerTest {
 
         assertSchedulingFailureEventPosted(capturedEvent);
     }
-    
+
     /**
      * Tests if the {@link ComponentExecutionScheduler} only post events to the {@link ComponentStateMachine} if set to active.
      * 
-     * @throws Exception on test failure
+     * @throws Exception on unexpected error
      */
     @Test
     public void testIdleMode() throws Exception {
@@ -778,26 +757,135 @@ public class ComponentExecutionSchedulerTest {
         Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
         ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent);
         compExeScheduler.disable();
-        
+
         List<EndpointDatum> endpointDatumsSent = new ArrayList<>();
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new TypedDatumMock(DataType.Float)));
         endpointDatumsSent.add(new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.WorkflowFinish)));
 
         sendValuesToExecutionScheduler(compExeScheduler, endpointDatumsSent);
-
-        assertFalse(capturedEvent.hasCaptured());
+        assertNoNewSchedulingStateEventPosted(capturedEvent);
         assertEquals(State.IDLING, compExeScheduler.getSchedulingState());
-        
+
         compExeScheduler.disable();
         assertFalse(capturedEvent.hasCaptured());
         compExeScheduler.enable();
         assertNewSchedulingStateEventPosted(capturedEvent);
+    }
+
+    /**
+     * Tests if the {@link ComponentExecutionScheduler} considers exclusively inputs with character of {@link EndpointCharacter#SAME_LOOP}
+     * for finish detection if not outer loop input exists and the component is not a loop driver.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testFinishNoLoopDriverWithoutOuterLoopInputs() throws ComponentExecutionException {
+        List<InputMockInformation> inputMockInfos = new ArrayList<>();
+        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
+        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
+        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        ComponentExecutionScheduler compExeScheduler = setUpExecutionScheduler(inputMockInfos, capturedEvent, false, false);
+
+        EndpointDatum endpointDatum1 = new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum1);
+        assertNoNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.IDLING, compExeScheduler.getSchedulingState());
+        EndpointDatum endpointDatum2 = new EndpointDatumMock(INPUT_2, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum2);
+        assertNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.FINISHED, compExeScheduler.getSchedulingState());
+        assertFalse(compExeScheduler.isEnabled());
+    }
+    
+    /**
+     * Tests if the {@link ComponentExecutionScheduler} considers exclusively inputs with character of {@link EndpointCharacter#SAME_LOOP}
+     * for finish detection if component is a loop driver having outer loop inputs.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testFinishLoopDriverWithOuterLoopInputs() throws ComponentExecutionException {
+        List<InputMockInformation> inputMockInfos = new ArrayList<>();
+        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.OUTER_LOOP));
+        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
+        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        ComponentExecutionScheduler compExeScheduler =
+            setUpExecutionScheduler(inputMockInfos, capturedEvent, true, false);
+
+        EndpointDatum endpointDatum1 = new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum1);
+        assertNoNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.IDLING, compExeScheduler.getSchedulingState());
+        EndpointDatum endpointDatum2 = new EndpointDatumMock(INPUT_2, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum2);
+        assertNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.FINISHED, compExeScheduler.getSchedulingState());
+        assertFalse(compExeScheduler.isEnabled());
+    }
+
+    /**
+     * Tests if the {@link ComponentExecutionScheduler} considers exclusively inputs with character of {@link EndpointCharacter#OUTER_LOOP}
+     * for finish detection if at least one exists and the component is no loop driver.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testFinishNonDriverWithOuterLoopInputs() throws ComponentExecutionException {
+        testFinishConsiderOuterLoopInputs(false);
+    }
+    
+    /**
+     * Tests if the {@link ComponentExecutionScheduler} considers exclusively inputs with character of {@link EndpointCharacter#OUTER_LOOP}
+     * for finish detection if component is a nested loop driver.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testFinishNestedLoopDriver() throws ComponentExecutionException {
+        testFinishConsiderOuterLoopInputs(true);
+    }
+
+    private void testFinishConsiderOuterLoopInputs(boolean isNestedLoopDriver) throws ComponentExecutionException {
+        List<InputMockInformation> inputMockInfos = new ArrayList<>();
+        inputMockInfos.add(new InputMockInformation(INPUT_1, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.OUTER_LOOP));
+        inputMockInfos.add(new InputMockInformation(INPUT_2, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.OUTER_LOOP));
+        inputMockInfos.add(new InputMockInformation(INPUT_3, EndpointDefinition.InputDatumHandling.Single,
+            EndpointDefinition.InputExecutionContraint.Required, EndpointCharacter.SAME_LOOP));
+        Capture<ComponentStateMachineEvent> capturedEvent = new Capture<>(CaptureType.ALL);
+        ComponentExecutionScheduler compExeScheduler =
+            setUpExecutionScheduler(inputMockInfos, capturedEvent, isNestedLoopDriver, isNestedLoopDriver);
+
+        EndpointDatum endpointDatum1 = new EndpointDatumMock(INPUT_1, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum1);
+        assertNoNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.IDLING, compExeScheduler.getSchedulingState());
+        EndpointDatum endpointDatum3 = new EndpointDatumMock(INPUT_3, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum3);
+        assertNoNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.IDLING, compExeScheduler.getSchedulingState());
+        EndpointDatum endpointDatum2 = new EndpointDatumMock(INPUT_2, new InternalTDImpl(InternalTDType.WorkflowFinish));
+        compExeScheduler.validateAndQueueEndpointDatum(endpointDatum2);
+        assertNewSchedulingStateEventPosted(capturedEvent);
+        assertEquals(State.FINISHED, compExeScheduler.getSchedulingState());
+        assertFalse(compExeScheduler.isEnabled());
     }
     
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent)
         throws ComponentExecutionException {
         return setUpExecutionScheduler(inputMockInfos, capturedEvent, UUID.randomUUID().toString());
+    }
+    
+    private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
+        Capture<ComponentStateMachineEvent> capturedEvent, boolean isLoopDriver, boolean isNestedLoopDriver)
+        throws ComponentExecutionException {
+        return setUpExecutionScheduler(inputMockInfos, capturedEvent, UUID.randomUUID().toString(), isLoopDriver, isNestedLoopDriver);
     }
 
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
@@ -806,6 +894,13 @@ public class ComponentExecutionSchedulerTest {
         return setUpExecutionScheduler(inputMockInfos, inputGroupMockInfos, capturedEvent, UUID.randomUUID().toString());
     }
 
+    private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
+        Capture<ComponentStateMachineEvent> capturedEvent, String executionId, boolean isLoopDriver, boolean isNestedLoopDriver)
+        throws ComponentExecutionException {
+        return setUpExecutionScheduler(inputMockInfos, new ArrayList<InputGroupMockInformation>(), capturedEvent, executionId, isLoopDriver,
+            isNestedLoopDriver);
+    }
+    
     private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
         Capture<ComponentStateMachineEvent> capturedEvent, String executionId)
         throws ComponentExecutionException {
@@ -817,6 +912,20 @@ public class ComponentExecutionSchedulerTest {
         throws ComponentExecutionException {
         ExecutionSpecificComponentExecutionContextMock compExeCtxMock =
             new ExecutionSpecificComponentExecutionContextMock(executionId, inputMockInfos, inputGroupMockInfos);
+        ComponentExecutionScheduler compExeScheduler =
+            new ComponentExecutionScheduler(
+                createCompExeRelatedInstancesStub(compExeCtxMock, createComponentStateMachineMock(capturedEvent)));
+        compExeScheduler.bindTypedDatumService(new TypedDatumServiceDefaultStub());
+        compExeScheduler.initialize(compExeCtxMock);
+        compExeScheduler.enable();
+        return compExeScheduler;
+    }
+    
+    private ComponentExecutionScheduler setUpExecutionScheduler(List<InputMockInformation> inputMockInfos,
+        List<InputGroupMockInformation> inputGroupMockInfos, Capture<ComponentStateMachineEvent> capturedEvent, String executionId,
+        boolean isLoopDriver, boolean isNestedLoopDriver) throws ComponentExecutionException {
+        ExecutionSpecificComponentExecutionContextMock compExeCtxMock = new ExecutionSpecificComponentExecutionContextMock(
+            executionId, inputMockInfos, inputGroupMockInfos, isLoopDriver, isNestedLoopDriver);
         ComponentExecutionScheduler compExeScheduler =
             new ComponentExecutionScheduler(
                 createCompExeRelatedInstancesStub(compExeCtxMock, createComponentStateMachineMock(capturedEvent)));
@@ -858,6 +967,10 @@ public class ComponentExecutionSchedulerTest {
             assertTrue(endpointDatumsReturned.containsValue(endpointDatum));
         }
         compExeScheduler.enable();
+    }
+
+    private void assertNoNewSchedulingStateEventPosted(Capture<ComponentStateMachineEvent> capturedEvent) {
+        assertFalse(capturedEvent.hasCaptured());
     }
 
     private void assertNewSchedulingStateAndSchedulingFailureEventPosted(Capture<ComponentStateMachineEvent> capturedEvent) {
@@ -942,23 +1055,30 @@ public class ComponentExecutionSchedulerTest {
 
         private static final long serialVersionUID = 6234658796478889718L;
 
-        private List<InputMockInformation> inputMockInformations;
+        private final List<InputMockInformation> inputMockInformations;
 
-        private List<InputGroupMockInformation> inputGroupMockInformations;
+        private final List<InputGroupMockInformation> inputGroupMockInformations;
+
+        private final boolean isLoopDriver;
+
+        private final boolean isNestedLoopDriver;
 
         private ExecutionSpecificComponentExecutionContextMock(List<InputMockInformation> inputMockInformations) {
             this(inputMockInformations, new ArrayList<InputGroupMockInformation>());
         }
 
-        private ExecutionSpecificComponentExecutionContextMock(String executionId, List<InputMockInformation> inputMockInformations) {
-            this(executionId, inputMockInformations, new ArrayList<InputGroupMockInformation>());
+        private ExecutionSpecificComponentExecutionContextMock(String executionId, List<InputMockInformation> inputMockInformations,
+            List<InputGroupMockInformation> inputGroupMockInformations, boolean isLoopDriver, boolean isNestedLoopDriver) {
+            super(executionId);
+            this.inputMockInformations = inputMockInformations;
+            this.inputGroupMockInformations = inputGroupMockInformations;
+            this.isLoopDriver = isLoopDriver;
+            this.isNestedLoopDriver = isNestedLoopDriver;
         }
 
         private ExecutionSpecificComponentExecutionContextMock(String executionId, List<InputMockInformation> inputMockInformations,
             List<InputGroupMockInformation> inputGroupMockInformations) {
-            super(executionId);
-            this.inputMockInformations = inputMockInformations;
-            this.inputGroupMockInformations = inputGroupMockInformations;
+            this(executionId, inputMockInformations, inputGroupMockInformations, false, false);
         }
 
         private ExecutionSpecificComponentExecutionContextMock(List<InputMockInformation> inputMockInformations,
@@ -966,15 +1086,29 @@ public class ComponentExecutionSchedulerTest {
             super();
             this.inputMockInformations = inputMockInformations;
             this.inputGroupMockInformations = inputGroupMockInformations;
+            this.isLoopDriver = false;
+            this.isNestedLoopDriver = false;
         }
 
         @Override
         public ComponentDescription getComponentDescription() {
             ComponentDescription componentDescriptionMock = EasyMock.createStrictMock(ComponentDescription.class);
+
+            ComponentInterface compInterfaceMock = EasyMock.createStrictMock(ComponentInterface.class);
+            EasyMock.expect(compInterfaceMock.getIsLoopDriver()).andStubReturn(isLoopDriver);
+            EasyMock.replay(compInterfaceMock);
+            EasyMock.expect(componentDescriptionMock.getComponentInterface()).andStubReturn(compInterfaceMock);
+
+            ConfigurationDescription configDescMock = EasyMock.createStrictMock(ConfigurationDescription.class);
+            EasyMock.expect(configDescMock.getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP))
+                .andStubReturn(String.valueOf(isNestedLoopDriver));
+            EasyMock.replay(configDescMock);
+
+            EasyMock.expect(componentDescriptionMock.getConfigurationDescription()).andStubReturn(configDescMock);
+
             EasyMock.expect(componentDescriptionMock.getInputDescriptionsManager())
-                .andReturn(InputDescriptionManagerMockFactory.createInputDescriptionManagerMock(inputMockInformations,
-                    inputGroupMockInformations))
-                .anyTimes();
+                .andStubReturn(InputDescriptionManagerMockFactory.createInputDescriptionManagerMock(inputMockInformations,
+                    inputGroupMockInformations));
             EasyMock.replay(componentDescriptionMock);
             return componentDescriptionMock;
         }

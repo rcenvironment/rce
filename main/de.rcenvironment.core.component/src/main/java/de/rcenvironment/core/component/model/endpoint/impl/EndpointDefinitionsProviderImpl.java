@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinitionsProvider;
@@ -25,24 +26,27 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinitio
  * 
  * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class EndpointDefinitionsProviderImpl implements Serializable, EndpointDefinitionsProvider {
 
     private static final long serialVersionUID = -386695878188756473L;
 
     private Set<EndpointDefinitionImpl> endpointDefinitions = new HashSet<>();
 
-    private Map<String, EndpointDefinition> staticEndpointDefinitions = new HashMap<>();
-
-    private Map<String, EndpointDefinition> dynamicEndpointDefinitions = new HashMap<>();
-    
     private Set<EndpointGroupDefinitionImpl> endpointGroupDefinitions = new HashSet<>();
     
+    @JsonIgnore
+    private Map<String, EndpointDefinition> staticEndpointDefinitions = new HashMap<>();
+
+    @JsonIgnore
+    private Map<String, EndpointDefinition> dynamicEndpointDefinitions = new HashMap<>();
+    
+    @JsonIgnore
     private Map<String, EndpointGroupDefinition> staticEndpointGroupDefinitions = new HashMap<>();
     
+    @JsonIgnore
     private Map<String, EndpointGroupDefinition> dynamicEndpointGroupDefinitions = new HashMap<>();
     
-    private Map<String, EndpointGroupDefinition> endpointGroups = new HashMap<>();
-
     @JsonIgnore
     @Override
     public Set<EndpointDefinition> getStaticEndpointDefinitions() {
@@ -84,33 +88,15 @@ public class EndpointDefinitionsProviderImpl implements Serializable, EndpointDe
     public EndpointGroupDefinition getDynamicEndpointGroupDefinition(String id) {
         return dynamicEndpointGroupDefinitions.get(id);
     }
-    
-    public Set<EndpointGroupDefinition> getEndpointGroupDefinitions() {
-        return new HashSet<EndpointGroupDefinition>(endpointGroupDefinitions);
-    }
 
     public Set<EndpointDefinition> getEndpointDefinitions() {
         return new HashSet<EndpointDefinition>(endpointDefinitions);
     }
     
-    /**
-     * Assumes that at most one {@link EndpointGroupDefinition} with name "*" is given. If there is more than
-     * one given the very last one is set as the dynamic one.
-     * 
-     * @param endpointGroupDefinitionImpls all {@link EndpointGroupDefinition}s (static and at most one
-     *        dynamic)
-     */
-    public void setEndpointGroupDefinitions(Set<EndpointGroupDefinitionImpl> endpointGroupDefinitionImpls) {
-        endpointGroupDefinitions = endpointGroupDefinitionImpls;
-        for (EndpointGroupDefinition endpointDefinition : endpointGroupDefinitionImpls) {
-            if (endpointDefinition.getIdentifier() != null) {
-                dynamicEndpointGroupDefinitions.put(endpointDefinition.getIdentifier(), endpointDefinition);
-            } else {
-                staticEndpointGroupDefinitions.put(endpointDefinition.getName(), endpointDefinition);
-            }
-        }
+    public Set<EndpointGroupDefinition> getEndpointGroupDefinitions() {
+        return new HashSet<EndpointGroupDefinition>(endpointGroupDefinitions);
     }
-
+    
     /**
      * Assumes that at most one endpoint description with name "*" is given. If there is more than
      * one given the very last one is set as the dynamic one.
@@ -129,16 +115,21 @@ public class EndpointDefinitionsProviderImpl implements Serializable, EndpointDe
         }
     }
     
-    public Set<EndpointGroupDefinition> getEndpointGroups() {
-        return new HashSet<>(endpointGroups.values());
-    }
-    
     /**
-     * @param endpointGroups set of {@link EndpointGroupDefinitionImpl} to set
+     * Assumes that at most one {@link EndpointGroupDefinition} with name "*" is given. If there is more than
+     * one given the very last one is set as the dynamic one.
+     * 
+     * @param endpointGroupDefinitionImpls all {@link EndpointGroupDefinition}s (static and at most one
+     *        dynamic)
      */
-    public void setEndpointGroups(Set<EndpointGroupDefinitionImpl> endpointGroups) {
-        for (EndpointGroupDefinitionImpl endpointGroup : endpointGroups) {
-            this.endpointGroups.put(endpointGroup.getIdentifier(), endpointGroup);
+    public void setEndpointGroupDefinitions(Set<EndpointGroupDefinitionImpl> endpointGroupDefinitionImpls) {
+        endpointGroupDefinitions = endpointGroupDefinitionImpls;
+        for (EndpointGroupDefinition endpointDefinition : endpointGroupDefinitionImpls) {
+            if (endpointDefinition.getIdentifier() != null) {
+                dynamicEndpointGroupDefinitions.put(endpointDefinition.getIdentifier(), endpointDefinition);
+            } else {
+                staticEndpointGroupDefinitions.put(endpointDefinition.getName(), endpointDefinition);
+            }
         }
     }
 

@@ -213,16 +213,20 @@ public class EndpointDescription extends EndpointGroupDescription {
     }
 
     /**
-     * @return <code>true</code> if the input execution constraint is 'required'
+     * @return <code>true</code> if the input execution constraint is {@link InputExecutionContraint#Required}
      */
     public boolean isRequired() {
-        String currentConstraint = getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT);
-        if (currentConstraint != null) {
-            if (currentConstraint.equals(InputExecutionContraint.Required.name())) {
-                return true;
-            }
+        // endpointDefinition is null if the component doesn't exist, then only an EndpointDescription instance exists in order to show the
+        // endpoint in the GUI, but it is kind of empty so to say (without the actual definition behind)
+        if (endpointDefinition == null || endpointDefinition.getEndpointType().equals(EndpointType.OUTPUT))  {
+            return false;
         }
-        return false;
+        EndpointDefinition.InputExecutionContraint exeConstraint = getEndpointDefinition().getDefaultInputExecutionConstraint(); 
+        if (getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null) {
+            exeConstraint = EndpointDefinition.InputExecutionContraint.valueOf(
+                getMetaDataValue(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT));
+        }
+        return exeConstraint.equals(EndpointDefinition.InputExecutionContraint.Required);
     }
 
     /**

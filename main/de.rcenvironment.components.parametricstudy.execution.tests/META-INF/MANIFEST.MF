@@ -2,11 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components Parametric Study Execution Tests
 Bundle-SymbolicName: de.rcenvironment.components.parametricstudy.execution.tests
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Fragment-Host: de.rcenvironment.components.parametricstudy.execution
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: de.rcenvironment.core.utils.testing
 Import-Package: de.rcenvironment.core.communication.common,
+ de.rcenvironment.core.component.model.testutils,
  de.rcenvironment.core.component.testutils,
- de.rcenvironment.core.datamodel.api
+ de.rcenvironment.core.datamodel.api,
+ de.rcenvironment.core.toolkitbridge.transitional,
+ de.rcenvironment.toolkit.modules.concurrency.api
 Bundle-Vendor: DLR

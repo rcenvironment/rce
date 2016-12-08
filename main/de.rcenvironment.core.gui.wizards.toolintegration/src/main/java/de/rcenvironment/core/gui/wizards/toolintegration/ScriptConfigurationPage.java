@@ -39,6 +39,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
+import de.rcenvironment.core.gui.utils.common.widgets.LineNumberStyledText;
 import de.rcenvironment.core.gui.wizards.toolintegration.api.ToolIntegrationWizardPage;
 
 /**
@@ -86,7 +87,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
     private final Combo[] directoryCombos;
 
-    private final Text[] textFields;
+    private final LineNumberStyledText[] textFields;
 
     private Button winEnabledButton = null;
 
@@ -123,7 +124,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         outputCombos = new Combo[NUMBER_OF_TABS];
         propertiesCombos = new Combo[NUMBER_OF_TABS];
         directoryCombos = new Combo[NUMBER_OF_TABS];
-        textFields = new Text[NUMBER_OF_TABS + 1];
+        textFields = new LineNumberStyledText[NUMBER_OF_TABS + 1];
 
     }
 
@@ -149,6 +150,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         PlatformUI.getWorkbench().getHelpSystem().setHelp(this.getControl(),
             HELP_CONTEXT_ID);
+
         updatePageComplete();
     }
 
@@ -279,7 +281,10 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
         winEnabledButton.setSelection(windowsEnabled);
         linuxEnabledButton.setSelection(linuxEnabled);
+        
+        textFields[0].setEditable(linuxEnabled);
         textFields[0].setEnabled(linuxEnabled);
+        textFields[textFields.length - 1].setEditable(windowsEnabled);
         textFields[textFields.length - 1].setEnabled(windowsEnabled);
 
         if ((String) configurationMap.get(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX) != null) {
@@ -364,7 +369,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
     }
 
-    private Text createScriptTabItem(String propertyKey, String name, int buttonIndex) {
+    private LineNumberStyledText createScriptTabItem(String propertyKey, String name, int buttonIndex) {
         CTabItem item = new CTabItem(tabFolder, SWT.NONE);
         item.setText(name);
         Composite client = new Composite(tabFolder, SWT.NONE);
@@ -376,16 +381,15 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             new Label(client, SWT.NONE);
         }
 
-        final Text scriptAreaWin;
+        final LineNumberStyledText scriptAreaWin;
         if (buttonIndex == 0) {
             client.setLayout(new GridLayout(3, false));
-            scriptAreaWin = new Text(client, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
+            scriptAreaWin = new LineNumberStyledText(client, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
             GridData scriptAreaWinData = new GridData(GridData.FILL_BOTH);
             scriptAreaWinData.widthHint = TEXTFIELD_WIDTH / 2;
             scriptAreaWinData.heightHint = TEXTFIELD_HEIGHT;
             scriptAreaWin.setLayoutData(scriptAreaWinData);
             scriptAreaWin.addModifyListener(new TextAreaModifyListener(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_WINDOWS));
-            scriptAreaWin.setEnabled(false);
             scriptAreaWin.addFocusListener(new FocusListener() {
 
                 @Override
@@ -396,16 +400,18 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
                     winScriptHasFocus = true;
                 }
             });
+            scriptAreaWin.setEditable(false);
             textFields[textFields.length - 1] = scriptAreaWin;
         } else {
             scriptAreaWin = null;
             client.setLayout(new GridLayout(2, false));
         }
         item.setControl(client);
-        final Text scriptArea = new Text(client, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
+        final LineNumberStyledText scriptArea = new LineNumberStyledText(client, SWT.MULTI | SWT.BORDER | SWT.WRAP | SWT.V_SCROLL);
         GridData scriptAreaData = new GridData(GridData.FILL_BOTH);
         if (buttonIndex == 0) {
             scriptArea.setEnabled(false);
+            scriptArea.setEditable(false);
             scriptArea.addFocusListener(new FocusListener() {
 
                 @Override
@@ -423,6 +429,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         scriptAreaData.heightHint = TEXTFIELD_HEIGHT;
         scriptArea.setLayoutData(scriptAreaData);
         scriptArea.addModifyListener(new TextAreaModifyListener(propertyKey));
+        
         textFields[buttonIndex] = scriptArea;
         if (buttonIndex == 0) {
             addScriptSelectButtonListener();
@@ -496,7 +503,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             });
         }
 
-        for (Text textField : textFields) {
+        for (LineNumberStyledText textField : textFields) {
             if (textField != null) {
                 textField.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
             }
@@ -523,7 +530,8 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
     }
 
-    private void createInsertFields(int buttonIndex, Composite client, final Text scriptAreaWin, final Text scriptArea) {
+    private void createInsertFields(int buttonIndex, Composite client, 
+        final LineNumberStyledText scriptAreaWin, final LineNumberStyledText scriptArea) {
         Composite buttonComposite = new Composite(client, SWT.NONE);
         buttonComposite.setLayout(new GridLayout(2, false));
         GridData buttonCompositeData = new GridData();
@@ -628,13 +636,14 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         }
 
     }
-
+    
     private void addScriptSelectButtonListener() {
         winEnabledButton.addSelectionListener(new SelectionListener() {
 
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 textFields[NUMBER_OF_TABS].setEnabled(winEnabledButton.getSelection());
+                textFields[NUMBER_OF_TABS].setEditable(winEnabledButton.getSelection());
                 configurationMap.put(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_WINDOWS_ENABLED, winEnabledButton.getSelection());
                 updatePageComplete();
             }
@@ -649,6 +658,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
             @Override
             public void widgetSelected(SelectionEvent arg0) {
                 textFields[0].setEnabled(linuxEnabledButton.getSelection());
+                textFields[0].setEditable(linuxEnabledButton.getSelection());
                 configurationMap.put(ToolIntegrationConstants.KEY_COMMAND_SCRIPT_LINUX_ENABLED, linuxEnabledButton.getSelection());
                 updatePageComplete();
             }
@@ -690,7 +700,13 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         @Override
         public void modifyText(ModifyEvent arg0) {
-            configurationMap.put(key, ((Text) arg0.getSource()).getText());
+            Object obj = arg0.getSource();
+            if (obj instanceof Text){
+                configurationMap.put(key, ((Text) obj).getText());
+            } else if (obj instanceof LineNumberStyledText){
+                configurationMap.put(key, ((LineNumberStyledText) obj).getText());
+            }
+            
             updatePageComplete();
         }
     }
@@ -706,19 +722,19 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
 
         private final Combo combo;
 
-        private final Text text;
+        private final LineNumberStyledText text;
 
         private final int comboType;
 
-        private Text text2;
+        private LineNumberStyledText text2;
 
-        InsertButtonListener(Combo inputCombo, Text scriptArea, int comboType) {
+        InsertButtonListener(Combo inputCombo, LineNumberStyledText scriptArea, int comboType) {
             combo = inputCombo;
             text = scriptArea;
             this.comboType = comboType;
         }
 
-        InsertButtonListener(Combo inputCombo, Text scriptArea, Text scriptArea2, int comboType) {
+        InsertButtonListener(Combo inputCombo, LineNumberStyledText scriptArea, LineNumberStyledText scriptArea2, int comboType) {
             combo = inputCombo;
             text = scriptArea;
             text2 = scriptArea2;
@@ -735,7 +751,7 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
         @Override
         public void widgetSelected(SelectionEvent arg0) {
             String insertText = combo.getText();
-            Text currentText = text;
+            LineNumberStyledText currentText = text;
             if (winScriptHasFocus && text2 != null) {
                 currentText = text2;
             }
@@ -815,9 +831,9 @@ public class ScriptConfigurationPage extends ToolIntegrationWizardPage {
      */
     private class CopyInputListener implements SelectionListener {
 
-        private final Text text;
+        private final LineNumberStyledText text;
 
-        CopyInputListener(Text text) {
+        CopyInputListener(LineNumberStyledText text) {
             this.text = text;
         }
 

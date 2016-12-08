@@ -22,7 +22,7 @@ import java.util.Set;
 
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkRoutingInformation;
 import de.rcenvironment.core.communication.protocol.MessageMetaData;
@@ -72,9 +72,9 @@ public final class NetworkFormatter {
 
         for (TopologyLink link : linkList) {
             result += StringUtils.format("  %s --[%s]--> %s (Hash=%s)\n",
-                link.getSource().getIdString(),
+                link.getSource().getInstanceNodeSessionIdString(),
                 link.getConnectionId(),
-                link.getDestination().getIdString(),
+                link.getDestination().getInstanceNodeSessionIdString(),
                 link.hashCode());
         }
         return result;
@@ -93,9 +93,9 @@ public final class NetworkFormatter {
 
         SimpleDateFormat timestampFormat = new SimpleDateFormat("yyyyMMdd-HHmmss.SSS");
         for (TopologyNode networkNode : networkNodes) {
-            String nodeIdInfo = networkNode.getNodeIdentifier().getIdString();
+            String nodeIdInfo = networkNode.getNodeIdentifier().getInstanceNodeSessionIdString();
             // mark local node
-            if (nodeIdInfo.equals(networkGraph.getLocalNodeId().getIdString())) {
+            if (nodeIdInfo.equals(networkGraph.getLocalNodeId().getInstanceNodeSessionIdString())) {
                 nodeIdInfo += "*";
             }
             result +=
@@ -123,7 +123,7 @@ public final class NetworkFormatter {
      */
     public static String graphMetaData(TopologyMap networkGraph) {
         return StringUtils.format("  Local Node Id: %s, Nodes: %s, Links: %s, Fully conv.: %s, Hash=%s\n",
-            networkGraph.getLocalNodeId().getIdString(),
+            networkGraph.getLocalNodeId().getInstanceNodeSessionIdString(),
             networkGraph.getNodeCount(),
             networkGraph.getLinkCount(),
             networkGraph.hasSameTopologyHashesForAllNodes(),
@@ -156,7 +156,7 @@ public final class NetworkFormatter {
         backwardEdgeProperties.put(GRAPHVIZ_STYLE_KEY, GRAPHVIZ_STYLE_VALUE_DASHED);
         for (TopologyNode networkNode : networkNodes) {
             // TODO filter to only include reachable nodes
-            String vertexId = networkNode.getNodeIdentifier().getIdString();
+            String vertexId = networkNode.getNodeIdentifier().getInstanceNodeIdString();  // only use persistent part to avoid clutter
             String label = networkNode.getDisplayName();
             builder.addVertex(vertexId, label);
         }
@@ -165,13 +165,14 @@ public final class NetworkFormatter {
             String edgeId = link.getConnectionId();
             String label = edgeId.substring(0, edgeId.indexOf('-'));
             if (label.endsWith("s")) {
-                builder.addEdge(link.getSource().getIdString(), link.getDestination().getIdString(), label);
+                builder.addEdge(link.getSource().getInstanceNodeIdString(), link.getDestination().getInstanceNodeIdString(), label);
             } else {
-                builder.addEdge(link.getSource().getIdString(), link.getDestination().getIdString(), label, backwardEdgeProperties);
+                builder.addEdge(link.getSource().getInstanceNodeIdString(), link.getDestination().getInstanceNodeIdString(), label,
+                    backwardEdgeProperties);
             }
         }
         // mark local node
-        String localNodeId = topologyMap.getLocalNodeId().getIdString();
+        String localNodeId = topologyMap.getLocalNodeId().getInstanceNodeIdString();
         builder.addVertexProperty(localNodeId, GRAPHVIZ_STYLE_KEY, GRAPHVIZ_STYLE_VALUE_BOLD);
         // generate script
         return builder.getScriptContent();
@@ -233,10 +234,11 @@ public final class NetworkFormatter {
      */
     public static String networkRoute(NetworkRoute networkRoute) {
         String result =
-            StringUtils.format("length: %s, %s, time: %s ms", networkRoute.getPath().size(), networkRoute.getSource().getIdString(),
+            StringUtils.format("length: %s, %s, time: %s ms", networkRoute.getPath().size(),
+                networkRoute.getSource().getInstanceNodeSessionIdString(),
                 networkRoute.getComputationalEffort());
         for (TopologyLink link : networkRoute.getPath()) {
-            result += StringUtils.format(" --> %s", link.getDestination().getIdString());
+            result += StringUtils.format(" --> %s", link.getDestination().getInstanceNodeSessionIdString());
         }
         return result;
     }
@@ -312,10 +314,10 @@ public final class NetworkFormatter {
      */
     public static String networkGraphToConsoleInfo(NetworkGraph networkGraph) {
         StringBuilder buffer = new StringBuilder();
-        List<NodeIdentifier> networkNodes = new ArrayList<NodeIdentifier>(networkGraph.getNodeIds());
+        List<InstanceNodeSessionId> networkNodes = new ArrayList<InstanceNodeSessionId>(networkGraph.getNodeIds());
         buffer.append("Reachable network nodes (" + networkNodes.size() + " total):\n");
-        for (NodeIdentifier nodeId : networkNodes) {
-            buffer.append(StringUtils.format("  %s [%s]\n", nodeId.getAssociatedDisplayName(), nodeId.getIdString()));
+        for (InstanceNodeSessionId nodeId : networkNodes) {
+            buffer.append(StringUtils.format("  %s [%s]\n", nodeId.getAssociatedDisplayName(), nodeId.getInstanceNodeSessionIdString()));
         }
         buffer.append("Message channels (" + networkGraph.getLinkCount() + " total):\n");
         for (NetworkGraphLink link : networkGraph.getLinks()) {
@@ -333,7 +335,7 @@ public final class NetworkFormatter {
      */
     public static String networkGraphToGraphviz(NetworkGraph networkGraph, boolean markSpanningTree) {
         DotFileBuilder builder = GraphvizUtils.createDotFileBuilder("rce_network");
-        List<NodeIdentifier> networkNodes = new ArrayList<NodeIdentifier>(networkGraph.getNodeIds());
+        List<InstanceNodeSessionId> networkNodes = new ArrayList<InstanceNodeSessionId>(networkGraph.getNodeIds());
 
         // prepare spanning tree data if requested, or set an empty placeholder
         Set<NetworkGraphLink> spanningTreeLinks;
@@ -349,8 +351,8 @@ public final class NetworkFormatter {
         }
 
         // add vertices
-        for (NodeIdentifier nodeId : networkNodes) {
-            String vertexId = nodeId.getIdString();
+        for (InstanceNodeSessionId nodeId : networkNodes) {
+            String vertexId = nodeId.getInstanceNodeIdString(); // only use the persistent part to avoid clutter 
             String label = nodeId.getAssociatedDisplayName(); // TODO improve
             builder.addVertex(vertexId, label);
         }
@@ -374,12 +376,12 @@ public final class NetworkFormatter {
             }
             edgeProperties.put(GRAPHVIZ_STYLE_KEY, styleBuilder.toString());
             styleBuilder.setLength(0);
-            builder.addEdge(link.getSourceNodeId().getIdString(), link.getTargetNodeId().getIdString(), label,
+            builder.addEdge(link.getSourceNodeId().getInstanceNodeIdString(), link.getTargetNodeId().getInstanceNodeIdString(), label,
                 edgeProperties);
         }
 
         // mark local node
-        String localNodeId = networkGraph.getLocalNodeId().getIdString();
+        String localNodeId = networkGraph.getLocalNodeId().getInstanceNodeIdString();
         builder.addVertexProperty(localNodeId, GRAPHVIZ_STYLE_KEY, GRAPHVIZ_STYLE_VALUE_BOLD);
 
         // generate script
@@ -387,8 +389,8 @@ public final class NetworkFormatter {
     }
 
     private static String formatTopologyNodes(TopologyMap topologyMap, boolean extendedInfo) {
-        NodeIdentifier localNodeId = topologyMap.getLocalNodeId();
-        Set<NodeIdentifier> reachableNodes = topologyMap.getIdsOfReachableNodes(false);
+        InstanceNodeSessionId localNodeId = topologyMap.getLocalNodeId();
+        Set<InstanceNodeSessionId> reachableNodes = topologyMap.getIdsOfReachableNodes(false);
         List<TopologyNode> topologyNodes = new ArrayList<TopologyNode>(topologyMap.getNodes());
 
         StringBuilder result = new StringBuilder();
@@ -396,7 +398,7 @@ public final class NetworkFormatter {
         Collections.sort(topologyNodes);
         for (TopologyNode topologyNode : topologyNodes) {
             // do not show unreachable nodes (at least, not by default)
-            NodeIdentifier nodeId = topologyNode.getNodeIdentifier();
+            InstanceNodeSessionId nodeId = topologyNode.getNodeIdentifier();
             if (!reachableNodes.contains(nodeId)) {
                 continue;
             }

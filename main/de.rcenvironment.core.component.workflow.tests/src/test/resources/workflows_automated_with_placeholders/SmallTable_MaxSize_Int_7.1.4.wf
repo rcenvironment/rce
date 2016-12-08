@@ -1,0 +1,65 @@
+{
+  "identifier" : "d693825c-830a-4028-9f76-a246c226564f",
+  "workflowVersion" : "4",
+  "name" : "SmallTable_succeed_2_2016-09-22_15:59:11_50",
+  "nodes" : [ {
+    "identifier" : "c4b76921-1672-415b-a88a-0eea3daea4c3",
+    "name" : "Receiver",
+    "location" : "161:104",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "smallTable = RCE.read_input(\"in\")\r\ncontent = 922337203685477580811111111111\r\n\r\nprint type(content)\r\nprint type(smallTable[0][0])\r\n\r\nprint content\r\n\r\nif int(smallTable[0][0]) == content:\r\n  print \"succeed\"\r\nelse:\r\n  RCE.fail(\"This did not work\")  \r\n\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "33c030ca-ced1-4938-8197-15674499e3ae",
+      "name" : "in",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "c04a6249-3c78-4e79-8bc2-43ad8de63ba8",
+    "name" : "Sender",
+    "location" : "55:104",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 1000\r\nrows = 100\r\ncontent = int(922337203685477580811111111111)\r\n\r\n\r\nsmallTable = [[content]*cols for i in range(rows)]\r\n\r\nRCE.write_output(\"smallTable\", smallTable)\r\n\r\nprint content\r\nprint smallTable",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "8706e55a-6f9a-44f2-8289-52eea4b0c99c",
+      "name" : "smallTable",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "c04a6249-3c78-4e79-8bc2-43ad8de63ba8",
+    "output" : "8706e55a-6f9a-44f2-8289-52eea4b0c99c",
+    "target" : "c4b76921-1672-415b-a88a-0eea3daea4c3",
+    "input" : "33c030ca-ced1-4938-8197-15674499e3ae"
+  } ],
+  "labels" : "[{\"identifier\":\"0ad1f60a-143f-4734-b332-c7498372d632\",\"text\":\"Smalltable with 100.000 entries.\\r\\nEntries are max_int.\",\"location\":\"46:24\",\"size\":\"196:61\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

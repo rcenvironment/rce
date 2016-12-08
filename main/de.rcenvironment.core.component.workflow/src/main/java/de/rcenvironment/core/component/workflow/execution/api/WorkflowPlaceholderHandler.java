@@ -202,7 +202,7 @@ public class WorkflowPlaceholderHandler implements Serializable {
             if ((matcher.group(ComponentUtils.ATTRIBUTE1) != null
                 && matcher.group(ComponentUtils.ATTRIBUTE1).equals(ComponentUtils.ENCODEDATTRIBUTE))
                 || (matcher.group(ComponentUtils.ATTRIBUTE2) != null
-                    && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
+                && matcher.group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.ENCODEDATTRIBUTE))) {
                 encryptedPlaceholder.add(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME));
             }
         }
@@ -212,8 +212,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
     private boolean isGlobalPlaceholder(Matcher matcherOfPlaceholder) {
         return (matcherOfPlaceholder.group(ComponentUtils.ATTRIBUTE1) != null && (matcherOfPlaceholder.group(ComponentUtils.ATTRIBUTE1)
             .equals(ComponentUtils.GLOBALATTRIBUTE) || (matcherOfPlaceholder
-                .group(ComponentUtils.ATTRIBUTE2) != null && matcherOfPlaceholder
-                    .group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.GLOBALATTRIBUTE))));
+            .group(ComponentUtils.ATTRIBUTE2) != null && matcherOfPlaceholder
+            .group(ComponentUtils.ATTRIBUTE2).equals(ComponentUtils.GLOBALATTRIBUTE))));
     }
 
     private void addPlaceholderKeyToMap(Map<String, Map<String, String>> map, String key, String placeholderName) {
@@ -258,8 +258,12 @@ public class WorkflowPlaceholderHandler implements Serializable {
                     componentInstancePlaceholders.get(componentUUID).put(matcher.group(ComponentUtils.PLACEHOLDERNAME), value);
                 }
             }
+            
+            String tail = dot + matcher.group(ComponentUtils.PLACEHOLDERNAME);
             if (addToHistory) {
-                String tail = dot + matcher.group(ComponentUtils.PLACEHOLDERNAME);
+                // do save -> add to history
+                
+                // placeholder component history
                 String placeholderCompHistory = wfID + dot + componentID + tail;
                 List<String> placeholderCompHistoryList = null;
                 if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory.toString()) != null) {
@@ -279,6 +283,8 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 if (componentTypeHistory != null) {
                     componentTypeHistory.put(placeholderCompHistory, placeholderCompHistoryList);
                 }
+                
+                // placeholder instance history
                 String placeholderInstanceHistory = componentUUID + tail;
                 List<String> placeholderHistoryList = null;
                 if (componentInstanceHistory != null && componentInstanceHistory.get(placeholderInstanceHistory) != null) {
@@ -298,9 +304,54 @@ public class WorkflowPlaceholderHandler implements Serializable {
                 if (componentInstanceHistory != null) {
                     componentInstanceHistory.put(placeholderInstanceHistory, placeholderHistoryList);
                 }
+            } else {
+                // don't save === remove from history
+
+                // placeholder component history
+                String placeholderCompHistory = wfID + dot + componentID + tail;
+                List<String> placeholderCompHistoryList = null;
+                if (componentTypeHistory != null && componentTypeHistory.get(placeholderCompHistory.toString()) != null) {
+                    placeholderCompHistoryList = componentTypeHistory.get(placeholderCompHistory.toString());
+                    if (placeholderCompHistoryList.contains(value)) {
+                        placeholderCompHistoryList.remove(value);
+                    }
+                } else {
+                    placeholderCompHistoryList = new LinkedList<String>();
+                }
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+                    encryptedPlaceholder)) {
+                    clearPassword(componentID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderCompHistoryList);
+                }
+
+                // placeholder instance history
+                String placeholderInstanceHistory = componentUUID + tail;
+                List<String> placeholderHistoryList = null;
+                if (componentInstanceHistory != null && componentInstanceHistory.get(placeholderInstanceHistory) != null) {
+                    placeholderHistoryList = componentInstanceHistory.get(placeholderInstanceHistory);
+                    if (placeholderHistoryList.contains(value)) {
+                        placeholderHistoryList.remove(value);
+                    }
+                } else {
+                    placeholderHistoryList = new LinkedList<String>();
+                }
+                if (ComponentUtils.isEncryptedPlaceholder(componentID + dot + matcher.group(ComponentUtils.PLACEHOLDERNAME),
+                    encryptedPlaceholder)) {
+                    clearPassword(componentUUID, matcher.group(ComponentUtils.PLACEHOLDERNAME), placeholderHistoryList);
+                } 
             }
         }
+    }
 
+    private void clearPassword(String componentID, String placeholderName, List<String> placeholderList) {
+        placeholderList.clear();
+        try {
+            ISecurePreferences prefs = SecurePreferencesFactory.getSecurePreferencesStore();
+            ISecurePreferences placeholderNode = prefs.node(ComponentUtils.PLACEHOLDER_PASSWORD_STORAGE_NODE);
+            String path = componentID + dot + placeholderName;
+            placeholderNode.remove(path);
+        } catch (IOException e) {
+            LOGGER.warn("Could not remove password", e);
+        }
     }
 
     private void storePassword(Serializable value, String componentID, String placeholderName, List<String> placeholderList) {
@@ -799,6 +850,33 @@ public class WorkflowPlaceholderHandler implements Serializable {
 
     public Map<String, String> getPlaceholdersDataType() {
         return placeholdersDataType;
+    }
+
+    /**
+     * Checks if the placeholder is active, i.e. it has to be filled before running the workflow.
+     *  
+     * @param instancePlaceholder the placeholder to check
+     * @param configDesc configuration description of the component.
+     * @return true, iff the placeholder is active.
+     */
+    public static boolean isActivePlaceholder(String instancePlaceholder,
+        ConfigurationDescription configDesc) {
+        Set<String> configKeys = configDesc.getComponentConfigurationDefinition().getConfigurationKeys();
+        Set<String> activeConfigKeys = configDesc.getActiveConfigurationDefinition().getConfigurationKeys();
+        boolean isActivePlaceholder = false;
+        for (String configKey : configDesc.getConfiguration().keySet()) {
+            if ((activeConfigKeys.contains(configKey) || !configKeys
+                .contains(configKey))
+                && configDesc.isPlaceholderSet(configKey)) {
+                String configValue = configDesc
+                    .getActualConfigurationValue(configKey);
+                if (configValue.contains(instancePlaceholder)) {
+                    isActivePlaceholder = true;
+                    break;
+                }
+            }
+        }
+        return isActivePlaceholder;
     }
 
 }

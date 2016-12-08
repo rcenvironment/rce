@@ -10,6 +10,8 @@ package de.rcenvironment.core.remoteaccess.server.internal;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.api.FinalWorkflowState;
@@ -32,8 +34,15 @@ public interface RemoteAccessService {
      * 
      * @param outputReceiver the receiver to print the output to
      * @param format the output format to use: supported values are "csv" and "token-stream"
+     * @param includeLoadData true to fetch and include system load data (CPU/RAM) in the generated output
+     * @param timeSpanMsec the maximum time span, in milliseconds, to aggregate/average load information over
+     * @param timeLimitMsec the maximum time, in milliseconds, to wait for each node's load data
+     * @throws TimeoutException on unexpected errors during asynchronous task execution
+     * @throws ExecutionException on unexpected errors during asynchronous task execution
+     * @throws InterruptedException on interruption while waiting for asynchronous task execution
      */
-    void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format);
+    void printListOfAvailableTools(TextOutputReceiver outputReceiver, String format, boolean includeLoadData, int timeSpanMsec,
+        int timeLimitMsec) throws InterruptedException, ExecutionException, TimeoutException;
 
     /**
      * Prints information about all published workflows available for the "ra run-wf" command.

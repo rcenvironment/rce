@@ -15,8 +15,8 @@
         <para>
             <orderedlist>
                 <listitem>
-                    <para>Copy of the existing Excel file as temporarily file in a temporarily
-                        folder (working copy)</para>
+                    <para>Copy of the existing Excel file as temporary file in a temporary folder
+                        (working copy)</para>
                 </listitem>
                 <listitem>
                     <para>Wait for all input channels which are needed to run the component
@@ -57,7 +57,7 @@
         <sect2>
             <title>File</title>
             <para>In the 'File' tab you can link an Excel file to the RCE component. Note that the
-                Excel file must be located within the workflows project. Click "Link an Excel file
+                Excel file must be located within the workflow's project. Click "Link an Excel file
                 ..." and navigate to the Excel file of your choice.</para>
             <para><inlinegraphic fileref="../../images/image001.png"/></para>
         </sect2>
@@ -93,11 +93,11 @@
                                 <entry>See RCE user guide (Coupling Workflow Components)</entry>
                             </row>
                             <row>
-                                <entry>Constraints</entry>
+                                <entry>Handling</entry>
                                 <entry>See RCE user guide (Coupling Workflow Components)</entry>
                             </row>
                             <row>
-                                <entry>Handling</entry>
+                                <entry>Constraint</entry>
                                 <entry>See RCE user guide (Coupling Workflow Components)</entry>
                             </row>
                             <row>
@@ -143,9 +143,9 @@
                 </listitem>
                 <listitem>
                     <para>For an automatic detection of VBA-macros the VBA-project must be trusted.
-                        Please start Excel as administrator. Navigate to file->options->trust
-                        center->trust center settings->macro settings and check the "trust access to
-                        the VBA project object model" option.</para>
+                        Please start Excel as administrator. In Microsoft Excel 2010 navigate to
+                        "File -> Options -> Trust center -> Trust center settings -> macro settings"
+                        and check the "trust access to the VBA project object model" option. </para>
                 </listitem>
             </orderedlist>
         </para>

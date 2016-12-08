@@ -24,7 +24,7 @@ import de.rcenvironment.components.optimizer.common.OptimizerResultService;
 import de.rcenvironment.components.optimizer.common.OptimizerResultSet;
 import de.rcenvironment.components.optimizer.common.ResultSet;
 import de.rcenvironment.components.optimizer.common.ResultStructure;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
@@ -110,11 +110,15 @@ public final class OptimizerDatastore extends ResultSet {
      * @param optimizerResultService instance of {@link OptimizerResultService}
      * @return created {@link OptimizerDatastore}.
      */
-    public static OptimizerDatastore connect(final String identifier, final NodeIdentifier platform,
+    public static OptimizerDatastore connect(final String identifier, final ResolvableNodeId platform,
         OptimizerResultService optimizerResultService) {
         OptimizerReceiver receiver;
         try {
             receiver = optimizerResultService.createReceiver(identifier, platform);
+            if (receiver == null) {
+                LogFactory.getLog(OptimizerDatastore.class).error("Failed to get values from node: " + platform);
+                return null;
+            }
             final OptimizerDatastore datastore = new OptimizerDatastore(identifier,
                 receiver.getStudy().getTitle(), receiver.getStudy().getStructure());
             if (notificationSubscriber == null) {
@@ -127,7 +131,7 @@ public final class OptimizerDatastore extends ResultSet {
             notificationSubscriber.add(newNotificationSubscriber);
             return datastore;
         } catch (RemoteOperationException e) {
-            LogFactory.getLog(OptimizerDatastore.class).error("Failed to subscribe to remote notifications.");
+            LogFactory.getLog(OptimizerDatastore.class).error("Failed to get values from remote node: " + platform);
         }
         return null;
     }

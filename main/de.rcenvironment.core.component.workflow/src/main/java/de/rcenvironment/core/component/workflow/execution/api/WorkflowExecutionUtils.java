@@ -17,8 +17,11 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
@@ -48,6 +51,28 @@ public final class WorkflowExecutionUtils {
 
     private static final int WORKFLOW_SUFFIX_NUMBER_MODULO = 100;
 
+    private static final int PATTERN_DATETIME_LENGTH = 19;
+
+    /**
+     * Structure of this regular expression:<br>
+     * 1. year<br>
+     * \d{4} -> random number between 0 and 9 exactly 4 times. \- -> hyphen 2. month<br>
+     * [01]{1} -> 0 or 1 (a year only has 12 months) \d{1} -> random number between 0 and 9 exactly once. \- -> hyphen 3. day<br>
+     * [0123]{1} \d{1} -> random number between 0 and 9 exactly once. \_ -> underline character 4. hour<br>
+     * [012]{1} \d -> random number between 0 and 9 exactly once. \: -> colon 5. minutes<br>
+     * [0123456]{1} -> random number between 0 and 6 exactly once (a hour only has 60min) \d{1} -> random number between 0 and 9 exactly
+     * once. \: -> colon 6. seconds<br>
+     * [0123456]{1} -> random number between 0 and 6 exactly once (a minute only has 60sec) \d{1} -> random number between 0 and 9 exactly
+     * once.
+     * 
+     */
+    private static final String PATTERN_DATETIME_STRING =
+        "\\d{4}\\-[01]{1}\\d{1}\\-[0123]{1}\\d{1}\\_[012]{1}\\d\\:[0123456]{1}\\d{1}\\:[0123456]{1}\\d{1}";
+
+    private static final int PATTERN_NUMBER_LENGTH = 3;
+
+    private static final String PATTERN_NUMBER_STRING = "^\\_\\d{2}";
+
     private static final AtomicInteger GLOBAL_WORKFLOW_SUFFIX_SEQUENCE_COUNTER = new AtomicInteger();
 
     private WorkflowExecutionUtils() {};
@@ -60,38 +85,41 @@ public final class WorkflowExecutionUtils {
      * @return the generated default name including the timestamp
      */
     public static String generateDefaultNameforExecutingWorkflow(String filename, WorkflowDescription workflowDescription) {
-
-        if (workflowDescription.getName() == null) {
+        String wfDescriptionName = workflowDescription.getName();
+        if (wfDescriptionName == null) {
             return generateWorkflowName(filename);
         }
+        Pattern pattern = Pattern.compile(PATTERN_DATETIME_STRING);
+        Matcher matcher = pattern.matcher(wfDescriptionName);
+        if (!matcher.find()) {
+            return wfDescriptionName;
+        }
+        int position = matcher.start();
 
-        if (workflowDescription.getName().contains("_20")) {
+        String dateAndTime = wfDescriptionName.substring(position, position + PATTERN_DATETIME_LENGTH);
 
-            int index = workflowDescription.getName().indexOf("_20");
-
-            try {
-                String dateAndNumber = workflowDescription.getName().substring(index + 1);
-
-                if (dateAndNumber.contains("_")) {
-
-                    int indexOfunderLine = dateAndNumber.lastIndexOf("_");
-                    String dateOnly = dateAndNumber.substring(0, indexOfunderLine);
-                    SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
-                    dateFormat.setLenient(false);
-                    dateFormat.parse(dateOnly);
-
-                }
-
-                return generateWorkflowName(filename);
-
-            } catch (ParseException e) {
-                return workflowDescription.getName();
-            }
-
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd_HH:mm:ss");
+            dateFormat.setLenient(false);
+            dateFormat.parse(dateAndTime);
+        } catch (ParseException e) {
+            return wfDescriptionName;
         }
 
-        return workflowDescription.getName();
+        String newName = wfDescriptionName.substring(0, position)
+            + generateTimestampString();
 
+        String rest = wfDescriptionName.substring(position + PATTERN_DATETIME_LENGTH);
+        pattern = Pattern.compile(PATTERN_NUMBER_STRING);
+        matcher = pattern.matcher(rest);
+        if (matcher.find()) {
+            newName = StringUtils.format("%s_%02d", newName, generateNewSuffixNumber());
+            newName += rest.substring(PATTERN_NUMBER_LENGTH);
+        } else {
+            newName += rest;
+        }
+
+        return newName;
     }
 
     private static String generateWorkflowName(String filename) {
@@ -102,8 +130,11 @@ public final class WorkflowExecutionUtils {
         }
 
         // make the last two digits sequentially increasing to reduce the likelihood of timestamp collisions
-        int suffixNumber = GLOBAL_WORKFLOW_SUFFIX_SEQUENCE_COUNTER.incrementAndGet() % WORKFLOW_SUFFIX_NUMBER_MODULO;
-        return StringUtils.format("%s_%s_%02d", storedWorkflowName, generateTimestampString(), suffixNumber);
+        return StringUtils.format("%s_%s_%02d", storedWorkflowName, generateTimestampString(), generateNewSuffixNumber());
+    }
+
+    private static int generateNewSuffixNumber() {
+        return GLOBAL_WORKFLOW_SUFFIX_SEQUENCE_COUNTER.incrementAndGet() % WORKFLOW_SUFFIX_NUMBER_MODULO;
     }
 
     /**
@@ -133,26 +164,28 @@ public final class WorkflowExecutionUtils {
     }
 
     /**
-     * Replaces null {@link NodeIdentifier} for controller and components with local {@link NodeIdentifier}.
+     * Replaces null {@link InstanceNodeSessionId} for controller and components with local {@link InstanceNodeSessionId}.
      * 
      * @param wfDescription {@link WorkflowDescription}
-     * @param localNodeId local {@link NodeIdentifier}
+     * @param localNodeId local {@link InstanceNodeSessionId}
      * @param compKnowledge latest {@link DistributedComponentKnowledge}
      * @throws WorkflowExecutionException if a component affected is not installed locally
      */
     public static void replaceNullNodeIdentifiersWithActualNodeIdentifier(WorkflowDescription wfDescription,
-        NodeIdentifier localNodeId, DistributedComponentKnowledge compKnowledge)
+        LogicalNodeId localNodeId, DistributedComponentKnowledge compKnowledge)
         throws WorkflowExecutionException {
 
         for (WorkflowNode node : wfDescription.getWorkflowNodes()) {
             // replace null (representing localhost) with the actual host name
+            // TODO review: can this actually still be null at this point?
             if (node.getComponentDescription().getNode() == null) {
                 Collection<ComponentInstallation> installations = compKnowledge.getLocalInstallations();
+                final String componentIdentifier = node.getComponentDescription().getIdentifier();
                 ComponentInstallation installation = ComponentUtils.getExactMatchingComponentInstallationForNode(
-                    node.getComponentDescription().getIdentifier(), installations, localNodeId);
+                    componentIdentifier, installations, localNodeId);
                 if (installation == null) {
-                    throw new WorkflowExecutionException(StringUtils.format("Component '%s' not installed on node %s "
-                        + node.getName(), node.getComponentDescription().getNode()));
+                    throw new WorkflowExecutionException(StringUtils.format("Component '%s' (%s) not installed on node %s ",
+                        node.getName(), componentIdentifier, node.getComponentDescription().getNode()));
                 }
                 node.getComponentDescription().setComponentInstallationAndUpdateConfiguration(installation);
                 node.getComponentDescription().setIsNodeIdTransient(true);
@@ -164,15 +197,15 @@ public final class WorkflowExecutionUtils {
             wfDescription.setIsControllerNodeIdTransient(true);
         }
     }
-    
+
     /**
-     * Set {@link NodeIdentifier}s to transient if they point to the local node.
+     * Set {@link InstanceNodeSessionId}s to transient if they point to the local node.
      * 
      * @param wfDescription {@link WorkflowDescription}
-     * @param localNodeId local {@link NodeIdentifier}
+     * @param localNodeId local {@link InstanceNodeSessionId}
      */
     public static void setNodeIdentifiersToTransientInCaseOfLocalOnes(WorkflowDescription wfDescription,
-        NodeIdentifier localNodeId) {
+        LogicalNodeId localNodeId) {
 
         for (WorkflowNode node : wfDescription.getWorkflowNodes()) {
             node.getComponentDescription().setIsNodeIdTransient(node.getComponentDescription().getNode() == null
@@ -182,7 +215,7 @@ public final class WorkflowExecutionUtils {
         wfDescription.setIsControllerNodeIdTransient(wfDescription.getControllerNode() == null
             || wfDescription.getControllerNode().equals(localNodeId));
     }
-    
+
     /**
      * Removed disabled workflow nodes from given {@link WorkflowDescription}.
      * 
@@ -192,11 +225,11 @@ public final class WorkflowExecutionUtils {
     public static WorkflowDescription removeDisabledWorkflowNodesWithoutNotify(WorkflowDescription workflowDescription) {
         List<WorkflowNode> disabledWorkflowNodes = getDisabledWorkflowNodes(workflowDescription);
         if (!disabledWorkflowNodes.isEmpty()) {
-            workflowDescription.removeWorkflowNodesAndRelatedConnectionsWithoutNotify(disabledWorkflowNodes);            
+            workflowDescription.removeWorkflowNodesAndRelatedConnectionsWithoutNotify(disabledWorkflowNodes);
         }
         return workflowDescription;
     }
-    
+
     /**
      * Returns the workflow nodes that are disabled from given {@link WorkflowDescription}.
      * 
@@ -214,11 +247,25 @@ public final class WorkflowExecutionUtils {
     }
 
     /**
+     * @param wfNodes list of {@link WorkflowNode}s to check
+     * @return <code>true</code> if one of the {@link WorkflowNode}s is considered as referring to a non-available component, otherwise
+     *         <code>false</code>
+     */
+    public static boolean hasMissingWorkflowNode(List<WorkflowNode> wfNodes) {
+        for (WorkflowNode wfNode : wfNodes) {
+            if (wfNode.getComponentDescription().getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
      * @param wfExeCtx {@link WorkflowExecutionContext} of related workflow
      * @return text containing workflow instance name and workflow execution id that can be used in log messages
      */
     public static String substituteWorkflowNameAndExeId(WorkflowExecutionContext wfExeCtx) {
-        return String.format("workflow '%s' (%s)", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
+        return StringUtils.format("workflow '%s' (%s)", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
     }
 
 }

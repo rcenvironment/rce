@@ -27,6 +27,7 @@ import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.Widget;
 
+import de.rcenvironment.components.excel.common.ExcelAddress;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelException;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
@@ -34,7 +35,6 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 /**
  * A dialog for defining and editing cells as additional endpoints.

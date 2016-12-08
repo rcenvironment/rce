@@ -10,12 +10,14 @@ package de.rcenvironment.core.gui.workflow.execute;
 
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.UUID;
 
@@ -69,7 +71,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Wizard page for managing placeholders.
  * 
  * @author Sascha Zur
+ * @author Brigitte Boden
  */
+@SuppressWarnings("boxing")
 public class PlaceholderPage extends WizardPage {
 
     private static final Color COLOR_WHITE = Display.getCurrent()
@@ -82,9 +86,9 @@ public class PlaceholderPage extends WizardPage {
 
     private static final Log LOGGER = LogFactory.getLog(PlaceholderPage.class);
 
-    private final WorkflowDescription workflowDescription;
+    protected final WorkflowDescription workflowDescription;
 
-    private WorkflowPlaceholderHandler placeholderHelper;
+    protected WorkflowPlaceholderHandler placeholderHelper;
 
     private Tree componentPlaceholderTree;
 
@@ -93,7 +97,7 @@ public class PlaceholderPage extends WizardPage {
 
     private final String dot = ".";
 
-    private Map<String, Button> saveButtonMap;
+    private Map<Integer, Button> saveButtonMap;
 
     private boolean restoredPasswords = false;
 
@@ -122,8 +126,7 @@ public class PlaceholderPage extends WizardPage {
         IPreferenceStore prefs = Activator.getInstance().getPreferenceStore();
         String placeholderPersistentSettingsUUID = prefs
             .getString(WorkflowPlaceholderHandler.PLACEHOLDER_PREFERENCES_KEY);
-        if (placeholderPersistentSettingsUUID.isEmpty()
-            || placeholderPersistentSettingsUUID == null) {
+        if (placeholderPersistentSettingsUUID.isEmpty()) {
             placeholderPersistentSettingsUUID = UUID.randomUUID().toString();
             prefs.putValue(WorkflowPlaceholderHandler.PLACEHOLDER_PREFERENCES_KEY,
                 placeholderPersistentSettingsUUID);
@@ -156,11 +159,11 @@ public class PlaceholderPage extends WizardPage {
     }
 
     private void addPlaceholderGroup(Composite container) {
-        controlMap = new HashMap<Integer, Control>();
-        saveButtonMap = new HashMap<String, Button>();
+        controlMap = new HashMap<>();
+        saveButtonMap = new HashMap<>();
         // guiNameToPlaceholder = new HashMap<String, String>();
-        treeItemNameToPlaceholder = new HashMap<Integer, String>();
-        treeItemToUUIDMap = new HashMap<Integer, String>();
+        treeItemNameToPlaceholder = new HashMap<>();
+        treeItemToUUIDMap = new HashMap<>();
         Group placeholderInformationGroup = new Group(container, SWT.NONE);
         placeholderInformationGroup
             .setText(Messages.placeholderInformationHeader);
@@ -248,12 +251,10 @@ public class PlaceholderPage extends WizardPage {
                     if (control instanceof Text) {
                         Text current = (Text) control;
                         parent.setExpanded(true); // Always expand. Copy into if
-                                                  // branch, if it
-                                                  // should
+                        // branch, if it
+                        // should
                         // only open when nothing is in it
-                        if (current != null
-                            && (current.getText().equals("") || current
-                                .getText() == null)) {
+                        if ((current.getText().equals("") || current.getText() == null)) {
                             current.setBackground(COLOR_RED);
                         }
                     }
@@ -297,7 +298,8 @@ public class PlaceholderPage extends WizardPage {
         TreeColumn column4 = new TreeColumn(componentPlaceholderTree, SWT.CENTER);
         column4.setText("");
         column4.setWidth(HUNDRED);
-        placeholderValidators = new HashMap<String, Set<String>>();
+        placeholderValidators = new HashMap<>();
+
         Set<String> componentTypesWithPlaceholder = placeholderHelper.getIdentifiersOfPlaceholderContainingComponents();
         String[] componentTypesWithPlaceholderArray = componentTypesWithPlaceholder
             .toArray(new String[componentTypesWithPlaceholder.size()]);
@@ -305,8 +307,11 @@ public class PlaceholderPage extends WizardPage {
         for (String componentID : componentTypesWithPlaceholderArray) {
             TreeItem componentIDTreeItem = new TreeItem(componentPlaceholderTree, 0);
             String componentName = workflowDescription.getWorkflowNode(placeholderHelper
+                .getComponentInstances(componentID).get(0)).getName();
+            String abstractComponentName = workflowDescription.getWorkflowNode(placeholderHelper
                 .getComponentInstances(componentID).get(0)).getComponentDescription().getName();
-            componentIDTreeItem.setText(0, componentName);
+
+            componentIDTreeItem.setText(0, abstractComponentName);
             componentIDTreeItem.setImage(getImage(workflowDescription
                 .getWorkflowNode(placeholderHelper.getComponentInstances(componentID).get(0))));
             PlaceholdersMetaDataDefinition placeholderMetaData = getPlaceholderAttributes(componentName);
@@ -314,7 +319,7 @@ public class PlaceholderPage extends WizardPage {
                 .getPlaceholderOrder(placeholderHelper.getPlaceholderNameSetOfComponentID(componentID),
                     placeholderMetaData);
             if (globalPlaceholderOrder == null) {
-                globalPlaceholderOrder = new LinkedList<String>();
+                globalPlaceholderOrder = new LinkedList<>();
             }
             for (String componentPlaceholder : globalPlaceholderOrder) {
                 TreeItem compPHTreeItem = new TreeItem(componentIDTreeItem, 0);
@@ -322,76 +327,55 @@ public class PlaceholderPage extends WizardPage {
                 if (guiName == null) {
                     guiName = "";
                 }
-                treeItemNameToPlaceholder.put(compPHTreeItem.hashCode(),
-                    componentPlaceholder);
-
+                treeItemNameToPlaceholder.put(compPHTreeItem.hashCode(), componentPlaceholder);
                 compPHTreeItem.setText(0, guiName);
                 String currentPlaceholder = componentID + dot + componentPlaceholder;
-                controlMap.put(
-                    compPHTreeItem.hashCode(),
-                    addSWTHandler(compPHTreeItem, componentName + dot
-                        + componentPlaceholder, ComponentUtils
-                            .isEncryptedPlaceholder(currentPlaceholder,
-                                WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
-                        true));
+                controlMap.put(compPHTreeItem.hashCode(),
+                    addSWTHandler(compPHTreeItem, componentName + dot + componentPlaceholder, guiName, ComponentUtils
+                        .isEncryptedPlaceholder(currentPlaceholder, WorkflowPlaceholderHandler.getEncryptedPlaceholder()), true));
             }
             List<String> instancesWithPlaceholder = placeholderHelper.getComponentInstances(componentID);
             instancesWithPlaceholder = PlaceholderSortUtils
                 .sortInstancesWithPlaceholderByName(
                     instancesWithPlaceholder, workflowDescription);
             for (String compInstances : instancesWithPlaceholder) {
-                ConfigurationDescription configDesc = workflowDescription
-                    .getWorkflowNode(compInstances)
-                    .getComponentDescription()
+                ConfigurationDescription configDesc = workflowDescription.getWorkflowNode(compInstances).getComponentDescription()
                     .getConfigurationDescription();
-                Set<String> configKeys = configDesc
-                    .getComponentConfigurationDefinition()
-                    .getConfigurationKeys();
-                Set<String> activeConfigKeys = configDesc
-                    .getActiveConfigurationDefinition()
-                    .getConfigurationKeys();
+                
                 boolean hasPlaceholderWithGUIName = false;
-                for (String instancePlaceholder : placeholderHelper
-                    .getPlaceholderNameSetOfComponentInstance(compInstances)) {
-                    boolean isActivePlaceholder = isActivePlaceholder(
-                        instancePlaceholder, configDesc, configKeys,
-                        activeConfigKeys);
+                for (String instancePlaceholder : placeholderHelper.getPlaceholderNameSetOfComponentInstance(compInstances)) {
+                    boolean isActivePlaceholder = WorkflowPlaceholderHandler.isActivePlaceholder(instancePlaceholder, configDesc);
                     if (isActivePlaceholder) {
-                        if ((placeholderMetaData
-                            .getGuiName(instancePlaceholder) != null
-                            && !placeholderMetaData.getGuiName(
-                                instancePlaceholder).isEmpty()
-                            || placeholderMetaData
-                                .getGuiName("*") != null)) {
+                        if ((placeholderMetaData.getGuiName(instancePlaceholder) != null
+                            && !placeholderMetaData.getGuiName(instancePlaceholder).isEmpty()
+                            || placeholderMetaData.getGuiName("*") != null)) {
                             hasPlaceholderWithGUIName = true;
                         } else {
-                            LOGGER.warn(StringUtils
-                                .format("Placeholder %s of component %s has no GUI name defined and will be ignored.",
-                                    instancePlaceholder,
-                                    workflowDescription
-                                        .getWorkflowNode(
-                                            compInstances)
-                                        .getComponentDescription()
-                                        .getName()));
+                            for (Entry<String, String> entry : configDesc.getConfiguration().entrySet()) {
+                                if (ConfigurationDescription.isPlaceholder(entry.getValue())
+                                    && WorkflowPlaceholderHandler.getNameOfPlaceholder(entry.getValue())
+                                        .equals(instancePlaceholder)) {
+                                    hasPlaceholderWithGUIName = true;
+                                }
+                            }
+                            if (!hasPlaceholderWithGUIName) {
+                                LOGGER
+                                    .warn(StringUtils.format("Placeholder %s of component %s has no GUI name defined and will be ignored.",
+                                        instancePlaceholder, workflowDescription.getWorkflowNode(compInstances)
+                                            .getComponentDescription().getName()));
+                            }
                         }
                     }
                 }
 
                 if (hasPlaceholderWithGUIName) {
-                    TreeItem instanceTreeItem = new TreeItem(
-                        componentIDTreeItem, 0);
-                    String instanceName = workflowDescription.getWorkflowNode(
-                        compInstances).getName();
+                    TreeItem instanceTreeItem = new TreeItem(componentIDTreeItem, 0);
+                    String instanceName = workflowDescription.getWorkflowNode(compInstances).getName();
                     instanceTreeItem.setText(0, instanceName);
-                    instanceTreeItem
-                        .setImage(getImage(workflowDescription
-                            .getWorkflowNode(placeholderHelper
-                                .getComponentInstances(componentID)
-                                .get(0))));
+                    instanceTreeItem.setImage(getImage(workflowDescription.getWorkflowNode(placeholderHelper
+                        .getComponentInstances(componentID).get(0))));
                     List<String> orderedIinstancePlaceholder = PlaceholderSortUtils
-                        .getPlaceholderOrder(
-                            placeholderHelper
-                                .getPlaceholderNameSetOfComponentInstance(compInstances),
+                        .getPlaceholderOrder(placeholderHelper.getPlaceholderNameSetOfComponentInstance(compInstances),
                             placeholderMetaData);
                     for (String instancePlaceholder : orderedIinstancePlaceholder) {
                         // active configuration only considers declarative keys
@@ -402,60 +386,37 @@ public class PlaceholderPage extends WizardPage {
                         // is not part of the
                         // declarative keys and was added at runtime. those
                         // entries are active per default
-
-                        boolean isActivePlaceholder = isActivePlaceholder(
-                            instancePlaceholder, configDesc, configKeys,
-                            activeConfigKeys);
+                        boolean isActivePlaceholder = WorkflowPlaceholderHandler.isActivePlaceholder(instancePlaceholder, configDesc);
                         if (isActivePlaceholder) {
-                            TreeItem instancePHTreeItem = new TreeItem(
-                                instanceTreeItem, 0);
-                            treeItemToUUIDMap.put(
-                                instancePHTreeItem.hashCode(),
-                                compInstances);
-
+                            TreeItem instancePHTreeItem = new TreeItem(instanceTreeItem, 0);
+                            treeItemToUUIDMap.put(instancePHTreeItem.hashCode(), compInstances);
                             String guiName = placeholderMetaData.getGuiName(instancePlaceholder);
+
                             if (guiName == null) {
                                 guiName = instancePlaceholder;
                             }
+
                             treeItemNameToPlaceholder.put(instancePHTreeItem.hashCode(), instancePlaceholder);
                             instancePHTreeItem.setText(0, guiName);
                             String currentPlaceholder = componentID + dot + instancePlaceholder;
-                            controlMap
-                                .put(instancePHTreeItem.hashCode(),
-                                    addSWTHandler(
-                                        instancePHTreeItem,
-                                        instanceName + dot + instancePlaceholder,
-                                        ComponentUtils.isEncryptedPlaceholder(currentPlaceholder,
-                                            WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
-                                        false));
+                            controlMap.put(instancePHTreeItem.hashCode(),
+                                addSWTHandler(
+                                    instancePHTreeItem,
+                                    instanceName + dot + instancePlaceholder,
+                                    guiName,
+                                    ComponentUtils.isEncryptedPlaceholder(currentPlaceholder,
+                                        WorkflowPlaceholderHandler.getEncryptedPlaceholder()),
+                                    false));
                         }
                     }
                 }
             }
         }
+        placeApplyToAllButtonsWhereNecessary(componentPlaceholderTree);
         column1.pack();
     }
 
-    private boolean isActivePlaceholder(String instancePlaceholder,
-        ConfigurationDescription configDesc, Set<String> configKeys,
-        Set<String> activeConfigKeys) {
-        boolean isActivePlaceholder = false;
-        for (String configKey : configDesc.getConfiguration().keySet()) {
-            if ((activeConfigKeys.contains(configKey) || !configKeys
-                .contains(configKey))
-                && configDesc.isPlaceholderSet(configKey)) {
-                String configValue = configDesc
-                    .getActualConfigurationValue(configKey);
-                if (configValue.contains(instancePlaceholder)) {
-                    isActivePlaceholder = true;
-                    break;
-                }
-            }
-        }
-        return isActivePlaceholder;
-    }
-
-    private Control addSWTHandler(TreeItem item, final String placeholderName,
+    private Control addSWTHandler(TreeItem item, final String placeholderName, final String guiName,
         boolean isEncrypted, boolean isGlobal) {
         TreeEditor textEditor = new TreeEditor(item.getParent());
         Combo booleanCombo = null;
@@ -492,7 +453,7 @@ public class PlaceholderPage extends WizardPage {
 
             @Override
             public void modifyText(ModifyEvent e) {
-                validateInput((Text) e.getSource(), componentName, placeholderName);
+                validateInput((Text) e.getSource(), componentName, guiName);
             }
         };
         placeholderText.addModifyListener(modifyListener);
@@ -575,7 +536,7 @@ public class PlaceholderPage extends WizardPage {
             return booleanCombo;
         }
         if (isTextEmpty(placeholderText)) {
-            addPlaceholderValidator(componentName, placeholderName);
+            addPlaceholderValidator(componentName, guiName);
         }
         textEditor.setEditor(placeholderText, item, 1);
         if (isEncrypted) {
@@ -586,14 +547,12 @@ public class PlaceholderPage extends WizardPage {
             checkForSaveButton.setText("Save");
             checkButton.minimumWidth = checkForSaveButton.getSize().x;
             checkButton.setEditor(checkForSaveButton, item, 2);
-            saveButtonMap.put(placeholderName, checkForSaveButton);
+            saveButtonMap.put(item.hashCode(), checkForSaveButton);
             if (placeholderText.getText() != null && !placeholderText.getText().equals("")) {
                 checkForSaveButton.setSelection(true);
             }
         }
-        if (!isGlobal) {
-            addApplyToAllButton(item);
-        }
+        // componentPlaceholderCount.get(placeholderName) > 1
         if (isFloat) {
             NumericalTextConstraintListener floatListener = new NumericalTextConstraintListener(
                 placeholderText, WidgetGroupFactory.ONLY_FLOAT);
@@ -607,11 +566,74 @@ public class PlaceholderPage extends WizardPage {
         return placeholderText;
     }
 
+    private void placeApplyToAllButtonsWhereNecessary(Tree baseTree) {
+        // put all Items of one ComponentID in one List
+
+        Map<String, String> placeholderDataTypes = placeholderHelper.getPlaceholdersDataType();
+
+        for (TreeItem componentTree : baseTree.getItems()) {
+            List<ExtendedTreeItem> componentKeyValues = new ArrayList<>();
+            List<ExtendedTreeItem> fullComponentKeyValues = new ArrayList<>();
+            for (TreeItem instanceItem : componentTree.getItems()) {
+                for (TreeItem keyValue : instanceItem.getItems()) {
+                    String dataType = placeholderDataTypes.get(instanceItem.getText() + "."
+                        + treeItemNameToPlaceholder.get(keyValue.hashCode()));
+                    componentKeyValues.add(new ExtendedTreeItem(keyValue, dataType));
+                    fullComponentKeyValues.add(new ExtendedTreeItem(keyValue, dataType));
+                }
+            }
+
+            for (int i = 0; i < componentKeyValues.size(); i++) {
+                boolean buttonForIElementCreated = false;
+                for (int j = i + 1; j < componentKeyValues.size(); j++) {
+
+                    if (componentKeyValues.get(i).treeItem.getText().equals(componentKeyValues.get(j).treeItem.getText())) {
+                        if (componentKeyValues.get(i).dataType == null || componentKeyValues.get(j).dataType == null) {
+                            if (componentKeyValues.get(i).dataType == null && componentKeyValues.get(i).dataType == null) {
+                                if (!buttonForIElementCreated) {
+                                    addApplyToAllButton(componentKeyValues.get(i), fullComponentKeyValues);
+                                    buttonForIElementCreated = true;
+                                }
+                                addApplyToAllButton(componentKeyValues.get(j), fullComponentKeyValues);
+                            }
+
+                        } else if (componentKeyValues.get(i).dataType.equals(componentKeyValues.get(j).dataType)) {
+                            if (!buttonForIElementCreated) {
+                                addApplyToAllButton(componentKeyValues.get(i), fullComponentKeyValues);
+                                buttonForIElementCreated = true;
+                            }
+                            addApplyToAllButton(componentKeyValues.get(j), fullComponentKeyValues);
+                        }
+
+                    }
+                }
+            }
+        }
+
+    }
+
+    /**
+     * More like an Object that clues together an Item with a dataType.
+     * 
+     * @author Jascha Riedel
+     */
+    private final class ExtendedTreeItem {
+
+        public final TreeItem treeItem;
+
+        public final String dataType;
+
+        ExtendedTreeItem(TreeItem treeItem, String dataType) {
+            this.treeItem = treeItem;
+            this.dataType = dataType;
+        }
+    }
+
     private void addPlaceholderValidator(final String componentName,
         String placeholderName) {
         Set<String> placeholderNames = placeholderValidators.get(componentName);
         if (placeholderNames == null) {
-            placeholderNames = new HashSet<String>();
+            placeholderNames = new HashSet<>();
         }
         placeholderNames.add(placeholderName);
         placeholderValidators.put(componentName, placeholderNames);
@@ -626,18 +648,19 @@ public class PlaceholderPage extends WizardPage {
         }
     }
 
-    private void addApplyToAllButton(TreeItem item) {
-        TreeEditor buttonEditor = new TreeEditor(item.getParent());
+    private void addApplyToAllButton(ExtendedTreeItem extendedTreeItem, List<ExtendedTreeItem> allItems) {
+        TreeEditor buttonEditor = new TreeEditor(extendedTreeItem.treeItem.getParent());
         buttonEditor.horizontalAlignment = SWT.LEFT;
         buttonEditor.grabHorizontal = true;
-        Button placeholderButton = new Button(item.getParent(), SWT.PUSH);
+        Button placeholderButton = new Button(extendedTreeItem.treeItem.getParent(), SWT.PUSH);
+        placeholderButton.setToolTipText(Messages.applyToAllToolTip);
         placeholderButton.setText(Messages.applyToAll);
         placeholderButton.setSize(placeholderButton.getText().length() * 6, 0);
-        placeholderButton.computeSize(SWT.DEFAULT, item.getParent()
+        placeholderButton.computeSize(SWT.DEFAULT, extendedTreeItem.treeItem.getParent()
             .getItemHeight());
-        placeholderButton.addSelectionListener(new ButtonListener(item));
+        placeholderButton.addSelectionListener(new ButtonListener(extendedTreeItem, allItems));
         buttonEditor.minimumWidth = placeholderButton.getSize().x;
-        buttonEditor.setEditor(placeholderButton, item, 3);
+        buttonEditor.setEditor(placeholderButton, extendedTreeItem.treeItem, 3);
     }
 
     private void addFileChooser(TreeItem item, final String dataType,
@@ -676,7 +699,7 @@ public class PlaceholderPage extends WizardPage {
         pathButtonEditor.setEditor(pathChooserButton, item, 2);
     }
 
-    private Combo addBooleanCombo(TreeItem item) {
+    private static Combo addBooleanCombo(TreeItem item) {
         final Combo combo = new Combo(item.getParent(), SWT.READ_ONLY);
         combo.add(Boolean.TRUE.toString().toLowerCase());
         combo.add(Boolean.FALSE.toString().toLowerCase());
@@ -684,7 +707,7 @@ public class PlaceholderPage extends WizardPage {
         return combo;
     }
 
-    private Image getImage(WorkflowNode element) {
+    private static Image getImage(WorkflowNode element) {
         byte[] icon = element.getComponentDescription().getIcon16();
         Image image;
         if (icon != null) {
@@ -710,25 +733,25 @@ public class PlaceholderPage extends WizardPage {
         return text;
     }
 
-    private Control getControl(int id) {
+    protected Control getControl(int id) {
         Control control = controlMap.get(id);
         return control;
     }
 
-    private boolean isTextEmpty(Text source) {
+    private static boolean isTextEmpty(Text source) {
         return source.getText() == null || source.getText().equals("");
     }
 
-    private void validateInput(Text source, String componentName,
-        String placeholdername) {
+    protected void validateInput(Text source, String componentName,
+        String placeholderName) {
         if (!isTextEmpty(source)) {
             if (source.getBackground().equals(COLOR_RED)) {
                 source.setBackground(COLOR_WHITE);
-                removePlaceholderValidator(componentName, placeholdername);
+                removePlaceholderValidator(componentName, placeholderName);
             }
         } else {
             source.setBackground(COLOR_RED);
-            addPlaceholderValidator(componentName, placeholdername);
+            addPlaceholderValidator(componentName, placeholderName);
         }
     }
 
@@ -758,7 +781,7 @@ public class PlaceholderPage extends WizardPage {
      */
     public Map<String, String> getComponentNamesWithError(boolean indicator) {
         Set<String> componentNames = placeholderValidators.keySet();
-        Map<String, String> newComponentNames = new HashMap<String, String>();
+        Map<String, String> newComponentNames = new HashMap<>();
         for (String name : componentNames) {
             String additionalInfos = "";
             if (indicator) {
@@ -781,18 +804,14 @@ public class PlaceholderPage extends WizardPage {
             for (TreeItem componentIDItems : componentItems.getItems()) {
                 if (componentIDItems.getItemCount() == 0) {
                     // componentPlaceholder
-                    String placeholder = componentItems.getText()
-                        + dot
-                        + treeItemNameToPlaceholder.get(componentIDItems
-                            .hashCode());
                     for (String fullPlaceholder : placeholderHelper
                         .getPlaceholderOfComponent(getComponentIDByName(componentItems
                             .getText()))) {
                         if (WorkflowPlaceholderHandler.getNameOfPlaceholder(fullPlaceholder)
                             .equals(treeItemNameToPlaceholder.get(componentIDItems.hashCode()))) {
                             boolean addToHistory = true;
-                            if (saveButtonMap.get(placeholder) != null) {
-                                addToHistory = saveButtonMap.get(placeholder)
+                            if (saveButtonMap.get(componentIDItems.hashCode()) != null) {
+                                addToHistory = saveButtonMap.get(componentIDItems.hashCode())
                                     .getSelection();
                             }
                             placeholderHelper
@@ -810,54 +829,42 @@ public class PlaceholderPage extends WizardPage {
                     for (TreeItem instancePlaceholderItems : componentIDItems
                         .getItems()) {
                         // instancePlaceholder
-                        String placeholder = componentIDItems.getText()
-                            + dot
-                            + treeItemNameToPlaceholder
-                                .get(instancePlaceholderItems
-                                    .hashCode());
                         for (String fullPlaceholder : placeholderHelper
-                            .getPlaceholderNamesOfComponentInstance(treeItemToUUIDMap
-                                .get(instancePlaceholderItems
-                                    .hashCode()))) {
-                            if (WorkflowPlaceholderHandler
-                                .getNameOfPlaceholder(fullPlaceholder)
-                                .equals(treeItemNameToPlaceholder
-                                    .get(instancePlaceholderItems
-                                        .hashCode()))) {
+                            .getPlaceholderNamesOfComponentInstance(treeItemToUUIDMap.get(instancePlaceholderItems.hashCode()))) {
+                            if (WorkflowPlaceholderHandler.getNameOfPlaceholder(fullPlaceholder).equals(treeItemNameToPlaceholder
+                                .get(instancePlaceholderItems.hashCode()))) {
                                 boolean addToHistory = true;
-                                if (saveButtonMap.get(placeholder) != null) {
+                                if (saveButtonMap.get(instancePlaceholderItems.hashCode()) != null) {
                                     addToHistory = saveButtonMap.get(
-                                        placeholder).getSelection();
+                                        instancePlaceholderItems.hashCode()).getSelection();
                                 }
-                                placeholderHelper.setPlaceholderValue(
-                                    fullPlaceholder,
-                                    getComponentIDByName(componentIDItems
-                                        .getText()),
-                                    treeItemToUUIDMap
-                                        .get(instancePlaceholderItems
-                                            .hashCode()),
-                                    getControlText(instancePlaceholderItems
-                                        .hashCode()),
-                                    workflowDescription.getIdentifier(),
-                                    addToHistory);
+                                placeholderHelper.setPlaceholderValue(fullPlaceholder, getComponentIDByName(componentIDItems
+                                    .getText()), treeItemToUUIDMap.get(instancePlaceholderItems.hashCode()),
+                                    getControlText(instancePlaceholderItems.hashCode()),
+                                    workflowDescription.getIdentifier(), addToHistory);
                             }
                         }
                     }
                 }
             }
         }
-        /* dispose SWT components */
-        for (Integer key : controlMap.keySet()) {
-            controlMap.get(key).dispose();
-        }
-        componentPlaceholderTree.dispose();
+        /// * dispose SWT components */
+        // for (Integer key : controlMap.keySet()) {
+        // controlMap.get(key).dispose();
+        // }
+        // componentPlaceholderTree.dispose();
+    }
+
+    /**
+     * Saves the placeholder settings to persistent settings.
+     */
+    protected void savePlaceholdersToPersistentSettings() {
         if (WorkflowPlaceholderHandler.getPlaceholderPersistentSettingsUUID() == null) {
             IPreferenceStore prefs = Activator.getInstance()
                 .getPreferenceStore();
             String placeholderPersistentSettingsUUID = prefs
                 .getString(WorkflowPlaceholderHandler.PLACEHOLDER_PREFERENCES_KEY);
-            if (placeholderPersistentSettingsUUID.isEmpty()
-                || placeholderPersistentSettingsUUID == null) {
+            if (placeholderPersistentSettingsUUID.isEmpty()) {
                 WorkflowPlaceholderHandler
                     .setPlaceholderPersistentSettingsUUID(UUID.randomUUID()
                         .toString());
@@ -874,7 +881,7 @@ public class PlaceholderPage extends WizardPage {
 
         for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
 
-            Map<String, String> placeholders = new HashMap<String, String>();
+            Map<String, String> placeholders = new HashMap<>();
 
             Map<String, String> compTypePlaceholders = placeholderHelper.getPlaceholdersOfComponentType(wn
                 .getComponentDescription().getIdentifier());
@@ -905,7 +912,7 @@ public class PlaceholderPage extends WizardPage {
 
     private PlaceholdersMetaDataDefinition getPlaceholderAttributes(String name) {
         for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
-            if (wn.getComponentDescription().getName().equals(name)) {
+            if (wn.getName().equals(name)) {
                 return wn.getComponentDescription()
                     .getConfigurationDescription()
                     .getComponentConfigurationDefinition()
@@ -915,109 +922,74 @@ public class PlaceholderPage extends WizardPage {
         return null;
     }
 
+    public Map<String, Set<String>> getPlaceholderValidators() {
+        return placeholderValidators;
+    }
+
     protected boolean canFinish() {
         if (componentPlaceholderTree != null) {
             return componentPlaceholderTree.getItemCount() == 0;
 
-        } else {
-            return false;
         }
+        return false;
+    }
+
+    @Override
+    public void dispose() {
+        /* dispose SWT components */
+        for (Integer key : controlMap.keySet()) {
+            controlMap.get(key).dispose();
+        }
+        componentPlaceholderTree.dispose();
+        super.dispose();
     }
 
     /**
-     * ButtonListener to identify TreeItem for every button.
+     * New Button Listener behaving as follows: if item Name and item DataType are the same, value of that Item/Field/Parameter is replaced.
      * 
-     * @author Sascha Zur
+     * @author Jascha Riedel
      */
     private class ButtonListener extends SelectionAdapter {
 
-        // the tree item which represents the current line in the tree
-        private final TreeItem correspondingTreeItem;
+        private ExtendedTreeItem extendedTreeItem;
 
-        ButtonListener(TreeItem it) {
-            correspondingTreeItem = it;
+        private List<ExtendedTreeItem> allItems;
+
+        ButtonListener(ExtendedTreeItem extendedTreeItem, List<ExtendedTreeItem> allItems) {
+            this.extendedTreeItem = extendedTreeItem;
+            this.allItems = allItems;
         }
 
         @Override
         public void widgetSelected(SelectionEvent event) {
-            Control currentControl = getControl(correspondingTreeItem.hashCode());
-            if (currentControl != null) {
-                // the value which will be copied to the other placeholder entries
-                String value = null;
-                if (currentControl instanceof Text) {
-                    value = ((Text) currentControl).getText();
-                } else if (currentControl instanceof Combo) {
-                    value = ((Combo) currentControl).getText();
-                }
-                if (value != null) {
-
-                    String filledPlaceholderName = correspondingTreeItem.getText();
-
-                    // loop over all TreeItems of the parent level
-                    for (TreeItem componentIDItem : correspondingTreeItem.getParentItem().getParentItem().getItems()) {
-                        // loop over all TreeItems of the same level
-                        for (TreeItem instanceItem : componentIDItem.getItems()) {
-                            // only TreeItems which are named the same as the already filled placeholder should be considered, but the
-                            // placeholder whose value is used should be skipped
-                            String placeholderName = instanceItem.getText();
-                            if (placeholderName.equals(filledPlaceholderName) && correspondingTreeItem != instanceItem) {
-                                // FIXME: key used by getPlaceholdersDataType() is weird and should be reworked -- seid_do, Nov 2015
-
-                                // Why are two different methods necessary to get the data type of the placeholder? Why is it possible that
-                                // the type is null? It seem that this is happening if the value should be copied to the placeholder where
-                                // it was copied from. ~ rode_to, Mar 2016
-
-                                // Only apply placeholder if data types match
-                                String type1 = placeholderHelper.getPlaceholdersDataType().get(
-                                    correspondingTreeItem.getParentItem().getParentItem().getText() + dot + treeItemNameToPlaceholder
-                                        .get(correspondingTreeItem.hashCode()));
-
-                                if (type1 == null) {
-                                    type1 = getPlaceholderAttributes(correspondingTreeItem.getParentItem().getParentItem().getText())
-                                        .getDataType(treeItemNameToPlaceholder.get(correspondingTreeItem.hashCode()));
-                                }
-
-                                String type2 = placeholderHelper.getPlaceholdersDataType().get(
-                                    instanceItem.getParentItem().getParentItem().getText() + dot + treeItemNameToPlaceholder
-                                        .get(instanceItem.hashCode()));
-
-                                if (type2 == null) {
-                                    type2 = getPlaceholderAttributes(instanceItem.getParentItem().getParentItem().getText())
-                                        .getDataType(treeItemNameToPlaceholder.get(instanceItem.hashCode()));
-                                }
-
-                                if (type1 == null || type2 == null) {
-                                    LOGGER.error("Missing attribut data type for component: "
-                                        + correspondingTreeItem.getParentItem().getParentItem().getText());
-                                    continue;
-
-                                }
-                                if (type1.equals(type2)) {
-                                    Control nextControl = getControl(instanceItem
-                                        .hashCode());
-                                    replaceText(nextControl, value);
-                                }
+            Control treeItemControl = getControl(extendedTreeItem.treeItem.hashCode());
+            Object valueToBeCoppied = null;
+            if (treeItemControl instanceof Text) {
+                valueToBeCoppied = ((Text) treeItemControl).getText();
+            } else if (treeItemControl instanceof Combo) {
+                valueToBeCoppied = ((Combo) treeItemControl).getText();
+            }
+            if (valueToBeCoppied != null && !((String) valueToBeCoppied).isEmpty()) {
+                for (int i = 0; i < allItems.size(); i++) {
+                    if (extendedTreeItem.treeItem.getText().equals(allItems.get(i).treeItem.getText())) {
+                        if (extendedTreeItem.dataType == null && allItems.get(i).dataType == null) {
+                            Control toReplaceItem = getControl(allItems.get(i).treeItem.hashCode());
+                            if (toReplaceItem instanceof Text) {
+                                ((Text) toReplaceItem).setText((String) valueToBeCoppied);
+                            } else if (toReplaceItem instanceof Combo) {
+                                ((Combo) toReplaceItem).select(((Combo) treeItemControl).indexOf((String) valueToBeCoppied));
+                            }
+                        } else if (extendedTreeItem.dataType.equals(allItems.get(i).dataType)) {
+                            Control toReplaceItem = getControl(allItems.get(i).treeItem.hashCode());
+                            if (toReplaceItem instanceof Text) {
+                                ((Text) toReplaceItem).setText((String) valueToBeCoppied);
+                            } else if (toReplaceItem instanceof Combo) {
+                                ((Combo) toReplaceItem).select(((Combo) treeItemControl).indexOf((String) valueToBeCoppied));
                             }
                         }
                     }
                 }
             }
         }
-
-        private void replaceText(Control nextControl, String replaceText) {
-            if (nextControl != null) {
-                if (nextControl instanceof Text) {
-                    ((Text) nextControl).setText(replaceText);
-                } else if (nextControl instanceof Combo) {
-                    ((Combo) nextControl).setText(replaceText);
-                }
-            }
-        }
-
-        @Override
-        public void widgetDefaultSelected(SelectionEvent event) {
-            widgetSelected(event);
-        }
     }
-
 }

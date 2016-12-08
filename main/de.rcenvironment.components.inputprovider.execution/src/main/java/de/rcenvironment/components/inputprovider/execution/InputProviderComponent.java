@@ -96,8 +96,7 @@ public class InputProviderComponent extends DefaultComponent {
     private TypedDatum getTypedDatumForFile(String value, String outputName) throws ComponentException {
         File file = createFileObject(value);
         if (file == null) {
-            throw new ComponentException(StringUtils.format("Internal error: No file given for output '%s'",
-                componentContext.getInstanceName(), outputName));
+            throw new ComponentException(StringUtils.format("Internal error: No file given for output '%s'", outputName));
         } else if (!file.exists()) {
             throw new ComponentException(StringUtils.format("Given path doesn't refer to a file on node %s: %s",
                 componentContext.getNodeId().getAssociatedDisplayName(), file.getAbsolutePath()));

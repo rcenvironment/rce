@@ -12,7 +12,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Represents the local knowledge about published {@link LinkState}s of other nodes.
@@ -25,17 +25,17 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 // TODO unless a new use for this class is found, delete it for 4.0
 public final class LinkStateKnowledge {
 
-    private final Map<NodeIdentifier, LinkState> linkStates;
+    private final Map<InstanceNodeSessionId, LinkState> linkStates;
 
     public LinkStateKnowledge() {
-        linkStates = Collections.unmodifiableMap(new HashMap<NodeIdentifier, LinkState>());
+        linkStates = Collections.unmodifiableMap(new HashMap<InstanceNodeSessionId, LinkState>());
     }
 
-    public LinkStateKnowledge(Map<NodeIdentifier, LinkState> newLinkStates) {
-        linkStates = Collections.unmodifiableMap(new HashMap<NodeIdentifier, LinkState>(newLinkStates));
+    public LinkStateKnowledge(Map<InstanceNodeSessionId, LinkState> newLinkStates) {
+        linkStates = Collections.unmodifiableMap(new HashMap<InstanceNodeSessionId, LinkState>(newLinkStates));
     }
 
-    public Map<NodeIdentifier, LinkState> getLinkStates() {
+    public Map<InstanceNodeSessionId, LinkState> getLinkStates() {
         return linkStates;
     }
 

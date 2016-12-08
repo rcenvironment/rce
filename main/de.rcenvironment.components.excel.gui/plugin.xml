@@ -119,18 +119,7 @@
    		<toc file="help/toc.xml"/>
  	</extension>
    
-    <!-- Component configuration validator -->
-    <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator
-            class="de.rcenvironment.components.excel.gui.properties.ExcelMacroWorkflowNodeValidator"
-            filter="de.rcenvironment.components.excel.gui.properties.ExcelComponentFilter">
-      </validator>
-      <validator
-            class="de.rcenvironment.components.excel.gui.properties.ExcelWorkflowNodeValidator"
-            filter="de.rcenvironment.components.excel.gui.properties.ExcelComponentFilter">
-      </validator>
-   </extension>
+
   
 	<extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.excel.gui.dm.ExcelHistoryDataItemSubtreeBuilder"/>

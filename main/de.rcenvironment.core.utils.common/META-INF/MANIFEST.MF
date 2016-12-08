@@ -2,13 +2,12 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Common
 Bundle-SymbolicName: de.rcenvironment.core.utils.common;singleton:=true
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.excel.legacy,
  de.rcenvironment.core.utils.common.legacy,
  de.rcenvironment.core.utils.common.rpc,
@@ -21,7 +20,12 @@ Export-Package: de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.xml,
  de.rcenvironment.core.utils.common.xml.api,
  de.rcenvironment.core.utils.common.xml.impl
-Import-Package: net.sf.saxon;version="9.4.0.1",
+Import-Package: de.rcenvironment.toolkit.modules.concurrency.api,
+ de.rcenvironment.toolkit.modules.concurrency.utils,
+ de.rcenvironment.toolkit.modules.statistics.api,
+ de.rcenvironment.toolkit.modules.statistics.utils,
+ de.rcenvironment.toolkit.utils.text,
+ net.sf.saxon;version="9.4.0.1",
  org.apache.commons.compress.archivers;version="1.4.0",
  org.apache.commons.compress.archivers.zip;version="1.4.0",
  org.apache.commons.io;version="2.0.1",
@@ -37,7 +41,8 @@ Import-Package: net.sf.saxon;version="9.4.0.1",
  org.codehaus.jackson.map;version="1.9.13",
  org.codehaus.jackson.util;version="1.9.13",
  org.osgi.framework;version="1.5.0"
-Require-Bundle: org.ops4j.pax.logging.pax-logging-api;bundle-version="1.6.4"
+Require-Bundle: org.ops4j.pax.logging.pax-logging-api;bundle-version="1.6.4",
+ org.apache.servicemix.bundles.saxon
 Service-Component: OSGI-INF/*.xml
 
 

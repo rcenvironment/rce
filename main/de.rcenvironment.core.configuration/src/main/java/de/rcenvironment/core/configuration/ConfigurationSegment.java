@@ -22,9 +22,9 @@ import org.codehaus.jackson.map.ObjectMapper;
 public interface ConfigurationSegment {
 
     /**
-     * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment
-     * is "network", calling this method with "ipFilter" will result the segment for the "network/ipFilter" path. Multiple path levels can
-     * be concatenated with slashes.
+     * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment is
+     * "network", calling this method with "ipFilter" will result the segment for the "network/ipFilter" path. Multiple path levels can be
+     * concatenated with slashes.
      * <p>
      * If no entry/segment exists at the given path, this method will still return a {@link ConfigurationSegment}, but that instance will
      * return <code>false</code> on calls to {@link #isPresentInCurrentConfiguration()}.
@@ -33,7 +33,7 @@ public interface ConfigurationSegment {
      * @return the requested {@link ConfigurationSegment}
      */
     ConfigurationSegment getSubSegment(String relativePath);
-    
+
     /**
      * @param relativePath the path relative to the current one to fetch
      * @return the value of the given relativ path, or null if no such value exists
@@ -42,9 +42,9 @@ public interface ConfigurationSegment {
     List<String> getStringArray(String relativePath) throws ConfigurationException;
 
     /**
-     * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment
-     * is "network", calling this method with "ipFilter" will result the segment for the "network/ipFilter" path. Multiple path levels can
-     * be concatenated with slashes.
+     * Fetches a part of the current configuration segment, as defined by the relative path argument. For example, if the current segment is
+     * "network", calling this method with "ipFilter" will result the segment for the "network/ipFilter" path. Multiple path levels can be
+     * concatenated with slashes.
      * <p>
      * If no entry/segment exists at the given path, this method will create the missing elements as needed. The returned
      * {@link WritableConfigurationSegment} can then be used to edit the properties or elements of that segment. Note that the current
@@ -71,14 +71,14 @@ public interface ConfigurationSegment {
 
     /**
      * @param relativePath the value's relative path to the current segment
-     * @return the value at the given relative path, or null if no such value exists
+     * @return the value at the given relative path, or null if no such value exists or if it cannot be parsed
      */
     Long getLong(String relativePath);
 
     /**
      * @param relativePath the value's relative path to the current segment
      * @param defaultValue the default value to return
-     * @return the value at the given relative path, or the given default if no such value exists
+     * @return the value at the given relative path, or the given default if no such value exists or if it cannot be parsed
      */
     Long getLong(String relativePath, Long defaultValue);
 

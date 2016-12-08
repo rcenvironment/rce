@@ -8,6 +8,9 @@
 
 package de.rcenvironment.core.communication.nodeproperties.internal;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -24,8 +27,9 @@ public class NodePropertyImpl implements NodeProperty {
 
     private final String value;
 
-    public NodePropertyImpl(String compactForm) {
-        // FIXME check for proper split() behaviour
+    private final InstanceNodeSessionId instanceSessionId; // parsed at creation for centralization
+
+    public NodePropertyImpl(String compactForm, NodeIdentifierService nodeIdentifierService) throws IdentifierException {
         String[] parts = StringUtils.splitAndUnescape(compactForm);
         if (parts.length != 4) {
             throw new IllegalArgumentException("Wrong number of segments: " + compactForm);
@@ -33,12 +37,14 @@ public class NodePropertyImpl implements NodeProperty {
         this.key = new CompositeNodePropertyKey(parts[0], parts[1]);
         this.sequenceNo = Long.parseLong(parts[2]);
         this.value = parts[3];
+        this.instanceSessionId = nodeIdentifierService.parseInstanceNodeSessionIdString(key.getInstanceNodeSessionIdString());
     }
 
-    public NodePropertyImpl(String nodeIdString, String dataKey, long sequenceNo, String value) {
-        this.key = new CompositeNodePropertyKey(nodeIdString, dataKey);
+    public NodePropertyImpl(InstanceNodeSessionId instanceSessionId, String dataKey, long sequenceNo, String value) {
+        this.key = new CompositeNodePropertyKey(instanceSessionId.getInstanceNodeSessionIdString(), dataKey);
         this.sequenceNo = sequenceNo;
         this.value = value;
+        this.instanceSessionId = instanceSessionId;
     }
 
     public CompositeNodePropertyKey getCompositeKey() {
@@ -46,8 +52,13 @@ public class NodePropertyImpl implements NodeProperty {
     }
 
     @Override
-    public String getNodeIdString() {
-        return key.getNodeIdString();
+    public InstanceNodeSessionId getInstanceNodeSessionId() {
+        return instanceSessionId;
+    }
+
+    @Override
+    public String getInstanceNodeSessionIdString() {
+        return key.getInstanceNodeSessionIdString();
     }
 
     @Override
@@ -69,7 +80,7 @@ public class NodePropertyImpl implements NodeProperty {
      * @return the compact form of this entry that can be parsed by the single-arg constructor
      */
     public String toCompactForm() {
-        return StringUtils.escapeAndConcat(key.getNodeIdString(), key.getDataKey(), Long.toString(sequenceNo), value);
+        return StringUtils.escapeAndConcat(key.getInstanceNodeSessionIdString(), key.getDataKey(), Long.toString(sequenceNo), value);
     }
 
     /**

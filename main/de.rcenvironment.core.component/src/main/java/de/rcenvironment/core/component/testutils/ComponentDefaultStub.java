@@ -89,5 +89,13 @@ public abstract class ComponentDefaultStub {
             throw new UnsupportedOperationException();
         }
 
+        @Override
+        public void handleVerificationToken(String verificationToken) {
+        }
+
+        @Override
+        public void completeStartOrProcessInputsAfterVerificationDone() throws ComponentException {
+        }
+
     }
 }

@@ -1,7 +1,27 @@
 {
     "dynamicInputs": [
+    	{
+    		"identifier": "paramericStudyParameters",
+    		"character": "outerLoop",
+    		"group": "paramericStudyParameters",
+    		"dataTypes": [
+    			"Integer",
+    			"Float"
+			],
+			"defaultDataType": "Float",
+			"inputHandlingoptions":[
+				"Single"
+			],
+			"defaultInputHandling":"Single",
+			"inputExecutionConstraintOptions":[
+				"Required"
+			],
+			"defaultInputExecutionConstraint":"Required",
+			"readOnly": "true"
+    	},
         {
             "identifier": "parameters",
+            "character": "sameLoop",
             "group": "parameters",
             "dataTypes": [
                 "Integer",
@@ -16,17 +36,11 @@
                 "Required",
                 "RequiredIfConnected"
             ],
-            "defaultInputExecutionConstraint":"Required",
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "SelfLoopEndpoint"
-                }
-            }
+            "defaultInputExecutionConstraint":"Required"
         },
         {
             "identifier":"toForward",
+            "character": "sameLoop",
             "group": "parameters",
             "dataTypes":[
                 "Boolean",
@@ -49,16 +63,37 @@
             "defaultInputExecutionConstraint":"Required"
         },
         {
-            "identifier": "outerLoopDone",
-            "group": "orGroup",
-            "dataTypes": [
-                "Boolean"
+            "identifier": "startToForward",
+            "character": "outerLoop",
+            "group": "parameters",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
             ],
-            "readOnly": "true",
-            "defaultDataType": "Boolean"
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "readOnly": "true"
         }
     ],
     "dynamicInputGroups": [
+    	{
+    		"name": "paramericStudyParameters",
+    		"type": "And",
+    		"group": "orGroup"
+    	},
         {
             "name": "parameters",
             "type": "And",

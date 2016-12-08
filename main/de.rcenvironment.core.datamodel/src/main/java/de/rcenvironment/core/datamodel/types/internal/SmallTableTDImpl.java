@@ -12,7 +12,8 @@ import java.util.Arrays;
 
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
-import de.rcenvironment.core.datamodel.internal.TypedDatumConversionTable;
+import de.rcenvironment.core.datamodel.api.TypedDatumConverter;
+import de.rcenvironment.core.datamodel.internal.DefaultTypedDatumConverter;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 
@@ -168,12 +169,12 @@ public class SmallTableTDImpl extends AbstractTypedDatum implements SmallTableTD
         }
         return fullContent;
     }
-
-    @Override
-    public boolean isAllowedAsCellType(TypedDatum typedDatum) {
-        return TypedDatumConversionTable.getTable()[TypedDatumConversionTable
-            .getIndexOfType(typedDatum.getDataType())][TypedDatumConversionTable
-                .getIndexOfType(DataType.SmallTable)] == TypedDatumConversionTable.IS_CONVERTIBLE
-            && typedDatum.getDataType() != DataType.Matrix && typedDatum.getDataType() != DataType.Vector;
+    
+    private boolean isAllowedAsCellType(TypedDatum typedDatum) {
+        TypedDatumConverter converter = new DefaultTypedDatumConverter();
+        boolean convertibleToSmallTable = converter.isConvertibleTo(typedDatum.getDataType(), DataType.SmallTable);
+        boolean allowedCellType = convertibleToSmallTable && typedDatum.getDataType() != DataType.Matrix
+            && typedDatum.getDataType() != DataType.Vector;
+        return allowedCellType;
     }
 }

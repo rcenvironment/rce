@@ -90,6 +90,7 @@ final class ProcessUtils {
         /**
          * Retrieves the process identifier of the specified process.
          */
+
         // CHECKSTYLE:DISABLE (MethodName) - method name needs to be identical to the Kernel32 method name
         int GetProcessId(Long handle);
         // CHECKSTYLE:ENABLE (MethodName)

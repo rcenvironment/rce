@@ -21,6 +21,9 @@ public class Messages extends NLS {
     public static String localExecutionOnly;
     
     /** Constant. */
+    public static String imitationMode;
+    
+    /** Constant. */
     public static String deprecated;
     
     /** Constant. */

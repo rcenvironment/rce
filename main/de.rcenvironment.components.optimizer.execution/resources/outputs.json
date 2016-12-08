@@ -12,7 +12,7 @@
                     "guiName": "Has start value",
                     "guiPosition": "0",
                     "guiGroup": "Start values",
-                    "visibility": "shown",
+                    "visibility": "userConfigurable",
                     "defaultValue": "true",
                     "dataType": "bool"
                 },
@@ -142,6 +142,7 @@
         },
         {
             "identifier": "optima",
+            "character": "outerLoop",
             "dataTypes": [
                 "Float",
                 "Vector"
@@ -150,6 +151,23 @@
         },
         {
             "identifier":"toForward",
+            "character": "sameLoop",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "readOnly": "true"
+        },
+        {
+            "identifier":"finalToForward",
+            "character": "outerLoop",
             "dataTypes":[
                 "Boolean",
                 "ShortText",
@@ -167,56 +185,26 @@
     "staticOutputs": [
         {
             "name": "Done",
-            "dataTypes": [
-                "Boolean"
-            ]            ,
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "OuterLoopEndpoint"
-                }
-            },
-            "defaultDataType": "Boolean"
-        },
-         {
-            "name": "Outer loop done",
+            "character": "outerLoop",
             "dataTypes": [
                 "Boolean"
             ],
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "InnerLoopEndpoint"
-                }
-            },
             "defaultDataType": "Boolean"
         },
         {
             "name": "Gradient request",
+            "character": "sameLoop",
             "dataTypes": [
                 "Boolean"
-            ],"metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "SelfLoopEndpoint"
-                }
-            },
+            ],
             "defaultDataType": "Boolean"
         },
         {
             "name": "Iteration",
+            "character": "sameLoop",
             "dataTypes": [
                 "Integer"
-            ],"metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "SelfLoopEndpoint"
-                }
-            },
+            ],
             "defaultDataType": "Integer"
         }
     ]

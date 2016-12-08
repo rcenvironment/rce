@@ -82,9 +82,6 @@ public class Messages extends NLS {
     public static String isNestedLoop;
 
     /** Constant. */
-    public static String nestedLoopNote;
-    
-    /** Constant. */
     public static String dataItemTitle;
 
     /** Constant. */
@@ -100,7 +97,10 @@ public class Messages extends NLS {
     public static String title;
 
     /** Constant. */
-    public static String labelAlignment;
+    public static String textAlignment;
+    
+    /** Constant. */
+    public static String labelPosition;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

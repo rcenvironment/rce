@@ -13,6 +13,7 @@ import java.io.Serializable;
 import java.util.UUID;
 import java.util.regex.Pattern;
 
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
@@ -26,8 +27,10 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
  * @author Heinrich Wendel
  * @author Robert Mischke
  * @author Christian Weiss
+ * @author Hendrik Abbenhaus
  */
-public class WorkflowNode extends PropertiesChangeSupport implements Serializable, ComponentInstanceProperties, Comparable<WorkflowNode> {
+public class WorkflowNode extends PropertiesChangeSupport
+    implements Serializable, ComponentInstanceProperties, Comparable<WorkflowNode> {
 
     /**
      * {@link Pattern} to match property names of {@link java.beans.PropertyChangeEvent}s concerning properties.
@@ -39,10 +42,12 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
 
     /** Property that is fired when the name changes. */
     public static final String PROPERTY_NODE_ATTRIBUTES = "de.rcenvironment.props.n";
-    
+
     private static final int DEFAULT_X_Y = 0;
 
     private static final long serialVersionUID = -7495156467094187194L;
+
+    private static final int INITIAL_ZINDEX = -1;
 
     private ComponentDescription compDesc;
 
@@ -56,6 +61,9 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     /** Y position of the location in a graphical editor. */
     private int y;
 
+    /** Z index of component. */
+    private int zIndex;
+
     private boolean isEnabled = true;
 
     private boolean valid = false;
@@ -63,7 +71,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     private boolean isChecked = false;
 
     private boolean init = false;
-
+   
     /**
      * Constructor.
      * 
@@ -77,6 +85,7 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
         identifier = UUID.randomUUID().toString();
         x = DEFAULT_X_Y;
         y = DEFAULT_X_Y;
+        zIndex = INITIAL_ZINDEX;
     }
 
     @Override
@@ -103,6 +112,15 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
     public boolean isEnabled() {
         return isEnabled;
     }
+    
+    public boolean isImitiationModeActive() {
+        return Boolean.valueOf(getConfigurationDescription().getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE));
+    }
+    
+    public boolean isImitationModeSupported() {
+        return Boolean.valueOf(getConfigurationDescription().getComponentConfigurationDefinition()
+            .getReadOnlyConfiguration().getValue(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED));
+    }
 
     /**
      * @param newX The new X location.
@@ -120,6 +138,17 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
      */
     public void setEnabled(boolean newEnabled) {
         this.isEnabled = newEnabled;
+        firePropertyChange(PROPERTY_NODE_ATTRIBUTES);
+    }
+    
+    /**
+     * 
+     * @param isImitiationModeActive set <code>true</code> to activate or <code>false</code> to deactivate imitation mode
+     */
+    public void setImitiationModeActive(boolean isImitiationModeActive) {
+        getConfigurationDescription().setConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE, 
+            Boolean.valueOf(isImitiationModeActive).toString());
+       
         firePropertyChange(PROPERTY_NODE_ATTRIBUTES);
     }
 
@@ -214,7 +243,6 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
         this.isChecked = checked;
     }
 
-
     /**
      * 
      * @return flag.
@@ -225,6 +253,14 @@ public class WorkflowNode extends PropertiesChangeSupport implements Serializabl
 
     public void setInit(boolean init) {
         this.init = init;
+    }
+
+    public int getZIndex() {
+        return zIndex;
+    }
+
+    public void setZIndex(int zIndexD) {
+        this.zIndex = zIndexD;
     }
 
 }

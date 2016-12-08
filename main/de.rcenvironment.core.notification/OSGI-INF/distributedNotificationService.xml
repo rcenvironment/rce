@@ -15,5 +15,6 @@
 		cardinality="1..1"
 		bind="bindCommunicationService"
 		policy="dynamic"/>
+  <reference bind="bindPlatformService" cardinality="1..1" interface="de.rcenvironment.core.communication.api.PlatformService" name="PlatformService" policy="dynamic"/>
 </scr:component>
   	  

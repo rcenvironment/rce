@@ -19,12 +19,6 @@ public class Messages extends NLS {
     /** Field for NLS. */
     public static String noInput;
 
-    /** Field for Validation. */
-    public static String noAlgorithmSmall;
-
-    /** Field for Validation. */
-    public static String noAlgorithmLarge;
-
     /** Field for configuration section title. */
     public static String algorithmTabTitle;
 

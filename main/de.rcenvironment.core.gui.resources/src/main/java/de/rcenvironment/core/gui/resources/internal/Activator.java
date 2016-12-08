@@ -11,6 +11,8 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleActivator;
 import org.osgi.framework.BundleContext;
 
+import de.rcenvironment.core.gui.resources.api.ColorManager;
+import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 
@@ -42,6 +44,18 @@ public class Activator implements BundleActivator {
             }
             FontManager.setInstance(new FontManagerImpl());
         }
+        synchronized (ColorManager.class) {
+            ColorManager instance = ColorManager.getInstance();
+            if (instance != null) {
+                throw new IllegalStateException("Color manager already present");
+            }
+            ColorManager.setInstance(new ColorManagerImpl());
+        }
+        
+        synchronized (ComponentImageManager.class) {
+            //TODO add check if component image manger is already present, see above ^
+            ComponentImageManager.getInstance();
+        }
     }
 
     /**
@@ -70,6 +84,16 @@ public class Activator implements BundleActivator {
             }
             ImageManager.setInstance(null);
             ((FontManagerImpl) oldInstance).dispose();
+        }
+        synchronized (ColorManager.class) {
+            ColorManager oldInstance = ColorManager.getInstance();
+            if (oldInstance == null) {
+                // this can happen if initialization failed, so don't throw another exception
+                LogFactory.getLog(getClass()).warn("No color manager present on shutdown");
+                return;
+            }
+            ColorManager.setInstance(null);
+            ((ColorManagerImpl) oldInstance).dispose();
         }
     }
 

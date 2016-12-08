@@ -118,6 +118,18 @@ public abstract class DMBrowserImages {
      */
     public static final ImageDescriptor IMG_DESC_DELETE_FILES =
         AbstractUIPlugin.imageDescriptorFromPlugin(PLUGIN_ID, ICONS_PATH_PREFIX + "deleteFiles.gif");
+    
+    /**
+     * Small "Failed" icon to decorate browser nodes.
+     */
+    public static final ImageDescriptor FAILED_SMALL =
+        AbstractUIPlugin.imageDescriptorFromPlugin(PLUGIN_ID, ICONS_PATH_PREFIX + "failed_8.gif");
+    
+    /**
+     * Small "Verification Failed" icon to decorate browser nodes.
+     */
+    public static final ImageDescriptor VERIFICATION_FAILED_SMALL =
+        AbstractUIPlugin.imageDescriptorFromPlugin(PLUGIN_ID, ICONS_PATH_PREFIX + "verification_failed_8.gif");
 
     private DMBrowserImages() {}
 

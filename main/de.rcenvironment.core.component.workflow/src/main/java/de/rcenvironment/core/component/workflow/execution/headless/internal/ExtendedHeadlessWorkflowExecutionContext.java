@@ -18,7 +18,7 @@ import java.util.concurrent.CountDownLatch;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
@@ -49,9 +49,15 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
 
     private final CountDownLatch consoleOutputFinishedLatch;
 
+    private final CountDownLatch workflowDisposedLatch;
+
     private final List<Closeable> resourcesToCloseOnFinish = new ArrayList<>();
 
     private final List<NotificationSubscription> notificationSubscriptionsToUnsubscribeOnFinish = new ArrayList<>();
+
+    private final long startTimestampMillis;
+
+    private long executionDurationMillis;
 
     // informational; not needed for execution - seid_do
     private WorkflowExecutionContext wfExeContext;
@@ -62,12 +68,17 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
     public ExtendedHeadlessWorkflowExecutionContext(HeadlessWorkflowExecutionContext headlessWfExeContext) {
         this.headlessWfExeContext = headlessWfExeContext;
 
-        // wait for two events: the "end of console output marker", and the workflow reaching a
-        // finished state;
-        // using two separate latches to ensure a duplicate event cannot count for the other type -
-        // misc_ro
+        // wait for two events: the "end of console output marker", and the workflow reaching a finished state; using two separate latches
+        // to ensure a duplicate event cannot count for the other type -misc_ro
         workflowFinishedLatch = new CountDownLatch(1);
         consoleOutputFinishedLatch = new CountDownLatch(1);
+
+        workflowDisposedLatch = new CountDownLatch(1);
+
+        // to keep is simple the actual time the workflow is started is expected to be very close to the instantiation of this class, if a
+        // more precise workflow execution time is needed, the time should be set from the workflow execution code right before the actual
+        // start -seid_do
+        startTimestampMillis = System.currentTimeMillis();
     }
 
     protected void setWorkflowExecutionContext(WorkflowExecutionContext wfExeCtx) {
@@ -97,8 +108,7 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
     }
 
     /**
-     * @param consoleRow called if new console row was received, e.g. by the
-     *        {@link ConsoleRowSubscriber}
+     * @param consoleRow called if new console row was received, e.g. by the {@link ConsoleRowSubscriber}
      */
     public final void reportConsoleRowReceived(ConsoleRow consoleRow) {
         if (headlessWfExeContext.getSingleConsoleRowReceiver() != null) {
@@ -118,9 +128,8 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
 
     /**
      * @param newState new {@link WorkflowState}
-     * @param dispose <code>true</code> if workflow will be disposed, <code>false</code> otherwise
      */
-    protected synchronized void reportWorkflowTerminated(WorkflowState newState, boolean dispose) {
+    protected synchronized void reportWorkflowTerminated(WorkflowState newState) {
         if (this.finalState != null) {
             log.warn(StringUtils.format("Workflow '%s' (%s) was already marked as %s, new final state: %s (%s)",
                 getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
@@ -130,14 +139,18 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
         if (finalState != WorkflowState.FINISHED) {
             addOutput(StringUtils.format("'%s' terminated abnormally: %s; check log and console output for details",
                 getWorkflowFile().getName(), finalState.getDisplayName()));
-            
+
         }
         log.debug(StringUtils.format("Workflow '%s' (%s) has terminated, final state: %s (%s)",
             getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
             finalState.getDisplayName(), getWorkflowFile()));
-        if (!dispose) {
-            workflowFinishedLatch.countDown();
-        }
+
+        executionDurationMillis = System.currentTimeMillis() - startTimestampMillis;
+        workflowFinishedLatch.countDown();
+    }
+
+    public synchronized long getExecutionDuration() {
+        return executionDurationMillis;
     }
 
     /**
@@ -147,7 +160,7 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
         log.debug(StringUtils.format("Workflow '%s' (%s) is done, disposed: %s (%s)",
             getWorkflowExecutionContext().getInstanceName(), wfExeContext.getExecutionIdentifier(),
             newState == WorkflowState.DISPOSED, getWorkflowFile()));
-        workflowFinishedLatch.countDown();
+        workflowDisposedLatch.countDown();
     }
 
     /**
@@ -170,6 +183,17 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
         synchronized (this) {
             return finalState;
         }
+    }
+
+    /**
+     * Awaits disposal.
+     * 
+     * @return {@link WorkflowState} after termination
+     * @throws InterruptedException on error
+     */
+    protected void waitForDisposal() throws InterruptedException {
+        // TODO add timeout and workflow heartbeat checking
+        workflowDisposedLatch.await();
     }
 
     /**
@@ -242,6 +266,11 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
     }
 
     @Override
+    public File[] getLogFiles() {
+        return headlessWfExeContext.getLogFiles();
+    }
+
+    @Override
     public TextOutputReceiver getTextOutputReceiver() {
         return headlessWfExeContext.getTextOutputReceiver();
     }
@@ -273,9 +302,9 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
 
     /**
      * Encapsulates information about {@link NotificationSubscriber} subscribed.
-     *
+     * 
      * @author Doreen Seider
-     *
+     * 
      */
     protected class NotificationSubscription {
 
@@ -283,7 +312,7 @@ public class ExtendedHeadlessWorkflowExecutionContext implements HeadlessWorkflo
 
         protected String notificationId;
 
-        protected NodeIdentifier nodeId;
+        protected ResolvableNodeId nodeId;
     }
 
 }

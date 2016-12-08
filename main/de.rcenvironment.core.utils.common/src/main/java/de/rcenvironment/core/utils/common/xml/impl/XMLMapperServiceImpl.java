@@ -9,9 +9,10 @@
 package de.rcenvironment.core.utils.common.xml.impl;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.StringReader;
+import java.io.StringWriter;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -27,6 +28,10 @@ import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.LineIterator;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -42,6 +47,8 @@ import de.rcenvironment.core.utils.common.xml.XMLNamespaceContext;
 import de.rcenvironment.core.utils.common.xml.XSLTErrorHandler;
 import de.rcenvironment.core.utils.common.xml.api.XMLMapperService;
 import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
+import de.rcenvironment.toolkit.utils.text.TextLinesReceiver;
+import net.sf.saxon.serialize.MessageEmitter;
 
 /**
  * Default implementation of the XML Mapper.
@@ -63,6 +70,8 @@ public class XMLMapperServiceImpl implements XMLMapperService {
 
     private XMLSupportService xmlSupport;
 
+    private Log log = LogFactory.getLog(getClass());
+
     public XMLMapperServiceImpl() {
 
         tFactory = TransformerFactory.newInstance("net.sf.saxon.TransformerFactoryImpl", null);
@@ -78,26 +87,37 @@ public class XMLMapperServiceImpl implements XMLMapperService {
         xmlSupport = service;
     }
 
-    /**
-     * Executes XSL-transformation on the files.
-     * 
-     * (The code was taken over from the old XSLTransformer class.)
-     * 
-     * @param sourceFile Name of source xml-file
-     * @param xsltFile Name of xslt-file
-     * @param resultFile Name of result-file
-     * @throws XMLException Thrown if xml transformation fails
-     */
     @Override
-    public void transformXMLFileWithXSLT(File sourceFile, File resultFile, File xsltFile) throws XMLException {
+    public void transformXMLFileWithXSLT(File sourceFile, File resultFile, File xsltFile, TextLinesReceiver logReceiver)
+        throws XMLException {
         Transformer transformer = null;
-        try {
+        try (FileOutputStream resultFileOutputStream = new FileOutputStream(resultFile)) {
             transformer = tFactory.newTransformer(new StreamSource(xsltFile));
             transformer.setErrorListener(new XSLTErrorHandler());
+            MessageEmitter em = new MessageEmitter();
+           // PipedReader reader = new PipedReader();
+            StringWriter writer = new StringWriter();
+            em.setWriter(writer);
+            ((net.sf.saxon.Controller) transformer).setMessageEmitter(em);
             synchronized (XMLMapperConstants.GLOBAL_MAPPING_LOCK) {
-                transformer.transform(new StreamSource(sourceFile), new StreamResult(new FileOutputStream(resultFile)));
+
+                StreamSource streamSource = new StreamSource(sourceFile);
+                transformer.transform(streamSource, new StreamResult(resultFileOutputStream));
+                em.close();
+                writer.close();
             }
-        } catch (TransformerException | FileNotFoundException e) {
+            resultFileOutputStream.close();
+            StringReader reader = new StringReader(writer.toString());
+            LineIterator it = IOUtils.lineIterator(reader);
+            while (it.hasNext()) {
+                String line = it.nextLine();
+                if (logReceiver != null) {
+                    logReceiver.addLine("XSL:Message:" + line);
+                }
+                log.info("XSL:Message:" + line);
+            }
+            reader.close();
+        } catch (TransformerException | IOException e) {
             throw new XMLException(e);
         }
     }

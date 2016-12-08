@@ -16,9 +16,9 @@ package de.rcenvironment.core.communication.common;
 public interface NetworkGraphNode {
 
     /**
-     * @return the {@link NodeIdentifier} of this node
+     * @return the {@link InstanceNodeSessionId} of this node
      */
-    NodeIdentifier getNodeId();
+    InstanceNodeSessionId getNodeId();
 
     /**
      * @return the display name of this node

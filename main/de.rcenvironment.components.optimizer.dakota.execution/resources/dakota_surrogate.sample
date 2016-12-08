@@ -27,6 +27,12 @@ variables,
    cdv_upper_bounds	%%CDV_UPPER_BOUNDS%%
    cdv_descriptor	%%CDV_NAMES%%
    
+   discrete_design_range = %%DISCRETE_DESIGN_COUNT%%
+   ddv_initial_point   	%%DDV_INITIAL_POINT%%
+   ddv_lower_bounds	%%DDV_LOWER_BOUNDS%%
+   ddv_upper_bounds	%%DDV_UPPER_BOUNDS%%
+   ddv_descriptor	%%DDV_NAMES%%   
+   
 interface, 
 	system
 	id_interface = 'interface1'

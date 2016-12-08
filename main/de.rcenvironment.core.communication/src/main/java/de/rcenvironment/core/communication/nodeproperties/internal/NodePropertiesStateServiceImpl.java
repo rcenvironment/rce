@@ -20,22 +20,21 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListener;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
-import de.rcenvironment.core.utils.common.AutoCreationMap;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
+import de.rcenvironment.toolkit.utils.common.AutoCreationMap;
 
 /**
  * A service that listens for low-level {@link RawNodePropertiesChangeListener} and {@link NetworkTopologyChangeListener} events, and
@@ -47,21 +46,21 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
 
     private static final Set<NodeProperty> IMMUTABLE_EMPTY_PROPERTY_SET = Collections.unmodifiableSet(new HashSet<NodeProperty>());
 
-    private final AutoCreationMap<NodeIdentifier, Map<String, NodeProperty>> propertyObjectMapsByNode =
-        new AutoCreationMap<NodeIdentifier, Map<String, NodeProperty>>() {
+    private final AutoCreationMap<InstanceNodeSessionId, Map<String, NodeProperty>> propertyObjectMapsByNode =
+        new AutoCreationMap<InstanceNodeSessionId, Map<String, NodeProperty>>() {
 
-            protected Map<String, NodeProperty> createNewEntry(NodeIdentifier key) {
+            protected Map<String, NodeProperty> createNewEntry(InstanceNodeSessionId key) {
                 return new HashMap<String, NodeProperty>();
             };
         };
 
-    private final Map<NodeIdentifier, Map<String, String>> immutableValueMapsOfNodes =
-        new HashMap<NodeIdentifier, Map<String, String>>();
+    private final Map<InstanceNodeSessionId, Map<String, String>> immutableValueMapsOfNodes =
+        new HashMap<InstanceNodeSessionId, Map<String, String>>();
 
-    private final Map<NodeIdentifier, Map<String, String>> immutableValueMapsOfReachableNodes =
-        new HashMap<NodeIdentifier, Map<String, String>>();
+    private final Map<InstanceNodeSessionId, Map<String, String>> immutableValueMapsOfReachableNodes =
+        new HashMap<InstanceNodeSessionId, Map<String, String>>();
 
-    private Set<NodeIdentifier> reachableNodes = new HashSet<NodeIdentifier>();
+    private Set<InstanceNodeSessionId> reachableNodes = new HashSet<InstanceNodeSessionId>();
 
     private final Set<NodeProperty> reachableProperties = new HashSet<NodeProperty>();
 
@@ -72,8 +71,8 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
     private final Log log = LogFactory.getLog(getClass());
 
     public NodePropertiesStateServiceImpl() {
-        callbackManager = new AsyncOrderedCallbackManager<NodePropertiesChangeListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+        callbackManager =
+            ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
     }
 
     @Override
@@ -90,8 +89,8 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
         result.add(new AdditionalServiceDeclaration(NetworkTopologyChangeListener.class, new NetworkTopologyChangeListenerAdapter() {
 
             @Override
-            public void onReachableNodesChanged(Set<NodeIdentifier> newReachableNodes, Set<NodeIdentifier> addedNodes,
-                Set<NodeIdentifier> removedNodes) {
+            public void onReachableNodesChanged(Set<InstanceNodeSessionId> newReachableNodes, Set<InstanceNodeSessionId> addedNodes,
+                Set<InstanceNodeSessionId> removedNodes) {
                 NodePropertiesStateServiceImpl.this.updateOnReachableNodesChanged(newReachableNodes, addedNodes, removedNodes);
             }
         }));
@@ -107,7 +106,8 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
     public synchronized void addNodePropertiesChangeListener(NodePropertiesChangeListener listener) {
         // create copies in synchronized block block
         final Set<NodeProperty> reachablePropertiesCopy = new HashSet<NodeProperty>(reachableProperties);
-        final Map<NodeIdentifier, Map<String, String>> valueMapsDeltaCopy = Collections.unmodifiableMap(immutableValueMapsOfReachableNodes);
+        final Map<InstanceNodeSessionId, Map<String, String>> valueMapsDeltaCopy =
+            Collections.unmodifiableMap(immutableValueMapsOfReachableNodes);
         // send initial callback
         callbackManager.addListenerAndEnqueueCallback(listener, new AsyncCallback<NodePropertiesChangeListener>() {
 
@@ -134,10 +134,10 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
         Set<NodeProperty> updatedProperties = new HashSet<NodeProperty>();
         Set<NodeProperty> removedProperties = new HashSet<NodeProperty>();
 
-        Set<NodeIdentifier> valueMapsToUpdate = new HashSet<NodeIdentifier>();
+        Set<InstanceNodeSessionId> valueMapsToUpdate = new HashSet<InstanceNodeSessionId>();
 
         for (NodeProperty property : newOrUpdatedProperties) {
-            NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(property.getNodeIdString());
+            final InstanceNodeSessionId nodeId = property.getInstanceNodeSessionId();
 
             final Map<String, NodeProperty> propertyObjectMap = propertyObjectMapsByNode.get(nodeId);
             boolean isReachableNode = reachableNodes.contains(nodeId);
@@ -186,8 +186,8 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
             });
         }
 
-        Map<NodeIdentifier, Map<String, String>> valueMapsDelta = new HashMap<NodeIdentifier, Map<String, String>>();
-        for (NodeIdentifier nodeId : valueMapsToUpdate) {
+        Map<InstanceNodeSessionId, Map<String, String>> valueMapsDelta = new HashMap<InstanceNodeSessionId, Map<String, String>>();
+        for (InstanceNodeSessionId nodeId : valueMapsToUpdate) {
             // construct new value map for each modified node
             Map<String, String> valueMap = createImmutableValueMapForNode(nodeId);
             if (reachableNodes.contains(nodeId)) {
@@ -201,7 +201,7 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
         }
         // TODO check: can this be safely merged with the other callback (regarding asynchronous topology changes)? - misc_ro
         if (!valueMapsDelta.isEmpty()) {
-            final Map<NodeIdentifier, Map<String, String>> valueMapsDeltaCopy = Collections.unmodifiableMap(valueMapsDelta);
+            final Map<InstanceNodeSessionId, Map<String, String>> valueMapsDeltaCopy = Collections.unmodifiableMap(valueMapsDelta);
             callbackManager.enqueueCallback(new AsyncCallback<NodePropertiesChangeListener>() {
 
                 @Override
@@ -212,14 +212,14 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
         }
     }
 
-    private synchronized void updateOnReachableNodesChanged(Set<NodeIdentifier> newReachableNodes, Set<NodeIdentifier> addedNodes,
-        Set<NodeIdentifier> removedNodes) {
+    private synchronized void updateOnReachableNodesChanged(Set<InstanceNodeSessionId> newReachableNodes,
+        Set<InstanceNodeSessionId> addedNodes, Set<InstanceNodeSessionId> removedNodes) {
 
-        Map<NodeIdentifier, Map<String, String>> valueMapsDelta = new HashMap<NodeIdentifier, Map<String, String>>();
+        Map<InstanceNodeSessionId, Map<String, String>> valueMapsDelta = new HashMap<InstanceNodeSessionId, Map<String, String>>();
 
         // find now-disconnected properties
         List<NodeProperty> disconnectedProperties = new ArrayList<NodeProperty>();
-        for (NodeIdentifier nodeId : removedNodes) {
+        for (InstanceNodeSessionId nodeId : removedNodes) {
             Map<String, NodeProperty> nodePropertyMap = propertyObjectMapsByNode.get(nodeId);
             if (nodePropertyMap != null) {
                 disconnectedProperties.addAll(nodePropertyMap.values());
@@ -231,7 +231,7 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
 
         // find reconnected properties
         List<NodeProperty> reconnectedProperties = new ArrayList<NodeProperty>();
-        for (NodeIdentifier nodeId : addedNodes) {
+        for (InstanceNodeSessionId nodeId : addedNodes) {
             Map<String, NodeProperty> nodePropertyMap = propertyObjectMapsByNode.get(nodeId);
             if (nodePropertyMap != null) {
                 reconnectedProperties.addAll(nodePropertyMap.values());
@@ -287,7 +287,7 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
 
         // TODO check: can this be safely merged with the other callback (regarding asynchronous topology changes)? - misc_ro
         if (!valueMapsDelta.isEmpty()) {
-            final Map<NodeIdentifier, Map<String, String>> valueMapsDeltaCopy = Collections.unmodifiableMap(valueMapsDelta);
+            final Map<InstanceNodeSessionId, Map<String, String>> valueMapsDeltaCopy = Collections.unmodifiableMap(valueMapsDelta);
             callbackManager.enqueueCallback(new AsyncCallback<NodePropertiesChangeListener>() {
 
                 @Override
@@ -303,7 +303,7 @@ public class NodePropertiesStateServiceImpl implements AdditionalServicesProvide
         reachableNodes = newReachableNodes;
     }
 
-    private Map<String, String> createImmutableValueMapForNode(NodeIdentifier nodeId) {
+    private Map<String, String> createImmutableValueMapForNode(InstanceNodeSessionId nodeId) {
         final Map<String, NodeProperty> propertyObjectMap = propertyObjectMapsByNode.get(nodeId);
         Map<String, String> valueMap = new HashMap<String, String>();
         for (NodeProperty property : propertyObjectMap.values()) {

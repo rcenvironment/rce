@@ -15,12 +15,12 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
-import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Base class for {@link VirtualInstance} that provides management of the instance life cycle and the configured test properties.
@@ -150,7 +150,7 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
 
     }
 
-    private static final ThreadPool sharedThreadPool = SharedThreadPool.getInstance();
+    private static final AsyncTaskService sharedThreadPool = ConcurrencyUtils.getAsyncTaskService();
 
     protected final InitialNodeInformation nodeInformation;
 
@@ -163,11 +163,12 @@ public abstract class VirtualInstanceSkeleton implements CommonVirtualInstanceCo
     /**
      * Creates a virtual instance with the given log/display name.
      * 
-     * @param logName the log/display name to use
+     * @param predefinedInstanceId an optional predefined instance id's string form; if null, an instance id is created automatically
+     * @param displayName the log/display name to use
      * @param isRelay whether the "is relay" flag of this node should be set
      */
-    public VirtualInstanceSkeleton(String nodeId, String logName, boolean isRelay) {
-        nodeConfigurationService = new NodeConfigurationServiceTestStub(nodeId, logName, isRelay);
+    public VirtualInstanceSkeleton(String predefinedInstanceId, String displayName, boolean isRelay) {
+        nodeConfigurationService = new NodeConfigurationServiceTestStub(predefinedInstanceId, displayName, isRelay);
         nodeInformation = nodeConfigurationService.getInitialNodeInformation();
     }
 

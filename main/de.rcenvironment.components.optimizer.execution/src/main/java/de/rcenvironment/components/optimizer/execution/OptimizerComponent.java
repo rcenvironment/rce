@@ -50,10 +50,11 @@ import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 
 /**
  * Optimizer implementation of {@link Component}.
@@ -114,7 +115,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private OptimizerComponentHistoryDataItem historyDataItem;
 
-    private Map<String, TypedDatum> runtimeViewValues = new HashMap<String, TypedDatum>();
+    private Map<String, TypedDatum> runtimeViewValues = new HashMap<>();
 
     private Map<Integer, Map<String, Double>> iterationData;
 
@@ -123,7 +124,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
     private Map<String, Double> stepValues;
 
     private void prepareExternalProgram() throws ComponentException {
-        Map<String, Map<String, Double>> boundMaps = new HashMap<String, Map<String, Double>>();
+        Map<String, Map<String, Double>> boundMaps = new HashMap<>();
         boundMaps.put("lower", lowerBoundsStartValues);
         boundMaps.put("upper", upperBoundsStartValues);
         optimizer = optimizerAlgorithmExecutorFactoryRegistry.createAlgorithmProviderInstance(
@@ -131,7 +132,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             methodConfigurations, outputValues, input, componentContext, boundMaps, stepValues);
         programThreadInterrupted = false;
 
-        SharedThreadPool.getInstance().execute(optimizer);
+        ConcurrencyUtils.getAsyncTaskService().execute(optimizer);
         if (optimizer.isInitFailed()) {
             throw new ComponentException("Failed to prepare optimizer", optimizer.getStartFailedException());
         }
@@ -180,7 +181,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         if (!componentContext.getInputsWithDatum().isEmpty() && historyDataItem != null) {
             File resultFile;
             try {
-                List<String> outputs = (new LinkedList<String>(componentContext.getOutputs()));
+                List<String> outputs = (new LinkedList<>(componentContext.getOutputs()));
                 Collections.sort(outputs);
                 resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("OptimizerResultFile*.csv");
                 writeResultToCSVFile(resultFile.getAbsolutePath());
@@ -205,8 +206,8 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             List<String> orderedOutputs = new LinkedList<>(output);
             List<String> orderedInputs = new LinkedList<>(input);
 
-            List<String> insert = new LinkedList<String>();
-            List<String> remove = new LinkedList<String>();
+            List<String> insert = new LinkedList<>();
+            List<String> remove = new LinkedList<>();
             for (String outputName : orderedOutputs) {
                 if (componentContext.getOutputDataType(outputName) == DataType.Vector) {
                     remove.add(outputName);
@@ -223,8 +224,8 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
                 orderedOutputs.add(toInsert);
             }
 
-            insert = new LinkedList<String>();
-            remove = new LinkedList<String>();
+            insert = new LinkedList<>();
+            remove = new LinkedList<>();
             for (String inputName : orderedInputs) {
                 if (componentContext.getInputDataType(inputName) == DataType.Vector) {
                     int vectorSize = 0;
@@ -308,7 +309,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         runtimeViewValues.put(ITERATION, typedDatumFactory.createInteger(iterationCount));
         dataset = new OptimizerResultSet(runtimeViewValues, componentContext.getExecutionIdentifier());
         resultPublisher.add(dataset);
-        runtimeViewValues = new HashMap<String, TypedDatum>();
+        runtimeViewValues = new HashMap<>();
     }
 
     private void convertValue(Map<String, Double> inputVariables, Map<String, Double> inputVariablesGradients,
@@ -436,9 +437,9 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         optimizerAlgorithmExecutorFactoryRegistry = componentContext.getService(OptimizerAlgorithmExecutorFactoryRegistry.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
         iterationData = new TreeMap<>();
-        output = new HashSet<String>();
+        output = new HashSet<>();
         output.addAll(componentContext.getOutputs());
-        List<String> toRemove = new LinkedList<String>();
+        List<String> toRemove = new LinkedList<>();
 
         for (String e : output) {
             if (e.endsWith(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
@@ -453,9 +454,6 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             if (e.endsWith(OptimizerComponentConstants.DERIVATIVES_NEEDED)) {
                 toRemove.add(e);
             }
-            if (e.endsWith(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE)) {
-                toRemove.add(e);
-            }
             if (componentContext.isDynamicInput(e)
                 && componentContext.getDynamicInputIdentifier(e).equals(LoopComponentConstants.ENDPOINT_ID_TO_FORWARD)) {
                 toRemove.add(e);
@@ -465,7 +463,7 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             output.remove(e);
         }
 
-        input = new HashSet<String>();
+        input = new HashSet<>();
         for (String inputName : componentContext.getInputs()) {
             if (componentContext.getDynamicInputIdentifier(inputName).equals(OptimizerComponentConstants.ID_OBJECTIVE)
                 || componentContext.getDynamicInputIdentifier(inputName).equals(OptimizerComponentConstants.ID_CONSTRAINT)
@@ -517,10 +515,10 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
             if (!initFailed) {
                 storeDataForwarded();
 
-                Map<String, Double> inputVariables = new HashMap<String, Double>();
-                Map<String, Double> constraintVariables = new HashMap<String, Double>();
-                Map<String, Double> inputVariablesGradients = new HashMap<String, Double>();
-                Map<String, Double> constraintVariablesGradients = new HashMap<String, Double>();
+                Map<String, Double> inputVariables = new HashMap<>();
+                Map<String, Double> constraintVariables = new HashMap<>();
+                Map<String, Double> inputVariablesGradients = new HashMap<>();
+                Map<String, Double> constraintVariablesGradients = new HashMap<>();
                 // isolate variables and save result
                 manageNewInput(inputVariables, inputVariablesGradients,
                     constraintVariables, constraintVariablesGradients);
@@ -563,11 +561,11 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
 
     private void firstRun() throws ComponentException {
         final String errorMessage = "Failed to start optimizer";
-        outputValues = new HashMap<String, TypedDatum>();
-        startValues = new HashMap<String, Double>();
-        stepValues = new HashMap<String, Double>();
-        lowerBoundsStartValues = new HashMap<String, Double>();
-        upperBoundsStartValues = new HashMap<String, Double>();
+        outputValues = new HashMap<>();
+        startValues = new HashMap<>();
+        stepValues = new HashMap<>();
+        lowerBoundsStartValues = new HashMap<>();
+        upperBoundsStartValues = new HashMap<>();
         for (String e : output) {
             String hasStartValue =
                 componentContext.getOutputMetaDataValue(e, OptimizerComponentConstants.META_HAS_STARTVALUE);
@@ -724,18 +722,22 @@ public class OptimizerComponent extends AbstractNestedLoopComponent {
         if (optimizerStarted && optimizer != null && !optimizer.isStopped()) {
             Map<String, Double> iteration = new HashMap<>();
             for (String e : output) {
-                writeOutput(e, outputValues.get(e));
-                if (componentContext.getOutputDataType(e) == DataType.Vector) {
-                    for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(e,
-                        OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
-                        runtimeViewValues.put("Output: " + e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                            ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i));
-                        iteration.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
-                            ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i).getFloatValue());
+                if (outputValues.get(e) != null) {
+                    writeOutput(e, outputValues.get(e));
+                    if (componentContext.getOutputDataType(e) == DataType.Vector) {
+                        for (int i = 0; i < Integer.parseInt(componentContext.getOutputMetaDataValue(e,
+                            OptimizerComponentConstants.METADATA_VECTOR_SIZE)); i++) {
+                            runtimeViewValues.put("Output: " + e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                                ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i));
+                            iteration.put(e + OptimizerComponentConstants.OPTIMIZER_VECTOR_INDEX_SYMBOL + i,
+                                ((VectorTD) outputValues.get(e)).getFloatTDOfElement(i).getFloatValue());
+                        }
+                    } else {
+                        runtimeViewValues.put("Output: " + e, outputValues.get(e));
+                        iteration.put(e, ((FloatTD) outputValues.get(e)).getFloatValue());
                     }
                 } else {
-                    runtimeViewValues.put("Output: " + e, outputValues.get(e));
-                    iteration.put(e, ((FloatTD) outputValues.get(e)).getFloatValue());
+                    LOGGER.info(StringUtils.format("Could not send out output %s because the value was null", e));
                 }
             }
             writeOutput(OptimizerComponentConstants.ITERATION_COUNT_ENDPOINT_NAME,

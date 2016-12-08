@@ -12,7 +12,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.impl.NetworkRequestImpl;
 
@@ -37,15 +37,15 @@ public final class NetworkRequestFactory {
      * @param finalRecipient the final receiver/destination of the request; can be null if no forwarding is required
      * @return the generated {@link NetworkRequest}
      */
-    public static NetworkRequest createNetworkRequest(byte[] contentBytes, String messageType, NodeIdentifier sender,
-        NodeIdentifier finalRecipient) {
+    public static NetworkRequest createNetworkRequest(byte[] contentBytes, String messageType, InstanceNodeSessionId sender,
+        InstanceNodeSessionId finalRecipient) {
         MessageMetaData metaData = MessageMetaData.create();
         metaData.setMessageType(messageType);
         metaData.setSender(sender);
         if (finalRecipient != null) {
             metaData.setFinalRecipient(finalRecipient);
         }
-        metaData.addTraceStep(sender.getIdString());
+        metaData.addTraceStep(sender.getInstanceNodeSessionIdString());
         // TODO refactor: remove unwrapping/wrapping
         return new NetworkRequestImpl(contentBytes, metaData.getInnerMap());
     }
@@ -58,15 +58,15 @@ public final class NetworkRequestFactory {
      * forwarding.
      * 
      * @param receivedRequest the {@link NetworkRequest} that arrived at the local node
-     * @param localNodeId the {@link NodeIdentifier} of the local node (NOT the recipient!)
+     * @param localNodeId the {@link InstanceNodeSessionId} of the local node (NOT the recipient!)
      * @return the generated {@link NetworkRequest} for forwarding
      */
-    public static NetworkRequest createNetworkRequestForForwarding(NetworkRequest receivedRequest, NodeIdentifier localNodeId) {
+    public static NetworkRequest createNetworkRequestForForwarding(NetworkRequest receivedRequest, InstanceNodeSessionId localNodeId) {
         MessageMetaData newMetadata = MessageMetaData.cloneAndWrap(receivedRequest.accessRawMetaData());
         // TODO check TTL?
         // TODO check for valid message type?
         newMetadata.incHopCount();
-        newMetadata.addTraceStep(localNodeId.getIdString());
+        newMetadata.addTraceStep(localNodeId.getInstanceNodeSessionIdString());
         // the 3.0.0 approach is to maintain the original request id; change if necessary - misc_ro
         String requestIdToMaintain = receivedRequest.getRequestId();
         return new NetworkRequestImpl(receivedRequest.getContentBytes(), newMetadata.getInnerMap(), requestIdToMaintain);

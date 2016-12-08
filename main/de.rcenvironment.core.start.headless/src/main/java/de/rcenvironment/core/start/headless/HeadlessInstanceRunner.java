@@ -18,6 +18,7 @@ import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService;
+import de.rcenvironment.core.mail.SMTPServerConfigurationService;
 import de.rcenvironment.core.start.common.Instance;
 import de.rcenvironment.core.start.common.InstanceRunner;
 import de.rcenvironment.core.start.headless.textui.ConfigurationTextUI;
@@ -63,7 +64,9 @@ public final class HeadlessInstanceRunner extends InstanceRunner {
             final ServiceRegistryAccess serviceAccess = ServiceRegistry.createAccessFor(this);
             final ConfigurationService configurationService = serviceAccess.getService(ConfigurationService.class);
             final SshAccountConfigurationService sshConfigurationService = serviceAccess.getService(SshAccountConfigurationService.class);
-            new ConfigurationTextUI(configurationService, sshConfigurationService).run();
+            final SMTPServerConfigurationService smtpServerConfigurationService =
+                serviceAccess.getService(SMTPServerConfigurationService.class);
+            new ConfigurationTextUI(configurationService, sshConfigurationService, smtpServerConfigurationService).run();
             log.debug("Shutting down after text-mode configuration UI has terminated");
         } else if (CommandLineArguments.isBatchModeRequested()) {
             if (commandExecutionFuture != null) {

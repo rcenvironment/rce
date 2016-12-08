@@ -8,39 +8,68 @@
 
 package de.rcenvironment.core.mail.internal;
 
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.ExpectedException;
+
+import de.rcenvironment.core.mail.InvalidMailException;
 import de.rcenvironment.core.mail.Mail;
-import de.rcenvironment.core.mail.MailTestConstants;
-import junit.framework.TestCase;
+import static org.hamcrest.CoreMatchers.containsString;
 
 /**
- * Test case for the class {@link Mail}.
- * 
- * @author Tobias Menden
+ * Tests for {@link Mail}.
+ *
+ * @author Tobias Rodehutskors
  */
-public class MailTest extends TestCase {
+public class MailTest {
+
+    private static final String INVALID_MAIL_ADDRESS = "hallo?";
+
+    private static final String VALID_MAIL_ADDRESS = "tobias.rodehutskors@dlr.de";
+
+    private static final String HTML_TEXT = "HTML Text";
+
+    private static final String TEXT = "Text";
+
+    private static final String SUBJECT = "Subject";
 
     /**
-     * The class under test.
+     * ExpectedException.
      */
-    private Mail myMail = null;
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
 
-    @Override
-    public void setUp() throws Exception {
-        myMail = new Mail(MailTestConstants.TO,
-            MailTestConstants.SUBJECT,
-            MailTestConstants.TEXT,
-            MailTestConstants.REPLY_TO
-        );
+    /**
+     *  Tests, if an email with an valid input can be created successfully.
+     * 
+     * @throws InvalidMailException unexpected
+     */
+    @Test
+    public void testValidMail() throws InvalidMailException {
+        Mail.createMail(new String[] { VALID_MAIL_ADDRESS }, SUBJECT, TEXT, HTML_TEXT);
     }
 
     /**
-     * Test method for {@link de.rcenvironment.core.mail.internal.MailConfiguration} Getter Methods.
+     * 
+     * Tests, if an email without a recipient is properly rejected.
+     * 
+     * @throws InvalidMailException expected
      */
-    public void testGettterForSuccess() {
-        assertTrue(myMail.getReplyTo().equals(MailTestConstants.REPLY_TO));
-        assertTrue(myMail.getSubject().equals(MailTestConstants.SUBJECT));
-        assertTrue(myMail.getText().equals(MailTestConstants.TEXT));
-        assertEquals(MailTestConstants.TO, myMail.getRecipients());
+    @Test
+    public void testMailWithoutRecipients() throws InvalidMailException {
+        expectedException.expect(InvalidMailException.class);
+        Mail.createMail(new String[] {}, SUBJECT, TEXT, HTML_TEXT);
     }
 
+    /**
+     * Tests, if an email with an invalid recipient is properly rejected.
+     * 
+     * @throws InvalidMailException expected
+     */
+    @Test
+    public void testMailWithInvalidRecipients() throws InvalidMailException {
+        expectedException.expect(InvalidMailException.class);
+        expectedException.expectMessage(containsString(INVALID_MAIL_ADDRESS));
+        Mail.createMail(new String[] { INVALID_MAIL_ADDRESS }, SUBJECT, TEXT, HTML_TEXT);
+    }
 }

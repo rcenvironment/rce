@@ -34,10 +34,10 @@ public class InputCoupledWithOutputSelectionPane extends ForwardingEndpointSelec
 
     private Map<String, String> metaDataOutput = new HashMap<>();
 
-    public InputCoupledWithOutputSelectionPane(String title, String dynEndpointId, WorkflowNodeCommand.Executor executor,
+    public InputCoupledWithOutputSelectionPane(String title, String endpointId, WorkflowNodeCommand.Executor executor,
         Refreshable outputPane) {
-        super(title, EndpointType.INPUT, executor, false, dynEndpointId, true, true);
-        this.dynEndpointId = dynEndpointId;
+        super(title, EndpointType.INPUT, endpointId, new String[] {}, executor);
+        this.dynEndpointId = endpointId;
         this.outputPane = outputPane;
     }
 

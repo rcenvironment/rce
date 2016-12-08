@@ -22,14 +22,15 @@ import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptionManager;
 import de.rcenvironment.core.datamodel.api.DataType;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides central access to input values, processed and pending ones.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (tweaked notification setup)
  */
 public final class InputModel {
 
@@ -61,12 +62,13 @@ public final class InputModel {
             currentInputManager = new GenericSubscriptionManager(eventProcessor,
                 ServiceRegistry.createAccessFor(instance).getService(CommunicationService.class),
                 ServiceRegistry.createAccessFor(instance).getService(WorkflowHostService.class));
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override
                 @TaskDescription("Initial inputs subscriptions")
                 public void run() {
-                    currentInputManager.updateSubscriptions(new String[] { ComponentConstants.PORCESSED_INPUT_NOTIFICATION_ID_SUFFIX });
+                    currentInputManager
+                        .updateSubscriptionsForPrefixes(new String[] { ComponentConstants.NOTIFICATION_ID_PREFIX_PROCESSED_INPUT });
                     initialSubscriptionLatch.countDown();
                 }
             });
@@ -84,7 +86,7 @@ public final class InputModel {
             // TODO better handling?
             throw new RuntimeException("Interrupted while waiting for initial subscriptions to complete", e);
         }
-        currentInputManager.updateSubscriptions(new String[] { ComponentConstants.PORCESSED_INPUT_NOTIFICATION_ID_SUFFIX });
+        currentInputManager.updateSubscriptionsForPrefixes(new String[] { ComponentConstants.NOTIFICATION_ID_PREFIX_PROCESSED_INPUT });
     }
 
     /**

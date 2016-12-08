@@ -16,13 +16,14 @@ import org.junit.Before;
 import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 
 /**
  * Test cases for {@link CallbackProxyServiceImplTest}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class CallbackProxyServiceImplTest {
 
@@ -30,7 +31,7 @@ public class CallbackProxyServiceImplTest {
 
     private final String objectID = "objectID";
 
-    private final NodeIdentifier pi = NodeIdentifierFactory.fromHostAndNumberString("localhost:1");
+    private final InstanceNodeSessionId piLocal = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local");
 
     private CallbackProxy proxy = new CallbackProxy() {
 
@@ -42,8 +43,8 @@ public class CallbackProxyServiceImplTest {
         }
 
         @Override
-        public NodeIdentifier getHomePlatform() {
-            return pi;
+        public InstanceNodeSessionId getHomePlatform() {
+            return piLocal;
         }
     };
 

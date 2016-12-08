@@ -13,7 +13,7 @@ import java.io.InputStream;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
@@ -40,13 +40,13 @@ public interface FileDataService {
 
     /**
      * Creates a new {@link DataReference} from the given {@link InputStream} on the platform represented by the given
-     * {@link NodeIdentifier}. The new {@link DataReference} will contain the given {@link MetaData} and reserved {@link MetaData} which
+     * {@link ResolvableNodeId}. The new {@link DataReference} will contain the given {@link MetaData} and reserved {@link MetaData} which
      * will be set automatically.
      * 
      * @param inputStream InputStream that shall be saved.
      * @param metaDataSet MetaDataSet that shall be saved.
-     * @param platform {@link NodeIdentifier} of the platform to store the reference. If <code>null</code> the new reference will be created
-     *        on the local platform.
+     * @param platform {@link ResolvableNodeId} of the platform to store the reference. If <code>null</code> the new reference will be
+     *        created on the local platform.
      * @return DataReference for the given InputStream and MetaData.
      * @throws AuthorizationException If the user or the extension has no create permission.
      * @throws IOException on upload failure
@@ -54,7 +54,7 @@ public interface FileDataService {
      * @throws CommunicationException in case of communication error
      */
     DataReference newReferenceFromStream(InputStream inputStream, MetaDataSet metaDataSet,
-        NodeIdentifier platform) throws AuthorizationException, IOException, InterruptedException, CommunicationException;
+        ResolvableNodeId platform) throws AuthorizationException, IOException, InterruptedException, CommunicationException;
 
     /**
      * Deletes a whole local or remote {@link DataReference} with all {@link Revision}s.

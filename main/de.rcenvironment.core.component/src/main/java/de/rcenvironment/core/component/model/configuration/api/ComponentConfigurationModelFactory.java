@@ -51,7 +51,7 @@ public final class ComponentConfigurationModelFactory {
         ConfigurationExtensionDefinitionImpl configurationDefinition = new ConfigurationExtensionDefinitionImpl();
         configurationDefinition.setRawConfigurationDefinition(rawConfigurationDef);
         configurationDefinition.setRawPlaceholderMetaDataDefinition(rawPlaceholdersDef);
-        configurationDefinition.setActivationFilter(rawActivationFilter);
+        configurationDefinition.setRawActivationFilter(rawActivationFilter);
         return configurationDefinition;
     }
 

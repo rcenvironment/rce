@@ -42,9 +42,6 @@ public final class EvaluationMemoryComponentConstants {
     /** Constants. */
     public static final String ENDPOINT_ID_EVALUATION_RESULTS = "evaluation_results";
     
-    /** Constants. */
-    public static final String INPUT_NAME_LOOP_DONE = "Loop done";
-    
     private EvaluationMemoryComponentConstants() {}
 
 }

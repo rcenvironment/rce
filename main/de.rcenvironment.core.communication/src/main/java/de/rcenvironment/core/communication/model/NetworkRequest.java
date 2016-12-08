@@ -16,6 +16,11 @@ package de.rcenvironment.core.communication.model;
 public interface NetworkRequest extends NetworkMessage {
 
     /**
+     * The length of request id strings as returned by {@link #getRequestId()}.
+     */
+    int REQUEST_ID_LENGTH = 32;
+
+    /**
      * @return the internal id associated with this request
      */
     String getRequestId();

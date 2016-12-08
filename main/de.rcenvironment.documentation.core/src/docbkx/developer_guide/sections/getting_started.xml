@@ -53,9 +53,10 @@
                         </listitem>
                         <listitem>
                             <para><ulink url="http://eclipse-cs.sourceforge.net/">Checkstyle-CS
-                                </ulink> - Eclipse integration for Checkstyle. Not required for
-                                local development, but mandatory before committing changes into the
-                                central code base.</para>
+                                </ulink> - Eclipse integration for Checkstyle( version 6.14 is
+                                recommended, see note in "Configuring CheckStyle" ). Not required
+                                for local development, but mandatory before committing changes into
+                                the central code base.</para>
                         </listitem>
                     </itemizedlist>
                 </listitem>
@@ -107,7 +108,7 @@
                             </listitem>
                             <listitem>
                                 <para>Select the "Locations" list entry starting with
-                                        "<code>http://updates.sc.dlr.de/</code>" and click "Update".
+                                        "<code>https://software.dlr.de/</code>" and click "Update".
                                     After a while, the text below the entry should change to "RCE
                                     Combined Platform Feature &lt;version tag>".</para>
                             </listitem>
@@ -231,6 +232,11 @@
                 <para>Close the preferences with "Ok" and confirm the rebuild. </para>
             </listitem>
         </itemizedlist>
+        <para>
+        <note>
+            <para>We are currently using version 6.14 of CheckStyle. If you are using a newer version, you might see additional error markers.</para>
+        </note>
+        </para>
     </sect2>
     <sect2>
         <title>Building a standalone RCE version from Eclipse</title>

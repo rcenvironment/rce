@@ -46,24 +46,12 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String dialogMessageReadFromFileError;
-    
+
     /** Constant. */
     public static String mappingFileAsInputButton;
-    
+
     /** Constant. */
     public static String mappingFileLoadedButton;
-
-    /** Validation message. */
-    public static String noXmlFileLoaded;
-
-    /** Validation message. */
-    public static String noXmlFileLoadedLong;
-
-    /** Validation message. */
-    public static String unknownMappingType;
-
-    /** Validation message. */
-    public static String unknownMappingTypeLong;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

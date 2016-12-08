@@ -13,14 +13,14 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.osgi.service.log.LogService;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
-
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 
 /**
  * Test cases for {@link SerializableLogEntry}.
- *
+ * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class SerializableLogEntryTest {
 
@@ -32,35 +32,35 @@ public class SerializableLogEntryTest {
         final String message = "sesamstrasse";
         final long time = 11;
         final String exception = new Exception().toString();
-        
+
         SerializableLogEntry entry = new SerializableLogEntry(name, level, message, time, exception.toString());
-        
+
         assertEquals(name, entry.getBundleName());
         assertEquals(level, entry.getLevel());
         assertEquals(message, entry.getMessage());
         assertEquals(time, entry.getTime());
         assertEquals(exception, entry.getException());
-        
-        NodeIdentifier pi = NodeIdentifierFactory.fromHostAndNumberString("horst:3");
+
+        InstanceNodeSessionId pi = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("dummy");
         entry.setPlatformIdentifer(pi);
         assertEquals(pi, entry.getPlatformIdentifer());
-        
+
         entry.toString();
         new SerializableLogEntry(name, LogService.LOG_DEBUG, message, time, exception.toString()).toString();
         new SerializableLogEntry(name, LogService.LOG_INFO, message, time, exception.toString()).toString();
         new SerializableLogEntry(name, LogService.LOG_WARNING, message, time, exception.toString()).toString();
         new SerializableLogEntry(name, LogService.LOG_ERROR, message, time, exception.toString()).toString();
-        
+
         final long laterTime = 43;
         SerializableLogEntry laterEntry = new SerializableLogEntry(name, level, message, laterTime, exception.toString());
-        
+
         final int lower = -1;
         assertEquals(0, entry.compareTo(entry));
         assertEquals(lower, entry.compareTo(laterEntry));
         assertEquals(1, laterEntry.compareTo(entry));
-        
+
         SerializableLogEntry latestEntry = new SerializableLogEntry(name, level, message, laterTime, null);
-        
+
         laterEntry.setPlatformIdentifer(pi);
         latestEntry.setPlatformIdentifer(pi);
         latestEntry.compareTo(laterEntry);

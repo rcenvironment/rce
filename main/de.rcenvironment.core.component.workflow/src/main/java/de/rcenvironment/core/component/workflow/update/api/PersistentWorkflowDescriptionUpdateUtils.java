@@ -10,6 +10,8 @@ package de.rcenvironment.core.component.workflow.update.api;
 
 import java.io.File;
 
+import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
+
 /**
  * Provides convenient methods.
  * 
@@ -25,10 +27,10 @@ public final class PersistentWorkflowDescriptionUpdateUtils {
      */
     public static String getFilenameForBackupFile(File orignalFile) {
         String filenameWithoutFileExtension = orignalFile.getName().substring(0, orignalFile.getName().lastIndexOf("."));
-        String backupBasicFilename = filenameWithoutFileExtension + "_backup";
+        String backupBasicFilename = filenameWithoutFileExtension + WorkflowConstants.WORKFLOW_FILE_BACKUP_SUFFIX;
         String backupFilename = backupBasicFilename;
         int i = 1;
-        while (new File(orignalFile.getParentFile(), backupFilename + ".wf").exists()) {
+        while (new File(orignalFile.getParentFile(), backupFilename + WorkflowConstants.WORKFLOW_FILE_ENDING).exists()) {
             backupFilename = backupBasicFilename + " (" + i++ + ")";
         }
         return backupFilename;

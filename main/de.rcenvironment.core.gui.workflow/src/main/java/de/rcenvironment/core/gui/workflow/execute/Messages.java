@@ -170,6 +170,9 @@ public final class Messages extends NLS {
 
     /** Constant. */
     public static String applyToAll;
+    
+    /** Constant. */
+    public static String applyToAllToolTip;
 
     /** Constant. */
     public static String older;
@@ -200,6 +203,12 @@ public final class Messages extends NLS {
 
     /** Constant. */
     public static String missingPlaceholder;
+    
+    /** Constant. */
+    public static String validationProblem;
+    
+    /** Constant. */
+    public static String validationProblems;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

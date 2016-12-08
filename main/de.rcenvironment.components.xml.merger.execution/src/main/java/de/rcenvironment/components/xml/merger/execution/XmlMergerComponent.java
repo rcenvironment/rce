@@ -38,6 +38,7 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.xml.XMLException;
 import de.rcenvironment.core.utils.common.xml.api.XMLMapperService;
 import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
+import de.rcenvironment.toolkit.utils.text.AbstractTextLinesReceiver;
 
 /**
  * Implementing class for XMLMerger functionality with file support.
@@ -48,6 +49,19 @@ import de.rcenvironment.core.utils.common.xml.api.XMLSupportService;
  * @author Brigitte Boden
  */
 public class XmlMergerComponent extends DefaultComponent {
+
+    /**
+     * Implementation of TextLinesReceiver for XMLMerger.
+     *
+     * @author Brigitte Boden
+     */
+    private final class XMLMergerTextLinesReceiver extends AbstractTextLinesReceiver {
+
+        @Override
+        public void addLine(String line) {
+            componentContext.getLog().componentInfo(line);
+        }
+    }
 
     private static final String FAILED_TO_DELETE_TEMP_FILE = "Failed to delete temp file: ";
 
@@ -124,7 +138,7 @@ public class XmlMergerComponent extends DefaultComponent {
             }
         }
 
-        FileReferenceTD mainXML = (FileReferenceTD) componentContext.readInput(XmlMergerComponentConstants.INPUT_NAME_XML);
+        FileReferenceTD mainXML = (FileReferenceTD) componentContext.readInput(XmlMergerComponentConstants.ENDPOINT_NAME_XML);
         FileReferenceTD xmlToIntegrate = (FileReferenceTD) componentContext
             .readInput(XmlMergerComponentConstants.INPUT_NAME_XML_TO_INTEGRATE);
 
@@ -187,7 +201,7 @@ public class XmlMergerComponent extends DefaultComponent {
             }
 
             try {
-                xmlMapper.transformXMLFileWithXSLT(tempMainFile, resultFile, xsltFile);
+                xmlMapper.transformXMLFileWithXSLT(tempMainFile, resultFile, xsltFile, new XMLMergerTextLinesReceiver());
             } catch (XMLException e) {
                 throw new ComponentException("XSL transformation failed", e);
             }
@@ -218,7 +232,7 @@ public class XmlMergerComponent extends DefaultComponent {
             throw new ComponentException("Failed to store merged XML file into the data management - "
                 + "if it is not stored in the data management, it can not be sent as output value", e);
         }
-        componentContext.writeOutput(XmlMergerComponentConstants.INPUT_NAME_XML, fileReference);
+        componentContext.writeOutput(XmlMergerComponentConstants.ENDPOINT_NAME_XML, fileReference);
 
         storeHistoryDataItem();
         deleteTempFiles();

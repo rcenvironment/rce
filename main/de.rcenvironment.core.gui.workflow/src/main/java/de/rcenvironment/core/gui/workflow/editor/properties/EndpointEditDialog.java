@@ -60,16 +60,16 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class EndpointEditDialog extends Dialog {
 
-    private static final String MINUS = "-";
-
-    private static final String COLON = ":";
+    protected static final String COLON = ":";
+    
+    protected static final String MINUS = "-";
 
     private static final int GROUPS_MIN_WIDTH = 235;
 
     private static final int MINIMUM_HEIGHT = 125;
 
     private static final int MINIMUM_WIDTH = 250;
-
+    
     protected final ComponentInstanceProperties configuration;
 
     protected final EndpointType type;
@@ -274,7 +274,7 @@ public class EndpointEditDialog extends Dialog {
      * @param sortedKeyMap the sorted key map
      * @param container the container
      */
-    private void createSettings(Map<Integer, String> sortedKeyMap, Composite container) {
+    protected void createSettings(Map<Integer, String> sortedKeyMap, Composite container) {
         for (String key : sortedKeyMap.values()) {
             if (!metaData.getVisibility(key).equals(Visibility.developerConfigurable)
                 && metadataIsActive(key, metaData.getActivationFilter(key))) {
@@ -303,7 +303,7 @@ public class EndpointEditDialog extends Dialog {
         }
     }
 
-    private boolean metadataIsActive(String key, Map<String, List<String>> activationFilter) {
+    protected boolean metadataIsActive(String key, Map<String, List<String>> activationFilter) {
         if (activationFilter != null) {
             boolean hasActiveFilter = false;
 
@@ -319,7 +319,7 @@ public class EndpointEditDialog extends Dialog {
         return true;
     }
 
-    private Button createLabelAndCheckbox(Composite container, String text, String value) {
+    protected Button createLabelAndCheckbox(Composite container, String text, String value) {
         new Label(container, SWT.NONE).setText(text);
         Button result = new Button(container, SWT.CHECK);
         result.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -331,7 +331,7 @@ public class EndpointEditDialog extends Dialog {
         return result;
     }
 
-    private Combo createLabelAndCombo(Composite container, String text, String key, String value) {
+    protected Combo createLabelAndCombo(Composite container, String text, String key, String value) {
         new Label(container, SWT.NONE).setText(text);
         Combo combo = new Combo(container, SWT.READ_ONLY);
         combo.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
@@ -705,7 +705,7 @@ public class EndpointEditDialog extends Dialog {
      * 
      * @author Sascha Zur
      */
-    private class MethodPropertiesModifyListener implements ModifyListener {
+    public class MethodPropertiesModifyListener implements ModifyListener {
 
         @Override
         public void modifyText(ModifyEvent event) {
@@ -730,7 +730,7 @@ public class EndpointEditDialog extends Dialog {
      * 
      * @author Sascha Zur
      */
-    private class SelectionChangedListener extends SelectionAdapter {
+    public class SelectionChangedListener extends SelectionAdapter {
 
         @Override
         public void widgetDefaultSelected(SelectionEvent e) {

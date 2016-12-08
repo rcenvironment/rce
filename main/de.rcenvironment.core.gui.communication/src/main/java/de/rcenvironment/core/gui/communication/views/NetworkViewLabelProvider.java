@@ -72,7 +72,7 @@ public class NetworkViewLabelProvider extends LabelProvider {
                 NetworkGraphNode node = typedNode.getNode();
                 result = typedNode.getDisplayNameOfNode();
                 if (optionNodeIdsVisible) {
-                    result += "  [" + node.getNodeId().getIdString() + "] ";
+                    result += "  [" + node.getNodeId().getInstanceNodeSessionIdString() + "] ";
                 }
                 if (typedNode.isWorkflowHost()) {
                     result += " <Workflow Host>";

@@ -20,19 +20,19 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.SimpleNotificationService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Handles the connection to the subscription service and the retrieval of "missed" notifications.
@@ -42,15 +42,15 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  */
 public class GenericSubscriptionManager {
 
+    private static final String NOTIFICATION_PATTERN_WILDCARD = ".*";
+
     private final GenericSubscriptionEventProcessor eventProcessor;
 
     private final WorkflowHostService workflowHostService;
 
     private final CommunicationService communicationService;
 
-    private final String wildCard = ".*";
-
-    private final Set<String> subscribed = new HashSet<String>();
+    private final Set<String> subscribedIds = new HashSet<String>();
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
@@ -69,26 +69,20 @@ public class GenericSubscriptionManager {
         this.workflowHostService = workflowHostService;
     }
 
-    private Set<String> updateSubscribedIds(Set<String> subscribedIds) {
+    private Set<String> updateSubscribedIds() {
 
-        Set<String> currentIdsToSubscribe = new HashSet<String>();
+        final Set<String> currentIdsToSubscribe = new HashSet<String>();
 
-        Set<String> missingSubscribed = new HashSet<String>();
-
-        Set<NodeIdentifier> allNodes = communicationService.getReachableNodes();
-        Set<NodeIdentifier> allWorkflowNodes = workflowHostService.getWorkflowHostNodesAndSelf();
-
-        for (NodeIdentifier node : allNodes) {
-            for (NodeIdentifier wfNode : allWorkflowNodes) {
-                String id = StringUtils.escapeAndConcat(node.getIdString(), wfNode.getIdString());
-                currentIdsToSubscribe.add(id);
-            }
+        final Set<InstanceNodeSessionId> allWorkflowNodes = workflowHostService.getWorkflowHostNodesAndSelf();
+        for (InstanceNodeSessionId wfNode : allWorkflowNodes) {
+            final String id = wfNode.getInstanceNodeSessionIdString();
+            currentIdsToSubscribe.add(id);
         }
 
-        missingSubscribed = new HashSet<String>(currentIdsToSubscribe);
-        missingSubscribed.removeAll(subscribedIds);
+        final Set<String> missingSubscribed = new HashSet<String>(currentIdsToSubscribe);
+        missingSubscribed.removeAll(subscribedIds); // determine missing nodes/ids
 
-        subscribed.retainAll(currentIdsToSubscribe);
+        subscribedIds.retainAll(currentIdsToSubscribe); // purge unreachable nodes/ids
 
         return missingSubscribed;
     }
@@ -97,31 +91,34 @@ public class GenericSubscriptionManager {
      * Subscribes to the relevant notification id and catches up with previous updates. It only considers "new" platforms, which where not
      * known during initialize.
      * 
-     * @param notificationIdSuffixes identifiers of notifications to subscribe
+     * @param notificationIdPrefixes identifiers of notifications to subscribe
      */
-    public synchronized void updateSubscriptions(String[] notificationIdSuffixes) {
+    public synchronized void updateSubscriptionsForPrefixes(String[] notificationIdPrefixes) {
 
-        Set<String> missingSubscribed = updateSubscribedIds(subscribed);
+        final Set<String> missingSubscribedIds = updateSubscribedIds();
 
+        // TODO (p2) deprecated
         final SimpleNotificationService sns = new SimpleNotificationService();
 
-        CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+        final CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
 
-        for (String missing : missingSubscribed) {
-            final String missingSnapshot = missing;
-            final String[] nodes = StringUtils.splitAndUnescape(missing);
-            final NodeIdentifier targetNode = NodeIdentifierFactory.fromNodeId(nodes[0]);
-            for (String notificationIdSuffix : notificationIdSuffixes) {
-                final String notificationIdSuffixSnapshot = notificationIdSuffix;
+        for (final String missingId : missingSubscribedIds) {
+            final InstanceNodeSessionId targetWorkflowHostNode =
+                NodeIdentifierUtils.parseInstanceNodeSessionIdStringWithExceptionWrapping(missingId);
+            for (final String notificationIdPrefix : notificationIdPrefixes) {
                 callablesGroup.add(new Callable<Void>() {
 
                     @Override
                     @TaskDescription("Distributed console/input model notification subscriptions")
                     public Void call() throws Exception {
-                        Map<String, Long> lastMissedNumbers = sns.subscribe(wildCard + nodes[1]
-                            + notificationIdSuffixSnapshot, eventProcessor, targetNode);
-                        retrieveMissedNotifications(sns, targetNode, lastMissedNumbers);
-                        subscribed.add(missingSnapshot);
+                        Map<String, Long> lastMissedNumbers = sns.subscribe(
+                            StringUtils.format("%s%s:" + NOTIFICATION_PATTERN_WILDCARD, notificationIdPrefix,
+                                targetWorkflowHostNode.getInstanceNodeIdString()),
+                            eventProcessor, targetWorkflowHostNode);
+                        retrieveMissedNotifications(sns, targetWorkflowHostNode, lastMissedNumbers);
+                        synchronized (subscribedIds) {
+                            subscribedIds.add(missingId);
+                        }
                         return (Void) null;
                     }
                 });
@@ -153,30 +150,25 @@ public class GenericSubscriptionManager {
     }
 
     private void retrieveMissedNotifications(SimpleNotificationService sns,
-        NodeIdentifier node, Map<String, Long> lastMissedNumbers) throws RemoteOperationException {
+        InstanceNodeSessionId targetNode, Map<String, Long> lastMissedNumbers) throws RemoteOperationException {
 
         for (String notifId : lastMissedNumbers.keySet()) {
             Long lastMissedNumber = lastMissedNumbers.get(notifId);
             if (lastMissedNumber != NotificationService.NO_MISSED) {
-                eventProcessor.setNumberOfLastMissingNotification(notifId, node.getIdString(), lastMissedNumber);
+                eventProcessor.setNumberOfLastMissingNotification(notifId, targetNode.getInstanceNodeSessionIdString(), lastMissedNumber);
                 if (verboseLogging) {
-                    log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, node));
+                    log.debug(StringUtils.format("Starting to fetch stored notifications for id %s from node %s", notifId, targetNode));
                 }
-                Map<String, List<Notification>> storedNotifications = sns.getNotifications(notifId, node);
+                Map<String, List<Notification>> storedNotifications = sns.getNotifications(notifId, targetNode);
                 if (verboseLogging) {
                     log.debug(StringUtils.format("Received %d stored notification entries for id %s from node %s",
-                        storedNotifications.size(), notifId, node));
+                        storedNotifications.size(), notifId, targetNode));
                     for (Entry<String, List<Notification>> e : storedNotifications.entrySet()) {
                         log.debug(StringUtils.format("  Received %d notifications for topic %s", e.getValue().size(), e.getKey()));
                     }
                 }
                 for (List<Notification> notifications : storedNotifications.values()) {
-                    // TODO 5.0 final: replaced commented-out code with this line; remove old code after testing
                     eventProcessor.receiveBatchedNotifications(notifications);
-                    // Iterator<Notification> notificationIterator = notifications.iterator();
-                    // while (notificationIterator.hasNext()) {
-                    // eventProcessor.notify(notificationIterator.next());
-                    // }
                 }
             }
         }

@@ -13,7 +13,7 @@
 <property name="rce.component.id" type="String" value="de.rcenvironment.evaluationmemory"/>
 
 <property name="rce.component.class" type="String" value="de.rcenvironment.components.evaluationmemory.execution.EvaluationMemoryComponent"/>
-<property name="rce.component.version" type="String" value="1.0"/>
+<property name="rce.component.version" type="String" value="2"/>
 <property name="rce.component.name" type="String" value="Evaluation Memory"/>
 <property name="rce.component.group" type="String" value="Evaluation"/>
 <property name="rce.component.inputs" type="String" value="/resources/inputs.json"/>

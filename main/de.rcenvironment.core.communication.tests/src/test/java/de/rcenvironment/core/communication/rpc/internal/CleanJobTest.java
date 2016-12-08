@@ -23,8 +23,9 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.internal.CleanJob.CleanRunnable;
@@ -36,6 +37,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link CleanJob}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class CleanJobTest {
 
@@ -43,9 +45,9 @@ public class CleanJobTest {
 
     private final BundleContext contextMock = EasyMock.createNiceMock(BundleContext.class);
 
-    private final NodeIdentifier pi1 = NodeIdentifierFactory.fromHostAndNumberString("localhost:1");
+    private final InstanceNodeSessionId instanceIdLocal1 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local1");
 
-    private final NodeIdentifier pi2 = NodeIdentifierFactory.fromHostAndNumberString("localhost:2");
+    private final InstanceNodeSessionId instanceIdLocal2 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local2");
 
     private final String id1 = "id1";
 
@@ -55,7 +57,7 @@ public class CleanJobTest {
 
     private Map<String, Long> ttls = new HashMap<String, Long>();
 
-    private Map<String, NodeIdentifier> nodes = new HashMap<String, NodeIdentifier>();
+    private Map<String, InstanceNodeSessionId> nodes = new HashMap<String, InstanceNodeSessionId>();
 
     /** Set up. */
     @SuppressWarnings("deprecation")
@@ -96,21 +98,21 @@ public class CleanJobTest {
 
         Object o = new Object();
         objects.put(id1, new WeakReference<Object>(o));
-        nodes.put(id1, pi1);
+        nodes.put(id1, instanceIdLocal1);
         ttls.put(id1, new Date(System.currentTimeMillis() + CleanJob.TTL_MSEC).getTime());
 
         assertEquals(1, objects.size());
         assertEquals(1, nodes.size());
         assertEquals(1, ttls.size());
-        
+
         runnable = new CleanRunnable(CallbackService.class, objects, ttls, nodes);
         runnable.run();
 
         assertEquals(1, objects.size());
         assertEquals(1, nodes.size());
         assertEquals(1, ttls.size());
-        
-        nodes.put(id1, pi2);
+
+        nodes.put(id1, instanceIdLocal2);
 
         o = null;
         System.gc();
@@ -121,24 +123,24 @@ public class CleanJobTest {
         assertEquals(0, objects.size());
         assertEquals(0, nodes.size());
         assertEquals(0, ttls.size());
-        
+
         o = new Object();
         objects.put(id2, new WeakReference<Object>(o));
-        nodes.put(id2, pi2);
+        nodes.put(id2, instanceIdLocal2);
         ttls.put(id2, new Date(System.currentTimeMillis() - CleanJob.TTL_MSEC).getTime());
 
         assertEquals(1, objects.size());
         assertEquals(1, nodes.size());
         assertEquals(1, ttls.size());
-        
+
         runnable = new CleanRunnable(CallbackService.class, objects, ttls, nodes);
         runnable.run();
-        
+
         assertEquals(0, objects.size());
         assertEquals(0, nodes.size());
         assertEquals(0, ttls.size());
     }
-    
+
     /**
      * Test {@link CommunicationService} implementation.
      * 
@@ -146,17 +148,17 @@ public class CleanJobTest {
      */
     private class DummyCommunicatioService extends CommunicationServiceDefaultStub {
 
+        @SuppressWarnings("unchecked")
         @Override
-        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-            throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
             T service = null;
-            if (iface == CallbackService.class && nodeId.equals(pi1) && bundleContext == contextMock) {
+            if (iface == CallbackService.class && nodeId.equals(instanceIdLocal1)) {
                 service = (T) new DummyCallbackService1();
-            } else if (iface == CallbackService.class && nodeId.equals(pi2) && bundleContext == contextMock) {
+            } else if (iface == CallbackService.class && nodeId.equals(instanceIdLocal2)) {
                 service = (T) new DummyCallbackService2();
-            } else if (iface == CallbackProxyService.class && nodeId.equals(pi1) && bundleContext == contextMock) {
+            } else if (iface == CallbackProxyService.class && nodeId.equals(instanceIdLocal1)) {
                 service = (T) new DummyCallbackProxyService1();
-            } else if (iface == CallbackProxyService.class && nodeId.equals(pi2) && bundleContext == contextMock) {
+            } else if (iface == CallbackProxyService.class && nodeId.equals(instanceIdLocal2)) {
                 service = (T) new DummyCallbackProxyService2();
             }
             return service;
@@ -172,7 +174,7 @@ public class CleanJobTest {
     private class DummyCallbackService1 implements CallbackService {
 
         @Override
-        public String addCallbackObject(Object callBackObject, NodeIdentifier nodeId) {
+        public String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId) {
             return null;
         }
 
@@ -191,7 +193,7 @@ public class CleanJobTest {
         public void setTTL(String objectIdentifier, Long ttl) {}
 
         @Override
-        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, NodeIdentifier proxyHome) {
+        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, InstanceNodeSessionId proxyHome) {
             return null;
         }
 
@@ -210,7 +212,7 @@ public class CleanJobTest {
     private class DummyCallbackService2 implements CallbackService {
 
         @Override
-        public String addCallbackObject(Object callBackObject, NodeIdentifier nodeId) {
+        public String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId) {
             return null;
         }
 
@@ -232,7 +234,7 @@ public class CleanJobTest {
         }
 
         @Override
-        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, NodeIdentifier proxyHome) {
+        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, InstanceNodeSessionId proxyHome) {
             return null;
         }
 

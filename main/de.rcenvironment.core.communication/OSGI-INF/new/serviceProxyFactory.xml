@@ -4,29 +4,26 @@
     	<provide interface="de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory"/>
 	</service>
 	<reference bind="bindPlatformService"
- 		cardinality="1..1"
  		interface="de.rcenvironment.core.communication.api.PlatformService"
  		name="Information Service"
- 		policy="dynamic"
  	/>
+	<reference
+		bind="bindLiveNetworkIdResolutionService"
+		interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService"
+		name="LiveNetworkIdResolutionService"
+	/>
  	<reference name="Callback Proxy Service"
 		bind="bindCallbackProxyService"
- 		cardinality="1..1"
  		interface="de.rcenvironment.core.communication.rpc.api.CallbackProxyService"
- 		policy="dynamic"
  	/>
 	<reference
  		name="Callback Service"
  		interface="de.rcenvironment.core.communication.rpc.api.CallbackService"
- 		cardinality="1..1"
  		bind="bindCallbackService"
- 		policy="dynamic"
  	/>
 	<reference
  		name="Remote Service Call Service"
  		interface="de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService"
- 		cardinality="1..1"
  		bind="bindRemoteServiceCallService"
- 		policy="dynamic"
  	/>
 </scr:component>

@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import de.rcenvironment.core.communication.channel.MessageChannelIdFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * A {@link MessageChannelIdFactory} implementation generating JVM-wide unique integer ids.
@@ -20,6 +20,8 @@ import de.rcenvironment.core.utils.incubator.IdGenerator;
  * @author Robert Mischke
  */
 public class DefaultMessageChannelIdFactoryImpl implements MessageChannelIdFactory {
+
+    private static final int CHANNEL_ID_LENGTH = 32;
 
     // assuming that 2^31 connections will suffice for now...
     private static AtomicInteger sequence = new AtomicInteger();
@@ -34,8 +36,9 @@ public class DefaultMessageChannelIdFactoryImpl implements MessageChannelIdFacto
         } else {
             directionFlag = "r";
         }
-        // the running index is for easy identification in log output; the UUID part ensures
+        // the running index is for easy identification in log output; the random part ensures
         // uniqueness; the leading "c" is to make it recognizable as a connection id -- misc_ro
-        return StringUtils.format("c%d%s-%s", sequence.incrementAndGet(), directionFlag, IdGenerator.randomUUIDWithoutDashes());
+        return StringUtils.format("c%d%s-%s", sequence.incrementAndGet(), directionFlag,
+            IdGenerator.fastRandomHexString(CHANNEL_ID_LENGTH));
     }
 }

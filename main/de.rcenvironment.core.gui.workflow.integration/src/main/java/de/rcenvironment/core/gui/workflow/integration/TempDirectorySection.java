@@ -21,7 +21,6 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
-import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
 /**
@@ -41,8 +40,16 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
-        final Section scriptSection = PropertyTabGuiHelper.createSingleColumnSectionComposite(parent, getWidgetFactory(),
-            Messages.tempDirectorySection);
+        parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        parent.setLayout(new GridLayout(1, true));
+        
+        final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+        composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        composite.setLayout(new GridLayout(1, true));
+        
+        final Section scriptSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
+        scriptSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        scriptSection.setText(Messages.tempDirectorySection);
 
         Composite scriptComposite = getWidgetFactory().createFlatFormComposite(scriptSection);
         scriptComposite.setLayout(new GridLayout(1, true));
@@ -112,7 +119,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
             } else if (chosen.equals(ToolIntegrationConstants.KEY_TOOL_DELETE_WORKING_DIRECTORIES_NEVER) && deleteNeverActive) {
                 neverDeleteTempDirectoryButton.setSelection(true);
             } else {
-                //The chosen behavior is not active anymore, determine an active option to replace it.
+                // The chosen behavior is not active anymore, determine an active option to replace it.
                 determineDeletionBehaviour(deleteNeverActive, deleteOnceActive, deleteAlwaysActive);
             }
         } else {
@@ -139,7 +146,7 @@ public class TempDirectorySection extends ValidatingWorkflowNodePropertySection 
             alwaysDeleteTempDirectoryButton.setSelection(true);
         }
     }
-    
+
     @Override
     public void refreshSection() {
         super.refreshSection();

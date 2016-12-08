@@ -8,6 +8,7 @@
 
 package de.rcenvironment.core.communication.nodeproperties;
 
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.internal.NodePropertyImpl;
 
 /**
@@ -22,9 +23,14 @@ import de.rcenvironment.core.communication.nodeproperties.internal.NodePropertyI
 public interface NodeProperty {
 
     /**
-     * @return the id string of the node that published this property
+     * @return the {@link InstanceNodeSessionId} of this property's publisher, in string form
      */
-    String getNodeIdString();
+    String getInstanceNodeSessionIdString();
+
+    /**
+     * @return the {@link InstanceNodeSessionId} of this property's publisher, in object form
+     */
+    InstanceNodeSessionId getInstanceNodeSessionId();
 
     /**
      * @return the property key
@@ -41,4 +47,5 @@ public interface NodeProperty {
      *         properties may share the same sequence number
      */
     long getSequenceNo();
+
 }

@@ -20,11 +20,11 @@ public class DefaultEndpointPropertySection extends EndpointPropertySection {
 
     public DefaultEndpointPropertySection() {
         super();
-        EndpointSelectionPane inputPane = new EndpointSelectionPane(Messages.inputs,
-            EndpointType.INPUT, this, false, "default", false);
+        EndpointSelectionPane inputPane = new EndpointSelectionPane(Messages.inputs, EndpointType.INPUT, "default",
+            new String[] {}, new String[] {}, this);
 
-        EndpointSelectionPane outputPane = new EndpointSelectionPane(Messages.outputs,
-            EndpointType.OUTPUT, this, false, "default", false);
+        EndpointSelectionPane outputPane = new EndpointSelectionPane(Messages.outputs, EndpointType.OUTPUT, "default",
+            new String[] {}, new String[] {}, this);
         setColumns(2);
         setPanes(inputPane, outputPane);
     }

@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
@@ -62,7 +62,7 @@ public interface ComponentDataManagementService {
      * @param nodeId The node to try to fetch data from
      * @throws IOException on a local I/O or data management error
      */
-    void copyReferenceToLocalFile(String reference, File targetFile, NodeIdentifier nodeId)
+    void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId nodeId)
         throws IOException;
 
     /**
@@ -74,7 +74,7 @@ public interface ComponentDataManagementService {
      * @throws IOException on a local I/O or data management error
      * @throws CommunicationException in case of communication error
      */
-    String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException, CommunicationException;
+    String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException, CommunicationException;
 
     /**
      * Creates {@link FileReferenceTD} object from given file by creating a new data management reference.
@@ -129,10 +129,10 @@ public interface ComponentDataManagementService {
      * 
      * @param dirReference {@link DirectoryReferenceTD}
      * @param targetDir local target directory
-     * @param node source {@link NodeIdentifier}
+     * @param node source {@link ResolvableNodeId}
      * @throws IOException on a local I/O or data management error
      */
-    void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NodeIdentifier node)
+    void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, ResolvableNodeId node)
         throws IOException;
 
 }

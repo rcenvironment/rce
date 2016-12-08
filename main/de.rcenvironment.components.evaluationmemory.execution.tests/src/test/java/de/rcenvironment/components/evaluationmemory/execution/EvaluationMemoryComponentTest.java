@@ -12,13 +12,14 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
 
+import org.apache.commons.logging.LogFactory;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
@@ -38,6 +39,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
+import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
@@ -66,6 +68,8 @@ public class EvaluationMemoryComponentTest {
     private ConvergerComponentContextMock context;
 
     private TypedDatumFactory typedDatumFactory;
+
+    private TempFileService tempFileService;
     
     /**
      * Custom subclass of {@link ComponentContextMock} that adds common configuration and query methods.
@@ -97,9 +101,6 @@ public class EvaluationMemoryComponentTest {
             context.addSimulatedInput(EVAL_Y2, EvaluationMemoryComponentConstants.ENDPOINT_ID_EVALUATION_RESULTS, DataType.Float,
                 true, null);
             
-            context.addSimulatedInput(EvaluationMemoryComponentConstants.INPUT_NAME_LOOP_DONE, null, DataType.Boolean, 
-                false, null);
-            
             context.addSimulatedOutput(TO_EVAL_X1, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true, null);
             context.addSimulatedOutput(TO_EVAL_X2, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true, null);
             context.addSimulatedOutput(TO_EVAL_X3, EvaluationMemoryComponentConstants.ENDPOINT_ID_TO_EVALUATE, DataType.Float, true, null);
@@ -122,8 +123,9 @@ public class EvaluationMemoryComponentTest {
     @Before
     public void setUp() throws IOException {
         TempFileServiceAccess.setupUnitTestEnvironment();
-        memoryFilePath = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("file_1").getAbsolutePath();
-        memoryFilePathAtWfStart = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("file_2").getAbsolutePath();
+        tempFileService = TempFileServiceAccess.getInstance();
+        memoryFilePath = tempFileService.createTempFileWithFixedFilename("file_1").getAbsolutePath();
+        memoryFilePathAtWfStart = tempFileService.createTempFileWithFixedFilename("file_2").getAbsolutePath();
         context = new ConvergerComponentContextMock();
         typedDatumFactory = context.getService(TypedDatumService.class).getFactory();
     }
@@ -134,6 +136,18 @@ public class EvaluationMemoryComponentTest {
     @After
     public void tearDown() {
         component.dispose();
+        deleteTempFile(memoryFilePath);
+        deleteTempFile(memoryFilePathAtWfStart);
+    }
+
+    private void deleteTempFile(String absoluteFileName) {
+        if (absoluteFileName != null) {
+            try {
+                tempFileService.disposeManagedTempDirOrFile(new File(absoluteFileName));
+            } catch (IOException e) {
+                LogFactory.getLog(getClass()).error("Failed to delete temp file: " + absoluteFileName, e);
+            }
+        }
     }
 
     /**
@@ -296,7 +310,6 @@ public class EvaluationMemoryComponentTest {
         FloatTD floatTD1 = typedDatumFactory.createFloat(1.0);
         FloatTD floatTD2 = typedDatumFactory.createFloat(2.0);
         FloatTD floatTD3 = typedDatumFactory.createFloat(3.0);
-        FloatTD floatTD4 = typedDatumFactory.createFloat(4.0);
         
         Map<SortedMap<String, TypedDatum>, SortedMap<String, TypedDatum>> values = new HashMap<>();
         SortedMap<String, TypedDatum> inputValues = new TreeMap<>();
@@ -486,47 +499,6 @@ public class EvaluationMemoryComponentTest {
         } catch (ComponentException e) {
             assertTrue(e.getMessage().contains("Failed to access"));
         }
-    }
-    
-    /**
-     * Tests if input "Loop done" is handled correctly.
-     * 
-     * @throws ComponentException on unexpected component failures
-     * @throws IOException on unexpected failures
-     */
-    @Test
-    public void testLoopDone() throws ComponentException, IOException {
-        EvaluationMemoryFileAccessService accessService = createFileAccessHandlerService(true);
-        context.configure(accessService, true);
-        component = new ComponentTestWrapper(new EvaluationMemoryComponent(), context);
-        component.start();
-        
-        context.setInputValue(EvaluationMemoryComponentConstants.INPUT_NAME_LOOP_DONE, typedDatumFactory.createBoolean(false));
-        component.processInputs();
-        
-        List<String> outputsClosed = context.getCapturedOutputClosings();
-        assertEquals(0, outputsClosed.size());
-
-        assertEquals(0, context.getCapturedOutput(TO_EVAL_X1).size());
-        assertEquals(0, context.getCapturedOutput(TO_EVAL_X2).size());
-        assertEquals(0, context.getCapturedOutput(TO_EVAL_X3).size());
-        assertEquals(0, context.getCapturedOutput(EVAL_Y1).size());
-        assertEquals(0, context.getCapturedOutput(EVAL_Y2).size());
-        
-        context.setInputValue(EvaluationMemoryComponentConstants.INPUT_NAME_LOOP_DONE, typedDatumFactory.createBoolean(true));
-        component.processInputs();
-        
-        outputsClosed = context.getCapturedOutputClosings();
-        assertEquals(3, outputsClosed.size());
-        assertTrue(outputsClosed.contains(TO_EVAL_X1));
-        assertTrue(outputsClosed.contains(TO_EVAL_X2));
-        assertTrue(outputsClosed.contains(TO_EVAL_X3));
-
-        assertEquals(0, context.getCapturedOutput(EVAL_Y1).size());
-        assertEquals(0, context.getCapturedOutput(EVAL_Y2).size());
-        
-        component.tearDown(Component.FinalComponentState.FINISHED);
-        EasyMock.verify(accessService);
     }
     
     private EvaluationMemoryFileAccessService createFileAccessHandlerService(boolean fileFromStart) 

@@ -44,13 +44,6 @@
 			<version>1.1</version>
 		</dependency>
 		<dependency>
-			<!-- used by mail bundle. -->
-			<!-- License: BSD (http://jodd.org/license.html) - misc_ro, Feb 2012 -->
-			<groupId>org.jodd</groupId>
-			<artifactId>jodd-mail</artifactId> <!-- note: switched from "jodd" to "jodd-mail" for 6.x -->
-			<version>3.6.2</version> <!-- last upgraded on 2014-11-07 - misc_ro -->
-		</dependency>
-		<dependency>
 			<!-- Toolkit for building text-mode UIs -->
 			<!-- License: LGPL v3 (https://github.com/mabe02/lanterna/blob/master/License.txt) 
 				- misc_ro, Oct 2015 -->
@@ -103,6 +96,8 @@
 		<!-- updated version number for 5.0.0 - seid_do, Mar 2014 -->
 		<!-- We use 2.5.1 because in 2.5.2+ a memory leak exists: http://bugs.jython.org/issue2026 
 			- seid_do, Mar 2014 -->
+		<!-- We cannot update to 2.7 since shutils.copytree is broken: http://bugs.jython.org/issue2314 
+			- rode_to, Nov 2016 -->	
 		<dependency>
 			<groupId>org.python</groupId>
 			<artifactId>jython-standalone</artifactId>
@@ -128,7 +123,26 @@
 			<artifactId>jackson-mapper-asl</artifactId>
 			<version>1.9.13</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-core -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.7.5</version>
+		</dependency>
+		<!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.7.5</version>
+		</dependency>
+
+
+		<dependency>
+			<groupId>org.picocontainer</groupId>
+			<artifactId>picocontainer</artifactId>
+			<version>2.15</version>
+		</dependency>
 	</dependencies>
 
-	<version>7.1.1.qualifier</version>
+	<version>8.0.0.qualifier</version>
 </project>

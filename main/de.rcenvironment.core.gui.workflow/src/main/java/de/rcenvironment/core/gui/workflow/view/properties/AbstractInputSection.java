@@ -36,16 +36,16 @@ import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.AbstractPropertySection;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionInformation;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.EndpointContentProvider;
 import de.rcenvironment.core.gui.workflow.editor.connections.EndpointTreeViewer;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Property section for displaying and editing inputs.
@@ -73,7 +73,7 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
     private Display display;
 
     private ServiceRegistryPublisherAccess serviceRegistryAccess;
-    
+
     private CountDownLatch modelInitializedLatch;
 
     private ScheduledFuture<?> refreshFuture;
@@ -108,9 +108,9 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
 
     public AbstractInputSection() {
         treeEditors = new ArrayList<TreeEditor>();
-        
+
         modelInitializedLatch = new CountDownLatch(1);
-        
+
         Job job = new Job("Opening inputs view") {
 
             @Override
@@ -185,8 +185,8 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
         serviceRegistryAccess.registerService(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
 
             @Override
-            public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
-                Set<NodeIdentifier> removedWfHosts) {
+            public void onReachableWorkflowHostsChanged(Set<InstanceNodeSessionId> reachableWfHosts,
+                Set<InstanceNodeSessionId> addedWfHosts, Set<InstanceNodeSessionId> removedWfHosts) {
                 try {
                     modelInitializedLatch.await();
                 } catch (InterruptedException e) {
@@ -210,7 +210,7 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
     @Override
     public void dispose() {
         if (refreshFuture != null) {
-            refreshFuture.cancel(true);            
+            refreshFuture.cancel(true);
         }
         if (serviceRegistryAccess != null) {
             serviceRegistryAccess.dispose();
@@ -222,7 +222,7 @@ public abstract class AbstractInputSection extends AbstractPropertySection {
      * Schedules the refresh timer responsible for refreshing the view every 500 milliseconds.
      */
     public void scheduleRefreshTimer() {
-        refreshFuture = SharedThreadPool.getInstance().scheduleAtFixedRate(new RefreshTask(), REFRESH_INTERVAL);
+        refreshFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new RefreshTask(), REFRESH_INTERVAL);
     }
 
     /**

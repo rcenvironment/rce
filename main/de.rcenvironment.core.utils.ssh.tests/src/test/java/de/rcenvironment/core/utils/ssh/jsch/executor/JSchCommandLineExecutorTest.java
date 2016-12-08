@@ -20,14 +20,14 @@ import java.util.ArrayList;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
-import org.apache.sshd.server.command.ScpCommandFactory;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -93,7 +93,7 @@ public class JSchCommandLineExecutorTest {
         sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {
 
             {
-                add(new UserAuthPassword.Factory());
+                add(new UserAuthPasswordFactory());
             }
         });
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());

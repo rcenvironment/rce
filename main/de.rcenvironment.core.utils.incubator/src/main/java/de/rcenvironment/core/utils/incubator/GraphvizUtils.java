@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
@@ -186,8 +187,8 @@ public final class GraphvizUtils {
             executor.start("dot " + gvFile.getAbsolutePath() + " -Tpng -o " + pngFile.getAbsolutePath());
             TextOutputReceiver stdoutCapture = new PrefixingTextOutForwarder("StdOut: ", outputReceiver);
             TextOutputReceiver stderrCapture = new PrefixingTextOutForwarder("StdErr: ", outputReceiver);
-            TextStreamWatcher outWatcher = new TextStreamWatcher(executor.getStdout(), stdoutCapture);
-            TextStreamWatcher errWatcher = new TextStreamWatcher(executor.getStderr(), stderrCapture);
+            TextStreamWatcher outWatcher = TextStreamWatcherFactory.create(executor.getStdout(), stdoutCapture);
+            TextStreamWatcher errWatcher = TextStreamWatcherFactory.create(executor.getStderr(), stderrCapture);
             outWatcher.start();
             errWatcher.start();
             int exitCode = executor.waitForTermination();

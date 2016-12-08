@@ -12,6 +12,8 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
+import de.rcenvironment.core.utils.common.StringUtils;
+
 /**
  * Represents a node in the {@link WorkflowGraph}.
  * 
@@ -32,15 +34,23 @@ public class WorkflowGraphNode implements Serializable {
     private final boolean isDriver;
     
     private final boolean isDrivingFaultTolerantLoop;
+    
+    private final String name;
 
     public WorkflowGraphNode(String nodeId, Set<String> inputIdentifiers, Set<String> outputIdentifiers,
         Map<String, String> endpointNames, boolean isDriver, boolean isDrivingFaultTolerantLoop) {
+        this(nodeId, inputIdentifiers, outputIdentifiers, endpointNames, isDriver, isDrivingFaultTolerantLoop, nodeId);
+    }
+
+    public WorkflowGraphNode(String nodeId, Set<String> inputIdentifiers, Set<String> outputIdentifiers,
+        Map<String, String> endpointNames, boolean isDriver, boolean isDrivingFaultTolerantLoop, String name) {
         this.executionIdentifier = nodeId;
         this.inputIdentifiers = inputIdentifiers;
         this.outputIdentifiers = outputIdentifiers;
         this.endpointNames = endpointNames;
         this.isDriver = isDriver;
         this.isDrivingFaultTolerantLoop = isDrivingFaultTolerantLoop;
+        this.name = name;
     }
 
     public String getExecutionIdentifier() {
@@ -71,9 +81,13 @@ public class WorkflowGraphNode implements Serializable {
         return endpointNames.get(endpointIdentifier);
     }
     
+    public String getName() {
+        return name;
+    }
+    
     @Override
     public String toString() {
-        return getExecutionIdentifier() + " " + isDriver();
+        return StringUtils.format("%s (driver: %b)", getExecutionIdentifier(), isDriver());
     }
 
 }

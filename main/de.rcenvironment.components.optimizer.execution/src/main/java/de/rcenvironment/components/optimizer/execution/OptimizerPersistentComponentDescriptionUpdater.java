@@ -122,6 +122,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
 
     private static final String V7_1 = "7.1";
 
+    private static final String V8 = "8";
+
     private static ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
     @Override
@@ -143,7 +145,7 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
         }
         if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V7_0) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V8) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         if (silent && persistentComponentDescriptionVersion != null
@@ -177,6 +179,8 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                     description = updateToVersion70(description);
                 case V7_0:
                     description = updateFrom70To71(description);
+                case V7_1:
+                    description = updateFrom71To8(description);
                 default:
                     // nothing to do here
                 }
@@ -191,6 +195,15 @@ public class OptimizerPersistentComponentDescriptionUpdater implements Persisten
                 }
             }
         }
+        return description;
+    }
+
+    private PersistentComponentDescription updateFrom71To8(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        description =
+            PersistentComponentDescriptionUpdaterUtils.removeOuterLoopDoneEndpoints(description);
+        description = PersistentComponentDescriptionUpdaterUtils.removeEndpointCharacterInfoFromMetaData(description);
+        description.setComponentVersion(V8);
         return description;
     }
 

@@ -12,10 +12,17 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
+
 /**
  * Identifier for a component run.
  * 
  * @author Jan Flink
+ * @author Brigitte Boden
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class ComponentRun implements Serializable, Comparable<ComponentRun> {
 
@@ -25,7 +32,12 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
 
     private final Long componentRunID;
 
-    private final String nodeID;
+    private final FinalComponentRunState finalState;
+
+    private final String logicalNodeId;
+
+    // as this object is created from a string for on the server side anyway, only parse this id on demand on the client side
+    private transient LogicalNodeId logicalNodeIdObject;
 
     private final Integer runCounter;
 
@@ -38,14 +50,14 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
     private final Boolean referencesDeleted;
 
     private Set<EndpointData> endpointData;
-    
+
     private final Map<String, String> metaData;
 
-    public ComponentRun(Long componentRunID, Long componentInstanceID, String nodeID, Integer runCounter, Long startTime, Long endtime,
-        String historyDataItem, Boolean referencesDeleted, Map<String, String> metaData) {
+    public ComponentRun(Long componentRunID, Long componentInstanceID, String logicalNodeId, Integer runCounter, Long startTime,
+        Long endtime, String historyDataItem, Boolean referencesDeleted, Map<String, String> metaData, FinalComponentRunState finalState) {
         this.componentRunID = componentRunID;
         this.componentInstanceID = componentInstanceID;
-        this.nodeID = nodeID;
+        this.logicalNodeId = logicalNodeId;
         this.runCounter = runCounter;
         this.startTime = startTime;
         this.endTime = endtime;
@@ -53,13 +65,14 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
         this.referencesDeleted = referencesDeleted;
         this.endpointData = null;
         this.metaData = metaData;
+        this.finalState = finalState;
     }
 
-    public ComponentRun(Long componentRunId, String nodeID, Integer runCounter, Long startTime, Long endtime,
-        String historyDataItem, Boolean referencesDeleted, Map<String, String> metaData) {
+    public ComponentRun(Long componentRunId, String logicalNodeId, Integer runCounter, Long startTime, Long endtime,
+        String historyDataItem, Boolean referencesDeleted, Map<String, String> metaData, FinalComponentRunState finalState) {
         this.componentRunID = componentRunId;
         this.componentInstanceID = null;
-        this.nodeID = nodeID;
+        this.logicalNodeId = logicalNodeId;
         this.runCounter = runCounter;
         this.startTime = startTime;
         this.endTime = endtime;
@@ -67,6 +80,7 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
         this.referencesDeleted = referencesDeleted;
         this.endpointData = null;
         this.metaData = metaData;
+        this.finalState = finalState;
     }
 
     public Long getEndTime() {
@@ -77,14 +91,29 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
         return historyDataItem;
     }
 
-    public String getNodeID() {
-        return nodeID;
+    public String getLogicalNodeIdString() {
+        return logicalNodeId;
+    }
+
+    /**
+     * @return returns the {@link LogicalNodeId} representation of the stored instance or logical node id representing the execution
+     *         location; this should be used in place of {@link #getLogicalNodeIdString()} for type safety
+     */
+    public synchronized LogicalNodeId getLogicalNodeId() {
+        if (logicalNodeIdObject == null && logicalNodeId != null) { // also return null in case the string id is ever null
+            try {
+                logicalNodeIdObject = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeId(logicalNodeId);
+            } catch (IdentifierException e) {
+                throw new RuntimeException("Failed to parse component run location string (expected an instance id or logical node id)", e);
+            }
+        }
+        return logicalNodeIdObject;
     }
 
     public Integer getRunCounter() {
         return runCounter;
     }
-    
+
     public Map<String, String> getMetaData() {
         return metaData;
     }
@@ -101,6 +130,10 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
         return componentRunID;
     }
 
+    public FinalComponentRunState getFinalState() {
+        return finalState;
+    }
+
     public Set<EndpointData> getEndpointData() {
         return endpointData;
     }
@@ -112,14 +145,14 @@ public class ComponentRun implements Serializable, Comparable<ComponentRun> {
     public Boolean isReferencesDeleted() {
         return referencesDeleted;
     }
-    
+
     /**
      * @return the reference to the log file, if available, otherwise <code>null</code>
      */
     public String getLogFile() {
         return metaData.get(PropertiesKeys.COMPONENT_LOG_FILE);
     }
-    
+
     /**
      * @return the reference to the error log file, if available, otherwise <code>null</code>
      */

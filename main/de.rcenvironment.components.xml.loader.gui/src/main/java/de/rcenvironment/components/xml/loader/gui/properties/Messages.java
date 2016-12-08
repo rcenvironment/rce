@@ -32,12 +32,6 @@ public class Messages extends NLS {
     /** Constant. */
     public static String actuallyLoadedLabel;
 
-    /** Validation message. */
-    public static String noXmlFileLoaded;
-
-    /** Validation message. */
-    public static String noXmlFileLoadedLong;
-
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 
     static {

@@ -39,9 +39,9 @@
                 },
                  "folderForSaving": {
                     "guiName": "Target folder",
-                    "guiPosition": "0",
+                    "guiPosition": "1",
                     "guiGroup": "Options",
-                    "visibility": "developerConfigurable",
+                    "visibility": "shown",
                     "dataType": "Text",
                     "defaultValue": "",
                     "validation": "required",

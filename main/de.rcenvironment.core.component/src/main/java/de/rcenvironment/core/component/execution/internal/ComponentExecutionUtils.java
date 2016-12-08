@@ -10,7 +10,9 @@ package de.rcenvironment.core.component.execution.internal;
 
 import org.apache.commons.logging.Log;
 
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -30,6 +32,11 @@ public final class ComponentExecutionUtils {
     private static final int THOUSAND = 1000;
     
     private ComponentExecutionUtils() {}
+    
+    protected static boolean isVerificationRequired(ConfigurationDefinition configDef) {
+        return Boolean
+            .valueOf(configDef.getReadOnlyConfiguration().getValue(ComponentConstants.COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL));
+    }
     
     protected static void logCallbackSuccessAfterFailure(Log log, String logMessage, int failureCount) {
         if (failureCount > 0) {

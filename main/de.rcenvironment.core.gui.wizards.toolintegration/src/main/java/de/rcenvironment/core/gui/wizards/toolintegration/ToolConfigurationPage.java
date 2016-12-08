@@ -649,8 +649,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             configurationMap.put(ToolIntegrationConstants.KEY_LAUNCH_SETTINGS, configs);
         }
         WizardToolConfigurationDialog wtcd =
-            new WizardToolConfigurationDialog(null, Messages.add + " "
-                + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), configs,
+            new WizardToolConfigurationDialog(null, Messages.addDiaglogTitle, configs,
                 ((ToolIntegrationWizard) getWizard()).getCurrentContext());
 
         int exit = wtcd.open();
@@ -676,8 +675,7 @@ public class ToolConfigurationPage extends ToolIntegrationWizardPage {
             Map<String, String> selectedConfigCopy = new HashMap<String, String>();
             selectedConfigCopy.putAll(selectedConfig);
             WizardToolConfigurationDialog wtcd =
-                new WizardToolConfigurationDialog(null, Messages.edit + " "
-                    + Messages.toolPage.substring(0, Messages.toolPage.length() - 1), selectedConfigCopy, configs,
+                new WizardToolConfigurationDialog(null, Messages.editDiaglogTitle, selectedConfigCopy, configs,
                     ((ToolIntegrationWizard) getWizard()).getCurrentContext(),
                     true);
             int exit = wtcd.open();

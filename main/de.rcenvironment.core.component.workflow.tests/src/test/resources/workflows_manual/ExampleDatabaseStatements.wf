@@ -1,0 +1,408 @@
+{
+  "identifier" : "91918082-cba1-4e9f-8b8a-73e1a8fd78e6",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "1c59a61a-50fb-4904-b789-09999753c050",
+    "name" : "Copy (2) of Copy of Database",
+    "location" : "640:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "localhost",
+      "databaseName" : "gruen",
+      "databasePort" : "3306",
+      "databaseScheme" : "rce_test",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"SELECT CAST(t11 AS DECIMAL(25)) FROM dev_table WHERE t22 = 0;\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"outiiii\"},{\"index\":1,\"name\":\"Statement (1)\",\"statement\":\"SELECT t11 FROM dev_table WHERE t22 = 0;\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"longi\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "28cfae33-400d-437e-a95d-54d8e7d8db51",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "6a1e9875-8f46-4316-94b5-ad130d62c5a5",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "27fb1dc3-69a6-4d0e-9764-3ce771ae18d7",
+      "name" : "longi",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Integer"
+    }, {
+      "identifier" : "1c412c51-ba0d-40e8-bf9c-632b96f77ba7",
+      "name" : "outiiii",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "696597a7-7c4f-4f31-8d03-dd525618dfdf",
+    "name" : "Copy (2) of Script (1)",
+    "location" : "780:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\nRCE.read_input(\"lonig\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "6bb6df03-a8e9-4fad-8927-df9b9d1608f6",
+      "name" : "lonig",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Integer",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    }, {
+      "identifier" : "974588dc-6ccf-4c5e-a1c8-13c8c4a0e36d",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "460ef66f-1389-458c-94bc-e3c3bda235e3",
+    "name" : "Copy of Copy of Copy of Database",
+    "location" : "340:300",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "localhost",
+      "databaseName" : "gruen",
+      "databasePort" : "3306",
+      "databaseScheme" : "rce_test",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"UPDATE dev_table SET t11 = '123' WHERE t11 = '34';\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "b4cd5969-7de6-4b1c-b2f6-42ebd684142e",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "dfc4d324-fdaa-4d46-9043-b39511362745",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "daf1fa84-d951-4bd2-b9d2-f1d9787f1490",
+    "name" : "Copy of Copy of Database",
+    "location" : "41:300",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "localhost",
+      "databaseName" : "gruen",
+      "databasePort" : "3306",
+      "databaseScheme" : "rce_test",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"DELETE FROM dev_table WHERE iddev_table > 6;\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "befaa438-42c3-4802-99b6-34f345455eef",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "8fcedd44-2149-43ba-986e-4835a10feedd",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "fe9a5db9-f8cd-4e9d-bc83-c5c040aa03f3",
+    "name" : "Copy of Copy of Script (1)",
+    "location" : "480:300",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "13da7ec6-be4d-4594-8329-6a20df777d71",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "b2473e9d-4429-49b3-a73a-c9a59f5ff967",
+    "name" : "Copy of Database",
+    "location" : "340:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "localhost",
+      "databaseName" : "gruen",
+      "databasePort" : "3306",
+      "databaseScheme" : "rce_test",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"SELECT * FROM dev_table\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"outiiii\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "738b2e23-8573-4a84-a89d-8b746ba92406",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "RequiredIfConnected",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "018ee4cb-1aa5-42c0-acfe-cbd04a32a35c",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "4e22dafe-31e3-440d-ad1f-6c0287799cd5",
+      "name" : "outiiii",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "4aa41945-055d-41da-bd8f-10f121f5d039",
+    "name" : "Copy of Script (1)",
+    "location" : "180:300",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "19f9f92e-4e39-497c-b63d-8dc56c2b33d6",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "04826c32-28eb-48b7-8657-fb17785a9c61",
+    "name" : "Database",
+    "location" : "180:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "localhost",
+      "databaseName" : "gruen",
+      "databasePort" : "3306",
+      "databaseScheme" : "rce_test",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable};\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "28b39357-117f-4560-80c5-73f7a379900a",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "ebf50fc4-f720-4040-a984-98914abb0ed5",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "6d37317d-734f-4abb-87ea-4ea4f9d8aa69",
+    "name" : "Script",
+    "location" : "40:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "smallTable = [[123, 11, 22, 0], [214, 0, 0, 0], [215, 3, 4, 6], [216, 0, 444, 2], [217, 0, 2220, 1110]]\r\nRCE.write_output(\"table\", smallTable)\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "false",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "35103326-0e07-4b64-9c8f-480b42524bd5",
+      "name" : "table",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "e001d43d-f182-42dd-a846-3781e86fb3cd",
+    "name" : "Script (1)",
+    "location" : "480:120",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"outtiii\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "51c24a86-8e58-4439-8cda-e483470705ad",
+      "name" : "outtiii",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "1c59a61a-50fb-4904-b789-09999753c050",
+    "output" : "27fb1dc3-69a6-4d0e-9764-3ce771ae18d7",
+    "target" : "696597a7-7c4f-4f31-8d03-dd525618dfdf",
+    "input" : "6bb6df03-a8e9-4fad-8927-df9b9d1608f6"
+  }, {
+    "source" : "1c59a61a-50fb-4904-b789-09999753c050",
+    "output" : "1c412c51-ba0d-40e8-bf9c-632b96f77ba7",
+    "target" : "696597a7-7c4f-4f31-8d03-dd525618dfdf",
+    "input" : "974588dc-6ccf-4c5e-a1c8-13c8c4a0e36d"
+  }, {
+    "source" : "460ef66f-1389-458c-94bc-e3c3bda235e3",
+    "output" : "dfc4d324-fdaa-4d46-9043-b39511362745",
+    "target" : "fe9a5db9-f8cd-4e9d-bc83-c5c040aa03f3",
+    "input" : "13da7ec6-be4d-4594-8329-6a20df777d71"
+  }, {
+    "source" : "daf1fa84-d951-4bd2-b9d2-f1d9787f1490",
+    "output" : "8fcedd44-2149-43ba-986e-4835a10feedd",
+    "target" : "4aa41945-055d-41da-bd8f-10f121f5d039",
+    "input" : "19f9f92e-4e39-497c-b63d-8dc56c2b33d6"
+  }, {
+    "source" : "b2473e9d-4429-49b3-a73a-c9a59f5ff967",
+    "output" : "4e22dafe-31e3-440d-ad1f-6c0287799cd5",
+    "target" : "e001d43d-f182-42dd-a846-3781e86fb3cd",
+    "input" : "51c24a86-8e58-4439-8cda-e483470705ad"
+  }, {
+    "source" : "6d37317d-734f-4abb-87ea-4ea4f9d8aa69",
+    "output" : "35103326-0e07-4b64-9c8f-480b42524bd5",
+    "target" : "04826c32-28eb-48b7-8657-fb17785a9c61",
+    "input" : "28b39357-117f-4560-80c5-73f7a379900a"
+  } ],
+  "labels" : "[{\"identifier\":\"3f19e0a6-16df-43a9-9c57-9b57b7e7e44f\",\"text\":\"Select small table\",\"location\":\"620:80\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"89b89a36-15dd-40f2-836c-eba1edb22a1f\",\"text\":\"Please configure a (local) database to have a structure that matches the given example statements.\",\"location\":\"20:20\",\"size\":\"861:41\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"11\"},{\"identifier\":\"b1cba0bc-f6be-4f07-9ee9-2f3d9df0b4ea\",\"text\":\"Delete\",\"location\":\"20:260\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"e15cf6a8-b0ca-44e4-8aa0-0c6da41cde07\",\"text\":\"Update\",\"location\":\"320:260\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"f81f582d-04e5-44cb-bb3d-b37dfa3ad2fa\",\"text\":\"Select small table\",\"location\":\"320:80\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"ffad17bc-bb6a-493e-9c05-1398cf0d7491\",\"text\":\"Insert small table\",\"location\":\"20:80\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

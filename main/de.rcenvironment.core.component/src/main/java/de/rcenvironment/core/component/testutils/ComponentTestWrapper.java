@@ -12,6 +12,7 @@ import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.Component.FinalComponentState;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.component.execution.api.ThreadHandler;
 
 /**
  * Wraps {@link Component} instances for integration testing to ensure proper {@link ComponentContext} behavior. For example, in an actual
@@ -56,6 +57,7 @@ public class ComponentTestWrapper {
         this.started = true;
         if (component.treatStartAsComponentRun()) {
             context.incrementExecutionCount();
+            context.resetOutputClosings();
         }
         component.start();
     }
@@ -112,6 +114,15 @@ public class ComponentTestWrapper {
             throw new IllegalStateException("tearDown() called before start()");
         }
         component.tearDown(state);
+    }
+    
+    /**
+     * Calls {@link Component#onStartInterrupted(ThreadHandler)} on the component.
+     * 
+     * @param executingThreadHandler allows to interrupt the thread of {@link #start(ComponentContext)}
+     */
+    public void onStartInterrupted(ThreadHandler executingThreadHandler) {
+        component.onStartInterrupted(executingThreadHandler);
     }
 
     /**

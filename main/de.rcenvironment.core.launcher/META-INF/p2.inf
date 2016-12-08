@@ -1,0 +1,2 @@
+#adding touchpoint instructions to use this launcher as the startup launcher in the rce.ini
+instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:-startup);org.eclipse.equinox.p2.touchpoint.eclipse.addProgramArg(programArg:@artifact);

@@ -11,13 +11,14 @@ package de.rcenvironment.core.notification;
 import java.util.Date;
 
 import junit.framework.TestCase;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Test cases for the class {@link NotificationHeader}.
  * 
  * @author Andre Nurzenski
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class NotificationHeaderTest extends TestCase {
 
@@ -30,7 +31,7 @@ public class NotificationHeaderTest extends TestCase {
     protected void setUp() throws Exception {
         super.setUp();
         myNotificationHeader = new NotificationHeader(NotificationTestConstants.NOTIFICATION_ID,
-            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCALHOST);
+            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCAL_INSTANCE_SESSION);
     }
 
     @Override
@@ -99,10 +100,10 @@ public class NotificationHeaderTest extends TestCase {
      * Test for the correct publisher.
      */
     public final void testGetPublisherPlatformForSanity() {
-        NodeIdentifier platform = myNotificationHeader.getPublishPlatform();
+        InstanceNodeSessionId platform = myNotificationHeader.getPublishPlatform();
 
         assertNotNull(platform);
-        assertEquals(platform, NotificationTestConstants.LOCALHOST);
+        assertEquals(platform, NotificationTestConstants.LOCAL_INSTANCE_SESSION);
     }
 
     /**
@@ -110,13 +111,13 @@ public class NotificationHeaderTest extends TestCase {
      */
     public final void testEqualsForSanity() {
         NotificationHeader header = new NotificationHeader(NotificationTestConstants.NOTIFICATION_ID,
-            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCALHOST);
+            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCAL_INSTANCE_SESSION);
         assertTrue(myNotificationHeader.equals(header));
         header = new NotificationHeader("myPublisherName",
-            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCALHOST);
+            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCAL_INSTANCE_SESSION);
         assertFalse(myNotificationHeader.equals(header));
         header = new NotificationHeader(NotificationTestConstants.NOTIFICATION_ID,
-            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.REMOTEHOST);
+            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.REMOTE_INSTANCE_SESSION);
         assertFalse(myNotificationHeader.equals(header));
     }
 
@@ -126,7 +127,7 @@ public class NotificationHeaderTest extends TestCase {
     public final void testHashCodeForSanity() {
         assertEquals(myNotificationHeader.toString().hashCode(), myNotificationHeader.hashCode());
         NotificationHeader header = new NotificationHeader(NotificationTestConstants.NOTIFICATION_ID,
-            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCALHOST);
+            NotificationTestConstants.NOTIFICATION_EDITION, NotificationTestConstants.LOCAL_INSTANCE_SESSION);
         assertEquals(myNotificationHeader.toString().hashCode(), header.hashCode());
     }
 
@@ -153,7 +154,7 @@ public class NotificationHeaderTest extends TestCase {
         final int greater = 1;
         final int equal = 0;
         NotificationHeader newerNotification = new NotificationHeader(NotificationTestConstants.NOTIFICATION_ID,
-            NotificationTestConstants.NOTIFICATION_EDITION + greater, NotificationTestConstants.LOCALHOST);
+            NotificationTestConstants.NOTIFICATION_EDITION + greater, NotificationTestConstants.LOCAL_INSTANCE_SESSION);
         assertEquals(lower, myNotificationHeader.compareTo(newerNotification));
         assertEquals(greater, newerNotification.compareTo(myNotificationHeader));
         assertEquals(equal, myNotificationHeader.compareTo(myNotificationHeader));

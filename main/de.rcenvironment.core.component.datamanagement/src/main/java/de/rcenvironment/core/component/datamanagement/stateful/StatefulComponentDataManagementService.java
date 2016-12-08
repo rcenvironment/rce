@@ -13,7 +13,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
@@ -75,7 +76,7 @@ public interface StatefulComponentDataManagementService {
      * @param platforms The platforms to try to fetch data from
      * @throws IOException on a local I/O or data management error
      */
-    void copyReferenceToLocalFile(String reference, File targetFile, Collection<NodeIdentifier> platforms) throws IOException;
+    void copyReferenceToLocalFile(String reference, File targetFile, Collection<ResolvableNodeId> platforms) throws IOException;
 
     /**
      * Copies the data "body" identified by a data management reference to a local file.
@@ -85,7 +86,7 @@ public interface StatefulComponentDataManagementService {
      * @param platform platform the data is stored
      * @throws IOException on a local I/O or data management error
      */
-    void copyReferenceToLocalFile(String reference, File targetFile, NodeIdentifier platform) throws IOException;
+    void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId platform) throws IOException;
     
     /**
      * Retrieved the String "body" identified by a data management reference.
@@ -95,7 +96,7 @@ public interface StatefulComponentDataManagementService {
      * @return the retrieved String 
      * @throws IOException on a local I/O or data management error
      */
-    String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException;
+    String retrieveStringFromReference(String reference, InstanceNodeSessionId nodeId) throws IOException;
 
     /**
      * Creates a "history" point in the data management with appropriate metadata entries.
@@ -137,10 +138,10 @@ public interface StatefulComponentDataManagementService {
      * 
      * @param fileReference {@link FileReferenceTD}
      * @param targetFile local target file
-     * @param node source {@link NodeIdentifier}
+     * @param node source {@link InstanceNodeSessionId}
      * @throws IOException on a local I/O or data management error
      */
-    void copyFileReferenceTDToLocalFile(FileReferenceTD fileReference, File targetFile, NodeIdentifier node) throws IOException;
+    void copyFileReferenceTDToLocalFile(FileReferenceTD fileReference, File targetFile, InstanceNodeSessionId node) throws IOException;
 
     /**
      * Retrieves a directory from the data management referred by the given
@@ -148,10 +149,10 @@ public interface StatefulComponentDataManagementService {
      * 
      * @param dirReference {@link DirectoryReferenceTD}
      * @param targetDir local target directory
-     * @param node source {@link NodeIdentifier}
+     * @param node source {@link InstanceNodeSessionId}
      * @throws IOException on a local I/O or data management error
      */
-    void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NodeIdentifier node)
+    void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, InstanceNodeSessionId node)
         throws IOException;
 
 }

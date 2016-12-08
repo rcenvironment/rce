@@ -203,8 +203,8 @@ public class ConvergerComponent extends AbstractNestedLoopComponent {
 
     private Boolean[] isConverged(Map<String, Boolean[]> isInputConverged) {
 
-        boolean isConvergedAbs = true;
-        boolean isConvergedRel = true;
+        boolean isConvergedAbs = !valueTuples.isEmpty();
+        boolean isConvergedRel = !valueTuples.isEmpty();
         for (String inputName : valueTuples.keySet()) {
             Boolean[] isThisInputConverged = isInputConverged.get(inputName);
             if (!isThisInputConverged[0]) {

@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Decrypter Component Execution (Example Component)
 Bundle-SymbolicName: de.rcenvironment.components.examples.decrypter.execution
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.components.examples.decrypter.common,
@@ -16,11 +16,14 @@ Import-Package: de.rcenvironment.components.examples.decrypter.common,
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
  de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.component.validation.api,
+ de.rcenvironment.core.component.validation.spi,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.encryption,
- org.apache.commons.logging;version="1.1.1"
+ org.apache.commons.logging;version="1.1.1",
+ org.eclipse.osgi.util;version="1.1.0"
 Service-Component: OSGI-INF/*.xml
 RCE-Component: true
 Export-Package: de.rcenvironment.components.examples.decrypter.execution

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.io.FileUtils;
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.IDialogConstants;
 import org.eclipse.swt.SWT;
@@ -256,7 +257,7 @@ public class WizardToolConfigurationDialog extends Dialog {
         versionText.setLayoutData(versionGridData);
 
         Label workingDirLabel = new Label(propertyContainer, SWT.NONE);
-        workingDirLabel.setText("Working directory: ");
+        workingDirLabel.setText("Working directory (absolute): ");
 
         rootWorkingDirText = new Text(propertyContainer, SWT.BORDER);
         GridData rootWorkingDirGridData = new GridData(GridData.FILL_HORIZONTAL | GridData.GRAB_HORIZONTAL);
@@ -446,10 +447,15 @@ public class WizardToolConfigurationDialog extends Dialog {
                 }
             }
         }
-        if (!defaultTempDirButton.getSelection()
-            && (rootWorkingDirText.getText() == null || rootWorkingDirText.getText().trim().isEmpty())) {
+        
+        if (!defaultTempDirButton.getSelection() && (rootWorkingDirText.getText() == null 
+            || rootWorkingDirText.getText().trim().isEmpty() 
+            || !(FileUtils.getFile(rootWorkingDirText.getText()).isAbsolute()))) {
             isValid = false;
         }
+        
+        
+        
         getButton(IDialogConstants.OK_ID).setEnabled(isValid);
     }
 

@@ -32,8 +32,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
-import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -71,10 +73,14 @@ public class WorkflowDescriptionPersistenceHandlerTest {
     private static final String COMP_ID_OUTPUT_WRITER =
         "de.rcenvironment.outputwriter" + ComponentConstants.ID_SEPARATOR + COMP_VERSION_OUTPUT_WRITER;
 
-    private static final String NODE_ID_LOCAL = "c8061f66333342c9a393c2184c75454f";
+    private static final String LOCAL_INSTANCE_ID = "c8061f66333342c9a393c2184c75454f";
 
-    private static final String NODE_ID_REMOTE = "5f323616fcc4440d852074f737a9f297";
-    
+    private static final String LOCAL_LOGICAL_NODE_ID = LOCAL_INSTANCE_ID + ":0";
+
+    private static final String REMOTE_INSTANCE_ID = "5f323616fcc4440d852074f737a9f297";
+
+    private static final String REMOTE_LOGICAL_NODE_ID = REMOTE_INSTANCE_ID + ":0";
+
     private static final int TEST_TIMEOUT_MSEC = 2000;
 
     /**
@@ -86,26 +92,27 @@ public class WorkflowDescriptionPersistenceHandlerTest {
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
     public void testValidBasicWorkflow() throws IOException, WorkflowFileException {
-        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
-        
+        WorkflowDescriptionPersistenceHandler handler =
+            WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
+
         handler.bindPlatformService(createPlatformServiceMock());
-        
+
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping = createCompInstToCompDescMapping();
         Map<String, ComponentInstallation> wfNodeIdToCompInstMapping = createWfNodeIdToCompInstMapping(compInstToCompDescMapping.keySet());
-            
+
         handler.bindDistributedComponentKnowledgeService(createComponentKnowledgeServiceMock(compInstToCompDescMapping));
         handler.bindComponentDescriptionFactoryService(createComponentDescriptionFactoryServiceMock(compInstToCompDescMapping));
-        
+
         WorkflowDescription workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream("Basic_test_workflow.wf"));
         assertEquals("aebf6bb8-ad05-4b2e-a698-a6705f6dc0cf", workflowDescription.getIdentifier());
         assertEquals(4, workflowDescription.getWorkflowVersion());
-        
+
         assertWorkflowNodes(workflowDescription, wfNodeIdToCompInstMapping);
         assertConnections(workflowDescription);
         assertBendpoints(workflowDescription);
         assertWorkflowLabels(workflowDescription);
     }
-    
+
     /**
      * Test if loading a workflow file and saving it again produces the same file.
      * 
@@ -127,7 +134,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         File tempFileOrig = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("Labels_orig.wf");
         FileUtils.copyInputStreamToFile(getTestFileStream(filename), tempFileOrig);
 
-        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
+        WorkflowDescriptionPersistenceHandler handler =
+            WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
         WorkflowDescription workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream(filename));
         ByteArrayOutputStream workflowStream = handler.writeWorkflowDescriptionToStream(workflowDescription);
         File tempFileTest = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("Labels_test.wf");
@@ -155,8 +163,9 @@ public class WorkflowDescriptionPersistenceHandlerTest {
             assertTrue(wfNode.getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
                 .getIdentifier().equals(wfNodeIdToCompInstMapping.get(wfNode.getIdentifier())
                     .getComponentRevision().getComponentInterface().getIdentifier()));
-            assertTrue(wfNode.getComponentDescription().getComponentInstallation().getNodeId()
-                .equals(wfNodeIdToCompInstMapping.get(wfNode.getIdentifier()).getNodeId()));
+            final String logicalNodeIdStringOfComponent = wfNode.getComponentDescription().getComponentInstallation().getNodeId();
+            assertEquals(logicalNodeIdStringOfComponent,
+                wfNodeIdToCompInstMapping.get(wfNode.getIdentifier()).getNodeId());
         }
         // spot check
         WorkflowNode ouputWritterWfNode = wd.getWorkflowNode("361ff68d-04c7-4ef1-a1b7-aba1292b339d");
@@ -166,7 +175,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         assertEquals(y, ouputWritterWfNode.getY());
         assertEquals("Combiner", ouputWritterWfNode.getName());
     }
-    
+
     private void assertConnections(WorkflowDescription wd) {
         assertEquals(2, wd.getConnections().size());
         for (Connection cn : wd.getConnections()) {
@@ -185,7 +194,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
             }
         }
     }
-    
+
     private void assertBendpoints(WorkflowDescription wd) {
         for (Connection cn : wd.getConnections()) {
             // spot check
@@ -198,7 +207,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
             }
         }
     }
-    
+
     private void assertWorkflowLabels(WorkflowDescription wd) {
         assertEquals(1, wd.getWorkflowLabels().size());
         // spot check
@@ -216,14 +225,21 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         final int textSize = 11;
         assertEquals(textSize, wfLabel.getTextSize());
     }
-    
+
     private PlatformService createPlatformServiceMock() {
-        PlatformService platformService = EasyMock.createStrictMock(PlatformService.class);
-        EasyMock.expect(platformService.getLocalNodeId()).andReturn(NodeIdentifierFactory.fromNodeId(NODE_ID_LOCAL)).anyTimes();
+        PlatformService platformService = EasyMock.createNiceMock(PlatformService.class);
+        final InstanceNodeSessionId instanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionId(LOCAL_INSTANCE_ID);
+        final LogicalNodeId defaultLogicalNodeId = instanceSessionId.convertToDefaultLogicalNodeId();
+        EasyMock.expect(platformService.getLocalInstanceNodeSessionId())
+            .andReturn(instanceSessionId)
+            .anyTimes();
+        EasyMock.expect(platformService.getLocalDefaultLogicalNodeId())
+            .andReturn(defaultLogicalNodeId)
+            .anyTimes();
         EasyMock.replay(platformService);
         return platformService;
     }
-    
+
     private DistributedComponentKnowledgeService createComponentKnowledgeServiceMock(
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         DistributedComponentKnowledgeService compKnowledgeService = EasyMock.createStrictMock(DistributedComponentKnowledgeService.class);
@@ -232,7 +248,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         EasyMock.replay(compKnowledgeService);
         return compKnowledgeService;
     }
-    
+
     private DistributedComponentKnowledge createComponentKnowledgeMock(
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         DistributedComponentKnowledge compKnowledge = EasyMock.createStrictMock(DistributedComponentKnowledge.class);
@@ -240,7 +256,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         EasyMock.replay(compKnowledge);
         return compKnowledge;
     }
-    
+
     private Map<ComponentInstallation, ComponentDescription> createCompInstToCompDescMapping() {
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping = new HashMap<>();
         for (ComponentInstallation compInst : createComponentInstallationMocks()) {
@@ -262,39 +278,39 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         }
         return compInstToCompDescMapping;
     }
-    
+
     private Map<String, ComponentInstallation> createWfNodeIdToCompInstMapping(Set<ComponentInstallation> compInstallations) {
         Map<String, ComponentInstallation> wfNodeIdToCompInstMapping = new HashMap<>();
         for (ComponentInstallation compInst : compInstallations) {
             if (compInst.getComponentRevision().getComponentInterface().getIdentifier().equals(COMP_ID_INPUT_PROVIDER)
-                && (compInst.getNodeId() == null || compInst.getNodeId().equals(NODE_ID_LOCAL))) {
+                && (compInst.getNodeId() == null || isComponentInstallationLocatedOnInstance(compInst, LOCAL_INSTANCE_ID))) {
                 wfNodeIdToCompInstMapping.put("fbfcc614-b0e9-4a97-81db-26dd40964e15", compInst);
             } else if (compInst.getComponentRevision().getComponentInterface().getIdentifier().equals(COMP_ID_SCRIPT)
-                && (compInst.getNodeId().equals(NODE_ID_REMOTE))) {
+                && isComponentInstallationLocatedOnInstance(compInst, REMOTE_INSTANCE_ID)) {
                 wfNodeIdToCompInstMapping.put("c5aa840d-68a8-456f-943b-569a1875933d", compInst);
             } else if (compInst.getComponentRevision().getComponentInterface().getIdentifier().equals(COMP_ID_OUTPUT_WRITER)
-                && (compInst.getNodeId() == null || compInst.getNodeId().equals(NODE_ID_LOCAL))) {
+                && (compInst.getNodeId() == null || isComponentInstallationLocatedOnInstance(compInst, LOCAL_INSTANCE_ID))) {
                 wfNodeIdToCompInstMapping.put("361ff68d-04c7-4ef1-a1b7-aba1292b339d", compInst);
             }
         }
         return wfNodeIdToCompInstMapping;
     }
-    
+
     private Collection<ComponentInstallation> createComponentInstallationMocks() {
         Set<ComponentInstallation> compInstallations = new HashSet<>();
         compInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock(
-            COMP_ID_INPUT_PROVIDER, COMP_VERSION_INPUT_PROVIDER, NODE_ID_LOCAL));
+            COMP_ID_INPUT_PROVIDER, COMP_VERSION_INPUT_PROVIDER, LOCAL_LOGICAL_NODE_ID));
         compInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock(
-            COMP_ID_SCRIPT, COMP_VERSION_SCRIPT, NODE_ID_LOCAL));
+            COMP_ID_SCRIPT, COMP_VERSION_SCRIPT, LOCAL_LOGICAL_NODE_ID));
         compInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock(
-            COMP_ID_SCRIPT, COMP_VERSION_SCRIPT, NODE_ID_REMOTE));
+            COMP_ID_SCRIPT, COMP_VERSION_SCRIPT, REMOTE_LOGICAL_NODE_ID));
         compInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock(
-            COMP_ID_OUTPUT_WRITER, COMP_VERSION_OUTPUT_WRITER, NODE_ID_LOCAL));
+            COMP_ID_OUTPUT_WRITER, COMP_VERSION_OUTPUT_WRITER, LOCAL_LOGICAL_NODE_ID));
         compInstallations.add(ComponentInstallationMockFactory.createComponentInstallationMock(
-            COMP_ID_OUTPUT_WRITER, COMP_VERSION_OUTPUT_WRITER, NODE_ID_REMOTE));
+            COMP_ID_OUTPUT_WRITER, COMP_VERSION_OUTPUT_WRITER, REMOTE_LOGICAL_NODE_ID));
         return compInstallations;
     }
-    
+
     private ComponentDescriptionFactoryService createComponentDescriptionFactoryServiceMock(
         Map<ComponentInstallation, ComponentDescription> compInstToCompDescMapping) {
         ComponentDescriptionFactoryService compKnowledgeService = EasyMock.createStrictMock(ComponentDescriptionFactoryService.class);
@@ -305,7 +321,7 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         EasyMock.replay(compKnowledgeService);
         return compKnowledgeService;
     }
-    
+
     /**
      * Tests if {@link WorkflowDescriptionPersistenceHandler} can handle json arrays on top level, which key is not known.
      * 
@@ -314,7 +330,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
     public void testIfUnknownJsonArrayIsHandledProperly() throws IOException, WorkflowFileException {
-        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
+        WorkflowDescriptionPersistenceHandler handler =
+            WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
         WorkflowDescription workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream("UnknownJsonArray.wf"));
         assertEquals("03c4b8e3-7238-43f3-8992-2c3956b737a9", workflowDescription.getIdentifier());
         assertEquals(1, workflowDescription.getWorkflowVersion());
@@ -329,13 +346,14 @@ public class WorkflowDescriptionPersistenceHandlerTest {
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
     public void testParseLabelsEitherStyle() throws IOException, WorkflowFileException {
-        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
+        WorkflowDescriptionPersistenceHandler handler =
+            WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
         WorkflowDescription workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream("Labels_old_style.wf"));
         assertLabelsParsedEitheStyle(workflowDescription);
         workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream("Labels_new_style.wf"));
         assertLabelsParsedEitheStyle(workflowDescription);
     }
-    
+
     private void assertLabelsParsedEitheStyle(WorkflowDescription workflowDescription) {
         assertEquals("697261b6-eaf5-44ab-af40-6c161a4f26f8", workflowDescription.getIdentifier());
         assertEquals(4, workflowDescription.getWorkflowVersion());
@@ -353,7 +371,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
     public void testParseBendpointsEitherStyle() throws IOException, WorkflowFileException {
-        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
+        WorkflowDescriptionPersistenceHandler handler =
+            WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
         handler.bindDistributedComponentKnowledgeService(new DistributedComponentKnowledgeServiceDefaultStub());
         handler.bindComponentDescriptionFactoryService(new ComponentDescriptionFactoryServiceDefaultStub());
         WorkflowDescription workflowDescription = handler.readWorkflowDescriptionFromStream(getTestFileStream("Bendpoints_old_style.wf"));
@@ -384,7 +403,8 @@ public class WorkflowDescriptionPersistenceHandlerTest {
      */
     @Test(timeout = TEST_TIMEOUT_MSEC)
     public void specificRegressionTest() throws IOException, WorkflowFileException {
-        WorkflowDescriptionPersistenceHandler handler = createTestInstance();
+        WorkflowDescriptionPersistenceHandler handler =
+            WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
         try {
             handler.readWorkflowDescriptionFromStream(getTestFileStream("Bug_Demo.wf"));
         } catch (WorkflowFileException e) {
@@ -394,13 +414,13 @@ public class WorkflowDescriptionPersistenceHandlerTest {
         }
     }
 
-    private WorkflowDescriptionPersistenceHandler createTestInstance() {
-        WorkflowDescriptionPersistenceHandler handler = new WorkflowDescriptionPersistenceHandler();
-        handler.bindPlatformService(new PlatformServiceDefaultStub());
-        return handler;
-    }
-
     private InputStream getTestFileStream(String filename) {
         return getClass().getResourceAsStream("/workflows_unit_test/" + filename);
+    }
+
+    private boolean isComponentInstallationLocatedOnInstance(ComponentInstallation compInst, String instanceId) {
+        // encapsulate comparison until component installations use id objects natively
+        return NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(compInst.getNodeId()).getInstanceNodeIdString()
+            .equals(instanceId);
     }
 }

@@ -13,11 +13,11 @@ import java.util.Map;
 
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphWithProperties;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.gui.communication.views.NetworkView;
-import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
+import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
 
 /**
  * The complete model that the {@link NetworkView} is filled from.
@@ -45,7 +45,7 @@ public class NetworkViewModel {
     /**
      * The collected node's property maps; the inner maps must be immutable.
      */
-    public Map<NodeIdentifier, Map<String, String>> nodeProperties;
+    public Map<InstanceNodeSessionId, Map<String, String>> nodeProperties;
 
     /**
      * The merged {@link NetworkGraphWithProperties}, constructed from {@link #networkGraph} and {@link #nodeProperties}.
@@ -53,13 +53,13 @@ public class NetworkViewModel {
     public NetworkGraphWithProperties networkGraphWithProperties;
 
     /**
-     * The map of {@link SystemMonitoringDataSnapshot}.
+     * The map of {@link FullSystemAndProcessDataSnapshot}.
      */
-    public Map<NodeIdentifier, SystemMonitoringDataSnapshot> monitoringDataModelMap;
+    public Map<InstanceNodeSessionId, FullSystemAndProcessDataSnapshot> monitoringDataModelMap;
 
     public NetworkViewModel(NetworkGraph networkGraph, DistributedComponentKnowledge componentKnowledge,
-        Collection<ConnectionSetup> connectionSetups, Map<NodeIdentifier, Map<String, String>> nodeProperties,
-        Map<NodeIdentifier, SystemMonitoringDataSnapshot> monitoringDataModelMap) {
+        Collection<ConnectionSetup> connectionSetups, Map<InstanceNodeSessionId, Map<String, String>> nodeProperties,
+        Map<InstanceNodeSessionId, FullSystemAndProcessDataSnapshot> monitoringDataModelMap) {
         this.networkGraph = networkGraph;
         this.nodeProperties = nodeProperties;
         this.componentKnowledge = componentKnowledge;
@@ -80,11 +80,11 @@ public class NetworkViewModel {
         return connectionSetups;
     }
 
-    public Map<NodeIdentifier, Map<String, String>> getNodeProperties() {
+    public Map<InstanceNodeSessionId, Map<String, String>> getNodeProperties() {
         return nodeProperties;
     }
     
-    public Map<NodeIdentifier, SystemMonitoringDataSnapshot> getMonitoringDataModelMap() {
+    public Map<InstanceNodeSessionId, FullSystemAndProcessDataSnapshot> getMonitoringDataModelMap() {
         return monitoringDataModelMap;
     }
 

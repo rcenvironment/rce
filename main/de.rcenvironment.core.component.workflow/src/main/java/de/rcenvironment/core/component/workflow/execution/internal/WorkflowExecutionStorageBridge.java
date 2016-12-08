@@ -28,6 +28,7 @@ import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionE
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandler;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.datamanagement.DataManagementIdMapping;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
 import de.rcenvironment.core.datamanagement.commons.ComponentInstance;
@@ -62,15 +63,41 @@ public class WorkflowExecutionStorageBridge {
 
     private String errorMessageSuffix;
 
-    private Long workflowDmId;
+    // Note: Field is auto-boxed when passed to the DataManagementService and returned to client code
+    // Decided to take the primitive data type anyway to make use of volatile and avoid AtomicLong or synchronization as the field is used
+    // widely in this class -seid_do
+    private volatile long workflowDmId;
 
     private Map<String, Long> compInstDmIds;
 
-    private Map<String, Map<String, Long>> inputDmIds = new HashMap<>();
+    private Map<String, Map<String, Long>> inputDmIds = new HashMap<String, Map<String, Long>>();
 
-    private Map<String, Map<String, Long>> outputDmIds = new HashMap<>();
+    private Map<String, Map<String, Long>> outputDmIds = new HashMap<String, Map<String, Long>>();
 
     private Map<String, Long> intervalTypeDmIds = Collections.synchronizedMap(new HashMap<String, Long>());
+
+    /**
+     * Holder for data management ids returned by
+     * {@link WorkflowExecutionStorageBridge#addWorkflowExecution(WorkflowExecutionContext, WorkflowDescription)}.
+     * 
+     * @author Doreen Seider
+     */
+    class DataManagementIdsHolder {
+
+        public final Map<String, Long> compInstDmIds;
+
+        public final Map<String, Map<String, Long>> inputDmIds;
+
+        public final Map<String, Map<String, Long>> outputDmIds;
+
+        DataManagementIdsHolder(Map<String, Long> compInstDmIds, Map<String, Map<String, Long>> inputDmIds,
+            Map<String, Map<String, Long>> outputDmIds) {
+            this.compInstDmIds = compInstDmIds;
+            this.inputDmIds = inputDmIds;
+            this.outputDmIds = outputDmIds;
+        }
+
+    }
 
     @Deprecated
     public WorkflowExecutionStorageBridge() {}
@@ -79,12 +106,13 @@ public class WorkflowExecutionStorageBridge {
         errorMessageSuffix = StringUtils.format(" of workflow '%s' (%s)", wfExeCtx.getInstanceName(), wfExeCtx.getExecutionIdentifier());
     }
 
-    protected Long addWorkflowExecution(WorkflowExecutionContext wfExeCtx, WorkflowDescription fullWorkflowDescription)
+    protected DataManagementIdsHolder addWorkflowExecution(WorkflowExecutionContext wfExeCtx, WorkflowDescription fullWorkflowDescription)
         throws WorkflowExecutionException {
         try {
             workflowDmId =
-                metaDataBackendService.addWorkflowRun(wfExeCtx.getInstanceName(), wfExeCtx.getNodeId().getIdString(),
-                    wfExeCtx.getDefaultStorageNodeId().getIdString(), System.currentTimeMillis());
+                metaDataBackendService.addWorkflowRun(wfExeCtx.getInstanceName(),
+                    DataManagementIdMapping.mapLogicalNodeIdToDbString(wfExeCtx.getNodeId()), DataManagementIdMapping
+                        .mapLogicalNodeIdToDbString(wfExeCtx.getDefaultStorageNodeId()), System.currentTimeMillis());
             // Store additional information in the data management, if it is provided.
             if (wfExeCtx.getAdditionalInformationProvidedAtStart() != null) {
                 Map<String, String> properties = new HashMap<>();
@@ -94,7 +122,7 @@ public class WorkflowExecutionStorageBridge {
             try {
                 MetaDataSet mds = new MetaDataSet();
                 MetaData mdWorkflowRunId = new MetaData(MetaDataKeys.WORKFLOW_RUN_ID, true, true);
-                mds.setValue(mdWorkflowRunId, workflowDmId.toString());
+                mds.setValue(mdWorkflowRunId, String.valueOf(workflowDmId));
                 WorkflowDescriptionPersistenceHandler persistenceHandler = new WorkflowDescriptionPersistenceHandler();
                 ByteArrayOutputStream content = persistenceHandler.writeWorkflowDescriptionToStream(fullWorkflowDescription);
                 String wfFileName = wfExeCtx.getWorkflowDescription().getFileName();
@@ -105,11 +133,8 @@ public class WorkflowExecutionStorageBridge {
                 File wfFile =
                     TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(wfFileName);
                 FileUtils.writeByteArrayToFile(wfFile, content.toByteArray());
-                String wfFileReference =
-                    dataManagementService.createReferenceFromLocalFile(wfFile, mds,
-                        wfExeCtx.getNodeId());
-                TypedDatum fileRefTD = typedDatumService.getFactory()
-                    .createFileReference(wfFileReference, wfFile.getName());
+                String wfFileReference = dataManagementService.createReferenceFromLocalFile(wfFile, mds, wfExeCtx.getNodeId());
+                TypedDatum fileRefTD = typedDatumService.getFactory().createFileReference(wfFileReference, wfFile.getName());
                 metaDataBackendService.addWorkflowFileToWorkflowRun(workflowDmId, typedDatumService.getSerializer().serialize(fileRefTD));
             } catch (IOException | InterruptedException | CommunicationException e) {
                 throw new WorkflowExecutionException("Failed to store workflow file" + errorMessageSuffix, e);
@@ -126,12 +151,16 @@ public class WorkflowExecutionStorageBridge {
             String compExeId = wfExeCtx.getCompExeIdByWfNodeId(wn.getIdentifier());
             componentInstances.add(new ComponentInstance(compExeId, wn.getComponentDescription().getIdentifier(), wn.getName(), null));
             for (EndpointDescription ep : wn.getComponentDescription().getInputDescriptionsManager().getEndpointDescriptions()) {
-                endpointInstances.add(new EndpointInstance(ep.getName(), EndpointType.INPUT));
+                Map<String, String> metaData = new HashMap<String, String>();
+                metaData.put(MetaDataKeys.DATA_TYPE, ep.getDataType().getShortName());
+                endpointInstances.add(new EndpointInstance(ep.getName(), EndpointType.INPUT, metaData));
             }
             compInputInstances.put(compExeId, endpointInstances);
             endpointInstances = new HashSet<>();
             for (EndpointDescription ep : wn.getComponentDescription().getOutputDescriptionsManager().getEndpointDescriptions()) {
-                endpointInstances.add(new EndpointInstance(ep.getName(), EndpointType.OUTPUT));
+                Map<String, String> metaData = new HashMap<String, String>();
+                metaData.put(MetaDataKeys.DATA_TYPE, ep.getDataType().getShortName());
+                endpointInstances.add(new EndpointInstance(ep.getName(), EndpointType.OUTPUT, metaData));
             }
             compOutputInstances.put(compExeId, endpointInstances);
         }
@@ -143,8 +172,7 @@ public class WorkflowExecutionStorageBridge {
         }
         for (String dmId : compInputInstances.keySet()) {
             try {
-                inputDmIds.put(dmId, metaDataBackendService.addEndpointInstances(compInstDmIds.get(dmId),
-                    compInputInstances.get(dmId)));
+                inputDmIds.put(dmId, metaDataBackendService.addEndpointInstances(compInstDmIds.get(dmId), compInputInstances.get(dmId)));
                 // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
             } catch (RemoteOperationException | RuntimeException e) {
                 throw new WorkflowExecutionException("Failed to store component input instances" + errorMessageSuffix, e);
@@ -177,14 +205,14 @@ public class WorkflowExecutionStorageBridge {
                 throw new WorkflowExecutionException("Failed to store meta data for component output instances" + errorMessageSuffix, e);
             }
         }
-        return workflowDmId;
+        return new DataManagementIdsHolder(compInstDmIds, inputDmIds, outputDmIds);
     }
 
     protected void addWorkflowErrorLog(File logfile, String fileName) throws WorkflowExecutionException {
         try {
             MetaDataSet mds = new MetaDataSet();
             MetaData mdWorkflowRunId = new MetaData(MetaDataKeys.WORKFLOW_RUN_ID, true, true);
-            mds.setValue(mdWorkflowRunId, workflowDmId.toString());
+            mds.setValue(mdWorkflowRunId, String.valueOf(workflowDmId));
 
             String logFileReference = dataManagementService.createReferenceFromLocalFile(logfile, mds, null);
             FileReferenceTD fileReference = typedDatumService.getFactory().createFileReference(logFileReference, fileName);
@@ -220,7 +248,8 @@ public class WorkflowExecutionStorageBridge {
         }
         Long intervalTypeDmId;
         try {
-            intervalTypeDmId = metaDataBackendService.addTimelineInterval(workflowDmId, intervalType, startTime, Long.valueOf(compRunDmId));
+            intervalTypeDmId =
+                metaDataBackendService.addTimelineInterval(workflowDmId, intervalType, startTime, Long.valueOf(compRunDmId));
             // catch RuntimeException until https://mantis.sc.dlr.de/view.php?id=13865 is solved
         } catch (RemoteOperationException | RuntimeException e) {
             throw new WorkflowExecutionException("Failed to store start of timeline interval" + errorMessageSuffix, e);
@@ -281,18 +310,6 @@ public class WorkflowExecutionStorageBridge {
 
     protected Long getWorkflowInstanceDataManamagementId() {
         return workflowDmId;
-    }
-
-    protected Long getComponentInstanceDataManamagementId(String compExecutionIdentifier) {
-        return compInstDmIds.get(compExecutionIdentifier);
-    }
-
-    protected Map<String, Long> getInputInstanceDataManamagementIds(String compExecutionIdentifier) {
-        return inputDmIds.get(compExecutionIdentifier);
-    }
-
-    protected Map<String, Long> getOutputInstanceDataManamagementIds(String compExecutionIdentifier) {
-        return outputDmIds.get(compExecutionIdentifier);
     }
 
     protected void bindMetaDataService(MetaDataBackendService newService) {

@@ -10,6 +10,7 @@ package de.rcenvironment.components.doe.execution;
 
 import static org.easymock.EasyMock.anyObject;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.HashMap;
@@ -26,18 +27,19 @@ import de.rcenvironment.components.doe.common.DOEConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.testutils.ComponentContextMock;
 import de.rcenvironment.core.component.testutils.ComponentTestWrapper;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import junit.framework.Assert;
@@ -46,6 +48,7 @@ import junit.framework.Assert;
  * Test class for the DOE execution.
  * 
  * @author Sascha Zur
+ * @author Doreen Seider
  */
 public class DOEComponentTest {
 
@@ -72,6 +75,10 @@ public class DOEComponentTest {
     private static final String Y = "y";
 
     private static final String X = "x";
+
+    private static final long EIGHT_HUNDRED_INT = 800;
+
+    private static final int STATIC_OUTPUTS_COUNT = 2;
 
     /**
      * Exception rule.
@@ -127,7 +134,7 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I, "", DataType.Float, true, null);
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(1));
 
         component.start();
@@ -145,11 +152,12 @@ public class DOEComponentTest {
             Assert.assertEquals(1, context.getCapturedOutput(Y).size());
             checkOutput(new double[] { expectedValuesX[i] }, X);
             checkOutput(new double[] { expectedValuesY[i] }, Y);
-            checkLoopDoneValuesSent(false);
+            checkLoopDoneSent(false);
         }
 
         component.processInputs();
-        checkLoopDoneValuesSent(true, true, true, 2);
+        checkLoopDoneSent(true);
+        checkClosedOutputs(2);
 
         component.tearDown(Component.FinalComponentState.FINISHED);
         component.dispose();
@@ -170,7 +178,7 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I, "", DataType.Float, true, null);
 
         final double[] expectedValuesX = { -1, -1, 1, -1, 1 };
         final double[] expectedValuesY = { -10, -10, -10, 10, 10 };
@@ -187,11 +195,12 @@ public class DOEComponentTest {
             Assert.assertEquals(1, context.getCapturedOutput(Y).size());
             checkOutput(new double[] { expectedValuesX[i] }, X);
             checkOutput(new double[] { expectedValuesY[i] }, Y);
-            checkLoopDoneValuesSent(false);
+            checkLoopDoneSent(false);
         }
 
         component.processInputs();
-        checkLoopDoneValuesSent(true, true, true, 2);
+        checkLoopDoneSent(true);
+        checkClosedOutputs(2);
         component.tearDown(Component.FinalComponentState.FINISHED);
         component.dispose();
 
@@ -211,7 +220,7 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I, "", DataType.Float, true, null);
 
         component.start();
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createNotAValue());
@@ -219,9 +228,10 @@ public class DOEComponentTest {
         Assert.assertEquals(1, context.getCapturedOutput(Y).size());
         exception.expect(ComponentException.class);
         component.processInputs();
-        checkLoopDoneValuesSent(false);
+        checkLoopDoneSent(false);
         component.processInputs();
-        checkLoopDoneValuesSent(true, true, true, 2);
+        checkLoopDoneSent(true);
+        checkClosedOutputs(2);
     }
 
     /**
@@ -237,7 +247,8 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, "", DataType.Float, true, LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I, "", DataType.Float, true, null);
+        addStaticOutputs();
 
         component.start();
         Assert.assertEquals(1, context.getCapturedOutput(X).size());
@@ -683,10 +694,8 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        context.addSimulatedOutput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true, null);
+        context.addSimulatedOutput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true, null);
 
         component.start();
         Assert.assertEquals(1, context.getCapturedOutput(X).size());
@@ -711,7 +720,8 @@ public class DOEComponentTest {
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(5.0));
         component.processInputs();
         Assert.assertEquals(0, context.getCapturedOutput(I).size());
-        checkLoopDoneValuesSent(true, true, true, 3);
+        checkLoopDoneSent(true);
+        checkClosedOutputs(3);
 
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
     }
@@ -732,13 +742,10 @@ public class DOEComponentTest {
         addNewOutput(X, MINUS_1, ONE);
         addNewOutput(Y, MINUS_TEN, TEN);
 
-        context.addSimulatedInput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true, null);
         context.addSimulatedInput(I + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        context.addSimulatedOutput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+            LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, DataType.Float, true, null);
+        context.addSimulatedOutput(I, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true, null);
 
         component.start();
         Assert.assertEquals(0, context.getCapturedOutput(X).size());
@@ -771,23 +778,64 @@ public class DOEComponentTest {
         context.setInputValue(I, context.getService(TypedDatumService.class).getFactory().createFloat(5.0));
         component.processInputs();
         Assert.assertEquals(0, context.getCapturedOutput(I).size());
-        checkLoopDoneValuesSent(true, true, true, 3);
+        checkLoopDoneSent(true);
+        checkClosedOutputs(3);
 
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
     }
 
+    /**
+     * Test if the components cancels sending new design variables in case the component run (start) was canceled.
+     * 
+     * @throws ComponentException on unexpected error.
+     */
+    @Test(timeout = EIGHT_HUNDRED_INT)
+    public void testCancelStart() throws ComponentException {
+
+        setDOEConfiguration(DOEConstants.DOE_ALGORITHM_FULLFACT, ZERO, "200", ZERO, ZERO,
+            LoopComponentConstants.LoopBehaviorInCaseOfFailure.RerunAndFail, null);
+
+        addStaticOutputs();
+
+        addNewOutput(X, MINUS_1, ONE);
+        addNewOutput(Y, MINUS_TEN, TEN);
+
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+
+            @Override
+            public void run() {
+                try {
+                    final int hundred = 150;
+                    Thread.sleep(hundred);
+                } catch (InterruptedException e) {
+                    return; // test timeout will apply as onStartInterrupted is not called
+                }
+                component.onStartInterrupted(null);
+            }
+        });
+
+        component.start();
+        final int outputCount = 40000;
+        assertTrue(context.getCapturedOutput(X).size() < outputCount);
+        assertTrue(context.getCapturedOutput(Y).size() < outputCount);
+        assertTrue(context.getCapturedOutput(X).size() == context.getCapturedOutput(Y).size());
+        checkLoopDoneSent(true);
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+
+    }
+
     private void addStaticOutputs() {
-        context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, "", DataType.Boolean, false,
-            new HashMap<String, String>());
         context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, "", DataType.Boolean, false,
             new HashMap<String, String>());
+        context.addSimulatedOutput(DOEConstants.OUTPUT_NAME_NUMBER_OF_SAMPLES, "", DataType.Integer, false, new HashMap<String, String>(),
+            EndpointCharacter.SAME_LOOP);
     }
 
     private void addNewOutput(String name, String lower, String upper) {
         Map<String, String> metaDatumX = new HashMap<>();
         metaDatumX.put("lower", lower);
         metaDatumX.put("upper", upper);
-        metaDatumX.putAll(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
         context.addSimulatedOutput(name, "", DataType.Float, true, metaDatumX);
     }
 
@@ -811,53 +859,16 @@ public class DOEComponentTest {
         context.setConfigurationValue(DOEConstants.KEY_TABLE, table);
     }
 
-    // will be used if reset is tested
-    private void checkLoopDoneValuesSent(boolean done, boolean finallyDone) {
-        checkLoopDoneValuesSent(done, finallyDone, false, 0);
-    }
-
-    private void checkLoopDoneValuesSent(boolean done) {
-        checkLoopDoneValuesSent(done, done, false, 0);
-    }
-
-    private void checkLoopDoneValuesSent(boolean done, boolean finallyDone, boolean outputsClosed, int dynInputCount) {
+    private void checkLoopDoneSent(boolean done) {
         if (done) {
-            checkLoopDoneSent();
-        } else {
-            checkLoopDoneNotSent();
+            Assert.assertEquals(1, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
+            Assert.assertEquals(true, ((BooleanTD) context
+                .getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).get(0)).getBooleanValue());
         }
-        if (finallyDone) {
-            checkOuterLoopDoneSent();
-            if (outputsClosed) {
-                checkClosedOutputs(dynInputCount);
-            }
-        } else {
-            checkOuterLoopDoneNotSent();
-        }
-    }
-
-    private void checkLoopDoneSent() {
-        Assert.assertEquals(1, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
-        Assert.assertEquals(true, ((BooleanTD) context
-            .getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).get(0)).getBooleanValue());
-    }
-
-    private void checkOuterLoopDoneSent() {
-        Assert.assertEquals(1, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
-        Assert.assertEquals(true, ((BooleanTD) context
-            .getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).get(0)).getBooleanValue());
     }
 
     private void checkClosedOutputs(int dynInputCount) {
-        assertEquals(2 + dynInputCount, context.getCapturedOutputClosings().size());
-    }
-
-    private void checkLoopDoneNotSent() {
-        Assert.assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
-    }
-
-    private void checkOuterLoopDoneNotSent() {
-        Assert.assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
+        assertEquals(STATIC_OUTPUTS_COUNT + dynInputCount, context.getCapturedOutputClosings().size());
     }
 
 }

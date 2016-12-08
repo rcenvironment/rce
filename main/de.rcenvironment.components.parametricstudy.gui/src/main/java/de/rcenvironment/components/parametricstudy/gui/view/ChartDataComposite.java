@@ -18,6 +18,8 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 
+import org.eclipse.core.runtime.preferences.IEclipsePreferences;
+import org.eclipse.core.runtime.preferences.InstanceScope;
 import org.eclipse.jface.viewers.ColumnLabelProvider;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionChangedListener;
@@ -49,8 +51,8 @@ import de.rcenvironment.components.parametricstudy.common.Measure;
 import de.rcenvironment.components.parametricstudy.common.StudyDataset;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
+import de.rcenvironment.core.gui.utils.common.configuration.ExcelFileExporterDialog;
 import de.rcenvironment.core.gui.utils.incubator.StudyDataExportMessageHelper;
-import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.variables.legacy.TypedValue;
 import de.rcenvironment.core.utils.common.variables.legacy.VariableType;
 
@@ -66,6 +68,11 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
 
     private static final int DEFAULT_COLUMN_WIDTH = 100;
 
+    private static final String SAVE_LOCATION_PROPERTIES_NODE = "de.rcenvironment.core.gui.resources.savelocations";
+    
+    private static final String EXPORT_TO_EXCEL_PROPERTIES_IDENTIFIER = "export_to_excel_save_location";
+    
+    
     /** The button to save data to an excel file. */
     private Button saveDataButton;
 
@@ -185,7 +192,9 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
     }
 
     private void copyToClipboard() {
+        
         final ISelection selection = getSelection();
+        // keys will contain the column header strings
         final List<String> keys = new LinkedList<String>();
         for (final TableColumn column : table.getColumns()) {
             keys.add(column.getText());
@@ -205,6 +214,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                     if (value != null) {
                         builder.append(value);
                     }
+                    // add a tab to separate several values in a single row
                     if (index < (keysCount - 1)) {
                         builder.append("\t");
                     }
@@ -245,6 +255,8 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
      */
     private class MySelectionListener implements SelectionListener {
 
+        private IEclipsePreferences preferences = InstanceScope.INSTANCE.getNode(SAVE_LOCATION_PROPERTIES_NODE);
+        
         private final Shell cdc;
 
         MySelectionListener(ChartDataComposite cd) {
@@ -261,7 +273,9 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             boolean success = true;
             FileDialog fd = new FileDialog(cdc, SWT.SAVE);
             fd.setText("Save");
-            fd.setFilterPath(System.getProperty("user.dir"));
+            fd.setOverwrite(true);
+            String lastSaveLocation = preferences.get(EXPORT_TO_EXCEL_PROPERTIES_IDENTIFIER, System.getProperty("user.dir"));
+            fd.setFilterPath(lastSaveLocation);
             String[] filterExt = { "*.xls" };
             fd.setFilterExtensions(filterExt);
             String selected = fd.open();
@@ -302,19 +316,20 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
                         }
                         i++;
                     }
-
-                    success = ExcelFileExporter.exportValuesToExcelFile(excelFile, values);
+                    success = ExcelFileExporterDialog.exportExcelFile(excelFile, values);
+                    
                 } else {
                     success = false;
                 }
-
-                StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
-
+                if (excelFile != null) {
+                    StudyDataExportMessageHelper.showConfirmationOrWarningMessageDialog(success, excelFile.getPath());
+                    preferences.put(EXPORT_TO_EXCEL_PROPERTIES_IDENTIFIER, excelFile.getParent());
+                }
             }
         }
-
     }
-
+    
+    
     private List<Measure> getSortedMeasures(final StudyStructure structure) {
         Collection<Measure> measureCollection = structure.getMeasures();
         List<Measure> measureList = new ArrayList<Measure>(measureCollection);
@@ -388,7 +403,9 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             }
 
         }
-        for (final Dimension dimension : structure.getDimensions()) {
+
+        
+        for (final Dimension dimension : getSortedDimensions(structure)) {
             final TableViewerColumn column = new TableViewerColumn(tableViewer,
                 SWT.NONE);
             column.getColumn().setText(dimension.getName());
@@ -397,7 +414,8 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             column.getColumn().setMoveable(true);
             column.setLabelProvider(new ValueLabelProvider(dimension.getName()));
         }
-        for (final Measure measure : structure.getMeasures()) {
+        
+        for (final Measure measure : getSortedMeasures(structure)) {
             final TableViewerColumn column = new TableViewerColumn(tableViewer,
                 SWT.NONE);
             column.getColumn().setText(measure.getName());
@@ -406,6 +424,7 @@ public class ChartDataComposite extends Composite implements ISelectionProvider 
             column.getColumn().setMoveable(true);
             column.setLabelProvider(new ValueLabelProvider(measure.getName()));
         }
+
     }
 
     /**

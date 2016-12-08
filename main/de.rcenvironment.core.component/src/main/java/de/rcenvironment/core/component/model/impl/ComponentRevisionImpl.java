@@ -10,6 +10,8 @@ package de.rcenvironment.core.component.model.impl;
 
 import java.io.Serializable;
 
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -18,7 +20,9 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * A writable {@link ComponentRevision} implementation.
  * 
  * @author Robert Mischke
+ * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ComponentRevisionImpl implements ComponentRevision, Serializable {
 
     private static final long serialVersionUID = 6744720085980362367L;

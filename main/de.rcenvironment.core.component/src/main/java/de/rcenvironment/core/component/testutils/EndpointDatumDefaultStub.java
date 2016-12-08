@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.component.testutils;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -31,7 +31,7 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
     }
 
     @Override
-    public NodeIdentifier getInputsNodeId() {
+    public LogicalNodeId getInputsNodeId() {
         return null;
     }
 
@@ -39,7 +39,7 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
     public TypedDatum getValue() {
         return null;
     }
-    
+
     @Override
     public String getOutputsComponentExecutionIdentifier() {
         return null;
@@ -51,7 +51,7 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
     }
 
     @Override
-    public NodeIdentifier getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowNodeId() {
         return null;
     }
 
@@ -66,7 +66,7 @@ public class EndpointDatumDefaultStub implements EndpointDatum {
     }
 
     @Override
-    public NodeIdentifier getOutputsNodeId() {
+    public LogicalNodeId getOutputsNodeId() {
         return null;
     }
 

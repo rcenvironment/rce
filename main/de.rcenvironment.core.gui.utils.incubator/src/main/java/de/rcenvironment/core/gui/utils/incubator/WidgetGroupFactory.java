@@ -19,6 +19,7 @@ import org.eclipse.swt.widgets.Text;
  * Factory for creating several widgets in one step for given composites.
  * 
  * @author Sascha Zur
+ * @author Jascha Riedel (#14005)
  */
 public final class WidgetGroupFactory {
 
@@ -38,10 +39,15 @@ public final class WidgetGroupFactory {
     public static final int ONLY_INTEGER = 2;
 
     /**
-     * Option if a textfield should only allow only inputs > 0.
+     * Option if a textfield should only allow inputs >= 0.
      */
     public static final int GREATER_OR_EQUAL_ZERO = 4;
-
+    
+    /**
+     * Option if a textfield should only allow inputs > 0.
+     */
+    public static final int GREATER_ZERO = 16;
+    
     /**
      * Option if a textfield should align the text in the (standard is left).
      */

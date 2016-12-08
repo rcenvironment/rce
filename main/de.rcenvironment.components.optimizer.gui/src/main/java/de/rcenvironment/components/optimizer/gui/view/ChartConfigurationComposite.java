@@ -504,6 +504,7 @@ public class ChartConfigurationComposite extends Composite implements
             final RGB color = configurationTrace.getColor();
             if (color != null) {
                 configurationTrace.setColor(color);
+                //FIXME: the color object is never disposed
                 graphTrace
                     .setTraceColor(new Color(Display.getDefault(), color));
             }

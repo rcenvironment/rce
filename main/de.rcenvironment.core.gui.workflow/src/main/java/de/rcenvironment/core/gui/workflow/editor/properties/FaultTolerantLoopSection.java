@@ -106,7 +106,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         rerunTimesAndFailTextNAV.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
             LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_FAIL_NAV);
         rerunTimesAndFailTextNAV.addVerifyListener(new NumericalTextConstraintListener(rerunTimesAndFailTextNAV,
-            NumericalTextConstraintListener.GREATER_ZERO));
+            NumericalTextConstraintListener.GREATER_ZERO | NumericalTextConstraintListener.ONLY_INTEGER));
         factory.createLabel(compositeNAV, "time(s) and fail if maximum exceeded");
 
         rerunAndDiscardRadioButtonNAV = factory.createButton(compositeNAV,
@@ -122,7 +122,7 @@ public class FaultTolerantLoopSection extends ValidatingWorkflowNodePropertySect
         rerunTimesAndDiscardTextNAV.setData(WorkflowNodePropertiesSection.CONTROL_PROPERTY_KEY,
             LoopComponentConstants.CONFIG_KEY_MAX_RERUN_BEFORE_DISCARD_NAV);
         rerunTimesAndDiscardTextNAV.addVerifyListener(new NumericalTextConstraintListener(rerunTimesAndDiscardTextNAV,
-            NumericalTextConstraintListener.GREATER_ZERO));
+            NumericalTextConstraintListener.GREATER_ZERO | NumericalTextConstraintListener.ONLY_INTEGER));
         rerunTimesAndDiscardLabelNAV = factory.createLabel(compositeNAV, "time(s) and discard if maximum exceeded");
 
         failLoopIfAnyRunFailedCheckboxNAV = factory.createButton(compositeNAV, TEXT_FINALLY_FAIL, SWT.CHECK);

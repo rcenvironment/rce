@@ -26,7 +26,8 @@ import de.rcenvironment.core.utils.cluster.ClusterService;
  */
 public class ClusterJobInformationModel {
     
-    protected static final String NOT_CONNECTED = Messages.notConnectedSelection;
+    /** Constant shown in the drop down menu of no cluster connection is active. */
+    public static final String NOT_CONNECTED = Messages.notConnectedSelection;
 
     private static ClusterJobInformationModel instance = null;
     
@@ -56,7 +57,9 @@ public class ClusterJobInformationModel {
     }
     
     protected synchronized void setSelectedConnectedConfigurationName(String configurationName) {
-        this.selectedConnectedConfigurationName = configurationName;
+        if (connectedClustersMap.containsKey(configurationName) || configurationName.equals(NOT_CONNECTED)) {
+            this.selectedConnectedConfigurationName = configurationName;            
+        }
     }
     
     protected synchronized void addClusterConnectionInformation(String configurationName,
@@ -97,6 +100,13 @@ public class ClusterJobInformationModel {
     protected synchronized void removeConnectedCluster(String configurationName) {
         connectedClustersMap.remove(configurationName);
         connectionInformationMap.remove(configurationName);
+        if (configurationName.equals(selectedConnectedConfigurationName)) {
+            if (connectedClustersMap.isEmpty()) {
+                setSelectedConnectedConfigurationName(NOT_CONNECTED);                
+            } else {
+                setSelectedConnectedConfigurationName(connectedClustersMap.keySet().iterator().next());
+            }
+        }
     }
     
     // TODO not really part of the model. should be extracted in extra class. for now added it here

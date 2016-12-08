@@ -19,16 +19,16 @@ import java.util.Observable;
 
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.components.excel.common.ChannelValue;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelUtils;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
 import de.rcenvironment.core.notification.SimpleNotificationService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
 
 /**
  * ModelProvider of channels.
@@ -64,7 +64,7 @@ public class ModelProvider extends Observable implements NotificationSubscriber 
      * @param publishPlatform identifier of publishing platform
      * @throws RemoteOperationException when subscribing to remote notifications fails
      */
-    public void subscribeToLocalToolRunPlatForm(final String componentIdentifier, final NodeIdentifier publishPlatform)
+    public void subscribeToLocalToolRunPlatForm(final String componentIdentifier, final ResolvableNodeId publishPlatform)
         throws RemoteOperationException {
         if (!isSubscribed) {
             SimpleNotificationService sns = new SimpleNotificationService();

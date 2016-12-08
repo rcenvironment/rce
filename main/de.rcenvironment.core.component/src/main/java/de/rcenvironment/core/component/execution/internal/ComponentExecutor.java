@@ -41,15 +41,16 @@ import de.rcenvironment.core.component.execution.api.WorkflowGraphNode;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.DataModelConstants;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Wrapper class that calls life cycle methods of components by considering optional limitations concerning the amount of parallel
@@ -59,11 +60,13 @@ import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
  */
 public class ComponentExecutor {
 
-    protected static final int DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_SEC = 60;
+    protected static final int DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_MSEC = 60000;
 
-    protected static int waitIntervalAfterCacelledCalledSec = DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_SEC;
+    protected static final int DEAFULT_WAIT_INTERVAL_NOT_RUN_MSEC = 60000;
 
-    private static final int WAIT_INTERVAL_NOT_RUN_SEC = 60;
+    protected static int waitIntervalAfterCacelledCalledMSec = DEAFULT_WAIT_INTERVAL_AFTER_CANCELLED_MSEC;
+
+    protected static int waitIntervalNotRunMSec = DEAFULT_WAIT_INTERVAL_NOT_RUN_MSEC;
 
     private static final Log LOG = LogFactory.getLog(ComponentExecutor.class);
 
@@ -74,29 +77,49 @@ public class ComponentExecutor {
      */
     protected enum ComponentExecutionType {
 
-        StartAsInit(ComponentState.STARTING, ComponentStateMachineEventType.START_FAILED, null),
-        StartAsRun(ComponentState.STARTING, ComponentStateMachineEventType.START_FAILED, null),
-        ProcessInputs(ComponentState.PROCESSING_INPUTS, ComponentStateMachineEventType.PROCESSING_INPUTS_FAILED, null),
-        Reset(ComponentState.RESETTING, ComponentStateMachineEventType.RESET_FAILED, null),
-        TearDown(ComponentState.TEARING_DOWN, ComponentStateMachineEventType.TEARED_DOWN, ComponentState.FAILED);
+        StartAsInit(ComponentState.STARTING, ComponentStateMachineEventType.START_FAILED),
+        StartAsRun(ComponentState.STARTING, ComponentStateMachineEventType.START_FAILED),
+        ProcessInputs(ComponentState.PROCESSING_INPUTS, ComponentStateMachineEventType.PROCESSING_INPUTS_FAILED),
+        Reset(ComponentState.RESETTING),
+        TearDown(),
+        HandleVerificationToken(),
+        CompleteVerification();
 
-        private ComponentState compStateOnSuccess;
+        private final ComponentState compStateOnSuccess;
 
-        private ComponentStateMachineEventType compStateMachineEventTypeOnFailure;
-
-        private ComponentState compStateAfterFailure;
+        private final ComponentStateMachineEventType compStateMachineEventTypeOnFailure;
 
         private Component.FinalComponentState finalCompStateAfterTearedDown;
+        
+        private FinalComponentRunState finalCompRunState;
 
-        ComponentExecutionType(ComponentState compStateOnSuccess, ComponentStateMachineEventType compStateMachineEventTypeOnFailure,
-            ComponentState compStateOnFailure) {
+        private String verificationToken;
+
+        ComponentExecutionType() {
+            this.compStateOnSuccess = null;
+            this.compStateMachineEventTypeOnFailure = null;
+        }
+
+        ComponentExecutionType(ComponentState compStateOnSuccess) {
+            this.compStateOnSuccess = compStateOnSuccess;
+            this.compStateMachineEventTypeOnFailure = null;
+        }
+
+        ComponentExecutionType(ComponentState compStateOnSuccess, ComponentStateMachineEventType compStateMachineEventTypeOnFailure) {
             this.compStateOnSuccess = compStateOnSuccess;
             this.compStateMachineEventTypeOnFailure = compStateMachineEventTypeOnFailure;
-            this.compStateAfterFailure = compStateOnFailure;
         }
 
         protected void setFinalComponentStateAfterTearedDown(Component.FinalComponentState finalState) {
             this.finalCompStateAfterTearedDown = finalState;
+        }
+
+        protected void setFinalComponentStateAfterRun(FinalComponentRunState finalState) {
+            this.finalCompRunState = finalState;
+        }
+        
+        protected void setVerificationToken(String verificationToken) {
+            this.verificationToken = verificationToken;
         }
 
     }
@@ -111,14 +134,16 @@ public class ComponentExecutor {
 
     private static boolean sendInputsProcessedToWfCtrl;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
-    private final AsyncOrderedExecutionQueue executionQueue = new AsyncOrderedExecutionQueue(
-        AsyncCallbackExceptionPolicy.LOG_AND_PROCEED, SharedThreadPool.getInstance());
+    private final AsyncOrderedExecutionQueue executionQueue = ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(
+        AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
     private ComponentExecutionRelatedInstances compExeRelatedInstances;
 
     private ComponentExecutionType compExeType;
+
+    private boolean isVerificationRequired;
 
     private boolean treatAsRun;
 
@@ -144,6 +169,8 @@ public class ComponentExecutor {
     protected ComponentExecutor(ComponentExecutionRelatedInstances compExeRelatedInstances, ComponentExecutionType compExeType) {
         this.compExeRelatedInstances = compExeRelatedInstances;
         this.compExeType = compExeType;
+        this.isVerificationRequired = ComponentExecutionUtils.isVerificationRequired(compExeRelatedInstances.compExeCtx
+            .getComponentDescription().getConfigurationDescription().getComponentConfigurationDefinition());
         this.treatAsRun = compExeType == ComponentExecutionType.StartAsRun || compExeType == ComponentExecutionType.ProcessInputs;
         this.writesCompRunRelatedDataToDM = treatAsRun;
         this.isTearDown = compExeType == ComponentExecutionType.TearDown;
@@ -167,25 +194,27 @@ public class ComponentExecutor {
                     return;
                 }
                 compExeRelatedInstances.compStateMachine
-                    .postEvent(new ComponentStateMachineEvent(compExeType.compStateMachineEventTypeOnFailure,
-                        compExeType.compStateAfterFailure, e));
+                    .postEvent(new ComponentStateMachineEvent(compExeType.compStateMachineEventTypeOnFailure, e));
             } catch (ExecutionException | InterruptedException e) {
                 compExeRelatedInstances.compStateMachine
-                    .postEvent(new ComponentStateMachineEvent(compExeType.compStateMachineEventTypeOnFailure,
-                        compExeType.compStateAfterFailure, e));
+                    .postEvent(new ComponentStateMachineEvent(compExeType.compStateMachineEventTypeOnFailure, e));
             }
         }
     }
-    
+
     protected void performExecutionAndReleasePermission() throws ComponentExecutionException, ComponentException {
         try {
+            FinalComponentRunState finalState = FinalComponentRunState.FAILED;
             if (isCancelled.get()) {
                 compExeRelatedInstances.compExeRelatedStates.isComponentCancelled.set(true);
+                finalState = FinalComponentRunState.CANCELLED;
                 return;
             }
             if (!isTearDown) {
-                compExeRelatedInstances.compStateMachine
-                    .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RUNNING, compExeType.compStateOnSuccess));
+                if (compExeType.compStateOnSuccess != null) {
+                    compExeRelatedInstances.compStateMachine
+                        .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RUNNING, compExeType.compStateOnSuccess));
+                }
                 if (treatAsRun) {
                     compExeRelatedInstances.compExeStorageBridge
                         .addComponentExecution(compExeRelatedInstances.compExeCtx,
@@ -197,7 +226,11 @@ public class ComponentExecutor {
             try {
                 executeAsync();
                 awaitExecution();
-
+                if (compExeType.finalCompRunState == null) {
+                    finalState = FinalComponentRunState.FINISHED;                    
+                } else {
+                    finalState = compExeType.finalCompRunState;
+                }
                 if (compExeRelatedInstances.compExeRelatedStates.compHasSentConsoleRowLogMessages.get()) {
                     writesCompRunRelatedDataToDM = true;
                     prepareDmForComponentRunRelatedDataIfNeeded();
@@ -206,15 +239,25 @@ public class ComponentExecutor {
                 writesCompRunRelatedDataToDM = true;
                 prepareDmForComponentRunRelatedDataIfNeeded();
                 handleComponentExecutionFailure(e);
+                finalState = FinalComponentRunState.FAILED;
 
             } finally {
                 if (treatAsRun) {
                     compExeStatsService.addStatsAtComponentRunTermination(compExeRelatedInstances.compExeCtx);
                 }
-                if (writesCompRunRelatedDataToDM && !compExeRelatedInstances.compExeScheduler.isLoopResetRequested()) {
-                    compExeRelatedInstances.consoleRowsSender.sendLogFileWriteTriggerAsConsoleRow();
-                    compExeRelatedInstances.compExeStorageBridge.setComponentExecutionFinished();
+                // TODO improve condition when the component run is considered as done from a data management perspective
+                if (treatAsRun && !compExeRelatedInstances.compExeScheduler.isLoopResetRequested() && !isVerificationRequired) {
+                    finishExecutionFromDataManagementPerpective(finalState);
+                } else if (compExeType.equals(ComponentExecutionType.Reset)
+                    && (compExeRelatedInstances.compExeStorageBridge.hasUnfinishedComponentExecution() || writesCompRunRelatedDataToDM)) {
+                    finishExecutionFromDataManagementPerpective(finalState);
+                } else if (compExeType.equals(ComponentExecutionType.CompleteVerification)) {
+                    finishExecutionFromDataManagementPerpective(finalState);
+                } else if (writesCompRunRelatedDataToDM && !compExeRelatedInstances.compExeScheduler.isLoopResetRequested()
+                    && !compExeType.equals(ComponentExecutionType.HandleVerificationToken) && !isVerificationRequired) {
+                    finishExecutionFromDataManagementPerpective(finalState);
                 }
+
                 if (isCancelled.get()) {
                     compExeRelatedInstances.compExeRelatedStates.isComponentCancelled.set(true);
                 }
@@ -228,11 +271,16 @@ public class ComponentExecutor {
         }
     }
 
+    private void finishExecutionFromDataManagementPerpective(FinalComponentRunState finalState) throws ComponentExecutionException {
+        compExeRelatedInstances.consoleRowsSender.sendLogFileWriteTriggerAsConsoleRow();
+        compExeRelatedInstances.compExeStorageBridge.setComponentExecutionFinished(finalState);
+    }
+
     private void awaitExecution() throws ComponentException {
         ComponentException exception = null;
         try {
             if (compExeType == ComponentExecutionType.StartAsInit || compExeType == ComponentExecutionType.StartAsRun
-                || compExeType == ComponentExecutionType.ProcessInputs) {
+                || compExeType == ComponentExecutionType.ProcessInputs || compExeType == ComponentExecutionType.HandleVerificationToken) {
                 try {
                     exception = executeTask.get().get();
                 } catch (CancellationException e) {
@@ -241,7 +289,7 @@ public class ComponentExecutor {
                 }
             } else {
                 try {
-                    exception = executeTask.get().get(WAIT_INTERVAL_NOT_RUN_SEC, TimeUnit.SECONDS);
+                    exception = executeTask.get().get(waitIntervalNotRunMSec, TimeUnit.MILLISECONDS);
                 } catch (TimeoutException e) {
                     executeTask.get().cancel(true);
                     exception = new ComponentException(StringUtils.format(
@@ -260,7 +308,7 @@ public class ComponentExecutor {
             exception = new ComponentException("Unexpected error during component execution", e.getCause());
         }
         try {
-            if (!executionLatch.await(waitIntervalAfterCacelledCalledSec, TimeUnit.SECONDS)) {
+            if (!executionLatch.await(waitIntervalAfterCacelledCalledMSec, TimeUnit.MILLISECONDS)) {
                 exception = new ComponentException(StringUtils.format(
                     "Task didn't terminate in time after it was cancelled; it was executing '%s' of %s", compExeType.name(),
                     ComponentExecutionUtils.getStringWithInfoAboutComponentAndWorkflowLowerCase(compExeRelatedInstances.compExeCtx)));
@@ -322,6 +370,10 @@ public class ComponentExecutor {
             compExeRelatedInstances.component.get().reset();
         } else if (compExeType == ComponentExecutionType.TearDown) {
             compExeRelatedInstances.component.get().tearDown(compExeType.finalCompStateAfterTearedDown);
+        } else if (compExeType == ComponentExecutionType.HandleVerificationToken) {
+            compExeRelatedInstances.component.get().handleVerificationToken(compExeType.verificationToken);
+        } else if (compExeType == ComponentExecutionType.CompleteVerification) {
+            compExeRelatedInstances.component.get().completeStartOrProcessInputsAfterVerificationDone();
         } else {
             throw new ComponentExecutionException("Given component execution type not supported: " + compExeType);
         }
@@ -354,7 +406,8 @@ public class ComponentExecutor {
                 ComponentExecutionUtils.getStringWithInfoAboutComponentAndWorkflowLowerCase(compExeRelatedInstances.compExeCtx)),
             e);
         String errorConsoleRow = ComponentUtils.createErrorLogMessage(e, errId);
-        compExeRelatedInstances.consoleRowsSender.sendLogMessageAsConsoleRow(Type.COMPONENT_ERROR, errorConsoleRow);
+        compExeRelatedInstances.consoleRowsSender.sendLogMessageAsConsoleRow(Type.COMPONENT_ERROR, errorConsoleRow,
+            compExeRelatedInstances.compExeRelatedStates.executionCount.get());
 
         WorkflowGraphNode loopDriver = compExeRelatedInstances.compExeCtx.getWorkflowGraph()
             .getLoopDriver(compExeRelatedInstances.compExeCtx.getExecutionIdentifier());
@@ -373,7 +426,7 @@ public class ComponentExecutor {
             for (Queue<WorkflowGraphHop> hops : hopsToTraverseOnFailure.get(outputName)) {
                 WorkflowGraphHop firstHop = hops.poll();
                 NotAValueTD notAValue = typedDatumService.getFactory().createNotAValue(
-                    UUID.randomUUID().toString() + NotAValueTD.FAILURE_CAUSE_SUFFIX, NotAValueTD.Cause.Failure);
+                    UUID.randomUUID().toString(), NotAValueTD.Cause.Failure);
                 Long outputDmId = compExeRelatedInstances.compExeStorageBridge.addOutput(outputName,
                     typedDatumService.getSerializer().serialize(notAValue));
                 compExeRelatedInstances.compExeScheduler.addNotAValueDatumSent(notAValue.getIdentifier());

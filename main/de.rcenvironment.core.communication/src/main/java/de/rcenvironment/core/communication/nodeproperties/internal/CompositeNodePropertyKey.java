@@ -17,20 +17,20 @@ import de.rcenvironment.core.utils.common.StringUtils;
  */
 public class CompositeNodePropertyKey {
 
-    private final String nodeId;
+    private final String instanceSessionId;
 
     private final String dataKey;
 
     private final String compositeKey;
 
-    public CompositeNodePropertyKey(String nodeId, String dataKey) {
-        this.nodeId = nodeId;
+    public CompositeNodePropertyKey(String instanceSessionId, String dataKey) {
+        this.instanceSessionId = instanceSessionId;
         this.dataKey = dataKey;
-        this.compositeKey = StringUtils.format("%s:%s", nodeId, dataKey);
+        this.compositeKey = StringUtils.format("%s:%s", instanceSessionId, dataKey);
     }
 
-    public String getNodeIdString() {
-        return nodeId;
+    public String getInstanceNodeSessionIdString() {
+        return instanceSessionId;
     }
 
     public String getDataKey() {

@@ -49,30 +49,15 @@ public class EditClusterConnectionConfigurationDialog extends CreateClusterConne
     }
     
     @Override
-    protected boolean isConfigurationNameValid() {
-        boolean valid = true;
-        if (!defaultConfigurationNameCheckbox.getSelection()) {
-            if (configurationNameText.getText().length() == 0) {
-                setErrorMessage(Messages.maintainConfigurationNameLabel);
-                valid = false;
-            }
-        } else if (existingConfigurationNames.contains(usernameText.getText() + "@" + hostText.getText())) {
-            setErrorMessage(Messages.maintainAnotherConfigurationNameLabel);
-            valid = false;            
-            
-        }
-        if (existingConfigurationNames.contains(configurationNameText.getText())
-            && !configuration.getConfigurationName().equals(configurationNameText.getText())) {
-            setErrorMessage(Messages.maintainConfigurationNameLabel);
-            valid = false;
-        }
-        return valid;
+    protected boolean isConfigurationNameValid(String currentConfigurationName) {
+        return super.isConfigurationNameValid(configuration.getConfigurationName());
     }
     
     private void prefillForm() {
         if (configuration.getClusterQueuingSystem() == ClusterQueuingSystem.TORQUE) {
             queuingSystemCombo.select(1);
         }
+        showqPathText.setEnabled(queuingSystemCombo.getSelectionIndex() == 1);
 
         Map<String, String> paths = configuration.getPathToClusterQueuingSystemCommands();
         prefillCommandPath(ClusterQueuingSystemConstants.COMMAND_QSTAT, qstatPathText, paths);

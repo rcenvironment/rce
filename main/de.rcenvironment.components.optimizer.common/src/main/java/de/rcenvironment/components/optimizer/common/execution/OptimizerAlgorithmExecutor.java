@@ -39,11 +39,11 @@ import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Class to provide running an external program that has to be blocked for a RCE wf calculation.
@@ -152,7 +152,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
     private void writePortFile() throws ComponentException {
         try {
             File portFile = new File(workingDir.getAbsolutePath() + File.separator + inputFileName + ".port");
-            List<String> lines = new LinkedList<String>();
+            List<String> lines = new LinkedList<>();
             lines.add("" + port);
             FileUtils.writeLines(portFile, lines, System.getProperty("line.separator"));
         } catch (IOException e) {
@@ -229,12 +229,18 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
             fw.write("" + javaHome);
             fw.close();
             String command = "";
+            if (previousCommand != null && previousCommand.equals("[INTEGRATED OPTIMIZER: ENTER PATH TO PYTHON EXECUTABLE HERE]")) {
+                throw new ComponentException(
+                    "Generic optimizer python path not properly configured."
+                        + " Please set the path in the \"python_path\" file in the integration folder.");
+            }
             if (OS.isFamilyUnix()) {
-                if (previousCommand.equalsIgnoreCase("")) {
+                if (previousCommand != null && previousCommand.equalsIgnoreCase("")) {
                     command = executionCommand + inputFileName;
                 } else {
                     command =
-                        previousCommand + " \"" + workingDir.getAbsolutePath() + File.separator + executionCommand + "\" " + inputFileName;
+                        previousCommand + " \"" + workingDir.getAbsolutePath() + File.separator + executionCommand + "\" "
+                            + inputFileName;
                 }
             } else if (previousCommand == null || previousCommand.equalsIgnoreCase("")) {
                 command = executionCommand + inputFileName;
@@ -383,7 +389,7 @@ public abstract class OptimizerAlgorithmExecutor implements Runnable {
                 }
             }
         };
-        SharedThreadPool.getInstance().execute(newServerThread);
+        ConcurrencyUtils.getAsyncTaskService().execute(newServerThread);
         return newServerThread;
     }
 

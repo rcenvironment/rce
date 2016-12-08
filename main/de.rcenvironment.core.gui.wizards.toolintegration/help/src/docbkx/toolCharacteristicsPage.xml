@@ -35,7 +35,7 @@
                 </listitem>
                 <listitem>
                     <para><emphasis role="bold">Documentation:</emphasis> Here you can choose to add
-                        a documentation file for your tool. Note that the file must be a PDF
+                        a documentation file for your tool. Note that the file must be a PDF or a TXT
                         document and it must not be greater than 50 MB.</para>
                 </listitem>
                 <listitem>

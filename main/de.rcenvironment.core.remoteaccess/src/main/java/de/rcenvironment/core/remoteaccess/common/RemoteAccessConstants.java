@@ -20,9 +20,9 @@ public final class RemoteAccessConstants {
     public static final String WF_PLACEHOLDER_INPUT_DIR = "##RUNTIME_INPUT_DIRECTORY##";
 
     /**
-     * The version of the remote access protocol; used to determine client compatibility.
+     * The supported version (or list of versions) for the remote access protocol; used to determine client compatibility.
      */
-    public static final String PROTOCOL_VERSION = "7.0.0";
+    public static final String PROTOCOL_VERSION_STRING = "8.0.0";
 
     private RemoteAccessConstants() {}
 }

@@ -23,7 +23,10 @@ public enum FinalWorkflowState {
     CANCELLED("Cancelled"),
     
     /** Failed. */
-    FAILED("Failed");
+    FAILED("Failed"),
+    
+    /** Results rejected. */
+    RESULTS_REJECTED("Results rejected");
     
     private String displayName;
     
@@ -43,7 +46,8 @@ public enum FinalWorkflowState {
     public static boolean isFinalWorkflowState(WorkflowState workflowState) {
         return workflowState.name().equals(FINISHED.name())
             || workflowState.name().equals(CANCELLED.name())
-            || workflowState.name().equals(FAILED.name());
+            || workflowState.name().equals(FAILED.name())
+            || workflowState.name().equals(RESULTS_REJECTED.name());
     }
 
 }

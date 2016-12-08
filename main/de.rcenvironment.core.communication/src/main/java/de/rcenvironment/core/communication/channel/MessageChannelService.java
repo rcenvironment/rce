@@ -12,7 +12,7 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.direct.api.DirectMessagingSender;
@@ -192,7 +192,7 @@ public interface MessageChannelService extends DirectMessagingSender {
      * @param sourceId the source/sender node (should always be the local node id)
      * @return the RPC response
      */
-    NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, NodeIdentifier sourceId);
+    NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, InstanceNodeSessionId sourceId);
 
     /**
      * Sets a custom protocol version to use instead of the default value in {@link ProtocolConstants#PROTOCOL_COMPATIBILITY_VERSION}.

@@ -17,14 +17,14 @@
 	<classpathentry exported="true" kind="lib" path="lib/maven/jackson-mapper-asl-1.9.13.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/jython-standalone-2.5.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/commons-collections4-4.0.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/activation-1.1.1.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/jodd-core-3.6.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/jodd-mail-3.6.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="lib/maven/mail-1.4.5.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/xz-1.0.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/commons-csv-1.1.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/lanterna-2.1.9.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/picocontainer-2.15.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/manual/jBCrypt-0.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/maven/jsch-0.1.53.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/jackson-core-2.7.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/jackson-databind-2.7.5.jar"/>
+	<classpathentry exported="true" kind="lib" path="lib/maven/jackson-annotations-2.7.0.jar"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

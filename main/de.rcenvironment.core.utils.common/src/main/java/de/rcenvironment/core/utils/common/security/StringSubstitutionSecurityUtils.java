@@ -20,7 +20,7 @@ import org.apache.commons.logging.LogFactory;
  * 
  * @author Robert Mischke
  */
-// FIXME 5.0.0: review pattern lists for completeness
+// TODO (p1) review pattern lists for completeness
 public final class StringSubstitutionSecurityUtils {
 
     private static final String[] COMMON_FORBIDDEN_PATTERNS = {

@@ -70,7 +70,6 @@ public class ScriptComponent extends DefaultComponent {
         scriptLanguage = ScriptLanguage.getByName(language);
         script = componentContext.getConfigurationValue(SshExecutorConstants.CONFIG_KEY_SCRIPT);
         executor.prepareExecutor(componentContext);
-
         if (treatStartAsComponentRun()) {
             processInputs();
         }
@@ -84,8 +83,8 @@ public class ScriptComponent extends DefaultComponent {
         if (historyDataItem != null) {
             if (scriptFileRef == null) {
                 try {
-                    scriptFileRef = componentContext.getService(ComponentDataManagementService.class).
-                        createTaggedReferenceFromString(componentContext, script);
+                    scriptFileRef = componentContext.getService(ComponentDataManagementService.class)
+                        .createTaggedReferenceFromString(componentContext, script);
                     historyDataItem.setScriptFileReference(scriptFileRef);
                 } catch (IOException e) {
                     String errorMessage = "Failed to store Python script into the data management"
@@ -129,7 +128,7 @@ public class ScriptComponent extends DefaultComponent {
         canceled = true;
 
         if (executor == null) {
-            //FIXME we need to delay the cancellation request, currently it is simple ignored in this case
+            // FIXME we need to delay the cancellation request, currently it is simple ignored in this case
             log.error("Cannot cancel the execution, as the script executor (Script Component) is not propertly prepared.");
             return;
         }
@@ -164,7 +163,8 @@ public class ScriptComponent extends DefaultComponent {
     }
 
     private void writeFinalHistoryDataItem() {
-        if (Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
+        if (historyDataItem != null
+            && Boolean.valueOf(componentContext.getConfigurationValue(ComponentConstants.CONFIG_KEY_STORE_DATA_ITEM))) {
             componentContext.writeFinalHistoryDataItem(historyDataItem);
         }
     }

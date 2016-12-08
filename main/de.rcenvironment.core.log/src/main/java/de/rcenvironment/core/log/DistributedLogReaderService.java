@@ -16,7 +16,7 @@ import org.osgi.service.log.LogListener;
 import org.osgi.service.log.LogReaderService;
 import org.osgi.service.log.LogService;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Service that serves as an abstraction of the {@link RemotableLogReaderService}s of the whole distributed system. It provides convenient
@@ -34,11 +34,11 @@ public interface DistributedLogReaderService {
      * LogListener.logged(LogEntry) method will be called for each {@link LogEntry} object placed into the log.
      * 
      * @param logListener The {@link SerializableLogListener} object to register.
-     * @param nodeId The {@link NodeIdentifier} of the platform to register.
+     * @param nodeId The {@link InstanceNodeSessionId} of the platform to register.
      * 
      * @see LogReaderService#addLogListener(LogListener).
      */
-    void addLogListener(SerializableLogListener logListener, NodeIdentifier nodeId);
+    void addLogListener(SerializableLogListener logListener, InstanceNodeSessionId nodeId);
 
     /**
      * Returns an {@link Enumeration} of all {@link LogEntry} objects in the log.
@@ -47,12 +47,12 @@ public interface DistributedLogReaderService {
      * all {@link LogEntry} objects since the {@link LogService} was started or some recent past is implementation-specific. Also
      * implementation-specific is whether informational and debug {@link LogEntry} objects are included in the enumeration.
      * 
-     * @param nodeId The {@link NodeIdentifier} of the platform to get the log from.
+     * @param nodeId The {@link InstanceNodeSessionId} of the platform to get the log from.
      * @return The {@link List} of {@link SerializableLogEntry} objects.
      * 
      * @see LogReaderService#getLog().
      */
-    List<SerializableLogEntry> getLog(NodeIdentifier nodeId);
+    List<SerializableLogEntry> getLog(InstanceNodeSessionId nodeId);
 
     /**
      * Unsubscribes from LogEntry objects.
@@ -60,9 +60,9 @@ public interface DistributedLogReaderService {
      * This method unregisters a LogListener object from the Log Reader Service.
      * 
      * @param logListener The {@link SerializableLogListener} object to unregister.
-     * @param nodeId The {@link NodeIdentifier} of the platform to unregister.
+     * @param nodeId The {@link InstanceNodeSessionId} of the platform to unregister.
      * 
      * @see LogReaderService#removeLogListener().
      */
-    void removeLogListener(SerializableLogListener logListener, NodeIdentifier nodeId);
+    void removeLogListener(SerializableLogListener logListener, InstanceNodeSessionId nodeId);
 }

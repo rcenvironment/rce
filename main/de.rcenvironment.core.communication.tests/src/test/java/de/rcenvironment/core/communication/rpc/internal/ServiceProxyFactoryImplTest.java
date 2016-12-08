@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.rpc.internal;
 
-import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.LOCAL_PLATFORM;
+import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.LOCAL_LOGICAL_NODE_SESSION_ID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -28,8 +28,10 @@ import org.osgi.framework.BundleActivator;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.internal.LiveNetworkIdResolutionServiceImpl;
 import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
@@ -51,11 +53,14 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link ServiceProxyFactoryImpl}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (reworked for 2.5.0+)
+ * @author Robert Mischke (reworked for 2.5.0+; 8.0.0 id adaptations)
  */
 public class ServiceProxyFactoryImplTest {
 
-    private static final NodeIdentifier LOCAL_NODE_ID = NodeIdentifierFactory.fromNodeId("mockNodeId");
+    private static final LogicalNodeSessionId LOCAL_NODE_ID = NodeIdentifierTestUtils
+        .createTestLogicalNodeSessionIdWithDisplayName("mockLocalNode", true);
+
+    private static final InstanceNodeSessionId LOCAL_INSTANCE_SESSION_ID = LOCAL_NODE_ID.convertToInstanceNodeSessionId();
 
     private final int sum = 3;
 
@@ -78,6 +83,8 @@ public class ServiceProxyFactoryImplTest {
 
     private RemoteServiceCallSenderServiceImpl remoteServiceCallService;
 
+    private LiveNetworkIdResolutionServiceImpl liveIdResolver;
+
     /**
      * Common setup.
      */
@@ -86,11 +93,15 @@ public class ServiceProxyFactoryImplTest {
         // note that the routing service is bound in the individual tests - misc_ro
         remoteServiceCallService = new RemoteServiceCallSenderServiceImpl();
 
+        liveIdResolver = new LiveNetworkIdResolutionServiceImpl();
+        liveIdResolver.registerLocalInstanceNodeSessionId(LOCAL_INSTANCE_SESSION_ID);
+
         serviceProxyFactory = new ServiceProxyFactoryImpl();
         serviceProxyFactory.bindCallbackService(new DummyCallbackService());
         serviceProxyFactory.bindCallbackProxyService(EasyMock.createNiceMock(CallbackProxyService.class));
         serviceProxyFactory.bindPlatformService(new DummyPlatformService());
         serviceProxyFactory.bindRemoteServiceCallService(remoteServiceCallService);
+        serviceProxyFactory.bindLiveNetworkIdResolutionService(liveIdResolver);
     }
 
     /**
@@ -246,7 +257,7 @@ public class ServiceProxyFactoryImplTest {
             assertTrue(true);
         }
         try {
-            serviceProxyFactory.createServiceProxy(LOCAL_PLATFORM, null, null);
+            serviceProxyFactory.createServiceProxy(LOCAL_LOGICAL_NODE_SESSION_ID, null, null);
             fail();
         } catch (IllegalArgumentException e) {
             assertTrue(true);
@@ -259,11 +270,12 @@ public class ServiceProxyFactoryImplTest {
         // a request is not available in this mock, so fake a request
         NetworkRequest request =
             NetworkRequestFactory
-                .createNetworkRequest(null, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, LOCAL_NODE_ID, LOCAL_NODE_ID);
+                .createNetworkRequest(null, ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, LOCAL_INSTANCE_SESSION_ID,
+                    LOCAL_INSTANCE_SESSION_ID);
         NetworkResponse networkResponseMock = NetworkResponseFactory.generateSuccessResponse(request,
             MessageUtils.serializeSafeObject(serviceCallResult));
         EasyMock.expect(routingServiceMock.performRoutedRequest(EasyMock.anyObject(byte[].class),
-            EasyMock.eq(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC), EasyMock.eq(LOCAL_NODE_ID)))
+            EasyMock.eq(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC), EasyMock.eq(LOCAL_INSTANCE_SESSION_ID)))
             .andReturn(networkResponseMock);
         return routingServiceMock;
     }
@@ -295,7 +307,7 @@ public class ServiceProxyFactoryImplTest {
         @Override
         public ServiceCallResult send(ServiceCallRequest serviceCallRequest) throws RemoteOperationException {
             ServiceCallResult result = null;
-            if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+            if (serviceCallRequest.getTargetNodeId().equals(LOCAL_NODE_ID)
                 && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
                 && serviceCallRequest.getMethodName().equals("add")
                 && serviceCallRequest.getParameterList().get(0).equals(1)
@@ -303,20 +315,20 @@ public class ServiceProxyFactoryImplTest {
                 && serviceCallRequest.getParameterList().size() == 2) {
 
                 result = addResult;
-            } else if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+            } else if (serviceCallRequest.getTargetNodeId().equals(LOCAL_NODE_ID)
                 && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
                 && serviceCallRequest.getMethodName().equals("callbackTest")
                 && (serviceCallRequest.getParameterList().get(0) instanceof CallbackProxy)
                 && serviceCallRequest.getParameterList().size() == 1) {
 
                 result = callbackResult;
-            } else if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+            } else if (serviceCallRequest.getTargetNodeId().equals(LOCAL_NODE_ID)
                 && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
                 && serviceCallRequest.getMethodName().equals("getValue")
                 && serviceCallRequest.getParameterList().size() == 0) {
 
                 result = valueResult;
-            } else if (serviceCallRequest.getDestination().equals(LOCAL_NODE_ID)
+            } else if (serviceCallRequest.getTargetNodeId().equals(LOCAL_NODE_ID)
                 && serviceCallRequest.getServiceName().equals(MethodCallTestInterface.class.getCanonicalName())
                 && serviceCallRequest.getMethodName().equals("exceptionFunction")
                 && serviceCallRequest.getParameterList().size() == 0) {
@@ -374,8 +386,13 @@ public class ServiceProxyFactoryImplTest {
     private class DummyPlatformService extends PlatformServiceDefaultStub {
 
         @Override
-        public NodeIdentifier getLocalNodeId() {
-            return LOCAL_NODE_ID;
+        public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+            return LOCAL_INSTANCE_SESSION_ID;
+        }
+
+        @Override
+        public LogicalNodeSessionId getLocalDefaultLogicalNodeSessionId() {
+            return LOCAL_LOGICAL_NODE_SESSION_ID;
         }
 
     }
@@ -392,7 +409,7 @@ public class ServiceProxyFactoryImplTest {
         private final String id = "id";
 
         @Override
-        public String addCallbackObject(Object callBackObject, NodeIdentifier nodeId) {
+        public String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId) {
             return null;
         }
 
@@ -403,7 +420,7 @@ public class ServiceProxyFactoryImplTest {
         }
 
         @Override
-        public CallbackProxy createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, NodeIdentifier proxyHome) {
+        public CallbackProxy createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, InstanceNodeSessionId proxyHome) {
             if (objectIdentifier == id) {
                 return new CallbackProxy() {
 
@@ -415,8 +432,8 @@ public class ServiceProxyFactoryImplTest {
                     }
 
                     @Override
-                    public NodeIdentifier getHomePlatform() {
-                        return LOCAL_NODE_ID;
+                    public InstanceNodeSessionId getHomePlatform() {
+                        return LOCAL_INSTANCE_SESSION_ID;
                     }
                 };
             }

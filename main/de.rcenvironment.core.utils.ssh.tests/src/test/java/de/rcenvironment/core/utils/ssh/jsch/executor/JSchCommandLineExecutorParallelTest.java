@@ -16,12 +16,12 @@ import java.util.ArrayList;
 import java.util.concurrent.CountDownLatch;
 
 import org.apache.commons.lang3.RandomStringUtils;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
-import org.apache.sshd.server.command.ScpCommandFactory;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
+import org.apache.sshd.server.scp.ScpCommandFactory;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -30,15 +30,15 @@ import org.junit.Test;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.RunnablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.ssh.jsch.DummyPasswordAuthenticator;
 import de.rcenvironment.core.utils.ssh.jsch.JschSessionFactory;
 import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 import de.rcenvironment.core.utils.ssh.jsch.SshTestUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Test case for {@link JSchCommandLineExecutor}.
@@ -103,7 +103,7 @@ public class JSchCommandLineExecutorParallelTest {
         final int numServers = 10;
         final CountDownLatch threadsCompletedLatch = new CountDownLatch(numServers);
 
-        RunnablesGroup runnablesGroup = SharedThreadPool.getInstance().createRunnablesGroup();
+        RunnablesGroup runnablesGroup = ConcurrencyUtils.getFactory().createRunnablesGroup();
         
         for (int i = 0; i < numServers; i++) {
 
@@ -123,7 +123,7 @@ public class JSchCommandLineExecutorParallelTest {
                         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
                         sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {
                             {
-                                add(new UserAuthPassword.Factory());
+                                add(new UserAuthPasswordFactory());
                             }
                         });
                         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
@@ -163,7 +163,7 @@ public class JSchCommandLineExecutorParallelTest {
 
                     try {
                         sshServer.stop();
-                    } catch (InterruptedException e) {
+                    } catch (IOException e) {
                         throw new RuntimeException("Failed to stop server", e);
                     }
                     threadsCompletedLatch.countDown();

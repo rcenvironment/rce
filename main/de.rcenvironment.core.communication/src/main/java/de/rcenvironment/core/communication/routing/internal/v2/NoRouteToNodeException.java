@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.routing.internal.v2;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Exception class for routing attempts to unreachable nodes.
@@ -19,14 +19,14 @@ public final class NoRouteToNodeException extends Exception {
 
     private static final long serialVersionUID = 3448576774973336658L;
 
-    private final NodeIdentifier targetNodeId;
+    private final InstanceNodeSessionId targetNodeId;
 
-    public NoRouteToNodeException(String message, NodeIdentifier targetNodeId) {
+    public NoRouteToNodeException(String message, InstanceNodeSessionId targetNodeId) {
         super(message);
         this.targetNodeId = targetNodeId;
     }
 
-    public NodeIdentifier getTargetNodeId() {
+    public InstanceNodeSessionId getTargetNodeId() {
         return targetNodeId;
     }
 }

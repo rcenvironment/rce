@@ -70,8 +70,6 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
 
     private SshAuthenticationManager sshAuthenticationManager;
 
-    private boolean raAccountRoleIsPresent;
-
     private final Log log = LogFactory.getLog(getClass());
 
     @Override
@@ -102,16 +100,16 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
             return null;
         }
 
-        SshAccountRole raRole = sshConfiguration.getRoleByName("remote access");
-        raAccountRoleIsPresent = (raRole != null);
-        // verify the role if it is already present
-        if (raRole != null) {
-            if (!EXPECTED_RA_ROLE_ALLOWED_COMMAND_PATTERN_REGEXP.equals(raRole.getAllowedCommandRegEx())) {
-                return "The SSH Account role \"remote access\" exists, but has an unexpected "
-                    + "configuration. Please fix this manually (for example, by deleting the "
-                    + "existing \"role\" entry) and restart.";
-            }
-        }
+//        SshAccountRole raRole = sshConfiguration.getRoleByName("remote access");
+//        raAccountRoleIsPresent = (raRole != null);
+//        // verify the role if it is already present
+//        if (raRole != null) {
+//            if (!EXPECTED_RA_ROLE_ALLOWED_COMMAND_PATTERN_REGEXP.equals(raRole.getAllowedCommandRegEx())) {
+//                return "The SSH Account role \"remote access\" exists, but has an unexpected "
+//                    + "configuration. Please fix this manually (for example, by deleting the "
+//                    + "existing \"role\" entry) and restart.";
+//            }
+//        }
 
         return null; // all ok
     }
@@ -127,7 +125,7 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
     }
 
     @Override
-    public void createAccount(String loginName, String password, boolean setRemoteAccessRole) throws ConfigurationException {
+    public void createAccount(String loginName, String password) throws ConfigurationException {
         if (StringUtils.isNullorEmpty(loginName)) {
             throw new ConfigurationException("The login name must not be empty!");
         }
@@ -146,12 +144,7 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
             final WritableConfigurationSegment accountElement = accountsSegment.createElement(loginName);
             // write account data
             accountElement.setString(FIELD_NAME_PW_HASH, passwordHash);
-            if (setRemoteAccessRole) {
-                accountElement.setString(FIELD_NAME_ROLE, "remote access");
-            } else {
-                // TODO set which role otherwise?
-                accountElement.setString(FIELD_NAME_ROLE, "guest");
-            }
+            accountElement.setString(FIELD_NAME_ROLE, SshConstants.ROLE_NAME_REMOTE_ACCESS_USER);
             accountElement.setBoolean(FIELD_NAME_ENABLED, true);
         } catch (ConfigurationException e) {
             log.error("Failed to add SSH account", e);
@@ -159,15 +152,7 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
                 + " most likely, there is already an account with that login name");
         }
 
-        if (setRemoteAccessRole && !raAccountRoleIsPresent) {
-            createRemoteAccessAccountRole();
-        }
-
         writeConfigurationChanges();
-        if (setRemoteAccessRole) {
-            // set here in case writing the configuration fails
-            raAccountRoleIsPresent = true;
-        }
         log.debug(StringUtils.format("Created SSH account '%s' (using password hash authentication)", loginName));
     }
 
@@ -231,19 +216,13 @@ public class SshAccountConfigurationServiceImpl implements SshAccountConfigurati
         try {
             sshConfiguration = new SshConfiguration(sshConfigurationSegment);
             sshAuthenticationManager = new SshAuthenticationManager(sshConfiguration);
-        } catch (IOException e) {
+        } catch (ConfigurationException | IOException e) {
             throw new ConfigurationException("Error reading SSH configuration data: " + e.getMessage());
         }
     }
 
     private void reloadConfiguration() throws ConfigurationException {
         readAsParsedConfigurationData(loadSshConfigurationSegment());
-    }
-
-    private void createRemoteAccessAccountRole() throws ConfigurationException {
-        WritableConfigurationSegment tempSegment = getWritableConfigurationSegmentAndWrapErrors(
-            MAIN_SSH_CONFIGURATION_PATH + CONFIGURATION_PATH_SEPARATOR + ACCOUNT_ROLES_RA_SUB_CONFIGURATION_PATH);
-        tempSegment.setStringArray("allowedCommandPatterns", new String[] { DEFAULT_RA_ROLE_COMMAND_PATTERN });
     }
 
     private WritableConfigurationSegment getWritableConfigurationSegmentAndWrapErrors(String path) throws ConfigurationException {

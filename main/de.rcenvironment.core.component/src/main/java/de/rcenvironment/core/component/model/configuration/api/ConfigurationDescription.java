@@ -49,7 +49,7 @@ public class ConfigurationDescription extends PropertiesChangeSupport implements
 
     public ConfigurationDescription(ConfigurationDefinition configDef, Set<ConfigurationExtensionDefinition> extConfigDefs) {
 
-        Set<ConfigurationDefinition> configDefs = new HashSet<ConfigurationDefinition>();
+        Set<ConfigurationDefinition> configDefs = new HashSet<>();
         configDefs.add(configDef);
         configDefs.addAll(extConfigDefs);
 
@@ -59,14 +59,14 @@ public class ConfigurationDescription extends PropertiesChangeSupport implements
         combinedConfigDef = new ConfigurationDefinitionImpl();
         ((ConfigurationDefinitionImpl) combinedConfigDef).setConfigurationDefinitions(configDefs);
 
-        configuration = new HashMap<String, String>();
+        configuration = new HashMap<>();
 
         for (String key : combinedConfigDef.getConfigurationKeys()) {
             if (combinedConfigDef.getDefaultValue(key) != null) {
                 configuration.put(key, combinedConfigDef.getDefaultValue(key));
             }
         }
-        placeholders = new HashMap<String, String>();
+        placeholders = new HashMap<>();
     }
 
     /**
@@ -89,16 +89,16 @@ public class ConfigurationDescription extends PropertiesChangeSupport implements
                 configDefs.add(getActiveConfigurationDefinitionFromConfigurationDefinition(configDef));
             }
         }
-        
+
         ConfigurationDefinitionImpl def = new ConfigurationDefinitionImpl();
         def.setConfigurationDefinitions(configDefs);
         return def;
     }
-    
+
     private ConfigurationDefinition getActiveConfigurationDefinitionFromConfigurationDefinition(
         ConfigurationDefinition incConfigDefinition) {
 
-        List<Object> activeConfigurations = new LinkedList<Object>();
+        List<Object> activeConfigurations = new LinkedList<>();
         for (String key : incConfigDefinition.getConfigurationKeys()) {
             Map<String, List<String>> keyActivationFilter = ((ConfigurationDefinitionImpl) incConfigDefinition).getActivationFilter(key);
             if (keyActivationFilter != null) {
@@ -117,7 +117,7 @@ public class ConfigurationDescription extends PropertiesChangeSupport implements
         configurationDefinitionImpl.setRawConfigurationDefinition(activeConfigurations);
         configurationDefinitionImpl.setRawPlaceholderMetaDataDefinition(((ConfigurationDefinitionImpl) incConfigDefinition)
             .getRawPlaceholderMetaDataDefinition());
-        configurationDefinitionImpl.setRawActivationFilters(((ConfigurationDefinitionImpl) incConfigDefinition).getActivationFilter());
+        configurationDefinitionImpl.setRawActivationFilter(((ConfigurationDefinitionImpl) incConfigDefinition).getRawActivationFilter());
         return configurationDefinitionImpl;
     }
 
@@ -177,8 +177,7 @@ public class ConfigurationDescription extends PropertiesChangeSupport implements
 
     /**
      * @param key of configuration
-     * @return <code>true</code> if current configuration value is a placeholder, otherwise
-     *         <code>false</code>
+     * @return <code>true</code> if current configuration value is a placeholder, otherwise <code>false</code>
      */
     public boolean isPlaceholderSet(String key) {
         return isPlaceholder(configuration.get(key));
@@ -212,7 +211,13 @@ public class ConfigurationDescription extends PropertiesChangeSupport implements
         return ComponentUtils.getMatcherForPlaceholder(fullPlaceholder).group(ComponentUtils.PLACEHOLDERNAME);
     }
 
-    private boolean isPlaceholder(String configurationValue) {
+    /**
+     * Checks if the given value is a placeholder.
+     * 
+     * @param configurationValue to check
+     * @return true, if it is a placeholder
+     */
+    public static boolean isPlaceholder(String configurationValue) {
         if (configurationValue != null) {
             return configurationValue.matches(ComponentUtils.PLACEHOLDER_REGEX);
         }

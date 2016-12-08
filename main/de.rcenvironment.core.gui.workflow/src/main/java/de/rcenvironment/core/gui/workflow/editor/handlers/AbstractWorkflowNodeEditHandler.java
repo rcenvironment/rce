@@ -32,14 +32,17 @@ public abstract class AbstractWorkflowNodeEditHandler extends AbstractHandler {
     
     protected CommandStack commandStack;
     
+    protected ExecutionEvent event;
+
     @Override
-    public Object execute(ExecutionEvent event) throws ExecutionException {
+    public Object execute(ExecutionEvent e) throws ExecutionException {
         final IWorkbenchPart activePart = PlatformUI.getWorkbench()
                 .getActiveWorkbenchWindow().getActivePage().getActivePart();
         if (activePart instanceof WorkflowEditor) {
             editor = (WorkflowEditor) activePart;            
             viewer = editor.getViewer();
             commandStack = (CommandStack) editor.getAdapter(CommandStack.class);
+            event = e;
             edit();
         }
         return null;

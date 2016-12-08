@@ -43,15 +43,6 @@
         
 
    </extension>
-	<!--  Configuration validation -->
-	<!--  This code activates the automatic GUI validation -->
-    <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.examples.encrypter.gui.EncrypterWorkflowNodeValidator"
-            filter="de.rcenvironment.components.examples.encrypter.gui.EncrypterComponentFilter">
-       </validator>
-    </extension>
     <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
       <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment.components.examples.encrypter.execution" />

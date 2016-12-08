@@ -15,19 +15,28 @@ import java.nio.file.StandardCopyOption;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.eclipse.core.filesystem.EFS;
+import org.eclipse.core.filesystem.IFileStore;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.IStatus;
+import org.eclipse.core.runtime.Path;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Display;
+import org.eclipse.ui.IEditorInput;
+import org.eclipse.ui.IEditorPart;
+import org.eclipse.ui.IWorkbench;
+import org.eclipse.ui.IWorkbenchListener;
 import org.eclipse.ui.IWorkbenchPage;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.PlatformUI;
+import org.eclipse.ui.ide.FileStoreEditorInput;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.gui.datamanagement.browser.Activator;
 import de.rcenvironment.core.gui.utils.common.EditorsHelper;
@@ -71,10 +80,10 @@ public final class DataManagementWorkbenchUtils {
      * @param filename the filename for the given data
      * @throws AuthorizationException :
      * @throws IOException Exception
-     * @param rceNodeIdentifier {@link NodeIdentifier} of the RCE node, which store the file to open
+     * @param rceNodeIdentifier {@link InstanceNodeSessionId} of the RCE node, which store the file to open
      */
     public void saveReferenceToFile(final String dataReferenceId, final String fileReferencePath,
-        final String filename, final NodeIdentifier rceNodeIdentifier) throws AuthorizationException, IOException {
+        final String filename, final ResolvableNodeId rceNodeIdentifier) throws AuthorizationException, IOException {
         final File file = new File(filename);
         if (dataReferenceId != null && fileReferencePath == null) {
             try {
@@ -100,12 +109,11 @@ public final class DataManagementWorkbenchUtils {
      * @param dataReferenceId the data management reference
      * @param fileReferencePath the reference to the temp file
      * @param filename the filename to use for the given data
-     * @param rceNodeIdentifier {@link NodeIdentifier} of the RCE node, which store the file to open
+     * @param rceNodeIdentifier {@link InstanceNodeSessionId} of the RCE node, which store the file to open
      * @param inTiglViewer true if CPACS File should be opened in TiGL Viewer
      */
     public void tryOpenDataReferenceInReadonlyEditor(final String dataReferenceId, final String fileReferencePath,
-        final String filename,
-        final NodeIdentifier rceNodeIdentifier, final boolean inTiglViewer) {
+        final String filename, final ResolvableNodeId rceNodeIdentifier, final boolean inTiglViewer) {
 
         if (dataReferenceId != null && fileReferencePath == null) {
             // open = copy to local temporary file + open in editor
@@ -174,11 +182,11 @@ public final class DataManagementWorkbenchUtils {
             openJob.setUser(true);
             openJob.schedule();
         } else if (dataReferenceId != null && fileReferencePath != null) {
-            MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Open in Editor", 
+            MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Open in Editor",
                 "Failed to open data in editor. Refresh the workflow entry and try again.");
             log.error("When opening in editor both data reference ID and file reference path are set. Only one of these should be set.");
         } else if (dataReferenceId == null && fileReferencePath == null) {
-            MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Open in Editor", 
+            MessageDialog.openInformation(PlatformUI.getWorkbench().getActiveWorkbenchWindow().getShell(), "Open in Editor",
                 "Failed to open data in editor. Refresh the workflow entry and try again.");
             log.warn("When opening in editor neither data reference ID nor file reference path are set. One of these should be set.");
         }
@@ -193,15 +201,41 @@ public final class DataManagementWorkbenchUtils {
             @Override
             public void run() {
                 try {
-
-                    EditorsHelper.openExternalFileInEditor(tempFile);
+                    String fileName      = tempFile.getName();
+                    String fileExtension = EditorsHelper.getExtension(fileName); 
+                    if (fileExtension.equals("wf")){
+                        final IFileStore fileStore = EFS.getLocalFileSystem().getStore(new Path(tempFile.getAbsolutePath()));
+                        
+                        final IEditorInput editorInput = new FileStoreEditorInput(fileStore);
+                        final IEditorPart editor       = PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
+                            .openEditor(editorInput, "de.rcenvironment.rce.gui.workflow.editor.ReadOnlyWorkflowEditor");
+                        if (editor != null) { // if internal editor
+                            PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
+                            .showView("org.eclipse.ui.views.PropertySheet");
+                            // close editor on RCE shutdown as the file-property relation is gone after RCE is started again
+                            PlatformUI.getWorkbench().addWorkbenchListener(new IWorkbenchListener() {
+                
+                                @Override
+                                public boolean preShutdown(IWorkbench workbench, boolean arg1) {
+                                    editor.getSite().getPage().closeEditor(editor, false);
+                                    return true;
+                                }
+                
+                                @Override
+                                public void postShutdown(IWorkbench workbench) {}
+                            });
+                        }
+                    } else {
+                        EditorsHelper.openExternalFileInEditor(tempFile);
+                    }
                 } catch (final PartInitException e) {
                     log.error("Failed to open datamanagement reference copied to local file in an editor.", e);
                 }
             }
         });
     }
-
+    
+    
     private void openInTigl(final File tempFile) {
 
         tempFile.setWritable(false);

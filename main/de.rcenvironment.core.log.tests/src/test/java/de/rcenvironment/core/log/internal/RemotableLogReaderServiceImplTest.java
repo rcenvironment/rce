@@ -31,7 +31,7 @@ import de.rcenvironment.core.log.SerializableLogEntry;
 import de.rcenvironment.core.log.SerializableLogListener;
 
 /**
- * Test cases for {@link DistributedLogReaderServiceImpl}.
+ * Test cases for {@link RemotableLogReaderServiceImp}.
  *
  * @author Doreen Seider
  */

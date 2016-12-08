@@ -17,7 +17,7 @@
             version of Python, called Jython. Please note that Jython does not support all external
             modules for Python.)</para>
         <para>In the scripts and commands, you are able to use some of the elements you defined on
-            the previous pages. The are listed in the dropdown boxes on the righthand side. To use
+            the previous pages. They are listed in the dropdown boxes on the righthand side. To use
             them, select the desired one and click on “Insert” and a placeholder for the chosen
             element will be inserted into the active script. You could also just write the correct
             placeholder syntax into the script. The elements are:<itemizedlist>
@@ -112,12 +112,22 @@
                 <listitem>
                     <para><emphasis role="bold">Windows/Linux execution scripts:</emphasis> The
                         execution scripts for both operating systems are the native commands (Batch
-                        on Windows, Bash on Linux).</para>
+                        on Windows, Shell on Linux).</para>
                     <para>Every line in these scripts represents a single command. All commands will
                         be concatenated and executed in one terminal. For example, invoking a
                         program:</para>
                     <para>Windows: <programlisting>testTool.exe</programlisting></para>
                     <para>Linux:<programlisting>./testTool.sh</programlisting></para>
+                    
+                    <note>
+                            <para>On Linux, you can specify the shell which should be used for command
+                             execution by inserting a shebang in the first line of the script, e.g.: #!/bin/bash</para>
+                             <para>This forces RCE to execute the commands in the specified shell instead
+                              of using the default one. Make sure that the shebang is the only content of 
+                              the first line and that the specified shell is available on your system. Please 
+                              note that currently only #!/bin/bash and #!/bin/sh are supported.</para>
+                    </note>
+                    
                     <para>Placeholder for inputs, directories or properties can also be used as
                         command line parameters, for example:</para>
                     <para>Windows:<programlisting>testTool.exe ${in:NumberOfRuns}</programlisting></para>

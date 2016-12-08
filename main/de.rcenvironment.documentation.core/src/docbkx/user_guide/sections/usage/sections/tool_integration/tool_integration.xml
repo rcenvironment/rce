@@ -4,28 +4,27 @@
     <sect2>
         <title>Basic Concepts</title>
         <para>The Tool Integration concept of RCE is used to integrate external tools for
-            calculation or other things into RCE and use them in a workflow as a component. The
-            tools must fulfill some requirements:</para>
+            calculations, simulations and so on into RCE and use them in a workflow as a component.
+            The tools must fulfill these requirements:</para>
         <itemizedlist>
             <listitem>
-                <para>The tool must be callable via command line</para>
+                <para>The external tool must be callable via command line</para>
             </listitem>
             <listitem>
                 <para>It must have a non-interactive mode which is called via command line</para>
             </listitem>
             <listitem>
-                <para>Input for the tool must be provided trough command line arguments or
+                <para>Input for the tool must be provided through command line arguments or
                     files</para>
             </listitem>
         </itemizedlist>
-        <para>If these requirements are fulfilled, a configuration file that is used for the
-            integration can be created. </para>
-        <para>This can be done with the help of an integration wizard if you use RCE with a graphical user interface.
-            This wizard can be found in the menu <emphasis role="italic">File -> Integrate a
-                Tool</emphasis>. Everything that is needed for an integration will show up in this
-            wizard. Required fields are marked with an asterisk (*). When the wizard is finished
-            and everything is correct, the integrated tool will automatically show up in the
-            workflow editor palette.</para>
+        <para>If these requirements are fulfilled, a configuration file can be created that is used
+            for the integration. </para>
+        <para>If you use RCE with a graphical user interface this can be done with the help of an
+            wizard which guides you through the settings. This wizard can be found in the menu
+                <emphasis role="italic">File -> Integrate Tool...</emphasis>. Required fields are
+            marked with an asterisk (*). When the wizard is finished and everything is correct, the
+            integrated tool will automatically show up in the Workflow Editor palette.</para>
         <para>
             <note>
                 <para>The wizard has a dynamic help, which is shown by clicking on the question mark
@@ -39,10 +38,11 @@
         <para>When executing an integrated tool, a certain directory structure is created in the
             chosen working directory. This structure depends on the options you have chosen in the
             integration wizard. The two options that matter are "Use a new working directory each
-            run" and "Tool copying behaviour".</para>
+            run" and "Tool copying behavior".</para>
         <para><inlinegraphic fileref="images/Folderstructure.png" width="400px"/></para>
         <para><emphasis role="bold">Root Working Directory</emphasis>: This is the directory you
-            choose in the "Workflow Integration Wizard" as "Working Directory".</para>
+            choose in the "Tool Integration Wizard" as "Working Directory" on the "Launch Settings"
+            page.</para>
         <para><emphasis role="bold">Config Directory</emphasis>: In this directory, the
             configuration file that may be created by the tool integration will be created by
             default. The configuration files can be created from the properties that are defined for
@@ -51,23 +51,24 @@
             "Directory" will be copied here. They will have a subdirectory that is named exactly as
             the input's name (e.g. the input "x" of type "File" will be put into "Input
             Directory/x/filename").</para>
-        <para><emphasis role="bold">Output Directory</emphasis>: All file and directory outputs from
-            the tool can be written into this directory. After that, you can use the placeholder for
-            this directory, to assign this outputs to RCE output endpoints in the post execution
-            script. </para>
+        <para><emphasis role="bold">Output Directory</emphasis>: All outputs of type "File" and
+            "Directory" can be written into this directory. After that, you can use the placeholder
+            for this directory to assign these outputs to RCE outputs in the post execution script.
+            To write the output directory into an output "x" of type "Directory" the following line
+            in the post execution script would be required: ${out:x} = "${dir:output}"</para>
         <para><emphasis role="bold">Tool Directory</emphasis>: This is the directory, where the
-            actual tool is. If the tool should not be copied, it will be exactly the same directory
-            that you choose, otherwise it will be the same as the chosen directory but copied to the
-            working directory.</para>
+            actual tool is located. If the tool should not be copied, it will be exactly the same
+            directory that you choose, otherwise it will be the same as the chosen directory but
+            copied to the working directory.</para>
         <para><emphasis role="bold">Working Directory</emphasis>: A working directory is always the
-            location, where all the other directories will be created. If the "Use a new working
-            directory on each run" option is disabled, this will always be the same as the "Root
+            location, where all the other directories will be created. If the option "Use a new
+            working directory on each run" is disabled, this will always be the same as the "Root
             Working Directory". Otherwise, a new directory is created each run (the name will be the
             run number) and is the working directory for the run.</para>
     </sect2>
     <sect2>
         <title>Copying of Integrated Tools</title>
-        <para> When a component is created in the integration wizard, a configuration file is
+        <para>When a component is created in the integration wizard, a configuration file is
             created.</para>
         <para>All configuration files from the tool integration are stored in the directory</para>
         <para><code>&lt;profile folder>/integration/tools/</code></para>
@@ -77,28 +78,27 @@
         <para>In these subdirectory, the integrated tools are stored, again separated through a
             subdirectory for each. The name of the directory equals the name of integration of the
             tool. </para>
-        <para>If a tool integration should be copied to another RCE instance or another machine, the
+        <para>If an integrated tool should be copied to another RCE instance or another machine, the
             directory of the tool must be copied, containing a <code>configuration.json</code> and
             some optional files. It must be put in the equivalent integration type directory of the
             target RCE instance. After that, RCE automatically reads the new folder and if
             everything is valid, the tool will be integrated right away.</para>
         <para>
             <note>
-                <para>If you want to delete a tool folder that contains some documentation, you may
-                    get an error trying it. If you have this problem, delete the documentation
-                    folder at first (it must be empty), afterwards you can delete the tool
-                    folder.</para>
+                <para>If you want to delete a tool folder that contains some documentation, this can
+                    cause an error. If you have this problem, delete the documentation folder at
+                    first (it must be empty), afterwards you can delete the tool folder.</para>
             </note>
         </para>
         <sect3>
             <title>Publishing a Component on a Server Instance in Headless Mode</title>
-            <para>An integrated tool on a server is not neccessarily visible for other user in the
-                same network. Publishing it means to make it available for all others, but they are
-                not allowed to change the tool's integration. If a component should be published,
-                the <code>published.conf</code> file in the integration kind subdirectory must be
+            <para>An integrated tool on a server is not neccessarily visible for other users in the
+                same network. Publishing means to make it available for all others, but they are not
+                allowed to change the tool's integration. If a component should be published, the
+                    <code>published.conf</code> file in the integration kind subdirectory must be
                 edited. In this file, the tool's directory name (or absolute path) must be written
-                in a single line. After saving the file, RCE again reads the file automatically and
-                the component will be published in the network.</para>
+                in a single line. After saving the file, RCE reads the file automatically and the
+                component will be published in the network.</para>
             <para>
                 <note>
                     <para>Using a graphical editor to edit the <code>published.conf</code> or a tool
@@ -153,7 +153,7 @@
             <para>The mappings can be specified by XML or XSLT as shown in the following examples.
                 RCE differentiates between these methods in accordance to the corresponding file
                 extension (.xml or .xsl).</para>
-            <para>Example for an input or toolspecific XML mapping :</para>
+            <para>Example for an input or tools pecific XML mapping :</para>
             <para>
                 <programlisting>&lt;?xml version="1.0" encoding="UTF-8"?>
 &lt;map:mappings xmlns:map="http://www.rcenvironment.de/2015/mapping" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
@@ -165,7 +165,7 @@
 
 &lt;/map:mappings></programlisting>
             </para>
-            <para>And input or toolspecific XSLT mapping:</para>
+            <para>And input or tool specific XSLT mapping:</para>
             <para>
                 <programlisting>&lt;?xml version="1.0" encoding="utf-8"?>
 &lt;xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="cpacs_schema.xsd">
@@ -238,7 +238,7 @@
                 </listitem>
                 <listitem>
                     <para>Open the <emphasis role="italic">Tool Integration Wizard</emphasis> by
-                            clicking the <emphasis role="italic">Integrate Tool</emphasis> in the
+                            clicking the <emphasis role="italic">Integrate Tool...</emphasis> in the
                                 <emphasis role="italic">File</emphasis> menu.<note>
                                 <para>You will always find further help by clicking the <emphasis
                                         role="italic">?</emphasis> on the bottom left corner on each

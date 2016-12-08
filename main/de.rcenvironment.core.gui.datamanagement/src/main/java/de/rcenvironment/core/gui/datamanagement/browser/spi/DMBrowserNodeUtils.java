@@ -13,15 +13,16 @@ import java.util.Map;
 
 import de.rcenvironment.core.component.datamanagement.history.HistoryMetaDataKeys;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
-import de.rcenvironment.core.utils.common.ComparatorUtils;
 
 /**
  * Provides common methods for manipulating {@link DMBrowserNode}s.
  * 
  * @author Robert Mischke
+ * @author Jan Flink Made compare methods null safe
  * 
  */
 public abstract class DMBrowserNodeUtils {
+    
     
     /**
      * A {@link Comparator} that sorts by ascending history timestamp.
@@ -30,14 +31,27 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
-            if (o1.getMetaData() != null && o2.getMetaData() != null) {
-                String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-                String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-                long time1 = nullSafeLongValue(val1);
-                long time2 = nullSafeLongValue(val2);
-                return ComparatorUtils.compareLong(time1, time2);
+            
+            boolean o1NullCheck = o1 == null || o1.getMetaData() == null;
+            boolean o2NullCheck = o2 == null || o2.getMetaData() == null;
+
+            if (o1NullCheck && o2NullCheck) {
+                return 0;
             }
-            return 0;
+
+            if (o1NullCheck) {
+                return Integer.MAX_VALUE;
+            }
+
+            if (o2NullCheck) {
+                return Integer.MIN_VALUE;
+            }
+
+            String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+            String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+            long time1 = nullSafeLongValue(val1);
+            long time2 = nullSafeLongValue(val2);
+            return Long.compare(time1, time2);
         }
 
         private long nullSafeLongValue(String val1) {
@@ -55,14 +69,27 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
-            if (o1.getMetaData() != null && o2.getMetaData() != null) {
-                String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-                String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
-                long time1 = nullSafeLongValue(val1);
-                long time2 = nullSafeLongValue(val2);
-                return ComparatorUtils.compareLong(time1, time2) * DESC;
+            
+            boolean o1NullCheck = o1 == null || o1.getMetaData() == null;
+            boolean o2NullCheck = o2 == null || o2.getMetaData() == null;
+
+            if (o1NullCheck && o2NullCheck) {
+                return 0;
             }
-            return 0;
+
+            if (o1NullCheck) {
+                return Integer.MAX_VALUE;
+            }
+
+            if (o2NullCheck) {
+                return Integer.MIN_VALUE;
+            }
+
+            String val1 = o1.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+            String val2 = o2.getMetaData().getValue(METADATA_HISTORY_TIMESTAMP);
+            long time1 = nullSafeLongValue(val1);
+            long time2 = nullSafeLongValue(val2);
+            return Long.compare(time1, time2) * DESC;
         }
 
         private long nullSafeLongValue(String val1) {
@@ -80,6 +107,22 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
+
+            boolean o1NullCheck = o1 == null || o1.getAssociatedFilename() == null;
+            boolean o2NullCheck = o2 == null || o2.getAssociatedFilename() == null;
+
+            if (o1NullCheck && o2NullCheck) {
+                return 0;
+            }
+
+            if (o1NullCheck) {
+                return Integer.MIN_VALUE;
+            }
+
+            if (o2NullCheck) {
+                return Integer.MAX_VALUE;
+            }
+
             String val1 = o1.getAssociatedFilename().toLowerCase();
             String val2 = o2.getAssociatedFilename().toLowerCase();
             return val1.compareTo(val2);
@@ -93,6 +136,22 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
+            
+            boolean o1NullCheck = o1 == null || o1.getTitle() == null;
+            boolean o2NullCheck = o2 == null || o2.getTitle() == null;
+
+            if (o1NullCheck && o2NullCheck) {
+                return 0;
+            }
+
+            if (o1NullCheck) {
+                return Integer.MIN_VALUE;
+            }
+
+            if (o2NullCheck) {
+                return Integer.MAX_VALUE;
+            }
+
             String val1 = o1.getTitle().toLowerCase();
             String val2 = o2.getTitle().toLowerCase();
             return val1.compareTo(val2);
@@ -106,6 +165,22 @@ public abstract class DMBrowserNodeUtils {
 
         @Override
         public int compare(DMBrowserNode o1, DMBrowserNode o2) {
+            
+            boolean o1NullCheck = o1 == null || o1.getTitle() == null;
+            boolean o2NullCheck = o2 == null || o2.getTitle() == null;
+
+            if (o1NullCheck && o2NullCheck) {
+                return 0;
+            }
+
+            if (o1NullCheck) {
+                return Integer.MIN_VALUE;
+            }
+
+            if (o2NullCheck) {
+                return Integer.MAX_VALUE;
+            }
+            
             String val1 = o1.getTitle().toLowerCase();
             String val2 = o2.getTitle().toLowerCase();
             return val1.compareTo(val2) * DESC;
@@ -136,5 +211,4 @@ public abstract class DMBrowserNodeUtils {
         }
         folder.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_FILENAME);
     }
-    
 }

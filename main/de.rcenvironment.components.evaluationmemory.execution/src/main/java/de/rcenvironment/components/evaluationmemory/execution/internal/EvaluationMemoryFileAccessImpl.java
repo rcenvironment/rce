@@ -238,6 +238,10 @@ public class EvaluationMemoryFileAccessImpl implements EvaluationMemoryAccess {
     
     private Properties loadEvaluationMemory() throws IOException {
         Properties evalMemory = new Properties();
+        if (!evalMemoryFile.exists()) {
+            throw new FileNotFoundException(
+                "Evaluation memory file not found; either deleted or not created due to invalid file name");
+        }
         try (FileInputStream memFileInputStream = new FileInputStream(evalMemoryFile)) {
             evalMemory.load(memFileInputStream);
         }

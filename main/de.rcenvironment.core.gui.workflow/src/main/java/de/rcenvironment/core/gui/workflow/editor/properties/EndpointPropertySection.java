@@ -8,12 +8,18 @@
 
 package de.rcenvironment.core.gui.workflow.editor.properties;
 
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IWorkbenchPart;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
 
 /**
@@ -22,8 +28,9 @@ import de.rcenvironment.core.component.workflow.model.spi.ComponentInstancePrope
  * @author Robert Mischke
  * @author Sascha Zur
  * @author Markus Kunde
+ * @author Jan Flink
  */
-public class EndpointPropertySection extends ValidatingWorkflowNodePropertySection {
+public class EndpointPropertySection extends ValidatingWorkflowNodePropertySection implements PropertyChangeListener {
 
     private static final int OFFSET_ENPOINTPANES = 20;
 
@@ -53,7 +60,7 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
         GridData layoutData;
 
         for (EndpointSelectionPane pane : panes) {
-            pane.createControl(endpointsComposite, pane.genericEndpointTitle, toolkit);
+            pane.createControl(endpointsComposite, pane.paneTitle, toolkit);
             layoutData = new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL);
             pane.getControl().setLayoutData(layoutData);
         }
@@ -83,7 +90,14 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
                 endpointsComposite.setSize(parentComposite.getSize().x, endpointsComposite.getSize().y);
             }
             parentComposite.getParent().layout(endpointsComposite.getChildren()); 
+        }
+    }
 
+    @Override
+    public void setInput(IWorkbenchPart part, ISelection selection) {
+        super.setInput(part, selection);
+        if (node != null) {
+            node.addPropertyChangeListener(this);
         }
     }
 
@@ -102,4 +116,28 @@ public class EndpointPropertySection extends ValidatingWorkflowNodePropertySecti
     public void setColumns(int columns) {
         this.columns = columns;
     }
+
+    @Override
+    public void propertyChange(PropertyChangeEvent evt) {
+        if (evt.getPropertyName().equals(EndpointDescriptionsManager.PROPERTY_ENDPOINT)) {
+            refreshSection();
+        }
+    }
+
+    @Override
+    public void aboutToBeHidden() {
+        if (node != null) {
+            node.removePropertyChangeListener(this);
+        }
+        super.aboutToBeHidden();
+    }
+
+    @Override
+    public void dispose() {
+        if (node != null) {
+            node.removePropertyChangeListener(this);
+        }
+        super.dispose();
+    }
+
 }

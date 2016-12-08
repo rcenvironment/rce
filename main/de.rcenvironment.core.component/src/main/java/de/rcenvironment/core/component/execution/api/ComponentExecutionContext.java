@@ -12,8 +12,9 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
 
 /**
@@ -42,7 +43,7 @@ public interface ComponentExecutionContext extends ExecutionContext {
     /**
      * @return the workflow node id of the component executed within associated workflow
      */
-    NodeIdentifier getWorkflowNodeId();
+    LogicalNodeId getWorkflowNodeId();
     
     /**
      * @return execution identifier of the associated workflow

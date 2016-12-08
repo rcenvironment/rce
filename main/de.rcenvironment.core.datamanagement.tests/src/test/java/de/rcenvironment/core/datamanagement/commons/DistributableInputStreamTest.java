@@ -12,8 +12,8 @@ import java.io.InputStream;
 import java.net.URI;
 import java.util.UUID;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 
 /**
  * Test cases for {@link DistributableInputStream}.
@@ -22,6 +22,7 @@ import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
  * before test run
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class DistributableInputStreamTest {
 
@@ -45,7 +46,7 @@ public class DistributableInputStreamTest {
 
     private URI location = URI.create("test");
 
-    private NodeIdentifier pi = NodeIdentifierFactory.fromHostAndNumberString("horst:1");
+    private InstanceNodeSessionId instanceId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("dummy");
 
     // /**
     // * Set up.

@@ -9,6 +9,32 @@
             Also, define the working directory for the tool execution and clean up settings.</para>
     </sect1>
     <sect1>
+        <title>Folder structure</title>
+        <para>There are different option variations of the structure of the folders (working dir, tool dir, etc.):<itemizedlist>
+        	<listitem>
+                <para>“Use a new working directory on each run” <emphasis role="bold">not</emphasis> selected</para>
+                <para>“Do not copy tool” selected</para>
+                <para><inlinegraphic fileref="../../images/Folderstructure_1.png"/></para>
+            </listitem>
+            <listitem>
+                <para>“Use a new working directory on each run” <emphasis role="bold">not</emphasis> selected</para>
+                <para>“Copy tool to working directory once” selected</para>
+                <para><inlinegraphic fileref="../../images/Folderstructure_2.png"/></para>
+            </listitem>
+            <listitem>
+                <para>“Use a new working directory on each run” selected</para>
+                <para>“Copy tool to working directory once” selected</para>
+                <para><inlinegraphic fileref="../../images/Folderstructure_3.png"/></para>
+            </listitem>
+            <listitem>
+                <para>“Use a new working directory on each run” selected</para>
+                <para>“Copy tool to working directory on each run” selected</para>
+                <para><inlinegraphic fileref="../../images/Folderstructure_4.png"/></para>
+            </listitem>
+        </itemizedlist>
+        </para>
+    </sect1>
+    <sect1>
         <title>Usage</title>
         <para>With the launch settings, you define which tool is used and how it is used.</para>
         <para>Required fields:<itemizedlist>
@@ -49,7 +75,10 @@
                                     finished. This can be useful when you have restricted licenses
                                     for a specific tool or ressource restriction is desired.</para>
                             </listitem>
-                        </itemizedlist></para>
+                        </itemizedlist><note>
+                            <para>If you use relative paths for the Tool Directory, the root path
+                                used for this (".") is always the RCe installation folder.</para>
+                        </note></para>
                 </listitem>
             </itemizedlist></para>
         <para>Optional fields:<itemizedlist>

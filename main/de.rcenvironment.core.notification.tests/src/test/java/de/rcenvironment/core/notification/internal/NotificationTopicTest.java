@@ -21,6 +21,7 @@ import de.rcenvironment.core.notification.NotificationTestConstants;
  * 
  * @author Andre Nurzenski
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class NotificationTopicTest extends TestCase {
 
@@ -63,7 +64,7 @@ public class NotificationTopicTest extends TestCase {
         myPublisherName = NotificationTestConstants.NOTIFICATION_ID;
         myNotification = new Notification(myPublisherName,
             NotificationTestConstants.NOTIFICATION_EDITION,
-            NotificationTestConstants.LOCALHOST,
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION,
             NOTIFICATION_TEXT);
         myHeader = myNotification.getHeader();
     }

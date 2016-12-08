@@ -11,7 +11,8 @@ package de.rcenvironment.core.datamanagement;
 import java.util.Collection;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 
 /**
@@ -28,12 +29,12 @@ public interface DataReferenceService {
      * Retrieves a {@link DataReference} for a given key from the Catalog.
      * 
      * @param dataReferenceKey The key of the {@link DataReference} to return.
-     * @param platform The {@link NodeIdentifier} of the platform to query. If <code>null</code> the reference will be gotten from the local
-     *        platform.
+     * @param platform The {@link InstanceNodeSessionId} of the platform to query. If <code>null</code> the reference will be gotten from
+     *        the local platform.
      * @return the found {@link DataReference} as a clone.
      * @throws CommunicationException in case of communication error
      */
-    DataReference getReference(String dataReferenceKey, NodeIdentifier platform) throws CommunicationException;
+    DataReference getReference(String dataReferenceKey, ResolvableNodeId platform) throws CommunicationException;
 
     /**
      * Retrieves a {@link DataReference} for a given key by querying the Catalogs of the statically configured "known" platforms.
@@ -52,5 +53,5 @@ public interface DataReferenceService {
      * @return the found {@link DataReference} as a clone.
      * @throws CommunicationException in case of communication error
      */
-    DataReference getReference(String dataReferenceKey, Collection<NodeIdentifier> platforms) throws CommunicationException;
+    DataReference getReference(String dataReferenceKey, Collection<? extends ResolvableNodeId> platforms) throws CommunicationException;
 }

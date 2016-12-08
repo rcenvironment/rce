@@ -32,7 +32,7 @@ public interface ScpContextManager {
     /**
      * Fetches a matching {@link ScpContext} for a SSH username and the requested SCP path.
      * 
-     * FIXME 5.0 expand explanation
+     * TODO (p3) expand explanation
      * 
      * @param username the requesting user's SSH login name
      * @param virtualPath the requested SCP path

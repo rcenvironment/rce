@@ -18,8 +18,8 @@ import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.configuration.CommandLineArguments;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ToolIntegrationContextRegistry}.
@@ -49,7 +49,7 @@ public class ToolIntegrationContextRegistryImpl implements ToolIntegrationContex
     private synchronized void createIntegrationThread(final ToolIntegrationContext context) {
 
         if (!CommandLineArguments.isDoNotStartComponentsRequested()) {
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override
                 @TaskDescription("Read integrated tool folder at startup")

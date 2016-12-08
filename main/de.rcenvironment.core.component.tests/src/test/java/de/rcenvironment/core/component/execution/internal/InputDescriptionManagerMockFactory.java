@@ -19,6 +19,7 @@ import org.easymock.EasyMock;
 import org.omg.IOP.ExceptionDetailMessage;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointGroupDefinition;
@@ -59,15 +60,21 @@ public final class InputDescriptionManagerMockFactory implements ExceptionDetail
 
         Set<EndpointDescription> endpointDescriptions = new HashSet<>();
         for (InputMockInformation info : inputMockInformations) {
-            EndpointDescription endpointDescriptionMock = EasyMock.createMock(EndpointDescription.class);
+
+            EndpointDefinition endpointDefinitionMock = EasyMock.createStrictMock(EndpointDefinition.class);
+            EasyMock.expect(endpointDefinitionMock.getEndpointCharacter()).andStubReturn(info.endpointCharacter);
+            EasyMock.replay(endpointDefinitionMock);
+
+            EndpointDescription endpointDescriptionMock = EasyMock.createStrictMock(EndpointDescription.class);
+            EasyMock.expect(endpointDescriptionMock.getEndpointDefinition()).andStubReturn(endpointDefinitionMock);
             EasyMock.expect(endpointDescriptionMock.getName()).andReturn(info.name).anyTimes();
             Map<String, String> metaData = new HashedMap<>();
             metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING, info.inputDatumHandling.name());
             metaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT, info.inputExecutionContraint.name());
-            EasyMock.expect(endpointDescriptionMock.getMetaData()).andReturn(metaData).anyTimes();
-            EasyMock.expect(endpointDescriptionMock.getDataType()).andReturn(info.dataType).anyTimes();
-            EasyMock.expect(endpointDescriptionMock.isConnected()).andReturn(info.connected).anyTimes();
-            EasyMock.expect(endpointDescriptionMock.getParentGroupName()).andReturn(info.parentGroup).anyTimes();
+            EasyMock.expect(endpointDescriptionMock.getMetaData()).andStubReturn(metaData);
+            EasyMock.expect(endpointDescriptionMock.getDataType()).andStubReturn(info.dataType);
+            EasyMock.expect(endpointDescriptionMock.isConnected()).andStubReturn(info.connected);
+            EasyMock.expect(endpointDescriptionMock.getParentGroupName()).andStubReturn(info.parentGroup);
             EasyMock.replay(endpointDescriptionMock);
             endpointDescriptions.add(endpointDescriptionMock);
         }
@@ -75,19 +82,19 @@ public final class InputDescriptionManagerMockFactory implements ExceptionDetail
 
         Set<EndpointGroupDescription> endpointGroupDescriptions = new HashSet<>();
         for (InputGroupMockInformation info : inputGroupMockInformations) {
-            EndpointGroupDefinition endpointGroupDefinitionMock = EasyMock.createMock(EndpointGroupDefinition.class);
-            EasyMock.expect(endpointGroupDefinitionMock.getLogicOperation()).andReturn(info.type).anyTimes();
+            EndpointGroupDefinition endpointGroupDefinitionMock = EasyMock.createStrictMock(EndpointGroupDefinition.class);
+            EasyMock.expect(endpointGroupDefinitionMock.getLogicOperation()).andStubReturn(info.type);
             EasyMock.replay(endpointGroupDefinitionMock);
             EndpointGroupDescription endpointGroupDescriptionMock = EasyMock.createMock(EndpointGroupDescription.class);
-            EasyMock.expect(endpointGroupDescriptionMock.getEndpointGroupDefinition()).andReturn(endpointGroupDefinitionMock).anyTimes();
-            EasyMock.expect(endpointGroupDescriptionMock.getName()).andReturn(info.name).anyTimes();
-            EasyMock.expect(endpointGroupDescriptionMock.getParentGroupName()).andReturn(info.parentGroup).anyTimes();
+            EasyMock.expect(endpointGroupDescriptionMock.getEndpointGroupDefinition()).andStubReturn(endpointGroupDefinitionMock);
+            EasyMock.expect(endpointGroupDescriptionMock.getName()).andStubReturn(info.name);
+            EasyMock.expect(endpointGroupDescriptionMock.getParentGroupName()).andStubReturn(info.parentGroup);
             EasyMock.replay(endpointGroupDescriptionMock);
             endpointGroupDescriptions.add(endpointGroupDescriptionMock);
-            EasyMock.expect(endpointDescriptionsManagerMock.getEndpointGroupDescription(info.name)).andReturn(endpointGroupDescriptionMock)
-                .anyTimes();
+            EasyMock.expect(endpointDescriptionsManagerMock.getEndpointGroupDescription(info.name))
+                .andStubReturn(endpointGroupDescriptionMock);
         }
-        EasyMock.expect(endpointDescriptionsManagerMock.getEndpointGroupDescriptions()).andReturn(endpointGroupDescriptions).anyTimes();
+        EasyMock.expect(endpointDescriptionsManagerMock.getEndpointGroupDescriptions()).andReturn(endpointGroupDescriptions);
 
         EasyMock.replay(endpointDescriptionsManagerMock);
         return endpointDescriptionsManagerMock;

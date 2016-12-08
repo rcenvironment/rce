@@ -10,7 +10,8 @@ package de.rcenvironment.core.component.workflow.execution.api;
 
 import java.util.UUID;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.workflow.execution.impl.WorkflowExecutionContextImpl;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 
@@ -37,10 +38,10 @@ public class WorkflowExecutionContextBuilder {
     }
     
     /**
-     * @param nodeIdentifier {@link NodeIdentifier} of node the workflow was started
+     * @param nodeIdentifier {@link InstanceNodeSessionId} of node the workflow was started
      * @return {@link WorkflowExecutionContextBuilder} instance for method chaining
      */
-    public WorkflowExecutionContextBuilder setNodeIdentifierStartedExecution(NodeIdentifier nodeIdentifier) {
+    public WorkflowExecutionContextBuilder setNodeIdentifierStartedExecution(LogicalNodeId nodeIdentifier) {
         wfExeCtx.setNodeIdentifierStartedExecution(nodeIdentifier);
         return this;
     }

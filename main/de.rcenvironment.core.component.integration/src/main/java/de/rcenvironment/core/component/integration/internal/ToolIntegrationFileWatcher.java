@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
@@ -40,7 +42,7 @@ import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
 import de.rcenvironment.core.utils.common.JsonUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation for a file watcher in tool integration.
@@ -73,11 +75,13 @@ public class ToolIntegrationFileWatcher implements Runnable {
 
     private ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
 
+    private CountDownLatch stoppingLatch;
+
     public ToolIntegrationFileWatcher(ToolIntegrationContext context, ToolIntegrationService integrationService) throws IOException {
         this.watcher = FileSystems.getDefault().newWatchService();
         this.context = context;
         this.integrationService = integrationService;
-        this.registeredKeys = new HashMap<WatchKey, Path>();
+        this.registeredKeys = new HashMap<>();
         this.lastModified = new HashMap<>();
         this.rootContextPath =
             FileSystems.getDefault().getPath(context.getRootPathToToolIntegrationDirectory(), context.getNameOfToolIntegrationDirectory());
@@ -147,9 +151,11 @@ public class ToolIntegrationFileWatcher implements Runnable {
      * Stops the watcher and ends the thread.
      */
     public void stop() {
+        stoppingLatch = new CountDownLatch(1);
         try {
             watcher.close();
-        } catch (IOException e) {
+            stoppingLatch.await(5, TimeUnit.SECONDS);
+        } catch (IOException | InterruptedException e) {
             LOGGER.error("Error stopping watcher thread:", e);
         }
     }
@@ -168,7 +174,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                     running = false;
                 }
             } catch (InterruptedException e) {
-                LOGGER.error("Got interrupted waiting for watch keys", e);
+                LOGGER.error("Got interrupted waiting for watch keys.", e);
                 return;
             } catch (ClosedWatchServiceException e) {
                 running = false;
@@ -192,20 +198,20 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 Path child = directory.resolve(name);
                 if (kind == StandardWatchEventKinds.OVERFLOW) {
                     continue;
-                } else {
-                    LOGGER.debug(String.format("Got event %s in context %s for file: %s", kind.name(), context.getContextType(),
-                        child.toString()));
-                    if (kind == ENTRY_CREATE) {
-                        handleCreate(child, directory);
-                    } else if (kind == ENTRY_DELETE) {
-                        handleDelete(child, directory);
-                    } else if (kind == ENTRY_MODIFY) {
-                        handleModify(child, directory);
-                    }
+                }
+                LOGGER.debug(StringUtils.format("Got event %s in context %s for file: %s", kind.name(), context.getContextType(),
+                    child.toString()));
+                if (kind == ENTRY_CREATE) {
+                    handleCreate(child, directory);
+                } else if (kind == ENTRY_DELETE) {
+                    handleDelete(child, directory);
+                } else if (kind == ENTRY_MODIFY) {
+                    handleModify(child, directory);
                 }
             }
             key.reset();
         }
+        stoppingLatch.countDown();
     }
 
     private void handleCreate(Path child, Path directory) {
@@ -219,11 +225,11 @@ public class ToolIntegrationFileWatcher implements Runnable {
                 registered = false;
                 LOGGER.error(StringUtils.format(
                     "Could not register new path (Tried %s of %s times): %s; Cause: %s", ++attempt, MAX_RETRIES_REGISTER_ON_CREATE,
-                    child.toString(), x.getMessage()));
+                    child.toString(), x));
                 try {
                     Thread.sleep(SLEEPING_TIME);
                 } catch (InterruptedException e1) {
-                    LOGGER.error("Integration watcher sleep interrupted.");
+                    LOGGER.error("Integration watcher sleep interrupted.", e1);
                 }
             }
         }
@@ -352,7 +358,8 @@ public class ToolIntegrationFileWatcher implements Runnable {
             } catch (IOException e) {
                 read = false;
                 LOGGER.error(
-                    String.format("Could not read tool configuration (Tried %s of %s times)", ++attempt, MAX_RETRIES_INTEGRATE_NEW_FILE),
+                    StringUtils.format("Could not read tool configuration (Tried %s of %s times)", ++attempt,
+                        MAX_RETRIES_INTEGRATE_NEW_FILE),
                     e);
                 try {
                     Thread.sleep(SLEEPING_TIME);

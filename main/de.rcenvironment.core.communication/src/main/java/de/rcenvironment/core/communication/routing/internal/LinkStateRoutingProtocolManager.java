@@ -24,7 +24,7 @@ import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListen
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListenerAdapter;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandlerMap;
@@ -87,7 +87,7 @@ public class LinkStateRoutingProtocolManager {
         }
 
         @Override
-        public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier sourceId) throws InternalMessagingException {
+        public NetworkResponse handleRequest(NetworkRequest request, InstanceNodeSessionId sourceId) throws InternalMessagingException {
             Serializable messageContent = NetworkRequestUtils.deserializeWithExceptionHandling(request);
             Serializable responseBody;
             if (messageContent instanceof LinkStateAdvertisementBatch) {
@@ -120,7 +120,7 @@ public class LinkStateRoutingProtocolManager {
 
     private final InitialNodeInformation ownNodeInformation;
 
-    private final NodeIdentifier ownNodeId;
+    private final InstanceNodeSessionId ownNodeId;
 
     private final DirectMessagingSender directMessagingSender;
 
@@ -148,7 +148,7 @@ public class LinkStateRoutingProtocolManager {
         this.topologyMap = topologyMap;
         this.networkRequestHandler = new LSANetworkRequestHandler(this);
         this.ownNodeInformation = topologyMap.getLocalNodeInformation();
-        this.ownNodeId = ownNodeInformation.getNodeId();
+        this.ownNodeId = ownNodeInformation.getInstanceNodeSessionId();
         this.directMessagingSender = connectionService;
         this.networkStats = new NetworkStats();
         connectionService.addChannelLifecycleListener(new MessageChannelLifecycleHandler());
@@ -277,7 +277,7 @@ public class LinkStateRoutingProtocolManager {
             if (DEBUG_DUMP_INITIAL_LSA_BATCHES) {
                 // TODO add origin/sender information
                 String dump = StringUtils.format("Processing LSA cache at %s (as incoming request):", ownNodeId);
-                for (NodeIdentifier id : lsaCache.keySet()) {
+                for (InstanceNodeSessionId id : lsaCache.keySet()) {
                     dump += "\n" + id + " -> " + lsaCache.get(id);
                 }
                 log.debug(dump);
@@ -326,7 +326,7 @@ public class LinkStateRoutingProtocolManager {
             if (DEBUG_DUMP_INITIAL_LSA_BATCHES) {
                 // TODO add origin/sender information
                 String dump = StringUtils.format("Processing LSA cache at %s (as incoming response):", ownNodeId);
-                for (NodeIdentifier id : lsaCache.keySet()) {
+                for (InstanceNodeSessionId id : lsaCache.keySet()) {
                     dump += "\n" + id + " -> " + lsaCache.get(id);
                 }
                 log.debug(dump);
@@ -447,7 +447,7 @@ public class LinkStateRoutingProtocolManager {
             // ownNodeInformation.getLogName()));
 
             // NOTE: this replaces the obsolete "pingNetworkContactPoint" method -- misc_ro
-            NodeIdentifier remoteNodeId = connection.getRemoteNodeInformation().getNodeId();
+            InstanceNodeSessionId remoteNodeId = connection.getRemoteNodeInformation().getInstanceNodeSessionId();
 
             // TODO restore onCommunicationSuccess callback (via traffic listener?)
             // onCommunicationSuccess("", MetaDataWrapper.createEmpty().getInnerMap(), connection,
@@ -484,7 +484,7 @@ public class LinkStateRoutingProtocolManager {
                 byte[] lsaBytes = MessageUtils.serializeSafeObject(payloadLsaCache);
                 NetworkRequest lsaRequest =
                     NetworkRequestFactory.createNetworkRequest(lsaBytes, ProtocolConstants.VALUE_MESSAGE_TYPE_LSA, ownNodeId,
-                        connection.getRemoteNodeInformation().getNodeId());
+                        connection.getRemoteNodeInformation().getInstanceNodeSessionId());
                 directMessagingSender.sendDirectMessageAsync(lsaRequest, connection, new NetworkResponseHandler() {
 
                     @Override
@@ -525,7 +525,7 @@ public class LinkStateRoutingProtocolManager {
             TopologyLink link = topologyMap.getLinkForConnection(channelId);
             if (link == null) {
                 log.debug("Channel " + channelId + " to unregister does not exist in the topology; "
-                    + "the usual cause is that the remote node " + connection.getRemoteNodeInformation().getNodeId()
+                    + "the usual cause is that the remote node " + connection.getRemoteNodeInformation().getInstanceNodeSessionId()
                     + " was removed after a shutdown notice");
             } else {
                 if (!topologyMap.removeLink(link)) {
@@ -581,25 +581,8 @@ public class LinkStateRoutingProtocolManager {
     /**
      * @return Returns the owner.
      */
-    public NodeIdentifier getOwner() {
+    public InstanceNodeSessionId getOwner() {
         return ownNodeId;
-    }
-
-    /**
-     * Get something that is guaranteed to be unique for every message.
-     * 
-     * @param sender
-     * @param receiver
-     * @param messageContent
-     * @return
-     */
-    private String generateUniqueMessageId(NodeIdentifier sender, NodeIdentifier receiver,
-        Serializable messageContent) {
-        return Integer.toString(StringUtils.format("msg-id:%s%s%s%s",
-            sender.getIdString(),
-            receiver.getIdString(),
-            messageContent.hashCode(),
-            System.currentTimeMillis()).hashCode());
     }
 
     /**

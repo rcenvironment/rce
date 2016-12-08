@@ -25,7 +25,7 @@ import org.junit.rules.Timeout;
 
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.configuration.IPWhitelistConnectionFilter;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
@@ -42,7 +42,7 @@ import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
 import de.rcenvironment.core.communication.utils.MessageUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 
 /**
  * A common base class that defines common tests to verify proper transport operation. Subclasses implement
@@ -75,7 +75,8 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         int messageRepetitions = 10;
 
         // create mock server config
-        InitialNodeInformationImpl mockServerNodeInformation = new InitialNodeInformationImpl("serverId");
+        InitialNodeInformationImpl mockServerNodeInformation =
+            new InitialNodeInformationImpl(NodeIdentifierTestUtils.createTestInstanceNodeSessionId());
         mockServerNodeInformation.setDisplayName("Mock Server");
         // configure mock endpoint handler
         MessageChannelEndpointHandler serverEndpointHandler = EasyMock.createMock(MessageChannelEndpointHandler.class);
@@ -105,7 +106,7 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
 
         // create mock client config
         InitialNodeInformationImpl clientNodeInformation =
-            new InitialNodeInformationImpl("clientNodeId");
+            new InitialNodeInformationImpl(NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("clientNode"));
         // connect
         // (allows duplex connections, but omits client endpoint handler as it should not be used)
         MessageChannel channel =
@@ -128,7 +129,7 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
         final String requestString = "Hi world";
         final String responseSuffix = "#response"; // arbitrary
         EasyMock.reset(serverEndpointHandler);
-        serverEndpointHandler.onRawRequestReceived(EasyMock.isA(NetworkRequest.class), EasyMock.isA(NodeIdentifier.class));
+        serverEndpointHandler.onRawRequestReceived(EasyMock.isA(NetworkRequest.class), EasyMock.isA(String.class));
 
         EasyMock.expectLastCall().andAnswer(new IAnswer<NetworkResponse>() {
 
@@ -161,8 +162,8 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
             // note: message type is arbitrary, but must be valid
             NetworkRequest request =
                 NetworkRequestFactory.createNetworkRequest(contentBytes, ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK,
-                    clientNodeInformation.getNodeId(),
-                    mockServerNodeInformation.getNodeId());
+                    clientNodeInformation.getInstanceNodeSessionId(),
+                    mockServerNodeInformation.getInstanceNodeSessionId());
             channel.sendRequest(request, responseHandler, DEFAULT_REQUEST_TIMEOUT);
         }
         // TODO improve; quick&dirty hack to test larger message repetition counts
@@ -194,7 +195,8 @@ public abstract class AbstractTransportLowLevelTest extends AbstractTransportBas
     }
 
     private void logThreadPoolState(String timeDescription) {
-        log.debug("Thread pool state " + timeDescription + ":\n" + SharedThreadPool.getInstance().getFormattedStatistics(true));
+        log.debug("Thread pool state " + timeDescription + ":\n"
+            + ConcurrencyUtils.getThreadPoolManagement().getFormattedStatistics(true));
     }
 
 }

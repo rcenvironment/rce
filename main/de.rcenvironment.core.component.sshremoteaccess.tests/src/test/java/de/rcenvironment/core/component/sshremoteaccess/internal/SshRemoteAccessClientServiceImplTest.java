@@ -8,9 +8,9 @@
 
 package de.rcenvironment.core.component.sshremoteaccess.internal;
 
+import static org.easymock.EasyMock.notNull;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.easymock.EasyMock.notNull;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,15 +20,15 @@ import java.util.ArrayList;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.QuoteMode;
 import org.apache.commons.io.IOUtils;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.Environment;
 import org.apache.sshd.server.ExitCallback;
-import org.apache.sshd.server.PasswordAuthenticator;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.password.PasswordAuthenticator;
+import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.apache.sshd.server.session.ServerSession;
 import org.easymock.EasyMock;
@@ -40,10 +40,10 @@ import org.junit.Test;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 
-import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.sshconnection.SshConnectionService;
+import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.registration.api.ComponentRegistry;
 import de.rcenvironment.core.component.sshremoteaccess.SshRemoteAccessConstants;
@@ -52,8 +52,9 @@ import de.rcenvironment.core.utils.ssh.jsch.SshParameterException;
 
 /**
  * Tests for SSH Remote Access Service.
- *
+ * 
  * @author Brigitte Boden
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class SshRemoteAccessClientServiceImplTest {
 
@@ -63,7 +64,7 @@ public class SshRemoteAccessClientServiceImplTest {
 
     private SshRemoteAccessClientServiceImpl remoteAccessService;
 
-    private final NodeIdentifier dummyNodeId = NodeIdentifierFactory.fromNodeId("localhost:1");
+    private final InstanceNodeSessionId dummyNodeId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("dummy");
 
     private ComponentRegistry mockRegistry;
 
@@ -83,7 +84,7 @@ public class SshRemoteAccessClientServiceImplTest {
         sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {
 
             {
-                add(new UserAuthPassword.Factory());
+                add(new UserAuthPasswordFactory());
             }
         });
         sshServer.setPasswordAuthenticator(new PasswordAuthenticator() {
@@ -183,20 +184,15 @@ public class SshRemoteAccessClientServiceImplTest {
         remoteAccessService = new SshRemoteAccessClientServiceImpl();
 
         remoteAccessService.bindSSHConnectionService(connectionService);
-        remoteAccessService.bindPlatformService(new PlatformService() {
+        remoteAccessService.bindPlatformService(new PlatformServiceDefaultStub() {
 
             @Override
-            public boolean isLocalNode(NodeIdentifier nodeId) {
-                return false;
-            }
-
-            @Override
-            public NodeIdentifier getLocalNodeId() {
+            public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
                 return dummyNodeId;
             }
         });
 
-        mockRegistry = EasyMock.createMock(ComponentRegistry.class);
+        mockRegistry = EasyMock.createNiceMock(ComponentRegistry.class);
         remoteAccessService.bindComponentRegistry(mockRegistry);
     }
 

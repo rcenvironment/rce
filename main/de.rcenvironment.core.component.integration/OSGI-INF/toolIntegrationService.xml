@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Tool Integration Service"> 
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" deactivate="deactivateIntegrationService" immediate="true" name="Tool Integration Service"> 
    <implementation class="de.rcenvironment.core.component.integration.internal.ToolIntegrationServiceImpl"/> 
    	<service>
 		<provide interface="de.rcenvironment.core.component.integration.ToolIntegrationService"/>

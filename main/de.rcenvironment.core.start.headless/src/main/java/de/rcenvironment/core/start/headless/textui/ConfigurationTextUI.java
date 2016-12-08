@@ -29,6 +29,7 @@ import com.googlecode.lanterna.gui.component.Button;
 import com.googlecode.lanterna.gui.component.Label;
 import com.googlecode.lanterna.gui.component.Panel;
 import com.googlecode.lanterna.gui.component.PasswordBox;
+import com.googlecode.lanterna.gui.component.RadioCheckBoxList;
 import com.googlecode.lanterna.gui.component.TextBox;
 import com.googlecode.lanterna.gui.dialog.DialogButtons;
 import com.googlecode.lanterna.gui.dialog.DialogResult;
@@ -44,6 +45,8 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 import de.rcenvironment.core.embedded.ssh.api.SshAccountConfigurationService;
+import de.rcenvironment.core.mail.SMTPServerConfiguration;
+import de.rcenvironment.core.mail.SMTPServerConfigurationService;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -69,19 +72,26 @@ public class ConfigurationTextUI {
 
     private static final String OPTION_EDIT_SSH_ACCOUNTS = "Remote Access: Edit existing SSH accounts";
 
+    private static final String OPTION_CONFIGURE_SMTP_SERVER = "Mail: Configure SMTP mail server";
+
     private static final String OPTION_ENABLE_ACCOUNT = "Enable account";
 
     private static final String OPTION_DISABLE_ACCOUNT = "Disable account";
 
     private static final String OPTION_DELETE_ACCOUNT = "Permanently delete account";
 
-    private static final String REMOTE_ACCESS_ROLE_ID = "remote access";
+    private static final String REMOTE_ACCESS_ROLE_ID = "remote_access_user";
+
+    //This was the name of the remote access role in earlier versions, keep for backwards compatibility
+    private static final String REMOTE_ACCESS_ROLE_ID_ALIAS = "remote access";
 
     // private static final String OPTION_EXIT = "Exit";
 
     private final ConfigurationService configurationService;
 
     private final SshAccountConfigurationService sshAccountOperations;
+
+    private final SMTPServerConfigurationService smtpServerConfigurationOperations;
 
     private GUIScreen guiScreen;
 
@@ -128,6 +138,13 @@ public class ConfigurationTextUI {
         }
 
         @Override
+        public void setText(String text) {
+            if (text != null) {
+                super.setText(text);
+            }
+        }
+
+        @Override
         public Result keyboardInteraction(Key key) {
             if (key.getKind() == Kind.Enter) {
                 if (enterAction != null) {
@@ -152,6 +169,13 @@ public class ConfigurationTextUI {
             super(initialContent, width);
             this.enterAction = enterAction;
         }
+        
+        @Override
+        public void setText(String text) {
+            if (text != null) {
+                super.setText(text);
+            }
+        }
 
         @Override
         public Result keyboardInteraction(Key key) {
@@ -162,6 +186,30 @@ public class ConfigurationTextUI {
                 return Result.EVENT_HANDLED;
             }
             return super.keyboardInteraction(key);
+        }
+    }
+
+    /**
+     * This check box allows a selection based on an item.
+     *
+     * @author Tobias Rodehutskors
+     */
+    private class SetCheckedItemRadioCheckBoxList extends RadioCheckBoxList {
+
+        private static final int CLEAR_SELECTION_INDEX = -1;
+
+        /**
+         * @param item If the item is not known to the check box, no item is selected. Otherwise, the given item is selected.
+         */
+        public void setCheckedItem(Object item) {
+            this.setCheckedItemIndex(CLEAR_SELECTION_INDEX); // clear the current selection
+
+            for (int i = 0; i < this.getNrOfItems(); i++) {
+                if (this.getItemAt(i).equals(item)) {
+                    this.setCheckedItemIndex(i);
+                    break;
+                }
+            }
         }
     }
 
@@ -186,7 +234,7 @@ public class ConfigurationTextUI {
                     try {
                         final String loginName = textBoxName.getText();
                         final String password = textBoxPassword.getText();
-                        sshAccountOperations.createAccount(loginName, password, true);
+                        sshAccountOperations.createAccount(loginName, password);
                         // success -> close dialog
                         AddAccountWindow.this.close();
                         showSuccessMessageBox("The account \"" + loginName + "\" was successfully added.");
@@ -233,9 +281,119 @@ public class ConfigurationTextUI {
 
     }
 
-    public ConfigurationTextUI(ConfigurationService configurationService, SshAccountConfigurationService sshConfigurationService) {
+    /**
+     * Dialog for entering the SMTP mail server configuration.
+     * 
+     * @author Tobias Rodehutskors
+     */
+    private class ConfigureSMTPServerWindow extends Window {
+
+        private TextBox textBoxHost;
+
+        private TextBox textBoxPort;
+
+        private SetCheckedItemRadioCheckBoxList radioCheckBoxEncryption;
+
+        private TextBox textBoxUsername;
+
+        private PasswordBox passwordBoxPassword;
+
+        private TextBox textBoxSender;
+
+        ConfigureSMTPServerWindow() {
+            super("SMTP mail server configuration");
+
+            final Action okAction = new Action() {
+
+                @Override
+                public void doAction() {
+                    try {
+                        final String host = textBoxHost.getText();
+                        final int port;
+                        try {
+                            port = Integer.parseInt(textBoxPort.getText());
+                        } catch (NumberFormatException e) {
+                            throw new ConfigurationException("Invalid port number.");
+                        }
+                        final String encryption = (String) radioCheckBoxEncryption.getCheckedItem();
+                        final String username = textBoxUsername.getText();
+                        final String password = passwordBoxPassword.getText();
+                        final String sender = textBoxSender.getText();
+
+                        smtpServerConfigurationOperations.configureSMTPServer(host, port, encryption, username, password, sender);
+                        // success -> close dialog
+                        ConfigureSMTPServerWindow.this.close();
+                        showSuccessMessageBox("Successfully stored the SMTP server configuration.");
+                    } catch (ConfigurationException e) {
+                        showErrorMessageBox("Unable to store the configuration: " + e.getMessage());
+                    }
+                }
+            };
+            final Action cancelAction = new Action() {
+
+                @Override
+                public void doAction() {
+                    ConfigureSMTPServerWindow.this.close();
+                }
+            };
+
+            addComponent(new Label("Host:"));
+            textBoxHost = new CustomTextBox("", DEFAULT_TEXT_FIELD_WIDTH, okAction);
+            addComponent(textBoxHost);
+            addComponent(new Label("Port:"));
+            textBoxPort = new CustomTextBox("", DEFAULT_TEXT_FIELD_WIDTH, okAction);
+            addComponent(textBoxPort);
+            addComponent(new Label("Encryption:"));
+            radioCheckBoxEncryption = new SetCheckedItemRadioCheckBoxList();
+            radioCheckBoxEncryption.addItem(SMTPServerConfiguration.EXPLICIT_ENCRYPTION);
+            radioCheckBoxEncryption.addItem(SMTPServerConfiguration.IMPLICIT_ENCRYPTION);
+            addComponent(radioCheckBoxEncryption);
+            addComponent(new Label("Username:"));
+            textBoxUsername = new CustomTextBox("", DEFAULT_TEXT_FIELD_WIDTH, okAction);
+            addComponent(textBoxUsername);
+            addComponent(new Label("Password:"));
+            passwordBoxPassword = new CustomPasswordBox("", DEFAULT_TEXT_FIELD_WIDTH, okAction);
+            addComponent(passwordBoxPassword);
+            addComponent(new Label("Sender:"));
+            textBoxSender = new CustomTextBox("", DEFAULT_TEXT_FIELD_WIDTH, okAction);
+            addComponent(textBoxSender);
+
+            SMTPServerConfiguration smtpServerConfiguration = smtpServerConfigurationOperations.getSMTPServerConfiguration();
+            if (smtpServerConfiguration != null) {
+                textBoxHost.setText(smtpServerConfiguration.getHost());
+                textBoxPort.setText(Integer.toString(smtpServerConfiguration.getPort()));
+                radioCheckBoxEncryption.setCheckedItem(smtpServerConfiguration.getEncryption());
+                textBoxUsername.setText(smtpServerConfiguration.getUsername());
+                passwordBoxPassword.setText(smtpServerConfiguration.getPassword());
+                textBoxSender.setText(smtpServerConfiguration.getSenderAsString());
+            }
+
+            addComponent(createOkCancelButtonPanel(okAction, cancelAction));
+
+            addWindowListener(new WindowAdapter() {
+
+                @Override
+                public void onUnhandledKeyboardInteraction(Window arg0, Key key) {
+                    if (key.getKind() == Key.Kind.Escape) {
+                        cancelAction.doAction();
+                        return;
+                    }
+                    if (key.getKind() == Key.Kind.Enter) {
+                        okAction.doAction();
+                        return;
+                    }
+                    log.debug("Unhandled key in text-mode UI: " + key);
+                }
+
+            });
+        }
+    }
+
+    public ConfigurationTextUI(ConfigurationService configurationService, SshAccountConfigurationService sshConfigurationService,
+        SMTPServerConfigurationService smtpServerConfigurationOperations) {
         this.configurationService = configurationService;
         this.sshAccountOperations = sshConfigurationService;
+        this.smtpServerConfigurationOperations = smtpServerConfigurationOperations;
     }
 
     /**
@@ -280,6 +438,9 @@ public class ConfigurationTextUI {
             case OPTION_EDIT_SSH_ACCOUNTS:
                 showSelectExistingAccountDialog();
                 break;
+            case OPTION_CONFIGURE_SMTP_SERVER:
+                guiScreen.showWindow(new ConfigureSMTPServerWindow(), GUIScreen.Position.CENTER);
+                break;
             default:
                 log.error("Invalid action: " + action);
             }
@@ -290,6 +451,7 @@ public class ConfigurationTextUI {
         List<String> options = new ArrayList<>();
         options.add(OPTION_ADD_SSH_ACCOUNT);
         options.add(OPTION_EDIT_SSH_ACCOUNTS);
+        options.add(OPTION_CONFIGURE_SMTP_SERVER);
         String result = (String) ListSelectDialog.showDialog(guiScreen, "Select Action", null, options.toArray());
         return result;
     }
@@ -459,6 +621,7 @@ public class ConfigurationTextUI {
     }
 
     private boolean isRemoteAccessAccount(SshAccount account) {
-        return REMOTE_ACCESS_ROLE_ID.equals(account.getRole()); // tolerate null values
+        return REMOTE_ACCESS_ROLE_ID.equals(account.getRole()) || REMOTE_ACCESS_ROLE_ID_ALIAS.equals(account.getRole()); // tolerate null
+                                                                                                                         // values
     }
 }

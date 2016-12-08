@@ -14,9 +14,10 @@ import java.util.List;
 import java.util.Map;
 
 import org.eclipse.jface.dialogs.IDialogConstants;
-import org.eclipse.jface.dialogs.IMessageProvider;
 import org.eclipse.jface.dialogs.TitleAreaDialog;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.events.SelectionListener;
@@ -30,6 +31,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Text;
 
+import de.rcenvironment.core.gui.cluster.view.internal.ClusterJobInformationModel;
 import de.rcenvironment.core.utils.cluster.ClusterJobInformation;
 import de.rcenvironment.core.utils.cluster.ClusterQueuingSystem;
 import de.rcenvironment.core.utils.cluster.ClusterQueuingSystemConstants;
@@ -96,7 +98,7 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
     public void create() {
         super.create();
         setTitle(Messages.newConfigurationDialogTitle);
-        setMessage(Messages.newConfigurationDialogMessage, IMessageProvider.INFORMATION);
+        setMessage(Messages.newConfigurationDialogMessage);
     }
 
     @Override
@@ -126,19 +128,6 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         for (ClusterQueuingSystem system : ClusterQueuingSystem.values()) {
             queuingSystemCombo.add(system.name());            
         }
-        queuingSystemCombo.addSelectionListener(new SelectionListener() {
-            
-            @Override
-            public void widgetSelected(SelectionEvent event) {
-                showqPathText.setEnabled(queuingSystemCombo.getSelectionIndex() == 1);
-                showqPathLabel.setEnabled(queuingSystemCombo.getSelectionIndex() == 1);
-            }
-            
-            @Override
-            public void widgetDefaultSelected(SelectionEvent event) {
-                widgetSelected(event);
-            }
-        });
         
         queuingSystemCombo.select(0);
         
@@ -153,7 +142,7 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
 
         hostText = new Text(container, SWT.BORDER);
         hostText.setLayoutData(gridData);
-
+        
         Label portLabel = new Label(container, SWT.NONE);
         portLabel.setText(Messages.portLabel);
 
@@ -186,7 +175,7 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         passwordText = new Text(container, SWT.BORDER | SWT.PASSWORD);
         passwordText.setLayoutData(gridData);
         passwordText.setEnabled(false);
-
+        
         // placeholder label
         new Label(container, SWT.NONE);
 
@@ -197,18 +186,6 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         savePasswordCheckbox = new Button(container, SWT.CHECK);
         savePasswordCheckbox.setText(Messages.savePasswordCheckboxLabel);
         savePasswordCheckbox.setLayoutData(gridData);
-        savePasswordCheckbox.addSelectionListener(new SelectionListener() {
-            
-            @Override
-            public void widgetSelected(SelectionEvent event) {
-                passwordText.setEnabled(savePasswordCheckbox.getSelection());
-            }
-            
-            @Override
-            public void widgetDefaultSelected(SelectionEvent event) {
-                widgetSelected(event);
-            }
-        });
 
         Label configurationNameLabel = new Label(container, SWT.NONE);
         configurationNameLabel.setText(Messages.configurationNameLabel);
@@ -220,9 +197,8 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         configurationNameText = new Text(container, SWT.BORDER);
         configurationNameText.setLayoutData(gridData);
         configurationNameText.setEnabled(false);
-                
-        // placeholder label
-        new Label(container, SWT.NONE);
+        
+        new Label(container, SWT.NONE); // placeholder label
 
         gridData = new GridData();
         gridData.grabExcessHorizontalSpace = true;
@@ -232,11 +208,60 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         defaultConfigurationNameCheckbox.setText(Messages.useDefaultNameCheckboxLabel);
         defaultConfigurationNameCheckbox.setLayoutData(gridData);
         defaultConfigurationNameCheckbox.setSelection(true);
-        defaultConfigurationNameCheckbox.addSelectionListener(new SelectionListener() {
+        
+        setListener();
+        
+        return container;
+    }
+    
+    private void setShowqElementsEnabled() {
+        showqPathText.setEnabled(queuingSystemCombo.getSelectionIndex() == 1);
+        showqPathLabel.setEnabled(queuingSystemCombo.getSelectionIndex() == 1);
+    }
+    
+    private void setListener() {
+        queuingSystemCombo.addSelectionListener(new SelectionListener() {
             
             @Override
             public void widgetSelected(SelectionEvent event) {
-                configurationNameText.setEnabled(!defaultConfigurationNameCheckbox.getSelection());
+                setShowqElementsEnabled();
+            }
+
+            @Override
+            public void widgetDefaultSelected(SelectionEvent event) {
+                widgetSelected(event);
+            }
+        });
+        hostText.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent event) {
+                validateInput();
+            }
+        });
+        portText.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent event) {
+                validateInput();
+            }
+        });
+        usernameText.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent event) {
+                validateInput();
+            }
+        });
+        passwordText.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent event) {
+                validateInput();
+            }
+        });
+        savePasswordCheckbox.addSelectionListener(new SelectionListener() {
+            
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                passwordText.setEnabled(savePasswordCheckbox.getSelection());
+                validateInput();
             }
             
             @Override
@@ -244,8 +269,26 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
                 widgetSelected(event);
             }
         });
-        
-        return container;
+        configurationNameText.addModifyListener(new ModifyListener() {
+            @Override
+            public void modifyText(ModifyEvent event) {
+                validateInput();
+            }
+        });
+        defaultConfigurationNameCheckbox.addSelectionListener(new SelectionListener() {
+            
+            @Override
+            public void widgetSelected(SelectionEvent event) {
+                configurationNameText.setEnabled(!defaultConfigurationNameCheckbox.getSelection());
+                validateInput();
+            }
+            
+            @Override
+            public void widgetDefaultSelected(SelectionEvent event) {
+                widgetSelected(event);
+            }
+        });
+
     }
     
     private void createQueuingSystemCommandPathsLabelsAndTexts(Composite container) {
@@ -278,6 +321,8 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
 
         showqPathText = new Text(container, SWT.BORDER);
         showqPathText.setLayoutData(gridData);
+        
+        setShowqElementsEnabled();
     }
     
     @Override
@@ -306,7 +351,7 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
         createButton.addSelectionListener(new SelectionAdapter() {
             @Override
             public void widgetSelected(SelectionEvent e) {
-                if (isValidInput()) {
+                if (validateInput()) {
                     saveInput();
                     setReturnCode(CREATE);
                     close();
@@ -321,56 +366,71 @@ public class CreateClusterConnectionConfigurationDialog extends TitleAreaDialog 
                 close();
             }
         });
+        createButton.setEnabled(validateInput());
     }
     
-    private boolean isValidInput() {
+    private boolean validateInput() {
         
         boolean valid = true;
         if (hostText.getText().length() == 0) {
-            setErrorMessage(Messages.maintainHostLabel);
+            setErrorMessage(Messages.provideHostLabel);
             valid = false;
         }
-        if (portText.getText().length() == 0) {
-            setErrorMessage(Messages.portLabel);
+        if (valid && portText.getText().length() == 0) {
+            setErrorMessage(Messages.providePortLabel);
             valid = false;
         }
-        try {
-            Integer.valueOf(portText.getText());
-        } catch (NumberFormatException e) {
-            setErrorMessage(Messages.maintainPortNumberLabel);
+        if (valid) {
+            try {
+                Integer.valueOf(portText.getText());
+            } catch (NumberFormatException e) {
+                setErrorMessage(Messages.providePortNumberLabel);
+                valid = false;
+            }            
+        }
+        if (valid && usernameText.getText().length() == 0) {
+            setErrorMessage(Messages.provideUsernameLabel);
             valid = false;
         }
-        if (usernameText.getText().length() == 0) {
-            setErrorMessage(Messages.maintainUsernameLabel);
-            valid = false;
-        }
-        if (savePasswordCheckbox.getSelection()) {
+        if (valid && savePasswordCheckbox.getSelection()) {
             if (passwordText.getText().length() == 0) {
-                setErrorMessage(Messages.maintainPasswordLabel);
+                setErrorMessage(Messages.providePasswordLabel);
                 valid = false;
             }
         }
+        if (valid) {
+            valid = isConfigurationNameValid(null);            
+        }
         
-        valid = isConfigurationNameValid();
-        
+        if (valid) {
+            setErrorMessage(null);
+        }
+        if (createButton != null) {
+            createButton.setEnabled(valid);
+        }
         return valid;
     }
     
-    protected boolean isConfigurationNameValid() {
+    protected boolean isConfigurationNameValid(String currentConfigurationName) {
         boolean valid = true;
         if (!defaultConfigurationNameCheckbox.getSelection()) {
             if (configurationNameText.getText().length() == 0) {
                 setErrorMessage(Messages.configurationNameLabel);
                 valid = false;
             }
-        } else if (existingConfigurationNames.contains(usernameText.getText() + "@" + hostText.getText())) {
-            setErrorMessage(Messages.maintainAnotherConfigurationNameLabel);
+        } else if (existingConfigurationNames.contains(usernameText.getText() + "@" + hostText.getText())
+            && (currentConfigurationName == null || !configurationNameText.getText().equals(currentConfigurationName))) {
+            setErrorMessage(Messages.provideAnotherConfigurationNameLabel);
             valid = false;            
             
         }
-        if (existingConfigurationNames.contains(configurationNameText.getText())) {
-            setErrorMessage(Messages.maintainAnotherConfigurationNameLabel);
-            valid = false;            
+        if ((existingConfigurationNames.contains(configurationNameText.getText())
+            && (currentConfigurationName == null || !configurationNameText.getText().equals(currentConfigurationName)))
+            // not clean approach to check for placeholder here but it is not very likely that a user will run into this and want to provide
+            // this placeholder as configuration name
+            || ClusterJobInformationModel.NOT_CONNECTED.equals(configurationNameText.getText())) {
+            setErrorMessage(Messages.provideAnotherConfigurationNameLabel);
+            valid = false;
         }
         return valid;
     }

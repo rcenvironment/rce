@@ -8,7 +8,8 @@
  
 package de.rcenvironment.core.component.model.endpoint.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.endpoint.impl.EndpointDatumRecipientImpl;
 
 /**
@@ -26,11 +27,11 @@ public final class EndpointDatumRecipientFactory {
      * @param inputIdentifier target input identifier (is the name of the input)
      * @param componentExecutionIdentifier execution identifier of the target component instance
      * @param componentInstanceName name of the target component instance
-     * @param inputsNode {@link NodeIdentifier} of the target node
+     * @param inputsNode {@link InstanceNodeSessionId} of the target node
      * @return {@link EndpointDatumRecipient} instance
      */
     public static EndpointDatumRecipient createEndpointDatumRecipient(String inputIdentifier, String componentExecutionIdentifier,
-        String componentInstanceName, NodeIdentifier inputsNode) {
+        String componentInstanceName, LogicalNodeId inputsNode) {
         EndpointDatumRecipientImpl endpointDatumRecipient = new EndpointDatumRecipientImpl();
         endpointDatumRecipient.setIdentifier(inputIdentifier);
         endpointDatumRecipient.setInputsComponentExecutionIdentifier(componentExecutionIdentifier);

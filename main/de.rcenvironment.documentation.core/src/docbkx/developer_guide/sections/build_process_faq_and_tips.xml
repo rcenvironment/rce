@@ -28,7 +28,7 @@
                         <code>/de.rcenvironment/maven/initial/scripts/RCEBuildPreprocessor.groovy</code> .<note>
                         <para>For example, the default "target platform" repository URL for the
                             7.1.0 release is the concatenation of the default URL "root" part
-                                <code>http://software.dlr.de/updates/rce/7.x/repositories/</code>
+                                <code>https://software.dlr.de/updates/rce/7.x/repositories/</code>
                             and the specific repository segment <code>releases/7.1.0</code>. The
                             same pattern using the same "root" URL, but different specific segments
                             is also used for the Dakota and TiGLViewer binary repositories. </para>

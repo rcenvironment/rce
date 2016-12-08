@@ -17,6 +17,7 @@ import java.util.Scanner;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
@@ -274,10 +275,8 @@ public class UnixFileInfoService extends AbstractFileService {
         stderr = executor.getStderr();
         final CapturingTextOutReceiver outReceiver = new CapturingTextOutReceiver("");
         final CapturingTextOutReceiver errReceiver = new CapturingTextOutReceiver("");
-        final TextStreamWatcher stdoutWatcher = new TextStreamWatcher(
-            stdout, outReceiver);
-        final TextStreamWatcher stderrWatcher = new TextStreamWatcher(
-            stderr, errReceiver);
+        final TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(stdout, outReceiver);
+        final TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(stderr, errReceiver);
         stdoutWatcher.start();
         stderrWatcher.start();
         executor.waitForTermination();

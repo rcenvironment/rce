@@ -74,15 +74,6 @@
    </extension>
    
    	
-	<!--  Configuration validation -->
-    <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.cluster.gui.properties.ClusterWorkflowNodeValidator"
-            filter="de.rcenvironment.components.cluster.gui.properties.ClusterComponentFilter">
-       </validator>
-    </extension>
-    
     <!-- Dynamic Help -->
     <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />

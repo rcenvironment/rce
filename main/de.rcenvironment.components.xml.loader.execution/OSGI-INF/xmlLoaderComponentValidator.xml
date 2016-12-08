@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" name="XmlLoader Component Validator">
+   <implementation class="de.rcenvironment.components.xml.loader.execution.validator.XmlLoaderComponentValidator"/>
+   <service>
+      <provide interface="de.rcenvironment.core.component.validation.spi.ComponentValidator"/>
+   </service>
+</scr:component>

@@ -10,6 +10,11 @@
 		name="Communication Service"
 	/>
 	<reference
+		bind="bindLiveNetworkIdResolutionService"
+		interface="de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService"
+		name="LiveNetworkIdResolutionService"
+	/>
+	<reference
 		bind="bindPlatformService"
 		interface="de.rcenvironment.core.communication.api.PlatformService"
 		name="Platform Service"

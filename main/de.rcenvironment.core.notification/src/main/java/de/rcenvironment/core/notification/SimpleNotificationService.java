@@ -12,7 +12,8 @@ import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
@@ -69,12 +70,12 @@ public class SimpleNotificationService {
      * 
      * @param notificationId The identifier of the {@link Notification}s to receive.
      * @param subscriber The {@link NotificationSubscriber} for this {@link Notification}.
-     * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
+     * @param publishPlatform The {@link InstanceNodeSessionId} of the corresponding publisher. <code>null</code> if local.
      * @return the number of the last notification, which was sent and missed by the new {@link NotificationSubscriber} sorted by the
      *         matching notification identifier.
      * @throws RemoteOperationException if the remote subscription fails
      */
-    public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+    public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, ResolvableNodeId publishPlatform)
         throws RemoteOperationException {
         return distrNotificationService.subscribe(notificationId, subscriber, publishPlatform);
     }
@@ -87,7 +88,7 @@ public class SimpleNotificationService {
      * @return the number of the last notification, which was sent and missed by the new {@link NotificationSubscriber} sorted by the
      *         matching notification identifier.
      */
-    public Map<NodeIdentifier, Map<String, Long>> subscribeToAllReachableNodes(String notificationId,
+    public Map<InstanceNodeSessionId, Map<String, Long>> subscribeToAllReachableNodes(String notificationId,
         NotificationSubscriber subscriber) {
         return distrNotificationService.subscribeToAllReachableNodes(notificationId, subscriber);
     }
@@ -98,11 +99,11 @@ public class SimpleNotificationService {
      * 
      * @param notificationId The identifier of the notification associated with the corresponding publisher.
      * @param subscriber The {@link NotificationSubscriber} to remove.
-     * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
+     * @param publishPlatform The {@link InstanceNodeSessionId} of the corresponding publisher. <code>null</code> if local.
      * 
      * @throws RemoteOperationException if the remote subscription cancellation fails
      */
-    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform)
+    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, ResolvableNodeId publishPlatform)
         throws RemoteOperationException {
         distrNotificationService.unsubscribe(notificationId, subscriber, publishPlatform);
     }
@@ -112,11 +113,11 @@ public class SimpleNotificationService {
      * 
      * @param notificationId The notification identifier which represents the {@link Notification} to get the {@link NotificationHeader} for
      *        (can be regEx).
-     * @param publishPlatform The {@link NodeIdentifier} of the corresponding publisher. <code>null</code> if local.
+     * @param publishPlatform The {@link InstanceNodeSessionId} of the corresponding publisher. <code>null</code> if local.
      * @return the {@link Notification}s sorted by the matching notification identifier.
      * @throws RemoteOperationException if getting notifications fails.
      */
-    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform)
+    public Map<String, List<Notification>> getNotifications(String notificationId, ResolvableNodeId publishPlatform)
         throws RemoteOperationException {
         return distrNotificationService.getNotifications(notificationId, publishPlatform);
     }

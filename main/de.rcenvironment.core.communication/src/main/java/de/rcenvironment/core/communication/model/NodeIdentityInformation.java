@@ -10,6 +10,8 @@ package de.rcenvironment.core.communication.model;
 
 import java.io.Serializable;
 
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+
 /**
  * This class represents identity information about an RCE node.
  * 
@@ -27,7 +29,7 @@ public interface NodeIdentityInformation extends Serializable {
      * 
      * @return the persistent identifier string
      */
-    String getPersistentNodeId();
+    InstanceNodeSessionId getInstanceNodeSessionId();
 
     /**
      * The X.509-encoded public key of this platform, if it exists.

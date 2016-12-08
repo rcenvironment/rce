@@ -15,6 +15,7 @@ import java.io.IOException;
 import org.junit.Before;
 import org.junit.Test;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.testutils.ConfigurationSegmentUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -60,8 +61,7 @@ public class CommunicationConfigurationTest {
      */
     @Test
     public void readTestConfigFile() throws IOException {
-        ConfigurationSegment config = ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().
-            getResourceAsStream("/config-tests/example1.json"));
+        ConfigurationSegment config = readExampleConfigurationSegment("example1.json");
         CommunicationConfiguration testInstance = new CommunicationConfiguration(config);
 
         assertEquals(8 * TEN_THOUSAND, testInstance.getRequestTimeoutMsec());
@@ -75,5 +75,43 @@ public class CommunicationConfigurationTest {
 
         String serverPort1 = testInstance.getProvidedContactPoints().get(0);
         assertEquals("activemq-tcp:1.2.3.4:20009", serverPort1);
+    }
+
+    /**
+     * Verifies that invalid data fields do not cause uncaught exceptions.
+     * 
+     * @throws IOException on uncaught errors
+     * @throws ConfigurationException on uncaught errors
+     */
+    @Test
+    public void testCorruptedConfiguration() throws IOException, ConfigurationException {
+        final String baselineConfigurationFile = "example1.json";
+        final String testConnectionEntryPath = "connections/1";
+        ConfigurationSegment configData;
+
+        configData = readExampleConfigurationSegment(baselineConfigurationFile);
+        configData.getOrCreateWritableSubSegment(testConnectionEntryPath).deleteElement("host"); // missing
+        assertConnectionGetsDiscardedWithoutException(configData);
+
+        configData = readExampleConfigurationSegment(baselineConfigurationFile);
+        configData.getOrCreateWritableSubSegment(testConnectionEntryPath).deleteElement("port"); // missing
+        assertConnectionGetsDiscardedWithoutException(configData);
+
+        configData = readExampleConfigurationSegment(baselineConfigurationFile);
+        configData.getOrCreateWritableSubSegment(testConnectionEntryPath).setString("port", "x"); // non-integer value
+        assertConnectionGetsDiscardedWithoutException(configData);
+    }
+
+    private void assertConnectionGetsDiscardedWithoutException(ConfigurationSegment configData) {
+        // attempt to parse the result; it should neither throw an exception nor add the connection entry
+        final CommunicationConfiguration parsedConfig = new CommunicationConfiguration(configData);
+        assertEquals(0, parsedConfig.getRemoteContactPoints().size());
+    }
+
+    private ConfigurationSegment readExampleConfigurationSegment(String testFileName) throws IOException {
+        ConfigurationSegment config =
+            ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream("/config-tests/"
+                + testFileName));
+        return config;
     }
 }

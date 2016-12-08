@@ -70,7 +70,7 @@ public class ShowIntegrationRemoveHandler extends AbstractHandler {
                             + selectedTool);
                         integrationService.updatePublishedComponents(context);
                         File remove =
-                            new File(integrationService.getPathOfComponentID(selectedTool));
+                            new File(integrationService.getPathOfComponentID(selectedTool, context));
                         removeOrDeactive(integrationService, dialog, context, remove);
 
                     } else {

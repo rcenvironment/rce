@@ -30,16 +30,21 @@ import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Status;
 import org.eclipse.core.runtime.jobs.Job;
 import org.eclipse.jface.dialogs.MessageDialog;
+import org.eclipse.jface.resource.ImageDescriptor;
+import org.eclipse.jface.viewers.DecorationOverlayIcon;
+import org.eclipse.jface.viewers.IDecoration;
 import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
+import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
 import org.osgi.framework.Version;
 
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.datamanagement.api.DefaultComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.history.HistoryMetaDataKeys;
 import de.rcenvironment.core.datamanagement.MetaDataService;
@@ -52,6 +57,7 @@ import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamodel.api.DataModelConstants;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
@@ -65,15 +71,15 @@ import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeType;
 import de.rcenvironment.core.gui.datamanagement.browser.spi.DMBrowserNodeUtils;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * @author Jan Flink
@@ -85,11 +91,21 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  */
 public class DMContentProvider implements ITreeContentProvider {
 
+    private static final String BRACKET_RIGHT = "]";
+
+    private static final String BRACKET_LEFT = " [";
+
+    private static final String FAILED = "FAILED";
+
+    private static final String VERIFICATION_FAILED = "RESULTS_REJECTED";
+
+    private static final String FINISHED = "FINISHED";
+
     private static final int HUNDRET = 100;
 
-    private static final double FLOATING_HUNDRET = 100.0d;
+    private static final double FLOAT_ONE_HUNDRED = 100.0d;
 
-    private static final double KILO_BYTE = 1024.0;
+    private static final double FLOAT_KILO_BYTE = 1024.0;
 
     private static final String NODE_TEXT_FORMAT_TITLE_PLUS_STATE = "%s --> %s";
 
@@ -166,7 +182,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
     private final Set<String> warningIsShown = new CopyOnWriteArraySet<String>();
 
-    private NodeIdentifier localNodeID;
+    private InstanceNodeSessionId localInstanceSessionId;
 
     private TypedDatumSerializer typedDatumSerializer;
 
@@ -174,7 +190,7 @@ public class DMContentProvider implements ITreeContentProvider {
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         metaDataService = serviceRegistryAccess.getService(MetaDataService.class);
         typedDatumSerializer = serviceRegistryAccess.getService(TypedDatumService.class).getSerializer();
-        localNodeID = serviceRegistryAccess.getService(PlatformService.class).getLocalNodeId();
+        localInstanceSessionId = serviceRegistryAccess.getService(PlatformService.class).getLocalInstanceNodeSessionId();
         registerBuilders();
     }
 
@@ -286,7 +302,7 @@ public class DMContentProvider implements ITreeContentProvider {
     private WorkflowRun getMetaDataForWorkflow(DMBrowserNode workflowNode) throws CommunicationException {
         // extract the id of the desired workflow
         final Long workflowRunID = Long.valueOf(workflowNode.getMetaData().getValue(METADATA_COMPONENT_CONTEXT_ID));
-        final NodeIdentifier workflowNodeId = workflowNode.getNodeIdentifier(); // TODO review: not DM node id?
+        final ResolvableNodeId workflowNodeId = workflowNode.getNodeIdentifier(); // TODO review: not DM node id?
 
         synchronized (workflowMetaDataMap) {
             if (workflowMetaDataMap.containsKey(workflowNode)) {
@@ -356,7 +372,7 @@ public class DMContentProvider implements ITreeContentProvider {
             String contextName = wfd.getWorkflowTitle();
             mds.setValue(METADATA_COMPONENT_CONTEXT_NAME, contextName);
             // try to extract the instance node id of the workflow
-            String instanceNodeId = wfd.getDatamanagementNodeID();
+            String instanceNodeId = wfd.getStorageLogicalNodeIdString();
             mds.setValue(METADATA_INSTANCE_NODE_IDENTIFIER, instanceNodeId);
             if (wfd.getFinalState() != null) {
                 mds.setValue(METADATA_WORKFLOW_FINAL_STATE, wfd.getFinalState().toString());
@@ -392,7 +408,7 @@ public class DMContentProvider implements ITreeContentProvider {
                 contextDMObject.setMetaData(mds);
                 contextDMObject.setType(DMBrowserNodeType.Workflow);
                 contextDMObject.setWorkflowID(contextID);
-                contextDMObject.setWorkflowHostID(wfd.getControllerNodeID());
+                contextDMObject.setWorkflowControllerNode(wfd.getControllerLogicalNodeId());
                 // add workflow node to the child node set of the parent (root) node
                 parent.addChild(contextDMObject);
                 // register as known workflow
@@ -417,7 +433,7 @@ public class DMContentProvider implements ITreeContentProvider {
         }
 
         // create parallel tasks
-        CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+        CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
 
         for (String instanceNodeId : encounteredContextsByInstanceNode.keySet()) {
             final Map<String, DMBrowserNode> encounteredContextsPerInstanceNode = encounteredContextsByInstanceNode.get(instanceNodeId);
@@ -461,12 +477,11 @@ public class DMContentProvider implements ITreeContentProvider {
         });
 
         // sort nodes by start time
-        parent.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP);
+        parent.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP_DESC);
     }
 
     private void setupWorkflowNode(DMBrowserNode workflowNode) {
-        final NodeIdentifier workflowHostID = NodeIdentifierFactory.fromNodeId(workflowNode.getWorkflowHostID());
-        if (workflowHostID.getIdString().equals(localNodeID.getIdString())) {
+        if (isLocalWorkflow(workflowNode.getWorkflowControllerNode())) {
             workflowNode.setWorkflowHostName(LOCAL);
         } else {
             workflowNode.setWorkflowHostName(REMOTE);
@@ -475,26 +490,21 @@ public class DMContentProvider implements ITreeContentProvider {
             workflowNode.getName(), workflowNode.getWorkflowHostName());
         String finalState = workflowNode.getMetaData().getValue(METADATA_WORKFLOW_FINAL_STATE);
         if (finalState == null) {
-            wfNodeTitle =
-                StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_STATE, wfNodeTitle,
-                    NOT_TERMINATED_YET);
+            wfNodeTitle = StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_STATE, wfNodeTitle,
+                NOT_TERMINATED_YET);
         } else {
             setWorkflowNodeIconFromFinalState(workflowNode, getFinalStateFromString(finalState));
         }
         workflowNode.setTitle(wfNodeTitle);
     }
 
+    private boolean isLocalWorkflow(LogicalNodeId logicalNodeId) {
+        return localInstanceSessionId.isSameInstanceNodeAs(logicalNodeId);
+    }
+
     private FinalWorkflowState getFinalStateFromString(String finalState) {
         if (finalState != null) {
-            if (finalState.equals(FinalWorkflowState.FINISHED.toString())) {
-                return FinalWorkflowState.FINISHED;
-            } else if (finalState.equals(FinalWorkflowState.FAILED.toString())) {
-                return FinalWorkflowState.FAILED;
-            } else if (finalState.equals(FinalWorkflowState.CANCELLED.toString())) {
-                return FinalWorkflowState.CANCELLED;
-            } else if (finalState.equals(FinalWorkflowState.CORRUPTED.toString())) {
-                return FinalWorkflowState.CORRUPTED;
-            }
+            return FinalWorkflowState.valueOf(finalState);
         }
         // default
         return null;
@@ -512,6 +522,9 @@ public class DMContentProvider implements ITreeContentProvider {
                 break;
             case FAILED:
                 workflowNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.FAILED));
+                break;
+            case RESULTS_REJECTED:
+                workflowNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.RESULTS_REJECTED));
                 break;
             case CORRUPTED:
                 workflowNode.setIcon(ImageManager.getInstance().getSharedImage(StandardImages.CORRUPTED));
@@ -556,7 +569,7 @@ public class DMContentProvider implements ITreeContentProvider {
             runInformation.addChild(wfFileNode);
         }
 
-        NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(workflowRun.getControllerNodeID());
+        LogicalNodeId nodeId = workflowRun.getControllerLogicalNodeId();
         if (nodeId != null) {
             DMBrowserNode.addNewLeafNode(StringUtils.format(Messages.runInformationControllerNode, nodeId.getAssociatedDisplayName()),
                 DMBrowserNodeType.InformationText, runInformation);
@@ -573,14 +586,14 @@ public class DMContentProvider implements ITreeContentProvider {
 
                 if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
 
-                    final NodeIdentifier componentRunHostID =
-                        NodeIdentifierFactory.fromNodeId(workflowRun.getComponentRuns().get(componentInstance).iterator()
-                            .next().getNodeID());
+                    final ComponentRun firstComponentRun = workflowRun.getComponentRuns().get(componentInstance).iterator().next();
+                    final LogicalNodeId componentRunLogicalNodeId = firstComponentRun.getLogicalNodeId();
 
-                    if (componentRunHostID != null) {
+                    // TODO review: why/when can this be null? if it can be, this should be documented - misc_ro
+                    if (componentRunLogicalNodeId != null) {
                         DMBrowserNode compNode = DMBrowserNode.addNewLeafNode(
                             StringUtils.format("%s: %s", componentInstance.getComponentInstanceName(),
-                                componentRunHostID.getAssociatedDisplayName()),
+                                componentRunLogicalNodeId.getAssociatedDisplayName()),
                             DMBrowserNodeType.Component, componentHostInformation);
                         MetaDataSet metaDataSet = new MetaDataSet();
                         final String componentName = componentInstance.getComponentInstanceName();
@@ -589,7 +602,14 @@ public class DMContentProvider implements ITreeContentProvider {
                             .split(STRING_SLASH)[0]);
                         compNode.setMetaData(metaDataSet);
 
-                        setComponentIconForDMBrowserNode(compNode);
+                        boolean failed = false;
+                        boolean verificationFailed = false;
+                        if (componentInstance.getFinalState() != null) {
+                            failed = componentInstance.getFinalState().equals(FAILED);
+                            verificationFailed = componentInstance.getFinalState().equals(VERIFICATION_FAILED);
+                        }
+
+                        setComponentIconForDMBrowserNode(compNode, failed, verificationFailed);
                     }
 
                 }
@@ -656,12 +676,11 @@ public class DMContentProvider implements ITreeContentProvider {
         }
         for (final ComponentInstance componentInstance : workflowRun.getComponentRuns().keySet()) {
             for (final ComponentRun componentRun : workflowRun.getComponentRuns().get(componentInstance)) {
-                final NodeIdentifier componentRunHostID = NodeIdentifierFactory.fromNodeId(componentRun.getNodeID());
-                final String componentRunHostName;
-                if (componentRunHostID.getIdString().equals(localNodeID.getIdString())) {
-                    componentRunHostName = LOCAL;
+                final String componentRunLocationTag;
+                if (wasComponentRunOnLocalInstance(componentRun)) {
+                    componentRunLocationTag = LOCAL;
                 } else {
-                    componentRunHostName = REMOTE;
+                    componentRunLocationTag = REMOTE;
                 }
 
                 MetaDataSet metaDataSet = new MetaDataSet();
@@ -673,13 +692,24 @@ public class DMContentProvider implements ITreeContentProvider {
                 final String componentName = componentInstance.getComponentInstanceName();
                 metaDataSet.setValue(METADATA_COMPONENT_NAME, componentName);
                 metaDataSet.setValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER, componentInstance.getComponentID().split(STRING_SLASH)[0]);
+                String componentRunNodeText = StringUtils.format(COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
+                    componentName, componentSpecificText, startDateString, componentRunLocationTag);
+                if (componentRun.getFinalState() != null && componentRun.getFinalState() != FinalComponentRunState.FINISHED
+                    && componentRun.getFinalState() != FinalComponentRunState.RESULTS_APPROVED) {
+                    componentRunNodeText = componentRunNodeText.concat(BRACKET_LEFT + componentRun.getFinalState() + BRACKET_RIGHT);
+                }
                 DMBrowserNode dmoChild =
-                    new DMBrowserNode(StringUtils.format(COMPONENT_NAME_AND_NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
-                        componentName, componentSpecificText, startDateString, componentRunHostName), timelineNode);
+                    new DMBrowserNode(componentRunNodeText, timelineNode);
                 // dmoChild.setDataReferenceId(dataReferenceId);
                 dmoChild.setMetaData(metaDataSet);
                 dmoChild.setType(DMBrowserNodeType.HistoryObject);
-                setComponentIconForDMBrowserNode(dmoChild);
+                boolean compRunFailed = false;
+                boolean resultsRejected = false;
+                if (componentRun.getFinalState() != null) {
+                    compRunFailed = componentRun.getFinalState().equals(FinalComponentRunState.FAILED);
+                    resultsRejected = componentRun.getFinalState().equals(FinalComponentRunState.RESULTS_REJECTED);
+                }
+                setComponentIconForDMBrowserNode(dmoChild, compRunFailed, resultsRejected);
                 createChildrenForHistoryObjectNode(dmoChild, componentRun);
                 // dmoChild.setAssociatedFilename(nodeName);
                 timelineNode.addChild(dmoChild);
@@ -688,13 +718,13 @@ public class DMContentProvider implements ITreeContentProvider {
             }
         }
         // sort nodes by start time
-        timelineNode.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP);
+        timelineNode.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP_DESC);
         setFileNodesEnabled(timelineNode,
             !Boolean.valueOf(timelineNode.getNodeWithTypeWorkflow().getMetaData().getValue(METADATA_WORKFLOW_FILES_DELETED)));
     }
 
     private String getNodeTitleForComponentRun(final ComponentRun componentRun) {
-        final String componentSpecificText;
+        String componentSpecificText;
         if (componentRun.getRunCounter() == DataModelConstants.TEAR_DOWN_RUN) {
             componentSpecificText = "Tear down";
         } else if (componentRun.getRunCounter() == DataModelConstants.INIT_RUN) {
@@ -719,9 +749,8 @@ public class DMContentProvider implements ITreeContentProvider {
 
             final String componentHostName;
             if (workflowRun.getComponentRuns().get(componentInstance).size() > 0) {
-                if (NodeIdentifierFactory.fromNodeId(
-                    workflowRun.getComponentRuns().get(componentInstance).iterator().next().getNodeID()).getIdString()
-                    .equals(localNodeID.getIdString())) {
+                final ComponentRun firstRun = workflowRun.getComponentRuns().get(componentInstance).iterator().next();
+                if (wasComponentRunOnLocalInstance(firstRun)) {
                     componentHostName = LOCAL;
                 } else {
                     componentHostName = REMOTE;
@@ -733,16 +762,21 @@ public class DMContentProvider implements ITreeContentProvider {
             DMBrowserNode componentNode = new DMBrowserNode("");
             componentNode.setType(DMBrowserNodeType.Component);
             componentNode.setMetaData(metaDataSet);
-            setComponentIconForDMBrowserNode(componentNode);
+            boolean failed = false;
+            boolean verificationFailed = false;
+            if (componentInstance.getFinalState() != null) {
+                failed = componentInstance.getFinalState().equals(FAILED);
+                verificationFailed = componentInstance.getFinalState().equals(VERIFICATION_FAILED);
+            }
+            setComponentIconForDMBrowserNode(componentNode, failed, verificationFailed);
             boolean initIncluded = false;
             boolean tearDownIncluded = false;
             for (final ComponentRun componentRun : workflowRun.getComponentRuns().get(componentInstance)) {
-                final NodeIdentifier componentRunHostID = NodeIdentifierFactory.fromNodeId(componentRun.getNodeID());
-                final String componentRunHostName;
-                if (componentRunHostID.getIdString().equals(localNodeID.getIdString())) {
-                    componentRunHostName = LOCAL;
+                final String componentRunLocationTag;
+                if (wasComponentRunOnLocalInstance(componentRun)) {
+                    componentRunLocationTag = LOCAL;
                 } else {
-                    componentRunHostName = REMOTE;
+                    componentRunLocationTag = REMOTE;
                 }
 
                 final Long startTime = componentRun.getStartTime();
@@ -753,11 +787,22 @@ public class DMContentProvider implements ITreeContentProvider {
                 final String startDateString = dateFormat.format(new Date(startTime));
                 final String componentSpecificText = getNodeTitleForComponentRun(componentRun);
                 metaDataSetRun.setValue(METADATA_HISTORY_USER_INFO_TEXT, componentSpecificText);
-                DMBrowserNode dmoChild = new DMBrowserNode(StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
-                    componentSpecificText, startDateString, componentRunHostName), componentsNode);
+                String componentRunNodeText = StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_TIMESTAMP_AND_HOST,
+                    componentSpecificText, startDateString, componentRunLocationTag);
+                if (componentRun.getFinalState() != null && componentRun.getFinalState() != FinalComponentRunState.FINISHED
+                    && componentRun.getFinalState() != FinalComponentRunState.RESULTS_APPROVED) {
+                    componentRunNodeText = componentRunNodeText.concat(BRACKET_LEFT + componentRun.getFinalState() + BRACKET_RIGHT);
+                }
+                DMBrowserNode dmoChild = new DMBrowserNode(componentRunNodeText, componentsNode);
                 dmoChild.setMetaData(metaDataSetRun);
                 dmoChild.setType(DMBrowserNodeType.HistoryObject);
-                setComponentIconForDMBrowserNode(dmoChild);
+                boolean compRunFailed = false;
+                boolean resultsRejected = false;
+                if (componentRun.getFinalState() != null) {
+                    compRunFailed = componentRun.getFinalState().equals(FinalComponentRunState.FAILED);
+                    resultsRejected = componentRun.getFinalState().equals(FinalComponentRunState.RESULTS_REJECTED);
+                }
+                setComponentIconForDMBrowserNode(dmoChild, compRunFailed, resultsRejected);
                 createChildrenForHistoryObjectNode(dmoChild, componentRun);
                 componentNode.addChild(dmoChild);
 
@@ -771,13 +816,13 @@ public class DMContentProvider implements ITreeContentProvider {
             final String finalState = componentInstance.getFinalState();
             String componentNodeText = StringUtils.format("%s (Runs: %d) <%s>", componentName,
                 getComponentRunCount(workflowRun, componentInstance, initIncluded, tearDownIncluded), componentHostName);
-            if (finalState != null && finalState.equals("FAILED")) {
-                componentNodeText = componentNodeText.concat(" [FAILED]");
+            if (finalState != null && !finalState.equals(FINISHED)) {
+                componentNodeText = componentNodeText.concat(BRACKET_LEFT + finalState + BRACKET_RIGHT);
             }
             componentNode.setTitle(componentNodeText);
             componentsNode.addChild(componentNode);
 
-            componentNode.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP);
+            componentNode.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_HISTORY_TIMESTAMP_DESC);
         }
         // sort nodes by node title
         componentsNode.sortChildren(DMBrowserNodeUtils.COMPARATOR_BY_NODE_TITLE);
@@ -872,38 +917,62 @@ public class DMContentProvider implements ITreeContentProvider {
     }
 
     private String getTitleForLogFileDMBrowserNode(FileReferenceTD logFileReference) {
-        double fileSizeInKB = logFileReference.getFileSizeInBytes() / KILO_BYTE;
+        double fileSizeInKB = logFileReference.getFileSizeInBytes() / FLOAT_KILO_BYTE;
         String nodeTitle;
         if (fileSizeInKB == 0) {
             nodeTitle = StringUtils.format("%s [0 KB]", logFileReference.getFileName());
         } else if (fileSizeInKB < 1) {
             nodeTitle = StringUtils.format("%s [%.2f KB]", logFileReference.getFileName(),
-                Math.round(fileSizeInKB * HUNDRET) / FLOATING_HUNDRET);
+                Math.round(fileSizeInKB * HUNDRET) / FLOAT_ONE_HUNDRED);
         } else {
             nodeTitle = StringUtils.format("%s [%d KB]", logFileReference.getFileName(), Math.round(fileSizeInKB));
         }
         return nodeTitle;
     }
 
-    private void setComponentIconForDMBrowserNode(DMBrowserNode node) {
+    private void setComponentIconForDMBrowserNode(DMBrowserNode node, boolean isFailed, boolean isVerificationFailed) {
+
         String identifier = node.getMetaData().getValue(METADATA_HISTORY_DATA_ITEM_IDENTIFIER);
         ComponentHistoryDataItemSubtreeBuilder builder = getComponentHistoryDataItemSubtreeBuilder(node);
         if (builder != null) {
-            node.setIcon(builder.getComponentIcon(identifier));
+            Image componentIcon = builder.getComponentIcon(identifier);
+            Image decoratedImage = componentIcon;
+
+            // If component is failed, add small failed icon
+            ImageDescriptor overlayIconDescriptor = null;
+            if (isFailed) {
+                overlayIconDescriptor = DMBrowserImages.FAILED_SMALL;
+                if (overlayIconDescriptor != null) {
+                    DecorationOverlayIcon decorationOverlayIcon =
+                        new DecorationOverlayIcon(componentIcon, overlayIconDescriptor, IDecoration.TOP_RIGHT);
+                    decoratedImage = decorationOverlayIcon.createImage();
+                }
+            } else if (isVerificationFailed) {
+                overlayIconDescriptor = DMBrowserImages.VERIFICATION_FAILED_SMALL;
+                if (overlayIconDescriptor != null) {
+                    DecorationOverlayIcon decorationOverlayIcon =
+                        new DecorationOverlayIcon(componentIcon, overlayIconDescriptor, IDecoration.TOP_RIGHT);
+                    decoratedImage = decorationOverlayIcon.createImage();
+                }
+            }
+
+            node.setIcon(decoratedImage);
         } else {
             log.warn(NO_BUILDER_ERROR_MESSAGE + identifier);
         }
+
     }
 
     private void createChildrenForHistoryObjectNode(final DMBrowserNode node, ComponentRun componentRun) {
 
         ComponentHistoryDataItemSubtreeBuilder builder = getComponentHistoryDataItemSubtreeBuilder(node);
 
-        final NodeIdentifier componentRunHostID = NodeIdentifierFactory.fromNodeId(componentRun.getNodeID());
+        final LogicalNodeId componentRunNodeId = componentRun.getLogicalNodeId();
 
-        if (componentRunHostID != null) {
+        // TODO review: why/when can this be null? if it can be, this should be documented - misc_ro
+        if (componentRunNodeId != null) {
             DMBrowserNode.addNewLeafNode(
-                StringUtils.format(Messages.componentRunInformationNode, componentRunHostID.getAssociatedDisplayName()),
+                StringUtils.format(Messages.componentRunInformationNode, componentRunNodeId.getAssociatedDisplayName()),
                 DMBrowserNodeType.InformationText, node);
         }
         String historyDataItem = componentRun.getHistoryDataItem();
@@ -1008,8 +1077,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
     protected boolean deleteWorkflowRun(DMBrowserNode browserNode) {
         try {
-            metaDataService.deleteWorkflowRun(Long.valueOf(browserNode.getWorkflowID()),
-                NodeIdentifierFactory.fromNodeId(browserNode.getWorkflowHostID()));
+            metaDataService.deleteWorkflowRun(Long.valueOf(browserNode.getWorkflowID()), browserNode.getWorkflowControllerNode());
             return true;
         } catch (CommunicationException e) {
             log.error("Could not delete workflow run in the database.", e);
@@ -1019,8 +1087,7 @@ public class DMContentProvider implements ITreeContentProvider {
 
     protected void deleteWorkflowRunFiles(DMBrowserNode browserNode) {
         try {
-            metaDataService.deleteWorkflowRunFiles(Long.valueOf(browserNode.getWorkflowID()),
-                NodeIdentifierFactory.fromNodeId(browserNode.getWorkflowHostID()));
+            metaDataService.deleteWorkflowRunFiles(Long.valueOf(browserNode.getWorkflowID()), browserNode.getWorkflowControllerNode());
             browserNode.getMetaData().setValue(METADATA_WORKFLOW_FILES_DELETED, String.valueOf(true));
         } catch (CommunicationException e) {
             log.error("Could not delete workflow run files in the database.", e);
@@ -1136,6 +1203,10 @@ public class DMContentProvider implements ITreeContentProvider {
             }
         }
         return null;
+    }
+
+    private boolean wasComponentRunOnLocalInstance(final ComponentRun firstRun) {
+        return localInstanceSessionId.isSameInstanceNodeAs(firstRun.getLogicalNodeId());
     }
 
 }

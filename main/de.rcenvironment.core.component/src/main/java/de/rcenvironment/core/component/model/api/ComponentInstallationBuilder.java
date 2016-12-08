@@ -8,6 +8,8 @@
 
 package de.rcenvironment.core.component.model.api;
 
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.model.impl.ComponentInstallationImpl;
 import de.rcenvironment.core.component.model.impl.ComponentRevisionImpl;
 
@@ -31,7 +33,7 @@ public class ComponentInstallationBuilder {
      * instance given regarding installation id, component revision, publishing state, max count of parallel instances, and node id.
      * 
      * @param templateComponentInstallation {@link ComponentInstallation} instance that serves as template
-     * @return pre-initialized {@link ComponentInstallationBuilder} instance 
+     * @return pre-initialized {@link ComponentInstallationBuilder} instance
      */
     public static ComponentInstallationBuilder fromComponentInstallation(ComponentInstallation templateComponentInstallation) {
         ComponentInstallationBuilder componentInstallationBuilder = new ComponentInstallationBuilder();
@@ -39,7 +41,8 @@ public class ComponentInstallationBuilder {
         componentInstallationBuilder.setComponentRevision((ComponentRevisionImpl) templateComponentInstallation.getComponentRevision());
         componentInstallationBuilder.setIsPublished(templateComponentInstallation.getIsPublished());
         componentInstallationBuilder.setMaximumCountOfParallelInstances(templateComponentInstallation.getMaximumCountOfParallelInstances());
-        componentInstallationBuilder.setNodeId(templateComponentInstallation.getNodeId());
+        componentInstallationBuilder
+            .setNodeId(NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(templateComponentInstallation.getNodeId()));
         return componentInstallationBuilder;
     }
 
@@ -65,8 +68,13 @@ public class ComponentInstallationBuilder {
      * @param nodeId installation node
      * @return builder object for method chaining purposes
      */
-    public ComponentInstallationBuilder setNodeId(String nodeId) {
-        componentInstallation.setNodeId(nodeId);
+    public ComponentInstallationBuilder setNodeId(LogicalNodeId nodeId) {
+        // Can be null in case of local node.
+        if (nodeId != null) {
+            componentInstallation.setNodeIdFromObject(nodeId);
+        } else {
+            componentInstallation.setNodeId((String) null);
+        }
         return this;
     }
 

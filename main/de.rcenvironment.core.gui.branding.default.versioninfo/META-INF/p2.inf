@@ -1,5 +1,9 @@
 instructions.configure=\
 	removeRepository(location:http${#58}//software.dlr.de/updates/rce/7.x/repositories/standard/releases/latest/,type:0,enabled:true);\
 	removeRepository(location:http${#58}//software.dlr.de/updates/rce/7.x/repositories/standard/releases/latest/,type:1,enabled:true);\
-	addRepository(location:http${#58}//software.dlr.de/updates/rce/7.x/repositories/standard/releases/latest/,type:0,enabled:true);\
-	addRepository(location:http${#58}//software.dlr.de/updates/rce/7.x/repositories/standard/releases/latest/,type:1,enabled:true);
+	removeRepository(location:https${#58}//software.dlr.de/updates/rce/7.x/repositories/standard/releases/latest/,type:0,enabled:true);\
+	removeRepository(location:https${#58}//software.dlr.de/updates/rce/7.x/repositories/standard/releases/latest/,type:1,enabled:true);\
+	removeRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:0,enabled:true);\
+	removeRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:1,enabled:true);\
+	addRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:0,enabled:true);\
+	addRepository(location:https${#58}//software.dlr.de/updates/rce/8.x/repositories/standard/releases/latest/,type:1,enabled:true);

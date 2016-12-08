@@ -1,0 +1,8 @@
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" immediate="true" name="Node Identifier Service">
+
+	<implementation class="de.rcenvironment.core.communication.common.impl.NodeIdentifierServiceImpl" />
+	<service>
+		<provide interface="de.rcenvironment.core.communication.api.NodeIdentifierService"/>
+	</service>
+	
+</scr:component>

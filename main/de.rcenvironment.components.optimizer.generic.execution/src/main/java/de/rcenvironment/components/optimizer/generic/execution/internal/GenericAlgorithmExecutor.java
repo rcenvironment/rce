@@ -32,7 +32,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.CompressingHelper;
 import de.rcenvironment.core.utils.common.LogUtils;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * This class provides everything for running the generic optimizer blackbox.

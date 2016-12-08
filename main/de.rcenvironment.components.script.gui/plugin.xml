@@ -64,13 +64,6 @@
    		<toc file="help/toc.xml"/>
  	</extension>
    
-   <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator
-            class="de.rcenvironment.components.script.gui.ScriptComponentWorkflowNodeValidator"
-            filter="de.rcenvironment.components.script.gui.ScriptComponentFilter">
-      </validator>
-   </extension>
    
    <extension
          point="de.rcenvironment.core.gui.workflow.editorActions">

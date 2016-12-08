@@ -15,6 +15,7 @@ import javax.xml.xpath.XPathExpressionException;
 import org.w3c.dom.Document;
 
 import de.rcenvironment.core.utils.common.xml.XMLException;
+import de.rcenvironment.toolkit.utils.text.TextLinesReceiver;
 
 /**
  * Provides mapping between two XML files using XMLMappingInformation or XSLT. (Former classes: XMLMapper, XSLTransformer)
@@ -27,11 +28,13 @@ public interface XMLMapperService {
      * Executes XSL-transformation on the files.
      * 
      * @param sourceFile Name of source xml-file
-     * @param xsltFile Name of xslt-file
      * @param resultFile Name of result-file
+     * @param xsltFile Name of xslt-file
+     * @param logReceiver TextOutputReceiver to receive log output of the Transformer, or null, if not needed.
      * @throws XMLException Thrown if xml transformation fails
      */
-    void transformXMLFileWithXSLT(final File sourceFile, final File resultFile, final File xsltFile) throws XMLException;
+    void transformXMLFileWithXSLT(final File sourceFile, final File resultFile, final File xsltFile, TextLinesReceiver logReceiver)
+        throws XMLException;
 
     /**
      * Does the mapping between the elements of a source document and a target document.
@@ -45,7 +48,7 @@ public interface XMLMapperService {
      */
     void transformXMLFileWithXMLMappingInformation(final File sourceFile, final File targetFile, final Document mappingsDoc)
         throws XPathExpressionException, XMLException;
-    
+
     /**
      * Does the mapping between the elements of a source document and a target document.
      * 

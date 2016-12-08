@@ -13,15 +13,13 @@ import javax.jms.Message;
 import javax.jms.Session;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A single-threaded consumer that listens for all incoming messages after the initial two-way handshake. These requests contain the actual
@@ -36,7 +34,7 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
 
     private final MessageChannelEndpointHandler endpointHandler;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     public RequestInboxConsumer(String queueName, Connection connection, MessageChannelEndpointHandler endpointHandler)
         throws JMSException {
@@ -86,9 +84,10 @@ public final class RequestInboxConsumer extends AbstractJmsQueueConsumer impleme
         try {
             if (JmsProtocolConstants.MESSAGE_TYPE_REQUEST.equals(messageType)) {
                 request = JmsProtocolUtils.createNetworkRequestFromMessage(message);
-                NodeIdentifier senderId = NodeIdentifierFactory.fromNodeId("FIXME");
+                // on the messaging level, senders and receivers are identified by instance session ids
+                String senderIdString = request.accessMetaData().getSenderIdString();
                 long startTime = System.currentTimeMillis();
-                NetworkResponse response = endpointHandler.onRawRequestReceived(request, senderId);
+                NetworkResponse response = endpointHandler.onRawRequestReceived(request, senderIdString);
                 long durationMsec = System.currentTimeMillis() - startTime;
                 // TODO move slow dispatch logging to transport-neutral code - misc_ro, May 2015
                 if (durationMsec > SLOW_DISPATCH_LOGGING_THRESHOLD_MSEC) {

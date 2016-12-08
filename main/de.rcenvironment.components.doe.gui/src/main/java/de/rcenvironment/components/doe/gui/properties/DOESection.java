@@ -216,7 +216,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         startData.widthHint = minWidthSamples;
         startData.horizontalSpan = 2;
         startSample.addVerifyListener(new NumericalTextConstraintListener(startSample, NumericalTextConstraintListener.ONLY_INTEGER
-            | NumericalTextConstraintListener.GREATER_ZERO));
+            | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
         startSample.setLayoutData(startData);
         startSample.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_START_SAMPLE);
         new Label(tableComposite, SWT.NONE).setText(Messages.sampleEnd);
@@ -226,7 +226,7 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         endData.horizontalSpan = 2;
         endSample.setLayoutData(endData);
         endSample.addVerifyListener(new NumericalTextConstraintListener(endSample, NumericalTextConstraintListener.ONLY_INTEGER
-            | NumericalTextConstraintListener.GREATER_ZERO));
+            | NumericalTextConstraintListener.GREATER_OR_EQUAL_ZERO));
         endSample.setData(CONTROL_PROPERTY_KEY, DOEConstants.KEY_END_SAMPLE);
         addTableComposite();
         algorithmSelection.addSelectionListener(new AlgorithmSelectionListener());
@@ -884,8 +884,8 @@ public class DOESection extends ValidatingWorkflowNodePropertySection {
         while (outputsIterator.hasNext()) {
             EndpointDescription next = outputsIterator.next();
             if (LoopComponentConstants.ENDPOINT_ID_TO_FORWARD.equals(next.getDynamicEndpointIdentifier())
-                || LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE.equals(next.getName())
-                || LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE.equals(next.getName())) {
+                || LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE.equals(next.getName())
+                || DOEConstants.OUTPUT_NAME_NUMBER_OF_SAMPLES.equals(next.getName())) {
                 outputsIterator.remove();
             }
         }

@@ -9,7 +9,6 @@
 package de.rcenvironment.core.communication.testutils;
 
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
@@ -37,7 +36,7 @@ public class DefaultRawMessageChannelEndpointHandler implements MessageChannelEn
     public void onInboundChannelClosing(String idOfInboundChannel) {}
 
     @Override
-    public NetworkResponse onRawRequestReceived(NetworkRequest request, NodeIdentifier sourceId) {
+    public NetworkResponse onRawRequestReceived(NetworkRequest request, String sourceId) {
         return null;
     }
 }

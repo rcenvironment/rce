@@ -15,11 +15,15 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
@@ -28,8 +32,7 @@ import de.rcenvironment.core.component.workflow.execution.api.EndpointChangeList
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Describes a {@link WorkflowController} in a way that can be used by a {@link WorkflowRegistry} to
- * create that {@link WorkflowController}.
+ * Describes a {@link WorkflowController} in a way that can be used by a {@link WorkflowRegistry} to create that {@link WorkflowController}.
  * 
  * @author Roland Gude
  * @author Heinrich Wendel
@@ -40,7 +43,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
 
     /** Property that is fired when a WorkflowNode was added. */
     public static final String PROPERTY_NODES_OR_CONNECTIONS = "de.rcenvironment.wf.n_cn";
-    
+
     /** Property that is fired when a WorkflowNode was added. */
     public static final String PROPERTY_NODES = "e.rcenvironment.wf.n";
 
@@ -50,6 +53,8 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     /** Property that is fired when a WorkflowLabel was removed. */
     public static final String PROPERTY_LABEL = "e.rcenvironment.wf.l";
 
+    protected static final int MINUS_ONE = -1;
+
     private static final long serialVersionUID = 339866937554580256L;
 
     private final String identifier;
@@ -57,13 +62,13 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     private int workflowVersionNumber = WorkflowConstants.INITIAL_WORKFLOW_VERSION_NUMBER;
 
     private String name;
-    
+
     private String fileName;
 
     private String additionalInformation;
-    
-    private NodeIdentifier controllerNode;
-    
+
+    private LogicalNodeId controllerNode;
+
     private boolean isControllerNodeIdTransient = false;
 
     private final List<WorkflowNode> nodes = new ArrayList<WorkflowNode>();
@@ -73,7 +78,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     // removed temporarily the final declaration to initialize the labels later on due to backwards compatibility: <=6.1. -seid_do, April
     // 2014
     private List<WorkflowLabel> labels = new ArrayList<WorkflowLabel>();
-    
+
     /**
      * @param identifier The identifier of the {@link WorkflowDescription}.
      */
@@ -100,7 +105,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     public void setName(String name) {
         this.name = name;
     }
-    
+
     public String getFileName() {
         return fileName;
     }
@@ -116,34 +121,94 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     public void setAdditionalInformation(final String additionalInformation) {
         this.additionalInformation = additionalInformation;
     }
-    
-    public NodeIdentifier getControllerNode() {
+
+    public LogicalNodeId getControllerNode() {
         return controllerNode;
     }
 
-    public void setControllerNode(NodeIdentifier controllerNode) {
-        this.controllerNode = controllerNode;
+    public void setControllerNode(LogicalNodeId logicalNodeId) {
+        this.controllerNode = logicalNodeId;
     }
-    
+
     public boolean getIsControllerNodeIdTransient() {
         return isControllerNodeIdTransient;
     }
-    
+
     public void setIsControllerNodeIdTransient(boolean isControllerNodeIdTransient) {
         this.isControllerNodeIdTransient = isControllerNodeIdTransient;
     }
 
+    /**
+     * @return {@link List} of {@link WorkflowNode}s; modification to the {@link List} don't affect the {@link WorkflowNode}s of this
+     *         {@link WorkflowDescription}
+     */
     public List<WorkflowNode> getWorkflowNodes() {
-        return nodes;
+        return new ArrayList<>(nodes);
     }
 
-    public List<WorkflowLabel> getWorkflowLabels() {
-        return labels;
-    }
-    
     /**
-     * Adds a new label to the list of @link {@link WorkflowLabel}s and fires a property change
-     * event.
+     * Sorts the list of {@link WorkflowNode}s regarding the z-index.
+     */
+    public void sortWorkflowNodesByZIndex() {
+        Collections.sort(nodes, new Comparator<WorkflowNode>() {
+
+            @Override
+            public int compare(WorkflowNode arg0, WorkflowNode arg1) {
+                // this automatically puts new nodes to the foreground
+                if (arg0.getZIndex() == MINUS_ONE) {
+                    return 1;
+                } else if (arg0.getZIndex() < arg1.getZIndex()) {
+                    return MINUS_ONE;
+                } else if (arg0.getZIndex() > arg1.getZIndex()) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+
+        });
+        // Normalize layers lowest: z = 0
+        for (int i = 0; i < nodes.size(); i++) {
+            nodes.get(i).setZIndex(i);
+        }
+    }
+
+    /**
+     * @return {@link List} of {@link WorkflowLabel}s; modification to the {@link List} don't affect the {@link WorkflowLabel}s of this
+     *         {@link WorkflowDescription}
+     */
+    public List<WorkflowLabel> getWorkflowLabels() {
+        return new ArrayList<>(labels);
+    }
+
+    /**
+     * Sorts the list of {@link WorkflowLabel}s regarding the z-index.
+     */
+    public void sortWorkflowLabelsByZIndex() {
+        Collections.sort(labels, new Comparator<WorkflowLabel>() {
+
+            @Override
+            public int compare(WorkflowLabel arg0, WorkflowLabel arg1) {
+                // this automatically puts new labels to the foreground
+                if (arg0.getZIndex() == MINUS_ONE) {
+                    return 1;
+                } else if (arg0.getZIndex() < arg1.getZIndex()) {
+                    return MINUS_ONE;
+                } else if (arg0.getZIndex() > arg1.getZIndex()) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }
+        });
+        // Normalize layers lowest: z = 0
+        for (int i = 0; i < labels.size(); i++) {
+            labels.get(i).setZIndex(i);
+        }
+    }
+
+    /**
+     * Adds a new label to the list of @link {@link WorkflowLabel}s and fires a property change event.
      * 
      * @param label the new label
      */
@@ -163,7 +228,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         }
         firePropertyChange(PROPERTY_LABEL);
     }
-    
+
     /**
      * Set new labels. It replaces the current list of @link {@link WorkflowLabel}s and fires a property change event.
      * 
@@ -197,7 +262,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         node.getInputDescriptionsManager().addPropertyChangeListener(l);
         node.getOutputDescriptionsManager().addPropertyChangeListener(l);
     }
-    
+
     /**
      * Adds a new {@link WorkflowNode}.
      * 
@@ -209,7 +274,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
         firePropertyChange(PROPERTY_NODES);
     }
-    
+
     /**
      * Adds a list of new {@link WorkflowNode}s.
      * 
@@ -226,7 +291,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
         firePropertyChange(PROPERTY_NODES);
     }
-    
+
     /**
      * Adds a new list of {@link Connection}s at once.
      * 
@@ -289,7 +354,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
         firePropertyChange(PROPERTY_NODES);
     }
-    
+
     /**
      * Removes a {@link WorkflowNode} and its {@link Connection}s.
      * 
@@ -297,7 +362,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
      */
     private List<Connection> removeWorkflowNodeAndRelatedConnectionsWithoutNotify(WorkflowNode node) {
         List<Connection> cnsToDelete = new ArrayList<>();
-        for (Connection cn: getConnections()) {
+        for (Connection cn : getConnections()) {
             if (cn.getTargetNode().equals(node) || cn.getSourceNode().equals(node)) {
                 cnsToDelete.add(cn);
             }
@@ -306,7 +371,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         nodes.remove(node);
         return cnsToDelete;
     }
-    
+
     /**
      * Removes a {@link WorkflowNode} and its {@link Connection}s.
      * 
@@ -322,7 +387,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES);
         return cnsDeleted;
     }
-    
+
     /**
      * Removes a list of {@link WorkflowNode}s and their {@link Connection}s.
      * 
@@ -331,7 +396,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
      */
     public List<Connection> removeWorkflowNodesAndRelatedConnections(List<WorkflowNode> nodesToRemove) {
         List<Connection> cnsDeleted = new ArrayList<>();
-        for (WorkflowNode node : nodesToRemove){
+        for (WorkflowNode node : nodesToRemove) {
             cnsDeleted.addAll(removeWorkflowNodeAndRelatedConnectionsWithoutNotify(node));
         }
         if (!cnsDeleted.isEmpty()) {
@@ -341,7 +406,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES);
         return cnsDeleted;
     }
-    
+
     /**
      * Removes a list of {@link WorkflowNode}s and their {@link Connection}s.
      * 
@@ -350,19 +415,19 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
      */
     public List<Connection> removeWorkflowNodesAndRelatedConnectionsWithoutNotify(List<WorkflowNode> nodesToRemove) {
         List<Connection> cnsDeleted = new ArrayList<>();
-        for (WorkflowNode node : nodesToRemove){
+        for (WorkflowNode node : nodesToRemove) {
             cnsDeleted.addAll(removeWorkflowNodeAndRelatedConnectionsWithoutNotify(node));
         }
         return cnsDeleted;
     }
-    
+
     /**
      * Removes a list of {@link WorkflowNode}s.
      * 
      * @param nodesToRemove The list of {@link WorkflowNode}s to remove.
      */
     public void removeWorkflowNodes(List<WorkflowNode> nodesToRemove) {
-        for (WorkflowNode node : nodesToRemove){
+        for (WorkflowNode node : nodesToRemove) {
             nodes.remove(node);
         }
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
@@ -377,7 +442,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
         firePropertyChange(PROPERTY_NODES);
     }
-    
+
     /**
      * Returns all {@link Connection}s.
      * 
@@ -397,7 +462,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
         firePropertyChange(PROPERTY_CONNECTIONS);
     }
-    
+
     /**
      * Adds a new list of {@link Connection}s at once.
      * 
@@ -408,13 +473,13 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
         firePropertyChange(PROPERTY_CONNECTIONS);
     }
-    
+
     private void addConnectionsWithoutNotify(List<Connection> connectionsToAdd) {
-        for (Connection connection : connectionsToAdd){
+        for (Connection connection : connectionsToAdd) {
             addConnectionWithoutNotify(connection);
         }
     }
-    
+
     private void addConnectionWithoutNotify(Connection connection) {
         connections.add(connection);
 
@@ -426,7 +491,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         getWorkflowNode(connection.getTargetNode().getIdentifier()).getInputDescriptionsManager()
             .addConnectedDataType(input.getName(), output.getDataType());
     }
-    
+
     /**
      * Removes a {@link Connection}.
      * 
@@ -438,47 +503,50 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
             firePropertyChange(PROPERTY_CONNECTIONS);
         }
     }
-    
+
     /**
      * Removes a list of {@link Connection}s at once.
      * 
      * @param connectionsToRemove The list of {@link Connection}s to remove.
      */
-    public void removeConnections(List<Connection> connectionsToRemove){
+    public void removeConnections(List<Connection> connectionsToRemove) {
         boolean removed = false;
-        for (Connection connection : connectionsToRemove){
+        for (Connection connection : connectionsToRemove) {
             if (removeConnectionWithoutNotify(connection)) {
                 removed = true;
             }
         }
         if (removed) {
             firePropertyChange(PROPERTY_NODES_OR_CONNECTIONS);
-            firePropertyChange(PROPERTY_CONNECTIONS);            
+            firePropertyChange(PROPERTY_CONNECTIONS);
         }
     }
-    
+
     private boolean removeConnectionWithoutNotify(Connection connection) {
         EndpointDescription output = connection.getOutput();
         EndpointDescription input = connection.getInput();
+
+        connection.getSourceNode().setValid(false);
+        connection.getTargetNode().setValid(false);
 
         getWorkflowNode(connection.getSourceNode().getIdentifier()).getOutputDescriptionsManager()
             .removeConnectedDataType(output.getName(), input.getDataType());
         getWorkflowNode(connection.getTargetNode().getIdentifier()).getInputDescriptionsManager()
             .removeConnectedDataType(input.getName(), output.getDataType());
-        
+
         return connections.remove(connection);
     }
-    
-    private boolean removeConnectionsWithoutNotify(List<Connection> connectionsToRemove){
+
+    private boolean removeConnectionsWithoutNotify(List<Connection> connectionsToRemove) {
         boolean removed = false;
-        for (Connection connection : connectionsToRemove){
+        for (Connection connection : connectionsToRemove) {
             if (removeConnectionWithoutNotify(connection)) {
                 removed = true;
             }
         }
         return removed;
     }
-    
+
     /**
      * Removes a {@link Connection}.
      * 
@@ -488,7 +556,7 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
         removeConnectionsWithoutNotify(getConnections());
         addConnections(connectionsToAdd);
     }
-    
+
     /**
      * Copies the execution information of the given workflow description. It includes name, controller's node, component's node and
      * "additional information".
@@ -508,7 +576,8 @@ public class WorkflowDescription extends PropertiesChangeSupport implements Seri
     }
 
     /**
-     * Clones a given {@link WorkflowDescription}.
+     * Clones a given {@link WorkflowDescription}. Note that this requires a {@link NodeIdentifierService} instance to be avilable to the
+     * current {@link Thread}; see {@link NodeIdentifierContextHolder} for how to set it.
      * 
      * @return the cloned {@link WorkflowDescription}.
      */

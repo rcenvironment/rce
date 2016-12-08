@@ -8,10 +8,13 @@
 
 package de.rcenvironment.core.communication.model.internal;
 
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NodeIdentityInformation;
 
 /**
  * Default immutable {@link NodeIdentityInformation} implementation.
+ * 
+ * TODO review: this does not seem to be actually used anywhere?
  * 
  * @author Robert Mischke
  */
@@ -19,7 +22,7 @@ public class NodeIdentityInformationImpl implements NodeIdentityInformation, Clo
 
     private static final long serialVersionUID = -7628040480675636721L;
 
-    private final String persistentId;
+    private final InstanceNodeSessionId instanceSessionId;
 
     private final String encodedPublicKey;
 
@@ -27,16 +30,17 @@ public class NodeIdentityInformationImpl implements NodeIdentityInformation, Clo
 
     private boolean isWorkflowHost;
 
-    public NodeIdentityInformationImpl(String persistentId, String encodedPublicKey, String displayName, boolean isWorkflowHost) {
-        this.persistentId = persistentId;
+    public NodeIdentityInformationImpl(InstanceNodeSessionId instanceSessionId, String encodedPublicKey, String displayName,
+        boolean isWorkflowHost) {
+        this.instanceSessionId = instanceSessionId;
         this.encodedPublicKey = encodedPublicKey;
         this.displayName = displayName;
         this.isWorkflowHost = isWorkflowHost;
     }
 
     @Override
-    public String getPersistentNodeId() {
-        return persistentId;
+    public InstanceNodeSessionId getInstanceNodeSessionId() {
+        return instanceSessionId;
     }
 
     @Override

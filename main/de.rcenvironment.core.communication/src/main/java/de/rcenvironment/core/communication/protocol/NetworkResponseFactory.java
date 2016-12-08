@@ -10,7 +10,9 @@ package de.rcenvironment.core.communication.protocol;
 
 import java.io.Serializable;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import org.apache.commons.logging.LogFactory;
+
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
@@ -72,7 +74,7 @@ public final class NetworkResponseFactory {
      * @param localNodeId the id of the node where the failure occurred
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForNoRouteWhileForwarding(NetworkRequest request, NodeIdentifier localNodeId) {
+    public static NetworkResponse generateResponseForNoRouteWhileForwarding(NetworkRequest request, InstanceNodeSessionId localNodeId) {
         return generateErrorResponse(request, ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_WHILE_FORWARDING, localNodeId, null);
     }
 
@@ -83,7 +85,7 @@ public final class NetworkResponseFactory {
      * @param localNodeId the id of the node where the failure occurred
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForNoRouteAtSender(NetworkRequest request, NodeIdentifier localNodeId) {
+    public static NetworkResponse generateResponseForNoRouteAtSender(NetworkRequest request, InstanceNodeSessionId localNodeId) {
         return generateErrorResponse(request, ProtocolConstants.ResultCode.NO_ROUTE_TO_DESTINATION_AT_SENDER, localNodeId, null);
     }
 
@@ -108,7 +110,7 @@ public final class NetworkResponseFactory {
      * @param errorId an (optional) error id
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForErrorDuringDelivery(NetworkRequest request, NodeIdentifier eventNodeId,
+    public static NetworkResponse generateResponseForErrorDuringDelivery(NetworkRequest request, InstanceNodeSessionId eventNodeId,
         String errorId) {
         return generateErrorResponse(request, ProtocolConstants.ResultCode.EXCEPTION_DURING_DELIVERY, eventNodeId, errorId);
     }
@@ -124,7 +126,7 @@ public final class NetworkResponseFactory {
      * @return the generated response
      */
     public static NetworkResponse generateResponseForCloseOrBrokenChannelDuringRequestDelivery(NetworkRequest request,
-        NodeIdentifier eventNodeId, String errorId) {
+        InstanceNodeSessionId eventNodeId, String errorId) {
         return generateErrorResponse(request, ProtocolConstants.ResultCode.CHANNEL_CLOSED_OR_BROKEN_BEFORE_SENDING_REQUEST, eventNodeId,
             errorId);
     }
@@ -139,7 +141,7 @@ public final class NetworkResponseFactory {
      * @return the generated response
      */
     public static NetworkResponse generateResponseForChannelCloseWhileWaitingForResponse(NetworkRequest request,
-        NodeIdentifier eventNodeId, String errorId) {
+        InstanceNodeSessionId eventNodeId, String errorId) {
         return generateErrorResponse(request,
             ProtocolConstants.ResultCode.CHANNEL_OR_RESPONSE_LISTENER_SHUT_DOWN_WHILE_WAITING_FOR_RESPONSE, eventNodeId, errorId);
     }
@@ -152,24 +154,30 @@ public final class NetworkResponseFactory {
      * @param eventNodeId the id of the node where the timeout occurred
      * @return the generated response
      */
-    public static NetworkResponse generateResponseForTimeoutWaitingForResponse(NetworkRequest request, NodeIdentifier eventNodeId) {
+    public static NetworkResponse generateResponseForTimeoutWaitingForResponse(NetworkRequest request, InstanceNodeSessionId eventNodeId) {
         return generateErrorResponse(request, ProtocolConstants.ResultCode.TIMEOUT_WAITING_FOR_RESPONSE, eventNodeId, null);
     }
 
-    private static NetworkResponse generateErrorResponse(NetworkRequest request, ResultCode resultCode, NodeIdentifier reporterNodeId,
-        String errorId) {
+    private static NetworkResponse generateErrorResponse(NetworkRequest request, ResultCode resultCode,
+        InstanceNodeSessionId reporterNodeId, String errorId) {
         errorId = StringUtils.nullSafe(errorId);
-        String nodeIdString = StringUtils.nullSafe(reporterNodeId.getIdString());
+        final String nodeIdString;
+        if (reporterNodeId != null) {
+            nodeIdString = StringUtils.nullSafe(reporterNodeId.getInstanceNodeSessionIdString());
+        } else {
+            nodeIdString = "<null>";
+            LogFactory.getLog(NetworkRequestFactory.class).warn("Observed <null> reporterNodeId");
+        }
         // wrap into pre-defined format string
         String errorInfoPayload = StringUtils.escapeAndConcat(errorId, nodeIdString);
         // generate response
         return new NetworkResponseImpl(MessageUtils.serializeSafeObject(errorInfoPayload), request.getRequestId(), resultCode);
     }
 
-    private static String representErrorLocationAsString(NodeIdentifier localNodeId) {
+    private static String representErrorLocationAsString(InstanceNodeSessionId localNodeId) {
         // note: there is a minimal information leak here by revealing what name the intermediate node assigns to itself; it's
         // very unlikely that this a secret, yet the sender is allowed to route across this node, though - misc_ro
-        return localNodeId.toString();
+        return localNodeId.toString(); // TODO before using this method again, check whether this should be a different conversion now
     }
 
 }

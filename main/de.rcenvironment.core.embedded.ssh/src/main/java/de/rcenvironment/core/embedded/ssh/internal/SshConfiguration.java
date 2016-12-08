@@ -16,6 +16,7 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
 
@@ -39,14 +40,20 @@ public class SshConfiguration {
 
     private List<SshAccountImpl> accounts = new ArrayList<>();
 
-    private List<SshAccountRole> roles = new ArrayList<>();
+    private final List<SshAccountRole> roles;
 
     public SshConfiguration() {
         host = DEFAULT_HOST;
         port = DEFAULT_PORT;
+        // Create predefined roles
+        roles = createPredefinedRoles();
+
     }
 
-    public SshConfiguration(ConfigurationSegment configurationSegment) throws IOException {
+    public SshConfiguration(ConfigurationSegment configurationSegment) throws ConfigurationException, IOException {
+
+        // Create predefined roles
+        roles = createPredefinedRoles();
 
         enabled = configurationSegment.getBoolean("enabled", false);
 
@@ -69,16 +76,29 @@ public class SshConfiguration {
         port = configurationSegment.getInteger("port", DEFAULT_PORT);
 
         for (Entry<String, ConfigurationSegment> entry : configurationSegment.listElements("accounts").entrySet()) {
-            SshAccountImpl account = entry.getValue().mapToObject(SshAccountImpl.class);
-            account.setLoginName(entry.getKey());
-            accounts.add(account);
+            try {
+                SshAccountImpl account = entry.getValue().mapToObject(SshAccountImpl.class);
+                account.setLoginName(entry.getKey());
+                accounts.add(account);
+            } catch (IOException e) {
+                throw new ConfigurationException("Error parsing the configuration for account \"" + entry.getKey()
+                    + "\". The embedded SSH server will not be started.");
+            }
         }
 
-        for (Entry<String, ConfigurationSegment> entry : configurationSegment.listElements("roles").entrySet()) {
-            SshAccountRole role = entry.getValue().mapToObject(SshAccountRole.class);
-            role.setRoleName(entry.getKey());
-            roles.add(role);
+        // Check if deprecated "roles" configuration was used.
+        if (configurationSegment.getSubSegment("roles").isPresentInCurrentConfiguration()) {
+            LogFactory.getLog(getClass()).warn("Deprecated \"roles\" configuration used. The roles will not be applied. Only "
+                + "predefined roles can be used. A list of available roles can be found in the configuration reference or the user guide.");
         }
+    }
+
+    private List<SshAccountRole> createPredefinedRoles() {
+        List<SshAccountRole> predefRoles = new ArrayList<SshAccountRole>();
+        for (String roleName : SshConstants.PREDEFINED_ROLE_NAMES) {
+            predefRoles.add(new SshAccountRole(roleName));
+        }
+        return predefRoles;
     }
 
     /**
@@ -91,7 +111,7 @@ public class SshConfiguration {
      */
     public boolean validateConfiguration(Log logger) {
         boolean isValid = true;
-        List<SshAccountRole> valRoles = new ArrayList<SshAccountRole>();
+        // List<SshAccountRole> valRoles = new ArrayList<SshAccountRole>();
         List<SshAccountImpl> valUsers = new ArrayList<SshAccountImpl>();
 
         if (host == null || host.isEmpty()) {
@@ -105,29 +125,17 @@ public class SshConfiguration {
             isValid = false;
         }
 
-        // roles not null
-        if (roles != null && !roles.isEmpty()) {
-            for (SshAccountRole role : roles) {
-                // validate single role
-                isValid = role.validateRole(logger) && isValid;
-
-                // distinct role names
-                if (valRoles.contains(role)) {
-                    logger.warn("Role names must be distinct. found two roles with name: " + role.getRoleName());
-                    isValid = false;
-                } else {
-                    valRoles.add(role);
-                }
-            }
-        } else {
-            if (roles == null) {
-                roles = new ArrayList<SshAccountRole>();
-            }
-            List<String> defaultPrivileges = new ArrayList<String>();
-            defaultPrivileges.add(SshConstants.DEFAULT_ROLE_PRIVILEGES);
-            logger.warn("Warning: Configuration did not include roles. Creating default role with all privileges");
-            roles.add(new SshAccountRole("", defaultPrivileges, new ArrayList<String>()));
-        }
+        /*
+         * Validation of roles currently not needed, only predefined roles are used. // roles not null if (roles != null &&
+         * !roles.isEmpty()) { for (SshAccountRole role : roles) { // validate single role isValid = role.validateRole(logger) && isValid;
+         * 
+         * // distinct role names if (valRoles.contains(role)) { logger.warn("Role names must be distinct. found two roles with name: " +
+         * role.getRoleName()); isValid = false; } else { valRoles.add(role); } } } else { if (roles == null) { roles = new
+         * ArrayList<SshAccountRole>(); } List<String> defaultPrivileges = new ArrayList<String>();
+         * defaultPrivileges.add(SshConstants.DEFAULT_ROLE_PRIVILEGES);
+         * logger.warn("Warning: Configuration did not include roles. Creating default role with all privileges"); roles.add(new
+         * SshAccountRole("", new ArrayList<String>())); }
+         */
 
         // users not null
         if (accounts != null && !accounts.isEmpty()) {
@@ -194,6 +202,9 @@ public class SshConfiguration {
                 break;
             }
         }
+        if (curRole == null) {
+            curRole = getRoleByName(SshConstants.ROLE_NAME_DEFAULT);
+        }
         return curRole;
     }
 
@@ -230,10 +241,6 @@ public class SshConfiguration {
 
     public List<SshAccountRole> getRoles() {
         return roles;
-    }
-
-    public void setRoles(List<SshAccountRole> roles) {
-        this.roles = roles;
     }
 
     // Getter and Setter - END

@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.testutils;
 
 import java.io.Serializable;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
@@ -27,14 +27,14 @@ import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
  */
 public class TestNetworkRequestHandler implements NetworkRequestHandler {
 
-    private NodeIdentifier ownNodeId;
+    private InstanceNodeSessionId ownNodeId;
 
-    public TestNetworkRequestHandler(NodeIdentifier ownNodeId) {
+    public TestNetworkRequestHandler(InstanceNodeSessionId ownNodeId) {
         this.ownNodeId = ownNodeId;
     }
 
     @Override
-    public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier lastHopNodeId) throws InternalMessagingException {
+    public NetworkResponse handleRequest(NetworkRequest request, InstanceNodeSessionId lastHopNodeId) throws InternalMessagingException {
         Serializable content = NetworkRequestUtils.deserializeWithExceptionHandling(request);
         if (!(content instanceof String)) {
             throw new RuntimeException("Test request handler received a non-string request: " + content);
@@ -54,7 +54,7 @@ public class TestNetworkRequestHandler implements NetworkRequestHandler {
      * @param respondingNodeId the id of the node generating the response
      * @return the response string
      */
-    public static String getTestResponse(String content, NodeIdentifier respondingNodeId) {
-        return content + ".response.from=" + respondingNodeId.getIdString();
+    public static String getTestResponse(String content, InstanceNodeSessionId respondingNodeId) {
+        return content + ".response.from=" + respondingNodeId.getInstanceNodeSessionIdString();
     }
 }

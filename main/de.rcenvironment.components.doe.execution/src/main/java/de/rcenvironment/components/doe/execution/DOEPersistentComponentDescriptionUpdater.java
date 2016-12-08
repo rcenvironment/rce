@@ -9,8 +9,11 @@ package de.rcenvironment.components.doe.execution;
 
 import java.io.IOException;
 
+import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonNode;
+import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.JsonProcessingException;
+import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.ObjectWriter;
 import org.codehaus.jackson.node.JsonNodeFactory;
@@ -42,8 +45,12 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
     private static final String V3_2 = "3.2";
 
     private static final String V3_3 = "3.3";
-    
+
     private static final String V3_4 = "3.4";
+
+    private static final String V4 = "4";
+
+    private static final String V4_1 = "4.1";
 
     private static final String DYNAMIC_INPUTS = "dynamicInputs";
 
@@ -65,7 +72,11 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         if (!silent && persistentComponentDescriptionVersion != null
-            && persistentComponentDescriptionVersion.compareTo(V3_3) < 0) {
+            && persistentComponentDescriptionVersion.compareTo(V4) < 0) {
+            versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
+        }
+        if (!silent && persistentComponentDescriptionVersion != null
+            && persistentComponentDescriptionVersion.compareTo(V4_1) < 0) {
             versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
         }
         return versionsToUpdate;
@@ -94,11 +105,34 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
                 switch (description.getComponentVersion()) {
                 case V3_3:
                     description = updateToVersion34(description);
+                case V3_4:
+                    description = updatefrom34To4(description);
+                case V4:
+                    description = updatefrom4To41(description);
                     break;
                 default:
                 }
             }
         }
+        return description;
+    }
+
+    private PersistentComponentDescription updatefrom4To41(PersistentComponentDescription description)
+        throws JsonParseException, JsonGenerationException, JsonMappingException, IOException {
+        description =
+            PersistentComponentDescriptionUpdaterUtils.addStaticOutput(description, DOEConstants.OUTPUT_NAME_NUMBER_OF_SAMPLES, "Integer");
+        description.setComponentVersion(V4_1);
+        return description;
+    }
+
+    private PersistentComponentDescription updatefrom34To4(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        description =
+            PersistentComponentDescriptionUpdaterUtils.removeOuterLoopDoneEndpoints(description);
+        description = PersistentComponentDescriptionUpdaterUtils.removeEndpointCharacterInfoFromMetaData(description);
+        description = PersistentComponentDescriptionUpdaterUtils.reassignEndpointIdentifiers(description, DYNAMIC_INPUTS, "toForward",
+            "startToForward", "_start");
+        description.setComponentVersion(V4);
         return description;
     }
 
@@ -109,7 +143,7 @@ public class DOEPersistentComponentDescriptionUpdater implements PersistentCompo
         updatedDesc.setComponentVersion(V3_4);
         return updatedDesc;
     }
-    
+
     private PersistentComponentDescription updateToVersion33(PersistentComponentDescription description)
         throws JsonProcessingException, IOException {
         JsonNode node = mapper.readTree(description.getComponentDescriptionAsString());

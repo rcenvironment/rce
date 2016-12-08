@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.routing.internal.v2;
 
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Listener for {@link LinkState} knowledge changes.
@@ -27,7 +27,7 @@ public interface LinkStateKnowledgeChangeListener {
      * 
      * @param knowledge the map of all known {@link LinkState}s
      */
-    void onLinkStateKnowledgeChanged(Map<NodeIdentifier, LinkState> knowledge);
+    void onLinkStateKnowledgeChanged(Map<InstanceNodeSessionId, LinkState> knowledge);
 
     /**
      * Called when {@link LinkState}s are added or updated. The map and the contained {@link LinkState} objects are immutable, so all access
@@ -35,7 +35,7 @@ public interface LinkStateKnowledgeChangeListener {
      * 
      * @param delta the map of added or updated {@link LinkState}s
      */
-    void onLinkStatesUpdated(Map<NodeIdentifier, LinkState> delta);
+    void onLinkStatesUpdated(Map<InstanceNodeSessionId, LinkState> delta);
 
     /**
      * Reports that the local node's {@link LinkState} has been updated.

@@ -32,8 +32,8 @@ import de.rcenvironment.components.excel.common.SimpleExcelService;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * "Properties" view tab for defining macros to run.
@@ -131,7 +131,7 @@ public class MacrosSection extends ValidatingWorkflowNodePropertySection {
      * 
      */
     private void discoverMacros() {
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Browses the given excel file for macros")

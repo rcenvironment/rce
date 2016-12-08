@@ -9,7 +9,6 @@
 package de.rcenvironment.core.gui.workflow.executor.properties;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.custom.StyledText;
 import org.eclipse.swt.events.KeyAdapter;
 import org.eclipse.swt.events.KeyEvent;
 import org.eclipse.swt.events.SelectionAdapter;
@@ -31,6 +30,7 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowNodeUtil;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
+import de.rcenvironment.core.gui.utils.common.widgets.LineNumberStyledText;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -59,7 +59,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     private static final String KEY_SCRIPT_WHITESPACE_BOX = "ScriptWhitespaceBox";
 
-    private static final int MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT = 500;
+    private static final int MINIMUM_HEIGHT_OF_JOB_SCRIPTING_TEXT = 200;
 
     protected Button openInEditorButton;
 
@@ -71,7 +71,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
     protected EditScriptRunnable esr = null;
 
-    private StyledText scriptingText;
+    protected LineNumberStyledText scriptingText;
 
     private final String scriptName;
 
@@ -111,6 +111,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         GridData gridData = new GridData();
         gridData.grabExcessHorizontalSpace = true;
         gridData.horizontalAlignment = GridData.FILL;
+        gridData.widthHint = 1;
 
         openInEditorButton = factory.createButton(jobParent, Messages.openInEditor, SWT.PUSH);
         checkBoxWhitespace = factory.createButton(jobParent, Messages.showWhitespace, SWT.CHECK);
@@ -134,6 +135,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         gridData = new GridData();
         gridData.grabExcessHorizontalSpace = true;
         gridData.horizontalAlignment = GridData.FILL;
+        gridData.widthHint = 1;
 
         newScriptArea = factory.createFlatFormComposite(jobParent);
         newScriptArea.setLayoutData(gridData);
@@ -141,10 +143,6 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
         layout = new GridLayout();
         layout.numColumns = 2;
         newScriptArea.setLayout(layout);
-
-        gridData = new GridData();
-        gridData.grabExcessHorizontalSpace = true;
-        gridData.horizontalAlignment = GridData.FILL;
 
         gridData = new GridData();
         gridData.horizontalSpan = 2;
@@ -155,7 +153,7 @@ public abstract class AbstractScriptSection extends ValidatingWorkflowNodeProper
 
         final int aKeyCode = 97;
 
-        scriptingText = new StyledText(newScriptArea, SWT.MULTI | SWT.V_SCROLL | SWT.BORDER);
+        scriptingText = new LineNumberStyledText(newScriptArea, SWT.MULTI | SWT.V_SCROLL | SWT.BORDER | SWT.WRAP);
 
         scriptingText.setFont(FontManager.getInstance().getFont(StandardFonts.CONSOLE_TEXT_FONT));
         scriptingText.addKeyListener(new KeyAdapter() {

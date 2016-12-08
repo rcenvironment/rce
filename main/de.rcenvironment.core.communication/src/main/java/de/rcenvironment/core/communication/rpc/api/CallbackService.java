@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.communication.rpc.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.spi.CallbackObject;
 
 /**
@@ -22,10 +22,10 @@ public interface CallbackService extends RemotableCallbackService {
      * Adds an object so that call backs on this object can be invoked.
      * 
      * @param callBackObject The object to invoke call backs on.
-     * @param nodeId The {@link NodeIdentifier} of the remote platform doing the call backs.
+     * @param nodeId The {@link InstanceNodeSessionId} of the remote platform doing the call backs.
      * @return the object's identifier used for callback() and setTimeToLive().
      */
-    String addCallbackObject(Object callBackObject, NodeIdentifier nodeId);
+    String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId);
 
     /**
      * Gets an already added callback object.
@@ -49,8 +49,8 @@ public interface CallbackService extends RemotableCallbackService {
      * 
      * @param callbackObject The object to create a callback proxy for.
      * @param objectIdentifier The object's identifier.
-     * @param proxyHome The {@link NodeIdentifier} of the remote platform where the proxy will be located then.
+     * @param proxyHome The {@link InstanceNodeSessionId} of the remote platform where the proxy will be located then.
      * @return The created proxy object.
      */
-    Object createCallbackProxy(CallbackObject callbackObject, final String objectIdentifier, NodeIdentifier proxyHome);
+    Object createCallbackProxy(CallbackObject callbackObject, final String objectIdentifier, InstanceNodeSessionId proxyHome);
 }

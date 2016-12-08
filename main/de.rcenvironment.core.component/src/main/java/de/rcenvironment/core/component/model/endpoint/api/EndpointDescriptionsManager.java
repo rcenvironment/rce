@@ -13,6 +13,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -198,7 +199,19 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
     }
 
     /**
-     * @param name name of {@link EndpointDescription} to get
+     * @param names names of {@link EndpointDefinition}s to get
+     * @return list of {@link EndpointDefinition}s for given names
+     */
+    public Set<EndpointDefinition> getStaticEndpointDefinitions(List<String> names) {
+        Set<EndpointDefinition> endpointDefinitions = new HashSet<>();
+        for (String name : names) {
+            endpointDefinitions.add(getStaticEndpointDefinition(name));
+        }
+        return endpointDefinitions;
+    }
+
+    /**
+     * @param name name of {@link EndpointDefinition} to get
      * @return {@link EndpointDefinition} with given name
      */
     public EndpointDefinition getStaticEndpointDefinition(String name) {
@@ -207,6 +220,18 @@ public class EndpointDescriptionsManager extends PropertiesChangeSupport impleme
 
     public Set<EndpointDefinition> getDynamicEndpointDefinitions() {
         return Collections.unmodifiableSet(endpointDefinitionsProvider.getDynamicEndpointDefinitions());
+    }
+    
+    /**
+     * @param ids identifiers of {@link EndpointDefinition}s to get
+     * @return list of {@link EndpointDefinition}s for given identifiers
+     */
+    public Set<EndpointDefinition> getDynamicEndpointDefinitions(List<String> ids) {
+        Set<EndpointDefinition> endpointDefinitions = new HashSet<>();
+        for (String id : ids) {
+            endpointDefinitions.add(getDynamicEndpointDefinition(id));
+        }
+        return endpointDefinitions;
     }
 
     /**

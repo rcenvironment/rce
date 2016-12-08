@@ -5,7 +5,7 @@
     <title>Design of Experiments Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-    <para>The DOE component sends values (floating-point numbers) to other components. The values
+    <para>The Design of Experiments component sends values (floating-point numbers) to other components. The values
             are either generated on the base of a design method or are provided by a custom design
             table. The values can be used to sample a solution within a bounded space. They are
             independent to each other.</para>
@@ -32,7 +32,9 @@
         <para>The first three methods generate the output values on the base of established design
             methods (see links above). For two of them, the values are random. You can choose a seed
             in order to reuse the same values later. The number of samples can be defined with the
-            option "Number of levels"/"Desired runs".</para>
+            option "Number of levels"/"Desired runs" and can be communicated to other components
+            using the "Number of samples" output, which is sent out on the first iteration of the
+            DOE component.</para>
         <para>The last method allows to define a custom design table. The table at the bottom is
             editable and values can be entered. The table can be saved as a csv file and can be
             re-loaded later on. It is also possible to define a custom sample range by modifying the

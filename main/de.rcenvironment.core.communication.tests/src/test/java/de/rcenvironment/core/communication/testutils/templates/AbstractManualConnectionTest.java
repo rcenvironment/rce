@@ -31,9 +31,10 @@ import de.rcenvironment.core.communication.testutils.ConnectionSetupStateTracker
 import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
 import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualTopology;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.RunnablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.RunnablesGroup;
 
 /**
  * A common base class that defines common tests to verify proper transport operation. Subclasses implement
@@ -55,7 +56,7 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
 
     private static final int MRM_TEST_SINGLE_MESSAGE_TIMEOUT = 1000;
 
-    private static final String COMMON_SERVER_NODE_ID = "server";
+    private static final String COMMON_SERVER_NODE_NAME = "server";
 
     private static final int COMMON_SLEEP_TIME_AFTER_SERVER_SHUTDOWN = 2000;
 
@@ -77,7 +78,7 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
     @Ignore
     public void sequentialHighConnectDisconnectCount() throws InterruptedException, TimeoutException {
         VirtualInstance client = new VirtualInstance("client");
-        VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_ID);
+        VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_NAME);
         client.registerNetworkTransportProvider(transportProvider);
         server.registerNetworkTransportProvider(transportProvider);
         server.addServerConfigurationEntry(contactPointGenerator.createContactPoint());
@@ -90,10 +91,11 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
         try {
             for (int i = 0; i < SHCDC_TEST_NUM_CONNECTION_ATTEMPTS; i++) {
                 log.debug("Starting connection attempt " + (i + 1));
-                performConnectDisconnectCycle(setup, stateTracker);
+                final String observedRemoteIdString = performConnectDisconnectCycle(setup, stateTracker);
+                assertEquals(server.getInstanceNodeSessionId().getInstanceNodeSessionIdString(), observedRemoteIdString);
             }
         } finally {
-            String statistics = SharedThreadPool.getInstance().getFormattedStatistics(true);
+            String statistics = ConcurrencyUtils.getThreadPoolManagement().getFormattedStatistics(true);
             log.debug(statistics);
             connectionSetupService.removeConnectionSetupListener(stateTracker);
             server.shutDown();
@@ -111,7 +113,7 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
     @Ignore
     public void sequentialWrongProtocolConnectionAttempts() throws InterruptedException, TimeoutException {
         VirtualInstance client = new VirtualInstance("client");
-        VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_ID);
+        VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_NAME);
         client.registerNetworkTransportProvider(transportProvider);
         server.registerNetworkTransportProvider(transportProvider);
         server.addServerConfigurationEntry(contactPointGenerator.createContactPoint());
@@ -151,13 +153,13 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
 
         final AtomicInteger successCount = new AtomicInteger();
 
-        final VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_ID, COMMON_SERVER_NODE_ID, false); // no relay
+        final VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_NAME, false); // no relay
         server.registerNetworkTransportProvider(transportProvider);
         server.addServerConfigurationEntry(contactPointGenerator.createContactPoint());
         server.start();
 
         try {
-            RunnablesGroup runnablesGroup = SharedThreadPool.getInstance().createRunnablesGroup();
+            RunnablesGroup runnablesGroup = ConcurrencyUtils.getFactory().createRunnablesGroup();
 
             for (int i = 1; i <= CHCDC_TEST_NUM_THREADS; i++) {
                 final int i2 = i;
@@ -181,7 +183,8 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
                                 connectionSetupService.addConnectionSetupListener(stateTracker);
                                 log.debug("Starting connection attempt: " + attemptId);
                                 try {
-                                    performConnectDisconnectCycle(setup, stateTracker);
+                                    final String observedRemoteIdString = performConnectDisconnectCycle(setup, stateTracker);
+                                    assertEquals(server.getInstanceNodeSessionIdString(), observedRemoteIdString);
                                     successCount.incrementAndGet();
                                 } catch (TimeoutException e) {
                                     log.error(StringUtils.format("Connect attempt %d of thread %d failed with a timeout: %s", i2, j,
@@ -202,14 +205,14 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
             }
             runnablesGroup.executeParallel();
         } finally {
-            String statistics = SharedThreadPool.getInstance().getFormattedStatistics(true);
+            String statistics = ConcurrencyUtils.getThreadPoolManagement().getFormattedStatistics(true);
             log.debug("Immediately after end of test:\n" + statistics);
             Thread.sleep(COMMON_WAIT_TIME_BEFORE_PRINTING_2ND_STATS);
-            String statistics2 = SharedThreadPool.getInstance().getFormattedStatistics(true);
+            String statistics2 = ConcurrencyUtils.getThreadPoolManagement().getFormattedStatistics(true);
             log.debug("After a short delay:\n" + statistics2);
             server.shutDown();
             Thread.sleep(COMMON_WAIT_TIME_BEFORE_PRINTING_3RD_STATS); // avoid irrelevant interruption exception
-            String statistics3 = SharedThreadPool.getInstance().getFormattedStatistics(true);
+            String statistics3 = ConcurrencyUtils.getThreadPoolManagement().getFormattedStatistics(true);
             log.debug("After server shutdown:\n" + statistics3);
 
             log.debug(StringUtils.format("Attempt/success count: %d/%d", attemptCount.get(), successCount.get()));
@@ -229,7 +232,7 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
     public void manyRoutedMessages() throws Exception {
         final VirtualInstance client1 = new VirtualInstance("client1");
         final VirtualInstance client2 = new VirtualInstance("client2");
-        final VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_ID, COMMON_SERVER_NODE_ID, true); // relay
+        final VirtualInstance server = new VirtualInstance(COMMON_SERVER_NODE_NAME, true); // relay
 
         VirtualTopology topology = new VirtualTopology(client1, client2, server);
         VirtualInstanceGroup allNodes = topology.getAsGroup();
@@ -244,7 +247,7 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
         try {
             log.info("Starting to send messages");
             final Semaphore maxParallelSendLimit = new Semaphore(MRM_TEST_NUM_SENDER_THREADS);
-            final SharedThreadPool threadPool = SharedThreadPool.getInstance();
+            final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
             for (int i = 0; i < MRM_TEST_NUM_MESSAGES; i++) {
                 maxParallelSendLimit.acquire();
                 final String requestContent = Integer.toString(i);
@@ -254,7 +257,8 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
                     public void run() {
                         NetworkResponse response;
                         try {
-                            response = client1.performRoutedRequest(requestContent, client2.getNodeId(), MRM_TEST_SINGLE_MESSAGE_TIMEOUT);
+                            response = client1.performRoutedRequest(requestContent, client2.getInstanceNodeSessionId(),
+                                MRM_TEST_SINGLE_MESSAGE_TIMEOUT);
                             Serializable responseContent = response.getDeserializedContent();
                             assertTrue(responseContent.toString().startsWith(requestContent));
                             // note: intentionally not reached on errors
@@ -273,18 +277,23 @@ public abstract class AbstractManualConnectionTest extends AbstractTransportBase
         }
     }
 
-    private void performConnectDisconnectCycle(ConnectionSetup setup, ConnectionSetupStateTracker stateTracker)
+    /**
+     * @return the instance session id reported by the remote node
+     */
+    private String performConnectDisconnectCycle(ConnectionSetup setup, ConnectionSetupStateTracker stateTracker)
         throws InterruptedException, AssertionError, TimeoutException {
         ConnectionSetupState initialState = setup.getState();
         assertTrue(ConnectionSetupState.DISCONNECTED == initialState);
         setup.signalStartIntent();
         stateTracker.awaitAndExpect(ConnectionSetupState.CONNECTING, COMMON_STATE_CHANGE_WAIT_MSEC);
         stateTracker.awaitAndExpect(ConnectionSetupState.CONNECTED, COMMON_STATE_CHANGE_WAIT_MSEC);
-        assertEquals(COMMON_SERVER_NODE_ID, setup.getCurrentChannel().getRemoteNodeInformation().getNodeIdString());
+        final String remoteInstanceSessionIdString = setup.getCurrentChannel().getRemoteNodeInformation().getInstanceNodeSessionIdString();
         Thread.sleep(COMMON_WAIT_TIME_BEFORE_DISCONNECTING);
-        // TODO test message round-trip here?
+        // TODO also test message round-trip here?
         setup.signalStopIntent();
         stateTracker.awaitAndExpect(ConnectionSetupState.DISCONNECTING, COMMON_STATE_CHANGE_WAIT_MSEC);
         stateTracker.awaitAndExpect(ConnectionSetupState.DISCONNECTED, COMMON_STATE_CHANGE_WAIT_MSEC);
+        // return remote id for potential verification
+        return remoteInstanceSessionIdString;
     }
 }

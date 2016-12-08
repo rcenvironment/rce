@@ -80,7 +80,7 @@ public class WorkflowInstancePropertySource implements IPropertySource {
         if (key.equals(PROP_KEY_NAME)) {
             value = wfExeInfo.getInstanceName();
         } else if (key.equals(PROP_KEY_WORKKLOWPLATFORM)) {
-            if (wfExeInfo.getNodeId() == null || platformService.isLocalNode(wfExeInfo.getNodeId())) {
+            if (wfExeInfo.getNodeId() == null || platformService.matchesLocalInstance(wfExeInfo.getNodeId())) {
                 value = Messages.local;
             } else {
                 value = wfExeInfo.getNodeId().getAssociatedDisplayName();
@@ -125,7 +125,7 @@ public class WorkflowInstancePropertySource implements IPropertySource {
                 count++;
             }
         }
-        if (!nodeIdentifiers.contains(wfExeInfo.getNodeId().getIdString())) {
+        if (!nodeIdentifiers.contains(wfExeInfo.getNodeId().getLogicalNodeIdString())) {
             count++;
         }
         return count;

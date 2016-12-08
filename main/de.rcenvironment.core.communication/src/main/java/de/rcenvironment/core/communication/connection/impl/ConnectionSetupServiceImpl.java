@@ -28,12 +28,12 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetupState;
 import de.rcenvironment.core.communication.connection.api.DisconnectReason;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
 
 /**
  * Default {@link ConnectionSetupService} implementation.
@@ -50,8 +50,7 @@ public class ConnectionSetupServiceImpl implements ConnectionSetupService, Addit
     private final AtomicLong lastSetupId = new AtomicLong();
 
     private final AsyncOrderedCallbackManager<ConnectionSetupListener> callbackManager =
-        new AsyncOrderedCallbackManager<ConnectionSetupListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+        ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
     private final Log log = LogFactory.getLog(getClass());
 

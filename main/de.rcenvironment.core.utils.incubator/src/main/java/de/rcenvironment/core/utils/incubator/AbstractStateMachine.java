@@ -8,9 +8,9 @@
 
 package de.rcenvironment.core.utils.incubator;
 
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
 
 /**
  * An abstract base class to simplify the creation of state machine implementations.
@@ -27,7 +27,7 @@ public abstract class AbstractStateMachine<S extends Enum<?>, E> {
 
     public AbstractStateMachine(S initialState) {
         this.currentState = initialState;
-        this.eventQueue = new AsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED, SharedThreadPool.getInstance());
+        this.eventQueue = ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
     }
 
     /**

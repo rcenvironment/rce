@@ -23,7 +23,7 @@ import java.util.UUID;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
@@ -44,7 +44,7 @@ public class CallbackServiceImpl implements CallbackService, RemotableCallbackSe
 
     private Map<String, WeakReference<Object>> objects = Collections.synchronizedMap(new HashMap<String, WeakReference<Object>>());
 
-    private Map<String, NodeIdentifier> remotePlatforms = Collections.synchronizedMap(new HashMap<String, NodeIdentifier>());
+    private Map<String, InstanceNodeSessionId> remotePlatforms = Collections.synchronizedMap(new HashMap<String, InstanceNodeSessionId>());
 
     private Map<String, Long> ttls = Collections.synchronizedMap(new HashMap<String, Long>());
 
@@ -68,7 +68,7 @@ public class CallbackServiceImpl implements CallbackService, RemotableCallbackSe
     }
 
     @Override
-    public String addCallbackObject(Object callbackObject, NodeIdentifier nodeId) {
+    public String addCallbackObject(Object callbackObject, InstanceNodeSessionId nodeId) {
         String identifier = null;
         synchronized (objects) {
             for (String id : objects.keySet()) {
@@ -110,7 +110,7 @@ public class CallbackServiceImpl implements CallbackService, RemotableCallbackSe
                 try {
                     return MethodCaller.callMethod(objectToCall, methodName, parameters, METHOD_PERMISSION_CHECK);
                 } catch (InvocationTargetException e) {
-                    // FIXME 7.0.0: review
+                    // TODO (p2) review (was _FIXME 7.0.0)
                     throw new RemoteOperationException("Callback method threw an exception: " + e.toString());
                 }
             }
@@ -126,10 +126,10 @@ public class CallbackServiceImpl implements CallbackService, RemotableCallbackSe
 
     @Override
     public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier,
-        NodeIdentifier proxyHome) {
+        InstanceNodeSessionId proxyHome) {
 
         InvocationHandler handler = new CallbackInvocationHandler(callbackObject, objectIdentifier,
-            platformService.getLocalNodeId(), proxyHome);
+            platformService.getLocalInstanceNodeSessionId(), proxyHome);
         Object proxy = Proxy.newProxyInstance(CallbackProxy.class.getClassLoader(),
             new Class[] { callbackObject.getInterface(), CallbackProxy.class }, handler);
         return proxy;

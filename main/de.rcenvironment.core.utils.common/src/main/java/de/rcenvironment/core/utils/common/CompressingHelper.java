@@ -66,6 +66,10 @@ public final class CompressingHelper {
             if (file.isDirectory()) {
                 compressDirectoryToZipfile(rootDir, new File(sourceDir, file.getName()).getAbsolutePath(), out);
             } else {
+                if (CrossPlatformFilenameUtils.isNFSFile(file.getName())) {
+                    continue;
+                }
+
                 ZipEntry entry = new ZipEntry(sourceDir.replace(rootDir, "") + file.getName());
                 entry.setTime(0); // Set creation time to 0 to get the same hash value for same
                                   // content.

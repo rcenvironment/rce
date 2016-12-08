@@ -20,6 +20,8 @@ import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.widgets.Canvas;
 import org.eclipse.swt.widgets.Composite;
 
+import de.rcenvironment.core.gui.resources.api.ColorManager;
+
 /**
  * Each Component has its own {@link TimelineComponentCanvas} showing the usage of the component during a workflow.
  * @author Hendrik Abbenhaus
@@ -49,9 +51,9 @@ public class TimelineComponentCanvas extends Canvas implements PaintListener, Mo
         // getHeigh of canvass
         int maxY = this.getSize().y;
 
-        e.gc.setBackground(new Color(null, TimelineViewConstants.CANVAS_COLOR_BACKGROUND));
+        e.gc.setBackground(ColorManager.getInstance().getSharedColor(TimelineViewConstants.CANVAS_COLOR_BACKGROUND));
         e.gc.fillRectangle(0, 0, maxX, maxY);
-        e.gc.setForeground(new Color(null, TimelineViewConstants.CANVAS_COLOR_BACKGROUND_LINE));
+        e.gc.setForeground(ColorManager.getInstance().getSharedColor(TimelineViewConstants.CANVAS_COLOR_BACKGROUND_LINE));
         e.gc.drawLine(0, (int) (maxY / 2), maxX, (int) (maxY / 2));
         if (activities == null || activities.length == 0
             || visibleStartTime == null

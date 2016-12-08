@@ -30,13 +30,14 @@ import org.osgi.framework.Version;
 
 import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
+import de.rcenvironment.core.gui.utils.incubator.Sleak;
 import de.rcenvironment.core.start.common.InstanceRunner;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult;
 import de.rcenvironment.core.start.common.validation.api.InstanceValidationResult.InstanceValidationResultType;
 import de.rcenvironment.core.start.gui.internal.ApplicationWorkbenchAdvisor;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.core.utils.common.concurrent.ThreadGuard;
+import de.rcenvironment.toolkit.modules.concurrency.api.ThreadGuard;
 
 /**
  * Starts the GUI for RCE.
@@ -54,6 +55,11 @@ public final class GUIInstanceRunner extends InstanceRunner {
 
     private static final boolean ALLOW_WORKSPACE_CHOOSER_SUPPRESSION = true;
 
+    /**
+     * System property for launching Sleak to detect SWT resource leaks.
+     */
+    private static final String DRCE_DEBUG_SLEAK = "rce.debug.sleak";
+
     private static boolean tryWorkspaceChoosingAgain = false;
 
     /**
@@ -64,22 +70,35 @@ public final class GUIInstanceRunner extends InstanceRunner {
      */
     @Override
     public int performRun() throws Exception {
-        
+
         int exitCode = 0 - 1;
-        
+
         // trigger execution of "--exec" commands, if they exist
         String[] execCommandTokens = CommandLineArguments.getExecCommandTokens();
         if (execCommandTokens != null) {
             initiateAsyncCommandExecution(execCommandTokens, "execution of --exec commands", false);
         }
-        
+
         storeVersionInformationToSystemProperties();
-        
+
         // mark the GUI thread as forbidden (or at least, critical) for certain operations - misc_ro
         ThreadGuard.setForbiddenThread(Thread.currentThread());
-        
+
+        boolean startSleak = System.getProperties().containsKey(DRCE_DEBUG_SLEAK);
+        if (startSleak) {
+            // this needs to be executed before the display has been created
+            org.eclipse.ui.internal.misc.Policy.DEBUG_SWT_GRAPHICS = true;
+            org.eclipse.ui.internal.misc.Policy.DEBUG_SWT_DEBUG = true;
+        }
+
         // initialize the GUI
         Display display = PlatformUI.createDisplay();
+
+        if (startSleak) {
+            // this needs to be executed after the display has been created
+            Sleak sleak = new Sleak();
+            sleak.open();
+        }
 
         // start the workbench - returns as soon as the workbench is closed
         try {
@@ -91,7 +110,7 @@ public final class GUIInstanceRunner extends InstanceRunner {
                 // If this flag is true, a non-valid workspace was chosen, show the workspace chooser again until a valid workspace is
                 // selected or "cancel" is clicked.
             } while (tryWorkspaceChoosingAgain);
-            
+
             int platformUIExitCode = PlatformUI.createAndRunWorkbench(display, new ApplicationWorkbenchAdvisor());
             if (platformUIExitCode == PlatformUI.RETURN_RESTART) {
                 exitCode = IApplication.EXIT_RESTART;
@@ -103,16 +122,16 @@ public final class GUIInstanceRunner extends InstanceRunner {
         }
         return exitCode;
     }
-    
+
     @Override
     public boolean onInstanceValidationFailures(Map<InstanceValidationResultType, List<InstanceValidationResult>> validationResults) {
-        
+
         if (validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).size() > 0) {
             InstanceValidationResult result = validationResults.get(InstanceValidationResultType.FAILED_SHUTDOWN_REQUIRED).get(0);
             showErrorDialog("Instance validation failure", result.getGuiDialogMessage() + "\n\nRCE will be shut down.");
             return false;
         }
-        
+
         if (validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED).size() > 0) {
             for (InstanceValidationResult result : validationResults.get(InstanceValidationResultType.FAILED_PROCEEDING_ALLOWED)) {
                 if (!showQuestionDialog("Instance validation failure", result.getGuiDialogMessage()
@@ -156,8 +175,6 @@ public final class GUIInstanceRunner extends InstanceRunner {
             }
         });
     }
-    
-    
 
     private boolean determineWorkspaceLocation(Location workspaceLocation) throws MalformedURLException, IOException {
 
@@ -245,7 +262,7 @@ public final class GUIInstanceRunner extends InstanceRunner {
 
         return true;
     }
-    
+
     /**
      * Stores version information in system properties, which can be read by about dialog or version command. In case of RC or SNAPSHOT the
      * property for build hint will be set accordingly.
@@ -259,13 +276,13 @@ public final class GUIInstanceRunner extends InstanceRunner {
         System.setProperty("rce.version", VersionUtils.getVersionAsString(version));
         System.setProperty("rce.buildId", buildId);
     }
-    
+
     private void showErrorDialog(String title, String message) {
         MessageDialog.openError(new Shell(SWT.ON_TOP), title, message);
     }
-    
+
     private boolean showQuestionDialog(String title, String message) {
         return MessageDialog.openQuestion(new Shell(SWT.ON_TOP), title, message);
     }
-    
+
 }

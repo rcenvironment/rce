@@ -21,12 +21,12 @@ public final class Link {
 
     private final String linkId;
 
-    private final String nodeId;
+    private final String nodeId; // an InstanceNodeSessionId
 
     /**
      * @param linkId the value of {@link MessageChannel#getChannelId()}; named "link id" to match
      *        the LSA concept
-     * @param nodeIdString the {@link NodeIdentifier} string of the destination node
+     * @param nodeIdString the {@link InstanceNodeSessionId} string of the destination node
      */
     public Link(String linkId, String nodeIdString) {
         this.linkId = linkId;

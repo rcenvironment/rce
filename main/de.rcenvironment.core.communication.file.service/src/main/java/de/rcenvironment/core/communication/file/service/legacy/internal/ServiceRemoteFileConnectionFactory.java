@@ -18,29 +18,24 @@ import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection;
 import de.rcenvironment.core.communication.fileaccess.spi.RemoteFileConnectionFactory;
 
 /**
- * Implementation of the {@link RemoteFileConnectionFactory} creating
- * {@link ServiceRemoteFileConnection} objects.
+ * Implementation of the {@link RemoteFileConnectionFactory} creating {@link ServiceRemoteFileConnection} objects.
  * 
  * @author Doreen Seider
  */
 @Deprecated
 public class ServiceRemoteFileConnectionFactory implements RemoteFileConnectionFactory {
 
-    private BundleContext context;
-
     private CommunicationService communicationService;
-    
-    protected void activate(BundleContext bundleContext) {
-        context = bundleContext;
-    }
+
+    protected void activate(BundleContext bundleContext) {}
 
     protected void bindCommunicationService(CommunicationService newCommunicationService) {
         communicationService = newCommunicationService;
     }
-    
+
     @Override
     public RemoteFileConnection createRemoteFileConnection(URI uri) throws IOException {
-        return new ServiceRemoteFileConnection(uri, communicationService, context);
+        return new ServiceRemoteFileConnection(uri, communicationService);
     }
 
 }

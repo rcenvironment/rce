@@ -44,9 +44,8 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
 
     private Composite noteComposite;
 
-    public InputProviderEndpointSelectionPane(String genericEndpointTitle, EndpointType direction, Executor executor,
-        boolean readonly, String dynamicEndpointIdToManage, boolean showOnlyManagedEndpoints) {
-        super(genericEndpointTitle, direction, executor, readonly, dynamicEndpointIdToManage, showOnlyManagedEndpoints);
+    public InputProviderEndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, Executor executor) {
+        super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
     }
 
     @Override
@@ -80,7 +79,9 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
     }
 
     private void setNoteVisible(boolean visible) {
-        noteComposite.setVisible(visible);
+        if (!noteComposite.isDisposed()) {
+            noteComposite.setVisible(visible);
+        }
     }
 
     @Override
@@ -89,8 +90,8 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
 
         InputProviderEndpointEditDialog dialog =
             new InputProviderEndpointEditDialog(Display.getDefault().getActiveShell(),
-                EndpointActionType.ADD, configuration, endpointType, endpointIdToManage, false,
-                icon, endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
+                EndpointActionType.ADD, configuration, endpointType, dynEndpointIdToManage, false,
+                icon, endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
                     .getMetaDataDefinition(), metaData);
 
         if (dialog.open() == Dialog.OK) {
@@ -125,7 +126,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
         InputProviderEndpointEditDialog dialog =
             new InputProviderEndpointEditDialog(Display.getDefault().getActiveShell(),
                 EndpointActionType.EDIT, configuration, endpointType,
-                endpointIdToManage, false, icon, endpoint.getEndpointDefinition()
+                dynEndpointIdToManage, false, icon, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(), newMetaData);
 
         onEditClicked(name, dialog, newMetaData);
@@ -138,7 +139,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
             && metaData.get(InputProviderComponentConstants.META_FILESOURCETYPE).equals(
                 InputProviderComponentConstants.META_FILESOURCETYPE_ATWORKFLOWSTART)) {
 
-            WorkflowNodeCommand command = new InputProviderAddDynamicEndpointCommand(endpointType, endpointIdToManage, name,
+            WorkflowNodeCommand command = new InputProviderAddDynamicEndpointCommand(endpointType, dynEndpointIdToManage, name,
                 type, metaData, this); // null = this
             execute(command);
         } else {
@@ -164,7 +165,7 @@ public class InputProviderEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void executeRemoveCommand(List<String> names) {
         WorkflowNodeCommand command = new InputProviderRemoveDynamicEndpointCommand(endpointType,
-            endpointIdToManage, names, null, this); // null = this
+            dynEndpointIdToManage, names, null, this); // null = this
         execute(command);
         setNoteVisible(areFilesOrDirectoriesDefined());
     }

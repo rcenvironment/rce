@@ -74,24 +74,22 @@
 							consistent: <itemizedlist>
 								<listitem>
 									<para>(Option 1) To build from Eclipse, use the launch files in
-										"/de.rcenvironment.repositories.rce.core/eclipse". The best
-										way to ensure proper configuration of the local code base is
-										the "RCE - test core repository release (using configured
-										platform release).launch" configuration, as it uses the same
-										setup as the CI build on Jenkins. </para>
+										"/de.rcenvironment/eclipse/build/using default (release or
+										snapshot) remote repositories". The best way to ensure
+										proper configuration of the local code base is the "RCE 6.x
+										- product.singleStep (snapshot).launch" configuration, as it
+										uses the same setup as the CI build on Jenkins. </para>
 								</listitem>
 								<listitem>
 									<para>(Option 2) To build with plain Maven, open a shell in
-										"/de.rcenvironment. repositories.rce.core/" and run the
-										command "mvn clean package
-										-Drce.maven.platformRepositoryUrlRoot=http://updates.sc.dlr.de/eclipse/rce/platform/releases/".
-									</para>
+										"/de.rcenvironment/maven/initial" and run the command "mvn
+										clean package --Drce.maven.buildVariant=product.singleStep". </para>
 								</listitem>
 							</itemizedlist></para>
-						<para>Note that both options will only work if you have network access to
-							the "updates.sc.dlr.de" host that provides RCE Platform releases. If
-							this is not the case, build a local RCE Platform repository and use the
-							"RCE - build core repository (using local platform repository).launch"
+						<para>Note that both options will only work if you have network access to the
+							"software.dlr.de" host that provides RCE Platform releases. If this is
+							not the case, build a local RCE Platform repository and use the "RCE 6.x
+							- product.singleStep (using local platform repository).launch"
 							configuration from eclipse. </para>
 					</listitem>
 					<listitem>

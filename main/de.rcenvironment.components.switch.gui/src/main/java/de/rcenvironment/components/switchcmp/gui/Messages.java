@@ -52,27 +52,22 @@ public class Messages extends NLS {
      * Messages.
      */
     public static String channelLabelString;
-    
+
     /**
      * Messages.
      */
     public static String insertButtonString;
-    
-    /**
-     * Messages.
-     */
-    public static String noConditionString;
-    
+
     /**
      * Messages.
      */
     public static String noConditionMessageString;
-    
+
     /**
      * Messages.
      */
     public static String validateButtonString;
-    
+
     static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 
     static {

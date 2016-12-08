@@ -56,19 +56,23 @@ public class RemoveToolIntegrationDialog extends Dialog {
     public RemoveToolIntegrationDialog(Shell parent, Set<String> integratedConfigurations, Collection<ToolIntegrationContext> contexts) {
         super(parent);
         integratedConfigs = integratedConfigurations;
-        integrationMapping = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
+        integrationMapping = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
 
         for (String config : integratedConfigs) {
-            String type ="";
+            String type = "";
             for (ToolIntegrationContext c : contexts) {
                 if (config.contains(c.getPrefixForComponentId())) {
                     type = c.getContextType();
-                    integrationMapping.put(config.substring(c.getPrefixForComponentId().length()) 
-                    		+ " (Type: " + type.substring(type.lastIndexOf(SEPARATOR) + 1) + ")", config);
+                    integrationMapping.put(
+                        config.substring(c.getPrefixForComponentId().length()) + " (Type: "
+                            + type.substring(type.lastIndexOf(SEPARATOR) + 1) + ")",
+                        config);
                     break;
                 }
+
             }
         }
+
     }
 
     @Override

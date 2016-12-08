@@ -19,6 +19,12 @@
 	/>
 
 	<reference 
+		name="LocalSystemMonitoringAggregationService" 
+		interface="de.rcenvironment.core.monitoring.system.api.LocalSystemMonitoringAggregationService" 
+		bind="bindLocalSystemMonitoringAggregationService" 
+	/>
+
+	<reference 
 		name="EmbeddedSshServerControl" 
 		interface="de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl" 
 		bind="bindEmbeddedSshServerControl" 

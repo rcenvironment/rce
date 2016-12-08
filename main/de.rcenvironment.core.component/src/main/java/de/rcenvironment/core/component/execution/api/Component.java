@@ -28,6 +28,7 @@ public interface Component extends Registerable {
         FINISHED,
         CANCELLED,
         FAILED,
+        RESULTS_REJECTED,
     }
 
     /**
@@ -107,5 +108,22 @@ public interface Component extends Registerable {
      * or {@link #processInputs()}.
      */
     void onIntermediateHistoryDataUpdateTimer();
+    
+    /**
+     * Injects the token generated that is used by a user to verify the latest {@link Component#start()} (if treated as run) or
+     * {@link Component#processInputs()}.
+     * 
+     * @param verificationToken token used for verification
+     * @throws ComponentException on component error
+     */
+    void handleVerificationToken(String verificationToken) throws ComponentException;
+    
+    /**
+     * Called after {@link #start()} (if treated as run) or {@link #processInputs()} finished and verification is done (verification is done
+     * by the user).
+     * 
+     * @throws ComponentException on component error
+     */
+    void completeStartOrProcessInputsAfterVerificationDone() throws ComponentException;
 
 }

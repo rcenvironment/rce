@@ -22,8 +22,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A {@link CommandLineExecutor} that executes the given commands locally.
@@ -98,7 +98,7 @@ public class LocalCommandLineExecutor extends AbstractCommandLineExecutor implem
 
         if (stdinStream != null) {
             final OutputStream stdin = process.getOutputStream();
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override
                 @TaskDescription("LocalCommandLineExecutor input stream pipe")

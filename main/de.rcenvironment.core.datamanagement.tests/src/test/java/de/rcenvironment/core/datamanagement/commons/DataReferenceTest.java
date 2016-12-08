@@ -10,7 +10,7 @@ package de.rcenvironment.core.datamanagement.commons;
 
 import java.net.URI;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Test cases for {@link DataReference}.
@@ -22,7 +22,7 @@ public class DataReferenceTest {
 
     private DataReference dataReference;
 
-    private NodeIdentifier pi;
+    private InstanceNodeSessionId pi;
 
     private URI location;
 

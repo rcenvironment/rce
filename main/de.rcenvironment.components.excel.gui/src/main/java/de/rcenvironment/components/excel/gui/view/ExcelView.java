@@ -48,6 +48,7 @@ import org.eclipse.ui.forms.widgets.FormToolkit;
 import org.eclipse.ui.forms.widgets.ScrolledForm;
 import org.eclipse.ui.part.ViewPart;
 
+import de.rcenvironment.components.excel.common.ChannelValue;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelUtils;
 import de.rcenvironment.components.excel.common.SimpleExcelService;
@@ -56,11 +57,10 @@ import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
 import de.rcenvironment.core.gui.workflow.view.ComponentRuntimeView;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.excel.legacy.ExcelFileExporter;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * View of Excel component during run of workflow.
@@ -393,7 +393,7 @@ public class ExcelView extends ViewPart implements ComponentRuntimeView, Observe
      */
     private void exportToExcel(final File saveTo) {
         final SimpleExcelService excel = new SimpleExcelService();
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Export values to Excel")

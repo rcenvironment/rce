@@ -21,6 +21,9 @@ public final class DatabaseComponentConstants {
     /** Identifier of the Database component. */
     public static final String COMPONENT_ID = ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "database";
 
+    /** Output name of static output. */
+    public static final String OUTPUT_NAME_SUCCESS = "Success";
+    
     /** Select statement type. */
     public static final String SELECT = "select";
 

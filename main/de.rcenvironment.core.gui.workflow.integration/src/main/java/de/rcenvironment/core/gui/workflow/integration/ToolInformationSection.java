@@ -21,7 +21,6 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetPage;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfiguration;
-import de.rcenvironment.core.gui.utils.common.components.PropertyTabGuiHelper;
 import de.rcenvironment.core.gui.workflow.editor.documentation.ToolIntegrationDocumentationGUIHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
 
@@ -44,8 +43,18 @@ public class ToolInformationSection extends ValidatingWorkflowNodePropertySectio
 
     @Override
     protected void createCompositeContent(final Composite parent, final TabbedPropertySheetPage aTabbedPropertySheetPage) {
-        Section infoSection = PropertyTabGuiHelper.createSingleColumnSectionComposite(parent, getWidgetFactory(),
-            Messages.infoSection);
+
+        parent.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        parent.setLayout(new GridLayout(1, true));
+        
+        final Composite composite = getWidgetFactory().createFlatFormComposite(parent);
+        composite.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        composite.setLayout(new GridLayout(1, true));
+        
+        final Section infoSection = getWidgetFactory().createSection(composite, Section.TITLE_BAR);
+        infoSection.setLayoutData(new GridData(GridData.FILL_BOTH | GridData.GRAB_HORIZONTAL | GridData.GRAB_VERTICAL));
+        infoSection.setText(Messages.infoSection);
+
         infoComposite = getWidgetFactory().createFlatFormComposite(infoSection);
         infoComposite.setLayout(new GridLayout(2, false));
         new Label(infoComposite, SWT.NONE).setText(Messages.toolNameLabel);

@@ -1,0 +1,361 @@
+{
+  "identifier" : "38a8db32-4e39-46d6-b80e-d54c58179c80",
+  "workflowVersion" : "4",
+  "name" : "InfiniteLoop_Float_2016-05-30_14:57:10_28",
+  "nodes" : [ {
+    "identifier" : "f0d8bdd9-366f-45d0-a23d-0b2557ae4d00",
+    "name" : "Copy (2) of Joiner",
+    "location" : "120:260",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Float",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "dfc8c775-d2e4-4f13-9101-f5133d432514",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "5c81aacf-96ff-4f68-81e0-a9a059600255",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "744ec1ea-f806-4f08-b741-6f2caed0a07c",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "946b22cc-0f6c-437d-880c-2867bc590a99",
+    "name" : "Copy (3) of Joiner",
+    "location" : "280:260",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Float",
+      "inputCount" : "2",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "feabcec5-2888-4cf9-8f00-ad0f157503c9",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "ee2e4f36-be0d-49de-a9b0-c84db93d0443",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "19d9f00e-4408-467f-836e-11746ea2e2e6",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "46a64a1b-e47b-4351-892e-be6a29b05cc5",
+    "name" : "Copy of Input Provider (1)",
+    "location" : "200:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "1dedeb8e-7e20-4476-b29a-82b0771b0421",
+      "name" : "constant",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "5678"
+      }
+    } ]
+  }, {
+    "identifier" : "bc3bce45-0264-4352-a81d-6f7a2ea776b8",
+    "name" : "Copy of Joiner",
+    "location" : "360:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Float",
+      "inputCount" : "3",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "9c9b07db-93ff-439a-b364-0b89279270af",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "85f2d3a0-82ba-4e5a-bcdd-e999590d5293",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "d0d486d2-31d6-4303-8983-abd69d7058e8",
+      "name" : "Input 003",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "0e1f49ad-11aa-43c8-9a37-83284d6cce5e",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "e673bc20-ba19-4773-b889-0fa6a40b98fc",
+    "name" : "Input Provider",
+    "location" : "100:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "b527d2ae-715a-4922-b8dd-74c628bf3431",
+      "name" : "out1",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "1234"
+      }
+    } ]
+  }, {
+    "identifier" : "2c05c61a-2a8d-4908-8613-8ae7f85a0125",
+    "name" : "Input Provider (1)",
+    "location" : "300:140",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.inputprovider",
+      "version" : "3.2",
+      "name" : "Input Provider"
+    },
+    "configuration" : {
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "236f9846-ce22-4fa0-a66e-48f4d459f91c",
+      "name" : "out2",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "startValue" : "5678"
+      }
+    } ]
+  }, {
+    "identifier" : "2c631d1d-66a6-442e-b868-36a5a8290bfb",
+    "name" : "Joiner",
+    "location" : "40:200",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.joiner",
+      "version" : "3.3",
+      "name" : "Joiner"
+    },
+    "configuration" : {
+      "datatype" : "Float",
+      "inputCount" : "3",
+      "storeComponentHistoryData" : "true"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "fcaa4e30-616b-46bf-97bf-8bcf7c5e5946",
+      "name" : "Input 001",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "a7cbef61-0734-4f82-97da-047b01e9f024",
+      "name" : "Input 002",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    }, {
+      "identifier" : "c15a2e65-ab89-4f9c-a2e8-60d5c25c69e9",
+      "name" : "Input 003",
+      "epIdentifier" : "toJoin",
+      "group" : "join",
+      "datatype" : "Float"
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "2484c18f-0368-4425-b3ac-9647913dcdd4",
+      "name" : "Joined",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float"
+    } ]
+  }, {
+    "identifier" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "name" : "Switch",
+    "location" : "200:220",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.switchcmp",
+      "version" : "1.1",
+      "name" : "Switch"
+    },
+    "configuration" : {
+      "closeOutputsOnFalse" : "false",
+      "closeOutputsOnTrue" : "false",
+      "conditionKey" : "x1 < x2 ",
+      "neverCloseOutputs" : "true",
+      "scriptErrorMessage" : "",
+      "storeComponentHistoryData" : "true"
+    },
+    "staticInputs" : [ {
+      "identifier" : "0d4751e7-f704-4533-844f-0afa044400d5",
+      "name" : "To_forward",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Constant"
+      }
+    } ],
+    "dynamicInputs" : [ {
+      "identifier" : "394d7e2b-7d4a-4d95-9889-6188b90f25af",
+      "name" : "x1",
+      "epIdentifier" : "conditionToInput",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    }, {
+      "identifier" : "27d222e9-9e90-46fb-9731-1f02d7a9fedb",
+      "name" : "x2",
+      "epIdentifier" : "conditionToInput",
+      "group" : "null",
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Queue"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "d0a6f586-b653-404a-85b4-d401307b43cb",
+      "name" : "False",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Constant"
+      }
+    }, {
+      "identifier" : "2669ee27-7ffb-4336-b0f1-76a6d1ede48f",
+      "name" : "True",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Float",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Constant"
+      }
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "f0d8bdd9-366f-45d0-a23d-0b2557ae4d00",
+    "output" : "744ec1ea-f806-4f08-b741-6f2caed0a07c",
+    "target" : "bc3bce45-0264-4352-a81d-6f7a2ea776b8",
+    "input" : "d0d486d2-31d6-4303-8983-abd69d7058e8"
+  }, {
+    "source" : "f0d8bdd9-366f-45d0-a23d-0b2557ae4d00",
+    "output" : "744ec1ea-f806-4f08-b741-6f2caed0a07c",
+    "target" : "2c631d1d-66a6-442e-b868-36a5a8290bfb",
+    "input" : "a7cbef61-0734-4f82-97da-047b01e9f024"
+  }, {
+    "source" : "946b22cc-0f6c-437d-880c-2867bc590a99",
+    "output" : "19d9f00e-4408-467f-836e-11746ea2e2e6",
+    "target" : "bc3bce45-0264-4352-a81d-6f7a2ea776b8",
+    "input" : "85f2d3a0-82ba-4e5a-bcdd-e999590d5293"
+  }, {
+    "source" : "946b22cc-0f6c-437d-880c-2867bc590a99",
+    "output" : "19d9f00e-4408-467f-836e-11746ea2e2e6",
+    "target" : "2c631d1d-66a6-442e-b868-36a5a8290bfb",
+    "input" : "c15a2e65-ab89-4f9c-a2e8-60d5c25c69e9"
+  }, {
+    "source" : "46a64a1b-e47b-4351-892e-be6a29b05cc5",
+    "output" : "1dedeb8e-7e20-4476-b29a-82b0771b0421",
+    "target" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "input" : "0d4751e7-f704-4533-844f-0afa044400d5"
+  }, {
+    "source" : "bc3bce45-0264-4352-a81d-6f7a2ea776b8",
+    "output" : "0e1f49ad-11aa-43c8-9a37-83284d6cce5e",
+    "target" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "input" : "27d222e9-9e90-46fb-9731-1f02d7a9fedb"
+  }, {
+    "source" : "e673bc20-ba19-4773-b889-0fa6a40b98fc",
+    "output" : "b527d2ae-715a-4922-b8dd-74c628bf3431",
+    "target" : "2c631d1d-66a6-442e-b868-36a5a8290bfb",
+    "input" : "fcaa4e30-616b-46bf-97bf-8bcf7c5e5946"
+  }, {
+    "source" : "2c05c61a-2a8d-4908-8613-8ae7f85a0125",
+    "output" : "236f9846-ce22-4fa0-a66e-48f4d459f91c",
+    "target" : "bc3bce45-0264-4352-a81d-6f7a2ea776b8",
+    "input" : "9c9b07db-93ff-439a-b364-0b89279270af"
+  }, {
+    "source" : "2c631d1d-66a6-442e-b868-36a5a8290bfb",
+    "output" : "2484c18f-0368-4425-b3ac-9647913dcdd4",
+    "target" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "input" : "394d7e2b-7d4a-4d95-9889-6188b90f25af"
+  }, {
+    "source" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "output" : "d0a6f586-b653-404a-85b4-d401307b43cb",
+    "target" : "f0d8bdd9-366f-45d0-a23d-0b2557ae4d00",
+    "input" : "dfc8c775-d2e4-4f13-9101-f5133d432514"
+  }, {
+    "source" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "output" : "d0a6f586-b653-404a-85b4-d401307b43cb",
+    "target" : "946b22cc-0f6c-437d-880c-2867bc590a99",
+    "input" : "ee2e4f36-be0d-49de-a9b0-c84db93d0443"
+  }, {
+    "source" : "8db79601-a6e9-4b21-9776-28980473fa26",
+    "output" : "2669ee27-7ffb-4336-b0f1-76a6d1ede48f",
+    "target" : "946b22cc-0f6c-437d-880c-2867bc590a99",
+    "input" : "feabcec5-2888-4cf9-8f00-ad0f157503c9"
+  } ],
+  "bendpoints" : "[{\"source\":\"2c631d1d-66a6-442e-b868-36a5a8290bfb\",\"target\":\"8db79601-a6e9-4b21-9776-28980473fa26\",\"coordinates\":\"180:220\"},{\"source\":\"bc3bce45-0264-4352-a81d-6f7a2ea776b8\",\"target\":\"8db79601-a6e9-4b21-9776-28980473fa26\",\"coordinates\":\"260:220\"},{\"source\":\"8db79601-a6e9-4b21-9776-28980473fa26\",\"target\":\"946b22cc-0f6c-437d-880c-2867bc590a99\",\"coordinates\":\"300:240\"},{\"source\":\"e673bc20-ba19-4773-b889-0fa6a40b98fc\",\"target\":\"2c631d1d-66a6-442e-b868-36a5a8290bfb\",\"coordinates\":\"60:160\"},{\"source\":\"946b22cc-0f6c-437d-880c-2867bc590a99\",\"target\":\"2c631d1d-66a6-442e-b868-36a5a8290bfb\",\"coordinates\":\"60:340\"},{\"source\":\"2c05c61a-2a8d-4908-8613-8ae7f85a0125\",\"target\":\"bc3bce45-0264-4352-a81d-6f7a2ea776b8\",\"coordinates\":\"380:160\"},{\"source\":\"f0d8bdd9-366f-45d0-a23d-0b2557ae4d00\",\"target\":\"bc3bce45-0264-4352-a81d-6f7a2ea776b8\",\"coordinates\":\"380:340\"},{\"source\":\"8db79601-a6e9-4b21-9776-28980473fa26\",\"target\":\"f0d8bdd9-366f-45d0-a23d-0b2557ae4d00\",\"coordinates\":\"140:240\"}]",
+  "labels" : "[{\"identifier\":\"6227d271-8730-4cfa-b4d7-5666d7855734\",\"text\":\"CAREFUL ! \\r\\nThis workflow is an infinite loop!\",\"location\":\"40:20\",\"size\":\"301:101\",\"alpha\":\"127\",\"colorText\":\"255:0:0\",\"colorBackground\":\"0:255:0\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"14\"}]"
+}

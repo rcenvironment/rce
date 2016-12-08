@@ -2,7 +2,8 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component Execution Bundle Tests
 Bundle-SymbolicName: de.rcenvironment.components.script.execution.tests
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
+Fragment-Host: de.rcenvironment.components.script.execution
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
 Import-Package: de.rcenvironment.components.script.common,
@@ -13,17 +14,16 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.core.component.datamanagement.api,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.executor,
+ de.rcenvironment.core.component.model.testutils,
  de.rcenvironment.core.component.scripting,
  de.rcenvironment.core.component.testutils,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
- de.rcenvironment.core.notification,
  de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.python,
  de.rcenvironment.core.scripting.testutils,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.scripting,
- org.apache.commons.io;version="2.0.1"
+ de.rcenvironment.core.utils.scripting
 Export-Package: de.rcenvironment.components.script.execution.testutils
 Require-Bundle: de.rcenvironment.core.utils.testing

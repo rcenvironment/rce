@@ -5,7 +5,7 @@
     <title>Switch Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-        <para>The Switch component forwards an input value to one of two ouputs.</para>
+        <para>The Switch component forwards an input value to one of two outputs.</para>
     </sect1>
     <sect1>
         <title>Rationale</title>
@@ -30,7 +30,7 @@
             valid operators from the drop down list on the right-hand side or you can write them by
             yourself. Inputs can only be used within conditions if their data type is either
             integer, float or boolean. The data input automatically appears in the drop down list,
-            if it has one of the data types allowed.</para>
+            if it is of an allowed data type.</para>
         <para><inlinegraphic fileref="../../images/image002.png"/></para>
         <para>There are three options available that define the behavior of the Switch component within loops.
         In the 'Loop Control' tab you can choose between:

@@ -121,15 +121,6 @@
 		</perspectiveExtension>
 	</extension>
    
-   <!-- Validator -->
-   
-   <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator
-            class="de.rcenvironment.components.optimizer.gui.properties.OptimizerWorkflowNodeValidator"
-            filter="de.rcenvironment.components.optimizer.gui.properties.OptimizerComponentFilter">
-      </validator>
-   </extension>
    <!-- Register Runtime View -->
    <extension
          point="de.rcenvironment.core.gui.workflow.monitoring">

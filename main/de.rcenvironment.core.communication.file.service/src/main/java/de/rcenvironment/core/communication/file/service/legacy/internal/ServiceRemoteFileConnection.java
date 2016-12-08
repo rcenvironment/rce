@@ -11,8 +11,6 @@ package de.rcenvironment.core.communication.file.service.legacy.internal;
 import java.io.IOException;
 import java.net.URI;
 
-import org.osgi.framework.BundleContext;
-
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.file.service.legacy.api.RemotableFileStreamAccessService;
@@ -49,12 +47,12 @@ public class ServiceRemoteFileConnection implements RemoteFileConnection {
 
     /**
      * Creates a new {@link ServiceRemoteFileConnection} of a remote file and initialize it.
-     * 
-     * @param user The user's certificate.
      * @param uri URI pointing to remote file. (rce://node-id/dataReferenceUUID/revision)
+     * @param user The user's certificate.
+     * 
      * @throws IOException if the file could not be accessed remotely.
      */
-    public ServiceRemoteFileConnection(URI uri, CommunicationService communicationService, BundleContext context)
+    public ServiceRemoteFileConnection(URI uri, CommunicationService communicationService)
         throws IOException {
 
         try {

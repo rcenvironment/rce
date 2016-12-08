@@ -9,13 +9,13 @@ package de.rcenvironment.core.communication.routing.internal;
 
 import java.util.Arrays;
 
-import junit.framework.TestCase;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import junit.framework.TestCase;
 
 /**
  * Unit tests for {@link TopologyMap}.
@@ -43,15 +43,15 @@ public class TopologyMapTest extends TestCase {
 
     private static final String LSA_CAUSED_UPDATE = "Merging this LSA into a graph was considered an update when it shouldn't";
 
-    private static final NodeIdentifier NODE_1 = NodeIdentifierFactory.fromNodeId("node1");
+    private static final InstanceNodeSessionId NODE_1 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("node1");
 
-    private static final NodeIdentifier NODE_2 = NodeIdentifierFactory.fromNodeId("node2");
+    private static final InstanceNodeSessionId NODE_2 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("node2");
 
-    private static final NodeIdentifier NODE_3 = NodeIdentifierFactory.fromNodeId("node3");
+    private static final InstanceNodeSessionId NODE_3 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("node3");
 
-    private static final NodeIdentifier NODE_4 = NodeIdentifierFactory.fromNodeId("node4");
+    private static final InstanceNodeSessionId NODE_4 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("node4");
 
-    private static final NodeIdentifier NODE_5 = NodeIdentifierFactory.fromNodeId("node5");
+    private static final InstanceNodeSessionId NODE_5 = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("node5");
 
     private static final String NODE_1_NAME = "Name1";
 
@@ -542,19 +542,25 @@ public class TopologyMapTest extends TestCase {
     }
 
     /**
-     * Tests for {@link TopologyMap#containsNode(NodeIdentifier)}.
+     * Tests for {@link TopologyMap#containsNode(InstanceNodeSessionId)}.
+     * 
+     * @throws IdentifierException on unexpected errors
      */
-    public final void testContainsNode() {
+    public final void testContainsNode() throws IdentifierException {
         networkGraph = new TopologyMap(NODE_5);
 
         assertTrue(networkGraph.containsNode(NODE_5));
         assertFalse(networkGraph.containsNode(NODE_4));
-        assertTrue(networkGraph.containsNode(NodeIdentifierFactory.fromNodeId(NODE_5.getIdString())));
-        assertFalse(networkGraph.containsNode(NodeIdentifierFactory.fromNodeId("FAKE" + NODE_5.getIdString())));
+        // also test for different instance node session ids of the existing instance node ids
+        assertFalse(networkGraph.containsNode(NodeIdentifierTestUtils.createTestInstanceNodeSessionId(NODE_5.getInstanceNodeIdString())));
+        assertFalse(networkGraph.containsNode(NodeIdentifierTestUtils.createTestInstanceNodeSessionId(NODE_4.getInstanceNodeIdString())));
+        // test with round-trip deserialized node id
+        assertTrue(networkGraph.containsNode(NodeIdentifierTestUtils.getTestNodeIdentifierService().parseInstanceNodeSessionIdString(
+            NODE_5.getInstanceNodeSessionIdString())));
     }
 
     /**
-     * Test for {@link TopologyMap#getShortestPath(NodeIdentifier, NodeIdentifier)}.
+     * Test for {@link TopologyMap#getShortestPath(InstanceNodeSessionId, InstanceNodeSessionId)}.
      */
     public final void testShortestPathComputation1() {
         networkGraph = new TopologyMap(NODE_1);
@@ -584,7 +590,7 @@ public class TopologyMapTest extends TestCase {
     }
 
     /**
-     * Test for {@link TopologyMap#getNode(NodeIdentifier)}.
+     * Test for {@link TopologyMap#getNode(InstanceNodeSessionId)}.
      */
     public final void testFindNetworkNode() {
         networkGraph = new TopologyMap(NODE_1);
@@ -680,9 +686,8 @@ public class TopologyMapTest extends TestCase {
             networkGraph.getSuccessors(NODE_1).size());
 
         for (TopologyLink channel : lsa.getLinks()) {
-            assertTrue(networkGraph.getPredecessors(networkGraph.getNode(channel.getDestination())).
-                contains(networkGraph.getNode(networkGraph.getLocalNodeId())
-                ));
+            assertTrue(networkGraph.getPredecessors(networkGraph.getNode(channel.getDestination()))
+                .contains(networkGraph.getNode(networkGraph.getLocalNodeId())));
         }
 
     }

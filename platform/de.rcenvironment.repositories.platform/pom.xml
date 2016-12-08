@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.repositories.rce.platform.master</artifactId>
 	<name>RCE Platform Master Project</name>
-	<version>7.1.1.qualifier</version>
+	<version>8.0.0.qualifier</version>
 	<packaging>pom</packaging>
 
 	<parent>
@@ -43,6 +43,7 @@
 		<module>../de.rcenvironment.platform.maven.database</module>
 		<module>../de.rcenvironment.platform.maven.graph</module>
 		<module>../de.rcenvironment.platform.maven.gui</module>
+		<module>../de.rcenvironment.platform.maven.mail</module>
 		<module>../de.rcenvironment.platform.maven.jms</module>
 		<module>../de.rcenvironment.platform.maven.webservice</module>
 		<module>../de.rcenvironment.platform.maven.ssh.server</module>

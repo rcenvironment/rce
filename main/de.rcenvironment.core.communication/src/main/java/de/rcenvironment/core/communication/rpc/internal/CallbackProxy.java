@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.rpc.internal;
 
 import java.io.Serializable;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Interface which needs to be implemented by proxy objects, which are transfered to another platform
@@ -28,10 +28,10 @@ public interface CallbackProxy extends Serializable {
     String getObjectIdentifier();
 
     /**
-     * Returns the {@link NodeIdentifier} of the home platform, i.e. the platform to call back.
+     * Returns the {@link InstanceNodeSessionId} of the home platform, i.e. the platform to call back.
      * 
-     * @return The {@link NodeIdentifier} of the home platform..
+     * @return The {@link InstanceNodeSessionId} of the home platform..
      */
-    NodeIdentifier getHomePlatform();
+    InstanceNodeSessionId getHomePlatform();
 
 }

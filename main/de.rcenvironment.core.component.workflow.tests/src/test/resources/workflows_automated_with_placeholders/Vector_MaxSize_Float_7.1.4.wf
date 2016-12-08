@@ -1,0 +1,65 @@
+{
+  "identifier" : "8b53c342-d9c9-4862-b473-c0af3effd4a5",
+  "workflowVersion" : "4",
+  "name" : "Vector_succeed_2016-10-12_10:46:07_36",
+  "nodes" : [ {
+    "identifier" : "6e8f32a1-e1b0-4ef1-bc75-ac9e3a617f71",
+    "name" : "Receiver",
+    "location" : "172:107",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "vector = RCE.read_input(\"in\")\r\ncontent = 1337.1337\r\n\r\nprint type(content)\r\nprint type(vector[0])\r\n\r\nprint content\r\nprint vector[0]\r\n\r\nif vector[0] == content:\r\n  print \"succeed\"\r\nelse:\r\n  RCE.fail(\"This did not work\")  \r\n\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "e29ccb3e-afad-4a08-8849-8a8f51e6e390",
+      "name" : "in",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "Vector",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "5b4ccda1-1632-4bdb-94bd-0c1ab1bc469a",
+    "name" : "Vector",
+    "location" : "50:107",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "cols = 100000\r\n\r\ncontent = 1337.1337\r\n\r\nvectorn = [content]*cols\r\n\r\nRCE.write_output(\"vector\", vectorn)\r\n\r\nprint content\r\nprint vectorn",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "c5f88373-7d95-496d-b521-945dc50a5126",
+      "name" : "vector",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Vector"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "5b4ccda1-1632-4bdb-94bd-0c1ab1bc469a",
+    "output" : "c5f88373-7d95-496d-b521-945dc50a5126",
+    "target" : "6e8f32a1-e1b0-4ef1-bc75-ac9e3a617f71",
+    "input" : "e29ccb3e-afad-4a08-8849-8a8f51e6e390"
+  } ],
+  "labels" : "[{\"identifier\":\"0b63d0c0-44ee-444d-b4d8-5b15018732c9\",\"text\":\"Vector with 100.000 entries\\r\\nEntries are some float.\",\"location\":\"64:32\",\"size\":\"171:61\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

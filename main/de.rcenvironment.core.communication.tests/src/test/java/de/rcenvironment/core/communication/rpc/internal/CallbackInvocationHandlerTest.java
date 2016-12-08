@@ -21,8 +21,8 @@ import org.apache.commons.logging.LogFactory;
 import org.easymock.EasyMock;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.messaging.internal.MessageEndpointHandlerImpl;
 import de.rcenvironment.core.communication.messaging.internal.RPCNetworkRequestHandler;
 import de.rcenvironment.core.communication.model.NetworkRequest;
@@ -45,7 +45,7 @@ import de.rcenvironment.core.utils.common.LogUtils;
  * Test case for {@link CallbackInvocationHandler}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (reworked for 2.5.0+)
+ * @author Robert Mischke (reworked for 2.5.0+; 8.0.0 id adaptations)
  */
 public class CallbackInvocationHandlerTest {
 
@@ -63,19 +63,21 @@ public class CallbackInvocationHandlerTest {
 
     private final String throwMethod = "throwSomething";
 
-    private final String puff1RV = "puff1";
+    private final String puff1RetVal = "puff1";
 
-    private final String puff2RV = "puff2";
+    private final String puff2RetVal = "puff2";
 
-    private final String pengRV = "peng";
+    private final String pengRetVal = "peng";
 
-    private final ServiceCallResult puffResult = ServiceCallResultFactory.wrapReturnValue(puff1RV);
+    private final ServiceCallResult puffResult = ServiceCallResultFactory.wrapReturnValue(puff1RetVal);
 
-    private final ServiceCallResult pengResult = ServiceCallResultFactory.wrapReturnValue(pengRV);
+    private final ServiceCallResult pengResult = ServiceCallResultFactory.wrapReturnValue(pengRetVal);
 
-    private final NodeIdentifier piLocal = NodeIdentifierFactory.fromNodeId("mockLocalNodeId");
+    private final InstanceNodeSessionId instanceSessionIdLocal = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName(
+        "mockLocalNode");
 
-    private final NodeIdentifier piRemote = NodeIdentifierFactory.fromNodeId("mockRemoteNodeId");
+    private final InstanceNodeSessionId instanceSessionIdRemote = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName(
+        "mockRemoteNode");
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -88,7 +90,8 @@ public class CallbackInvocationHandlerTest {
     public void test() throws Throwable {
 
         // create the simulated ServiceCallRequestPayloadHandler
-        final MessageEndpointHandlerImpl scrHandler = new MessageEndpointHandlerImpl();
+        final MessageEndpointHandlerImpl scrHandler =
+            new MessageEndpointHandlerImpl(NodeIdentifierTestUtils.getTestNodeIdentifierService());
         scrHandler.registerRequestHandler(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC, new RPCNetworkRequestHandler(
             new SimulatingServiceCallHandler()));
 
@@ -100,10 +103,11 @@ public class CallbackInvocationHandlerTest {
 
             @Override
             public NetworkResponse performRoutedRequest(final byte[] payload, final String messageType,
-                final NodeIdentifier receiver, int timeoutMsec) {
-                NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, piLocal, receiver);
+                final InstanceNodeSessionId receiver, int timeoutMsec) {
+                NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, instanceSessionIdLocal, receiver);
                 NetworkResponse result;
                 try {
+                    NodeIdentifierTestUtils.attachTestNodeIdentifierServiceToCurrentThread();
                     result = scrHandler.onRequestArrivedAtDestination(request);
                 } catch (RuntimeException e) {
                     // TODO review: is this a useful test approach?
@@ -111,6 +115,7 @@ public class CallbackInvocationHandlerTest {
                         "Uncaught RuntimeException thrown by request handler", e);
                     result = NetworkResponseFactory.generateResponseForInternalErrorAtRecipient(request, errorId);
                 }
+                NodeIdentifierTestUtils.removeTestNodeIdentifierServiceFromCurrentThread();
                 return result;
             }
         };
@@ -118,7 +123,7 @@ public class CallbackInvocationHandlerTest {
         EasyMock
             .expect(
                 messageRoutingServiceMock.performRoutedRequest(EasyMock.anyObject(byte[].class),
-                    EasyMock.eq(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC), EasyMock.eq(piLocal)))
+                    EasyMock.eq(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC), EasyMock.eq(instanceSessionIdLocal)))
             .andDelegateTo(messageRoutingServiceDelegate).anyTimes();
 
         RemoteServiceCallSenderServiceImpl remoteServiceCallService = new RemoteServiceCallSenderServiceImpl();
@@ -130,22 +135,22 @@ public class CallbackInvocationHandlerTest {
 
         EasyMock.replay(messageRoutingServiceMock);
         CallbackInvocationHandler handler =
-            new CallbackInvocationHandler(callbackObject, objectID, piLocal, piRemote);
+            new CallbackInvocationHandler(callbackObject, objectID, instanceSessionIdLocal, instanceSessionIdRemote);
 
         Method method = CallbackProxy.class.getMethod("getObjectIdentifier", new Class[] {});
         assertEquals(objectID, handler.invoke(new Object(), method, new Object[] {}));
 
         method = CallbackProxy.class.getMethod("getHomePlatform", new Class[] {});
-        assertEquals(piLocal, handler.invoke(new Object(), method, new Object[] {}));
+        assertEquals(instanceSessionIdLocal, handler.invoke(new Object(), method, new Object[] {}));
 
         method = DummyInterface.class.getMethod(puffMethod, new Class[] { String.class });
-        assertEquals(puff1RV, handler.invoke(new Object(), method, new Object[] { puffParam }));
+        assertEquals(puff1RetVal, handler.invoke(new Object(), method, new Object[] { puffParam }));
 
         method = DummyInterface.class.getMethod(puffMethod, new Class[] { Integer.class });
-        assertEquals(puff2RV, handler.invoke(new Object(), method, new Object[] { puffIterations }));
+        assertEquals(puff2RetVal, handler.invoke(new Object(), method, new Object[] { puffIterations }));
 
         method = DummyInterface.class.getMethod(pengMethod, new Class[] {});
-        assertEquals(pengRV, handler.invoke(new Object(), method, null));
+        assertEquals(pengRetVal, handler.invoke(new Object(), method, null));
 
         method = DummyInterface.class.getMethod(throwMethod, new Class[] {});
 
@@ -168,7 +173,7 @@ public class CallbackInvocationHandlerTest {
         @SuppressWarnings("unchecked")
         @Override
         public ServiceCallResult handle(ServiceCallRequest serviceCallRequest) {
-            if (serviceCallRequest.getDestination().equals(piLocal)
+            if (serviceCallRequest.getTargetNodeId().isSameInstanceNodeSessionAs(instanceSessionIdLocal)
                 && serviceCallRequest.getServiceName().equals(RemotableCallbackService.class.getCanonicalName())
                 && serviceCallRequest.getMethodName().equals("callback")
                 && serviceCallRequest.getParameterList().get(0).equals(objectID)) {
@@ -186,7 +191,8 @@ public class CallbackInvocationHandlerTest {
                     return ServiceCallResultFactory.wrapMethodException(new NullPointerException());
                 }
             }
-            return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest, "Test error: no match in "
+            // TODO review: is this the appropriate wrapper factory method?
+            return ServiceCallResultFactory.representInternalErrorAtSender(serviceCallRequest, "Test error: no service call match in "
                 + SimulatingServiceCallHandler.class.getName());
         }
     }
@@ -239,7 +245,7 @@ public class CallbackInvocationHandlerTest {
 
         @Override
         public Object makePuff(Integer iteration) {
-            return puff2RV;
+            return puff2RetVal;
         }
 
         @Override

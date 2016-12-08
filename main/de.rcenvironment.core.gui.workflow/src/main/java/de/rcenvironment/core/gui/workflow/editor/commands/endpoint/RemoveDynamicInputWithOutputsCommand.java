@@ -13,18 +13,21 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
 
 /**
- * Removes one single input and two outputs - one with the same name as the input and one with the
- * same name as the input + given suffix.
+ * Removes one single input and two outputs - one with the same name as the input and one with the same name as the input + given suffix.
  * 
  * @author Doreen Seider
  */
 public class RemoveDynamicInputWithOutputsCommand extends RemoveDynamicInputWithOutputCommand {
 
-    private final String nameSuffix;
+    private final String addDynOutputId;
 
-    public RemoveDynamicInputWithOutputsCommand(String dynamicEndpointId, List<String> names, String nameSuffix, Refreshable... panes) {
-        super(dynamicEndpointId, names, panes);
-        this.nameSuffix = nameSuffix;
+    private final String outputNameSuffix;
+
+    public RemoveDynamicInputWithOutputsCommand(String dynEndpointId, String addDynOutputId, String outputNameSuffix,
+        List<String> names, Refreshable... panes) {
+        super(dynEndpointId, names, panes);
+        this.addDynOutputId = addDynOutputId;
+        this.outputNameSuffix = outputNameSuffix;
     }
 
     @Override
@@ -37,7 +40,7 @@ public class RemoveDynamicInputWithOutputsCommand extends RemoveDynamicInputWith
     @Override
     public void execute() {
         for (String name : names) {
-            InputWithOutputsCommandUtils.removeOutputWithSuffix(getProperties(), name, nameSuffix);
+            InputWithOutputsCommandUtils.removeOutputWithSuffix(getProperties(), name, outputNameSuffix);
         }
         super.execute();
     }
@@ -46,8 +49,8 @@ public class RemoveDynamicInputWithOutputsCommand extends RemoveDynamicInputWith
     public void undo() {
         for (String name : names) {
             EndpointDescription oldDescription = oldDescriptions.get(name);
-            InputWithOutputsCommandUtils.addOutputWithSuffix(getProperties(), dynEndpointId, name, oldDescription.getDataType(),
-                nameSuffix);
+            InputWithOutputsCommandUtils.addOutputWithSuffix(getProperties(), addDynOutputId, name, oldDescription.getDataType(),
+                outputNameSuffix);
         }
         super.undo();
     }

@@ -23,10 +23,10 @@ public interface NetworkGraphLink {
     /**
      * @return the id of the graph node this link (edge) originates from
      */
-    NodeIdentifier getSourceNodeId();
+    InstanceNodeSessionId getSourceNodeId();
 
     /**
      * @return the id of the graph node this link (edge) points to
      */
-    NodeIdentifier getTargetNodeId();
+    InstanceNodeSessionId getTargetNodeId();
 }

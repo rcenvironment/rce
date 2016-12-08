@@ -437,7 +437,6 @@ public class ClusterJobMonitorView extends ViewPart {
             model.removeConnectedCluster(connectedClusterConfigurationName);
             return false;
         }
-        model.setSelectedConnectedConfigurationName(connectedClusterConfigurationName);
         return true;
     }
 

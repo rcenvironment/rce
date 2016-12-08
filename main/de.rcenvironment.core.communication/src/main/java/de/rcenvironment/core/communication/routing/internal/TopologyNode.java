@@ -11,11 +11,11 @@ package de.rcenvironment.core.communication.routing.internal;
 import java.io.Serializable;
 import java.util.Date;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
- * Represents a RCE instance in the network. More abstract a {@link TopologyNode} is a node in a
- * graph that is encapsulated in {@link TopologyMap}.
+ * Represents a RCE instance in the network. More abstract a {@link TopologyNode} is a node in a graph that is encapsulated in
+ * {@link TopologyMap}.
  * 
  * @author Phillip Kroll
  * @author Robert Mischke (changed sequenceNumber to timestamp)
@@ -28,7 +28,7 @@ public final class TopologyNode implements Comparable<TopologyNode>, Cloneable, 
 
     private final Date createdTime = new Date();
 
-    private final NodeIdentifier nodeId;
+    private final InstanceNodeSessionId nodeId;
 
     private long lastSequenceNumber = INITIAL_SEQUENCE_NUMBER;
 
@@ -45,12 +45,12 @@ public final class TopologyNode implements Comparable<TopologyNode>, Cloneable, 
      * 
      * @param nodeId
      */
-    public TopologyNode(NodeIdentifier nodeId) {
+    public TopologyNode(InstanceNodeSessionId nodeId) {
         this.nodeId = nodeId;
         this.routing = true;
     }
 
-    public TopologyNode(NodeIdentifier nodeId, boolean routing) {
+    public TopologyNode(InstanceNodeSessionId nodeId, boolean routing) {
         this.nodeId = nodeId;
         this.routing = routing;
     }
@@ -73,15 +73,9 @@ public final class TopologyNode implements Comparable<TopologyNode>, Cloneable, 
         this.isWorkflowHost = isWorkflowHost;
     }
 
-    /**
-     * 
-     * {@inheritDoc}
-     * 
-     * @see java.lang.Object#clone()
-     */
     @Override
     public TopologyNode clone() {
-        return new TopologyNode(getNodeIdentifier().clone());
+        return new TopologyNode(getNodeIdentifier());
     }
 
     /**
@@ -101,7 +95,7 @@ public final class TopologyNode implements Comparable<TopologyNode>, Cloneable, 
     /**
      * @return Returns the node identifier.
      */
-    public NodeIdentifier getNodeIdentifier() {
+    public InstanceNodeSessionId getNodeIdentifier() {
         return nodeId;
     }
 

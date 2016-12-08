@@ -21,17 +21,17 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.update.api.DistributedPersistentComponentDescriptionUpdateService;
 import de.rcenvironment.core.component.update.api.PersistentComponentDescription;
 import de.rcenvironment.core.component.update.api.PersistentDescriptionFormatVersion;
 import de.rcenvironment.core.component.update.api.RemotablePersistentComponentDescriptionUpdateService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link DistributedPersistentComponentDescriptionUpdateService}.
@@ -41,21 +41,21 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 public class DistributedPersistentComponentDescriptionUpdateServiceImpl implements DistributedPersistentComponentDescriptionUpdateService {
 
     private static final Log LOGGER = LogFactory.getLog(DistributedPersistentComponentDescriptionUpdateServiceImpl.class);
-    
+
     private CommunicationService communicationService;
 
     @Override
     public int getFormatVersionsAffectedByUpdate(List<PersistentComponentDescription> descriptions, final boolean silent) {
 
         int versionsToUpdate = PersistentDescriptionFormatVersion.NONE;
-        
-        CallablesGroup<Integer> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Integer.class);
-        
-        final Map<NodeIdentifier, List<PersistentComponentDescription>> sortedDescriptionsMap =
+
+        CallablesGroup<Integer> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Integer.class);
+
+        final Map<LogicalNodeId, List<PersistentComponentDescription>> sortedDescriptionsMap =
             Collections.unmodifiableMap(sortPersistentComponentDescriptions(descriptions));
-        
-        for (NodeIdentifier node : sortedDescriptionsMap.keySet()) {
-            final NodeIdentifier node2 = node;
+
+        for (LogicalNodeId node : sortedDescriptionsMap.keySet()) {
+            final LogicalNodeId node2 = node;
             callablesGroup.add(new Callable<Integer>() {
 
                 @Override
@@ -66,11 +66,11 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
                             .getRemotableService(RemotablePersistentComponentDescriptionUpdateService.class, node2);
                         return udpateService.getFormatVersionsAffectedByUpdate(sortedDescriptionsMap.get(node2), silent);
                     } catch (RemoteOperationException | RuntimeException e) {
-                        LOGGER.warn(StringUtils.format("Failed to check for persistent component updates for node: %s; cause: %s", 
+                        LOGGER.warn(StringUtils.format("Failed to check for persistent component updates for node: %s; cause: %s",
                             node2, e.toString()));
                         return null;
                     }
-                    
+
                 }
             });
 
@@ -97,17 +97,17 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
 
         List<PersistentComponentDescription> allUpdatedDescriptions = new ArrayList<PersistentComponentDescription>();
 
-        final Map<NodeIdentifier, List<PersistentComponentDescription>> sortedDescriptionsMap =
+        final Map<LogicalNodeId, List<PersistentComponentDescription>> sortedDescriptionsMap =
             Collections.unmodifiableMap(sortPersistentComponentDescriptions(descriptions));
-        
+
         final List<PersistentComponentDescription> unModdescriptions = Collections.unmodifiableList(descriptions);
 
-        CallablesGroup<List> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(List.class);
-        
-        for (NodeIdentifier node : sortedDescriptionsMap.keySet()) {
-            final NodeIdentifier node2 = node;
+        CallablesGroup<List> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(List.class);
+
+        for (LogicalNodeId node : sortedDescriptionsMap.keySet()) {
+            final LogicalNodeId node2 = node;
             callablesGroup.add(new Callable<List>() {
-    
+
                 @Override
                 @TaskDescription("Distributed persistent component update: performComponentDescriptionUpdates()")
                 public List call() throws Exception {
@@ -127,7 +127,7 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
                 }
             });
         }
-        
+
         List<List> results = callablesGroup.executeParallel(new AsyncExceptionListener() {
 
             @Override
@@ -135,7 +135,7 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
                 LOGGER.warn("Exception during asynchrous execution", e);
             }
         });
-        
+
         // merge results
         for (List singleResult : results) {
             if (singleResult != null) {
@@ -149,11 +149,11 @@ public class DistributedPersistentComponentDescriptionUpdateServiceImpl implemen
         this.communicationService = newCommunicationService;
     }
 
-    private Map<NodeIdentifier, List<PersistentComponentDescription>> sortPersistentComponentDescriptions(
+    private Map<LogicalNodeId, List<PersistentComponentDescription>> sortPersistentComponentDescriptions(
         List<PersistentComponentDescription> descriptions) {
 
-        Map<NodeIdentifier, List<PersistentComponentDescription>> sortedDescriptions =
-            new HashMap<NodeIdentifier, List<PersistentComponentDescription>>();
+        Map<LogicalNodeId, List<PersistentComponentDescription>> sortedDescriptions =
+            new HashMap<LogicalNodeId, List<PersistentComponentDescription>>();
 
         for (PersistentComponentDescription description : descriptions) {
             if (!sortedDescriptions.containsKey(description.getComponentNodeIdentifier())) {

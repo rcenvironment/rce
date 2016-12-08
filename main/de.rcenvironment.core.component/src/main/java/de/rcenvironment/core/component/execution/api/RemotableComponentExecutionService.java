@@ -8,7 +8,7 @@
 
 package de.rcenvironment.core.component.execution.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.utils.common.rpc.RemotableService;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
@@ -40,7 +40,7 @@ public interface RemotableComponentExecutionService {
      * @param node the hosting node of the component executed
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      */
-    void prepare(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    void prepare(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
     /**
      * Starts a component.
@@ -49,7 +49,7 @@ public interface RemotableComponentExecutionService {
      * @param node the hosting node of the component executed
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      */
-    void start(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    void start(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
     /**
      * Pauses a component.
@@ -58,7 +58,7 @@ public interface RemotableComponentExecutionService {
      * @param node the hosting node of the component executed
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      */
-    void pause(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    void pause(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
     /**
      * Resumes a component.
@@ -67,7 +67,7 @@ public interface RemotableComponentExecutionService {
      * @param node the hosting node of the component executed
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      */
-    void resume(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    void resume(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
     /**
      * Cancels a component.
@@ -76,7 +76,7 @@ public interface RemotableComponentExecutionService {
      * @param node the hosting node of the component executed
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      */
-    void cancel(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    void cancel(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
     /**
      * Disposes a component.
@@ -85,7 +85,7 @@ public interface RemotableComponentExecutionService {
      * @param node the hosting node of the component executed
      * @throws RemoteOperationException if communication error occurs (cannot occur if component runs locally)
      */
-    void dispose(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    void dispose(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
     /**
      * Gets current component state.
@@ -95,6 +95,6 @@ public interface RemotableComponentExecutionService {
      * @return {@link ComponentState}
      * @throws RemoteOperationException if communication error occurs (cannot occur if controller and components run locally)
      */
-    ComponentState getComponentState(String executionId, NodeIdentifier node) throws RemoteOperationException;
+    ComponentState getComponentState(String executionId, InstanceNodeSessionId node) throws RemoteOperationException;
 
 }

@@ -12,7 +12,7 @@ import org.eclipse.jface.viewers.IFilter;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.configuration.ConfigurationService;
-import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 
 
@@ -33,7 +33,7 @@ public class InputSectionForWorkflowNodeFilter implements IFilter {
     
     @Override
     public boolean select(Object object) {
-        return object instanceof ReadOnlyWorkflowNodePart && inputViewEnabled;
+        return object instanceof WorkflowRunNodePart && inputViewEnabled;
     }
 
 

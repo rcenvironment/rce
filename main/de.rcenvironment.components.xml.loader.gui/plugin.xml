@@ -18,7 +18,7 @@
          <propertySection
                tab="workflow.editor.tab.loader.XPathChooser"
                enablesFor="1"
-               class="de.rcenvironment.core.gui.xpathchooser.XPathChooserPropertyView"
+               class="de.rcenvironment.components.xml.loader.gui.properties.XMLLoaderInputsOutputsSection"
                id="workflow.editor.tab.loader.XPathChooser.Section"
                filter="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentFilter">
          </propertySection>
@@ -56,13 +56,6 @@
         </propertyTabs>
     </extension>
     
-    <!--  Configuration validation -->
-    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderWorkflowNodeValidator"
-            filter="de.rcenvironment.components.xml.loader.gui.properties.XmlLoaderComponentFilter">
-       </validator>
-    </extension>
     
     <!-- Dynamic Help -->
     <extension point="org.eclipse.help.contexts">

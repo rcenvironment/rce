@@ -29,15 +29,27 @@ public final class ParametricStudyComponentConstants {
 
     /** Suffix used for publishing Parametric Study notifications. */
     public static final String NOTIFICATION_SUFFIX = ":rce.component.parametricstudy";
+    
+    /** Configuration value name. */
+    public static final String OUTPUT_METADATA_USE_INPUT_AS_FROM_VALUE = "UseInputAsFromValue";
+    
+    /** Configuration value name. */
+    public static final String OUTPUT_METADATA_USE_INPUT_AS_TO_VALUE = "UseInputAsToValue";
+    
+    /** Configuration value name. */
+    public static final String OUTPUT_METADATA_USE_INPUT_AS_STEPSIZE_VALUE = "UseInputAsStepSizeValue";
 
-    /** Suffix used for configuration value name. */
+    /** Configuration value name. */
     public static final String OUTPUT_METATDATA_FROMVALUE = "FromValue";
 
-    /** Suffix used for configuration value name. */
+    /** Configuration value name. */
     public static final String OUTPUT_METATDATA_TOVALUE = "ToValue";
 
-    /** Suffix used for configuration value name. */
+    /** Configuration value name. */
     public static final String OUTPUT_METATDATA_STEPSIZE = "StepSize";
+    
+    /** Dynamic inputs id. */
+    public static final String DYNAMIC_INPUT_STUDY_PARAMETERS = "paramericStudyParameters";
 
     /** Dynamic inputs id. */
     public static final String DYNAMIC_INPUT_IDENTIFIER = "parameters";
@@ -47,7 +59,16 @@ public final class ParametricStudyComponentConstants {
 
     /** Output name. */
     public static final String OUTPUT_NAME_DONE = "Done";
-
+    
+    /** Input name. */
+    public static final String INPUT_NAME_FROM_VALUE = "From Value";
+    
+    /** Input name. */
+    public static final String INPUT_NAME_TO_VALUE = "To Value";
+    
+    /** Input name. */
+    public static final String INPUT_NAME_STEPSIZE_VALUE = "StepSize Value";
+    
     /** Constant. */
     public static final String OUTPUT_METATDATA_FIT_STEP_SIZE_TO_BOUNDS = "fitStepSizeToBounds";
 

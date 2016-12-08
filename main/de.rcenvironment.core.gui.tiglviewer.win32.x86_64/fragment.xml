@@ -6,7 +6,7 @@
          point="org.eclipse.ui.views">
       <view
             name="TiGLViewer"
-            icon="resouces/TIGLViewer.png"
+            icon="resources/TIGLViewer.png"
             category="de.rcenvironment.core"
             class="de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer"
             id="de.rcenvironment.core.gui.tiglviewer.views.TIGLViewer" 

@@ -11,7 +11,7 @@ package de.rcenvironment.core.datamanagement.commons;
 import java.io.Serializable;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
 
 /**
  * Identifier for data references holding {@link BinaryReference}s.
@@ -24,13 +24,13 @@ public final class DataReference implements Serializable {
 
     private final String dataReferenceKey;
 
-    private final NodeIdentifier nodeId;
+    private final InstanceNodeId storageInstanceId;
 
     private Set<BinaryReference> binaryReferences;
 
-    public DataReference(String dataReferenceKey, NodeIdentifier platform, Set<BinaryReference> binaryReferences) {
+    public DataReference(String dataReferenceKey, InstanceNodeId storageInstanceId, Set<BinaryReference> binaryReferences) {
         this.dataReferenceKey = dataReferenceKey;
-        this.nodeId = platform;
+        this.storageInstanceId = storageInstanceId;
         this.binaryReferences = binaryReferences;
     }
 
@@ -55,10 +55,10 @@ public final class DataReference implements Serializable {
     }
 
     /**
-     * @return the {@link NodeIdentifier} of the platform this {@link DataReference} is hosted.
+     * @return the {@link InstanceNodeId} of the platform this {@link DataReference} is hosted.
      */
-    public NodeIdentifier getNodeIdentifier() {
-        return nodeId;
+    public InstanceNodeId getInstanceId() {
+        return storageInstanceId;
     }
 
     @Override

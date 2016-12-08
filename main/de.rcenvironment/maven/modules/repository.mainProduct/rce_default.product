@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <?pde version="3.5"?>
 
-<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="7.1.5.qualifier" useFeatures="true" includeLaunchers="true">
+<product name="Remote Component Environment" uid="de.rcenvironment.products.rce.default" id="de.rcenvironment.core.start.product" application="de.rcenvironment.core.start.application" version="8.0.0.qualifier" useFeatures="true" includeLaunchers="true">
 
    <aboutInfo>
       <image path="/de.rcenvironment.core.gui.branding.default/resources/images/about.gif"/>
@@ -14,7 +14,8 @@
    </configIni>
 
    <launcherArgs>
-      <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts</vmArgsMac>
+      <vmArgsMac>-XstartOnFirstThread -Dorg.eclipse.swt.internal.carbon.smallFonts
+      </vmArgsMac>
    </launcherArgs>
 
    <windowImages i16="/de.rcenvironment.core.gui.branding.default/resources/images/logo16.png" i32="/de.rcenvironment.core.gui.branding.default/resources/images/logo32.png"/>
@@ -156,6 +157,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <feature id="de.vonloesch.pdf4eclipse"/>
       <feature id="nu.psnet.quickimage"/>
       <feature id="org.eclipse.wst.xml_ui.feature"/>
+      <feature id="de.rcenvironment.core.gui.help.feature" version="8.0.0.qualifier"/>
    </features>
 
    <configurations>
@@ -174,6 +176,7 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <plugin id="de.rcenvironment.core.log" autoStart="true" startLevel="0" />
       <plugin id="de.rcenvironment.core.login" autoStart="true" startLevel="0" />
       <plugin id="de.rcenvironment.core.shutdown" autoStart="true" startLevel="3" />
+      <plugin id="de.rcenvironment.core.toolkitbridge" autoStart="true" startLevel="3" />
       <plugin id="org.eclipse.core.runtime" autoStart="true" startLevel="0" />
       <plugin id="org.eclipse.equinox.cm" autoStart="true" startLevel="1" />
       <plugin id="org.eclipse.equinox.common" autoStart="true" startLevel="3" />

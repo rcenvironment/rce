@@ -18,6 +18,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  * Edits one single input and one output with the same name as the input .
  * 
  * @author Sascha Zur
+ * @author Martin Misiak FIXED 0014355: {@link #undo()} reverted to the datatype of the new @link {@link EndpointDescription} instead of the
+ *         old.
  */
 public class EditDynamicInputWithAnotherInputAndOutputCommand extends EditDynamicInputWithOutputCommand {
 
@@ -41,17 +43,16 @@ public class EditDynamicInputWithAnotherInputAndOutputCommand extends EditDynami
     @Override
     public void execute() {
         EndpointDescriptionsManager inputManager = getProperties().getInputDescriptionsManager();
-        EndpointDescription inputConvergedDesc = inputManager.getEndpointDescription(oldDesc.getName() + inputNameSuffix);
+        EndpointDescription addInputDesc = inputManager.getEndpointDescription(oldDesc.getName() + inputNameSuffix);
         Map<String, String> metaDataForInput = new HashMap<String, String>();
         metaDataForInput.putAll(newDesc.getMetaData());
         metaDataForInput.putAll(metaDataInputWithSuffix);
         if (!addOrRemoveOtherInput) {
-            inputConvergedDesc.setName(newDesc.getName() + inputNameSuffix);
-            inputManager.editDynamicEndpointDescription(oldDesc.getName() + inputNameSuffix,
-                newDesc.getName() + inputNameSuffix, newDesc.getDataType(), metaDataForInput,
-                newDesc.getDynamicEndpointIdentifier(), inputGroup);
+            addInputDesc.setName(newDesc.getName() + inputNameSuffix);
+            inputManager.editDynamicEndpointDescription(oldDesc.getName() + inputNameSuffix, newDesc.getName() + inputNameSuffix,
+                newDesc.getDataType(), metaDataForInput, addInputDesc.getDynamicEndpointIdentifier(), inputGroup);
         } else {
-            if (inputConvergedDesc == null) {
+            if (addInputDesc == null) {
                 InputWithOutputsCommandUtils.addInputWithSuffix(getProperties(), newDesc.getDynamicEndpointIdentifier(), newDesc.getName(),
                     newDesc.getEndpointDefinition().getDefaultDataType(), inputNameSuffix, inputGroup, metaDataForInput);
             } else {
@@ -72,7 +73,7 @@ public class EditDynamicInputWithAnotherInputAndOutputCommand extends EditDynami
         if (!addOrRemoveOtherInput) {
             inputConvergedDesc.setName(oldDesc.getName() + inputNameSuffix);
             inputManager.editDynamicEndpointDescription(newDesc.getName() + inputNameSuffix,
-                oldDesc.getName() + inputNameSuffix, inputConvergedDesc.getDataType(), metaDataForInput,
+                oldDesc.getName() + inputNameSuffix, oldDesc.getDataType(), metaDataForInput,
                 newDesc.getDynamicEndpointIdentifier(), inputGroup);
         } else {
             if (inputConvergedDesc == null) {

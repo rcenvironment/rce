@@ -8,9 +8,8 @@
 
 package de.rcenvironment.core.communication.rpc.internal;
 
-import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.LOCAL_PLATFORM;
+import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.LOCAL_LOGICAL_NODE_SESSION_ID;
 import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.REMOTE_CONTACT;
-import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.REMOTE_PLATFORM;
 import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.REQUEST;
 import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.RESULT;
 import static de.rcenvironment.core.communication.testutils.CommunicationTestHelper.RETURN_VALUE;
@@ -29,7 +28,8 @@ import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.legacy.internal.NetworkContact;
 import de.rcenvironment.core.communication.messaging.internal.InternalMessagingException;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
@@ -38,6 +38,7 @@ import de.rcenvironment.core.communication.rpc.ServiceCallResultFactory;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
+import de.rcenvironment.core.communication.testutils.CommunicationTestHelper;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
@@ -46,6 +47,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * 
  * @author Heinrich Wendel
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class OSGiServiceCallHandlerImplTest extends TestCase {
 
@@ -130,15 +132,16 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         List<Serializable> params = new ArrayList<>();
         params.add(new DummyProxy(objectID1));
 
-        ServiceCallRequest callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
-            MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
+        ServiceCallRequest callbackRequest =
+            new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
+                MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
 
         params = new ArrayList<Serializable>();
         params.add(new DummyProxy(objectID2));
 
-        callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
+        callbackRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
             MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
@@ -146,7 +149,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         params = new ArrayList<Serializable>();
         params.add(new DummyProxy(objectID3));
 
-        callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
+        callbackRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
             MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
@@ -158,7 +161,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         param.add(new DummyProxy(objectID3));
         params.add((Serializable) param); // ArrayList
 
-        callbackRequest = new ServiceCallRequest(LOCAL_PLATFORM, REMOTE_PLATFORM,
+        callbackRequest = new ServiceCallRequest(LOCAL_LOGICAL_NODE_SESSION_ID, CommunicationTestHelper.REMOTE_LOGICAL_NODE_SESSION_ID,
             MethodCallTestInterface.class.getCanonicalName(), CALLBACK_TEST_METHOD, params);
 
         assertNotNull(callHandler.handle(callbackRequest));
@@ -172,7 +175,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
     private class DummyCallbackService implements CallbackService {
 
         @Override
-        public String addCallbackObject(Object callBackObject, NodeIdentifier nodeId) {
+        public String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId) {
             return null;
         }
 
@@ -194,7 +197,7 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         public void setTTL(String objectIdentifier, Long ttl) {}
 
         @Override
-        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, NodeIdentifier proxyHome) {
+        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, InstanceNodeSessionId proxyHome) {
             return null;
         }
 
@@ -251,8 +254,8 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
         public void method() {}
 
         @Override
-        public NodeIdentifier getHomePlatform() {
-            return LOCAL_PLATFORM;
+        public InstanceNodeSessionId getHomePlatform() {
+            return CommunicationTestHelper.LOCAL_INSTANCE_SESSION_ID;
         }
 
         @Override
@@ -303,8 +306,8 @@ public class OSGiServiceCallHandlerImplTest extends TestCase {
     private class DummyPlatformService extends PlatformServiceDefaultStub {
 
         @Override
-        public boolean isLocalNode(NodeIdentifier nodeId) {
-            if (nodeId.equals(LOCAL_PLATFORM)) {
+        public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
+            if (nodeId.equals(LOCAL_LOGICAL_NODE_SESSION_ID)) {
                 return true;
             }
             return false;

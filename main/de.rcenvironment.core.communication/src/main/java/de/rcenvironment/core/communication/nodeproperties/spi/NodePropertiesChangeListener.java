@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.nodeproperties.spi;
 import java.util.Collection;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 
 /**
@@ -47,7 +47,7 @@ public interface NodePropertiesChangeListener {
      * 
      * @param updatedPropertyMaps the map of property maps that have changed
      */
-    void onNodePropertyMapsOfNodesChanged(Map<NodeIdentifier, Map<String, String>> updatedPropertyMaps);
+    void onNodePropertyMapsOfNodesChanged(Map<InstanceNodeSessionId, Map<String, String>> updatedPropertyMaps);
 
     /**
      * Reports that one or more nodes that previously declared {@link NodeProperty}s have become unreachable/disconnected.

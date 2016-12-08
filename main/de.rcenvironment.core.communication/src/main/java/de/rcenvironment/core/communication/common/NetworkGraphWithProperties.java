@@ -26,6 +26,6 @@ public interface NetworkGraphWithProperties extends NetworkGraph {
      * @param nodeId the nodeId of the topology node
      * @return the graph node representing the matching topology node
      */
-    NetworkGraphNode getNodeById(NodeIdentifier nodeId);
+    NetworkGraphNode getNodeById(InstanceNodeSessionId nodeId);
 
 }

@@ -25,9 +25,9 @@ import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowLogService;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default {@link ConsoleRowLogService} implementation.
@@ -161,7 +161,7 @@ public class ConsoleRowLogServiceImpl implements ConsoleRowLogService {
             // TODO use the thread pool instead?
             backgroundWriterTask = new BackgroundLogWriterTask(fileWriter, Thread.MIN_PRIORITY);
             backgroundTaskFuture =
-                SharedThreadPool.getInstance().submit(backgroundWriterTask, "Common ConsoleRow log " + logFile.getAbsolutePath());
+                ConcurrencyUtils.getAsyncTaskService().submit(backgroundWriterTask, "Common ConsoleRow log " + logFile.getAbsolutePath());
             log.debug("Logging combined workflow console output to " + logFileName + " (NOTE: may not capture all output yet)"); // TODO 5.0
         } catch (IOException e) {
             log.error("Failed to set up background console logging to " + logFileName, e);

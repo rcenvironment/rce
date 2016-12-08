@@ -8,7 +8,8 @@
 
 package de.rcenvironment.core.gui.utils.common.endpoint;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.TreeMap;
 
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
+import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsManager;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataConstants.Visibility;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.workflow.model.spi.ComponentInstanceProperties;
@@ -32,89 +33,25 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
 public final class EndpointHelper {
 
     @Deprecated
-    private EndpointHelper() {
+    private EndpointHelper() {}
 
-    }
-
-    /**
-     * Gets a List of all static endpoint names from the given configuration in the given direction.
-     * 
-     * @param direction if it should be in- or outputs.
-     * @param configuration to look at
-     * @return List of all static endpoint names
-     */
-    public static List<String> getStaticEndpointNames(EndpointType direction, ComponentInstanceProperties configuration) {
-        List<String> result = new LinkedList<String>();
-        Set<EndpointDescription> descriptions = new HashSet<EndpointDescription>();
-        if (direction == EndpointType.INPUT) {
-            if (configuration != null && configuration.getInputDescriptionsManager() != null) {
-                descriptions = configuration.getInputDescriptionsManager().getStaticEndpointDescriptions();
-            }
-        } else {
-            if (configuration != null && configuration.getInputDescriptionsManager() != null) {
-                descriptions = configuration.getOutputDescriptionsManager().getStaticEndpointDescriptions();
-            }
-        }
-        for (EndpointDescription e : descriptions) {
-            result.add(e.getName());
-        }
-        return result;
-
-    }
-
-    /**
-     * Gets a List of all dynamic endpoint names from the given configuration in the given direction.
-     * 
-     * @param direction if it should be in- or outputs.
-     * @param id of dynamic endpoints
-     * @param configuration to look at
-     * @param filter filter for id
-     * @return List of all dynamic endpoint names
-     */
-    public static List<String> getDynamicEndpointNames(EndpointType direction, String id,
-        ComponentInstanceProperties configuration, boolean filter) {
-        List<String> result = new LinkedList<String>();
-        Set<EndpointDescription> descriptions = new HashSet<EndpointDescription>();
-        if (direction == EndpointType.INPUT) {
-            if (configuration != null && configuration.getInputDescriptionsManager() != null) {
-                descriptions = configuration.getInputDescriptionsManager().getDynamicEndpointDescriptions();
-            }
-        } else {
-            if (configuration != null && configuration.getInputDescriptionsManager() != null) {
-                descriptions = configuration.getOutputDescriptionsManager().getDynamicEndpointDescriptions();
-            }
-        }
-        for (EndpointDescription e : descriptions) {
-            if (!filter || e.getEndpointDefinition().getIdentifier().equals(id)) {
-                result.add(e.getName());
-            }
-        }
-        return result;
-    }
-
-    private static List<String> getMetadataGUINames(Visibility visibility, EndpointType direction,
-        String id, ComponentInstanceProperties configuration) {
+    private static List<String> getMetadataGUINames(Visibility visibility, EndpointType endpointType,
+        List<String> dynEndpointIdsToConsider, List<String> statEndpointNamesToConsider, ComponentInstanceProperties compInstProps) {
         Set<String> resultList = new LinkedHashSet<String>();
-        Set<EndpointDefinition> dynamicDescriptions = null;
-        Set<EndpointDescription> staticDescriptions = null;
-        if (configuration != null) {
-            if (direction == EndpointType.INPUT) {
-                dynamicDescriptions = configuration.getInputDescriptionsManager().getDynamicEndpointDefinitions();
-                staticDescriptions = configuration.getInputDescriptionsManager().getStaticEndpointDescriptions();
-            } else {
-                dynamicDescriptions = configuration.getOutputDescriptionsManager().getDynamicEndpointDefinitions();
-                staticDescriptions = configuration.getOutputDescriptionsManager().getStaticEndpointDescriptions();
-            }
-            Map<String, Map<Integer, String>> staticGroups = new TreeMap<String, Map<Integer, String>>();
+        Set<EndpointDefinition> dynamicEndpointDefinitions = null;
+        Set<EndpointDefinition> staticEndpointDefinitions = null;
+        if (compInstProps != null) {
+            EndpointDescriptionsManager endpointManager = getEndpointDescriptionsManager(endpointType, compInstProps);
+            dynamicEndpointDefinitions = endpointManager.getDynamicEndpointDefinitions(dynEndpointIdsToConsider);
+            staticEndpointDefinitions = endpointManager.getStaticEndpointDefinitions(statEndpointNamesToConsider);
 
-            for (EndpointDescription currentDescription : staticDescriptions) {
-                EndpointMetaDataDefinition metaDataDefinition =
-                    currentDescription.getEndpointDefinition().getMetaDataDefinition();
-                for (String metaDatumKey : metaDataDefinition
-                    .getMetaDataKeys()) {
+            Map<String, Map<Integer, String>> staticGroups = new TreeMap<String, Map<Integer, String>>();
+            for (EndpointDefinition currentDefinition : staticEndpointDefinitions) {
+                EndpointMetaDataDefinition metaDataDefinition = currentDefinition.getMetaDataDefinition();
+                for (String metaDatumKey : metaDataDefinition.getMetaDataKeys()) {
                     if (metaDataDefinition.getVisibility(metaDatumKey).equals(visibility)
                         && checkConfigurationFilter(metaDataDefinition.getGuiVisibilityFilter(metaDatumKey),
-                            configuration.getConfigurationDescription())) {
+                            compInstProps.getConfigurationDescription())) {
                         Map<Integer, String> sortedKeyMap = null;
                         if (staticGroups.get(metaDataDefinition.getGuiGroup(metaDatumKey)) != null) {
                             sortedKeyMap = staticGroups.get(metaDataDefinition.getGuiGroup(metaDatumKey));
@@ -132,14 +69,16 @@ public final class EndpointHelper {
                 }
             }
             Map<String, Map<Integer, String>> dynamicGroups = new TreeMap<String, Map<Integer, String>>();
-            for (EndpointDefinition dynamicDescription : dynamicDescriptions) {
+            for (EndpointDefinition dynamicDescription : dynamicEndpointDefinitions) {
+                if (dynamicDescription == null) {
+                    continue;
+                } 
                 EndpointMetaDataDefinition metaDataDefinition = dynamicDescription.getMetaDataDefinition();
                 for (String metaDatumKey : dynamicDescription.getMetaDataDefinition().getMetaDataKeys()) {
-                    if (dynamicDescription.getIdentifier().equals(id)
-                        && dynamicDescription.getMetaDataDefinition().getVisibility(metaDatumKey)
-                            .equals(visibility)
+                    
+                    if (dynamicDescription.getMetaDataDefinition().getVisibility(metaDatumKey).equals(visibility)
                         && checkConfigurationFilter(metaDataDefinition.getGuiVisibilityFilter(metaDatumKey),
-                            configuration.getConfigurationDescription())) {
+                            compInstProps.getConfigurationDescription())) {
                         Map<Integer, String> sortedKeyMap = null;
 
                         if (dynamicGroups.get(metaDataDefinition.getGuiGroup(metaDatumKey)) != null) {
@@ -159,6 +98,46 @@ public final class EndpointHelper {
             }
         }
         return new LinkedList<String>(resultList);
+    }
+    
+    /**
+    * @param endpointType {@link EndpointType} to consider
+    * @param compInstProps {@link ComponentInstanceProperties} to consider
+    * @return {@link List} with names of all static {@link EndpointDefinition}s
+     */
+    public static List<String> getAllStaticEndpointNames(EndpointType endpointType, ComponentInstanceProperties compInstProps) {
+        List<String> endpointNames = new ArrayList<>();
+        EndpointDescriptionsManager endpointManager = getEndpointDescriptionsManager(endpointType, compInstProps);
+        for (EndpointDefinition endpointDef : endpointManager.getStaticEndpointDefinitions()) {
+            endpointNames.add(endpointDef.getName());
+        }
+        Collections.sort(endpointNames);
+        return endpointNames;
+    }
+    
+    /**
+    * @param endpointType {@link EndpointType} to consider
+    * @param compInstProps {@link ComponentInstanceProperties} to consider
+    * @return {@link List} with identifiers of all dynamic {@link EndpointDefinition}s
+     */
+    public static List<String> getAllDynamicEndpointIds(EndpointType endpointType, ComponentInstanceProperties compInstProps) {
+        List<String> endpointIds = new ArrayList<>();
+        EndpointDescriptionsManager endpointManager = getEndpointDescriptionsManager(endpointType, compInstProps);
+        for (EndpointDefinition endpointDef : endpointManager.getDynamicEndpointDefinitions()) {
+            endpointIds.add(endpointDef.getIdentifier());
+        }
+        return endpointIds;
+    }
+    
+    private static EndpointDescriptionsManager getEndpointDescriptionsManager(EndpointType endpointType,
+        ComponentInstanceProperties compInstProps) {
+        EndpointDescriptionsManager endpointManager;
+        if (endpointType == EndpointType.INPUT) {
+            endpointManager = compInstProps.getInputDescriptionsManager();
+        } else {
+            endpointManager = compInstProps.getOutputDescriptionsManager();
+        }
+        return endpointManager;
     }
 
     private static boolean checkConfigurationFilter(Map<String, List<String>> filter,
@@ -214,36 +193,15 @@ public final class EndpointHelper {
     }
 
     /**
-     * @param direction if the inputs or outputs shall be filtered
-     * @param id for dynamic channel
+     * @param endpointType if the inputs or outputs shall be filtered
+     * @param dynEndpointIdsToConsider identifiers of dynamic endpoints to consider
+     * @param statEndpointNamesToConsider identifiers of static endpoints to consider
      * @param configuration to filter from
      * @return List of all meta data GUI names which shall be shown in the in-/output table.
      */
-    public static List<String> getMetaDataNamesForTable(EndpointType direction,
-        String id, ComponentInstanceProperties configuration) {
-        return getMetadataGUINames(Visibility.shown, direction, id, configuration);
-
+    public static List<String> getMetaDataNamesForTable(EndpointType endpointType,
+        List<String> dynEndpointIdsToConsider, List<String> statEndpointNamesToConsider, ComponentInstanceProperties configuration) {
+        return getMetadataGUINames(Visibility.shown, endpointType, dynEndpointIdsToConsider, statEndpointNamesToConsider, configuration);
     }
 
-    /**
-     * @param direction if the inputs or outputs shall be filtered
-     * @param configuration to filter from
-     * @param id for dynamic channel
-     * @return List of all meta data GUI names which shall be shown in the configuration dialog.
-     */
-    public static List<String> getMetadataNamesForDialog(EndpointType direction,
-        ComponentInstanceProperties configuration, String id) {
-        return getMetadataGUINames(Visibility.userConfigurable, direction, id, configuration);
-    }
-
-    /**
-     * @param direction if the inputs or outputs shall be filtered
-     * @param configuration to filter from
-     * @param id for dynamic channel
-     * @return List of all meta data GUI names which shall not be shown.
-     */
-    public static List<String> getMetadataNamesForDeveloper(EndpointType direction,
-        ComponentInstanceProperties configuration, String id) {
-        return getMetadataGUINames(Visibility.developerConfigurable, direction, id, configuration);
-    }
 }

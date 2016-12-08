@@ -20,26 +20,23 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPan
  * @author David Scholz
  */
 public class SwitchEndpointPropertiesSection extends EndpointPropertySection {
-   
 
     public SwitchEndpointPropertiesSection() {
 
-        SwitchDataInputSelectionPane dataInputPane =
-            new SwitchDataInputSelectionPane(Messages.dataInputString, EndpointType.INPUT, this, false,
-                SwitchComponentConstants.DATA_INPUT_NAME);
+        SwitchDataInputSelectionPane dataInputPane = new SwitchDataInputSelectionPane(this);
 
         SwitchConditionInputSelectionPane conditionInputPane =
-            new SwitchConditionInputSelectionPane(Messages.conditionInputString, EndpointType.INPUT, this, false,
-                SwitchComponentConstants.CONDITION_INPUT_ID);
+            new SwitchConditionInputSelectionPane(Messages.conditionInputString, EndpointType.INPUT,
+                SwitchComponentConstants.CONDITION_INPUT_ID, this);
 
         EndpointSelectionPane dataOutputpane =
-            new EndpointSelectionPane(Messages.dataOutputString, EndpointType.OUTPUT, this, true, null, false);
+            new EndpointSelectionPane(Messages.dataOutputString, EndpointType.OUTPUT, null, new String[] {},
+                new String[] { SwitchComponentConstants.FALSE_OUTPUT, SwitchComponentConstants.TRUE_OUTPUT }, this);
 
-        
         setColumns(1);
         setPanes(dataInputPane, conditionInputPane, dataOutputpane);
-        dataInputPane.setAllPanes(new EndpointSelectionPane[] {dataInputPane, conditionInputPane, dataOutputpane}); 
-        
+        dataInputPane.setAllPanes(new EndpointSelectionPane[] { dataInputPane, conditionInputPane, dataOutputpane });
+
     }
 
 }

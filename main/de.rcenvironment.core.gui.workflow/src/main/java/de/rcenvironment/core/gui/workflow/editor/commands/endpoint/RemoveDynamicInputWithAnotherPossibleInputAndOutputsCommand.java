@@ -10,6 +10,7 @@ package de.rcenvironment.core.gui.workflow.editor.commands.endpoint;
 import java.util.LinkedList;
 import java.util.List;
 
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
 
@@ -21,13 +22,16 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  */
 public class RemoveDynamicInputWithAnotherPossibleInputAndOutputsCommand extends RemoveDynamicInputWithOutputsCommand {
 
+    private final String addDynInputId;
+    
     private final String inputNameSuffix;
 
     private final List<String> inputsWithSuffixInput;
 
-    public RemoveDynamicInputWithAnotherPossibleInputAndOutputsCommand(String dynamicEndpointId, List<String> names, String inputNameSuffix,
-        String nameSuffix, Refreshable... panes) {
-        super(dynamicEndpointId, names, nameSuffix, panes);
+    public RemoveDynamicInputWithAnotherPossibleInputAndOutputsCommand(String dynEndpointId, String addDynInputId, String inputNameSuffix,
+        String addDynOutputId, String outputNameSuffix, List<String> names, Refreshable... panes) {
+        super(dynEndpointId, addDynOutputId, outputNameSuffix, names, panes);
+        this.addDynInputId = addDynInputId;
         this.inputNameSuffix = inputNameSuffix;
         this.inputsWithSuffixInput = new LinkedList<>();
     }
@@ -62,8 +66,8 @@ public class RemoveDynamicInputWithAnotherPossibleInputAndOutputsCommand extends
         for (String name : names) {
             EndpointDescription oldDescription = oldDescriptions.get(name);
             if (inputsWithSuffixInput.contains(name)) {
-                InputWithOutputsCommandUtils.addInputWithSuffix(getProperties(), dynEndpointId, name, oldDescription.getDataType(),
-                    inputNameSuffix, "startValues");
+                InputWithOutputsCommandUtils.addInputWithSuffix(getProperties(), addDynInputId, name, oldDescription.getDataType(),
+                    inputNameSuffix, LoopComponentConstants.ENDPOINT_STARTVALUE_GROUP);
             }
         }
         super.undo();

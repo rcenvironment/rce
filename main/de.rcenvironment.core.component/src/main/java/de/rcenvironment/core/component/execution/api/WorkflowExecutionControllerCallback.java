@@ -64,5 +64,5 @@ public interface WorkflowExecutionControllerCallback extends BatchedConsoleRowsP
      * @param executionIdentifier execution identifier of the calling component
      */
     void onComponentHeartbeatReceived(String executionIdentifier);
-
+    
 }

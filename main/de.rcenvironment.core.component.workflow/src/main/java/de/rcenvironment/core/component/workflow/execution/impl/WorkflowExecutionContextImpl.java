@@ -12,7 +12,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -34,7 +35,7 @@ public class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
     
     private Map<String, String> componentExecutionIdentifiers;
     
-    private NodeIdentifier nodeIdentifierStartedExecution;
+    private LogicalNodeId nodeIdentifierStartedExecution;
     
     private String additionalInformation;
     
@@ -58,12 +59,12 @@ public class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public LogicalNodeId getNodeId() {
         return workflowDescription.getControllerNode();
     }
 
     @Override
-    public NodeIdentifier getDefaultStorageNodeId() {
+    public LogicalNodeId getDefaultStorageNodeId() {
         return getNodeId();
     }
 
@@ -78,7 +79,7 @@ public class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
     }
 
     @Override
-    public NodeIdentifier getNodeIdStartedExecution() {
+    public LogicalNodeId getNodeIdStartedExecution() {
         return nodeIdentifierStartedExecution;
     }
 
@@ -91,11 +92,16 @@ public class WorkflowExecutionContextImpl implements WorkflowExecutionContext {
         this.instanceName = instanceName;
     }
     
-    public void setNodeIdentifierStartedExecution(NodeIdentifier nodeIdentifier) {
+    public void setNodeIdentifierStartedExecution(LogicalNodeId nodeIdentifier) {
         this.nodeIdentifierStartedExecution = nodeIdentifier;
     }
 
     public void setAdditionalInformationProvidedAtStart(String additionalInformationProvidedAtStart) {
         this.additionalInformation = additionalInformationProvidedAtStart;
+    }
+
+    @Override
+    public ServiceCallContext getServiceCallContext() {
+        return null; // implement this once needed
     }
 }

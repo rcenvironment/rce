@@ -20,8 +20,9 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.log.RemotableLogReaderService;
 import de.rcenvironment.core.log.SerializableLogEntry;
@@ -32,7 +33,7 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link DistributedLogReaderServiceImpl}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (7.0.0 adaptations)
+ * @author Robert Mischke (7.0.0 adaptations; 8.0.0 id adaptations)
  */
 // TODO consider replacing this with a VirtualInstance test for more realistic service behavior - misc_ro
 public class DistributedLogReaderServiceImplTest {
@@ -41,11 +42,12 @@ public class DistributedLogReaderServiceImplTest {
 
     private final String added = "added";
 
-    private final NodeIdentifier piLocal = NodeIdentifierFactory.fromHostAndNumberString("localhost:1");
+    private final InstanceNodeSessionId instanceIdLocal = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local");
 
-    private final NodeIdentifier piRemote = NodeIdentifierFactory.fromHostAndNumberString("remotehost:1");
+    private final InstanceNodeSessionId instanceIdRemote = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("remote");
 
-    private final NodeIdentifier piNotReachable = NodeIdentifierFactory.fromHostAndNumberString("notReachable:1");
+    private final InstanceNodeSessionId instanceIdNotReachable = NodeIdentifierTestUtils
+        .createTestInstanceNodeSessionIdWithDisplayName("notReachable");
 
     private final SerializableLogEntry localLogEntry = EasyMock.createNiceMock(SerializableLogEntry.class);
 
@@ -78,31 +80,31 @@ public class DistributedLogReaderServiceImplTest {
     /** Test. */
     @Test
     public void testAddListener() {
-        logReader.addLogListener(logListener, piLocal);
-        logReader.addLogListener(logListener, piRemote);
-        logReader.addLogListener(logListener, piNotReachable);
+        logReader.addLogListener(logListener, instanceIdLocal);
+        logReader.addLogListener(logListener, instanceIdRemote);
+        logReader.addLogListener(logListener, instanceIdNotReachable);
     }
 
     /** Test. */
     @Test
     public void testGetLog() {
-        List<SerializableLogEntry> entries = logReader.getLog(piLocal);
+        List<SerializableLogEntry> entries = logReader.getLog(instanceIdLocal);
         assertEquals(localLogEntry, entries.get(0));
         assertEquals(1, entries.size());
 
-        entries = logReader.getLog(piRemote);
+        entries = logReader.getLog(instanceIdRemote);
         assertEquals(remoteLogEntry, entries.get(0));
         assertEquals(1, entries.size());
 
-        assertEquals(0, logReader.getLog(piNotReachable).size());
+        assertEquals(0, logReader.getLog(instanceIdNotReachable).size());
     }
 
     /** Test. */
     @Test
     public void testRemoveListener() {
-        logReader.removeLogListener(logListener, piLocal);
-        logReader.removeLogListener(logListener, piRemote);
-        logReader.removeLogListener(logListener, piNotReachable);
+        logReader.removeLogListener(logListener, instanceIdLocal);
+        logReader.removeLogListener(logListener, instanceIdRemote);
+        logReader.removeLogListener(logListener, instanceIdNotReachable);
     }
 
     /**
@@ -114,23 +116,16 @@ public class DistributedLogReaderServiceImplTest {
 
         @SuppressWarnings("unchecked")
         @Override
-        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-            throws IllegalStateException {
+        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
             T service = null;
-            if (iface == RemotableLogReaderService.class && piLocal.equals(nodeId) && bundleContext == context) {
+            if (iface == RemotableLogReaderService.class && instanceIdLocal.equals(nodeId)) {
                 service = (T) new DummyLocalSerializableLogReaderService();
-            } else if (iface == RemotableLogReaderService.class && piRemote.equals(nodeId) && bundleContext == context) {
+            } else if (iface == RemotableLogReaderService.class && instanceIdRemote.equals(nodeId)) {
                 service = (T) new DummyRemoteSerializableLogReaderService();
-            } else if (iface == RemotableLogReaderService.class && piNotReachable.equals(nodeId)
-                && bundleContext == context) {
+            } else if (iface == RemotableLogReaderService.class && instanceIdNotReachable.equals(nodeId)) {
                 service = (T) new DummyNotReachableSerializableLogReaderService();
             }
             return service;
-        }
-
-        @Override
-        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
-            return getService(iface, nodeId, context);
         }
 
     }

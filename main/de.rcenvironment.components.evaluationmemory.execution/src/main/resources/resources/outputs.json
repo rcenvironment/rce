@@ -2,6 +2,7 @@
 	"dynamicOutputs": [
         {
             "identifier": "to_evaluate",
+            "character": "sameLoop",
             "dataTypes": [
                 "Float",
                 "Integer",
@@ -21,6 +22,7 @@
         },
         {
             "identifier": "evaluation_results",
+            "character": "outerLoop",
             "dataTypes": [
                 "Float",
                 "Integer",

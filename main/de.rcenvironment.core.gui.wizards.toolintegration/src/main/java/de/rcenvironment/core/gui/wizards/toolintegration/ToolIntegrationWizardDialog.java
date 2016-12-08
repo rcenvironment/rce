@@ -142,25 +142,24 @@ public class ToolIntegrationWizardDialog extends WizardDialog {
                     infoDialog.open();
                 }
                 break;
-            } else {
-                synchronized (LOCK_OBJECT) {
-                    ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
-                    finishPressed();
-                    if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
-                        MessageBox infoDialog = new MessageBox(this.getParentShell(),
-                            SWT.ICON_INFORMATION | SWT.OK);
-                        infoDialog.setText("Tool updated");
-                        infoDialog
-                            .setMessage(StringUtils
-                                .format("Tool \"%s\" was successfully updated.",
-                                    ((ToolIntegrationWizard) getWizard())
-                                        .getConfigurationMap()
-                                        .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
-                        infoDialog.open();
-                    }
-                }
-                break;
             }
+            synchronized (LOCK_OBJECT) {
+                ((ToolIntegrationWizard) getWizard()).removeOldIntegration();
+                finishPressed();
+                if (((ToolIntegrationWizard) getWizard()).isConfigOK() && this.getParentShell() != null) {
+                    MessageBox infoDialog = new MessageBox(this.getParentShell(),
+                        SWT.ICON_INFORMATION | SWT.OK);
+                    infoDialog.setText("Tool updated");
+                    infoDialog
+                        .setMessage(StringUtils
+                            .format("Tool \"%s\" was successfully updated.",
+                                ((ToolIntegrationWizard) getWizard())
+                                    .getConfigurationMap()
+                                    .get(ToolIntegrationConstants.KEY_TOOL_NAME)));
+                    infoDialog.open();
+                }
+            }
+            break;
         case IDialogConstants.OPEN_ID:
             DirectoryDialog dialog = new DirectoryDialog(getShell());
             String folder = dialog.open();

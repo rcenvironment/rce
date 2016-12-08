@@ -14,9 +14,9 @@ import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Abstract base class for the {@link MessageChannel} implementations of network transports.
@@ -165,7 +165,7 @@ public abstract class AbstractMessageChannel implements MessageChannel {
     }
 
     private void asyncFireOnClosedOrBroken() {
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Communication Layer: Asynchronous handling of connection breakdown")

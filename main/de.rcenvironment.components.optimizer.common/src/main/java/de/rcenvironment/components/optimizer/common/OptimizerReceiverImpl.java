@@ -12,7 +12,7 @@ import java.util.List;
 
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
@@ -31,13 +31,13 @@ public final class OptimizerReceiverImpl implements OptimizerReceiver {
 
     private final ResultSet study;
 
-    private final NodeIdentifier platform;
+    private final ResolvableNodeId platform;
 
     private NotificationSubscriber notificationSubscriber;
 
     private DistributedNotificationService notificationService;
 
-    public OptimizerReceiverImpl(final ResultSet study, final NodeIdentifier platform,
+    public OptimizerReceiverImpl(final ResultSet study, final ResolvableNodeId platform,
         DistributedNotificationService notificationService) {
         this.study = study;
         this.platform = platform;

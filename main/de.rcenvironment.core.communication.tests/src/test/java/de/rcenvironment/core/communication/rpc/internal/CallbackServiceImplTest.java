@@ -24,8 +24,8 @@ import org.junit.Test;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -42,9 +42,9 @@ public class CallbackServiceImplTest {
 
     private DummyObject callbackObject = new DummyObject();
 
-    private final NodeIdentifier piLocal = NodeIdentifierFactory.fromHostAndNumberString("localhost:1");
+    private final InstanceNodeSessionId instanceIdLocal = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local");
 
-    private final NodeIdentifier piRemote = NodeIdentifierFactory.fromHostAndNumberString("remotehost:1");
+    private final InstanceNodeSessionId instanceIdRemote = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("remote");
 
     /** Set up. */
     @Before
@@ -59,10 +59,10 @@ public class CallbackServiceImplTest {
      **/
     @Test
     public void testRemainingMethods() throws RemoteOperationException {
-        String id = service.addCallbackObject(callbackObject, piRemote);
+        String id = service.addCallbackObject(callbackObject, instanceIdRemote);
         assertNotNull(id);
-        assertEquals(id, service.addCallbackObject(callbackObject, piRemote));
-        assertTrue(id != service.addCallbackObject(new String(), piRemote));
+        assertEquals(id, service.addCallbackObject(callbackObject, instanceIdRemote));
+        assertTrue(id != service.addCallbackObject(new String(), instanceIdRemote));
 
         assertEquals(id, service.getCallbackObjectIdentifier(callbackObject));
         assertNull(service.getCallbackObjectIdentifier(new Object()));
@@ -114,12 +114,12 @@ public class CallbackServiceImplTest {
         service.bindPlatformService(new DummyPlatformService());
 
         String id = UUID.randomUUID().toString();
-        Object proxy = service.createCallbackProxy(new DummyObject(), id, piRemote);
+        Object proxy = service.createCallbackProxy(new DummyObject(), id, instanceIdRemote);
 
         assertTrue(proxy != null);
         assertTrue(proxy instanceof DummyInterface);
         assertTrue(proxy instanceof CallbackProxy);
-        assertEquals(piLocal, ((CallbackProxy) proxy).getHomePlatform());
+        assertEquals(instanceIdLocal, ((CallbackProxy) proxy).getHomePlatform());
         assertEquals(id, ((CallbackProxy) proxy).getObjectIdentifier());
         assertEquals("some method called", ((DummyInterface) proxy).someMethod());
     }
@@ -130,12 +130,12 @@ public class CallbackServiceImplTest {
         service.bindPlatformService(new DummyPlatformService());
 
         String id = UUID.randomUUID().toString();
-        Object proxy = service.createCallbackProxy(new DummyLevel2Object(), id, piRemote);
+        Object proxy = service.createCallbackProxy(new DummyLevel2Object(), id, instanceIdRemote);
 
         assertTrue(proxy != null);
         assertTrue(proxy instanceof DummyInterface);
         assertTrue(proxy instanceof CallbackProxy);
-        assertEquals(piLocal, ((CallbackProxy) proxy).getHomePlatform());
+        assertEquals(instanceIdLocal, ((CallbackProxy) proxy).getHomePlatform());
         assertEquals(id, ((CallbackProxy) proxy).getObjectIdentifier());
         assertEquals("some method called", ((DummyInterface) proxy).someMethod());
     }
@@ -148,8 +148,8 @@ public class CallbackServiceImplTest {
     private class DummyPlatformService extends PlatformServiceDefaultStub {
 
         @Override
-        public NodeIdentifier getLocalNodeId() {
-            return piLocal;
+        public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+            return instanceIdLocal;
         }
     }
 

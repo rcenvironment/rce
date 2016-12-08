@@ -41,11 +41,10 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
 /**
- * This is a sample new wizard. Its role is to create a new file resource in the provided container.
- * If the container resource (a folder or a project) is selected in the workspace when the wizard is
- * opened, it will accept it as the target container. The wizard creates one file with the extension
- * "mpe". If a sample multi-page editor (also available as a template) is registered for the same
- * extension, it will be able to open it.
+ * This is a sample new wizard. Its role is to create a new file resource in the provided container. If the container resource (a folder or
+ * a project) is selected in the workspace when the wizard is opened, it will accept it as the target container. The wizard creates one file
+ * with the extension "mpe". If a sample multi-page editor (also available as a template) is registered for the same extension, it will be
+ * able to open it.
  * 
  * @author Robert Mischke
  * @author Sascha Zur
@@ -91,8 +90,8 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     }
 
     /**
-     * This method is called when 'Finish' button is pressed in the wizard. We will create an
-     * operation and run it using wizard as execution context.
+     * This method is called when 'Finish' button is pressed in the wizard. We will create an operation and run it using wizard as execution
+     * context.
      * 
      * @return boolean : done
      */
@@ -100,7 +99,16 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     public boolean performFinish() {
 
         final String newProjectName = page.getNewProjectName();
-        final boolean copyTool = page.getCreateTIExample();
+        final int copyToolAnswer = page.getCreateTIExample();
+        final boolean copyTool;
+        if (copyToolAnswer == NewExampleProjectWizardPage.COPY_EXAMPLE_TOOL) {
+            copyTool = true;
+        } else if (copyToolAnswer == NewExampleProjectWizardPage.RED_X_CANCELD) {
+            return false;
+        } else {
+            copyTool = false;
+        }
+
         IRunnableWithProgress op = new IRunnableWithProgress() {
 
             @Override
@@ -142,20 +150,19 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
                 final String rawPath = elementURL.getPath();
                 final String targetPath = rawPath.replaceFirst("^/templates/\\w+/", "");
                 final File target = new File(commonsFolder, targetPath);
-                if (!target.exists()) {
-                    if (target.isDirectory() || rawPath.endsWith("/")) {
-                        target.mkdirs();
-                    } else {
-                        InputStream fileStream = null;
-                        try {
-                            fileStream = elementURL.openStream();
-                            FileUtils.copyInputStreamToFile(fileStream, target);
-                        } catch (IOException e) {
-                            log.error("Could not copy tool integration example", e);
-                        } finally {
-                            if (fileStream != null) {
-                                fileStream.close();
-                            }
+
+                if (target.isDirectory() || rawPath.endsWith("/")) {
+                    target.mkdirs();
+                } else {
+                    InputStream fileStream = null;
+                    try {
+                        fileStream = elementURL.openStream();
+                        FileUtils.copyInputStreamToFile(fileStream, target);
+                    } catch (IOException e) {
+                        log.error("Could not copy tool integration example", e);
+                    } finally {
+                        if (fileStream != null) {
+                            fileStream.close();
                         }
                     }
                 }
@@ -167,8 +174,8 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
     }
 
     /**
-     * The worker method. It will find the container, create the file if missing or just replace its
-     * contents, and open the editor on the newly created file.
+     * The worker method. It will find the container, create the file if missing or just replace its contents, and open the editor on the
+     * newly created file.
      * 
      * @param templateName
      */
@@ -209,6 +216,7 @@ public abstract class NewExampleProjectWizard extends Wizard implements INewWiza
                     }
                 }
             }
+
             if (copyIntegrationExample) {
                 copyExampleTool(bundle);
             }

@@ -12,20 +12,20 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Grouping of multiple LSAs in one batch.
  * 
  * @author Phillip Kroll
  */
-public class LinkStateAdvertisementBatch extends HashMap<NodeIdentifier, LinkStateAdvertisement> implements Serializable {
+public class LinkStateAdvertisementBatch extends HashMap<InstanceNodeSessionId, LinkStateAdvertisement> implements Serializable {
 
     private static final long serialVersionUID = -4462813588655196069L;
 
     public LinkStateAdvertisementBatch() {}
 
-    public LinkStateAdvertisementBatch(Map<NodeIdentifier, ? extends LinkStateAdvertisement> m) {
+    public LinkStateAdvertisementBatch(Map<InstanceNodeSessionId, ? extends LinkStateAdvertisement> m) {
         super(m);
     }
 

@@ -11,7 +11,10 @@ package de.rcenvironment.core.component.model.impl;
 import java.io.Serializable;
 
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -22,6 +25,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * @author Robert Mischke
  * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ComponentInstallationImpl implements ComponentInstallation, Serializable {
 
     private static final long serialVersionUID = 3895539478658080757L;
@@ -31,9 +35,9 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
     private ComponentRevisionImpl componentRevision;
 
     private String installationId;
-    
+
     private boolean isPublished = false;
-    
+
     private Integer maximumCountOfParallelInstances = null;
 
     @Override
@@ -41,8 +45,33 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
         return nodeId;
     }
 
-    public void setNodeId(String nodeId) {
-        this.nodeId = nodeId;
+    @Override
+    // TODO >=8.0 only *not* a getter to prevent default Jackson serialization; define a convention for/against this - misc_ro
+    public LogicalNodeId fetchNodeIdAsObject() {
+        return NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId);
+    }
+
+    /**
+     * Sets the location for this component.
+     * 
+     * @param idString the string form of the id to set
+     */
+    public void setNodeId(String idString) {
+        this.nodeId = idString;
+    }
+
+    /**
+     * Sets the location for this component.
+     * 
+     * @param nodeIdObject the id object to set
+     */
+    public void setNodeIdFromObject(LogicalNodeId nodeIdObject) {
+        if (nodeIdObject != null) {
+            this.nodeId = nodeIdObject.getLogicalNodeIdString();
+        } else {
+            this.nodeId = null;
+        }
+
     }
 
     @Override
@@ -64,11 +93,11 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
         }
         return installationId;
     }
-    
+
     public void setInstallationId(String installationId) {
         this.installationId = installationId;
     }
-    
+
     @Override
     public boolean getIsPublished() {
         return isPublished;
@@ -77,16 +106,16 @@ public class ComponentInstallationImpl implements ComponentInstallation, Seriali
     public void setIsPublished(boolean isPublished) {
         this.isPublished = isPublished;
     }
-    
+
     @Override
     public Integer getMaximumCountOfParallelInstances() {
         return maximumCountOfParallelInstances;
     }
-    
+
     public void setMaximumCountOfParallelInstances(Integer maximumCountOfParallelInstances) {
         this.maximumCountOfParallelInstances = maximumCountOfParallelInstances;
     }
-    
+
     @Override
     public String toString() {
         return StringUtils.format("ComponentInstallation(node=%s,rev=%s)", nodeId, componentRevision);

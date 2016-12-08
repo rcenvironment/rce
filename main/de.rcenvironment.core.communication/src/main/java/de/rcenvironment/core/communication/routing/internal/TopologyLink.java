@@ -11,15 +11,14 @@ package de.rcenvironment.core.communication.routing.internal;
 import java.io.Serializable;
 import java.util.Date;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Represents a logical link between two communicating RCE instances in a network. It is similar to
- * a {@link MessageChannel}, but can connect arbitrary nodes (while a {@link MessageChannel}
- * always starts at the local node). It is used as a directed edge in the graph representing the
- * known network topology (see {@link TopologyMap}).
+ * Represents a logical link between two communicating RCE instances in a network. It is similar to a {@link MessageChannel}, but can
+ * connect arbitrary nodes (while a {@link MessageChannel} always starts at the local node). It is used as a directed edge in the graph
+ * representing the known network topology (see {@link TopologyMap}).
  * 
  * @author Phillip Kroll
  * @author Robert Mischke
@@ -30,9 +29,9 @@ public final class TopologyLink implements Comparable<TopologyLink>, Cloneable, 
 
     private final Date creationTime = new Date();
 
-    private final NodeIdentifier source;
+    private final InstanceNodeSessionId source;
 
-    private final NodeIdentifier destination;
+    private final InstanceNodeSessionId destination;
 
     private int weight;
 
@@ -42,11 +41,11 @@ public final class TopologyLink implements Comparable<TopologyLink>, Cloneable, 
 
     private final String linkIdentity;
 
-    public TopologyLink(NodeIdentifier source, NodeIdentifier destination, String connectionId) {
+    public TopologyLink(InstanceNodeSessionId source, InstanceNodeSessionId destination, String connectionId) {
         this.source = source;
         this.destination = destination;
         // generate a link id that should be globally unique
-        this.linkIdentity = source.getIdString() + destination.getIdString() + connectionId;
+        this.linkIdentity = source.getInstanceNodeSessionIdString() + destination.getInstanceNodeSessionIdString() + connectionId;
         this.connectionId = connectionId;
         this.reliability = 0;
         this.weight = 1;
@@ -62,17 +61,10 @@ public final class TopologyLink implements Comparable<TopologyLink>, Cloneable, 
         return StringUtils.format("%s --[ConId=%3$s]--> %s, (Hash=%s)", getSource(), getDestination(), getConnectionId(), hashCode());
     }
 
-    /**
-     * 
-     * {@inheritDoc}
-     * @throws CloneNotSupportedException
-     * 
-     * @see java.lang.Object#clone()
-     */
     @Override
     public TopologyLink clone() {
-        // TODO Not so nice.
-        return new TopologyLink(getSource().clone(), getDestination().clone(), connectionId);
+        // TODO check - is this actually needed anymore? couldn't the class just be made immutable? - misc_ro
+        return new TopologyLink(getSource(), getDestination(), connectionId);
     }
 
     /**
@@ -89,14 +81,14 @@ public final class TopologyLink implements Comparable<TopologyLink>, Cloneable, 
     /**
      * @return Returns the source.
      */
-    public NodeIdentifier getSource() {
+    public InstanceNodeSessionId getSource() {
         return source;
     }
 
     /**
      * @return Returns the destination.
      */
-    public NodeIdentifier getDestination() {
+    public InstanceNodeSessionId getDestination() {
         return destination;
     }
 
@@ -123,7 +115,7 @@ public final class TopologyLink implements Comparable<TopologyLink>, Cloneable, 
 
     /**
      * Increase reliability.
-     *
+     * 
      */
     public void incReliability() {
         reliability = reliability + 1;

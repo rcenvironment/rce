@@ -14,7 +14,7 @@ import java.util.Collection;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 
 /**
@@ -49,7 +49,7 @@ public interface DataManagementService {
      * @throws CommunicationException in case of communication error
      */
     String createReferenceFromLocalFile(File file, MetaDataSet additionalMetaData, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException;
+        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException;
 
     /**
      * Creates a new data management entry with the utf-8 byte array form of the given String and returns a new and unique String id for it.
@@ -67,7 +67,7 @@ public interface DataManagementService {
      * @throws CommunicationException in case of communication error
      */
     String createReferenceFromString(String object, MetaDataSet additionalMetaData, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException;
+        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException;
 
     /**
      * Creates a new data management entry with the contents of the given directory and returns a new and unique String id for it. For this
@@ -88,58 +88,58 @@ public interface DataManagementService {
      * @throws CommunicationException in case of communication error
      */
     String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException;
+        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException;
 
     /**
      * Writes the data referenced by the given string id stored on a given platform to a local file.
      * 
      * @param reference the String id referencing a data management entry, as created, for example, by
-     *        {@link #createReferenceFromLocalFile(File, MetaDataSet, NodeIdentifier)} ; its internal format is implementation-dependent
+     *        {@link #createReferenceFromLocalFile(File, MetaDataSet, ResolvableNodeId)} ; its internal format is implementation-dependent
      * @param targetFile the local file to copy the referenced data to
      * @param nodeId platform where the data is stored
      * @throws IOException on I/O errors in the data management, or related to the given file
      * @throws CommunicationException in case of communication error
      */
     void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, CommunicationException;
+        ResolvableNodeId nodeId) throws IOException, CommunicationException;
 
     /**
      * Writes the data referenced by the given string id stored on a given platform to a local file.
      * 
      * @param reference the String id referencing a data management entry, as created, for example, by
-     *        {@link #createReferenceFromLocalFile(File, MetaDataSet, NodeIdentifier)} ; its internal format is implementation-dependent
+     *        {@link #createReferenceFromLocalFile(File, MetaDataSet, ResolvableNodeId)} ; its internal format is implementation-dependent
      * @param targetFile the local file to copy the referenced data to
      * @param platforms platforms where the data is queried
      * @throws IOException on I/O errors in the data management, or related to the given file
      * @throws CommunicationException in case of communication error
      */
     void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
-        Collection<NodeIdentifier> platforms) throws IOException, CommunicationException;
+        Collection<? extends ResolvableNodeId> platforms) throws IOException, CommunicationException;
 
     /**
      * Retrieves a directory from the data management referred by the given {@link DirectoryReferenceTD}.
      * 
      * @param reference the String id referencing a data management entry, as created, for example, by
-     *        {@link #createReferenceFromLocalFile(File, MetaDataSet, NodeIdentifier)} ; its internal format is implementation-dependent
+     *        {@link #createReferenceFromLocalFile(File, MetaDataSet, ResolvableNodeId)} ; its internal format is implementation-dependent
      * @param targetDir local target directory
-     * @param node source {@link NodeIdentifier}
+     * @param node source {@link ResolvableNodeId}
      * @throws IOException on a local I/O or data management error
      * @throws CommunicationException in case of communication error
      */
-    void copyReferenceToLocalDirectory(String reference, File targetDir, NodeIdentifier node)
+    void copyReferenceToLocalDirectory(String reference, File targetDir, ResolvableNodeId node)
         throws IOException, CommunicationException;
 
     /**
      * Retrieves the String referenced by the given string id.
      * 
      * @param reference the String id referencing a data management entry, as created, for example, by
-     *        {@link #createReferenceFromString(String, MetaDataSet, NodeIdentifier)}; its internal format is implementation-dependent
-     * @param nodeId {@link NodeIdentifier} to try to fetch data from
+     *        {@link #createReferenceFromString(String, MetaDataSet, ResolvableNodeId)}; its internal format is implementation-dependent
+     * @param nodeId {@link ResolvableNodeId} to try to fetch data from
      * @return the retrieved String
      * @throws IOException on I/O errors in the data management, or related to the given file
      * @throws CommunicationException in case of communication error
      */
-    String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException,
+    String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException,
         CommunicationException;
 
 }

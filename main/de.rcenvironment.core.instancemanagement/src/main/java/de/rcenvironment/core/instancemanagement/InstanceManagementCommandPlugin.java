@@ -216,7 +216,9 @@ public class InstanceManagementCommandPlugin implements CommandPlugin {
     public void execute(CommandContext context) throws CommandException {
         context.consumeExpectedToken(ROOT_COMMAND);
         String subCommand = context.consumeNextToken();
-
+        if (subCommand == null) {
+            throw CommandException.unknownCommand(context);
+        }
         switch (subCommand) {
         case "install":
             performInstall(context);

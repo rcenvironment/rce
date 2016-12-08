@@ -15,6 +15,7 @@
 
 	<modules>
 		<!-- core headless -->
+		<module>${projects-root}/de.rcenvironment.core.launcher</module>
 		<module>${projects-root}/de.rcenvironment.core.authentication</module>
 		<module>${projects-root}/de.rcenvironment.core.authentication.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.authorization</module>
@@ -40,6 +41,7 @@
 		<module>${projects-root}/de.rcenvironment.core.component.sshremoteaccess.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow</module>
+		<module>${projects-root}/de.rcenvironment.core.component.workflow.testworkflows</module>
 		<module>${projects-root}/de.rcenvironment.core.component.workflow.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.component.wrapper</module>
 		<module>${projects-root}/de.rcenvironment.core.component.xml</module>
@@ -68,6 +70,7 @@
 		<module>${projects-root}/de.rcenvironment.core.log.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.login</module>
 		<module>${projects-root}/de.rcenvironment.core.login.tests</module>
+		<module>${projects-root}/de.rcenvironment.core.utils.encryption</module>
 		<module>${projects-root}/de.rcenvironment.core.mail</module>
 		<module>${projects-root}/de.rcenvironment.core.mail.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.monitoring</module>
@@ -96,6 +99,12 @@
 		<module>${projects-root}/de.rcenvironment.core.utils.ssh.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.utils.testing</module>
 		<module>${projects-root}/de.rcenvironment.core.feature</module>
+		
+		<!-- toolkit and the core-toolkit integration bridge -->
+		<module>${projects-root}/de.rcenvironment.core.toolkitbridge</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.core</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.modules.common</module>
+		<module>${projects-root}/de.rcenvironment.toolkit.modules.common.tests</module>
 
 		<!-- core gui -->
 		<module>${projects-root}/de.rcenvironment.core.gui.cluster</module>
@@ -103,9 +112,6 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.communication</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.configuration</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.datamanagement</module>
-		<module>${projects-root}/de.rcenvironment.core.gui.help</module>
-		<module>${projects-root}/de.rcenvironment.core.gui.help.linux</module>
-		<module>${projects-root}/de.rcenvironment.core.gui.help.win32</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.log</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.login</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.resources</module>
@@ -118,8 +124,6 @@
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.executor</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.workflow.integration</module>
-		<module>${projects-root}/de.rcenvironment.core.gui.workflow.scripting</module>
-		<module>${projects-root}/de.rcenvironment.core.gui.workflow.tests</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.xpathchooser</module>
 		<module>${projects-root}/de.rcenvironment.core.gui.feature</module>
 		<module>${projects-root}/de.rcenvironment.core.start.gui</module>

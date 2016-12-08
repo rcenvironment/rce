@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.management;
 
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 
 /**
@@ -37,6 +37,6 @@ public interface WorkflowHostSetListener {
      * @param addedWfHosts workflow host nodes that have been added by this change
      * @param removedWfHosts workflow host nodes that have been removed by this change
      */
-    void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
-        Set<NodeIdentifier> removedWfHosts);
+    void onReachableWorkflowHostsChanged(Set<InstanceNodeSessionId> reachableWfHosts, Set<InstanceNodeSessionId> addedWfHosts,
+        Set<InstanceNodeSessionId> removedWfHosts);
 }

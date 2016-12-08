@@ -13,12 +13,27 @@
 		<relativePath>../../parent/module</relativePath>
 	</parent>
 
-	<modules>
-		<!-- documentation -->
-		<module>${projects-root}/de.rcenvironment.documentation.core</module>
-		<module>${projects-root}/de.rcenvironment.documentation.core.feature</module>
-		<module>${projects-root}/de.rcenvironment.documentation.core.linux.feature</module>
-		<module>${projects-root}/de.rcenvironment.documentation.core.win32.feature</module>
-	</modules>
+	<profiles>
+	    <profile>
+	      	<id>buildDocumentation</id>
+	      		<activation>
+	      			<activeByDefault>
+	      				true
+	      			</activeByDefault>
+	      		</activation>
+	      	<modules>
+				<!-- documentation -->
+				<module>${projects-root}/de.rcenvironment.documentation.core</module>
+				<module>${projects-root}/de.rcenvironment.documentation.core.feature</module>
+				<module>${projects-root}/de.rcenvironment.documentation.core.linux.feature</module>
+				<module>${projects-root}/de.rcenvironment.documentation.core.win32.feature</module>
+				<!-- help system -->
+				<module>${projects-root}/de.rcenvironment.core.gui.help</module>
+				<module>${projects-root}/de.rcenvironment.core.gui.help.feature</module>
+				<module>${projects-root}/de.rcenvironment.core.gui.help.linux</module>
+				<module>${projects-root}/de.rcenvironment.core.gui.help.win32</module>
+	      	</modules>
+    	</profile>
+  	</profiles>
 
 </project>

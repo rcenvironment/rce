@@ -26,4 +26,11 @@
 		policy="dynamic"
 	/>
 	
+	<reference name="Endpoin Datum Serializer"
+		interface="de.rcenvironment.core.component.execution.api.EndpointDatumSerializer"
+		cardinality="1..1"
+		bind="bindEndpointDatumSerializer"
+		policy="dynamic"
+	/>
+	
 </scr:component>

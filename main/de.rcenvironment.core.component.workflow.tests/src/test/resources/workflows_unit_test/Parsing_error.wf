@@ -1,5 +1,5 @@
 {
   "identifier" : "2b09e33f-b2a5-4c12-98bc-61ae5fa6dab9",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "labels" : "[{\"identifier\":\"364a9f33-bf1d-4722-b287-c34f61831fdc\",\"headerText\":\"\",\"text_unknown\":\"Ein Label!\",\"location\":\"11:48\",\"size\":\"121:61\",\"alpha\":\"127\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"0\"}]"
 }

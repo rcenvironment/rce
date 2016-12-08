@@ -10,10 +10,11 @@ package de.rcenvironment.core.communication.protocol;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import org.junit.After;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.utils.MessageUtils;
@@ -25,11 +26,17 @@ import de.rcenvironment.core.communication.utils.MessageUtils;
  */
 public class NetworkRequestFactoryTest {
 
-    private static final int UUID_LENGTH = 36;
+    private InstanceNodeSessionId senderId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("senderId");
 
-    private NodeIdentifier senderId = NodeIdentifierFactory.fromNodeId("senderId");
+    private InstanceNodeSessionId receiverId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("receiverId");;
 
-    private NodeIdentifier receiverId = NodeIdentifierFactory.fromNodeId("receiverId");;
+    /**
+     * Common teardown.
+     */
+    @After
+    public void teardown() {
+        NodeIdentifierTestUtils.removeTestNodeIdentifierServiceFromCurrentThread();
+    }
 
     /**
      * Verifies {@link NetworkRequestFactory#createNetworkRequest()}.
@@ -38,6 +45,7 @@ public class NetworkRequestFactoryTest {
      */
     @Test
     public void createNetworkRequest() throws SerializationException {
+        NodeIdentifierTestUtils.attachTestNodeIdentifierServiceToCurrentThread();
         validateMessageTypeMetadata(ProtocolConstants.VALUE_MESSAGE_TYPE_RPC);
         // TODO test other types, too
     }
@@ -48,7 +56,7 @@ public class NetworkRequestFactoryTest {
         NetworkRequest request =
             NetworkRequestFactory.createNetworkRequest(contentBytes, messageType, senderId, receiverId);
         assertNotNull(request.getRequestId());
-        assertEquals(UUID_LENGTH, request.getRequestId().length());
+        assertEquals(NetworkRequest.REQUEST_ID_LENGTH, request.getRequestId().length());
         assertEquals(messageType, request.getMessageType());
         assertEquals(senderId, request.accessMetaData().getSender());
         assertEquals(receiverId, request.accessMetaData().getFinalRecipient());

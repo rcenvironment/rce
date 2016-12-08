@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.spi;
 import java.util.Set;
 
 import de.rcenvironment.core.communication.common.NetworkGraph;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Listener interface for topology changes. The main events triggering topology changes are nodes entering or leaving the network.
@@ -44,6 +44,6 @@ public interface NetworkTopologyChangeListener {
      * @param addedNodes nodes that have been added by this change
      * @param removedNodes nodes that have been removed by this change
      */
-    void onReachableNodesChanged(Set<NodeIdentifier> reachableNodes, Set<NodeIdentifier> addedNodes,
-        Set<NodeIdentifier> removedNodes);
+    void onReachableNodesChanged(Set<InstanceNodeSessionId> reachableNodes, Set<InstanceNodeSessionId> addedNodes,
+        Set<InstanceNodeSessionId> removedNodes);
 }

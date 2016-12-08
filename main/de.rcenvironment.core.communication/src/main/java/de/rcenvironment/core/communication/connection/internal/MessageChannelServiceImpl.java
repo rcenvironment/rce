@@ -23,13 +23,17 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.MessageChannelTrafficListener;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.configuration.CommunicationConfiguration;
 import de.rcenvironment.core.communication.configuration.CommunicationIPFilterConfiguration;
@@ -42,7 +46,6 @@ import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.NetworkResponseHandler;
-import de.rcenvironment.core.communication.model.internal.NodeInformationRegistryImpl;
 import de.rcenvironment.core.communication.protocol.NetworkRequestFactory;
 import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.protocol.ProtocolConstants;
@@ -55,16 +58,16 @@ import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointH
 import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
 import de.rcenvironment.core.communication.utils.MessageUtils;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default implementation of {@link MessageChannelService} which also provides the {@link MessageChannelEndpointHandler} interface.
@@ -86,11 +89,11 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     private AsyncOrderedCallbackManager<MessageChannelTrafficListener> trafficListeners;
 
-    private NodeInformationRegistryImpl nodeInformationRegistry;
-
-    private ThreadPool threadPool = SharedThreadPool.getInstance();
+    private AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private NodeConfigurationService configurationService;
+
+    private NodeIdentifierService nodeIdentifierService;
 
     // stored here to allow overriding in integration tests
     private String protocolVersion = ProtocolConstants.PROTOCOL_COMPATIBILITY_VERSION;
@@ -118,7 +121,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
 
     private final IPWhitelistConnectionFilter globalIPWhitelistFilter;
 
-    private NodeIdentifier localNodeId;
+    private InstanceNodeSessionId localNodeId;
 
     private long requestTimeoutMsec;
 
@@ -137,7 +140,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             // senderNodeInformation.getLogName(), senderNodeInformation.getNodeIdentifier(),
             // ownNodeInformation.getLogName(),
             // ownNodeInformation.getNodeIdentifier()));
-            nodeInformationRegistry.updateFrom(senderNodeInformation);
+            mergeRemoteHandshakeInformationIntoGlobalNodeKnowledge(senderNodeInformation);
             return ownNodeInformation;
         }
 
@@ -181,7 +184,23 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         }
 
         @Override
-        public NetworkResponse onRawRequestReceived(final NetworkRequest request, final NodeIdentifier sourceId) {
+        public NetworkResponse onRawRequestReceived(final NetworkRequest request, final String sourceIdString) {
+            try {
+                NodeIdentifierContextHolder.setDeserializationServiceForCurrentThread(nodeIdentifierService);
+                return onRawRequestReceivedInternal(request, sourceIdString);
+            } finally {
+                NodeIdentifierContextHolder.setDeserializationServiceForCurrentThread(null);
+            }
+        }
+
+        private NetworkResponse onRawRequestReceivedInternal(final NetworkRequest request, final String sourceIdString) {
+
+            final InstanceNodeSessionId sourceId;
+            try {
+                sourceId = nodeIdentifierService.parseInstanceNodeSessionIdString(sourceIdString);
+            } catch (IdentifierException e) {
+                throw NodeIdentifierUtils.wrapIdentifierException(e);
+            }
 
             // send "request received" event to listeners
             trafficListeners.enqueueCallback(new AsyncCallback<MessageChannelTrafficListener>() {
@@ -201,8 +220,8 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             }
 
             // forward or process?
-            NodeIdentifier finalRecipient = request.accessMetaData().getFinalRecipient();
-            if (finalRecipient == null || ownNodeInformation.getNodeId().equals(finalRecipient)) {
+            String finalRecipientIdString = request.accessMetaData().getFinalRecipientIdString();
+            if (finalRecipientIdString == null || ownNodeInformation.getInstanceNodeSessionIdString().equals(finalRecipientIdString)) {
                 // handle locally
                 StatsCounter.count("Messages arrived at destination by type", messageType);
                 response = messageEndpointHandler.onRequestArrivedAtDestination(request);
@@ -211,11 +230,12 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                     // non-relays should never need to forward requests; malicious (forged) request?
                     logger.error("Received a network request that would be forwarded, but the local node is not a relay: " + request);
                     // TODO for future security, make sure this response does not differ from a "normal" routing failure - misc_ro
-                    return NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, ownNodeInformation.getNodeId());
+                    return NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request,
+                        ownNodeInformation.getInstanceNodeSessionId());
                 }
                 // forward
                 final NetworkRequest forwardingRequest =
-                    NetworkRequestFactory.createNetworkRequestForForwarding(request, ownNodeInformation.getNodeId());
+                    NetworkRequestFactory.createNetworkRequestForForwarding(request, ownNodeInformation.getInstanceNodeSessionId());
                 // consistency check: ensure that the request id is maintained on forwarding
                 if (!forwardingRequest.getRequestId().equals(request.getRequestId())) {
                     throw new IllegalStateException("Wrong request id on forwarding");
@@ -228,7 +248,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             if (!response.accessMetaData().hasSender()) {
                 // logger.debug("Filling in undefined 'sender' for response to message type " +
                 // request.getMessageType());
-                response.accessMetaData().setSender(ownNodeInformation.getNodeId());
+                response.accessMetaData().setSender(ownNodeInformation.getInstanceNodeSessionId());
             }
 
             // send "response generated" event to listeners
@@ -290,11 +310,9 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     public MessageChannelServiceImpl() {
         this.transportProviders = new HashMap<String, NetworkTransportProvider>();
         this.channelListeners =
-            new AsyncOrderedCallbackManager<MessageChannelLifecycleListener>(SharedThreadPool.getInstance(),
-                AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+            ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
         this.trafficListeners =
-            new AsyncOrderedCallbackManager<MessageChannelTrafficListener>(SharedThreadPool.getInstance(),
-                AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+            ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
         this.rawMessageChannelEndpointHandler = new RawMessageChannelEndpointHandlerImpl();
         this.brokenConnectionListener = new BrokenMessageChannelListenerImpl();
         this.activeOutgoingChannels = new HashMap<String, MessageChannel>();
@@ -331,7 +349,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 }
                 // on success
                 InitialNodeInformation remoteNodeInformation = channel.getRemoteNodeInformation();
-                nodeInformationRegistry.updateFrom(remoteNodeInformation);
+                mergeRemoteHandshakeInformationIntoGlobalNodeKnowledge(remoteNodeInformation);
                 logger.debug(StringUtils.format("Channel '%s' established from '%s' to '%s' using remote NCP %s", channel,
                     ownNodeInformation.getLogDescription(), remoteNodeInformation.getLogDescription(), ncp));
                 return channel;
@@ -439,7 +457,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 // send a proper response to the caller, instead of causing a timeout
                 // note: currently not generating an error id, as there is no useful/helpful information to log here
                 outerResponseHandler.onResponseAvailable(NetworkResponseFactory.generateResponseForChannelCloseWhileWaitingForResponse(
-                    request, ownNodeInformation.getNodeId(), null));
+                    request, ownNodeInformation.getInstanceNodeSessionId(), null));
                 handleBrokenChannel(channel);
             }
         };
@@ -489,8 +507,8 @@ public class MessageChannelServiceImpl implements MessageChannelService {
     }
 
     @Override
-    public NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, NodeIdentifier sourceId) {
-        return rawMessageChannelEndpointHandler.onRawRequestReceived(request, sourceId);
+    public NetworkResponse handleLocalForcedSerializationRPC(NetworkRequest request, InstanceNodeSessionId sourceId) {
+        return rawMessageChannelEndpointHandler.onRawRequestReceived(request, sourceId.getInstanceNodeSessionIdString());
     }
 
     @Override
@@ -662,6 +680,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
             throw new IllegalStateException();
         }
         this.configurationService = newService;
+        this.nodeIdentifierService = configurationService.getNodeIdentifierService();
     }
 
     /**
@@ -669,15 +688,14 @@ public class MessageChannelServiceImpl implements MessageChannelService {
      */
     public void activate() {
         ownNodeInformation = configurationService.getInitialNodeInformation();
-        localNodeId = ownNodeInformation.getNodeId();
+        localNodeId = ownNodeInformation.getInstanceNodeSessionId();
         localNodeIsRelay = configurationService.isRelay();
         requestTimeoutMsec = configurationService.getRequestTimeoutMsec();
-        nodeInformationRegistry = NodeInformationRegistryImpl.getInstance();
         synchronized (transportProviders) {
             int numTransports = transportProviders.size();
             logger.debug(StringUtils.format(
                 "Activated network channel service; instance log name='%s'; node id='%s'; %d registered transport providers",
-                ownNodeInformation.getLogDescription(), ownNodeInformation.getNodeId(), numTransports));
+                ownNodeInformation.getLogDescription(), ownNodeInformation.getInstanceNodeSessionId(), numTransports));
         }
         loadAndApplyIPFilterConfiguration();
     }
@@ -696,6 +714,25 @@ public class MessageChannelServiceImpl implements MessageChannelService {
      */
     protected void setNodeInformation(InitialNodeInformation nodeInformation) {
         ownNodeInformation = nodeInformation;
+    }
+
+    /**
+     * Field access for unit tests.
+     * 
+     * @return the {@link NodeIdentifierService} of the message-receiving node
+     */
+    public NodeIdentifierService getNodeIdentifierService() {
+        return nodeIdentifierService;
+    }
+
+    /**
+     * Updates the associated information for a node from a received or locally-generated {@link InitialNodeInformation} object.
+     * 
+     * @param remoteNodeInformation the object to update from
+     */
+    private void mergeRemoteHandshakeInformationIntoGlobalNodeKnowledge(InitialNodeInformation remoteNodeInformation) {
+        nodeIdentifierService.associateDisplayName(remoteNodeInformation.getInstanceNodeSessionId(),
+            remoteNodeInformation.getDisplayName());
     }
 
     private void performHealthCheckAndActOnResult(final MessageChannel channel) throws InterruptedException {
@@ -728,7 +765,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                         logger.debug(StringUtils.format(
                             "Channel %s to %s passed its health check after %d previous failures",
                             channel.getChannelId(),
-                            channel.getRemoteNodeInformation().getNodeId(),
+                            channel.getRemoteNodeInformation().getInstanceNodeSessionId(),
                             connectionState.healthCheckFailureCount));
                     }
                     // reset counter
@@ -740,7 +777,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                     logger.debug(StringUtils.format(
                         "Channel %s to %s failed a health check (%d consecutive failures)",
                         channel.getChannelId(),
-                        channel.getRemoteNodeInformation().getNodeId(),
+                        channel.getRemoteNodeInformation().getInstanceNodeSessionId(),
                         connectionState.healthCheckFailureCount));
                     // limit exceeded? -> consider broken
                     if (connectionState.healthCheckFailuresAtOrAboveLimit()) {
@@ -778,7 +815,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         byte[] contentBytes = MessageUtils.serializeSafeObject(randomToken);
         NetworkRequest request =
             NetworkRequestFactory.createNetworkRequest(contentBytes, ProtocolConstants.VALUE_MESSAGE_TYPE_HEALTH_CHECK,
-                ownNodeInformation.getNodeId(), null);
+                ownNodeInformation.getInstanceNodeSessionId(), null);
         NetworkResponse response =
             sendDirectMessageBlocking(request, channel, CommunicationConfiguration.CONNECTION_HEALTH_CHECK_TIMEOUT_MSEC);
 
@@ -811,7 +848,9 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                 logger.warn(
                     StringUtils.format(
                         "Received non-successful response for a health check on channel '%s' (error code %d), "
-                            + "and there was also an error deserializing its content", channel.getChannelId(), numericResultCode), e);
+                            + "and there was also an error deserializing its content",
+                        channel.getChannelId(), numericResultCode),
+                    e);
             }
             if (response.getResultCode() == ResultCode.TIMEOUT_WAITING_FOR_RESPONSE) {
                 logger.warn(StringUtils.format(
@@ -826,7 +865,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
                     channel.getChannelId(), CommunicationConfiguration.CONNECTION_HEALTH_CHECK_TIMEOUT_MSEC));
                 return true;
             } else {
-                logger.warn(StringUtils.format("Received non-sucess response for a health check on channel '%s': "
+                logger.warn(StringUtils.format("Received non-success response for a health check on channel '%s': "
                     + "error code %d, content: %s", channel.getChannelId(), numericResultCode, deserializedContent));
             }
             return false;
@@ -838,7 +877,7 @@ public class MessageChannelServiceImpl implements MessageChannelService {
         String remoteNodeText = "(no node information available)";
         // guard against the case when the handshake has not completed yet
         if (channel.getRemoteNodeInformation() != null) {
-            remoteNodeText = channel.getRemoteNodeInformation().getNodeId().toString();
+            remoteNodeText = channel.getRemoteNodeInformation().getInstanceNodeSessionId().toString();
         }
         logger.debug("Closing broken channel to " + remoteNodeText + " (id=" + channel.getChannelId() + ")");
         if (channel.markAsBroken()) {

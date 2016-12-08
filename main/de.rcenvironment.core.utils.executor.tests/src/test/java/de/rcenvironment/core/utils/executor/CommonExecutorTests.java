@@ -16,6 +16,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Assert;
 
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
 
@@ -145,8 +146,8 @@ abstract class CommonExecutorTests {
      */
     protected void waitAndGatherOutput(CommandLineExecutor executor, final CapturingTextOutReceiver outReceiver,
         final CapturingTextOutReceiver errReceiver) throws IOException, InterruptedException {
-        final TextStreamWatcher stdoutWatcher = new TextStreamWatcher(executor.getStdout(), outReceiver).start();
-        final TextStreamWatcher stderrWatcher = new TextStreamWatcher(executor.getStderr(), errReceiver).start();
+        final TextStreamWatcher stdoutWatcher = TextStreamWatcherFactory.create(executor.getStdout(), outReceiver).start();
+        final TextStreamWatcher stderrWatcher = TextStreamWatcherFactory.create(executor.getStderr(), errReceiver).start();
         executor.waitForTermination();
         stdoutWatcher.waitForTermination();
         stderrWatcher.waitForTermination();

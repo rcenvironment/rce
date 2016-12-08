@@ -9,9 +9,9 @@
 package de.rcenvironment.core.communication.internal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
@@ -28,13 +28,19 @@ import org.osgi.framework.ServiceReference;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
 import de.rcenvironment.core.communication.common.NetworkGraph;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
 import de.rcenvironment.core.communication.model.internal.NetworkGraphImpl;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.routing.internal.LinkStateRoutingProtocolManager;
+import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
+import de.rcenvironment.core.communication.rpc.internal.OSGiLocalServiceResolver;
 import de.rcenvironment.core.communication.rpc.spi.ServiceProxyFactory;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
@@ -54,21 +60,34 @@ public class CommunicationServiceImplTest {
 
     private BundleContext contextMock;
 
-    private final NodeIdentifier pi1 = NodeIdentifierFactory.fromHostAndNumberString("localhost:0");
+    private final InstanceNodeSessionId instanceSessionIdLocal =
+        NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local");
 
-    private final NodeIdentifier pi2 = NodeIdentifierFactory.fromHostAndNumberString("remoteHost:0");
+    private final InstanceNodeSessionId instanceSessionIdRemote =
+        NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("remote");
 
-    private final NodeIdentifier pi3 = NodeIdentifierFactory.fromHostAndNumberString("notReachable:0");
+    private final InstanceNodeSessionId instanceSessionIdNotReachable =
+        NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("notReachable");
 
-    private final Object serviceInstance = new Object();
+    // arbitrary test service interface; must be annotated with @RemotableService to pass the service publication tests
+    private final Class<?> iface = RemotableCallbackService.class;
 
-    private final Class<?> iface = Serializable.class;
+    private final RemotableCallbackService serviceInstance = EasyMock.createNiceMock(RemotableCallbackService.class);
 
     private final Map<String, String> serviceProperties = new HashMap<String, String>();
 
-    /** Setup. */
+    private LiveNetworkIdResolutionServiceImpl idResolutionService;
+
+    /**
+     * Setup.
+     * 
+     * @throws InvalidSyntaxException on uncaught exceptions
+     */
     @Before
-    public void setUp() {
+    // suppress warnings from generics mocking; TODO check if this can be solved better
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    public void setUp() throws InvalidSyntaxException {
+
         serviceProperties.put("piti", "platsch");
         communicationService = new CommunicationServiceImpl();
         communicationService.bindServiceProxyFactory(new CustomServiceProxyFactoryMock());
@@ -77,28 +96,45 @@ public class CommunicationServiceImplTest {
         communicationService.bindPlatformService(platformServiceMock);
         communicationService.bindCommunicationManagementService(EasyMock.createMock(CommunicationManagementService.class));
 
-        NetworkRoutingService routingServiceMock = new CustomNetworkRoutingServiceMock(platformServiceMock.getLocalNodeId());
+        NetworkRoutingService routingServiceMock = new CustomNetworkRoutingServiceMock(platformServiceMock.getLocalInstanceNodeSessionId());
         communicationService.bindNetworkRoutingService(routingServiceMock);
+
+        idResolutionService = new LiveNetworkIdResolutionServiceImpl();
+        communicationService.bindLiveNetworkIdResolutionService(idResolutionService);
 
         contextMock = EasyMock.createNiceMock(BundleContext.class);
         ServiceReference ifaceReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
         EasyMock.expect(contextMock.getServiceReference(iface.getName())).andReturn(ifaceReferenceMock).anyTimes();
+
+        // for OSGiLocalServiceResolver compatibility, which uses this call pattern
+        EasyMock.expect(contextMock.getServiceReferences(iface.getName(), null)).andReturn(new ServiceReference[] { ifaceReferenceMock })
+            .anyTimes();
+
         ServiceReference[] referencesDummy = new ServiceReference[2];
         referencesDummy[0] = ifaceReferenceMock;
-        try {
-            EasyMock.expect(contextMock.getServiceReferences(iface.getName(),
-                ServiceUtils.constructFilter(serviceProperties))).andReturn(referencesDummy).anyTimes();
-        } catch (InvalidSyntaxException e) {
-            fail();
-        }
+        EasyMock.expect(contextMock.getServiceReferences(iface.getName(),
+            ServiceUtils.constructFilter(serviceProperties))).andReturn(referencesDummy).anyTimes();
+
         EasyMock.expect(contextMock.getService(ifaceReferenceMock)).andReturn(serviceInstance).anyTimes();
         ServiceReference platformReferenceMock = EasyMock.createNiceMock(ServiceReference.class);
         EasyMock.expect(contextMock.getServiceReference(PlatformService.class.getName())).andReturn(platformReferenceMock).anyTimes();
         EasyMock.expect(contextMock.getService(platformReferenceMock)).andReturn(new DummyPlatformServiceLocal()).anyTimes();
 
-        EasyMock.replay(contextMock);
+        EasyMock.replay(contextMock, serviceInstance);
+
+        OSGiLocalServiceResolver localServiceResolverAdapter = new OSGiLocalServiceResolver(2); // reduce retry count to 2
+        localServiceResolverAdapter.activate(contextMock);
+
+        communicationService.bindLocalServiceResolver(localServiceResolverAdapter);
+
+        LiveNetworkIdResolutionServiceImpl liveNetworkIdResolver = new LiveNetworkIdResolutionServiceImpl();
+        communicationService.bindLiveNetworkIdResolutionService(liveNetworkIdResolver);
 
         communicationService.activate();
+
+        // register the ids "observed" in the network; this must be done after activate() as the local id is reserved there
+        liveNetworkIdResolver.registerInstanceNodeSessionId(instanceSessionIdLocal);
+        liveNetworkIdResolver.registerInstanceNodeSessionId(instanceSessionIdRemote);
     }
 
     /** Test. */
@@ -115,29 +151,48 @@ public class CommunicationServiceImplTest {
     @Test
     public void testGetService() throws Exception {
 
-        Object service = communicationService.getService(iface, pi1, contextMock);
+        Object service = communicationService.getRemotableService(iface, instanceSessionIdLocal);
+        // TODO disabled for now, as local services are proxied now as well, but the proxy is created internally - misc_ro
+        // assertEquals(serviceInstance, service);
+
+        // register the remote session id as known/seen on the routing level
+        idResolutionService.registerInstanceNodeSessionId(instanceSessionIdRemote);
+
+        service = communicationService.getRemotableService(iface, instanceSessionIdRemote);
         assertEquals(serviceInstance, service);
 
-        service = communicationService.getService(iface, pi2, contextMock);
+        try {
+            communicationService.getRemotableService(iface, null);
+            fail("Exception expected on null node id");
+        } catch (RuntimeException e) {
+            assertTrue(e instanceof IllegalArgumentException);
+        }
+
+        // TODO review: does it make sense to run this twice?
+
+        service = communicationService.getRemotableService(iface, instanceSessionIdLocal);
+        // see above
+        // assertEquals(serviceInstance, service);
+
+        service = communicationService.getRemotableService(iface, instanceSessionIdRemote);
         assertEquals(serviceInstance, service);
 
-        service = communicationService.getService(iface, null, contextMock);
-        assertEquals(serviceInstance, service);
-
-        service = communicationService.getService(iface, pi1, contextMock);
-        assertEquals(serviceInstance, service);
-
-        service = communicationService.getService(iface, pi2, contextMock);
-        assertEquals(serviceInstance, service);
-
-        service = communicationService.getService(iface, null, contextMock);
-        assertEquals(serviceInstance, service);
+        try {
+            communicationService.getRemotableService(iface, null);
+            fail("Exception expected on null node id");
+        } catch (RuntimeException e) {
+            assertTrue(e instanceof IllegalArgumentException);
+        }
 
     }
 
-    /** Test. */
+    /**
+     * Test.
+     * 
+     * @throws IdentifierException not expected
+     */
     @Test(expected = IllegalStateException.class)
-    public void testGetServiceIfServiceRefArrayIsEmpty() {
+    public void testGetServiceIfServiceRefArrayIsEmpty() throws IdentifierException {
 
         EasyMock.reset(contextMock);
         ServiceReference[] referencesDummy = new ServiceReference[0];
@@ -149,14 +204,18 @@ public class CommunicationServiceImplTest {
         }
         EasyMock.replay(contextMock);
 
-        Object service = communicationService.getService(iface, pi1, contextMock);
+        Object service = communicationService.getRemotableService(iface, instanceSessionIdLocal);
         assertEquals(serviceInstance, service);
 
     }
 
-    /** Test. */
+    /**
+     * Test.
+     * 
+     * @throws IdentifierException not expected
+     */
     @Test(expected = IllegalStateException.class)
-    public void testGetServiceIfNoServiceAvailable() {
+    public void testGetServiceIfNoServiceAvailable() throws IdentifierException {
 
         EasyMock.reset(contextMock);
         try {
@@ -167,34 +226,42 @@ public class CommunicationServiceImplTest {
         }
         EasyMock.replay(contextMock);
 
-        Object service = communicationService.getService(iface, pi1, contextMock);
+        Object service = communicationService.getRemotableService(iface, instanceSessionIdLocal);
         assertEquals(serviceInstance, service);
 
     }
 
-    /** Test. */
+    /**
+     * Test.
+     * 
+     * @throws IdentifierException not expected
+     */
     @Test(expected = IllegalStateException.class)
-    public void testGetServiceIfServiceRefIsNull() {
+    public void testGetServiceIfServiceRefIsNull() throws IdentifierException {
 
         EasyMock.reset(contextMock);
         EasyMock.expect(contextMock.getServiceReference(iface.getName())).andReturn(null).anyTimes();
         EasyMock.replay(contextMock);
 
-        Object service = communicationService.getService(iface, pi1, contextMock);
+        Object service = communicationService.getRemotableService(iface, instanceSessionIdLocal);
         assertEquals(serviceInstance, service);
 
     }
 
-    /** Test. */
+    /**
+     * Test.
+     * 
+     * @throws IdentifierException not expected
+     */
     @Test(expected = IllegalStateException.class)
-    public void testGetServiceIfServiceIsNull() {
+    public void testGetServiceIfServiceIsNull() throws IdentifierException {
 
         EasyMock.reset(contextMock);
         ServiceReference referenceMock = EasyMock.createNiceMock(ServiceReference.class);
         EasyMock.expect(contextMock.getServiceReference(iface.getName())).andReturn(referenceMock).anyTimes();
         EasyMock.replay(contextMock);
 
-        Object service = communicationService.getService(iface, pi1, contextMock);
+        Object service = communicationService.getRemotableService(iface, instanceSessionIdLocal);
         assertEquals(serviceInstance, service);
 
     }
@@ -220,21 +287,27 @@ public class CommunicationServiceImplTest {
         }
 
         @Override
-        public Object createServiceProxy(NodeIdentifier nodeId, Class<?> serviceIface, Class<?>[] ifaces) {
+        public Object createServiceProxy(ResolvableNodeId rawNodeId, Class<?> serviceIface, Class<?>[] ifaces) {
             Object service = null;
-            if (nodeId.equals(pi1) && serviceIface == PlatformService.class) {
+            LogicalNodeSessionId nodeId;
+            try {
+                nodeId = idResolutionService.resolveToLogicalNodeSessionId(rawNodeId);
+            } catch (IdentifierException e) {
+                throw NodeIdentifierUtils.wrapIdentifierException(e); // should not happen in test environment
+            }
+            if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdLocal) && serviceIface == PlatformService.class) {
                 service = new DummyPlatformServiceLocal();
-            } else if (nodeId.equals(pi2) && serviceIface == PlatformService.class) {
+            } else if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdRemote) && serviceIface == PlatformService.class) {
                 service = new DummyPlatformServiceRemote();
-            } else if (nodeId.equals(pi3) && serviceIface == PlatformService.class) {
+            } else if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdNotReachable) && serviceIface == PlatformService.class) {
                 service = createNullService(PlatformService.class);
-            } else if (nodeId.equals(pi1) && serviceIface == CommunicationService.class) {
+            } else if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdLocal) && serviceIface == CommunicationService.class) {
                 service = new DummyCommunicationService();
-            } else if (nodeId.equals(pi2) && serviceIface == CommunicationService.class) {
+            } else if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdRemote) && serviceIface == CommunicationService.class) {
                 service = new DummyBrokenCommunicationService();
-            } else if (nodeId.equals(pi3) && serviceIface == CommunicationService.class) {
+            } else if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdNotReachable) && serviceIface == CommunicationService.class) {
                 service = createNullService(CommunicationService.class);
-            } else if (nodeId.equals(pi2) && serviceIface == iface) {
+            } else if (nodeId.isSameInstanceNodeSessionAs(instanceSessionIdRemote) && serviceIface == iface) {
                 service = serviceInstance;
             }
             return service;
@@ -253,7 +326,7 @@ public class CommunicationServiceImplTest {
 
         private NetworkGraphImpl networkGraph;
 
-        CustomNetworkRoutingServiceMock(NodeIdentifier ownNodeId) {
+        CustomNetworkRoutingServiceMock(InstanceNodeSessionId ownNodeId) {
             networkGraph = new NetworkGraphImpl(ownNodeId);
         }
 
@@ -286,13 +359,13 @@ public class CommunicationServiceImplTest {
     private class DummyPlatformServiceLocal extends PlatformServiceDefaultStub {
 
         @Override
-        public NodeIdentifier getLocalNodeId() {
-            return pi1;
+        public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+            return instanceSessionIdLocal;
         }
 
         @Override
-        public boolean isLocalNode(NodeIdentifier nodeId) {
-            if (nodeId == pi1) {
+        public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
+            if (nodeId == instanceSessionIdLocal) {
                 return true;
             }
             return false;
@@ -308,13 +381,13 @@ public class CommunicationServiceImplTest {
     private class DummyPlatformServiceLocal2 extends PlatformServiceDefaultStub {
 
         @Override
-        public NodeIdentifier getLocalNodeId() {
-            return pi2;
+        public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+            return instanceSessionIdRemote;
         }
 
         @Override
-        public boolean isLocalNode(NodeIdentifier nodeId) {
-            if (nodeId == pi2) {
+        public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
+            if (nodeId == instanceSessionIdRemote) {
                 return true;
             }
             return false;
@@ -330,12 +403,12 @@ public class CommunicationServiceImplTest {
     private class DummyPlatformServiceRemote extends PlatformServiceDefaultStub {
 
         @Override
-        public NodeIdentifier getLocalNodeId() {
-            return pi2;
+        public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+            return instanceSessionIdRemote;
         }
 
         @Override
-        public boolean isLocalNode(NodeIdentifier nodeId) {
+        public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
             return false;
         }
 

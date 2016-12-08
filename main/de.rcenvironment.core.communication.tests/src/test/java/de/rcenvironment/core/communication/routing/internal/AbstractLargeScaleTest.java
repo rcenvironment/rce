@@ -12,6 +12,7 @@ import org.junit.Before;
 import de.rcenvironment.core.communication.testutils.AbstractVirtualInstanceTest;
 import de.rcenvironment.core.communication.testutils.TestConfiguration;
 import de.rcenvironment.core.communication.transport.virtual.VirtualTransportTestConfiguration;
+import de.rcenvironment.core.utils.testing.CommonTestOptions;
 
 /**
  * Obsolete test base class.
@@ -23,7 +24,7 @@ import de.rcenvironment.core.communication.transport.virtual.VirtualTransportTes
 public abstract class AbstractLargeScaleTest extends AbstractVirtualInstanceTest {
 
     // TODO rework this field
-    protected static int epochs = 10;
+    protected static int epochs = CommonTestOptions.selectStandardOrExtendedValue(5, 10);
 
     /**
      * Common setup method.

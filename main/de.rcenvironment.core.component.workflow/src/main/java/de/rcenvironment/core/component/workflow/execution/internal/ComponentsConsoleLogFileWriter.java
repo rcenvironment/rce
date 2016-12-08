@@ -44,8 +44,6 @@ public class ComponentsConsoleLogFileWriter {
     
     private static final int WAIT_INTERVAL_FLUSHED_AND_DISPOSED = 60;
 
-    private static final String VERSION = "1.0";
-    
     private static final String UNDERSCORE = "_";
     
     private static final String ALLOWED_CHARACTERS = "[^a-zA-Z0-9.-]";
@@ -131,6 +129,8 @@ public class ComponentsConsoleLogFileWriter {
      */
     protected class ComponentCompleteLogFileWriter extends AbstractBatchedComponentLogFileWriter {
         
+        private static final String VERSION = "1.0";
+        
         protected ComponentCompleteLogFileWriter(String exeId) throws IOException {
             super(exeId);
         }
@@ -151,6 +151,11 @@ public class ComponentsConsoleLogFileWriter {
         protected String formatConsoleRow(ConsoleRow consoleRow) {
             return consoleRowFormatter.toComponentCompleteLogFileFormat(consoleRow);
         }
+
+        @Override
+        protected String getFileFormatVersion() {
+            return VERSION;
+        }
     }
     
     /**
@@ -160,6 +165,8 @@ public class ComponentsConsoleLogFileWriter {
      * @author Doreen Seider
      */
     protected class ComponentErrorLogFileWriter extends AbstractBatchedComponentLogFileWriter {
+        
+        private static final String VERSION = "1.0";
         
         protected ComponentErrorLogFileWriter(String exeId) throws IOException {
             super(exeId);
@@ -181,6 +188,11 @@ public class ComponentsConsoleLogFileWriter {
         protected String formatConsoleRow(ConsoleRow consoleRow) {
             return consoleRowFormatter.toComponentErrorLogFileFormat(consoleRow);
         }
+        
+        @Override
+        protected String getFileFormatVersion() {
+            return VERSION;
+        }
     }
     
     /**
@@ -190,6 +202,8 @@ public class ComponentsConsoleLogFileWriter {
      * @author Doreen Seider
      */
     protected class BactchedWorkflowErrorLogFileWriter extends AbstractBatchedLogFileWriter {
+        
+        private static final String VERSION = "1.1";
         
         protected BactchedWorkflowErrorLogFileWriter(String exeId) throws IOException {
             super(exeId);
@@ -216,6 +230,11 @@ public class ComponentsConsoleLogFileWriter {
         @Override
         protected String formatConsoleRow(ConsoleRow consoleRow) {
             return consoleRowFormatter.toWorkflowErrorLogFileFormat(consoleRow);
+        }
+        
+        @Override
+        protected String getFileFormatVersion() {
+            return VERSION;
         }
     }
     
@@ -283,7 +302,7 @@ public class ComponentsConsoleLogFileWriter {
         public void processConsoleRows(ConsoleRow[] consoleRows) {
 
             if (logFileDisposed) {
-                log.error(StringUtils.format("Log file '%s' already disposed; ignored %d incoming console rows", logFile.getName(),
+                log.debug(StringUtils.format("Log file '%s' already disposed; ignored %d incoming console row(s)", logFile.getName(),
                     consoleRows.length));
                 return;
             }
@@ -320,6 +339,8 @@ public class ComponentsConsoleLogFileWriter {
         
         protected abstract String formatConsoleRow(ConsoleRow consoleRow);
         
+        protected abstract String getFileFormatVersion();
+        
         private void printLogFileNotEmptyError(File file) {
             String fileContent = "[not available]";
             try (FileInputStream inputStream = new FileInputStream(logFile)) {
@@ -342,7 +363,7 @@ public class ComponentsConsoleLogFileWriter {
 
         private void writeVersionToFile() {
             try {
-                FileUtils.writeStringToFile(logFile, StringUtils.format("[Log file format version: %s]\n", VERSION), true);
+                FileUtils.writeStringToFile(logFile, StringUtils.format("[Log file format version: %s]\n", getFileFormatVersion()), true);
             } catch (IOException e) {
                 log.error("Failed to add a console log row to the log file: " + logFile, e);
             }

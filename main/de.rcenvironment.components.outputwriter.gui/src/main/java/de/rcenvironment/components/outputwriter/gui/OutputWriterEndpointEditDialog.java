@@ -49,6 +49,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
  */
 public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
 
+    private static final String NO_DATA_STRING = "-";
+
     private static final char[] FORBIDDEN_CHARS = new char[] { '/', '\\', ':',
         '*', '?', '\"', '>', '<', '|' };
 
@@ -81,17 +83,25 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
         return superControl;
     }
 
+    
+    
     @Override
-    protected Text createLabelAndTextfield(Composite container, String text, String dataType, String value) {
+    protected void createSettings(Map<Integer, String> sortedKeyMap, Composite container) {
+        String key = OutputWriterComponentConstants.CONFIG_KEY_FILENAME;
+        String text = metaData.getGuiName(key);
+        String value = metadataValues.get(key);
+        
         final Label nameLabel = new Label(container, SWT.NONE);
         nameLabel.setText(text + "    ");
         result = new Text(container, SWT.SINGLE | SWT.BORDER);
         result.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, false));
-        if (value.equals("-")) {
+        if (value == null || value.equals(NO_DATA_STRING)) {
             value = "";
         }
         result.setText(value);
         result.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
+        widgetToKeyMap.put(result, key);
+        result.addModifyListener(new MethodPropertiesModifyListener());
         new Label(container, SWT.NONE).setText("");
         final Composite placeholderComp = new Composite(container, SWT.NONE);
         placeholderComp.setLayout(new GridLayout(2, false));
@@ -107,7 +117,9 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
             directoryCombo.add(OutputWriterComponentConstants.ROOT_DISPLAY_NAME);
         }
         for (String path : paths) {
-            directoryCombo.add(path);
+            if (!path.equals(NO_DATA_STRING)) {
+                directoryCombo.add(path);
+            }
         }
         int index = MINUS_ONE;
         for (String item : directoryCombo.getItems()) {
@@ -168,8 +180,18 @@ public class OutputWriterEndpointEditDialog extends EndpointEditDialog {
             }
         });
         additionalFolder.addListener(SWT.Verify, new AlphanumericalTextContraintListener(FORBIDDEN_CHARS));
-        return result;
-
+        
+    }
+    
+    @Override
+    public Map<String, String> getMetadataValues() {
+        Map<String, String> metaData = super.getMetadataValues();
+        if (!currentDataType.equals(DataType.DirectoryReference) && !currentDataType.equals(DataType.FileReference)) {
+            //If the input has a simple data type, remove values for target file and target folder
+            metaData.put(OutputWriterComponentConstants.CONFIG_KEY_FILENAME, NO_DATA_STRING);
+            metaData.put(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING, NO_DATA_STRING);
+        }
+        return metaData;
     }
 
     @Override

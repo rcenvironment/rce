@@ -25,13 +25,13 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Apache Derby Database Engine and Embedded JDBC Driver (org.apache.derby:derby:10.11.1.1 - http://db.apache.org/derby/derby/)
 	Apache Geronimo JAX-WS 2.1 API (org.apache.geronimo.specs:geronimo-jaxws_2.1_spec:1.0 - http://geronimo.apache.org/maven/specs/geronimo-jaxws_2.1_spec/1.0)
 	Apache Log4j (log4j:log4j:1.2.16 - http://logging.apache.org/log4j/1.2/)
-	Apache MINA Core (org.apache.mina:mina-core:2.0.4 - http://mina.apache.org/mina-core/)
-	Apache Mina SSHD :: Core (org.apache.sshd:sshd-core:0.7.0 - http://www.apache.org/sshd/sshd-core/)
+	Apache MINA Core (org.apache.mina:mina-core:2.0.13 - http://mina.apache.org/mina-core/)
+	Apache Mina SSHD :: Core (org.apache.sshd:sshd-core:1.2.0 - http://www.apache.org/sshd/sshd-core/)
 	Apache POI (org.apache.poi:poi-ooxml-schemas:3.8 - http://poi.apache.org/)
 	Apache POI (org.apache.poi:poi-ooxml:3.8 - http://poi.apache.org/)
 	Apache POI (org.apache.poi:poi:3.8 - http://poi.apache.org/)
 	Apache ServiceMix :: Bundles :: saxon9he (org.apache.servicemix.bundles:org.apache.servicemix.bundles.saxon:9.4.0.1_1 - http://servicemix.apache.org/bundles-pom/org.apache.servicemix.bundles.saxon/)
-	Apache Santuario (org.apache.santuario:xmlsec:1.4.4 - http://santuario.apache.org/)
+	Apache XML Security (org.apache.santuario:xmlsec:1.4.3 - http://santuario.apache.org/)
 	Axiom API (org.apache.ws.commons.axiom:axiom-api:1.2.7 - http://ws.apache.org/commons/axiom/modules/axiom-api/)
 	Axiom Impl (org.apache.ws.commons.axiom:axiom-impl:1.2.7 - http://ws.apache.org/commons/axiom/modules/axiom-impl/)
 	Code Generation Library (cglib:cglib-nodep:2.2.2 - http://cglib.sourceforge.net/)
@@ -47,12 +47,16 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Data Mapper for Jackson (org.codehaus.jackson:jackson-mapper-asl:1.9.13 - http://jackson.codehaus.org)
 	EasyMock (org.easymock:easymock:3.1 - http://www.easymock.org)
 	EasyMock class extension (org.easymock:easymockclassextension:3.1 - http://www.easymock.org)
+	GreenMail Core (com.icegreen:greenmail:1.5.1 - http://www.icegreen.com/greenmail/)
     hawtbuf (org.fusesource.hawtbuf:hawtbuf:1.11 - http://hawtbuf.fusesource.org/hawtbuf)
 	imgscalr - A Java Image Scaling Library (org.imgscalr:imgscalr-lib:4.2 - http://www.thebuzzmedia.com/software/imgscalr-java-image-scaling-library/)
 	I18N Libraries (org.apache.abdera:abdera-i18n:1.1 - http://abdera.apache.org)
     J2EE Management 1.1 (org.apache.geronimo.specs:geronimo-j2ee-management_1.1_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-j2ee-management_1.1_spec)
     JGlobus Core 2.0.4 (org.jglobus:JGlobus-Core:2.0.4 - http://dev.globus.org/wiki/CoG_jglobus)
     Jackson (org.codehaus.jackson:jackson-core-asl:1.9.13 - http://jackson.codehaus.org)
+    Jackson-annotations (com.fasterxml.jackson.core:jackson-annotations:2.7.0 - http://github.com/FasterXML/jackson)
+    Jackson-core (com.fasterxml.jackson.core:jackson-core:2.7.5 - https://github.com/FasterXML/jackson-core)
+    jackson-databind (com.fasterxml.jackson.core:jackson-databind:2.7.5 - http://github.com/FasterXML/jackson)
     larvalabs collections (net.sourceforge.collections:collections-generic:4.01 - http://collections.sourceforge.net)
 	JavaMail 1.4 (org.apache.geronimo.specs:geronimo-javamail_1.4_spec:1.6 - http://geronimo.apache.org/maven/specs/geronimo-javamail_1.4_spec/1.6)
 	jdom (jdom:jdom:1.0 - no url defined)
@@ -74,7 +78,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Streaming API for XML (STAX API 1.0) (org.apache.geronimo.specs:geronimo-stax-api_1.0_spec:1.0.1 - http://geronimo.apache.org/specs/geronimo-stax-api_1.0_spec)
 	Web Services Metadata 2.0 (org.apache.geronimo.specs:geronimo-ws-metadata_2.0_spec:1.1.2 - http://geronimo.apache.org/specs/geronimo-ws-metadata_2.0_spec)
 	Woodstox (org.codehaus.woodstox:wstx-asl:3.2.9 - http://woodstox.codehaus.org)
-	WSS4J (org.apache.ws.security:wss4j:1.5.10 - http://ws.apache.org/wss4j/)
+	WSS4J (org.apache.ws.security:wss4j:1.5.9 - http://ws.apache.org/wss4j/)
 	Xalan Java (xalan:xalan:2.7.1 - http://xml.apache.org/xalan-j/)
 	Xalan Java Serializer (xalan:serializer:2.7.1 - http://xml.apache.org/xalan-j/)
 	xercesImpl (xerces:xercesImpl:2.6.2 - no url defined)
@@ -89,13 +93,14 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	jung-algorithms (net.sf.jung:jung-algorithms:2.0.1 - http://jung.sourceforge.net/site/jung-algorithms)
 	jung-api (net.sf.jung:jung-api:2.0.1 - http://jung.sourceforge.net/site/jung-api)
 	jung-graph-impl (net.sf.jung:jung-graph-impl:2.0.1 - http://jung.sourceforge.net/site/jung-graph-impl)
+	PicoContainer Core (org.picocontainer:picocontainer:2.15 - http://www.picocontainer.org/picocontainer)
  
  Bouncy Castle Licence
 	Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15:1.43 - http://www.bouncycastle.org/java.html)
 	Bouncy Castle Provider (org.bouncycastle:bcprov-jdk15on:1.51 - http://www.bouncycastle.org/java.html)
 
  CERN Public License
-    colt (colt:colt:1.0.3 - no url defined)
+    colt (colt:colt:1.2.0 - no url defined)
 
  Common Development and Distribution License (CDDL) 1.0
 	JAXB RI (com.sun.xml.bind:jaxb-impl:2.1.13 - https://jaxb.dev.java.net/)
@@ -103,6 +108,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	jsr311-api (javax.ws.rs:jsr311-api:1.0 - https://jsr311.dev.java.net)
 	JavaBeans(TM) Activation Framework (javax.activation:activation:1.1.1 - http://java.sun.com/javase/technologies/desktop/javabeans/jaf/index.jsp)
     JavaMail API (compat) (javax.mail:mail:1.4.5 - http://kenai.com/projects/javamail/mail)
+    JavaMail (com.sun.mail:javax.mail:1.5.6 - https://java.net/projects/javamail/pages/Home)
 	jaxb-api (javax.xml.bind:jaxb-api:2.1 - no url defined)
 	saaj-api (javax.xml.soap:saaj-api:1.3 - no url defined)
 	saaj-impl (com.sun.xml.messaging.saaj:saaj-impl:1.3.2 - no url defined)
@@ -110,6 +116,7 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
  
  Common Public License (CPL)
 	WSDL4J (wsdl4j:wsdl4j:1.6.2 - http://sf.net/projects/wsdl4j)
+	Sleak (http://www.eclipse.org/articles/swt-design-2/sleak.htm)
 
  Custom License: Damien Miller
     jBCrypt (0.4 - http://www.mindrot.org/projects/jBCrypt/)
@@ -132,9 +139,9 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	Eclipse WST XML Userdoc, Version 3.3.0.v201102071641-50FYwAkF7B77UBZFDBL
 	Jetty Server (org.mortbay.jetty:jetty:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/modules/jetty)
 	Jetty Utilities (org.mortbay.jetty:jetty-util:6.1.26 - http://www.eclipse.org/jetty/jetty-parent/project/jetty-util)
+	JUnit (junit:junit:4.12 - http://junit.org)
 	
  GNU Lesser General Public License (LGPL), Version 2.1
-    Colt, Packages hep.aida.* (colt:colt:1.0.3 - http://acs.lbl.gov/software/colt/)
 	JACOB (com.jacob:jacob:1.17 - http://sourceforge.net/projects/jacob-project/)
 	Java Native Access (net.java.dev.jna:jna:4.2.2 - https://github.com/java-native-access/jna)
 	Lanterna (com.googlecode.lanterna:lanterna:2.1.9 - http://code.google.com/p/lanterna/)
@@ -147,26 +154,19 @@ Additional licenses used in this product may listed in a "THIRD_PARTY_ADDITIONAL
 	jaxen (jaxen:jaxen:1.1.1 - http://jaxen.codehaus.org/)
 	
  Jython License
-    jython (org.python:jython-standalone:2.5.1 - http://www.jython.org/)
+    jython (org.python:jython-standalone:2.7.0 - http://www.jython.org/)
 
  MIT License
-    SLF4J API Module (org.slf4j:slf4j-api:1.7.10 - http://www.slf4j.org)
- 
- Mozilla Public License
-    Saxon (saxon:net.sf.saxon:8.8 - http://saxon.sf.net)
+    SLF4J API Module (org.slf4j:slf4j-api:1.7.21 - http://www.slf4j.org)
 
  New BSD License
-    Hamcrest (org.hamcrest.core:1.1.0 - http://www.opensource.org/licenses/bsd-license.php)
-    Jodd Core (org.jodd:jodd-core:3.6.2 - http://jodd.org)
-    Jodd Mail (org.jodd:jodd-mail:3.6.2 - http://jodd.org)
+    Jodd Core (org.jodd:jodd-core:3.7.1 - http://jodd.org)
+    Jodd Mail (org.jodd:jodd-mail:3.7.1 - http://jodd.org)
  
- Open CASCADE Technology Public License
-    Open Cascade (org.jcae:opencascade:6.5 - http://http://www.opencascade.org/)
-
  Public Domain
     AOP alliance (aopalliance:aopalliance:1.0 - http://aopalliance.sourceforge.net)
     Dough Lea's util.concurrent package (concurrent:concurrent:1.3.4 - no url defined)
     XZ for Java (org.tukaani:xz:1.0 - http://tukaani.org/xz/java.html)
 
  Revised Berkeley Software Distribution (BSD)
-	JSch (com.jcraft:jsch:0.1.45 - http://www.jcraft.com/jsch/)
+	JSch (com.jcraft:jsch:0.1.53 - http://www.jcraft.com/jsch/)

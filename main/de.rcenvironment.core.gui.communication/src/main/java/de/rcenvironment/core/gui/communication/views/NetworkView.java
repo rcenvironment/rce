@@ -42,8 +42,8 @@ import org.eclipse.ui.IViewSite;
 import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.part.ViewPart;
 
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.NetworkGraph;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupListener;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupListenerAdapter;
@@ -70,8 +70,7 @@ import de.rcenvironment.core.gui.communication.views.spi.StandardUserNodeActionT
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
-import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataPollingManager;
-import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
+import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -143,8 +142,6 @@ public class NetworkView extends ViewPart {
     private final ServiceRegistryPublisherAccess serviceRegistryAccess;
 
     private NetworkViewModel model;
-
-    private SystemMonitoringDataPollingManager manager = new SystemMonitoringDataPollingManager();
 
     private ConnectionSetupsListContributor networkConnectionsContributor;
 
@@ -220,8 +217,8 @@ public class NetworkView extends ViewPart {
                     } else if (selectionObject.getContext() == Context.RAW_NODE_PROPERTIES_FOLDER) {
                         // all raw nodes folder selected
                         String allRawNodeProperties = "RAW NODE PROPERTIES: \n\n";
-                        Map<NodeIdentifier, Map<String, String>> nodeProperties = model.getNodeProperties();
-                        for (NodeIdentifier identifier : nodeProperties.keySet()) {
+                        Map<InstanceNodeSessionId, Map<String, String>> nodeProperties = model.getNodeProperties();
+                        for (InstanceNodeSessionId identifier : nodeProperties.keySet()) {
                             if (identifier.getAssociatedDisplayName() == selectionObject.getDisplayNameOfNode()) {
                                 for (String nodeProperty : nodeProperties.get(identifier).keySet()) {
                                     allRawNodeProperties += nodeProperty + ": " + nodeProperties.get(identifier).get(nodeProperty) + "\n";
@@ -304,8 +301,8 @@ public class NetworkView extends ViewPart {
         Collection<ConnectionSetup> initialConnectionSetups =
             serviceRegistryAccess.getService(ConnectionSetupService.class).getAllConnectionSetups();
         model =
-            new NetworkViewModel(initialGraph, null, initialConnectionSetups, new HashMap<NodeIdentifier, Map<String, String>>(),
-                new ConcurrentHashMap<NodeIdentifier, SystemMonitoringDataSnapshot>());
+            new NetworkViewModel(initialGraph, null, initialConnectionSetups, new HashMap<InstanceNodeSessionId, Map<String, String>>(),
+                new ConcurrentHashMap<InstanceNodeSessionId, FullSystemAndProcessDataSnapshot>());
 
         for (NetworkViewContributor contributor : allContributors) {
             contributor.setCurrentModel(model);
@@ -334,11 +331,30 @@ public class NetworkView extends ViewPart {
 
             @Override
             public void mouseDoubleClick(MouseEvent event) {
+                
+                expandSelectedNode();
                 if (editAction.isEnabled()) {
                     editAction.run();
-
                 }
             }
+        });
+        
+        viewer.getTree().addKeyListener(new KeyListener() {
+
+            @Override
+            public void keyPressed(KeyEvent arg0) {
+                if (arg0.keyCode == SWT.CR) {
+                    expandSelectedNode();
+                }
+                
+            }
+
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+                // TODO Auto-generated method stub
+                
+            }
+            
         });
 
         hookContextMenu();
@@ -350,7 +366,6 @@ public class NetworkView extends ViewPart {
 
     @Override
     public void dispose() {
-        manager.cancelAllPollingTasks();
         serviceRegistryAccess.dispose();
         for (NetworkViewContributor contributor : allContributors) {
             contributor.dispose();
@@ -462,7 +477,7 @@ public class NetworkView extends ViewPart {
         serviceRegistryAccess.registerService(NodePropertiesChangeListener.class, new NodePropertiesChangeListenerAdapter() {
 
             @Override
-            public void onNodePropertyMapsOfNodesChanged(final Map<NodeIdentifier, Map<String, String>> updatedPropertyMaps) {
+            public void onNodePropertyMapsOfNodesChanged(final Map<InstanceNodeSessionId, Map<String, String>> updatedPropertyMaps) {
                 display.asyncExec(new Runnable() {
 
                     @Override
@@ -633,6 +648,22 @@ public class NetworkView extends ViewPart {
         viewer.getTree().setMenu(menu);
         getSite().registerContextMenu(menuManager, viewer);
         getSite().setSelectionProvider(viewer);
+    }
+    
+    /**
+     * Actually expands if tree node is not expanded, collapses otherwise.
+     *
+     */
+    private void expandSelectedNode() {
+        Object selectedTreeNode = getSelectedTreeNode();
+        if (selectedTreeNode == null) {
+            return;
+        }
+        if (viewer.getExpandedState(selectedTreeNode)) {
+            viewer.collapseToLevel(selectedTreeNode, 1);
+        } else {
+            viewer.expandToLevel(selectedTreeNode, 1);
+        }
     }
 
 }

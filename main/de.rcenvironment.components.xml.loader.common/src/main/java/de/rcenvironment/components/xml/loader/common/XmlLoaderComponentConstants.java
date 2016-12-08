@@ -28,7 +28,7 @@ public final class XmlLoaderComponentConstants  {
     public static final String XMLCONTENT = "xmlContent";
     
     /** Constant. */
-    public static final String ENDPOINT_NAME_XML = "XML";
+    public static final String OUTPUT_NAME_XML = "XML";
     
     private XmlLoaderComponentConstants(){}
 }

@@ -5,20 +5,20 @@
     <title>Evaluation Memory Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-    <para>The Evaluation Memory component stores results of loop runs and re-uses them in future
+        <para>The Evaluation Memory component stores results of loop runs and re-uses them in future
             runs.</para>
     </sect1>
     <sect1>
         <title>Rationale</title>
         <para>The Evaluation Memory component is used within loops. It can speed up loops by reusing
             results of past loop runs. Usually, the Evaluation Memory component is used before/after
-            the loop driver component (e.g., DOE, Optimizer). It takes the design values of the loop
-            driver component. Then, it either sends stored result values directly back to the loop
-            driver or it forwards the values to the actual evaluation loop. If the evaluation loop
-            is done, the newly evaluated result values are fed back to the loop driver via the
-            Evaluation Memory component, so that it can store the result values together with the
-            design values sent before for later reuse. The values are stored in a file on the file
-            system.</para>
+            the loop driver component (e.g., Design of Experiments, Optimizer). It takes the design
+            values of the loop driver component. Then, it either sends stored result values directly
+            back to the loop driver or it forwards the values to the actual evaluation loop. If the
+            evaluation loop is done, the newly evaluated result values are fed back to the loop
+            driver via the Evaluation Memory component, so that it can store the result values
+            together with the design values sent before for later reuse. The values are stored in a
+            file on the file system.</para>
     </sect1>
     <sect1>
         <title>Usage</title>
@@ -45,9 +45,6 @@
             the loop properly. If done, there are actually two loops: evaluation loop driver -
             Evaluation Memory component and Evaluation Memory component - evaluation loop. The first
             one is driven by the evaluation loop driver, the second one is driven by the Evaluation
-            Memory component. Thereby, only the evaluation loop driver is able to know when the
-            second loop is done. Therefore, the evaluation loop driver must be connected to the
-            Evaluation Memory component: Connect the output 'Outer loop done' of the evaluation loop
-            driver to the input 'Loop done' of the Evaluation Memory component.</para>
+            Memory component.</para>
     </sect1>
 </chapter>

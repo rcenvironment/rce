@@ -134,7 +134,7 @@ public class EncrypterComponent extends DefaultComponent {
             FileReferenceTD encryptedFileReference =
                 dataManagementService.createFileReferenceTDFromLocalFile(componentContext, encryptedResult, encryptedResult.getName());
             
-            componentContext.writeOutput(EncrypterComponentConstants.OUTPUT_NAME, encryptedFileReference);
+            componentContext.writeOutput(EncrypterComponentConstants.OUTPUT_NAME_RESULT, encryptedFileReference);
 
         } catch (IOException e) {
             LOG.error("Could not write encrypted file: ", e);

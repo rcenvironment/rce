@@ -10,7 +10,8 @@ package de.rcenvironment.core.component.execution.api;
 
 import java.io.Serializable;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 
 /**
  * Provides information about an executing instance like a component or a workflow.
@@ -30,12 +31,12 @@ public interface ExecutionInformation extends Serializable {
     String getInstanceName();
 
     /**
-     * @return {@link NodeIdentifier} of host node
+     * @return {@link InstanceNodeSessionId} of host node
      */
-    NodeIdentifier getNodeId();
+    LogicalNodeId getNodeId();
     
     /**
-     * @return {@link NodeIdentifier} of the node which is the storage node for the execution
+     * @return {@link InstanceNodeSessionId} of the node which is the storage node for the execution
      */
-    NodeIdentifier getDefaultStorageNodeId();
+    LogicalNodeId getDefaultStorageNodeId();
 }

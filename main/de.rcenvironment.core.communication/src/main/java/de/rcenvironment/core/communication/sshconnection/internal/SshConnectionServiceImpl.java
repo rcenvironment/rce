@@ -32,12 +32,12 @@ import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListen
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionListenerAdapter;
 import de.rcenvironment.core.communication.sshconnection.api.SshConnectionSetup;
 import de.rcenvironment.core.configuration.SecurePreferencesFactory;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default implementation of {@link SshConnectionService}.
@@ -53,8 +53,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
     private final Log log = LogFactory.getLog(getClass());
 
     private final AsyncOrderedCallbackManager<SshConnectionListener> callbackManager =
-        new AsyncOrderedCallbackManager<SshConnectionListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+        ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
     private NodeConfigurationService configurationService;
 
@@ -286,7 +285,7 @@ public class SshConnectionServiceImpl implements SshConnectionService {
      * OSGi-DS lifecycle method.
      */
     public void activate() {
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Client-Side Remote Access: Add pre-configured SSH connections")

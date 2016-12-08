@@ -14,6 +14,8 @@ import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DeletionBehavior;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionService.DisposalBehavior;
 import de.rcenvironment.core.component.workflow.execution.headless.internal.HeadlessWorkflowExecutionContextImpl;
+import de.rcenvironment.core.utils.common.CrossPlatformFilenameUtils;
+import de.rcenvironment.core.utils.common.InvalidFilenameException;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
 /**
@@ -29,10 +31,12 @@ public final class HeadlessWorkflowExecutionContextBuilder {
     /**
      * @param wfFile workflow file
      * @param logDirectory set the location for workflow log files
+     * @throws InvalidFilenameException 
      */
-    public HeadlessWorkflowExecutionContextBuilder(File wfFile, File logDirectory) {
+    public HeadlessWorkflowExecutionContextBuilder(File wfFile, File logDirectory) throws InvalidFilenameException {
         headlessWfExeCtx = new HeadlessWorkflowExecutionContextImpl();
         headlessWfExeCtx.setWfFile(wfFile);
+        CrossPlatformFilenameUtils.throwExceptionIfFilenameNotValid(wfFile.getName());
         headlessWfExeCtx.setLogDirectory(logDirectory);
     }
 

@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.nodeproperties;
 import java.util.Collection;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandlerMap;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
 
@@ -46,22 +46,22 @@ public interface NodePropertiesService {
      * @param nodeId the id of the target node
      * @return the property map
      */
-    Map<String, String> getNodeProperties(NodeIdentifier nodeId);
+    Map<String, String> getNodeProperties(InstanceNodeSessionId nodeId);
 
     /**
      * Returns the full property map for all node that occurred in property updates.
      * 
-     * @return the map of property maps as returned by {@link #getNodeProperties(NodeIdentifier)}
+     * @return the map of property maps as returned by {@link #getNodeProperties(InstanceNodeSessionId)}
      */
-    Map<NodeIdentifier, Map<String, String>> getAllNodeProperties();
+    Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties();
 
     /**
      * Returns the full property map for the given set of nodes.
      * 
      * @param nodeIds the ids of the relevant nodes
-     * @return the map of property maps as returned by {@link #getNodeProperties(NodeIdentifier)}
+     * @return the map of property maps as returned by {@link #getNodeProperties(InstanceNodeSessionId)}
      */
-    Map<NodeIdentifier, Map<String, String>> getAllNodeProperties(Collection<NodeIdentifier> nodeIds);
+    Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties(Collection<InstanceNodeSessionId> nodeIds);
 
     /**
      * Adds a listener for local or remote node property changes.

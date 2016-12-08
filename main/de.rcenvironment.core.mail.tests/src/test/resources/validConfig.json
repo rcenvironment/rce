@@ -1,0 +1,8 @@
+{
+	"host" : "localhost",
+	"port" : 25,
+	"username" : "testuser",
+	"password" : "GNrWIbalKRJ1CM6tdp7IAQ==",
+	"sender" : "valid@mail.ad",
+	"encryption" : "implicit"
+}

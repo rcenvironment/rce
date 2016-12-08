@@ -17,6 +17,12 @@ import java.util.UUID;
  * @author Sascha Zur
  */
 public final class ToolIntegrationConstants {
+    
+    /** Constant. */
+    public static final int CURRENT_TOOLINTEGRATION_VERSION = 1;
+    
+    /** Constant. */
+    public static final String KEY_TOOL_INTEGRATION_VERSION = "toolIntegrationVersion";
 
     /** Constant. */
     public static final String KEY_TOOL_NAME = "toolName";
@@ -182,6 +188,15 @@ public final class ToolIntegrationConstants {
 
     /** Constant. */
     public static final String KEY_IS_MOCK_MODE = "isImitationMode";
+    
+    /** Constant. */
+    public static final String KEY_VERIFICATION_TOKEN_LOCATION = "verificationKeyLocation";
+    
+    /** Constant. */
+    public static final String KEY_VERIFICATION_TOKEN_RECIPIENTS = "verificationKeyEmailRecipients";
+    
+    /** Constant. */
+    public static final String VERIFICATION_TOKEN_RECIPIENTS_SEPARATOR = ";";
 
     /** Constant. */
     public static final String DEFAULT_CONFIG_FILE_SUFFIX = ".conf";

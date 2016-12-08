@@ -21,16 +21,19 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  */
 public class AddDynamicInputWithAnotherInputAndOutputsCommand extends AddDynamicInputWithOutputsCommand {
 
+    private final String addDynInputId;
+    
     private final String inputNameSuffix;
 
     private final String groupForOtherInput;
     
     private Map<String, String> metaDataInputWithSuffix;
 
-    public AddDynamicInputWithAnotherInputAndOutputsCommand(String dynamicEndpointId, String name, DataType type,
-        Map<String, String> metaData, String inputNameSuffix, String outputNameSuffix, String groupForOtherInput, 
-        Refreshable... panes) {
-        super(dynamicEndpointId, name, type, metaData, outputNameSuffix, panes);
+    public AddDynamicInputWithAnotherInputAndOutputsCommand(String dynEndpointId, String addDynInputId,
+        String inputNameSuffix, String addDynOutputId, String outputNameSuffix, String name, DataType type,
+        Map<String, String> metaData, String groupForOtherInput, Refreshable... panes) {
+        super(dynEndpointId, addDynOutputId, outputNameSuffix, name, type, metaData, panes);
+        this.addDynInputId = addDynInputId;
         this.inputNameSuffix = inputNameSuffix;
         this.groupForOtherInput = groupForOtherInput;
         this.metaDataInputWithSuffix = new HashMap<>();
@@ -39,7 +42,7 @@ public class AddDynamicInputWithAnotherInputAndOutputsCommand extends AddDynamic
 
     @Override
     public void execute() {
-        InputWithOutputsCommandUtils.addInputWithSuffix(getProperties(), dynEndpointId, name, type, inputNameSuffix,
+        InputWithOutputsCommandUtils.addInputWithSuffix(getProperties(), addDynInputId, name, type, inputNameSuffix,
             groupForOtherInput, metaDataInputWithSuffix);
         super.execute();
     }

@@ -1,11 +1,11 @@
 {
   "identifier" : "d49e232c-9ef6-4932-a3ed-a390cbcfb825",
-  "workflowVersion" : "4",
-  "name" : "03_04_Fault-tolerant_Loop_2016-05-19_10:43:47_04",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "9886cb0b-9f84-4b4d-a505-23f9a707a610",
     "name" : "Analysis",
     "location" : "243:418",
+    "zIndex" : "4",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -34,17 +34,17 @@
       "identifier" : "e3febc81-8968-46f4-a596-0aab57130bcc",
       "name" : "evaluation_result",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     } ]
   }, {
     "identifier" : "1290a1e6-f472-44d1-93c0-3fd63c3a972e",
     "name" : "Design of Experiments",
     "location" : "243:279",
+    "zIndex" : "0",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.doe.v2",
-      "version" : "3.4",
+      "version" : "4.1",
       "name" : "Design of Experiments"
     },
     "configuration" : {
@@ -69,37 +69,24 @@
       "datatype" : "Float",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
-        "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
+        "inputHandling_73b1056e" : "Single"
       }
     } ],
     "staticOutputs" : [ {
       "identifier" : "e4838aa1-a78e-4340-b482-cd48cc0e9ce2",
       "name" : "Done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
+      "datatype" : "Boolean"
     }, {
-      "identifier" : "ad13bd1c-33f9-4cf8-b7c1-04e184440704",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "identifier" : "a7b8598f-ab40-487b-b162-0f174419306e",
+      "name" : "Number of samples",
+      "datatype" : "Integer"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "4d365586-fa28-40b2-8ff6-0bea020f2ab8",
       "name" : "x",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "lower" : "-10",
         "upper" : "10"
       }
@@ -107,10 +94,8 @@
       "identifier" : "494e8744-eff1-48ce-812b-b84ebba12293",
       "name" : "y",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "lower" : "-10",
         "upper" : "10"
       }
@@ -119,10 +104,11 @@
     "identifier" : "8ccce3b6-f7f8-4703-8a1b-971336cb134d",
     "name" : "Optimizer",
     "location" : "443:418",
+    "zIndex" : "2",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.optimizer",
-      "version" : "7.1",
+      "version" : "8",
       "name" : "Optimizer"
     },
     "configuration" : {
@@ -141,23 +127,12 @@
       "usePrecalculation" : "false"
     },
     "dynamicInputs" : [ {
-      "identifier" : "859fbfbd-5fd5-4c3b-99d8-098dcaa37029",
-      "name" : "Outer loop done",
-      "epIdentifier" : "outerLoopDone",
-      "group" : "innerLoop",
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
-        "usage" : "optional"
-      }
-    }, {
       "identifier" : "2f6e130e-4c15-4765-92d4-acf673729175",
       "name" : "optimizationVariable - start value",
       "epIdentifier" : "startvalues",
       "group" : "startValues",
       "datatype" : "Float",
       "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
         "usage" : "initial"
       }
     }, {
@@ -171,7 +146,6 @@
         "hasGradient" : "false",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Single",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "vectorSize" : "-",
         "weight" : "1"
       }
@@ -179,51 +153,25 @@
     "staticOutputs" : [ {
       "identifier" : "18b42451-ced8-4834-afc2-0d7910078650",
       "name" : "Done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint"
-      }
+      "datatype" : "Boolean"
     }, {
       "identifier" : "d8926200-4ca6-4cef-944c-32dca9a4a84f",
       "name" : "Gradient request",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
-      }
+      "datatype" : "Boolean"
     }, {
       "identifier" : "75a34279-93d9-4202-a4af-38e6b4cda448",
       "name" : "Iteration",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Integer",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint"
-      }
-    }, {
-      "identifier" : "62a82778-f3bf-4211-999d-96660e8554dc",
-      "name" : "Outer loop done",
-      "epIdentifier" : null,
-      "group" : null,
-      "datatype" : "Boolean",
-      "metadata" : {
-        "loopEndpointType_5e0ed1cd" : "InnerLoopEndpoint"
-      }
+      "datatype" : "Integer"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "27c7028b-c55e-40e8-92f4-b34198c3859c",
       "name" : "optimizationVariable",
       "epIdentifier" : "Design",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
-        "loopEndpointType_5e0ed1cd" : "SelfLoopEndpoint",
         "lower" : "-100",
         "startValue" : "-",
         "step" : "1",
@@ -236,13 +184,11 @@
       "identifier" : "40c4edc3-d922-408b-889b-3d1d5b0d1379",
       "name" : "optimizationVariable_optimal",
       "epIdentifier" : "optima",
-      "group" : null,
       "datatype" : "Float",
       "metadata" : {
         "hasSingleBounds" : "true",
         "hasStartValue" : "false",
         "isDiscrete" : "false",
-        "loopEndpointType_5e0ed1cd" : "OuterLoopEndpoint",
         "lower" : "-100",
         "startValue" : "-",
         "upper" : "100",
@@ -253,6 +199,7 @@
     "identifier" : "d00d9752-c9e7-457e-a03e-42381408f1fc",
     "name" : "Preparing",
     "location" : "443:279",
+    "zIndex" : "1",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -291,13 +238,13 @@
       "identifier" : "e030c2a5-0d15-4694-90f4-fc0fd8f0af75",
       "name" : "prepared_value",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     } ]
   }, {
     "identifier" : "ad030734-0d12-44f4-9c22-42580ad887d4",
     "name" : "Simulation",
     "location" : "568:418",
+    "zIndex" : "3",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -326,7 +273,6 @@
       "identifier" : "07bf93cd-ca93-4c81-b874-4983b4c8308e",
       "name" : "simulation_result",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "Float"
     } ]
   } ],
@@ -335,11 +281,6 @@
     "output" : "e3febc81-8968-46f4-a596-0aab57130bcc",
     "target" : "1290a1e6-f472-44d1-93c0-3fd63c3a972e",
     "input" : "909754de-87f4-471a-ae34-8669b4f4b052"
-  }, {
-    "source" : "1290a1e6-f472-44d1-93c0-3fd63c3a972e",
-    "output" : "ad13bd1c-33f9-4cf8-b7c1-04e184440704",
-    "target" : "8ccce3b6-f7f8-4703-8a1b-971336cb134d",
-    "input" : "859fbfbd-5fd5-4c3b-99d8-098dcaa37029"
   }, {
     "source" : "1290a1e6-f472-44d1-93c0-3fd63c3a972e",
     "output" : "4d365586-fa28-40b2-8ff6-0bea020f2ab8",
@@ -371,5 +312,5 @@
     "target" : "8ccce3b6-f7f8-4703-8a1b-971336cb134d",
     "input" : "2ee0ecd8-a3ee-4a4b-a6ac-51a20e8db536"
   } ],
-  "labels" : "[{\"identifier\":\"0be6a63a-3f58-4fad-8915-276e4a2f6a88\",\"text\":\"Example workflow: 'Fault-tolerant Loops'\\r\\nObjective: Introducing the concept behind fault-tolerant loops.\\r\\n\\r\\nA fault-tolerant loop (either simple or nested) is capable to deal with failed execution of workflow components\\r\\nin different, fault-tolerant ways. Fault-tolerance behaviour is defined in the Properties tab \\\"Fault Tolerance\\\"\\r\\nof the loop's driver component.\\r\\n\\r\\nThis workflow is the same one used in the example workflow \\\"03_02_Nested_Loops\\\" beside slight configuration changes. \\r\\n\\r\\nTo make this workflow fault-tolerant go to the tab \\\"Fault Tolerance\\\" of the DOE and Optimizer workflow components and\\r\\nswitch options. \\\"Discard\\\" means, that the last run is considered failed, but the loop continues. \\\"Re-run\\\" means, that\\r\\nthe last run is simply repeated and not considered.\",\"location\":\"56:19\",\"size\":\"726:233\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"}]"
+  "labels" : "[{\"identifier\":\"0be6a63a-3f58-4fad-8915-276e4a2f6a88\",\"headerText\":\"\",\"text\":\"Example workflow: 'Fault-tolerant Loops'\\r\\nObjective: Introducing the concept behind fault-tolerant loops.\\r\\n\\r\\nA fault-tolerant loop (either simple or nested) is capable to deal with failed execution of workflow components in different, fault-tolerant ways. Fault-tolerance behaviour is defined in the Properties tab \\\"Fault Tolerance\\\" of the loop's driver component.\\r\\n\\r\\nThis workflow is the same one used in the example workflow \\\"03_02_Nested_Loops\\\" beside slight configuration changes. \\r\\n\\r\\nTo make this workflow fault-tolerant go to the tab \\\"Fault Tolerance\\\" of the DOE and Optimizer workflow components and switch options. \\\"Discard\\\" means, that the last run is considered failed, but the loop continues. \\\"Re-run\\\" means, that the last run is simply repeated and not considered.\",\"location\":\"56:19\",\"size\":\"726:233\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]"
 }

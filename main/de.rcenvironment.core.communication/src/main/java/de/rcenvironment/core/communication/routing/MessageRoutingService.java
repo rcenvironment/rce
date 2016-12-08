@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.routing;
 import java.util.List;
 
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.NetworkRequest;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
@@ -32,7 +32,7 @@ public interface MessageRoutingService {
      * @param receiver the final recipient's node id.
      * @return the {@link NetworkResponse}
      */
-    NetworkResponse performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver);
+    NetworkResponse performRoutedRequest(byte[] payload, String messageType, InstanceNodeSessionId receiver);
 
     /**
      * Performs a {@link NetworkRequest} to a remote node and returns a {@link NetworkResponse}, using a custom timeout. The destination
@@ -44,7 +44,7 @@ public interface MessageRoutingService {
      * @param timeoutMsec the timeout in msec
      * @return the {@link NetworkResponse}
      */
-    NetworkResponse performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver, int timeoutMsec);
+    NetworkResponse performRoutedRequest(byte[] payload, String messageType, InstanceNodeSessionId receiver, int timeoutMsec);
 
     /**
      * Sends the given request towards the destination node contained in its metadata. The request is not modified anymore; this method only
@@ -61,6 +61,6 @@ public interface MessageRoutingService {
      * @param destination the node to find a route to
      * @return the generated route, or null if no route could be constructed
      */
-    List<? extends NetworkGraphLink> getRouteTo(NodeIdentifier destination);
+    List<? extends NetworkGraphLink> getRouteTo(InstanceNodeSessionId destination);
 
 }

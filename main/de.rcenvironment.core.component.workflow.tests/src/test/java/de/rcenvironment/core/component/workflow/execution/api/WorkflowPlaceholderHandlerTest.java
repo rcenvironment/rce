@@ -15,10 +15,13 @@ import java.util.Map;
 import junit.framework.Assert;
 
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandlerTestUtils;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowTestUtils;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
 
@@ -56,6 +59,12 @@ public class WorkflowPlaceholderHandlerTest {
 
     private final String placeholderTestValue = "tada2";
 
+    /** Injects a {@link PlatformService} to the {@link WorkflowDescriptionPersistenceHandler}. */
+    @BeforeClass
+    public static void initWorkflowDescriptionPersistenceHandler() {
+        WorkflowDescriptionPersistenceHandlerTestUtils.initializeStaticFieldsOfWorkflowDescriptionPersistenceHandler();
+    }
+    
     /** Init. */
     @Before
     public void init() {

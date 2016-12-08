@@ -22,6 +22,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.datamanagement.stateful.StatefulComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
@@ -233,9 +234,9 @@ public abstract class WrapperBase<C, R> {
         InputStream ansysStderr = executor.getStderr();
 
         final TextStreamWatcher stdoutWatcher =
-            new TextStreamWatcher(ansysStdout, new LoggingTextOutReceiver("Environment pre-test Stdout"));
+            TextStreamWatcherFactory.create(ansysStdout, new LoggingTextOutReceiver("Environment pre-test Stdout"));
         final TextStreamWatcher stderrWatcher =
-            new TextStreamWatcher(ansysStderr, new LoggingTextOutReceiver("Environment pre-test Stderr"));
+            TextStreamWatcherFactory.create(ansysStderr, new LoggingTextOutReceiver("Environment pre-test Stderr"));
 
         stdoutWatcher.start();
         stderrWatcher.start();

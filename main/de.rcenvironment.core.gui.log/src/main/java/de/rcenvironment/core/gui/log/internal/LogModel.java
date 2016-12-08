@@ -29,7 +29,7 @@ import org.osgi.service.log.LogEntry;
 import org.osgi.service.log.LogService;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.gui.log.LogListener;
 import de.rcenvironment.core.log.DistributedLogReaderService;
@@ -52,11 +52,11 @@ public final class LogModel {
 
     private final List<Listener> listeners = new LinkedList<Listener>();
 
-    private Set<NodeIdentifier> currentWorkflowHostsAndSelf;
+    private Set<InstanceNodeSessionId> currentWorkflowHostsAndSelf;
 
-    private NodeIdentifier selectedLogSource;
+    private InstanceNodeSessionId selectedLogSource;
 
-    private Map<NodeIdentifier, Map<Integer, SortedSet<SerializableLogEntry>>> allLogEntries;
+    private Map<InstanceNodeSessionId, Map<Integer, SortedSet<SerializableLogEntry>>> allLogEntries;
 
     private final WorkflowHostService workflowHostService;
 
@@ -70,7 +70,7 @@ public final class LogModel {
         platformService = registryAccess.getService(PlatformService.class);
         logReaderService = registryAccess.getService(DistributedLogReaderService.class);
 
-        allLogEntries = new ConcurrentHashMap<NodeIdentifier, Map<Integer, SortedSet<SerializableLogEntry>>>();
+        allLogEntries = new ConcurrentHashMap<InstanceNodeSessionId, Map<Integer, SortedSet<SerializableLogEntry>>>();
         currentWorkflowHostsAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
     }
 
@@ -87,7 +87,7 @@ public final class LogModel {
     }
 
     /**
-     * Returns a list of {@link LogEntry} for the specified {@link NodeIdentifier} set by
+     * Returns a list of {@link LogEntry} for the specified {@link InstanceNodeSessionId} set by
      * {@link LogModel#setSelectedLogSource(String)}.
      * 
      * @return {@link SortedSet} of {@link LogEntry}.
@@ -99,6 +99,8 @@ public final class LogModel {
         synchronized (allLogEntries) {
             if (selectedLogSource != null && !allLogEntries.containsKey(selectedLogSource)) {
                 allLogEntries.put(selectedLogSource, new HashMap<Integer, SortedSet<SerializableLogEntry>>());
+                // the log model of this instance does not contain any entries of remote instance until this subscribe is called for the
+                // first time
                 subscribeForNewLogEntriesAndRetrieveOldOnes(selectedLogSource);
             } else {
                 for (Integer level : allLogEntries.get(selectedLogSource).keySet()) {
@@ -116,14 +118,22 @@ public final class LogModel {
     }
 
     /**
-     * Adds a {@link LogEntry} to the whole list of the specified {@link NodeIdentifier}.
+     * Adds a {@link LogEntry} to the whole list of the specified {@link InstanceNodeSessionId}.
      * 
      * @param logEntry The {@link LogEntry} to add.
      */
     public void addLogEntry(SerializableLogEntry logEntry) {
-        NodeIdentifier nodeId = logEntry.getPlatformIdentifer();
+        InstanceNodeSessionId nodeId = logEntry.getPlatformIdentifer();
 
         synchronized (allLogEntries) {
+
+            // If a node ID was removed from the allLogEntries map during a call of updateListOfLogSources, but we still receive a log entry
+            // for this node, it can be ignored. The ignored log entry is not relevant for now (since the corresponding node is offline) and
+            // the entry will be retrieved from the source instance again if the instance becomes available next time (and is selected as
+            // log source and getLogEntries is called).
+            if (allLogEntries.get(nodeId) == null) {
+                return;
+            }
 
             if (!allLogEntries.get(nodeId).containsKey(logEntry.getLevel())) {
                 allLogEntries.get(nodeId).put(logEntry.getLevel(),
@@ -152,14 +162,14 @@ public final class LogModel {
      * 
      * @param nodeId The current platform identifier to set.
      */
-    public synchronized void setSelectedLogSource(NodeIdentifier nodeId) {
+    public synchronized void setSelectedLogSource(InstanceNodeSessionId nodeId) {
         selectedLogSource = nodeId;
     }
 
     /**
      * @return current platform.
      */
-    public synchronized NodeIdentifier getCurrentLogSource() {
+    public synchronized InstanceNodeSessionId getCurrentLogSource() {
         return selectedLogSource;
     }
 
@@ -168,38 +178,41 @@ public final class LogModel {
      * 
      * @return Array of platform identifiers.
      */
-    public synchronized List<NodeIdentifier> updateListOfLogSources() {
-        
-        Set<NodeIdentifier> newWorkflowHostNodesAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
-        
-        Set<NodeIdentifier> nodeIdsRemoved = new HashSet<>(currentWorkflowHostsAndSelf);
+    public synchronized List<InstanceNodeSessionId> updateListOfLogSources() {
+
+        Set<InstanceNodeSessionId> newWorkflowHostNodesAndSelf = workflowHostService.getWorkflowHostNodesAndSelf();
+
+        // remove all entries for nodes that are not reachable anymore
+        Set<InstanceNodeSessionId> nodeIdsRemoved = new HashSet<>(currentWorkflowHostsAndSelf);
         nodeIdsRemoved.removeAll(newWorkflowHostNodesAndSelf);
-        
-        for (NodeIdentifier nodeIdRemoved : nodeIdsRemoved) {
+        for (InstanceNodeSessionId nodeIdRemoved : nodeIdsRemoved) {
             allLogEntries.remove(nodeIdRemoved);
         }
-        
-        currentWorkflowHostsAndSelf = newWorkflowHostNodesAndSelf;
-        
-        List<NodeIdentifier> logSources = new ArrayList<>();
 
-        NodeIdentifier localNodeId = null;
-        for (NodeIdentifier nodeId : currentWorkflowHostsAndSelf) {
-            if (platformService.isLocalNode(nodeId)) {
+        currentWorkflowHostsAndSelf = newWorkflowHostNodesAndSelf;
+
+        // gather all log sources ...
+        List<InstanceNodeSessionId> logSources = new ArrayList<>();
+
+        InstanceNodeSessionId localNodeId = null;
+        for (InstanceNodeSessionId nodeId : currentWorkflowHostsAndSelf) {
+            // ... but skip the current instance ...
+            if (platformService.matchesLocalInstance(nodeId)) {
                 localNodeId = nodeId;
             } else {
                 logSources.add(nodeId);
             }
         }
-        
-        Collections.sort(logSources, new Comparator<NodeIdentifier>() {
+
+        Collections.sort(logSources, new Comparator<InstanceNodeSessionId>() {
 
             @Override
-            public int compare(NodeIdentifier o1, NodeIdentifier o2) {
+            public int compare(InstanceNodeSessionId o1, InstanceNodeSessionId o2) {
                 return o1.getAssociatedDisplayName().compareTo(o2.getAssociatedDisplayName());
             }
         });
 
+        // ... and add it to the front of the log sources after they have been sorted
         if (localNodeId != null) {
             logSources.add(0, localNodeId);
         }
@@ -211,7 +224,7 @@ public final class LogModel {
     public void clear() {
         synchronized (allLogEntries) {
             if (selectedLogSource == null) {
-                for (NodeIdentifier pi : allLogEntries.keySet()) {
+                for (InstanceNodeSessionId pi : allLogEntries.keySet()) {
                     allLogEntries.get(pi).clear();
                 }
             } else {
@@ -220,7 +233,7 @@ public final class LogModel {
         }
     }
 
-    private synchronized void subscribeForNewLogEntriesAndRetrieveOldOnes(final NodeIdentifier node) {
+    private synchronized void subscribeForNewLogEntriesAndRetrieveOldOnes(final InstanceNodeSessionId node) {
 
         Job job = new Job("Fetching log") {
 

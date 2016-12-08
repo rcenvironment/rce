@@ -26,8 +26,8 @@ import org.eclipse.swt.widgets.TableColumn;
 import org.eclipse.swt.widgets.TableItem;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.utils.common.StringUtils;
@@ -67,10 +67,19 @@ public class ToolIntegrationDocumentationChooserDialog extends Dialog {
     protected void configureShell(Shell newShell) {
         super.configureShell(newShell);
         setShellStyle(SWT.MIN | SWT.RESIZE | SWT.TITLE);
-        newShell.setText(
-            StringUtils.format("Select Documentation For Component %s (Version %s)",
-                toolIdentifier.substring(toolIdentifier.lastIndexOf('.') + 1, toolIdentifier.lastIndexOf("/")),
-                toolIdentifier.substring(toolIdentifier.lastIndexOf("/") + 1)));
+        if (!toolIdentifier.isEmpty()) {
+            String[] split = toolIdentifier.split("/");
+            if (split.length > 1) {
+                String componentName = split[0].substring(split[0].lastIndexOf(".") + 1);
+                String componentVersion = "";
+                for (int i = 1; i < split.length; i++) {
+                    componentVersion += split[i] + "/";
+                }
+                componentVersion = componentVersion.substring(0, componentVersion.length() - 1);
+                newShell.setText(
+                    StringUtils.format("Select Documentation For Component %s (Version %s)", componentName, componentVersion));
+            }
+        }
     }
 
     /**
@@ -120,12 +129,14 @@ public class ToolIntegrationDocumentationChooserDialog extends Dialog {
                 nodeId = nodeId.substring(0, nodeId.length() - 3);
                 cached = true;
             }
-            NodeIdentifier identifier = NodeIdentifierFactory.fromNodeId(nodeId);
+            LogicalNodeId identifier =
+                NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(nodeId);
             item.setText(0, identifier.getAssociatedDisplayName());
+            boolean localNode = serviceRegistryAccess.getService(PlatformService.class).matchesLocalInstance(identifier);
             if (cached) {
                 item.setText(1, "Cached");
             } else {
-                boolean localNode = identifier.equals(serviceRegistryAccess.getService(PlatformService.class).getLocalNodeId());
+
                 if (localNode) {
                     item.setText(1, "Local");
                 } else {

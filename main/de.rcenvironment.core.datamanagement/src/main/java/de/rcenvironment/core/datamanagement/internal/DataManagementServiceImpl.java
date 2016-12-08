@@ -30,7 +30,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.DataReferenceService;
 import de.rcenvironment.core.datamanagement.FileDataService;
@@ -68,15 +68,15 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public String createReferenceFromLocalFile(File file, MetaDataSet additionalMetaData,
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (!CrossPlatformFilenameUtils.isFilenameValid(file.getName())) {
-            LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, file.getName()));
+            LOGGER.warn(StringUtils.format(STRING_FILENAME_NOT_VALID, file.getName()));
         }
         return createReferenceFromStream(new FileInputStream(file), additionalMetaData, nodeId);
     }
 
     private String createReferenceFromStream(InputStream inputStream, MetaDataSet additionalMetaData,
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (additionalMetaData == null) {
             additionalMetaData = new MetaDataSet();
         }
@@ -91,11 +91,8 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, NodeIdentifier nodeId)
+    public String createReferenceFromLocalDirectory(File dir, MetaDataSet additionalMetaData, ResolvableNodeId nodeId)
         throws IOException, AuthorizationException, InterruptedException, CommunicationException {
-        if (!CrossPlatformFilenameUtils.isFilenameValid(dir.getName())) {
-            LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, dir.getName()));
-        }
 
         File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
         createTarGz(dir, archive);
@@ -121,7 +118,7 @@ public class DataManagementServiceImpl implements DataManagementService {
     private void addFileToTarGz(TarArchiveOutputStream tOutStream, String path, String base) throws IOException {
         File file = new File(path);
         if (!CrossPlatformFilenameUtils.isPathValid(file.getAbsolutePath())) {
-            LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, file.getAbsolutePath()));
+            LOGGER.warn(StringUtils.format(STRING_FILENAME_NOT_VALID, file.getAbsolutePath()));
         }
         String entryName = base + file.getName();
         TarArchiveEntry tarEntry = new TarArchiveEntry(file, entryName);
@@ -129,7 +126,7 @@ public class DataManagementServiceImpl implements DataManagementService {
         tOutStream.putArchiveEntry(tarEntry);
 
         if (file.isFile()) {
-            try (InputStream inputStream = new FileInputStream(file))  {
+            try (InputStream inputStream = new FileInputStream(file)) {
                 IOUtils.copy(inputStream, tOutStream);
             }
             tOutStream.closeArchiveEntry();
@@ -139,7 +136,7 @@ public class DataManagementServiceImpl implements DataManagementService {
             if (children != null) {
                 for (File child : children) {
                     if (!CrossPlatformFilenameUtils.isFilenameValid(child.getName())) {
-                        LOGGER.warn(String.format(STRING_FILENAME_NOT_VALID, child.getName()));
+                        LOGGER.warn(StringUtils.format(STRING_FILENAME_NOT_VALID, child.getName()));
                     }
                     addFileToTarGz(tOutStream, child.getAbsolutePath(), entryName + TAR_GZ_PATH_SEPARATOR);
                 }
@@ -149,7 +146,7 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public String createReferenceFromString(String object, MetaDataSet additionalMetaData, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
+        ResolvableNodeId nodeId) throws IOException, AuthorizationException, InterruptedException, CommunicationException {
         if (additionalMetaData == null) {
             additionalMetaData = new MetaDataSet();
         }
@@ -166,7 +163,7 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
-        NodeIdentifier nodeId) throws IOException, CommunicationException {
+        ResolvableNodeId nodeId) throws IOException, CommunicationException {
 
         DataReference dataRef;
         if (nodeId == null) {
@@ -188,7 +185,7 @@ public class DataManagementServiceImpl implements DataManagementService {
 
     @Override
     public void copyReferenceToLocalFile(String reference, File targetFile, // CheckStyle
-        Collection<NodeIdentifier> platforms) throws IOException, AuthorizationException, CommunicationException {
+        Collection<? extends ResolvableNodeId> platforms) throws IOException, AuthorizationException, CommunicationException {
 
         DataReference dataRef;
         if ((platforms == null) || (platforms.size() == 0)) {
@@ -209,7 +206,7 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public void copyReferenceToLocalDirectory(String reference, File targetDir, NodeIdentifier node) throws IOException,
+    public void copyReferenceToLocalDirectory(String reference, File targetDir, ResolvableNodeId node) throws IOException,
         CommunicationException {
         File archive = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename(ARCHIVE_TAR_GZ);
         copyReferenceToLocalFile(reference, archive, node);
@@ -253,7 +250,7 @@ public class DataManagementServiceImpl implements DataManagementService {
     }
 
     @Override
-    public String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException,
+    public String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException,
         AuthorizationException, CommunicationException {
         // TODO extract reference to stream resolution into separate method?
         DataReference dataRef;

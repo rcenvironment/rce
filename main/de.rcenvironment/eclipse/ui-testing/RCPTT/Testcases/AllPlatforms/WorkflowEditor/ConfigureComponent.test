@@ -1,0 +1,60 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _wTZJsDblEeaeH4-rLFMbKA,_CkEGoDx2EeaeH4-rLFMbKA,_sSEj4Dx4EeaeH4-rLFMbKA
+Element-Name: ConfigureComponent
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _5-UzAJqzEeadSNrqTD40Fg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 10/26/16 5:01 PM
+Testcase-Type: ecl
+
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+with [get-editor "MyWorkflow.wf"] {
+	with [get-palette] {
+		with [get-palette-entry Database] {
+			mouse-move 58 10 button1 -height 23 -width 109
+			mouse-press 58 10 button1 -height 23 -width 109
+			get-figure 0 | drag-start 58 10
+		}
+	}
+	with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+		drag-enter 568 204 -detail move
+		drag-over 177 93 -detail copy
+		drag-exit
+		drag-accept 177 93 -detail copy
+	}
+	get-palette | drag-set-data
+	get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 177 93 -detail copy
+	get-palette | drag-end -detail move
+}
+
+try -times 10 -delay 100 -command {
+	with [get-view Properties] {
+		get-property-tab "Inputs/Outputs" | click
+		get-section Inputs | get-button "Add..." | click
+	}
+}
+with [get-window "Add Input"] {
+	get-editbox -after [get-label "Name:"] | type-text 123
+	get-button OK | click
+}
+
+// verfication
+with [get-view Properties | get-section Inputs] {
+	get-property "getChildren().Control[1].getChildren().Control[0].getChildren().Control[0].getItems().length" | equals 1 | verify-true
+	get-property "getChildren().Control[1].getChildren().Control[0].getChildren().Control[0].getItems().TableItem[0].getText()" | equals 123 | verify-true
+}
+
+with [get-editor "MyWorkflow.wf" | get-diagram -index 1 | get-edit-part -className WorkflowPart | get-edit-part
+	-text Database] {
+	get-property "getModel().getInputDescriptionsManager().getDynamicEndpointDefinitions().size()" | equals 1
+		| verify-true
+	get-property "getModel().getInputDescriptionsManager().getStaticEndpointDescriptions().size()" | equals 0
+		| verify-true
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

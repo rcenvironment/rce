@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2006-2016 DLR, Germany
+ * Copyright (C) 2006-2015 DLR, Germany
  * 
  * All rights reserved
  * 
@@ -19,10 +19,12 @@ import org.codehaus.jackson.JsonProcessingException;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ArrayNode;
 import org.codehaus.jackson.node.ObjectNode;
+import org.codehaus.jackson.node.TextNode;
 
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumSerializer;
+import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.DateTimeTD;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
@@ -30,6 +32,7 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.NotAValueTD;
+import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.utils.common.JsonUtils;
@@ -52,7 +55,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
     private static final String FILE_REFERENCE_STRING = "fileReference";
 
     private static final String FILE_SIZE_STRING = "fileSize";
-    
+
     private static final String DIRECTORY_NAME_STRING = "directoryName";
 
     private static final String DIRECTORY_REFERENCE_STRING = "directoryReference";
@@ -60,7 +63,7 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
     private static final String DIRECTORY_SIZE_STRING = "directorySize";
 
     private static final String LAST_MODIFIED_STRING = "lastModified";
-    
+
     private static final String TYPE_STRING = "t";
 
     private static final String VALUE_STRING = "v";
@@ -69,7 +72,11 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
 
     private static final String COLUMN_STRING = "c";
     
+    private static final String ID_STRING = "id";
+
     private static final Log LOGGER = LogFactory.getLog(DefaultTypedDatumSerializer.class);
+
+    private static final ObjectMapper MAPPER = JsonUtils.getDefaultObjectMapper();
 
     @Override
     public TypedDatum deserialize(String input) {
@@ -79,94 +86,11 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input.toString()));
         }
 
-        DefaultTypedDatumFactory factory = new DefaultTypedDatumFactory();
         try {
-            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-            JsonNode rootNode = mapper.readTree(input);
+            JsonNode rootNode = MAPPER.readTree(input);
             DataType dataType = DataType.byShortName(rootNode.get(TYPE_STRING).getTextValue());
             JsonNode valueNode = rootNode.get(VALUE_STRING);
-            switch (dataType) {
-            case Boolean:
-                returnDatum = factory.createBoolean(Boolean.parseBoolean(valueNode.getTextValue()));
-                break;
-            case ShortText:
-                returnDatum = factory.createShortText(valueNode.getTextValue());
-                break;
-            case Integer:
-                returnDatum = factory.createInteger(valueNode.getLongValue());
-                break;
-            case Float:
-                returnDatum = factory.createFloat(valueNode.getDoubleValue());
-                break;
-            case DateTime:
-                returnDatum = factory.createDateTime(valueNode.getLongValue());
-                break;
-            case Vector:
-                VectorTD vector = factory.createVector(valueNode.size());
-                for (int i = 0; i < valueNode.size(); i++) {
-                    vector.setFloatTDForElement(factory.createFloat(valueNode.get(i).getDoubleValue()), i);
-                }
-                returnDatum = vector;
-                break;
-            case Matrix:
-                ArrayNode matrixArray = (ArrayNode) valueNode;
-                MatrixTD matrix = factory.createMatrix(rootNode.get(ROW_STRING).getIntValue(), rootNode.get(COLUMN_STRING).getIntValue());
-                for (int i = 0; i < matrixArray.size(); i++) {
-                    ArrayNode matrixRowArray = (ArrayNode) matrixArray.get(i);
-                    for (int j = 0; j < matrixRowArray.size(); j++) {
-                        FloatTD value = factory.createFloat(matrixRowArray.get(j).getDoubleValue());
-                        matrix.setFloatTDForElement(value,
-                            i, j);
-                    }
-                }
-                returnDatum = matrix;
-                break;
-            case SmallTable:
-                SmallTableTD smallTable =
-                    factory.createSmallTable(rootNode.get(ROW_STRING).getIntValue(), rootNode.get(COLUMN_STRING).getIntValue());
-                ArrayNode tableArray = (ArrayNode) valueNode;
-                for (int i = 0; i < tableArray.size(); i++) {
-                    ArrayNode tableRowArray = (ArrayNode) tableArray.get(i);
-                    for (int j = 0; j < tableRowArray.size(); j++) {
-                        smallTable.setTypedDatumForCell(deserialize(tableRowArray.get(j).toString()), i, j);
-                    }
-                }
-                returnDatum = smallTable;
-                break;
-            case NotAValue:
-                String id = valueNode.getTextValue();
-                if (id.endsWith(NotAValueTD.FAILURE_CAUSE_SUFFIX)) {
-                    returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.Failure);
-                } else {
-                    returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.InvalidInputs);
-                }
-                break;
-            case Empty:
-                returnDatum = factory.createEmpty();
-                break;
-            case FileReference:
-                FileReferenceTD fileReference =
-                    factory.createFileReference(valueNode.get(FILE_REFERENCE_STRING).getTextValue(),
-                        valueNode.get(FILE_NAME_STRING).getTextValue());
-                fileReference.setFileSize(valueNode.get(FILE_SIZE_STRING).getLongValue());
-                if (valueNode.has(LAST_MODIFIED_STRING) && !valueNode.get(LAST_MODIFIED_STRING).isNull()) {
-                    fileReference.setLastModified(new Date(valueNode.get(LAST_MODIFIED_STRING).getLongValue()));
-                }
-                returnDatum = fileReference;
-                break;
-            case DirectoryReference:
-                DirectoryReferenceTD directoryReference =
-                    factory.createDirectoryReference(valueNode.get(DIRECTORY_REFERENCE_STRING).getTextValue(),
-                        valueNode.get(DIRECTORY_NAME_STRING).getTextValue());
-                directoryReference.setDirectorySize(valueNode.get(DIRECTORY_SIZE_STRING).getLongValue());
-                returnDatum = directoryReference;
-                break;
-            case StructuredData:
-            case BigTable:
-            default:
-                throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input));
-            }
-
+            returnDatum = getTypedDatumFromNode(dataType, rootNode, valueNode);
         } catch (JsonParseException e) {
             LOGGER.error(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input), e);
             throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, input));
@@ -181,9 +105,114 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
         return returnDatum;
     }
 
+    private TypedDatum getTypedDatumFromNode(DataType dataType, JsonNode rootNode, JsonNode valueNode)
+        throws JsonProcessingException, IOException {
+        TypedDatum returnDatum;
+        DefaultTypedDatumFactory factory = new DefaultTypedDatumFactory();
+        switch (dataType) {
+        case Boolean:
+            returnDatum = factory.createBoolean(valueNode.asBoolean());
+            break;
+        case ShortText:
+            returnDatum = factory.createShortText(valueNode.asText());
+            break;
+        case Integer:
+            returnDatum = factory.createInteger(valueNode.asLong());
+            break;
+        case Float:
+            returnDatum = factory.createFloat(valueNode.asDouble());
+            break;
+        case DateTime:
+            returnDatum = factory.createDateTime(valueNode.asLong());
+            break;
+        case Vector:
+            VectorTD vector = factory.createVector(valueNode.size());
+            for (int i = 0; i < valueNode.size(); i++) {
+                vector.setFloatTDForElement(factory.createFloat(valueNode.get(i).asDouble()), i);
+            }
+            returnDatum = vector;
+            break;
+        case Matrix:
+            ArrayNode matrixArray = (ArrayNode) valueNode;
+            MatrixTD matrix = factory.createMatrix(rootNode.get(ROW_STRING).asInt(), rootNode.get(COLUMN_STRING).asInt());
+            for (int i = 0; i < matrixArray.size(); i++) {
+                ArrayNode matrixRowArray = (ArrayNode) matrixArray.get(i);
+                for (int j = 0; j < matrixRowArray.size(); j++) {
+                    FloatTD value = factory.createFloat(matrixRowArray.get(j).asDouble());
+                    matrix.setFloatTDForElement(value,
+                        i, j);
+                }
+            }
+            returnDatum = matrix;
+            break;
+        case SmallTable:
+            SmallTableTD smallTable =
+                factory.createSmallTable(rootNode.get(ROW_STRING).asInt(), rootNode.get(COLUMN_STRING).asInt());
+            ArrayNode tableArray = (ArrayNode) valueNode;
+            for (int i = 0; i < tableArray.size(); i++) {
+                ArrayNode tableRowArray = (ArrayNode) tableArray.get(i);
+                for (int j = 0; j < tableRowArray.size(); j++) {
+
+                    // To remain compatibility to all versions below 7.1, there must this diffenerce in deserializing small table
+                    if (tableRowArray.get(j) instanceof TextNode) {
+                        smallTable.setTypedDatumForCell(deserialize(tableRowArray.get(j).asText()), i, j);
+                    } else {
+                        DataType dataTypeTableEntry = DataType.byShortName(tableRowArray.get(j).get(TYPE_STRING).asText());
+                        JsonNode valueNodeTableEntry = tableRowArray.get(j).get(VALUE_STRING);
+                        smallTable.setTypedDatumForCell(
+                            getTypedDatumFromNode(dataTypeTableEntry, tableRowArray.get(j), valueNodeTableEntry), i, j);
+                    }
+                }
+            }
+            returnDatum = smallTable;
+            break;
+        case NotAValue:
+            // backward-compatibility to RCE version < 8.0.0 if value is read from data management
+            if (valueNode.isValueNode()) {
+                String id = valueNode.getTextValue();
+                final String failureCaseSuffix = "_flr";
+                if (id.endsWith(failureCaseSuffix)) {
+                    returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.Failure);
+                } else {
+                    returnDatum = factory.createNotAValue(id, NotAValueTD.Cause.InvalidInputs);
+                }
+            } else {
+                NotAValueTD notAValue = factory.createNotAValue(valueNode.get(ID_STRING).getTextValue(),
+                    NotAValueTD.Cause.valueOf(valueNode.get(TYPE_STRING).getTextValue()));
+                returnDatum = notAValue;
+            }
+            break;
+        case Empty:
+            returnDatum = factory.createEmpty();
+            break;
+        case FileReference:
+            FileReferenceTD fileReference =
+                factory.createFileReference(valueNode.get(FILE_REFERENCE_STRING).getTextValue(),
+                    valueNode.get(FILE_NAME_STRING).getTextValue());
+            fileReference.setFileSize(valueNode.get(FILE_SIZE_STRING).getLongValue());
+            if (valueNode.has(LAST_MODIFIED_STRING) && !valueNode.get(LAST_MODIFIED_STRING).isNull()) {
+                fileReference.setLastModified(new Date(valueNode.get(LAST_MODIFIED_STRING).asLong()));
+            }
+            returnDatum = fileReference;
+            break;
+        case DirectoryReference:
+            DirectoryReferenceTD directoryReference =
+                factory.createDirectoryReference(valueNode.get(DIRECTORY_REFERENCE_STRING).getTextValue(),
+                    valueNode.get(DIRECTORY_NAME_STRING).getTextValue());
+            directoryReference.setDirectorySize(valueNode.get(DIRECTORY_SIZE_STRING).asLong());
+            returnDatum = directoryReference;
+            break;
+        case StructuredData:
+        case BigTable:
+        default:
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_DESERIALIZE_STRING, rootNode.toString()));
+        }
+        return returnDatum;
+    }
+
     @Override
     public String serialize(TypedDatum input) {
-        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        ObjectMapper mapper = new ObjectMapper();
         ObjectNode rootNode = mapper.createObjectNode();
         if (input == null || input.getDataType() == null) {
             throw new NullPointerException();
@@ -191,8 +220,10 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
         rootNode.put(TYPE_STRING, input.getDataType().getShortName());
         switch (input.getDataType()) {
         case Boolean:
+            rootNode.put(VALUE_STRING, ((BooleanTD) input).getBooleanValue());
+            break;
         case ShortText:
-            rootNode.put(VALUE_STRING, input.toString());
+            rootNode.put(VALUE_STRING, ((ShortTextTD) input).getShortTextValue());
             break;
         case Integer:
             IntegerTD integer = (IntegerTD) input;
@@ -262,7 +293,11 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
             rootNode.put(VALUE_STRING, dirObjectNode);
             break;
         case NotAValue:
-            rootNode.put(VALUE_STRING, ((NotAValueTD) input).getIdentifier());
+            ObjectNode notAValueObjectNode = mapper.createObjectNode();
+            NotAValueTD notAValue = (NotAValueTD) input;
+            notAValueObjectNode.put(ID_STRING, notAValue.getIdentifier());
+            notAValueObjectNode.put(TYPE_STRING, notAValue.getCause().name());
+            rootNode.put(VALUE_STRING, notAValueObjectNode);
             break;
         case Empty:
             break;
@@ -271,7 +306,11 @@ public class DefaultTypedDatumSerializer implements TypedDatumSerializer {
         default:
             throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_SERIALIZE_STRING, input.getDataType().getDisplayName()));
         }
-        return rootNode.toString();
+        try {
+            return mapper.writeValueAsString(rootNode);
+        } catch (IOException e) {
+            throw new IllegalArgumentException(StringUtils.format(UNABLE_TO_SERIALIZE_STRING, input.getDataType().getDisplayName()), e);
+        }
     }
 
 }

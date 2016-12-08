@@ -15,7 +15,10 @@ import java.io.InputStream;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
+import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 
@@ -23,6 +26,7 @@ import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
  * Convenient methods for workflow console usage.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public final class ConsoleRowUtils {
 
@@ -31,24 +35,20 @@ public final class ConsoleRowUtils {
     private ConsoleRowUtils() {}
 
     /**
-     * Send text to workflow console. Note that if you use this method with a
-     * {@link LocalApacheCommandLineExecutor} it must be called *after* the executor was started.
-     * After that, the returned {@link TextStreamWatcher} must be stored and *after* the
-     * waitForTermination() method of the executor, the waitForTermination() from the watcher must
-     * be called.
+     * Send text to workflow console. Note that if you use this method with a {@link LocalApacheCommandLineExecutor} it must be called
+     * *after* the executor was started. After that, the returned {@link TextStreamWatcher} must be stored and *after* the
+     * waitForTermination() method of the executor, the waitForTermination() from the watcher must be called.
      * 
      * @param componentLog {@link ComponentLog} instance of the calling component
      * @param inputStream contains text to send
      * @param consoleType stderr or stdour
      * @param logFile optional file to log to as well, <code>null</code> for no file logging
-     * @param append optional flag only considered if logFile not null. Append lines to file if
-     *        true; otherwise overwrite file
+     * @param append optional flag only considered if logFile not null. Append lines to file if true; otherwise overwrite file
      * @return the created {@link TextStreamWatcher} for calling the waitForTermination method
      */
     public static TextStreamWatcher logToWorkflowConsole(final ComponentLog componentLog, final InputStream inputStream,
         final Type consoleType, final File logFile, boolean append) {
 
-        
         /**
          * Sends each console line to the workflow console.
          * 
@@ -81,8 +81,8 @@ public final class ConsoleRowUtils {
 
         }
 
-        TextStreamWatcher watcher = new TextStreamWatcher(inputStream, new WorkflowConsoleOutputReceiver());
-        
+        TextStreamWatcher watcher = TextStreamWatcherFactory.create(inputStream, new WorkflowConsoleOutputReceiver());
+
         if (logFile != null) {
             try {
                 watcher.enableLogFile(logFile, append);
@@ -92,6 +92,18 @@ public final class ConsoleRowUtils {
         }
         watcher.start();
         return watcher;
+    }
+
+    /**
+     * Central method to define/assemble ConsoleRow-related notification ids.
+     * 
+     * @param nodeIdString common part: a node id
+     * @param specificIdString context-specific part/id; usually (always?) the workflow id
+     * @return the assembled notification id
+     */
+    public static String composeConsoleNotificationId(LogicalNodeId nodeIdString, String specificIdString) {
+        return StringUtils.format(ConsoleRow.NOTIFICATION_ID_PREFIX_CONSOLE_EVENT + "%s:%s", nodeIdString.getInstanceNodeIdString(),
+            specificIdString);
     }
 
 }

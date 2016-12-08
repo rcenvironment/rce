@@ -21,12 +21,12 @@ import de.rcenvironment.core.command.common.CommandException;
 import de.rcenvironment.core.command.spi.CommandContext;
 import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.VersionUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides built-in console commands, like printing "help" or version information.
@@ -105,8 +105,8 @@ public class BuiltInCommandPlugin implements CommandPlugin {
             performTasks(context);
         } else if (CMD_DUMMY.equals(cmd)) {
             performDummy(context);
-//        } else if (MultiCommandHandler.SAVETO.equals(cmd)) {
-//            throw CommandException.syntaxError("The 'saveto' command can only be used as a prefix of a list of commands!", context);
+            // } else if (MultiCommandHandler.SAVETO.equals(cmd)) {
+            // throw CommandException.syntaxError("The 'saveto' command can only be used as a prefix of a list of commands!", context);
         } else {
             throw new IllegalStateException();
         }
@@ -177,7 +177,7 @@ public class BuiltInCommandPlugin implements CommandPlugin {
 
             int delayMsec = Integer.parseInt(token);
             LogFactory.getLog(getClass()).warn(StringUtils.format("Killing the instance (using System.exit(1)) in %,d msec...", delayMsec));
-            SharedThreadPool.getInstance().scheduleAfterDelay(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().scheduleAfterDelay(new Runnable() {
 
                 @Override
                 @TaskDescription("Simulate an instance crash (triggered by console command)")
@@ -216,7 +216,7 @@ public class BuiltInCommandPlugin implements CommandPlugin {
                 throw CommandException.syntaxError("Unknown parameter: " + token, context);
             }
         }
-        context.println(SharedThreadPool.getInstance().getFormattedStatistics(addTaskIds, includeInactive));
+        context.println(ConcurrencyUtils.getThreadPoolManagement().getFormattedStatistics(addTaskIds, includeInactive));
     }
 
     private void performStats(CommandContext context) {

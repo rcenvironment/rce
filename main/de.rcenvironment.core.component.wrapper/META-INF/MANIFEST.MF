@@ -2,13 +2,14 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Wrapper
 Bundle-SymbolicName: de.rcenvironment.core.component.wrapper
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Import-Package: de.rcenvironment.core.communication.common,
  de.rcenvironment.core.component.datamanagement.stateful,
  de.rcenvironment.core.component.execution.api,
  de.rcenvironment.core.component.model.api,
  de.rcenvironment.core.component.model.spi,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.common.textstream.receivers,

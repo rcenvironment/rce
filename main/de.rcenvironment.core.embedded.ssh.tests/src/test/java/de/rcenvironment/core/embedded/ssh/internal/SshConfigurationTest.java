@@ -18,6 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.testutils.ConfigurationSegmentUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -51,9 +52,10 @@ public class SshConfigurationTest extends TestCase {
      * Tests default values when providing an empty {@link ConfigurationSegment}.
      * 
      * @throws IOException on uncaught exceptions
+     * @throws ConfigurationException on configuraion exceptions
      */
     @Test
-    public void testEmptyConfiguration() throws IOException {
+    public void testEmptyConfiguration() throws IOException, ConfigurationException {
         ConfigurationSegment configurationSegment = ConfigurationSegmentUtils.createEmptySegment();
         SshConfiguration configuration = new SshConfiguration(configurationSegment);
         verifyDefaultValues(configuration);
@@ -63,9 +65,9 @@ public class SshConfigurationTest extends TestCase {
      * Tests loading a test configuration file.
      * 
      * @throws IOException on uncaught exceptions
-     */
+     * @throws ConfigurationException on configuraion exceptions.*/
     @Test
-    public void testLoading() throws IOException {
+    public void testLoading() throws IOException, ConfigurationException {
         TempFileServiceAccess.setupUnitTestEnvironment();
         ConfigurationSegment configurationSegment =
             ConfigurationSegmentUtils.readTestConfigurationFromStream(getClass().getResourceAsStream("/sample1.json"));
@@ -75,7 +77,6 @@ public class SshConfigurationTest extends TestCase {
         assertEquals(TEST_FILE_PORT_VALUE, configuration.getPort());
         assertEquals(TEST_FILE_HOST_VALUE, configuration.getHost());
         assertEquals(4, configuration.getAccounts().size());
-        assertEquals(3, configuration.getRoles().size());
     }
 
     /** Test. */
@@ -96,38 +97,6 @@ public class SshConfigurationTest extends TestCase {
         config.setPort(Integer.MAX_VALUE);
         assertFalse("SshConfiguration.validateConfiguration returned true but false was expected",
             config.validateConfiguration(logger));
-    }
-
-    /** Test. */
-    @Test
-    public void testValidationNoRoles() {
-        SshConfiguration config = SshTestUtils.getValidConfig();
-        config.setRoles(null);
-        config.validateConfiguration(logger);
-        assertTrue("SshConfiguration.validateConfiguration() did not add default role", config.getRoles().size() == 1);
-        SshAccountRole role = config.getRoles().get(0);
-        assertTrue("SshConfiguration.validateConfiguration() did not add default role", role.getRoleName().equals(""));
-
-        config = SshTestUtils.getValidConfig();
-        config.setRoles(new ArrayList<SshAccountRole>());
-        config.validateConfiguration(logger);
-        assertTrue("SshConfiguration.validateConfiguration did not add default role", config.getRoles().size() == 1);
-        role = config.getRoles().get(0);
-        assertTrue("SshConfiguration.validateConfiguration did not add default role", role.getRoleName().equals(""));
-    }
-
-    /** Test. */
-    @Test
-    public void testValidationDuplicateRoles() {
-        SshConfiguration config = SshTestUtils.getValidConfig();
-        List<SshAccountRole> roles = config.getRoles();
-        if (roles.addAll(roles)) {
-            config.setRoles(roles);
-            assertFalse("SshConfiguration.validateConfiguration() returned true but false was expected.",
-                config.validateConfiguration(logger));
-        } else {
-            fail("Could not create duplicates for roles");
-        }
     }
 
     /** Test. */
@@ -161,6 +130,5 @@ public class SshConfigurationTest extends TestCase {
         assertEquals(SshConfiguration.DEFAULT_PORT, configuration.getPort());
         assertEquals(SshConfiguration.DEFAULT_HOST, configuration.getHost());
         assertEquals(0, configuration.getAccounts().size());
-        assertEquals(0, configuration.getRoles().size());
     }
 }

@@ -8,7 +8,7 @@
 
 package de.rcenvironment.components.parametricstudy.common;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 
 /**
  * Service used to announce and receive values used for parameter study purposes.
@@ -33,6 +33,6 @@ public interface ParametricStudyService {
      * @param platform the platform to receive values from
      * @return the created {@link StudyReceiver}
      */
-    StudyReceiver createReceiver(final String identifier, final NodeIdentifier platform);
+    StudyReceiver createReceiver(final String identifier, final ResolvableNodeId platform);
 
 }

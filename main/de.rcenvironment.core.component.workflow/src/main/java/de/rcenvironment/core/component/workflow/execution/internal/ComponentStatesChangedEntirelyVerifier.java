@@ -82,6 +82,7 @@ public class ComponentStatesChangedEntirelyVerifier {
             finishedComponentStateNotifier.addComponentInDesiredState(compExecutionId);
         case CANCELED:
         case FAILED:
+        case RESULTS_REJECTED:
             finalComponentStateNotifier.addComponentInDesiredState(compExecutionId);
             if (pausedComponentStateNotifier.isEnabled()) {
                 pausedComponentStateNotifier.addComponentInDesiredState(compExecutionId);

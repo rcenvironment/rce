@@ -25,8 +25,8 @@ import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowLogServi
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
 import de.rcenvironment.core.component.workflow.execution.api.GenericSubscriptionManager;
 import de.rcenvironment.core.component.workflow.execution.impl.ConsoleSubscriptionEventProcessor;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default {@link ConsoleRowModelService} implementation.
@@ -99,14 +99,14 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
      * OSGi-DS lifecycle method.
      */
     public void activate() {
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Initial ConsoleRow model subscriptions")
             public void run() {
                 subscriptionManager = new GenericSubscriptionManager(new ConsoleSubscriptionEventProcessor(
                     ConsoleRowModelServiceImpl.this, consoleRowLogService), communicationService, workflowHostService);
-                subscriptionManager.updateSubscriptions(new String[] { ConsoleRow.NOTIFICATION_SUFFIX });
+                subscriptionManager.updateSubscriptionsForPrefixes(new String[] { ConsoleRow.NOTIFICATION_ID_PREFIX_CONSOLE_EVENT });
                 initialSubscriptionLatch.countDown();
             }
         });
@@ -128,7 +128,7 @@ public class ConsoleRowModelServiceImpl implements ConsoleRowModelService, Conso
             // TODO better handling?
             throw new RuntimeException("Interrupted while waiting for initial subscriptions to complete", e);
         }
-        subscriptionManager.updateSubscriptions(new String[] { ConsoleRow.NOTIFICATION_SUFFIX });
+        subscriptionManager.updateSubscriptionsForPrefixes(new String[] { ConsoleRow.NOTIFICATION_ID_PREFIX_CONSOLE_EVENT });
     }
 
     /**

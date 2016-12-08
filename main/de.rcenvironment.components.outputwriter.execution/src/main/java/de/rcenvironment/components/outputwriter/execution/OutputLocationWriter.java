@@ -12,6 +12,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -81,6 +82,12 @@ public class OutputLocationWriter {
      */
     protected void initializeFile(File fileToWrite) throws ComponentException {
         this.basicName = fileToWrite.getName();
+        // Check for invalid filename
+        List<String> forbiddenFilenames = Arrays.asList(OutputWriterComponentConstants.PROBLEMATICFILENAMES_WIN);
+        if (forbiddenFilenames.contains(basicName) || basicName.contains("/") || basicName.contains("\\")) {
+            throw new ComponentException(StringUtils.format("Failed to write file beacuse '%s' "
+                + "is a forbidden filename", basicName));
+        }
         this.outputFile = fileToWrite;
         if (handleExistingFile == HandleExistingFile.APPEND || handleExistingFile == HandleExistingFile.OVERRIDE) {
             if (fileToWrite.exists()) {

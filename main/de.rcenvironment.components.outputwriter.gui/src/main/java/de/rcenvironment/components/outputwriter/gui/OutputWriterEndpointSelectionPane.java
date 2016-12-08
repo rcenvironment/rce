@@ -9,9 +9,9 @@
 package de.rcenvironment.components.outputwriter.gui;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -19,17 +19,13 @@ import java.util.TreeSet;
 
 import org.eclipse.jface.dialogs.Dialog;
 import org.eclipse.jface.dialogs.MessageDialog;
-import org.eclipse.jface.viewers.ColumnWeightData;
-import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Display;
-import org.eclipse.swt.widgets.TableColumn;
 
 import de.rcenvironment.components.outputwriter.common.OutputWriterComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.EndpointHandlingHelper;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
@@ -47,23 +43,21 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
     // The OutputLocationPane for this OutputWriter. Needed because outputLocations have to be updated for changes in the input list.
     private OutputLocationPane outputLocationPane;
 
-    public OutputWriterEndpointSelectionPane(String genericEndpointTitle, EndpointType direction, Executor executor, boolean readonly,
-        String dynamicEndpointIdToManage, boolean showOnlyManagedEndpoints) {
-        super(genericEndpointTitle, direction, executor, readonly, dynamicEndpointIdToManage, showOnlyManagedEndpoints);
+    public OutputWriterEndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage, Executor executor) {
+        super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
     }
 
     @Override
     protected void onAddClicked() {
         Set<String> paths = new TreeSet<String>();
-        for (String endpointName : EndpointHelper.getDynamicEndpointNames(endpointType, endpointIdToManage,
-            configuration, showOnlyManagedEndpoints)) {
+        for (String endpointName : getDynamicEndpointNames()) {
             paths.add(getMetaData(endpointName).get(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING));
         }
         OutputWriterEndpointEditDialog dialog =
             new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
                 endpointType,
-                endpointIdToManage, false,
-                endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
+                dynEndpointIdToManage, false,
+                endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
                     .getMetaDataDefinition(), new HashMap<String, String>(), paths);
 
         onAddClicked(dialog);
@@ -73,19 +67,18 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void onEditClicked() {
         Set<String> paths = new TreeSet<String>();
-        for (String endpointName : EndpointHelper.getDynamicEndpointNames(endpointType, endpointIdToManage,
-            configuration, showOnlyManagedEndpoints)) {
+        for (String endpointName : getDynamicEndpointNames()) {
             paths.add(getMetaData(endpointName).get(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING));
         }
         final String name = (String) table.getSelection()[0].getData();
-        boolean isStaticEndpoint = EndpointHelper.getStaticEndpointNames(endpointType, configuration).contains(name);
+        boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         OutputWriterEndpointEditDialog dialog =
             new OutputWriterEndpointEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
                 endpointType,
-                endpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
+                dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(), newMetaData, paths);
 
         onEditClicked(name, dialog, newMetaData);
@@ -169,7 +162,7 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         if (deleteConfirmed(outputLocationNames)) {
 
             final WorkflowNodeCommand command =
-                new OutputWriterRemoveDynamicInputCommand(endpointType, endpointIdToManage, names,
+                new OutputWriterRemoveDynamicInputCommand(endpointType, dynEndpointIdToManage, names,
                     new ArrayList<String>(outputLocationIds), this, outputLocationPane);
             execute(command);
 
@@ -193,35 +186,12 @@ public class OutputWriterEndpointSelectionPane extends EndpointSelectionPane {
         return true;
     }
 
-    @Override
-    protected void fillTable() {
-        super.fillTable();
-        if (table.getColumnCount() < 6) {
-            TableColumn col = new TableColumn(table, SWT.NONE);
-            col.setText(Messages.targetFolder);
-            final int columnWeight = 20;
-            tableLayout.setColumnData(col, new ColumnWeightData(columnWeight, true));
+    private List<String> getDynamicEndpointNames() {
+        List<String> result = new LinkedList<String>();
+        for (EndpointDescription e : endpointManager.getDynamicEndpointDescriptions()) {
+            result.add(e.getName());
         }
-        final List<String> dynamicEndpointNames = EndpointHelper.getDynamicEndpointNames(endpointType, endpointIdToManage,
-            configuration, showOnlyManagedEndpoints);
-        Collections.sort(dynamicEndpointNames);
-        int i = 0;
-        for (String endpoint : dynamicEndpointNames) {
-            if (table.getItemCount() > i) {
-                if (getType(endpoint).equals(DataType.FileReference) || getType(endpoint).equals(DataType.DirectoryReference)) {
-                    table.getItem(i).setText(5, getMetaData(endpoint).get(OutputWriterComponentConstants.CONFIG_KEY_FOLDERFORSAVING));
-                } else {
-                    // For simple data types, we have no target folder for the input
-                    table.getItem(i).setText(5, "-");
-                }
-            }
-            i++;
-        }
-
-        // Fix a bug in the GUI under some Linux distributions
-        final int columnWeight = 20;
-        tableLayout.setColumnData(table.getColumn(3), new ColumnWeightData(columnWeight, true));
-
+        return result;
     }
 
     protected OutputLocationPane getOutputLocationPane() {

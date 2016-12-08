@@ -27,6 +27,9 @@ import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNo
  * @author Doreen Seider
  */
 public class ToolMockModeSection extends ValidatingWorkflowNodePropertySection {
+    
+    /** Property that is fired when the name changes. */
+    public static final String PROPERTY_NODE_ATTRIBUTES = "de.rcenvironment.props.n";
 
     private Button checkBox;
 
@@ -48,11 +51,17 @@ public class ToolMockModeSection extends ValidatingWorkflowNodePropertySection {
 
         sectionProperties.setClient(sectionInstallationClient);
     }
-    
+
+    @Override
+    protected void setProperty(String key, String value) {
+        super.setProperty(key, value);
+        node.firePropertyChange(PROPERTY_NODE_ATTRIBUTES);
+    }
+
     @Override
     protected void setWorkflowNode(WorkflowNode workflowNode) {
         super.setWorkflowNode(workflowNode);
-
+        this.node = workflowNode;
         boolean isDeactivationSupported = Boolean.valueOf(workflowNode.getConfigurationDescription().getComponentConfigurationDefinition()
             .getReadOnlyConfiguration().getValue(ToolIntegrationConstants.KEY_MOCK_MODE_SUPPORTED));
         if (!isDeactivationSupported) {

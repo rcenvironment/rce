@@ -15,7 +15,8 @@ import org.osgi.framework.BundleContext;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataReferenceService;
 import de.rcenvironment.core.datamanagement.RemotableMetaDataService;
@@ -38,11 +39,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
 
     private PlatformService platformService;
 
-    private BundleContext context;
-
-    protected void activate(BundleContext bundleContext) {
-        context = bundleContext;
-    }
+    protected void activate(BundleContext bundleContext) {}
 
     protected void bindWorkflowHostService(WorkflowHostService newWorkflowHostService) {
         workflowHostService = newWorkflowHostService;
@@ -57,11 +54,11 @@ public class DataReferenceServiceImpl implements DataReferenceService {
     }
 
     @Override
-    public DataReference getReference(String dataReferenceKey, NodeIdentifier platform)
+    public DataReference getReference(String dataReferenceKey, ResolvableNodeId platform)
         throws CommunicationException {
 
         if (platform == null) {
-            platform = platformService.getLocalNodeId();
+            platform = platformService.getLocalInstanceNodeSessionId();
         }
         try {
             return getRemoteMetaDataBackendService(platform).getDataReference(dataReferenceKey);
@@ -78,11 +75,11 @@ public class DataReferenceServiceImpl implements DataReferenceService {
     }
 
     @Override
-    public DataReference getReference(String dataReferenceKey, Collection<NodeIdentifier> platforms)
+    public DataReference getReference(String dataReferenceKey, Collection<? extends ResolvableNodeId> platforms)
         throws CommunicationException {
         DataReference reference = null;
 
-        for (NodeIdentifier pi : workflowHostService.getWorkflowHostNodesAndSelf()) {
+        for (InstanceNodeSessionId pi : workflowHostService.getWorkflowHostNodesAndSelf()) {
             try {
                 reference = getRemoteMetaDataBackendService(pi).getDataReference(dataReferenceKey);
                 if (reference != null) {
@@ -98,7 +95,7 @@ public class DataReferenceServiceImpl implements DataReferenceService {
         return reference;
     }
 
-    private RemotableMetaDataService getRemoteMetaDataBackendService(NodeIdentifier nodeId) throws RemoteOperationException {
+    private RemotableMetaDataService getRemoteMetaDataBackendService(ResolvableNodeId nodeId) throws RemoteOperationException {
         return (RemotableMetaDataService) communicationService.getRemotableService(RemotableMetaDataService.class, nodeId);
     }
 }

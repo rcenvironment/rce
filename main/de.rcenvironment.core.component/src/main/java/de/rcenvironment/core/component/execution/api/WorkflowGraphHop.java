@@ -8,6 +8,8 @@
  
 package de.rcenvironment.core.component.execution.api;
 
+import java.io.Serializable;
+
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -15,8 +17,10 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  */
-public class WorkflowGraphHop {
-    
+public class WorkflowGraphHop implements Serializable {
+
+    private static final long serialVersionUID = 2180475342338990576L;
+
     private final String executionIdentifier;
     
     private final String ouputName;
@@ -24,12 +28,20 @@ public class WorkflowGraphHop {
     private final String targetExecutionIdentifier;
     
     private final String targetInputName;
+    
+    private final String hopOutputId;
 
     public WorkflowGraphHop(String hopExecutionIdentifier, String hopOuputName, String targetExecutionIdentifier, String targetInputName) {
+        this(hopExecutionIdentifier, hopOuputName, targetExecutionIdentifier, targetInputName, null);
+    }
+    
+    public WorkflowGraphHop(String hopExecutionIdentifier, String hopOuputName, String targetExecutionIdentifier, String targetInputName,
+        String hopOutputId) {
         this.executionIdentifier = hopExecutionIdentifier;
         this.ouputName = hopOuputName;
         this.targetExecutionIdentifier = targetExecutionIdentifier;
         this.targetInputName = targetInputName;
+        this.hopOutputId = hopOutputId;
     }
     
     public String getHopExecutionIdentifier() {
@@ -46,6 +58,10 @@ public class WorkflowGraphHop {
     
     public String getTargetInputName() {
         return targetInputName;
+    }
+    
+    protected String getHopOutputIdentifier() {
+        return hopOutputId;
     }
     
     @Override

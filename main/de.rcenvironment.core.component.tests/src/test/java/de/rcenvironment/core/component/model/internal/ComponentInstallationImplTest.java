@@ -5,17 +5,21 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.model.internal;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.collections4.map.HashedMap;
 import org.codehaus.jackson.JsonGenerationException;
 import org.codehaus.jackson.JsonParseException;
 import org.codehaus.jackson.map.JsonMappingException;
@@ -23,6 +27,7 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.junit.Test;
 
 import de.rcenvironment.core.component.model.api.ComponentInterface;
+import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDescriptionStubFactory;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationExtensionDefinition;
 import de.rcenvironment.core.component.model.configuration.impl.ConfigurationDefinitionImpl;
@@ -37,12 +42,15 @@ import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
  * Test cases for {@link ComponentInstallationImpl}.
+ * 
  * @author Doreen Seider
  */
 public class ComponentInstallationImplTest {
 
     /**
-     * Tests if the {@link ComponentInstallationImpl} is serialized correctly regarding configuration keys.
+     * Tests if the {@link ComponentInstallationImpl} is serialized correctly regarding configuration keys, endpoints etc.
+     * 
+     * Note: This test doesn't cover backwards compatibility checks.
      * 
      * @throws IOException on error
      * @throws JsonGenerationException on error
@@ -51,64 +59,106 @@ public class ComponentInstallationImplTest {
      */
     @Test
     public void testComponentInstallationSerialization() throws JsonParseException, JsonMappingException,
-    JsonGenerationException, IOException {
-        
-        ConfigurationDefinitionImpl configDef = ConfigurationDescriptionStubFactory.createConfigurationDefinitionFromTestFile();
-        
-        Set<ConfigurationExtensionDefinitionImpl> configExtDefs = ConfigurationDescriptionStubFactory
+        JsonGenerationException, IOException {
+
+        Integer maxInstances = Integer.valueOf(4);
+        String readOnlyConfigKey = "someReadOnlyConfigKey";
+        String readOnlyConfigValue = "someReadOnlyConfigValue";
+
+        ConfigurationDefinitionImpl configDefImpl = ConfigurationDescriptionStubFactory.createConfigurationDefinitionFromTestFile();
+
+        Set<ConfigurationExtensionDefinitionImpl> configExtDefsImpl = ConfigurationDescriptionStubFactory
             .createConfigurationExtensionDefinitionsFromTestFiles();
-        
-        EndpointDefinitionsProviderImpl inputsProvider = EndpointDefinitionProviderStubFactory
+
+        EndpointDefinitionsProviderImpl inputsProviderImpl = EndpointDefinitionProviderStubFactory
             .createInputDefinitionsProviderFromTestFile();
 
-        ComponentInterfaceImpl cinter = new ComponentInterfaceImpl();
-        cinter.setIdentifier("interface-id");
+        ComponentInterfaceImpl compInterf = new ComponentInterfaceImpl();
+        compInterf.setIdentifier("interface-id");
         List<String> identifiers = new ArrayList<>();
         identifiers.add("interface-id");
         identifiers.add("interface-id.old");
-        cinter.setIdentifiers(identifiers);
-        cinter.setDisplayName("display name");
-        cinter.setConfigurationDefinition(configDef);
-        cinter.setConfigurationExtensionDefinitions(configExtDefs);
-        cinter.setInputDefinitionsProvider(inputsProvider);
-        ComponentRevisionImpl cr = new ComponentRevisionImpl();
-        cr.setComponentInterface(cinter);
-        ComponentInstallationImpl ci = new ComponentInstallationImpl();
-        ci.setComponentRevision(cr);
-        ci.setInstallationId("install-id");
-        
+        compInterf.setIdentifiers(identifiers);
+        compInterf.setDisplayName("display name");
+        Map<String, String> readOnlyConfig = new HashedMap<>();
+        readOnlyConfig.put(readOnlyConfigKey, readOnlyConfigValue);
+        configDefImpl.setRawReadOnlyConfiguration(readOnlyConfig);
+        compInterf.setConfigurationDefinition(configDefImpl);
+        compInterf.setConfigurationExtensionDefinitions(configExtDefsImpl);
+        compInterf.setInputDefinitionsProvider(inputsProviderImpl);
+        ComponentRevisionImpl compRev = new ComponentRevisionImpl();
+        compRev.setComponentInterface(compInterf);
+        ComponentInstallationImpl compInst = new ComponentInstallationImpl();
+        compInst.setComponentRevision(compRev);
+        compInst.setInstallationId("install-id");
+        compInst.setMaximumCountOfParallelInstances(maxInstances);
         ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
-        ComponentInstallationImpl otherCi = mapper.readValue(mapper.writeValueAsString(ci), ComponentInstallationImpl.class);
-        
-        assertEquals(0, otherCi.compareTo(ci));
-        
-        ComponentInterface otherCinter = otherCi.getComponentRevision().getComponentInterface();
-        
-        assertEquals(cinter.getIdentifiers().size(), otherCinter.getIdentifiers().size());
-        
+
+        ComponentInstallationImpl otherCompInst = mapper.readValue(mapper.writeValueAsString(compInst), ComponentInstallationImpl.class);
+
+        assertEquals(0, otherCompInst.compareTo(compInst));
+
+        ComponentInterface otherCompInterf = otherCompInst.getComponentRevision().getComponentInterface();
+
+        assertEquals(compInterf.getIdentifiers().size(), otherCompInterf.getIdentifiers().size());
+        assertEquals(compInst.getMaximumCountOfParallelInstances(), otherCompInst.getMaximumCountOfParallelInstances());
+
         // check configuration
-        assertEquals(cinter.getConfigurationDefinition().getConfigurationKeys().size(),
-            otherCinter.getConfigurationDefinition().getConfigurationKeys().size());
-        assertEquals(cinter.getConfigurationExtensionDefinitions().size(),
-            otherCinter.getConfigurationExtensionDefinitions().size());
-        
-        for (ConfigurationExtensionDefinition configExtDef : otherCinter.getConfigurationExtensionDefinitions()) {
-            assertEquals(1, configExtDef.getConfigurationKeys().size());
+        ConfigurationDefinition configDef = compInterf.getConfigurationDefinition();
+        ConfigurationDefinition otherConfigDef = otherCompInterf.getConfigurationDefinition();
+
+        assertEquals(configDef.getConfigurationKeys().size(), otherConfigDef.getConfigurationKeys().size());
+        assertEquals(configDef.getDefaultValue(ConfigurationDescriptionStubFactory.PORT),
+            otherConfigDef.getDefaultValue(ConfigurationDescriptionStubFactory.PORT));
+        assertEquals(configDef.getReadOnlyConfiguration().getConfigurationKeys().size(),
+            otherConfigDef.getReadOnlyConfiguration().getConfigurationKeys().size());
+        assertEquals(configDef.getReadOnlyConfiguration().getValue(readOnlyConfigKey),
+            otherConfigDef.getReadOnlyConfiguration().getValue(readOnlyConfigKey));
+
+        assertEquals(compInterf.getConfigurationExtensionDefinitions().size(),
+            otherCompInterf.getConfigurationExtensionDefinitions().size());
+
+        // check activation filter
+        for (ConfigurationExtensionDefinition configExtDef : compInterf.getConfigurationExtensionDefinitions()) {
+            if (configExtDef.getConfigurationKeys().contains(ConfigurationDescriptionStubFactory.WORK_DIR)) {
+                boolean matchFound = false;
+                for (ConfigurationExtensionDefinition otherConfigExtDef : otherCompInterf.getConfigurationExtensionDefinitions()) {
+                    if (otherConfigExtDef.getConfigurationKeys().contains(ConfigurationDescriptionStubFactory.WORK_DIR)) {
+                        assertEquals(((ConfigurationExtensionDefinitionImpl) configExtDef).getRawActivationFilter(),
+                            ((ConfigurationExtensionDefinitionImpl) otherConfigExtDef).getRawActivationFilter());
+                        matchFound = true;
+                    }
+                }
+                assertTrue(matchFound);
+            } else if (configExtDef.getConfigurationKeys().contains(ConfigurationDescriptionStubFactory.FORMAT)) {
+                boolean matchFound = false;
+                for (ConfigurationExtensionDefinition otherConfigExtDef : otherCompInterf.getConfigurationExtensionDefinitions()) {
+                    if (otherConfigExtDef.getConfigurationKeys().contains(ConfigurationDescriptionStubFactory.FORMAT)) {
+                        assertEquals(((ConfigurationExtensionDefinitionImpl) configExtDef)
+                            .getActivationFilter(ConfigurationDescriptionStubFactory.FORMAT),
+                            ((ConfigurationExtensionDefinitionImpl) otherConfigExtDef)
+                                .getActivationFilter(ConfigurationDescriptionStubFactory.FORMAT));
+                        matchFound = true;
+                    }
+                }
+                assertTrue(matchFound);
+            } else {
+                fail("Missing configuration key");
+            }
         }
-        
-        assertEquals(cinter.getConfigurationDefinition().getDefaultValue(ConfigurationDescriptionStubFactory.PORT),
-            otherCinter.getConfigurationDefinition().getDefaultValue(ConfigurationDescriptionStubFactory.PORT));
-        
-        // check endpointsd
-        EndpointDefinition dynInputDef = cinter.getInputDefinitionsProvider()
+
+        // check endpoints
+        EndpointDefinition dynInputDef = compInterf.getInputDefinitionsProvider()
             .getDynamicEndpointDefinition(EndpointDefinitionProviderStubFactory.DYNAMICINPUTID1);
-        
-        EndpointDefinition otherDynInputDef = otherCinter.getInputDefinitionsProvider()
+        EndpointDefinition otherDynInputDef = otherCompInterf.getInputDefinitionsProvider()
             .getDynamicEndpointDefinition(EndpointDefinitionProviderStubFactory.DYNAMICINPUTID1);
-        
         assertNotNull(otherDynInputDef);
         assertEquals(dynInputDef.getMetaDataDefinition().getMetaDataKeys().size(),
             otherDynInputDef.getMetaDataDefinition().getMetaDataKeys().size());
         
+        assertEquals(compInterf.getInputDefinitionsProvider().getStaticEndpointGroupDefinitions().size(),
+            otherCompInterf.getInputDefinitionsProvider().getStaticEndpointGroupDefinitions().size());
+        assertEquals(compInterf.getInputDefinitionsProvider().getDynamicEndpointGroupDefinitions().size(),
+            otherCompInterf.getInputDefinitionsProvider().getDynamicEndpointGroupDefinitions().size());
     }
 }

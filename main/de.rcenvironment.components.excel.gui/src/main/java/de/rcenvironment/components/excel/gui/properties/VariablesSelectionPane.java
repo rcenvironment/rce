@@ -34,6 +34,7 @@ import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.forms.widgets.FormToolkit;
 
+import de.rcenvironment.components.excel.common.ExcelAddress;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelService;
 import de.rcenvironment.components.excel.common.ExcelUtils;
@@ -41,15 +42,13 @@ import de.rcenvironment.components.excel.common.SimpleExcelService;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.AddDynamicEndpointCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointEditDialog;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 /**
- * A UI part to display and edit a set of endpoints managed by a {@link DynamicEndpointManager).  
+ * A UI part to display and edit a set of endpoints managed by a {@link DynamicEndpointManager).
  *
  * @author Patrick Schaefer
  * @author Markus Kunde
@@ -63,9 +62,9 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
     /**
      * @param genericEndpointTitle the display text describing individual endpoints (like "Input" or "Output"); used in dialog texts
      */
-    public VariablesSelectionPane(String genericEndpointTitle, final EndpointType direction,
-        final WorkflowNodeCommand.Executor executor, String id) {
-        super(genericEndpointTitle, direction, executor, false, id, true);
+    public VariablesSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage,
+        WorkflowNodeCommand.Executor executor) {
+        super(title, direction, dynEndpointIdToManage, new String[] {}, new String[] {}, executor);
     }
 
     public EndpointSelectionPane[] getAllPanes() {
@@ -134,10 +133,11 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                                             if (!exists && !visitedAdresses.contains(addr.getFullAddress())) {
                                                 visitedAdresses.add(addr.getFullAddress());
                                                 final WorkflowNodeCommand command =
-                                                    new AddDynamicEndpointCommand(endpointType, endpointIdToManage,
+                                                    new AddDynamicEndpointCommand(endpointType, dynEndpointIdToManage,
                                                         addr.getUserDefinedName(), endpointManager
-                                                            .getDynamicEndpointDefinition(ExcelPropertiesConstants.ID_INPUT_PANE).
-                                                            getDefaultDataType(), metaData, allPanes);
+                                                            .getDynamicEndpointDefinition(ExcelPropertiesConstants.ID_INPUT_PANE)
+                                                            .getDefaultDataType(),
+                                                        metaData, allPanes);
                                                 commands.add(command);
                                                 successful = true;
                                             }
@@ -164,6 +164,7 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                             if (event.getResult() == Status.OK_STATUS) {
                                 for (final WorkflowNodeCommand command : commands) {
                                     Display.getDefault().asyncExec(new Runnable() {
+
                                         @Override
                                         public void run() {
                                             execute(command);
@@ -172,12 +173,13 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                                 }
                             } else if (event.getResult() == Status.CANCEL_STATUS) {
                                 Display.getDefault().asyncExec(new Runnable() {
+
                                     @Override
                                     public void run() {
                                         MessageBox dialog = new MessageBox(parent.getShell(), SWT.ICON_WARNING);
                                         dialog.setText("Warning!");
                                         dialog.setMessage("No " + endpointType + " could be added!");
-                                        dialog.open();                                        
+                                        dialog.open();
                                     }
                                 });
                             }
@@ -185,21 +187,21 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
                         }
 
                         @Override
-                        public void awake(IJobChangeEvent arg0) { }
+                        public void awake(IJobChangeEvent arg0) {}
 
                         @Override
-                        public void aboutToRun(IJobChangeEvent arg0) { }                        
-                        
-                        @Override
-                        public void sleeping(IJobChangeEvent arg0) { }
+                        public void aboutToRun(IJobChangeEvent arg0) {}
 
                         @Override
-                        public void scheduled(IJobChangeEvent arg0) { }
+                        public void sleeping(IJobChangeEvent arg0) {}
 
                         @Override
-                        public void running(IJobChangeEvent arg0) { }
+                        public void scheduled(IJobChangeEvent arg0) {}
+
+                        @Override
+                        public void running(IJobChangeEvent arg0) {}
                     });
-                    
+
                     job.setUser(true);
                     job.schedule();
 
@@ -226,9 +228,10 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
         if (excelFile != null && !excelFile.isEmpty() && excelService.isValidExcelFile(xlFile)) {
             EndpointEditDialog dialog =
                 new VariablesEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD, configuration,
-                    endpointType, endpointIdToManage, false,
-                    icon, endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
-                        .getMetaDataDefinition(), new HashMap<String, String>(), xlFile);
+                    endpointType, dynEndpointIdToManage, false,
+                    icon, endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
+                        .getMetaDataDefinition(),
+                    new HashMap<String, String>(), xlFile);
             super.onAddClicked(dialog);
         } else {
             MessageBox box = new MessageBox(Display.getDefault().getActiveShell(), SWT.ICON_WARNING);
@@ -248,15 +251,16 @@ public class VariablesSelectionPane extends EndpointSelectionPane {
         final File xlFile = ExcelUtils.getAbsoluteFile(excelFile);
 
         final String name = (String) table.getSelection()[0].getData();
-        boolean isStaticEndpoint = EndpointHelper.getStaticEndpointNames(endpointType, configuration).contains(name);
+        boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         EndpointEditDialog dialog =
             new VariablesEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.EDIT, configuration,
-                endpointType, endpointIdToManage, isStaticEndpoint,
+                endpointType, dynEndpointIdToManage, isStaticEndpoint,
                 icon, endpoint.getEndpointDefinition()
-                    .getMetaDataDefinition(), newMetaData, xlFile);
+                    .getMetaDataDefinition(),
+                newMetaData, xlFile);
 
         super.onEditClicked(name, dialog, newMetaData);
     }

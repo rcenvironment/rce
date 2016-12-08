@@ -51,6 +51,12 @@ public class DMLabelProvider extends ColumnLabelProvider {
             result = ImageManager.getInstance().getSharedImage(StandardImages.FOLDER_16);
         } else if (node.getType() == DMBrowserNodeType.DMFileResource) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.FILE_16);
+            //Check if the file is a workflow file. The null check is necessary because the node can also be a parent
+            //node if several files are sent to the same output, in this case the associatedFilename of the parent
+            //node is null.
+            if (node.getAssociatedFilename() != null && node.getAssociatedFilename().matches(".*\\.wf")) {
+                result = imageManager.getSharedImage(StandardImages.WORKFLOW_16);
+            }
         } else if (node.getType() == DMBrowserNodeType.InformationText) {
             result = ImageManager.getInstance().getSharedImage(StandardImages.INFORMATION_16);
         } else if (node.getType() == DMBrowserNodeType.ComponentHostInformation) {

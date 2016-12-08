@@ -19,10 +19,13 @@ public enum FinalWorkflowState {
     FINISHED("Finished"),
 
     /** Cancelled. */
-    CANCELLED("Cancelled"),
+    CANCELLED("Canceled"),
 
     /** Failed. */
     FAILED("Failed"),
+    
+    /** Failed. */
+    RESULTS_REJECTED("Verification failed"),
 
     /** Corrupted. */
     CORRUPTED("Corrupted");

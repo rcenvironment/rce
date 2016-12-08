@@ -22,10 +22,11 @@ import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceState;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Utilities for {@link VirtualInstance} tests. Mostly superseded by the new {@link VirtualTopology} class.
@@ -86,17 +87,18 @@ public class VirtualInstanceTestUtils {
 
         VirtualInstance[] instances = new VirtualInstance[size];
 
-        CallablesGroup<VirtualInstance> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(VirtualInstance.class);
+        CallablesGroup<VirtualInstance> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(VirtualInstance.class);
         for (int i = 1; i <= size; i++) {
             final int i2 = i;
             callablesGroup.add(new Callable<VirtualInstance>() {
 
                 @Override
+                @TaskDescription("Default VirtualInstance creation")
                 public VirtualInstance call() throws Exception {
                     if (verboseLogging) {
                         log.debug("Creating instance " + i2);
                     }
-                    VirtualInstance instance = new VirtualInstance(StringUtils.format("RCE-%03d", i2), "RCE Instance " + i2);
+                    VirtualInstance instance = new VirtualInstance("Instance " + i2);
                     if (verboseLogging) {
                         log.debug("Finished creating instance " + i2);
                     }
@@ -155,7 +157,7 @@ public class VirtualInstanceTestUtils {
     @Deprecated
     public String getFormattedName(VirtualInstance instance) {
         return StringUtils.format("%s (%s)",
-            instance.getConfigurationService().getLocalNodeId(),
+            instance.getInstanceNodeSessionId(),
             instance.getConfigurationService().getInitialNodeInformation().getLogDescription());
     }
 
@@ -224,10 +226,10 @@ public class VirtualInstanceTestUtils {
                 if (differences == 1) { // only log first
                     log.warn(StringUtils.format(
                         "At least two instances do not share a common view of the network topology; first difference:\n"
-                        + "Instance 0 (%s):\n%s\n%s\n%s\nInstance %d (%s):\n %s\n%s\n%s",
-                        instance0.getNodeId(), compact0, NetworkFormatter.networkGraphToGraphviz(networkGraph0, true),
+                            + "Instance 0 (%s):\n%s\n%s\n%s\nInstance %d (%s):\n %s\n%s\n%s",
+                        instance0.getInstanceNodeSessionId(), compact0, NetworkFormatter.networkGraphToGraphviz(networkGraph0, true),
                         instance0.getFormattedLSAKnowledge(),
-                        i, instanceN.getNodeId(), compactN, NetworkFormatter.networkGraphToGraphviz(networkGraphN, true),
+                        i, instanceN.getInstanceNodeSessionId(), compactN, NetworkFormatter.networkGraphToGraphviz(networkGraphN, true),
                         instanceN.getFormattedLSAKnowledge()));
                 }
             }

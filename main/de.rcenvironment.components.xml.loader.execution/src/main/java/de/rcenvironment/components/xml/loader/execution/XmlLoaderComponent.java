@@ -128,7 +128,7 @@ public class XmlLoaderComponent extends DefaultComponent {
             throw new ComponentException("Failed to store XML file into the data management - "
                 + "if it is not stored in the data management, it can not be sent as output value", e);
         }
-        componentContext.writeOutput(XmlLoaderComponentConstants.ENDPOINT_NAME_XML, fileReference);
+        componentContext.writeOutput(XmlLoaderComponentConstants.OUTPUT_NAME_XML, fileReference);
 
         try {
             // Output dynamic values from XML

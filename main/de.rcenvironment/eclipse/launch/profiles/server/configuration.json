@@ -30,9 +30,6 @@
             "de.rcenvironment.outputwriter",
             "de.rcenvironment.parametricstudy",
             "de.rcenvironment.script",
-            "de.rcenvironment.sqlcommand",
-            "de.rcenvironment.sqlreader",
-            "de.rcenvironment.sqlwriter",
             "de.rcenvironment.vampzeroinitializer",
             "de.rcenvironment.xmlloader",
             "de.rcenvironment.xmlmerger"
@@ -40,31 +37,20 @@
     },
     "sshServer" : {
         "enabled" : true,
-        "host": "127.0.0.1",
+        "ip": "127.0.0.1",
         "port" : 31005,
         "accounts" : {
             "admin" : {
             	// hashed form of the "changeme!_adm" test password; DO NOT reuse this for live accounts!
 				"passwordHash" : "$2a$10$sJ9k3lEa98V02jA/r04mOefA.fEml19VqqAVw.kzgtbw5.168OiH.",
-                "role" : "admin",
+                "role" : "local_admin",
                 "enabled" : false
             },
             "ra_demo" : {
-                "password" : "ra_demo",
-                "role" : "remote access",
+                // hashed form of the "ra_demo" test password; DO NOT reuse this for live accounts!
+				"passwordHash" : "$2a$10$5fNaK.L39IATICLMXoszyeeWc4xAy7Lgau2Xwz4Jw42oYsGVV1YGq",
+                "role" : "remote_access_user",
                 "enabled" : true
-            }
-        },
-        "roles" : {
-            "admin" : {
-                "allowedCommandPatterns" : [
-                    ".*"
-                ]
-            },
-            "remote access" : {
-                "allowedCommandPatterns" : [
-                    "ra .+"
-                ]
             }
         }
     }

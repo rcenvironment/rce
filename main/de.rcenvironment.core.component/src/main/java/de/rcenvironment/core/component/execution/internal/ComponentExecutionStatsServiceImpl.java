@@ -17,7 +17,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentState;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
@@ -52,7 +52,7 @@ public class ComponentExecutionStatsServiceImpl implements ComponentExecutionSta
     public void addStatsAtComponentStart(ComponentExecutionContext compExeCtx) {
         // StatsCounter.count(CAT_COMP_EXEC_USAGE_PER_WF, KEY_TOTAL);
         StatsCounter.count(CAT_COMP_EXEC_USAGE_PER_WF, compExeCtx.getComponentDescription().getName());
-        if (platformService.isLocalNode(compExeCtx.getWorkflowNodeId())) {
+        if (platformService.matchesLocalInstance(compExeCtx.getWorkflowNodeId())) {
             StatsCounter.count(CAT_COMP_EXEC_CTRL, KEY_LOCAL_WF_CTRL);
         } else {
             // note: there should be no statistics categories that can grow indefinitely; leaving in for now - misc_ro

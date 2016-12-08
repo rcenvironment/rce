@@ -11,7 +11,7 @@ package de.rcenvironment.core.component.execution.api;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionContextImpl;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
@@ -62,7 +62,7 @@ public class ComponentExecutionContextBuilder {
      * @param defaultStorageNode node of the default storage
      * @return {@link ComponentExecutionContextBuilder} instance for method chaining purposes
      */
-    public ComponentExecutionContextBuilder setNodes(NodeIdentifier workflowNode, NodeIdentifier defaultStorageNode) {
+    public ComponentExecutionContextBuilder setNodes(LogicalNodeId workflowNode, LogicalNodeId defaultStorageNode) {
         compExeCtx.setWorkflowNodeId(workflowNode);
         compExeCtx.setDefaultStorageNode(defaultStorageNode);
         return this;

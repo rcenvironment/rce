@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.routing.internal;
 import java.io.Serializable;
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * This class represents an entry in the routing table (see {@link RoutingTable}).
@@ -22,18 +22,18 @@ public class NetworkRoute implements Serializable {
 
     private static final long serialVersionUID = 1477187382233968105L;
 
-    private final NodeIdentifier source;
+    private final InstanceNodeSessionId source;
 
-    private final NodeIdentifier destination;
+    private final InstanceNodeSessionId destination;
 
     private final List<TopologyLink> path;
 
-    private final List<NodeIdentifier> nodes;
+    private final List<InstanceNodeSessionId> nodes;
 
     private final long computationalEffort;
 
-    public NetworkRoute(NodeIdentifier source, NodeIdentifier destination, List<TopologyLink> path,
-        List<NodeIdentifier> nodes, long computationalEffort) {
+    public NetworkRoute(InstanceNodeSessionId source, InstanceNodeSessionId destination, List<TopologyLink> path,
+        List<InstanceNodeSessionId> nodes, long computationalEffort) {
         this.source = source;
         this.destination = destination;
         this.path = path;
@@ -55,7 +55,7 @@ public class NetworkRoute implements Serializable {
     /**
      * @return The node that is the first to be passed along the route.
      */
-    public NodeIdentifier getNextNode() {
+    public InstanceNodeSessionId getNextNode() {
         return nodes.get(0);
     }
 
@@ -76,14 +76,14 @@ public class NetworkRoute implements Serializable {
     /**
      * @return Returns the source.
      */
-    public NodeIdentifier getSource() {
+    public InstanceNodeSessionId getSource() {
         return source;
     }
 
     /**
      * @return Returns the destination.
      */
-    public NodeIdentifier getDestination() {
+    public InstanceNodeSessionId getDestination() {
         return destination;
     }
 
@@ -97,7 +97,7 @@ public class NetworkRoute implements Serializable {
     /**
      * @return Returns the nodes.
      */
-    public List<NodeIdentifier> getNodes() {
+    public List<InstanceNodeSessionId> getNodes() {
         return nodes;
     }
 

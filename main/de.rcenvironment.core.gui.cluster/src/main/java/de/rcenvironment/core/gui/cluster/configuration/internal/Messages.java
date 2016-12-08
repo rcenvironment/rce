@@ -96,25 +96,25 @@ public class Messages extends NLS {
     public static String createButtonTitle;
     
     /** Constant. */
-    public static String maintainHostLabel;
+    public static String provideHostLabel;
 
     /** Constant. */
-    public static String maintainPortLabel;
+    public static String providePortLabel;
 
     /** Constant. */
-    public static String maintainPortNumberLabel;
+    public static String providePortNumberLabel;
 
     /** Constant. */
-    public static String maintainUsernameLabel;
+    public static String provideUsernameLabel;
 
     /** Constant. */
-    public static String maintainPasswordLabel;
+    public static String providePasswordLabel;
     
     /** Constant. */
-    public static String maintainConfigurationNameLabel;
+    public static String provideConfigurationNameLabel;
     
     /** Constant. */
-    public static String maintainAnotherConfigurationNameLabel;
+    public static String provideAnotherConfigurationNameLabel;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

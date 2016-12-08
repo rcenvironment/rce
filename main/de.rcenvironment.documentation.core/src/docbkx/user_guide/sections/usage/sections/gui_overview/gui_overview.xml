@@ -14,7 +14,7 @@
 			</imageobject>
 		</mediaobject>
 	</figure>
-	<para> Left hand-side: <itemizedlist>
+	<para> Left hand side: <itemizedlist>
 			<listitem>
 				<para>
 					<emphasis role="italic">Project Explorer:</emphasis> View to manage projects.
@@ -66,7 +66,7 @@
 					<emphasis role="italic">Network View:</emphasis> Shows all RCE nodes of the
 					distributed RCE network and their published workflow components. It also shows
 					the outgoing connections of the own RCE instance and allows to manage them
-					(start, stop, etc.). </para>
+					(start, stop, etc.). Furthermore, you are able to see monitoring data like CPU or RAM usage for each instance.</para>
 				<figure>
 					<title>Network View</title>
 					<mediaobject>

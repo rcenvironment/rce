@@ -19,8 +19,8 @@ import org.easymock.EasyMock;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.datamanagement.backend.DataBackend;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
@@ -36,12 +36,13 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link RemotableFileDataServiceImpl}.
  * 
  * @author Juergen Klein
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class FileDataServiceImplTest {
 
     private final URI location = URI.create("test");
 
-    private NodeIdentifier pi;
+    private InstanceNodeId nodeId;
 
     private UUID drId;
 
@@ -54,16 +55,16 @@ public class FileDataServiceImplTest {
     /** Set up. */
     @Before
     public void setUp() {
-        pi = NodeIdentifierFactory.fromNodeId("naklar:6");
+        nodeId = NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("dummy");
         drId = UUID.randomUUID();
 
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
 
-        dr = new DataReference(drId.toString(), pi, birefs);
+        dr = new DataReference(drId.toString(), nodeId, birefs);
         birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
-        anotherDr = new DataReference(UUID.randomUUID().toString(), pi, birefs);
+        anotherDr = new DataReference(UUID.randomUUID().toString(), nodeId, birefs);
 
         fileDataService = new RemotableFileDataServiceImpl();
         fileDataService.bindPlatformService(new PlatformServiceDefaultStub());

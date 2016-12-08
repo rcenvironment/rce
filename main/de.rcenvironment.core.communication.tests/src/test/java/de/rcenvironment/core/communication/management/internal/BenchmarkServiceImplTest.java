@@ -17,13 +17,17 @@ import java.util.Set;
 
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
+import de.rcenvironment.core.communication.internal.LiveNetworkIdResolutionServiceImpl;
 import de.rcenvironment.core.communication.management.BenchmarkSetup;
 import de.rcenvironment.core.communication.management.BenchmarkSubtask;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
 
 /**
  * Tests for {@link BenchmarkServiceImplTest}.
@@ -38,31 +42,50 @@ public class BenchmarkServiceImplTest {
     @Test
     public void testDescriptionParsing() {
         // define network test environment
-        final NodeIdentifier localNode = NodeIdentifierFactory.fromNodeId(IdGenerator.randomUUIDWithoutDashes());
-        NodeIdentifier serverNode1 = NodeIdentifierFactory.fromNodeId(IdGenerator.randomUUIDWithoutDashes());
-        NodeIdentifier serverNode2 = NodeIdentifierFactory.fromNodeId(IdGenerator.randomUUIDWithoutDashes());
-        final Set<NodeIdentifier> availableNodes = new HashSet<NodeIdentifier>();
+        final InstanceNodeSessionId localNode = createRandomInstanceNodeSessionId();
+        final InstanceNodeSessionId serverNode1 = createRandomInstanceNodeSessionId();
+        final InstanceNodeSessionId serverNode2 = createRandomInstanceNodeSessionId();
+        final Set<InstanceNodeSessionId> availableNodes = new HashSet<InstanceNodeSessionId>();
         // set up service and inject stubs/mocks
         BenchmarkServiceImpl service = new BenchmarkServiceImpl();
         service.bindPlatformService(new PlatformServiceDefaultStub() {
 
             @Override
-            public NodeIdentifier getLocalNodeId() {
+            public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
                 return localNode;
             }
 
             @Override
-            public boolean isLocalNode(NodeIdentifier nodeId) {
+            public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
                 return nodeId.equals(localNode);
             }
         });
         service.bindCommunicationService(new CommunicationServiceDefaultStub() {
 
             @Override
-            public Set<NodeIdentifier> getReachableNodes() {
+            public Set<InstanceNodeSessionId> getReachableInstanceNodes() {
                 return availableNodes;
             }
+
         });
+        service.bindLiveNetworkIdResolutionService(new LiveNetworkIdResolutionService() {
+
+            @Override
+            public LogicalNodeSessionId resolveToLogicalNodeSessionId(ResolvableNodeId id) throws IdentifierException {
+                return null;
+            }
+
+            @Override
+            public InstanceNodeSessionId resolveInstanceNodeIdStringToInstanceNodeSessionId(String input) throws IdentifierException {
+                final LiveNetworkIdResolutionServiceImpl idResolver = new LiveNetworkIdResolutionServiceImpl();
+                assertFalse(availableNodes.isEmpty());
+                for (InstanceNodeSessionId id : availableNodes) {
+                    idResolver.registerInstanceNodeSessionId(id);
+                }
+                return idResolver.resolveInstanceNodeIdStringToInstanceNodeSessionId(input);
+            }
+        });
+
         // test invalid parameters
         try {
             service.parseBenchmarkDescription(null);
@@ -112,7 +135,8 @@ public class BenchmarkServiceImplTest {
         assertFalse(subtask.getTargetNodes().contains(localNode));
 
         // verify explicit target declaration
-        setup = service.parseBenchmarkDescription(serverNode1.getIdString() + "(,,,,)");
+        // TODO needs mechanism to find "default" instance session id for given instance id (and ideally, support both)
+        setup = service.parseBenchmarkDescription(serverNode1.getInstanceNodeIdString() + "(,,,,)");
         assertEquals(1, setup.getSubtasks().size());
         subtask = setup.getSubtasks().get(0);
         assertEquals(1, subtask.getTargetNodes().size());
@@ -122,6 +146,10 @@ public class BenchmarkServiceImplTest {
         // TODO improve test
         setup = service.parseBenchmarkDescription("*(,,,,);*(,,,,)");
         assertEquals(2, setup.getSubtasks().size());
+    }
+
+    private InstanceNodeSessionId createRandomInstanceNodeSessionId() {
+        return NodeIdentifierTestUtils.createTestInstanceNodeSessionId();
     }
 
 }

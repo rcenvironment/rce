@@ -11,11 +11,8 @@ package de.rcenvironment.core.gui.workflow.execute;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -34,13 +31,16 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.MessageBox;
 import org.eclipse.ui.PlatformUI;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.spi.DistributedComponentKnowledgeListener;
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelService;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowDescriptionValidationResult;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
@@ -55,9 +55,8 @@ import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPer
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.gui.workflow.Activator;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage.Type;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidatorUtils;
-import de.rcenvironment.core.gui.workflow.view.OpenReadOnlyWorkflowRunEditorAction;
+import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowDescriptionValidationUtils;
+import de.rcenvironment.core.gui.workflow.view.WorkflowRunEditorAction;
 import de.rcenvironment.core.gui.workflow.view.properties.InputModel;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -70,6 +69,8 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
  * @author Christian Weiss
  * @author Doreen Seider
  * @author Goekhan Guerkan
+ * @author Jascha Riedel
+ * @author Robert Mischke
  */
 public class WorkflowExecutionWizard extends Wizard implements DistributedComponentKnowledgeListener {
 
@@ -79,8 +80,6 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionWizard.class);
 
-    private static final String BULLET_POINT = "- ";
-    
     private final boolean inputTabEnabled;
 
     private final IFile wfFile;
@@ -101,22 +100,20 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
     private PlaceholderPage placeholdersPage;
 
-    private NodeIdentifier localNodeId;
-
-    private String errorMessage;
-
-    private String errorComponents;
+    private LogicalNodeId localDefaultNodeId;
 
     private boolean errorVisible = false;
+
+    private ComponentValidationMessageStore messageStore = ComponentValidationMessageStore.getInstance();
 
     public WorkflowExecutionWizard(final IFile workflowFile, WorkflowDescription workflowDescription) {
         serviceRegistryAccess = ServiceRegistry.createPublisherAccessFor(this);
         workflowExecutionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
         Activator.getInstance().registerUndisposedWorkflowShutdownListener();
 
-        this.inputTabEnabled = serviceRegistryAccess.getService(ConfigurationService.class).getConfigurationSegment("general")
-            .getBoolean(ComponentConstants.CONFIG_KEY_ENABLE_INPUT_TAB, false);
-        
+        this.inputTabEnabled = serviceRegistryAccess.getService(ConfigurationService.class)
+            .getConfigurationSegment("general").getBoolean(ComponentConstants.CONFIG_KEY_ENABLE_INPUT_TAB, false);
+
         this.wfFile = workflowFile;
 
         this.disabledWorkflowNodes = WorkflowExecutionUtils.getDisabledWorkflowNodes(workflowDescription);
@@ -125,9 +122,10 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         nodeIdConfigHelper = new NodeIdentifierConfigurationHelper();
         // cache the local instance for later use
-        this.localNodeId = serviceRegistryAccess.getService(PlatformService.class).getLocalNodeId();
+        this.localDefaultNodeId = serviceRegistryAccess.getService(PlatformService.class).getLocalDefaultLogicalNodeId();
 
-        wfDescription.setName(WorkflowExecutionUtils.generateDefaultNameforExecutingWorkflow(workflowFile.getName(), wfDescription));
+        wfDescription.setName(
+            WorkflowExecutionUtils.generateDefaultNameforExecutingWorkflow(workflowFile.getName(), wfDescription));
         wfDescription.setFileName(workflowFile.getName());
 
         // set the title of the wizard dialog
@@ -138,6 +136,9 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         ColorPalette.getInstance().loadColors();
         serviceRegistryAccess.registerService(DistributedComponentKnowledgeListener.class, this);
 
+        // this is currently required for nested calls to WorkflowDescription.clone(), which indirectly use id deserialization - misc_ro
+        NodeIdentifierContextHolder
+            .setDeserializationServiceForCurrentThread(serviceRegistryAccess.getService(NodeIdentifierService.class));
     }
 
     @Override
@@ -162,20 +163,32 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
         grabDataFromWorkflowPage();
 
+        grabDataFromPlaceholdersPage();
+
         if (!performValidations()) {
             return false;
         }
 
         if (!validateWorkflowAndPlaceholders() && !requestConfirmationForValidationErrorsWarnings()) {
-            // keeps the execute dialog open
             return false;
+        } else {
+            //Only save placeholders to persistent settings if the user does not cancel the run dialog.
+            placeholdersPage.savePlaceholdersToPersistentSettings();
         }
 
-        WorkflowExecutionUtils.setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, localNodeId);
+        placeholdersPage.dispose();
+
+        WorkflowExecutionUtils.setNodeIdentifiersToTransientInCaseOfLocalOnes(wfDescription, localDefaultNodeId);
         saveWorkflow();
 
-        grabDataFromPlaceholdersPage();
+        // clone the wf description here to make sure that the description instance passed to the workflow engine is not modified by the
+        // GUI, can and should be changed with #0012071 e.g., by introducing and using an immutable representation of the workflow
+        executeWorkflowInBackground(wfDescription.clone());
 
+        return true;
+    }
+
+    private void executeWorkflowInBackground(final WorkflowDescription clonedWfDescription) {
         Job job = new Job(Messages.workflowExecutionWizardTitle) {
 
             @Override
@@ -183,7 +196,7 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
                 try {
                     monitor.beginTask(Messages.settingUpWorkflow, 2);
                     monitor.worked(1);
-                    executeWorkflowInBackground();
+                    executeWorkflow(clonedWfDescription);
                     monitor.worked(1);
                     return Status.OK_STATUS;
                 } finally {
@@ -193,26 +206,27 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         };
         job.setUser(true);
         job.schedule();
-
-        return true;
     }
 
     /**
      * @return true if all selected instances available.
      */
     public synchronized boolean performValidations() {
-        WorkflowDescriptionValidationResult validationResult = workflowExecutionService.validateWorkflowDescription(wfDescription);
+        WorkflowDescriptionValidationResult validationResult = workflowExecutionService
+            .validateWorkflowDescription(wfDescription);
         workflowPage.getWorkflowComposite().refreshContent();
 
         if (getContainer().getCurrentPage() == placeholdersPage) {
 
             if (!validationResult.isSucceeded()) {
-                // MessageDialog.openError(getShell(), "Instances Error", "Some instances selected, are not available anymore:\n\n"
-                // + validationResult.toString() + "\n\nCheck your connection(s) or select (an)other instance(s).");
+                // MessageDialog.openError(getShell(), "Instances Error", "Some
+                // instances selected, are not available anymore:\n\n"
+                // + validationResult.toString() + "\n\nCheck your connection(s)
+                // or select (an)other instance(s).");
                 if (!errorVisible) {
                     errorVisible = true;
                     MessageBox errorBox = new MessageBox(Display.getCurrent().getActiveShell(), SWT.ICON_ERROR | SWT.OK);
-                    errorBox.setMessage("Some instances selected, are not available anymore:\n\n"
+                    errorBox.setMessage("Some of the selected instances are not available anymore:\n\n"
                         + validationResult.toString() + "\n\nCheck your connection(s) or select (an)other instance(s).");
                     errorBox.setText("Instances Error");
                     int id = errorBox.open();
@@ -248,8 +262,8 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         placeholdersPage.performFinish();
         Map<String, Map<String, String>> placeholders = placeholdersPage.getPlaceholders();
         for (String wfNodeId : placeholders.keySet()) {
-            wfDescription.getWorkflowNode(wfNodeId).getComponentDescription()
-                .getConfigurationDescription().setPlaceholders(placeholders.get(wfNodeId));
+            wfDescription.getWorkflowNode(wfNodeId).getComponentDescription().getConfigurationDescription()
+                .setPlaceholders(placeholders.get(wfNodeId));
         }
     }
 
@@ -259,67 +273,23 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
      * @return <code>false</code>, if at least one error or one warning exist
      */
     private boolean validateWorkflowAndPlaceholders() {
-        Map<String, String> componentNames = new TreeMap<String, String>(String.CASE_INSENSITIVE_ORDER);
-        WorkflowNodeValidatorUtils.initializeMessages(wfDescription);
-
-        // workflow-error
-        int workflowErrorAmount = WorkflowNodeValidatorUtils.getWorkflowErrors();
-        boolean workflowError = WorkflowNodeValidatorUtils.hasErrors();
-        componentNames.putAll(WorkflowNodeValidatorUtils.getComponentNames(Type.ERROR));
-
-        // workflow-warning
-        int workflowWarningAmount = WorkflowNodeValidatorUtils.getWorkflowWarnings();
-        boolean workflowWarning = WorkflowNodeValidatorUtils.hasWarnings();
-        componentNames.putAll(WorkflowNodeValidatorUtils.getComponentNames(Type.WARNING));
+        WorkflowDescriptionValidationUtils.validateWorkflowDescription(wfDescription, true, true);
 
         // placeholder-error
         boolean placeholderError = placeholdersPage.validateErrors();
-        int placeholderErrorAmount = placeholdersPage.getErrorAmount();
-        componentNames.putAll(placeholdersPage.getComponentNamesWithError(true));
 
-        createErrorMessage(placeholderError, workflowError, workflowWarning, placeholderErrorAmount + workflowErrorAmount,
-            workflowWarningAmount, componentNames);
-
-        return !(placeholderError || workflowError || workflowWarning);
-    }
-
-    private void createErrorMessage(boolean placeholderError, boolean workflowError, boolean workflowWarning,
-        int errorAmount, int warningAmount, Map<String, String> componentNames) {
-        errorMessage = "";
-        errorComponents = "";
-        List<String> messages = new ArrayList<String>();
-        if (placeholderError || workflowError) {
-            messages.add(StringUtils.format(Messages.errorMessage, errorAmount));
-        }
-        if (workflowWarning) {
-            messages.add(StringUtils.format(Messages.workflowWarningMessage, warningAmount));
-        }
-
-        for (String message : messages) {
-            if (errorMessage.equals("")) {
-                errorMessage = message;
-            } else {
-                errorMessage += "and " + message;
-            }
-        }
-
-        for (Entry<String, String> entry : componentNames.entrySet()) {
-            if (errorComponents.equals("")) {
-                errorComponents = BULLET_POINT + entry.getKey() + entry.getValue();
-            } else {
-                errorComponents += "\n" + BULLET_POINT + entry.getKey() + entry.getValue();
-            }
-        }
+        boolean returnValue = !placeholderError && messageStore.isErrorAndWarningsFree();
+        return returnValue;
     }
 
     /**
      * @return true if proceed is clicked, false if cancel is clicked
      */
     private boolean requestConfirmationForValidationErrorsWarnings() {
-        String[] dialogButtons = { Messages.proceedButton, Messages.cancelButton };
-        MessageDialog confirmationDialog = new MessageDialog(getShell(), Messages.validationTitle, null,
-            StringUtils.format(Messages.validationMessage, errorMessage, errorComponents), MessageDialog.QUESTION, dialogButtons, 1);
-        return confirmationDialog.open() == 0;
+
+        WorkflowExecutionWizardValidationDialog dialog = new WorkflowExecutionWizardValidationDialog(getShell(),
+            messageStore.getMessageMap(), wfDescription, placeholdersPage);
+        return dialog.open() == 0;
     }
 
     private void saveWorkflow() {
@@ -328,39 +298,41 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         try (ByteArrayOutputStream content = persistenceHandler.writeWorkflowDescriptionToStream(wfDescription)) {
             ByteArrayInputStream input = new ByteArrayInputStream(content.toByteArray());
             wfFile.setContents(input, // the file content
-                true, // keep saving, even if IFile is out of sync with the Workspace
+                true, // keep saving, even if IFile is out of sync with the
+                      // Workspace
                 false, // dont keep history
                 null); // progress monitor
             wfFile.getProject().refreshLocal(IProject.DEPTH_INFINITE, new NullProgressMonitor());
         } catch (CoreException | IOException e) {
-            MessageDialog.openError(getShell(), "Error when Saving Workflow", "Failed to save workflow: " + e.getMessage());
+            MessageDialog.openError(getShell(), "Error when Saving Workflow",
+                "Failed to save workflow: " + e.getMessage());
             LOG.error(StringUtils.format("Failed to save workflow: %s", wfFile.getRawLocation().toOSString()));
         }
 
     }
 
-    private void executeWorkflowInBackground() {
+    private void executeWorkflow(WorkflowDescription clonedWfDesc) {
 
-        DistributedComponentKnowledge compKnowledge = serviceRegistryAccess.getService(DistributedComponentKnowledgeService.class)
-            .getCurrentComponentKnowledge();
+        DistributedComponentKnowledge compKnowledge = serviceRegistryAccess
+            .getService(DistributedComponentKnowledgeService.class).getCurrentComponentKnowledge();
 
         try {
-            WorkflowExecutionUtils.replaceNullNodeIdentifiersWithActualNodeIdentifier(wfDescription, localNodeId, compKnowledge);
+            WorkflowExecutionUtils.replaceNullNodeIdentifiersWithActualNodeIdentifier(clonedWfDesc, localDefaultNodeId, compKnowledge);
         } catch (WorkflowExecutionException e) {
-            handleWorkflowExecutionError(e);
+            handleWorkflowExecutionError(clonedWfDesc, e);
             return;
         }
 
-        String name = wfDescription.getName();
+        String name = clonedWfDesc.getName();
         if (name == null) {
             name = Messages.bind(Messages.defaultWorkflowName, wfFile.getName().toString());
         }
 
-        WorkflowExecutionContextBuilder wfExeCtxBuilder = new WorkflowExecutionContextBuilder(wfDescription);
+        WorkflowExecutionContextBuilder wfExeCtxBuilder = new WorkflowExecutionContextBuilder(clonedWfDesc);
         wfExeCtxBuilder.setInstanceName(name);
-        wfExeCtxBuilder.setNodeIdentifierStartedExecution(localNodeId);
-        if (wfDescription.getAdditionalInformation() != null && !wfDescription.getAdditionalInformation().isEmpty()) {
-            wfExeCtxBuilder.setAdditionalInformationProvidedAtStart(wfDescription.getAdditionalInformation());
+        wfExeCtxBuilder.setNodeIdentifierStartedExecution(localDefaultNodeId);
+        if (clonedWfDesc.getAdditionalInformation() != null && !clonedWfDesc.getAdditionalInformation().isEmpty()) {
+            wfExeCtxBuilder.setAdditionalInformationProvidedAtStart(clonedWfDesc.getAdditionalInformation());
         }
         WorkflowExecutionContext wfExecutionContext = wfExeCtxBuilder.build();
 
@@ -368,17 +340,18 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
         try {
             wfExeInfo = workflowExecutionService.executeWorkflowAsync(wfExecutionContext);
         } catch (WorkflowExecutionException | RemoteOperationException e) {
-            handleWorkflowExecutionError(e);
+            handleWorkflowExecutionError(clonedWfDesc, e);
             return;
         }
 
-        // before starting the workflow, ensure that the console model is initialized
+        // before starting the workflow, ensure that the console model is
+        // initialized
         // so that no console output gets lost; this is lazily initialized here
         // so the application startup is not slowed down
         try {
             serviceRegistryAccess.getService(ConsoleRowModelService.class).ensureConsoleCaptureIsInitialized();
         } catch (InterruptedException e) {
-            LOG.error("Failed initialize workflow console capturing for workflow: " + wfDescription.getName(), e);
+            LOG.error("Failed initialize workflow console capturing for workflow: " + clonedWfDesc.getName(), e);
         }
 
         if (inputTabEnabled) {
@@ -390,19 +363,20 @@ public class WorkflowExecutionWizard extends Wizard implements DistributedCompon
 
             @Override
             public void run() {
-                new OpenReadOnlyWorkflowRunEditorAction(wfExeInfo).run();
+                new WorkflowRunEditorAction(wfExeInfo).run();
             }
         });
 
     }
 
-    private void handleWorkflowExecutionError(final Throwable e) {
-        LOG.error("Failed to execute workflow: " + wfDescription.getName(), e);
+    private void handleWorkflowExecutionError(WorkflowDescription clonedWfDesc, final Throwable e) {
+        LOG.error("Failed to execute workflow: " + clonedWfDesc.getName(), e);
         Display.getDefault().syncExec(new Runnable() {
 
             @Override
             public void run() {
-                MessageDialog.openError(getShell(), "Workflow Execution Error", "Failed to execute workflow: " + e.getMessage());
+                MessageDialog.openError(getShell(), "Workflow Execution Error",
+                    "Failed to execute workflow: " + e.getMessage());
             }
         });
     }

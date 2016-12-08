@@ -16,18 +16,20 @@ import java.util.Map.Entry;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.sshd.SshServer;
+import org.apache.sshd.server.SshServer;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 
 import de.rcenvironment.core.command.api.CommandExecutionService;
+import de.rcenvironment.core.configuration.CommandLineArguments;
+import de.rcenvironment.core.configuration.ConfigurationException;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
 import de.rcenvironment.core.embedded.ssh.api.EmbeddedSshServerControl;
 import de.rcenvironment.core.embedded.ssh.api.ScpContextManager;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of an embedded SSH server with OSGi lifecycle methods.
@@ -62,20 +64,23 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
      * OSGi-DS life-cycle method.
      */
     public void activate() {
-        ConfigurationSegment configurationSegment = configurationService.getConfigurationSegment("sshServer");
-        try {
-            sshConfiguration = new SshConfiguration(configurationSegment);
-        } catch (IOException e) {
-            sshConfiguration = new SshConfiguration();
-        }
-        SharedThreadPool.getInstance().execute(new Runnable() {
-
-            @Override
-            @TaskDescription("Embedded SSH server startup")
-            public void run() {
-                performStartup();
+        if (!CommandLineArguments.isConfigurationShellRequested()) {
+            ConfigurationSegment configurationSegment = configurationService.getConfigurationSegment("sshServer");
+            try {
+                sshConfiguration = new SshConfiguration(configurationSegment);
+            } catch (ConfigurationException | IOException e) {
+                sshConfiguration = new SshConfiguration();
+                logger.error(e.getMessage());
             }
-        });
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+
+                @Override
+                @TaskDescription("Embedded SSH server startup")
+                public void run() {
+                    performStartup();
+                }
+            });
+        }
     }
 
     /**
@@ -102,9 +107,9 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             updateServerBannerWithAnnouncementData();
             sshd.setPasswordAuthenticator(authenticationManager);
             sshd.setPublickeyAuthenticator(authenticationManager);
-            String hostKeyFilePath = new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA),
-                HOST_KEY_STORAGE_FILE_NAME).getAbsolutePath();
-            logger.debug("Using SSH server key storage " + hostKeyFilePath);
+            File hostKeyFilePath = new File(configurationService.getConfigurablePath(ConfigurablePathId.PROFILE_INTERNAL_DATA),
+                HOST_KEY_STORAGE_FILE_NAME).getAbsoluteFile();
+            logger.debug("Using SSH server key storage " + hostKeyFilePath.getPath());
             sshd.setKeyPairProvider(new SimpleGeneratorHostKeyProvider(hostKeyFilePath));
             sshd.setHost(sshConfiguration.getHost());
             sshd.setPort(sshConfiguration.getPort());
@@ -136,7 +141,7 @@ public class EmbeddedSshServerImpl implements EmbeddedSshServerControl {
             try {
                 sshd.stop(true);
                 logger.debug("Embedded SSH server shut down");
-            } catch (InterruptedException e) {
+            } catch (IOException e) {
                 logger.error("Exception during shutdown of embedded SSH server", e);
             }
         }

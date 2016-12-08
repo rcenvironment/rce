@@ -33,28 +33,33 @@
 		<para>
 			<itemizedlist>
 				<listitem>
-					<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
-				</listitem>
-				<listitem>
-					<para>Start RCE and select the "Help > Configuration
-						Information" menu option. From the list of configuration examples,
-						double-click "Remote Access Server" to open it. Mark all text (Ctrl-A) and
-						copy it to the clipboard (Ctrl-C).</para>
-				</listitem>
-				<listitem>
-					<para>Select the "Help > Open Configuration File" menu option, select all text
-						(Ctrl-A) and paste the copied text from the example configuration.</para>
-				</listitem>
-				<listitem>
-					<para>Save the file, and select "File > Restart" to apply the new configuration.
-						The Remote Access SSH interface is now running, with a pre-configured SSH
-						account of "ra_demo", password "ra_demo".<note>
-							<para>IMPORTANT: "ra_demo" is just an example account for testing within a secure network.
-								Create a new account with a better password (for example using the
-								configuration UI described in the "Configuration" section) before
-								using the Remote Access interface in production. Publishing tools
-								using this default account is a potential security risk.</para>
-						</note></para>
+					<para>Setting RCE up as a "Remote Access Server".</para>
+					<itemizedlist>
+						<listitem>
+							<para>Download and unpack/install an RCE distribution (version 7.0.0 or higher).</para>
+						</listitem>
+						<listitem>
+							<para>Start RCE and select the "Help > Configuration
+								Information" menu option. From the list of configuration examples,
+								double-click "Remote Access Server" to open it. Mark all text (Ctrl-A) and
+								copy it to the clipboard (Ctrl-C).</para>
+						</listitem>
+						<listitem>
+							<para>Select the "Help > Open Configuration File" menu option, select all text
+								(Ctrl-A) and paste the copied text from the example configuration.</para>
+						</listitem>
+						<listitem>
+							<para>Save the file, and select "File > Restart" to apply the new configuration.
+								The Remote Access SSH interface is now running, with a pre-configured SSH
+								account of "ra_demo", password "ra_demo".<note>
+									<para>IMPORTANT: "ra_demo" is just an example account for testing within a secure network.
+										Create a new account with a better password (for example using the
+										configuration UI described in the "Configuration" section) before
+										using the Remote Access interface in production. Publishing tools
+										using this default account is a potential security risk.</para>
+								</note></para>
+						</listitem>
+					</itemizedlist>
 				</listitem>
 				<listitem>
 					<para>Define an example tool using the following steps.</para>
@@ -80,7 +85,7 @@
 								describing your tool's release number and the path where it is
 								installed. For this example, just enter an arbitrary version and
 								select an arbitrary directory (for example, a temporary files
-								directory on your computer). Click "Ok" and then "Next >" to proceed.<note>
+								directory on your computer). Click "Ok", check "Publish component after integration" and then "Next >" to proceed.<note>
 									<para>After completing this Remote Access example, refer to the
 										"Tool Integration" section on how to integrate your actual
 										tools.</para>
@@ -95,7 +100,8 @@
 					</itemizedlist>
 				</listitem>
 				<listitem>
-					<para>You now have an example tool that can be accessed with the "Remote Access" feature. </para>
+					<para>You now have an example tool that can be accessed with the "Remote Access" feature. How to setup a
+						client to access this tool see the "Configuring an RCE instance as an SSH client" section </para>
 				</listitem>
 				<listitem>
 					<para>To get an impression of how this feature interacts with existing RCE features, you can

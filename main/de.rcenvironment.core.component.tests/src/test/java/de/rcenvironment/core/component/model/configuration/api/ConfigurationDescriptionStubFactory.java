@@ -25,6 +25,9 @@ public final class ConfigurationDescriptionStubFactory {
 
     /** Constant. */
     public static final String WORK_DIR = "workDir";
+    
+    /** Constant. */
+    public static final String FORMAT = "format";
 
     /** Constant. */
     public static final String HOST = "host";

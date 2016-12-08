@@ -14,7 +14,8 @@
             "key":"enryptionPassphrase",
             "guiName":"Encryption password",
             "guiPosition":"1",
-            "decode":"true"
+            "decode":"true",
+            "dataType" : "text"
         }
     ]
 }

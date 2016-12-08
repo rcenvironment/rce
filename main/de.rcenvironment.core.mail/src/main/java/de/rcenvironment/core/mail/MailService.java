@@ -8,41 +8,30 @@
 
 package de.rcenvironment.core.mail;
 
-import java.util.Map;
+import java.util.concurrent.Future;
 
 /**
- * Service used for sending e-mails. The smtp server configuration is done via the external bundle's
- * configuration.
+ * Service used for sending e-mails. The SMTP server configuration is done via the external bundle's configuration.
  * 
- * @author Tobias Menden
+ * @author Tobias Rodehutskors
  */
 public interface MailService {
 
     /**
-     * Creates an new {@link Mail} ready for sending.
-     * 
-     * @param to - set the recipients of the mail, define names of mailing lists and mail addresses
-     *        separated by a ";"
-     * @param subject of the mail
-     * @param text of the mail
-     * @param replyTo address in the mail header
-     * @return mail object for sendMail method
-     */
-    Mail createMail(String to, String subject, String text, String replyTo);
-
-    /**
-     * Sends the given {@link Mail}. For sending bundle's configuration defining the smpt server
-     * settings is used.
+     * Asynchronously sends the given {@link Mail} through the configured mail server.
      * 
      * @param mail object to send.
+     * @param listener A {@link MailDispatchResultListener} which informs the caller about the state of the mail dispatch.
+     * @return Returns a future as a handle of the asynchronous task. The future returns either after a successful mail dispatch or if there
+     *         is no more hope for a successful delivery. If this future is canceled, the {@link MailDispatchResultListener} will receive a
+     *         {@link MailDispatchResult.FAILURE} result.
      */
-    void sendMail(Mail mail);
+    Future<?> sendMail(Mail mail, MailDispatchResultListener listener);
 
     /**
-     * Returns all mailing lists configured in this bundle's configuration.
+     * Synchronous call to check if the MailService is properly configured.
      * 
-     * @return a {@link Map} with list names (key) and e-mail addresses (value).
+     * @return False, if there is no mail configuration or the configuration is invalid; True, otherwise.
      */
-    Map<String, String> getMailingLists();
-
+    boolean isConfigured();
 }

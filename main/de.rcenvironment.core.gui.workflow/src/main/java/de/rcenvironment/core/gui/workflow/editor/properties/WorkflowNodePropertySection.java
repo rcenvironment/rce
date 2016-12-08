@@ -461,7 +461,13 @@ public abstract class WorkflowNodePropertySection extends WorkflowPropertySectio
     }
 
     protected void refreshComposite(final Composite composite2) {
+        if (composite2.isDisposed()) {
+            return;
+        }
         for (final Control control : composite2.getChildren()) {
+            if (control.isDisposed()) {
+                continue;
+            }
             if (control instanceof Composite) {
                 refreshComposite((Composite) control);
             }

@@ -16,7 +16,7 @@ import java.util.Map;
 
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 
@@ -29,7 +29,7 @@ public class CallbackProxyServiceImpl implements CallbackProxyService {
 
     private Map<String, WeakReference<Object>> proxies = Collections.synchronizedMap(new HashMap<String, WeakReference<Object>>());
 
-    private Map<String, NodeIdentifier> homePlatforms = Collections.synchronizedMap(new HashMap<String, NodeIdentifier>());
+    private Map<String, InstanceNodeSessionId> homePlatforms = Collections.synchronizedMap(new HashMap<String, InstanceNodeSessionId>());
 
     private Map<String, Long> ttls = Collections.synchronizedMap(new HashMap<String, Long>());
 

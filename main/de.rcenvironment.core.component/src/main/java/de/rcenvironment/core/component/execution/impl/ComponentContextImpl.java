@@ -12,10 +12,14 @@ import java.io.File;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.api.ServiceCallContextUtils;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
@@ -30,6 +34,7 @@ import de.rcenvironment.core.component.model.configuration.api.ConfigurationDesc
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -39,6 +44,7 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * Implementation of {@link ComponentContext}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public class ComponentContextImpl implements ComponentContext {
 
@@ -48,15 +54,15 @@ public class ComponentContextImpl implements ComponentContext {
 
     private String instanceName;
 
-    private final NodeIdentifier node;
+    private final LogicalNodeId node;
 
     private final String wfExeCrtlId;
 
     private final String wfCtrlInstanceName;
 
-    private final NodeIdentifier wfCtrlNode;
+    private final LogicalNodeId wfCtrlNode;
 
-    private NodeIdentifier defaultStorageNode;
+    private LogicalNodeId defaultStorageNode;
 
     private File workingDirectory;
 
@@ -76,6 +82,10 @@ public class ComponentContextImpl implements ComponentContext {
 
     private final Map<String, DataType> inputsDataTypes = new HashMap<>();
 
+    private final Map<String, EndpointCharacter> outputsCharacter = new HashMap<>();
+
+    private final Map<String, EndpointCharacter> inputsCharacter = new HashMap<>();
+
     private final Map<String, Map<String, String>> inputsMetaData = new HashMap<>();
 
     private final Map<String, Map<String, String>> outputsMetaData = new HashMap<>();
@@ -87,29 +97,29 @@ public class ComponentContextImpl implements ComponentContext {
     private final ComponentContextBridge compExeCtxBridge;
 
     private final ServiceRegistryAccess serviceRegistryAccess;
-    
+
     private final ComponentLog log = new ComponentLog() {
-        
+
         @Override
         public void toolStdout(String message) {
             compExeCtxBridge.printConsoleRow(message, Type.TOOL_OUT);
         }
-        
+
         @Override
         public void toolStderr(String message) {
             compExeCtxBridge.printConsoleRow(message, Type.TOOL_ERROR);
         }
-        
+
         @Override
         public void componentWarn(String message) {
             compExeCtxBridge.printConsoleRow(message, Type.COMPONENT_WARN);
         }
-        
+
         @Override
         public void componentInfo(String message) {
             compExeCtxBridge.printConsoleRow(message, Type.COMPONENT_INFO);
         }
-        
+
         @Override
         public void componentError(String message) {
             compExeCtxBridge.printConsoleRow(message, Type.COMPONENT_ERROR);
@@ -143,6 +153,7 @@ public class ComponentContextImpl implements ComponentContext {
                 inputsNotConnected.add(ep.getName());
             }
             inputsDataTypes.put(ep.getName(), ep.getDataType());
+            inputsCharacter.put(ep.getName(), ep.getEndpointDefinition().getEndpointCharacter());
             inputsMetaData.put(ep.getName(), ep.getMetaData());
 
         }
@@ -151,13 +162,14 @@ public class ComponentContextImpl implements ComponentContext {
             outputs.add(ep.getName());
             dynOutputsIds.put(ep.getName(), ep.getDynamicEndpointIdentifier());
             outputsDataTypes.put(ep.getName(), ep.getDataType());
+            outputsCharacter.put(ep.getName(), ep.getEndpointDefinition().getEndpointCharacter());
             outputsMetaData.put(ep.getName(), ep.getMetaData());
         }
         componentIdentifier = compExeCtx.getComponentDescription().getIdentifier();
         componentName = compExeCtx.getComponentDescription().getName();
-        
+
         this.compExeCtxBridge = compExeCtxBridge;
-        
+
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
     }
 
@@ -172,12 +184,12 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public LogicalNodeId getNodeId() {
         return node;
     }
 
     @Override
-    public NodeIdentifier getDefaultStorageNodeId() {
+    public LogicalNodeId getDefaultStorageNodeId() {
         return defaultStorageNode;
     }
 
@@ -194,7 +206,7 @@ public class ComponentContextImpl implements ComponentContext {
         this.instanceName = instanceName;
     }
 
-    public void setDefaultStorageNode(NodeIdentifier defaultStorageNode) {
+    public void setDefaultStorageNode(LogicalNodeId defaultStorageNode) {
         this.defaultStorageNode = defaultStorageNode;
     }
 
@@ -244,7 +256,7 @@ public class ComponentContextImpl implements ComponentContext {
     public boolean isDynamicInput(String inputName) {
         return getDynamicInputIdentifier(inputName) != null;
     }
-    
+
     @Override
     public boolean isDynamicOutput(String outputName) {
         return getDynamicOutputIdentifier(outputName) != null;
@@ -319,7 +331,7 @@ public class ComponentContextImpl implements ComponentContext {
     public boolean isOutputClosed(String outputName) {
         return compExeCtxBridge.isOutputClosed(outputName);
     }
-    
+
     @Override
     public <T> T getService(Class<T> clazz) {
         return serviceRegistryAccess.getService(clazz);
@@ -331,7 +343,7 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     @Override
-    public NodeIdentifier getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowNodeId() {
         return wfCtrlNode;
     }
 
@@ -395,6 +407,11 @@ public class ComponentContextImpl implements ComponentContext {
     }
 
     @Override
+    public ServiceCallContext getServiceCallContext() {
+        return ServiceCallContextUtils.getCurrentServiceCallContext();
+    }
+
+    @Override
     public void announceExternalProgramStart() {
         compExeCtxBridge.printConsoleRow(WorkflowLifecyleEventType.TOOL_STARTING.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
     }
@@ -404,4 +421,35 @@ public class ComponentContextImpl implements ComponentContext {
         compExeCtxBridge.printConsoleRow(WorkflowLifecyleEventType.TOOL_FINISHED.name(), ConsoleRow.Type.LIFE_CYCLE_EVENT);
     }
 
+    @Override
+    public EndpointCharacter getInputCharacter(String inputName) {
+        return inputsCharacter.get(inputName);
+    }
+
+    @Override
+    public EndpointCharacter getOutputCharacter(String outputName) {
+        return outputsCharacter.get(outputName);
+    }
+
+    @Override
+    public List<String> getDynamicInputsWithIdentifier(String identifier) {
+        List<String> result = new LinkedList<>();
+        for (String endpoint : inputs) {
+            if (isDynamicInput(endpoint) && getDynamicInputIdentifier(endpoint).equals(identifier)) {
+                result.add(endpoint);
+            }
+        }
+        return result;
+    }
+
+    @Override
+    public List<String> getDynamicOutputsWithIdentifier(String identifier) {
+        List<String> result = new LinkedList<>();
+        for (String endpoint : outputs) {
+            if (isDynamicOutput(endpoint) && getDynamicOutputIdentifier(endpoint).equals(identifier)) {
+                result.add(endpoint);
+            }
+        }
+        return result;
+    }
 }

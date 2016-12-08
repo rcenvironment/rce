@@ -15,7 +15,8 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.MessageEndpointHandler;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
@@ -36,11 +37,16 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
 
     private final Map<String, NetworkRequestHandler> requestHandlerMap = new HashMap<String, NetworkRequestHandler>();
 
+    private final NodeIdentifierService nodeIdentifierService;
+
     private final Log log = LogFactory.getLog(getClass());
+
+    public MessageEndpointHandlerImpl(NodeIdentifierService nodeIdentifierService) {
+        this.nodeIdentifierService = nodeIdentifierService;
+    }
 
     @Override
     public NetworkResponse onRequestArrivedAtDestination(NetworkRequest request) {
-
         // find matching handler
         // TODO get rid of synchronization?
         NetworkRequestHandler handler;
@@ -53,6 +59,7 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
             try {
                 // trigger deserialization here to catch errors early and in a defined place - misc_ro
                 try {
+
                     request.getDeserializedContent();
                 } catch (SerializationException e) {
                     throw new InternalMessagingException("Error deserializing request body", e);
@@ -60,7 +67,7 @@ public class MessageEndpointHandlerImpl implements MessageEndpointHandler {
 
                 try {
                     // FIXME restore or remove "previous hop" parameter
-                    NodeIdentifier prevHopId = null;
+                    InstanceNodeSessionId prevHopId = null;
                     return handler.handleRequest(request, prevHopId);
                 } catch (RuntimeException e) {
                     throw new InternalMessagingException("Uncaught RuntimeException while handling remote request", e);

@@ -21,7 +21,9 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.MetaDataService;
@@ -29,14 +31,15 @@ import de.rcenvironment.core.datamanagement.RemotableMetaDataService;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link DataManagementService}.
@@ -51,13 +54,11 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     private WorkflowHostService workflowHostService;
 
-    private BundleContext context;
-
     private final Log log = LogFactory.getLog(getClass());
 
     @Override
     public Long addComponentRun(Long componentInstanceId, String nodeId, Integer count, Long starttime,
-        NodeIdentifier storageNodeId) throws CommunicationException {
+        ResolvableNodeId storageNodeId) throws CommunicationException {
 
         try {
             return getRemoteMetaDataService(storageNodeId).addComponentRun(componentInstanceId, nodeId, count, starttime);
@@ -69,7 +70,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public void addInputDatum(Long componentRunId, Long typedDatumId, Long endpointInstanceId, Integer count,
-        NodeIdentifier storageNodeId) throws CommunicationException {
+        ResolvableNodeId storageNodeId) throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).addInputDatum(componentRunId, typedDatumId, endpointInstanceId, count);
         } catch (RemoteOperationException e) {
@@ -80,7 +81,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public Long addOutputDatum(Long componentRunId, Long endpointInstanceId, String datum, Integer count,
-        NodeIdentifier storageNodeId) throws CommunicationException {
+        ResolvableNodeId storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).addOutputDatum(componentRunId, endpointInstanceId, datum, count);
         } catch (RemoteOperationException e) {
@@ -90,7 +91,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void addComponentRunProperties(Long componentRunId, Map<String, String> properties, NodeIdentifier storageNodeId)
+    public void addComponentRunProperties(Long componentRunId, Map<String, String> properties, ResolvableNodeId storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).addComponentRunProperties(componentRunId, properties);
@@ -102,7 +103,7 @@ public class MetaDataServiceImpl implements MetaDataService {
 
     @Override
     public Long addTimelineInterval(Long workflowRunId, TimelineIntervalType intervalType, long starttime, Long relatedComponentId,
-        NodeIdentifier storageNodeId) throws CommunicationException {
+        ResolvableNodeId storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).addTimelineInterval(workflowRunId, intervalType, starttime, relatedComponentId);
         } catch (RemoteOperationException e) {
@@ -112,7 +113,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setTimelineIntervalFinished(Long timelineIntervalId, long endtime, NodeIdentifier storageNodeId)
+    public void setTimelineIntervalFinished(Long timelineIntervalId, long endtime, ResolvableNodeId storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setTimelineIntervalFinished(timelineIntervalId, endtime);
@@ -123,7 +124,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setOrUpdateHistoryDataItem(Long componentRunId, String historyDataItem, NodeIdentifier storageNodeId)
+    public void setOrUpdateHistoryDataItem(Long componentRunId, String historyDataItem, ResolvableNodeId storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setOrUpdateHistoryDataItem(componentRunId, historyDataItem);
@@ -134,10 +135,11 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setComponentRunFinished(Long componentRunId, Long endtime, NodeIdentifier storageNodeId)
+    public void setComponentRunFinished(Long componentRunId, Long endtime, FinalComponentRunState finalState,
+        ResolvableNodeId storageNodeId)
         throws CommunicationException {
         try {
-            getRemoteMetaDataService(storageNodeId).setComponentRunFinished(componentRunId, endtime);
+            getRemoteMetaDataService(storageNodeId).setComponentRunFinished(componentRunId, endtime, finalState);
         } catch (RemoteOperationException e) {
             throw new CommunicationException(StringUtils.format("Failed to set endtime of component run from remote node @%s: ",
                 storageNodeId) + e.getMessage());
@@ -145,7 +147,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public void setComponentInstanceFinalState(Long componentInstanceId, FinalComponentState finalState, NodeIdentifier storageNodeId)
+    public void setComponentInstanceFinalState(Long componentInstanceId, FinalComponentState finalState, ResolvableNodeId storageNodeId)
         throws CommunicationException {
         try {
             getRemoteMetaDataService(storageNodeId).setComponentInstanceFinalState(componentInstanceId, finalState);
@@ -159,28 +161,28 @@ public class MetaDataServiceImpl implements MetaDataService {
     public Set<WorkflowRunDescription> getWorkflowRunDescriptions() throws CommunicationException {
         Set<WorkflowRunDescription> descriptions = new HashSet<WorkflowRunDescription>();
 
-        CallablesGroup<Set> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Set.class);
+        CallablesGroup<Set> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Set.class);
 
-        for (final NodeIdentifier remoteNodeId : workflowHostService.getWorkflowHostNodesAndSelf()) {
-            final String remoteNodeIdString = remoteNodeId.getIdString();
+        for (final InstanceNodeSessionId remoteInstanceSessionId : workflowHostService.getWorkflowHostNodesAndSelf()) {
             callablesGroup.add(new Callable<Set>() {
 
                 @Override
                 @TaskDescription("Distributed query: getWorkflowDescriptions()")
                 public Set<WorkflowRunDescription> call() throws Exception {
                     Set<WorkflowRunDescription> workflowRunDescriptions =
-                        getRemoteMetaDataService(remoteNodeId).getWorkflowRunDescriptions();
-                    workflowRunDescriptions = fixInconsistentControllerNodeIds(remoteNodeId, workflowRunDescriptions);
+                        getRemoteMetaDataService(remoteInstanceSessionId).getWorkflowRunDescriptions();
+                    workflowRunDescriptions = fixInconsistentControllerNodeIds(remoteInstanceSessionId, workflowRunDescriptions);
                     return workflowRunDescriptions;
                 }
 
-                private Set<WorkflowRunDescription> fixInconsistentControllerNodeIds(final NodeIdentifier remoteNodeId,
+                private Set<WorkflowRunDescription> fixInconsistentControllerNodeIds(final InstanceNodeSessionId remoteNodeId,
                     Set<WorkflowRunDescription> workflowRunDescriptions) {
                     boolean hasInconsistenControllerNodeIds = false;
                     for (WorkflowRunDescription wrd : workflowRunDescriptions) {
-                        final String controllerNodeId = wrd.getControllerNodeID();
-                        final String dmNodeId = wrd.getDatamanagementNodeID();
-                        if (!remoteNodeIdString.equals(controllerNodeId) || !remoteNodeIdString.equals(dmNodeId)) {
+                        final LogicalNodeId controllerNodeId = wrd.getControllerLogicalNodeId();
+                        final LogicalNodeId dmNodeId = wrd.getStorageLogicalNodeId();
+                        if (!remoteInstanceSessionId.isSameInstanceNodeAs(controllerNodeId)
+                            || !remoteInstanceSessionId.isSameInstanceNodeAs(dmNodeId)) {
                             hasInconsistenControllerNodeIds = true;
                         }
                     }
@@ -188,15 +190,17 @@ public class MetaDataServiceImpl implements MetaDataService {
                         // found at least one inconsistent workflow run, so rewrite the collection
                         Set<WorkflowRunDescription> newSet = new HashSet<>();
                         for (WorkflowRunDescription wrd : workflowRunDescriptions) {
-                            final String controllerNodeId = wrd.getControllerNodeID();
-                            final String dmNodeId = wrd.getDatamanagementNodeID();
-                            if (!remoteNodeIdString.equals(controllerNodeId) || !remoteNodeIdString.equals(dmNodeId)) {
-                                log.warn(StringUtils
-                                    .format(
-                                        "Replacing an inconsistent controller and/or storage node id (%s, %s) in workflow run #%d received "
-                                            + "from node %s - most likely, the remote node's id has changed since the workflow was run",
-                                        controllerNodeId, dmNodeId, wrd.getWorkflowRunID(), remoteNodeId));
-                                newSet.add(WorkflowRunDescription.cloneAndReplaceNodeIds(wrd, remoteNodeIdString));
+                            final LogicalNodeId controllerNodeId = wrd.getControllerLogicalNodeId();
+                            final LogicalNodeId dmNodeId = wrd.getStorageLogicalNodeId();
+                            if (!remoteInstanceSessionId.isSameInstanceNodeAs(controllerNodeId)
+                                || !remoteInstanceSessionId.isSameInstanceNodeAs(dmNodeId)) {
+                                log.warn(StringUtils.format(
+                                    "Replacing an inconsistent controller and/or storage node id (%s, %s) in workflow run #%d received "
+                                        + "from node %s - most likely, the remote node's id has changed since the workflow was run",
+                                    controllerNodeId, dmNodeId, wrd.getWorkflowRunID(), remoteNodeId));
+                                // TODO this should be the remote node's *logical node* id once migration is complete - misc_ro
+                                newSet.add(WorkflowRunDescription.cloneAndReplaceNodeIds(wrd,
+                                    remoteInstanceSessionId.getInstanceNodeIdString()));
                             } else {
                                 newSet.add(wrd);
                             }
@@ -226,7 +230,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public WorkflowRun getWorkflowRun(Long workflowRunId, NodeIdentifier storageNodeId) throws CommunicationException {
+    public WorkflowRun getWorkflowRun(Long workflowRunId, ResolvableNodeId storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).getWorkflowRun(workflowRunId);
         } catch (RemoteOperationException e) {
@@ -236,7 +240,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public WorkflowRunTimline getWorkflowTimeline(Long workflowRunId, NodeIdentifier storageNodeId) throws CommunicationException {
+    public WorkflowRunTimline getWorkflowTimeline(Long workflowRunId, ResolvableNodeId storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).getWorkflowTimeline(workflowRunId);
         } catch (RemoteOperationException e) {
@@ -246,7 +250,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public Boolean deleteWorkflowRun(Long workflowRunId, NodeIdentifier storageNodeId) throws CommunicationException {
+    public Boolean deleteWorkflowRun(Long workflowRunId, ResolvableNodeId storageNodeId) throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).deleteWorkflowRun(workflowRunId);
         } catch (RemoteOperationException e) {
@@ -256,7 +260,7 @@ public class MetaDataServiceImpl implements MetaDataService {
     }
 
     @Override
-    public Boolean deleteWorkflowRunFiles(Long workflowRunId, NodeIdentifier storageNodeId)
+    public Boolean deleteWorkflowRunFiles(Long workflowRunId, ResolvableNodeId storageNodeId)
         throws CommunicationException {
         try {
             return getRemoteMetaDataService(storageNodeId).deleteWorkflowRunFiles(workflowRunId);
@@ -266,9 +270,7 @@ public class MetaDataServiceImpl implements MetaDataService {
         }
     }
 
-    protected void activate(BundleContext bundleContext) {
-        context = bundleContext;
-    }
+    protected void activate(BundleContext bundleContext) {}
 
     protected void bindCommunicationService(CommunicationService newCommunicationService) {
         communicationService = newCommunicationService;
@@ -278,7 +280,7 @@ public class MetaDataServiceImpl implements MetaDataService {
         workflowHostService = newWorkflowHostService;
     }
 
-    private RemotableMetaDataService getRemoteMetaDataService(NodeIdentifier nodeId) throws RemoteOperationException {
+    private RemotableMetaDataService getRemoteMetaDataService(ResolvableNodeId nodeId) throws RemoteOperationException {
         return (RemotableMetaDataService) communicationService.getRemotableService(RemotableMetaDataService.class, nodeId);
     }
 

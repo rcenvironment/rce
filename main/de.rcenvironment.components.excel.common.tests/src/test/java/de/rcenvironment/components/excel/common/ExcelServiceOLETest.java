@@ -25,7 +25,6 @@ import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumFactoryDefaultStub;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 
 /**

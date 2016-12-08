@@ -9,9 +9,11 @@
 package de.rcenvironment.core.component.execution.internal;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Queue;
@@ -58,6 +60,8 @@ public class ComponentContextBridge {
     private Map<String, EndpointDatum> endpointDatumsForExecution = Collections.synchronizedMap(new HashMap<String, EndpointDatum>());
 
     private Map<String, Boolean> closedOutputs = Collections.synchronizedMap(new HashMap<String, Boolean>());
+    
+    private List<OutputHolder> outputsOnHold = Collections.synchronizedList(new ArrayList<OutputHolder>());
 
     private final Object historyDataLock = new Object();
 
@@ -92,12 +96,31 @@ public class ComponentContextBridge {
         }
         if (endpointDescription.isConnected()) {
             validateOutputDataType(outputName, endpointDescription.getDataType(), datumToSend);
-            compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutput(outputName, datumToSend, outputDmId);
-            if (datumToSend.getDataType().equals(DataType.NotAValue)) {
-                compExeRelatedInstances.compExeScheduler.addNotAValueDatumSent(((NotAValueTD) datumToSend).getIdentifier());
+            if (ComponentExecutionUtils.isVerificationRequired(compExeRelatedInstances.compExeCtx.getComponentDescription()
+                .getConfigurationDescription().getComponentConfigurationDefinition())) {
+                holdOutput(outputName, datumToSend, outputDmId);
+            } else {
+                sendOutput(outputName, datumToSend, outputDmId);
             }
         }
         closedOutputs.put(outputName, false);
+    }
+
+    private void sendOutput(String outputName, TypedDatum datumToSend, Long outputDmId) {
+        compExeRelatedInstances.typedDatumToOutputWriter.writeTypedDatumToOutput(outputName, datumToSend, outputDmId);
+        if (datumToSend.getDataType().equals(DataType.NotAValue)) {
+            compExeRelatedInstances.compExeScheduler.addNotAValueDatumSent(((NotAValueTD) datumToSend).getIdentifier());
+        }
+    }
+    
+    protected void holdOutput(String outputName, TypedDatum datumToSend, Long outputDmId) {
+        outputsOnHold.add(new OutputHolder(outputName, datumToSend, outputDmId));
+    }
+    
+    protected void flushOutputs() {
+        for (OutputHolder outputHolder : outputsOnHold) {
+            sendOutput(outputHolder.outputName, outputHolder.datumToSend, outputHolder.outputDmId);
+        }
     }
 
     protected void setEndpointDatumsForExecution(Map<String, EndpointDatum> endpointDatumsForExecution) throws ComponentExecutionException {
@@ -113,7 +136,7 @@ public class ComponentContextBridge {
     private void validateIfNestedLoopComponent(String outputName) {
         if (!compExeRelatedInstances.isNestedLoopDriver) {
             throw new RuntimeException(getLogMessagesPrefix() + StringUtils.format(
-                "Received reset datum at outout '%s' for a non nested loop component. "
+                "Received reset datum at output '%s' for a non nested loop component. "
                     + "Reset datums are only allowed to send by nested loop components.",
                 outputName));
         }
@@ -147,7 +170,7 @@ public class ComponentContextBridge {
                     }
                 } else {
                     throw new RuntimeException(getLogMessagesPrefix() + StringUtils.format("Value for output '" + outputName
-                        + "' has invalid data type. Output requires " + dataType + " or a convertable one, but it is of type "
+                        + "' has invalid data type. Output requires " + dataType + " or a convertible one, but it is of type "
                         + datumToSent.getDataType()));
                 }
             }
@@ -199,7 +222,8 @@ public class ComponentContextBridge {
         if (consoleRowType.equals(Type.LIFE_CYCLE_EVENT)) {
             compExeRelatedInstances.consoleRowsSender.sendTimelineEventAsConsoleRow(consoleRowType, line);
         } else {
-            compExeRelatedInstances.consoleRowsSender.sendLogMessageAsConsoleRow(consoleRowType, line);
+            compExeRelatedInstances.consoleRowsSender.sendLogMessageAsConsoleRow(consoleRowType, line,
+                compExeRelatedInstances.compExeRelatedStates.executionCount.get());
         }
     }
 
@@ -337,6 +361,27 @@ public class ComponentContextBridge {
             compExeRelatedInstances.compExeCtx.getWorkflowInstanceName(),
             compExeRelatedInstances.compExeCtx.getWorkflowExecutionIdentifier());
     }
+    
+    /**
+     * Holder class for outputs that are on hold because verification needs to be requested first.
+     * 
+     * @author Doreen Seider
+     */
+    class OutputHolder {
+        
+        private final String outputName;
+        
+        private final TypedDatum datumToSend;
+        
+        private final Long outputDmId;
+
+        OutputHolder(String outputName, TypedDatum datumToSend, Long outputDmId) {
+            this.outputName = outputName;
+            this.datumToSend = datumToSend;
+            this.outputDmId = outputDmId;
+        }
+    }
+    
 
     protected void bindTypedDatumService(TypedDatumService newService) {
         ComponentContextBridge.typedDatumService = newService;

@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.branding.default.versioninfo.feature</artifactId>
 	<name>RCE Default Branding Feature</name>
-	<version>7.1.5.qualifier</version>
+	<version>8.0.0.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

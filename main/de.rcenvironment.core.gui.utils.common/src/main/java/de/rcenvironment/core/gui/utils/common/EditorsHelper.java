@@ -58,14 +58,14 @@ public final class EditorsHelper {
      * @param filename The file name to check
      * @return the pure extension without a dot or txt as a fallback
      */
-    private static String getExtension(final String filename) {
+    public static String getExtension(final String filename) {
         if (filename == null) {
             return TXT; // default
         }
         final String f = filename.trim();
         final int lastSlash = f.lastIndexOf(File.separator); // works only on current node (same OS)
         final int lastDot = f.lastIndexOf(".");
-        if (((lastSlash != NOT_FOUND) && (lastDot != NOT_FOUND)) && (lastDot > lastSlash)) { // found an extension
+        if (lastDot > lastSlash) { // found an extension
             return f.substring(lastDot + 1);
         }
         return TXT; // fallback

@@ -9,14 +9,17 @@
 package de.rcenvironment.core.component.testutils;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.execution.api.PersistedComponentData;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
 /**
@@ -27,7 +30,7 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
 public class ComponentContextDefaultStub implements ComponentContext {
 
     private static final long serialVersionUID = 9197713563968264677L;
-    
+
     private ComponentLog componentLogStub = new ComponentLogDefaultStub();
 
     @Override
@@ -41,12 +44,12 @@ public class ComponentContextDefaultStub implements ComponentContext {
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public LogicalNodeId getNodeId() {
         return null;
     }
 
     @Override
-    public NodeIdentifier getDefaultStorageNodeId() {
+    public LogicalNodeId getDefaultStorageNodeId() {
         return null;
     }
 
@@ -189,7 +192,7 @@ public class ComponentContextDefaultStub implements ComponentContext {
     }
 
     @Override
-    public NodeIdentifier getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowNodeId() {
         return null;
     }
 
@@ -234,5 +237,30 @@ public class ComponentContextDefaultStub implements ComponentContext {
 
     @Override
     public void announceExternalProgramTermination() {}
+
+    @Override
+    public EndpointCharacter getInputCharacter(String inputName) {
+        return EndpointCharacter.SAME_LOOP;
+    }
+
+    @Override
+    public EndpointCharacter getOutputCharacter(String outputName) {
+        return EndpointCharacter.SAME_LOOP;
+    }
+
+    @Override
+    public List<String> getDynamicInputsWithIdentifier(String identifier) {
+        return null;
+    }
+
+    @Override
+    public List<String> getDynamicOutputsWithIdentifier(String identifier) {
+        return null;
+    }
+
+    @Override
+    public ServiceCallContext getServiceCallContext() {
+        return null;
+    }
 
 }

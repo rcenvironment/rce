@@ -1,4 +1,4 @@
-<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" name="Periodic Monitoring Service">
+<scr:component xmlns:scr="http://www.osgi.org/xmlns/scr/v1.1.0" activate="activate" deactivate="deactivate" immediate="true" name="Periodic Monitoring Service">
 	<implementation class="de.rcenvironment.core.monitoring.common.impl.PeriodicMonitoringServiceImpl" />
 	<reference
 		interface="de.rcenvironment.core.configuration.ConfigurationService"
@@ -6,10 +6,9 @@
 		name="Configuration Service"
 		policy="dynamic" />
 	<reference
-		interface="de.rcenvironment.core.monitoring.common.spi.PeriodicMonitoringDataContributor"
-		name="PeriodicMonitoringDataContributor"
-		cardinality="0..n"
-		policy="dynamic"
-		bind="addContributor"
-		unbind="removeContributor" />
+		name="ObjectBindingsService"
+		interface="de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService"
+		cardinality="1..1"
+		bind="bindObjectBindingsService"
+		policy="dynamic"/>
 </scr:component>

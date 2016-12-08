@@ -13,24 +13,18 @@
 		<para></para>
 		<variablelist>
 			<varlistentry>
-				<term>NodeIdentifier</term>
+				<term>ResolvableNodeId, InstanceNodeId, InstanceNodeSessionId, LogicalNodeId,
+					LogicalNodeSessionId (former: NodeIdentifier)</term>
 				<listitem>
-					<para>This interface represents the "identity" of a node, and is used whenever nodes are
-						specified in API calls. In general, these node identifiers (or "node ids")
-						are stored and reused by nodes, so they are persistent unless the node's
-						operator deletes its settings folder. From a developer's perspective, the
-						inner format of these ids is usually not relevant.</para>
+					<para>Explanation for NodeIdentifier: This interface represents the "identity" of a node, and
+						is used whenever nodes are specified in API calls. In general, these node
+						identifiers (or "node ids") are stored and reused by nodes, so they are
+						persistent unless the node's operator deletes its settings folder. From a
+						developer's perspective, the inner format of these ids is usually not
+						relevant.</para>
+					<para>TODO: Replace with explanation referring to current node identifier
+						approach</para>
 					<para>Package: de.rcenvironment.core.communication.common</para>
-				</listitem>
-			</varlistentry>
-			<varlistentry>
-				<term>User</term>
-				<listitem>
-					<para>Representation of a user's identity, usually for specifying which user
-						triggered/requested a certain operation. Note that as of RCE 4.x.x, there is
-						no effective user separation yet, but User parameters are passed through the
-						API in preparation for it.</para>
-					<para>Package: de.rcenvironment.rce.authentication (Note: will be moved in 5.0.0)  </para>
 				</listitem>
 			</varlistentry>
 		</variablelist>
@@ -71,10 +65,11 @@
 				<listitem>
 					<para>This utility class should be used whenever a temporary file or directory should be
 						created. Its main benefit is that it allows for managed cleanup of leftover
-						temporary files/directories. Additional benefits are convenience functions
-						(like generating a temporary file with a given filename or name pattern),
-						central handling of cleanup issues (like undeletable files), and making sure
-						that all temporary files are created in a consistent location.</para>
+						temporary files/directories (Note: This is not yet implemented!). Additional
+						benefits are convenience functions (like generating a temporary file with a
+						given filename or name pattern), central handling of cleanup issues (like
+						undeletable files), and making sure that all temporary files are created in
+						a consistent location.</para>
 					<para>Package: de.rcenvironment.commons (Note: will be moved in 5.0.0) </para>
 				</listitem>
 			</varlistentry>

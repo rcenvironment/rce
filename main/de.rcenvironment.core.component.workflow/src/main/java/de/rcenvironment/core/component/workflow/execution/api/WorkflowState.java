@@ -25,9 +25,6 @@ public enum WorkflowState {
     /** Preparing. */
     PREPARING("Preparing"),
     
-    /** Prepared. */
-    PREPARED("Prepared"),
-    
     /** Running. */
     RUNNING("Running"),
     
@@ -44,16 +41,22 @@ public enum WorkflowState {
     FINISHED("Finished"),
     
     /** Canceling. */
-    CANCELING("Cancelling"),
+    CANCELING("Canceling"),
     
     /** Canceling after failed. */
-    CANCELING_AFTER_FAILED("Cancelling after failure"),
+    CANCELING_AFTER_FAILED("Canceling after failure"),
+    
+    /** Canceling after verification failed. */
+    CANCELING_AFTER_RESULTS_REJECTED("Canceling after results rejected"),
     
     /** Canceled. */
-    CANCELLED("Cancelled"),
+    CANCELLED("Canceled"),
     
     /** Failed. */
     FAILED("Failed"),
+    
+    /** Verification failed. */
+    RESULTS_REJECTED("Results rejected"),
     
     /** Disposing. */
     DISPOSING("Disposing"),

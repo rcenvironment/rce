@@ -11,6 +11,8 @@ package de.rcenvironment.core.datamanagement.internal;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -23,9 +25,7 @@ import java.util.UUID;
 
 import org.easymock.EasyMock;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.ExpectedException;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
 import org.osgi.framework.InvalidSyntaxException;
@@ -35,8 +35,12 @@ import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.testutils.CommunicationServiceDefaultStub;
 import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
 import de.rcenvironment.core.configuration.ConfigurationService;
@@ -58,7 +62,7 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  * Test cases of {@link FileDataServiceImpl}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (adapted for new upload mechanism)
+ * @author Robert Mischke (adapted for new upload mechanism; id adaptations)
  */
 public class DistributedFileDataServiceImplTest {
 
@@ -84,19 +88,13 @@ public class DistributedFileDataServiceImplTest {
 
     private static String catalogBackendProvider = "de.rcenvironment.core.datamanagement.backend.metadata.derby";
 
-    /**
-     * Exception handler for expected exceptions.
-     */
-    @Rule
-    public final ExpectedException exception = ExpectedException.none();
-
     private final int read = 7;
 
     private FileDataServiceImpl fileDataService;
 
-    private NodeIdentifier localNodeId;
+    private InstanceNodeSessionId localInstanceSessionId;
 
-    private NodeIdentifier unreachableNodeId;
+    private InstanceNodeSessionId unreachableInstanceSessionId;
 
     private UUID referenceID;
 
@@ -111,7 +109,9 @@ public class DistributedFileDataServiceImplTest {
 
     private MetaDataSet mds;
 
-    private NodeIdentifier mockRemoteNodeId;
+    private InstanceNodeSessionId mockRemoteInstanceSessionId;
+
+    private InstanceNodeId mockRemoteInstanceId;
 
     private MetaDataBackendService catalogBackend = EasyMock.createNiceMock(MetaDataBackendService.class);
 
@@ -121,30 +121,39 @@ public class DistributedFileDataServiceImplTest {
 
     private UUID notReachableReferenceID;
 
+    private InstanceNodeId localInstanceId;
+
+    private InstanceNodeId unreachableInstanceId;
 
     public DistributedFileDataServiceImplTest() {
-        mockRemoteNodeId = NodeIdentifierFactory.fromNodeId("horst:7");
+        mockRemoteInstanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("mockRemote");
+        mockRemoteInstanceId = mockRemoteInstanceSessionId.convertToInstanceNodeId();
     }
 
     /**
      * Set up.
+     * 
+     * @throws IdentifierException not expected
      */
     @Before
-    public void setUp() {
+    public void setUp() throws IdentifierException {
         TempFileServiceAccess.setupUnitTestEnvironment();
 
-        localNodeId = NodeIdentifierFactory.fromNodeId("horst:1");
-        unreachableNodeId = NodeIdentifierFactory.fromNodeId("unreachable:1");
+        localInstanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("horst");
+        // TODO use proper conversion method once available
+        localInstanceId = NodeIdentifierUtils.parseInstanceNodeIdString(localInstanceSessionId.getInstanceNodeIdString());
+        unreachableInstanceSessionId = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("unreachable");
+        unreachableInstanceId = NodeIdentifierUtils.parseInstanceNodeIdString(unreachableInstanceSessionId.getInstanceNodeIdString());
         referenceID = UUID.randomUUID();
         notReachableReferenceID = UUID.randomUUID();
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
-        reference = new DataReference(referenceID.toString(), localNodeId, birefs);
+        reference = new DataReference(referenceID.toString(), localInstanceId, birefs);
         birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
         notReachableReference =
-            new DataReference(notReachableReferenceID.toString(), unreachableNodeId, birefs);
+            new DataReference(notReachableReferenceID.toString(), unreachableInstanceId, birefs);
 
         is = new InputStream() {
 
@@ -177,18 +186,31 @@ public class DistributedFileDataServiceImplTest {
     }
 
     /**
-     * Test.
+     * Tests successful access to a remote data reference.
      * 
      * @throws IOException if an error occurs.
      * @throws CommunicationException on communication error
      */
     @Test
-    public void testGetStreamFromDataReference() throws IOException, CommunicationException {
+    public void testGetStreamFromDataReferenceSuccess() throws IOException, CommunicationException {
         InputStream stream = fileDataService.getStreamFromDataReference(reference);
         assertEquals(read, stream.read());
-        exception.expect(UndeclaredThrowableException.class);
-        stream = fileDataService.getStreamFromDataReference(notReachableReference);
+    }
 
+    /**
+     * Test access attempt on an unreachable reference.
+     * 
+     * @throws IOException if an error occurs.
+     * @throws CommunicationException on communication error
+     */
+    @Test
+    public void testGetStreamFromDataReferenceFailure() throws IOException, CommunicationException {
+        try {
+            fileDataService.getStreamFromDataReference(notReachableReference);
+            fail("Exception expected");
+        } catch (RuntimeException e) {
+            assertTrue(e.getMessage().contains("DataReference is not equal")); // TODO somewhat brittle
+        }
     }
 
     /**
@@ -199,7 +221,7 @@ public class DistributedFileDataServiceImplTest {
     @Test
     public void testLocalNewReferenceFromStream() throws Exception {
         // test local
-        DataReference dr = fileDataService.newReferenceFromStream(is, mds, localNodeId);
+        DataReference dr = fileDataService.newReferenceFromStream(is, mds, localInstanceSessionId);
         assertEquals(reference, dr);
         // test "null" (should be local)
         dr = fileDataService.newReferenceFromStream(is, mds, null);
@@ -213,12 +235,13 @@ public class DistributedFileDataServiceImplTest {
      */
     @Test
     public void testDistributedNewReferenceFromStream() throws Exception {
-        assertFalse(localNodeId.equals(mockRemoteNodeId));
+        assertFalse(localInstanceSessionId.equals(mockRemoteInstanceSessionId));
+        assertFalse(localInstanceId.equals(mockRemoteInstanceId));
         InputStream testStream = new ByteArrayInputStream(new byte[UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteNodeId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteInstanceSessionId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
-        assertEquals(mockRemoteNodeId, remoteRef.getNodeIdentifier());
+        assertEquals(mockRemoteInstanceId, remoteRef.getInstanceId());
     }
 
     /**
@@ -228,12 +251,13 @@ public class DistributedFileDataServiceImplTest {
      */
     @Test
     public void testDistributedNewReferenceFromStreamSmallUpload() throws Exception {
-        assertFalse(localNodeId.equals(mockRemoteNodeId));
+        assertFalse(localInstanceSessionId.equals(mockRemoteInstanceSessionId));
+        assertFalse(localInstanceId.equals(mockRemoteInstanceId));
         InputStream testStream = new ByteArrayInputStream(new byte[SMALL_UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteNodeId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteInstanceSessionId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
-        assertEquals(mockRemoteNodeId, remoteRef.getNodeIdentifier());
+        assertEquals(mockRemoteInstanceId, remoteRef.getInstanceId());
     }
 
     /**
@@ -243,12 +267,13 @@ public class DistributedFileDataServiceImplTest {
      */
     @Test
     public void testDistributedNewReferenceFromStreamNoFullBuffer() throws Exception {
-        assertFalse(localNodeId.equals(mockRemoteNodeId));
+        assertFalse(localInstanceSessionId.equals(mockRemoteInstanceSessionId));
+        assertFalse(localInstanceId.equals(mockRemoteInstanceId));
         InputStream testStream = new MockInputStream(new byte[SMALL_UPLOAD_TEST_SIZE]);
-        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteNodeId);
+        DataReference remoteRef = fileDataService.newReferenceFromStream(testStream, mds, mockRemoteInstanceSessionId);
         assertNotNull(remoteRef);
         assertEquals(lastMockRemoteDataReference, remoteRef);
-        assertEquals(mockRemoteNodeId, remoteRef.getNodeIdentifier());
+        assertEquals(mockRemoteInstanceId, remoteRef.getInstanceId());
     }
 
     /**
@@ -260,23 +285,11 @@ public class DistributedFileDataServiceImplTest {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext) throws IllegalStateException {
-            if (nodeId.equals(localNodeId)) {
-                return (T) new MockLocalFileDataService();
-            } else if (nodeId.equals(unreachableNodeId)) {
-                return (T) new MockUnreachableFileDataService();
-            } else {
-                return (T) new MockRemoteFileDataService();
-            }
-        }
-
-        @Override
-        @SuppressWarnings("unchecked")
-        public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
+        public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
             if (iface == RemotableNotificationService.class
-                && nodeId.equals(localNodeId)) {
+                && nodeId.equals(localInstanceSessionId)) {
                 return (T) new MockLocalFileDataService();
-            } else if (nodeId.equals(unreachableNodeId)) {
+            } else if (nodeId.equals(unreachableInstanceSessionId)) {
                 return (T) new MockUnreachableFileDataService();
             } else {
                 return (T) new MockRemoteFileDataService();
@@ -343,7 +356,7 @@ public class DistributedFileDataServiceImplTest {
     /**
      * Mock of a remote {@link RemotableFileDataService} based on the actual {@link RemotableFileDataServiceImpl} implementation.
      * 
-     * @author Robert Mischke
+     * @author Robert Mischke (I don't think so; copy/paste artifact? - misc_ro)
      */
     private class MockRemoteFileDataService extends RemotableFileDataServiceImpl {
 
@@ -354,7 +367,8 @@ public class DistributedFileDataServiceImplTest {
             Set<BinaryReference> birefs = new HashSet<BinaryReference>();
             birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, REVISION));
 
-            lastMockRemoteDataReference = new DataReference(referenceID.toString(), mockRemoteNodeId, birefs);
+            lastMockRemoteDataReference =
+                new DataReference(referenceID.toString(), mockRemoteInstanceSessionId.convertToInstanceNodeId(), birefs);
             return lastMockRemoteDataReference;
         }
 
@@ -364,7 +378,8 @@ public class DistributedFileDataServiceImplTest {
             if (dataReference.equals(reference)) {
                 return is;
             } else {
-                throw new RuntimeException();
+                // TODO review: can this really only happen on programming errors? otherwise, it shouldn't be an RTE - misc_ro
+                throw new RuntimeException("DataReference is not equal: " + dataReference + " / " + reference);
             }
         }
 
@@ -430,13 +445,13 @@ public class DistributedFileDataServiceImplTest {
     private class MockPlatformService extends PlatformServiceDefaultStub {
 
         @Override
-        public NodeIdentifier getLocalNodeId() {
-            return localNodeId;
+        public InstanceNodeSessionId getLocalInstanceNodeSessionId() {
+            return localInstanceSessionId;
         }
 
         @Override
-        public boolean isLocalNode(NodeIdentifier nodeId) {
-            return localNodeId.equals(nodeId);
+        public boolean matchesLocalInstance(ResolvableNodeId nodeId) {
+            return localInstanceSessionId.equals(nodeId);
         }
 
     }

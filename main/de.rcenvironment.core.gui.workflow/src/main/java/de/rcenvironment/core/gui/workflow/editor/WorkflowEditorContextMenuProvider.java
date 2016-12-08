@@ -87,7 +87,6 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
 
             if (viewer.getSelectedEditParts().get(0) instanceof WorkflowNodePart){
                 WorkflowNode node = (WorkflowNode) ((WorkflowNodePart) viewer.getSelectedEditParts().get(0)).getModel();
-
                 if (node.getComponentDescription().getIdentifier().matches(confElement.getAttribute("component"))) { //$NON-NLS-1$
 
                     final WorkflowEditorAction action;
@@ -121,7 +120,7 @@ class WorkflowEditorContextMenuProvider extends ContextMenuProvider {
                             return selection.size() == 1 && selection.get(0).getClass() == WorkflowNodePart.class;
                         }
                     });
-                    break;
+                   
                 }
             }
         }

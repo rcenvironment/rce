@@ -4,6 +4,7 @@
 		<toc id="/de.rcenvironment.core.gui.help.win32/help/generated/user_guide_toc.xml" category="RCE Win32"/>
 		<toc id="/de.rcenvironment.core.gui.help.linux/help/generated/user_guide_toc.xml" category="RCE Linux"/>
 		<toc id="/de.rcenvironment.core.gui.help/help/components_toc.xml" category="RCE"/>
+		<toc id="/de.rcenvironment.core.gui.help/help/workflow_editor_toc.xml" category="RCE"/>
 		<toc id="/de.rcenvironment.core.gui.help/help/tool_integration_toc.xml" category="RCE"/>
 		<toc id="/de.rcenvironment.core.gui.help.win32/help/generated/developer_guide_toc.xml" category="RCE Win32"/>
 		<toc id="/de.rcenvironment.core.gui.help.linux/help/generated/developer_guide_toc.xml" category="RCE Linux"/>

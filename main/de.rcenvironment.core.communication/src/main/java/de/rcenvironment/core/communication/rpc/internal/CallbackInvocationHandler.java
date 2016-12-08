@@ -18,7 +18,7 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.api.RemotableCallbackService;
 import de.rcenvironment.core.communication.rpc.api.RemoteServiceCallSenderService;
@@ -28,10 +28,14 @@ import de.rcenvironment.core.communication.spi.CallbackObject;
 /**
  * {@link InvocationHandler} implementation used to create proxy for objects which need to be called back.
  * 
+ * TODO review/rework this concept; it is odd that the {@link InvocationHandler} itself is serialized
+ * 
  * @author Doreen Seider
  * @author Robert Mischke
  */
 public class CallbackInvocationHandler implements InvocationHandler, Serializable {
+
+    private static final long serialVersionUID = 3758584730981030172L;
 
     /**
      * Holds the {@link RemoteServiceCallSenderService} for a node so it can be accessed by deserialized {@link CallbackInvocationHandler}s.
@@ -60,25 +64,26 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
 
     }
 
-    private static final long serialVersionUID = 1L;
-
-    private static final Log LOGGER = LogFactory.getLog(CallbackInvocationHandler.class);
+    private static final transient Log LOGGER = LogFactory.getLog(CallbackInvocationHandler.class);
 
     private final CallbackObject callbackObject;
 
-    private final String objectIdentifier;
+    private final String objectId;
 
-    private final NodeIdentifier objectHome;
+    private final InstanceNodeSessionId objectNodeId;
 
-    private final NodeIdentifier proxyHome;
+    private final InstanceNodeSessionId proxyNodeId;
+
+    private final Class<?> callbackInterface;
 
     public CallbackInvocationHandler(CallbackObject callbackObject, String objectIdentifier,
-        NodeIdentifier objectHome, NodeIdentifier proxyHome) {
+        InstanceNodeSessionId objectHome, InstanceNodeSessionId proxyHome) {
 
         this.callbackObject = callbackObject;
-        this.objectIdentifier = objectIdentifier;
-        this.objectHome = objectHome;
-        this.proxyHome = proxyHome;
+        this.callbackInterface = callbackObject.getInterface();
+        this.objectId = objectIdentifier;
+        this.objectNodeId = objectHome;
+        this.proxyNodeId = proxyHome;
     }
 
     @Override
@@ -86,9 +91,9 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
         final String methodName = method.getName();
         Object returnValue; // extracted to satisfy CheckStyle
         if (methodName.equals("getHomePlatform")) {
-            returnValue = objectHome;
+            returnValue = objectNodeId;
         } else if (methodName.equals("getObjectIdentifier")) {
-            returnValue = objectIdentifier;
+            returnValue = objectId;
         } else {
             if (matchesCallbackMethod(method)) {
                 returnValue = invokeRemoteMethod(methodName, parameters);
@@ -112,7 +117,7 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
     private Object invokeRemoteMethod(final String methodName, Object[] parameters) throws Throwable {
 
         List<Serializable> parameterList = new ArrayList<Serializable>();
-        parameterList.add(0, objectIdentifier);
+        parameterList.add(0, objectId);
         parameterList.add(1, methodName);
         if (parameters != null) {
             // TODO improve generics handling -- misc_ro
@@ -122,8 +127,10 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
             parameterList.add(2, new ArrayList<Serializable>());
         }
 
-        ServiceCallRequest serviceCallRequest = new ServiceCallRequest(objectHome, proxyHome,
-            RemotableCallbackService.class.getCanonicalName(), "callback", parameterList);
+        ServiceCallRequest serviceCallRequest =
+            new ServiceCallRequest(objectNodeId.convertToDefaultLogicalNodeSessionId(),
+                proxyNodeId.convertToDefaultLogicalNodeSessionId(),
+                RemotableCallbackService.class.getCanonicalName(), "callback", parameterList);
 
         RemoteServiceCallSenderService remoteServiceCallService = RemoteServiceCallServiceHolder.getRemoteServiceCallService();
         return remoteServiceCallService.performRemoteServiceCallAsProxy(serviceCallRequest);
@@ -138,23 +145,33 @@ public class CallbackInvocationHandler implements InvocationHandler, Serializabl
      * @param method the method to invoke
      * @return true if the method is applicable for remote invocation; see method description
      */
+    // TODO add caching by class and method to avoid repeated reflection?
     private boolean matchesCallbackMethod(Method method) {
         final String methodName = method.getName();
+        final Class<?>[] parameterTypes = method.getParameterTypes();
+        final int parameterCount = parameterTypes.length;
+
+        // skip the interface check for common local methods to prevent needless generation of NoSuchMethodExceptions;
+        // also check the parameter count to detect simple name clashes
+        final boolean isCommonMethod =
+            ("hashCode".equals(methodName) && parameterCount == 0)
+                || ("toString".equals(methodName) && parameterCount == 0)
+                || ("equals".equals(methodName) && parameterCount == 1);
+        if (isCommonMethod) {
+            // always dispatch these locally, and do not log them
+            return false;
+        }
+
         try {
-            // check whether the method to invoke is part of the callback interface
-            Method interfaceMethod = callbackObject.getInterface().getMethod(methodName, method.getParameterTypes());
+            Method interfaceMethod = callbackInterface.getMethod(methodName, parameterTypes);
             // if it exists, check if it has a @Callback method annotation in the interface
             return interfaceMethod.isAnnotationPresent(CallbackMethod.class);
         } catch (NoSuchMethodException e) {
             if (LOGGER.isDebugEnabled()) {
-                // do not log some common methods to reduce log volume
-                final boolean isCommonMethod =
-                    methodName.equals("hashCode") || methodName.equals("equals") || methodName.equals("toString");
-                if (!isCommonMethod) {
-                    LOGGER.debug("Non-interface method called: " + method);
-                }
+                LOGGER.debug("Non-interface method called on callback object of interface " + callbackInterface.getName()
+                    + ": " + method);
             }
-            // not present in interface -> always dispatch locally
+            // not present in interface -> dispatch locally
             return false;
         }
     }

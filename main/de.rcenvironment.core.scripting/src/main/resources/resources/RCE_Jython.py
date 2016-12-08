@@ -6,21 +6,14 @@ class RCE:
 		global dictOut
 		global dictIn 
 		global listClose
-		global listIndef
 		dictIn = value
 		dictOut = {}
 		listClose = []
-		listIndef = []
 	def get_closed_outputs_internal(self):
 		"""
     	INTERNAL METHOD
     	"""
 		return listClose
-	def get_indefinite_outputs_internal(self):
-		"""
-    	INTERNAL METHOD
-    	"""
-		return listIndef
 	
 	def get_output_internal(self):
 		"""
@@ -54,18 +47,54 @@ class RCE:
 	def write_output(self,key,value):
 		if not str(key) in RCE_LIST_OUTPUTNAMES:
 			raise ValueError("Output '" + str(key) + "' is not defined")
+		elif(isinstance(value, complex)):
+			raise ValueError("Value '" + str(value) + "' for Output '" + key + "' is complex, which is not supported by RCE")
 		else :
-			if key in dictOut:
+			from decimal import Decimal
+			if (type(value) is Decimal and value  == Decimal('Infinity')):
+				dictOut[key].append(float("Infinity"))
+			elif (type(value) is Decimal and value  == Decimal('-Infinity')):
+				dictOut[key].append(float("-Infinity"))
+			elif (type(value) is Decimal and Decimal.is_nan(value)):
+				dictOut[key].append(float("nan"))
+			elif isinstance(value, list):
+				for index, elem in enumerate(value):
+					if isinstance(elem, list):
+						for index2, elem2 in enumerate(elem):
+							if (type(elem2) is Decimal and elem2  == Decimal('Infinity')):
+								elem[index2] = "+Infinity";
+							elif(type(elem2) is Decimal and elem2  == Decimal('-Infinity')):
+								elem[index2] = "-Infinity";
+							elif(type(elem2) is Decimal and Decimal.is_nan(elem2)):
+								elem[index2] = float("nan");
+							else:
+								if (type(elem) is Decimal and elem  == Decimal('Infinity')):
+									value[index] = "+Infinity";
+								if (type(elem) is Decimal and elem  == Decimal('-Infinity')):
+									value[index] = "-Infinity";
+								if (type(elem) is Decimal and Decimal.is_nan(elem)):
+									value[index] = float ("nan"); 
+				if key in dictOut:
+					dictOut[key].append(value)
+				else:
+					newlist = [value]
+					dictOut.update({key:newlist})
+			elif key in dictOut:
 				dictOut[key].append(value)
 			else:
-				list = [value]
-				dictOut.update({key:list})
+				newlist = [value]
+				dictOut.update({key:newlist})
 
 	def write_not_a_value_output(self, name):
 		if not str(name) in RCE_LIST_OUTPUTNAMES:
-			raise NameError("Output '" + str(key) + "' is not defined")
-		if not name in listIndef:
-			listIndef.append(name)
+			raise NameError("Output '" + str(name) + "' is not defined")
+		else :
+			if name in dictOut:
+				dictOut[name].append("not_a_value_7fdc603e")
+			else:
+				list = ["not_a_value_7fdc603e"]
+				dictOut.update({name:list})
+
 			
 	def close_output(self,key):
 		if not str(key) in RCE_LIST_OUTPUTNAMES:

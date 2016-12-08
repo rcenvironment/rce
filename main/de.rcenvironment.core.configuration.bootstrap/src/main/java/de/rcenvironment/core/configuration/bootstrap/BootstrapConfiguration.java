@@ -83,6 +83,8 @@ public final class BootstrapConfiguration {
 
     private static final String PROFILE_LOGFILES_PREFIX_PROPERTY = "profile.logfiles.prefix"; // set by this class
 
+    private static final String PROFILE_OPTION_HINT = " (use -p/--profile <id or path> to override)";
+
     // note: not using the singleton pattern so it can be reset by unit tests - misc_ro
     private static volatile BootstrapConfiguration instance;
 
@@ -111,6 +113,11 @@ public final class BootstrapConfiguration {
     private final File profilesRootDirectory;
 
     private final boolean fallbackProfileDisabled;
+
+    /**
+     * True, if either of the options -p or --profile were used.
+     */
+    private boolean profileOptionUsed = false;
 
     /**
      * Performs the bootstrap profile initialization.
@@ -219,10 +226,15 @@ public final class BootstrapConfiguration {
             }
         }
 
+        String profileOptionHintToPrint = PROFILE_OPTION_HINT;
+        // if the user specified profile directory is used, print a modified profile option hint
+        if (profileOptionUsed && finalProfileDirectory.getCanonicalPath().equals(originalProfileDirectory.getCanonicalPath())) {
+            profileOptionHintToPrint = "(as specified by the -p/--profile option)";
+        }
+
         // circumvent CheckStyle rule to generate basic output before the log system is initialized
         PrintStream stdout = System.out;
-        stdout.println(String.format("%s %s (use -p/--profile <id or path> to override)", introText, finalProfileDirectoryPath));
-
+        stdout.println(String.format("%s %s%s", introText, finalProfileDirectoryPath, profileOptionHintToPrint));
         setLoggingParameters();
 
         // TODO/NOTE: this does not take full effect; apparently, the setting has already been read and applied
@@ -352,6 +364,8 @@ public final class BootstrapConfiguration {
             }
         } else if (profilePath.equals("common")) {
             throw new IOException("Error: The profile \"common\" can not be used as it is reserved for cross-profile settings");
+        } else if (profilePath != null) {
+            profileOptionUsed  = true;
         }
 
         File configuredPath = new File(profilePath);
@@ -403,7 +417,8 @@ public final class BootstrapConfiguration {
      * @throws IOException on unusual errors; should not occur on a simple failure to acquire the lock
      */
     // note: technically, this method produces a resource leak, but this is irrelevant as the lock must be held anyway
-    private static boolean attemptToLockProfileDirectory(File profileDir) throws IOException {
+    // made this method public to be able to use it during testing ~ rode_to
+    public static boolean attemptToLockProfileDirectory(File profileDir) throws IOException {
         profileDir.mkdirs();
         if (!profileDir.isDirectory()) {
             throw new IOException("Profile directory " + profileDir.getAbsolutePath() + " can not be created or is not a directory");

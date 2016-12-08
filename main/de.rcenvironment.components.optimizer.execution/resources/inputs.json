@@ -2,10 +2,12 @@
     "dynamicInputs": [
         {
             "identifier": "Objective",
+            "character": "sameLoop",
             "group" : "valuesToOptimize",
             "dataTypes": [
                 "Float"
             ],
+            "tags" : ["Objective", "Input"],
             "defaultDataType": "Float",
             "metaData": {
                 "weight": {
@@ -52,6 +54,7 @@
         },
         {
             "identifier": "Constraint",
+            "character": "sameLoop",
             "group" : "valuesToOptimize",
             "dataTypes": [
                 "Float"
@@ -117,6 +120,7 @@
         },
         {
             "identifier":"toForward",
+            "character": "sameLoop",
             "group":"valuesToOptimize",
             "dataTypes":[
                 "Boolean",
@@ -139,7 +143,33 @@
             "defaultInputExecutionConstraint":"Required"
         },
         {
+            "identifier":"startToForward",
+            "character": "outerLoop",
+            "group":"valuesToOptimize",
+            "dataTypes":[
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference", 
+                "DirectoryReference",
+                "SmallTable", 
+                "Vector"
+            ],
+            "defaultDataType":"FileReference",
+            "inputHandlingOptions":[
+                "Single"
+            ],
+            "defaultInputHandling":"Single",
+            "inputExecutionConstraintOptions":[
+                "Required"
+            ],
+            "defaultInputExecutionConstraint":"Required",
+            "readOnly": "true"
+        },
+        {
             "identifier": "startvalues",
+            "character": "outerLoop",
             "group" : "startValues",
             "dataTypes": [
                 "Float",
@@ -161,6 +191,7 @@
         },
          {
             "identifier": "stepvalues",
+            "character": "outerLoop",
             "group" : "startValues",
             "dataTypes": [
                 "Float",
@@ -181,22 +212,8 @@
             }
         },
         {
-            "identifier": "outerLoopDone",
-            "group":"innerLoop",
-            "dataTypes": [
-                "Boolean"
-            ],
-            "readOnly": "true",
-            "defaultDataType": "Boolean",
-            "metaData": {
-                "usage": {
-                    "defaultValue": "optional",
-                    "visibility": "developerConfigurable"
-                }
-            }
-        },
-        {
             "identifier": "gradients",
+            "character": "sameLoop",
              "group":"valuesToOptimize",
             "dataTypes": [
                 "Float",

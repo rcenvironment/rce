@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.messaging.internal;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.messaging.NetworkRequestHandler;
 import de.rcenvironment.core.communication.model.NetworkRequest;
@@ -20,8 +20,12 @@ import de.rcenvironment.core.communication.protocol.NetworkResponseFactory;
 import de.rcenvironment.core.communication.rpc.ServiceCallRequest;
 import de.rcenvironment.core.communication.rpc.ServiceCallResult;
 import de.rcenvironment.core.communication.rpc.spi.RemoteServiceCallHandlerService;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.toolkit.modules.statistics.api.CounterCategory;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsFilterLevel;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsTrackerService;
+import de.rcenvironment.toolkit.modules.statistics.api.ValueEventCategory;
 
 /**
  * Handler for incoming RPC (remote procedure call) requests.
@@ -32,11 +36,12 @@ public class RPCNetworkRequestHandler implements NetworkRequestHandler {
 
     private static final long SLOW_SERVICE_CALL_LOGGING_THRESHOLD_MSEC = 10000; // 10 sec
 
-    private static final String SLOW_SERVICE_CALL_STATISTICS_CATEGORY_NAME =
-        "Remote service call processing times above threshold (" + SLOW_SERVICE_CALL_LOGGING_THRESHOLD_MSEC + " msec)";
-
     // the service to dispatch remote service calls to
     private final RemoteServiceCallHandlerService serviceCallHandler;
+
+    private final CounterCategory methodCallCounter;
+
+    private final ValueEventCategory slowMethodCallCounter;
 
     private final Log log = LogFactory.getLog(getClass());
 
@@ -45,16 +50,26 @@ public class RPCNetworkRequestHandler implements NetworkRequestHandler {
             throw new NullPointerException("Service call handler cannot be null");
         }
         this.serviceCallHandler = serviceCallHandler;
+
+        // not injecting this via OSGi-DS as this service is planned to move to the toolkit layer anyway - misc_ro
+        final StatisticsTrackerService statisticsService =
+            StaticToolkitHolder.getServiceWithUnitTestFallback(StatisticsTrackerService.class);
+        methodCallCounter =
+            statisticsService.getCounterCategory("Remote service calls (received): service methods",
+                StatisticsFilterLevel.RELEASE);
+        slowMethodCallCounter =
+            statisticsService.getValueEventCategory("Remote service calls (received): slow method calls (more than "
+                + SLOW_SERVICE_CALL_LOGGING_THRESHOLD_MSEC + " msec)", StatisticsFilterLevel.RELEASE);
     }
 
     @Override
-    public NetworkResponse handleRequest(NetworkRequest request, NodeIdentifier lastHopNodeId) throws InternalMessagingException {
+    public NetworkResponse handleRequest(NetworkRequest request, InstanceNodeSessionId lastHopNodeId) throws InternalMessagingException {
         ServiceCallRequest serviceCallRequest = (ServiceCallRequest) NetworkRequestUtils.deserializeWithExceptionHandling(request);
         ServiceCallResult scResult;
         try {
-            if (StatsCounter.isEnabled()) {
-                StatsCounter.count("Remote service calls (received)",
-                    StringUtils.format("%s#%s(...)", serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName()));
+            if (methodCallCounter.isEnabled()) {
+                methodCallCounter.count(StringUtils.format("%s#%s(...)", serviceCallRequest.getServiceName(),
+                    serviceCallRequest.getMethodName()));
             }
 
             scResult = handleInternal(serviceCallRequest);
@@ -73,7 +88,7 @@ public class RPCNetworkRequestHandler implements NetworkRequestHandler {
 
     private String formatGenericCallInfo(ServiceCallRequest serviceCallRequest) {
         return serviceCallRequest.getServiceName() + "#" + serviceCallRequest.getMethodName() + "; caller="
-            + serviceCallRequest.getSender();
+            + serviceCallRequest.getCallerNodeId();
     }
 
     private ServiceCallResult handleInternal(ServiceCallRequest serviceCallRequest) throws InternalMessagingException {
@@ -89,9 +104,9 @@ public class RPCNetworkRequestHandler implements NetworkRequestHandler {
         if (duration >= SLOW_SERVICE_CALL_LOGGING_THRESHOLD_MSEC) {
             // log
             log.debug(StringUtils.format("An incoming service call from %s to %s#%s() took %,d msec to complete",
-                serviceCallRequest.getSender(), serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), duration));
+                serviceCallRequest.getCallerNodeId(), serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), duration));
             // add duration to statistics
-            StatsCounter.registerValue(SLOW_SERVICE_CALL_STATISTICS_CATEGORY_NAME,
+            slowMethodCallCounter.registerEvent(
                 StringUtils.format("%s#%s", serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName()), duration);
         }
         return scResult;

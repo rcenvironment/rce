@@ -14,7 +14,7 @@ import java.util.Date;
 
 import org.osgi.service.log.LogService;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Serializable version of {@link LogEntry}.
@@ -33,7 +33,7 @@ public class SerializableLogEntry implements Serializable, Comparable<Serializab
     private final String message;
     private final long time;
     private final String exception;
-    private NodeIdentifier platformId;
+    private InstanceNodeSessionId platformId;
 
     
     public SerializableLogEntry(String bundleName, int level, String message, long time, String exception) {
@@ -65,11 +65,11 @@ public class SerializableLogEntry implements Serializable, Comparable<Serializab
         return exception;
     }
 
-    public NodeIdentifier getPlatformIdentifer() {
+    public InstanceNodeSessionId getPlatformIdentifer() {
         return platformId;
     }
 
-    public void setPlatformIdentifer(NodeIdentifier newPlatformId) {
+    public void setPlatformIdentifer(InstanceNodeSessionId newPlatformId) {
         this.platformId = newPlatformId;
     }
 

@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE TiGL Viewer Component Execution
 Bundle-SymbolicName: de.rcenvironment.components.tiglviewer.execution
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Service-Component: OSGI-INF/*.xml
 Require-Bundle: org.eclipse.osgi,
  org.eclipse.core.resources,
@@ -24,5 +24,4 @@ Import-Package: de.rcenvironment.core.authorization,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.concurrent,
  org.apache.commons.logging;provider=paxlogging

@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Configuration
 Bundle-SymbolicName: de.rcenvironment.core.configuration;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-ActivationPolicy: lazy
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Export-Package: de.rcenvironment.core.configuration,
@@ -11,9 +11,11 @@ Export-Package: de.rcenvironment.core.configuration,
  de.rcenvironment.core.configuration.testutils
 Import-Package: de.rcenvironment.core.configuration.bootstrap,
  de.rcenvironment.core.configuration.discovery.bootstrap,
+ de.rcenvironment.core.toolkitbridge.api,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.service,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.toolkit.modules.statistics.api,
  org.apache.commons.io,
  org.apache.commons.logging;version="1.1.1",
  org.codehaus.jackson;version="1.9.13",

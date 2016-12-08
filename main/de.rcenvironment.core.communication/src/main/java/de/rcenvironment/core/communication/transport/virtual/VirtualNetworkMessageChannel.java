@@ -18,7 +18,6 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.connection.internal.ConnectionClosedException;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
@@ -32,10 +31,10 @@ import de.rcenvironment.core.communication.transport.spi.AbstractMessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelResponseHandler;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * The {@link MessageChannel} implementation of {@link VirtualNetworkTransportProvider}.
@@ -50,7 +49,7 @@ public class VirtualNetworkMessageChannel extends AbstractMessageChannel {
 
     private InitialNodeInformation ownNodeInformation;
 
-    private ThreadPool threadPool = SharedThreadPool.getInstance();
+    private AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     public VirtualNetworkMessageChannel(InitialNodeInformation ownNodeInformation,
         String ownProtocolVersion, MessageChannelEndpointHandler receivingRawEndpointHandler, ServerContactPoint remoteSCP)
@@ -92,7 +91,8 @@ public class VirtualNetworkMessageChannel extends AbstractMessageChannel {
                 } catch (RuntimeException e) {
                     String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(log, "Uncaught RuntimeException", e);
                     NetworkResponse errorResponse =
-                        NetworkResponseFactory.generateResponseForErrorDuringDelivery(request, ownNodeInformation.getNodeId(), errorId);
+                        NetworkResponseFactory.generateResponseForErrorDuringDelivery(request,
+                            ownNodeInformation.getInstanceNodeSessionId(), errorId);
                     responseHandler.onResponseAvailable(errorResponse);
                     // responseHandler.onRequestFailure(request, VirtualNetworkConnection.this, e);
                     // TODO review: keep throwing this exception?
@@ -104,9 +104,8 @@ public class VirtualNetworkMessageChannel extends AbstractMessageChannel {
             private NetworkResponse simulateRoundTrip(final NetworkRequest request, final MessageChannelResponseHandler responseHandler)
                 throws SerializationException {
 
-                // clone the associated node identifier
-                // TODO is this actually necessary? embed sender UUID in metadata instead?
-                final NodeIdentifier virtualSenderId = ownNodeInformation.getNodeId().clone();
+                // as only the string form is passed, this is detached from the sending side
+                final String virtualSenderId = ownNodeInformation.getInstanceNodeSessionId().getInstanceNodeSessionIdString();
 
                 // create a detached clone of the request
                 NetworkRequest clonedRequest = NetworkRequestFactory.createDetachedClone(request);

@@ -1,0 +1,290 @@
+{
+  "identifier" : "4b96dc3d-98d1-4eb7-bf10-0284fd451b3f",
+  "workflowVersion" : "4",
+  "nodes" : [ {
+    "identifier" : "a2f9746a-d4b0-4820-9774-5de55fa51d4e",
+    "name" : "Copy of Script (1)",
+    "location" : "200:340",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"out\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d9054b25-ae59-4164-bab8-5a471c4cdf9f",
+      "name" : "out",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "0006d5e2-5596-4a16-abb7-edf78757ebed",
+    "name" : "Database",
+    "location" : "200:160",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "Insert",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"INSERT INTO City (ID, Name, CountryCode, District, Population) VALUES ${in:myTable};\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "ce522f9b-4f89-411c-a88c-e67e31fc6b4f",
+      "name" : "myTable",
+      "epIdentifier" : "default",
+      "group" : "null",
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "6a0ba4c5-3fd5-4e34-bd10-eca47ac0b3f5",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "fc12b86d-9bb2-45f9-bc57-5561d4f131d0",
+    "name" : "Database 2",
+    "location" : "360:160",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "Select",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"SELECT * FROM City\",\"willWriteToOutput\":true,\"outputToWriteTo\":\"out\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "staticOutputs" : [ {
+      "identifier" : "67bf2962-af71-40b6-a207-bcd9509a61c9",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ],
+    "dynamicOutputs" : [ {
+      "identifier" : "ee3e7e94-107f-42b6-b58e-31dc8797b2f8",
+      "name" : "out",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  }, {
+    "identifier" : "057786b7-1929-4f91-ba58-e08903abf7d2",
+    "name" : "Database 3",
+    "location" : "61:340",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "Delete",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"DELETE FROM City WHERE ID BETWEEN 5000 and 5010;\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "d415c899-01dd-4298-9c84-7b2292c6a8c1",
+      "name" : "trigger",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ],
+    "staticOutputs" : [ {
+      "identifier" : "0c768a01-12fb-4482-bdf3-bba16171508c",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "38bf293e-ba6d-40a2-9258-8bdff3b377b3",
+    "name" : "Database 4",
+    "location" : "360:340",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.database",
+      "version" : "1.0",
+      "name" : "Database"
+    },
+    "configuration" : {
+      "authPhrase" : "${*.authphrase}",
+      "authUser" : "${authuser}",
+      "databaseConnector" : "MySQL",
+      "databaseExecutionType" : "Sequentially",
+      "databaseHost" : "rce-test03-ubuntu14.sc.kp.dlr.de",
+      "databaseName" : "Update",
+      "databasePort" : "3366",
+      "databaseScheme" : "world",
+      "databaseStatements" : "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"UPDATE City SET Population = '1337' WHERE ID = '4000';\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]",
+      "databaseType" : "MySQL",
+      "db_statements" : "[{\"index\":0,\"name\":\"Initial Statement\",\"statement\":\"INSERT INTO dev_table (iddev_table, t11, t22, t33) VALUES ${in:myTable}\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\",\"endpointDescriptionToWriteTo\":null}]"
+    },
+    "staticOutputs" : [ {
+      "identifier" : "33b208ef-1a4e-48fe-be8a-ea9c92d1733f",
+      "name" : "Success",
+      "epIdentifier" : null,
+      "group" : null,
+      "datatype" : "Boolean"
+    } ]
+  }, {
+    "identifier" : "4c430029-91c6-4788-84b7-b738bed7eee0",
+    "name" : "Print",
+    "location" : "500:340",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"out\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "e6880aad-55b3-4d66-bc49-dc082b042d6d",
+      "name" : "out",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "Boolean",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "ebaf2d0e-73e2-4046-b0a2-8d456136a008",
+    "name" : "Print 2",
+    "location" : "500:160",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "RCE.read_input(\"out\")\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "true",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicInputs" : [ {
+      "identifier" : "f6ddf19e-3ab4-4787-a858-c707f8ccf9c0",
+      "name" : "out",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable",
+      "metadata" : {
+        "inputExecutionConstraint_4aae3eea" : "Required",
+        "inputHandling_73b1056e" : "Single"
+      }
+    } ]
+  }, {
+    "identifier" : "f9d3fa42-59f7-45c4-81ea-bfbf8fffd58e",
+    "name" : "Table Provider",
+    "location" : "60:160",
+    "active" : "true",
+    "component" : {
+      "identifier" : "de.rcenvironment.script",
+      "version" : "3.4",
+      "name" : "Script"
+    },
+    "configuration" : {
+      "pythonExecutionPath" : "${pythonExecutionPath}",
+      "script" : "smallTable = [[5000, \"From_Insert_Wf\", \"USA\", \"Florida\", 1337], [5001, \"From_Insert_Wf_2\", \"USA\", \"Florida\", 1337], [5002, \"From_Insert_Wf_3\", \"USA\", \"Florida\", 1337], [5003, \"From_Insert_Wf_4\", \"USA\", \"Florida\", 1337]]\r\nRCE.write_output(\"table\", smallTable)\r\n",
+      "scriptLanguage" : "Python",
+      "storeComponentHistoryData" : "false",
+      "usageOfScript" : "NEW"
+    },
+    "dynamicOutputs" : [ {
+      "identifier" : "a4e870b2-13fb-44b7-a1b4-d83d3f05d459",
+      "name" : "table",
+      "epIdentifier" : "default",
+      "group" : null,
+      "datatype" : "SmallTable"
+    } ]
+  } ],
+  "connections" : [ {
+    "source" : "0006d5e2-5596-4a16-abb7-edf78757ebed",
+    "output" : "6a0ba4c5-3fd5-4e34-bd10-eca47ac0b3f5",
+    "target" : "057786b7-1929-4f91-ba58-e08903abf7d2",
+    "input" : "d415c899-01dd-4298-9c84-7b2292c6a8c1"
+  }, {
+    "source" : "fc12b86d-9bb2-45f9-bc57-5561d4f131d0",
+    "output" : "ee3e7e94-107f-42b6-b58e-31dc8797b2f8",
+    "target" : "ebaf2d0e-73e2-4046-b0a2-8d456136a008",
+    "input" : "f6ddf19e-3ab4-4787-a858-c707f8ccf9c0"
+  }, {
+    "source" : "057786b7-1929-4f91-ba58-e08903abf7d2",
+    "output" : "0c768a01-12fb-4482-bdf3-bba16171508c",
+    "target" : "a2f9746a-d4b0-4820-9774-5de55fa51d4e",
+    "input" : "d9054b25-ae59-4164-bab8-5a471c4cdf9f"
+  }, {
+    "source" : "38bf293e-ba6d-40a2-9258-8bdff3b377b3",
+    "output" : "33b208ef-1a4e-48fe-be8a-ea9c92d1733f",
+    "target" : "4c430029-91c6-4788-84b7-b738bed7eee0",
+    "input" : "e6880aad-55b3-4d66-bc49-dc082b042d6d"
+  }, {
+    "source" : "f9d3fa42-59f7-45c4-81ea-bfbf8fffd58e",
+    "output" : "a4e870b2-13fb-44b7-a1b4-d83d3f05d459",
+    "target" : "0006d5e2-5596-4a16-abb7-edf78757ebed",
+    "input" : "ce522f9b-4f89-411c-a88c-e67e31fc6b4f"
+  } ],
+  "bendpoints" : "[{\"source\":\"0006d5e2-5596-4a16-abb7-edf78757ebed\",\"target\":\"057786b7-1929-4f91-ba58-e08903abf7d2\",\"coordinates\":\"240:280,100:280\"}]",
+  "labels" : "[{\"identifier\":\"4ff66e0d-1d6d-472e-8be4-c8f658d50148\",\"text\":\"These statements use the 'world' database as defined on the wiki page.\\r\\n'Delete' deletes the entries which are inserted by 'Insert' \\r\\n(so you can execute them several times without struggling with unique keys)\",\"location\":\"40:20\",\"size\":\"561:81\",\"alpha\":\"127\",\"colorText\":\"0:128:0\",\"colorBackground\":\"255:255:0\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"11\"},{\"identifier\":\"5341f4f1-dd7a-4125-9797-4d39e68dd3c1\",\"text\":\"Insert small table\",\"location\":\"40:120\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"6c0fde5d-3d64-4198-95fa-baec834ad86b\",\"text\":\"Select small table\",\"location\":\"340:120\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"70d42a95-8bad-46a2-9a8b-8f4d5d7a184c\",\"text\":\"Delete\",\"location\":\"40:300\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"},{\"identifier\":\"b0056322-5764-45a0-b8b0-4f837cc0e010\",\"text\":\"Update\",\"location\":\"340:300\",\"size\":\"261:141\",\"alpha\":\"127\",\"colorText\":\"0:0:0\",\"colorBackground\":\"57:146:34\",\"alignmentType\":\"TOPCENTER\",\"border\":\"false\",\"textSize\":\"9\"}]"
+}

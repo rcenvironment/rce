@@ -15,10 +15,10 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import org.apache.commons.logging.LogFactory;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.common.NamedFactory;
-import org.apache.sshd.server.UserAuth;
-import org.apache.sshd.server.auth.UserAuthPassword;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.auth.UserAuth;
+import org.apache.sshd.server.auth.password.UserAuthPasswordFactory;
 import org.apache.sshd.server.keyprovider.SimpleGeneratorHostKeyProvider;
 import org.junit.After;
 import org.junit.Before;
@@ -51,17 +51,17 @@ public class JschSessionFactoryTest {
         sshServer = SshServer.setUpDefaultServer();
         sshServer.setPort(port);
         sshServer.setKeyPairProvider(new SimpleGeneratorHostKeyProvider());
-        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPassword.Factory()); }});
+        sshServer.setUserAuthFactories(new ArrayList<NamedFactory<UserAuth>>() {{ add(new UserAuthPasswordFactory()); }});
         sshServer.setPasswordAuthenticator(new DummyPasswordAuthenticator());
         sshServer.start();
     }
     
     /**
      * Tear down test environment.
-     * @throws InterruptedException 
+     * @throws IOException 
      **/
     @After
-    public void tearDown() throws InterruptedException {
+    public void tearDown() throws IOException {
         sshServer.stop();
     }
     

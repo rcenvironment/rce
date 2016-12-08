@@ -21,7 +21,7 @@
 					options to see hidden files and directories.</para>
 			</note></para>
 		<para>All manual configuration takes place in the profile's central configuration file,
-			"configuration.json". As of RCE 7.0.0, most configuration settings only take effect on
+			"configuration.json". As of RCE 8.0.0, most configuration settings only take effect on
 			startup, so you need to restart RCE after editing it. (This will be changed in a future
 			release.) This applies to all types of installations.</para>
 	</sect2>
@@ -406,64 +406,6 @@
 							parallel to the cluster server.</entry>
 						<entry>8</entry>
 					</row>
-					<row>
-						<entry>de.rcenvironment.sql</entry>
-						<entry>Configuration of the SQLworkflow components.</entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/profiles </entry>
-						<entry>List of profiles which will describe the jdbc connection to a database. All
-							configuration keys following are part of one entry of the collection </entry>
-						<entry>{} (an empty list in JSON format)</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/label </entry>
-						<entry>A name for a profile. This label will be shown in the configuration view of the SQL
-							component </entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/host </entry>
-						<entry>A url to the host computer of the database </entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/database </entry>
-						<entry>The name of the database </entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/user </entry>
-						<entry>The username for database access </entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/password </entry>
-						<entry>The password of the user for database access </entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/jdbc </entry>
-						<entry>List of jdbc configuration parameters. All configuration keys following are part of
-							this list </entry>
-						<entry>{} (an empty list in JSON format)</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/url </entry>
-						<entry>Connection string of jdbc driver. Per default, it will be assembled with configuration
-							keys above.</entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/file </entry>
-						<entry>Absolute or relative (beginning at root-folder of RCE) path to jdbc driver file </entry>
-						<entry>-</entry>
-					</row>
-					<row>
-						<entry>de.rcenvironment.sql/[id]/driver </entry>
-						<entry>SQL driver classname </entry>
-					</row>
 				</tbody>
 			</tgroup>
 			</table>
@@ -538,7 +480,7 @@
 					</row>
 					<row>
 						<entry>[account name]/role</entry>
-						<entry>The role of the account. See 'roles' below.</entry>
+						<entry>The role of the account. See next table for a list of the possible roles.</entry>
 						<entry>-</entry>
 					</row>
 					<row>
@@ -547,21 +489,63 @@
 							enabled.</entry>
 						<entry>true</entry>
 					</row>
-					<row>
-						<entry>roles</entry>
-						<entry>A map of roles. For each role a unique identifier (role name) must be
-							given.</entry>
-						<entry>{} (an empty map in JSON format)</entry>
-					</row>
-					<row>
-						<entry>[role name]/allowedCommandPatterns</entry>
-						<entry>List of commands the role is allowed to execute. Regular expressions
-							are supported.</entry>
-						<entry>[] (an empty list in JSON format)</entry>
-					</row>
 				</tbody>
 			</tgroup>
 			</table>
+		<table width="100%">
+			<title>Possible roles for SSH accounts</title>
+			<tgroup cols="2">
+				<colspec colnum="1" colwidth="1.3*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Role name</emphasis></entry>
+						<entry>
+							<emphasis role="italic">Allowed commands</emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>remote_access_user (Standard role for using SSH remote access tools and
+							workflows)</entry>
+						<entry>ra|sysmon</entry>
+					</row>
+					<row>
+						<entry>remote access (backwards compatibility alias for
+							remote_access_user)</entry>
+						<entry>ra|sysmon</entry>
+					</row>
+					<row>
+						<entry>remote_access_admin</entry>
+						<entry>ra|ra-admin|sysmon|components</entry>
+					</row>
+					<row>
+						<entry>workflow_observer</entry>
+						<entry>components|net info|sysmon|wf list|wf details</entry>
+					</row>
+					<row>
+						<entry>workflow_admin</entry>
+						<entry>components|net info|sysmon|wf</entry>
+					</row>
+					<row>
+						<entry>local_admin</entry>
+						<entry>cn|components|mail|net|restart|shutdown|stop|stats|tasks</entry>
+					</row>
+					<row>
+						<entry>instance_management_admin</entry>
+						<entry>im|net info</entry>
+					</row>
+					<row>
+						<entry>instance_management_delegate_user</entry>
+						<entry>cn|components|net|restart|shutdown|stop|stats|tasks|wf|ra-admin</entry>
+					</row>
+					<row>
+						<entry>developer</entry>
+						<entry>&lt;all></entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
 		<table width="100%">
 			<title>sshRemoteAccess</title>
 			<tgroup cols="3">
@@ -584,6 +568,12 @@
 							SSH remote access client. For each connection a unique identifier (id)
 							must be given.     </entry>
 						<entry>{} (an empty map in JSON format)</entry>
+					</row>
+					<row>
+						<entry>sshConnections/[id]/displayName </entry>
+						<entry>The name for the connection that will be shown in the network
+							view.</entry>
+						<entry>-</entry>
 					</row>
 					<row>
 						<entry>sshConnections/[id]/host </entry>
@@ -618,27 +608,112 @@
 				</tbody>
 			</tgroup>
 		</table>
+		<table width="100%" id="smtpServerParameterTable">
+			<title>smtpServer</title>
+			<tgroup cols="3">
+				<colspec colnum="1" colwidth="1*"/>
+				<colspec colnum="2" colwidth="2*"/>
+				<colspec colnum="3" colwidth="1*"/>
+				<thead>
+					<row>
+						<entry><emphasis role="italic">Configuration key </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Comment </emphasis></entry>
+						<entry>
+							<emphasis role="italic">Default value </emphasis></entry>
+					</row>
+				</thead>
+				<tbody>
+					<row>
+						<entry>host</entry>
+						<entry>The IP address or hostname of the SMTP server, which should be used for mail delivery. </entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>port</entry>
+						<entry>Port number of the SMTP server.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>encryption</entry>
+						<entry>Can either be "explicit" or "implicit". Select "implicit" if you want to connect to the
+							SMTP server using SSL/TLS. Select "explicit" if you want to connect to
+							the SMTP server using STARTTLS. Unencrypted connections are not
+							permitted.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>username</entry>
+						<entry>The login name for authentication.</entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>password</entry>
+						<entry>The obfuscated password for authentication. Plaintext password cannot be used here. To
+							create the obfuscated password from the plaintext password, you need to
+							use the Configuration UI described in <xref linkend="configuration_ui"/></entry>
+						<entry>-</entry>
+					</row>
+					<row>
+						<entry>sender</entry>
+						<entry>Email address, which should be displayed as the sender in the sent email.</entry>
+						<entry>-</entry>
+					</row>
+				</tbody>
+			</tgroup>
+		</table>
+		<note>
+			<para>The used SMTP server needs to be configured using the Configuration UI described in <xref linkend="configuration_ui_smtp"/>, since the password needs to be obfuscated.</para>
+		</note>
 	</sect2>
-	<sect2>
-		<title>Configuration UI for SSH accounts</title>
-		<para> If the RCE instance shall act as an SSH server, you can configure SSH accounts using an
-			interactive tool, which encrypts the SSH passwords before storing them in the
-			configuration. You can access the tool by executing RCE from the command line with the
-			options "rce --configure -nosplash" or by using the "Launch SSH Configuration" script in
-			the "extras" folder of your RCE installation directory. </para>
+	<sect2 id="configuration_ui">
+		<title>Configuration UI</title>		
+		<para>If you want to configure SSH accounts with passphrases or you want to configure e-mail
+			support for the instance, you need to use the Configuration UI. You can access the
+			interactive tool by executing RCE from the command line with the option "rce
+			--configure" or by using the "Launch Configuration UI" script in the "extras" folder of
+			your RCE installation directory. </para>
+		
+		
 		<figure>
-			<title>Configuration tool for SSH account</title>
+			<title>Configuration tool for SSH account and SMTP server configuration</title>
 			<mediaobject>
 				<imageobject>
 					<imagedata fileref="images/configUI.PNG" contentwidth="420"/>
 				</imageobject>
 			</mediaobject>
 		</figure>
-		<note>
-			<para>All accounts configured with this tool initially have the role "remote access",
-				which allows to execute commands needed for remote access on tools and workflows. If
-				you want to change the role of an account, you can do this by editing the
-				configuration file manually. </para>
-		</note>
+		
+		<sect3>
+			<title>Remote Access: SSH account configuration</title>		
+		
+			<para> If the RCE instance shall act as a SSH server, you can configure SSH accounts using the Configuration UI, which encrypts the SSH passwords before storing them in the
+				configuration file.
+			</para>
+		
+			<note>
+				<para>All SSH accounts configured with this tool initially have the role "remote_access_user",
+					which allows to execute commands needed for remote access on tools and
+					workflows. If you want to change the role of an SSH account, you can do this by
+					editing the configuration file manually (see table "Possible roles for SSH
+					accounts"). </para>
+			</note>
+		</sect3>
+		<sect3 id="configuration_ui_smtp">
+			<title>Mail: SMTP server configuration</title>		
+			
+			<para>
+				If you want to send e-mails from a RCE instance, you need to configure a SMTP server. RCE 
+				does not send e-mails directly to the recipient, but instead sends the e-mails to a SMTP
+				server, which delivers them to the recipient. You need to use the Configuration UI to configure
+				such a SMTP server, since the password used for authentication needs to be obfuscated before it 
+				is stored in the configuration file. The SMTP server parameters that need to be configured are
+				described in more detail in <xref linkend="smtpServerParameterTable"/>
+			</para>
+			<note>
+				<para>Due to a known bug on Windows system with a German keyboard layout, the Configuration UI inserts the characers "q@" into a text field if you want to insert the @ sign. You can manually remove the additional character "q". </para>
+			</note>
+		</sect3>
+
 	</sect2>
 </sect1>

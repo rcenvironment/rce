@@ -21,16 +21,17 @@ import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.utils.common.JsonUtils;
 
 /**
- * Encapsulates information about a persistent component description as it is part of workflow files
- * (aka persistent workflow descriptions).
+ * Encapsulates information about a persistent component description as it is part of workflow files (aka persistent workflow descriptions).
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class PersistentComponentDescription implements Serializable {
 
@@ -50,7 +51,7 @@ public class PersistentComponentDescription implements Serializable {
 
     private String componentVersion = "";
 
-    private NodeIdentifier componentNodeIdentifier = null;
+    private LogicalNodeId componentNodeIdentifier = null;
 
     private String persistentComponentDescriptionString;
 
@@ -73,14 +74,25 @@ public class PersistentComponentDescription implements Serializable {
             node = mapper.readTree(jsonParser);
         }
 
-        componentIdentifier = node.get(COMPONENT).get(IDENTIFIER).getTextValue();
+        if (!node.has(COMPONENT)) {
+            throw new IOException("Required attribute 'component' missing in node delcaration");
+        }
+        if (!node.get(COMPONENT).has(IDENTIFIER)) {
+            throw new IOException("Required attribute 'identifier' missing in node's component delcaration");
+        }
+        componentIdentifier = node.get(COMPONENT).get(IDENTIFIER).getTextValue();            
 
-        if (node.get(COMPONENT).get(VERSION) != null) {
+        if (node.get(COMPONENT).has(VERSION)) {
             componentVersion = node.get(COMPONENT).get(VERSION).getTextValue();
         }
 
-        if (node.get(PLATFORM) != null) {
-            componentNodeIdentifier = NodeIdentifierFactory.fromNodeId(node.get(PLATFORM).getTextValue());
+        if (node.has(PLATFORM)) {
+            final String encodedNodeId = node.get(PLATFORM).getTextValue();
+            try {
+                componentNodeIdentifier = NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeId(encodedNodeId);
+            } catch (IdentifierException e) {
+                throw new IOException("Invalid node id string: " + encodedNodeId);
+            }
         }
     }
 
@@ -125,7 +137,7 @@ public class PersistentComponentDescription implements Serializable {
      * 
      * @param nodeId :
      */
-    public void setNodeIdentifier(NodeIdentifier nodeId) {
+    public void setNodeIdentifier(LogicalNodeId nodeId) {
         this.componentNodeIdentifier = nodeId;
         JsonFactory jsonFactory = new JsonFactory();
         try (JsonParser jsonParser = jsonFactory.createJsonParser(persistentComponentDescriptionString)) {
@@ -133,7 +145,7 @@ public class PersistentComponentDescription implements Serializable {
             JsonNode node = mapper.readTree(jsonParser);
             ((ObjectNode) node).remove(PLATFORM);
             if (nodeId != null) {
-                ((ObjectNode) node).put(PLATFORM, TextNode.valueOf(nodeId.getIdString()));
+                ((ObjectNode) node).put(PLATFORM, TextNode.valueOf(nodeId.getLogicalNodeIdString()));
             }
             persistentComponentDescriptionString = mapper.writeValueAsString(node);
         } catch (JsonParseException e) {
@@ -143,7 +155,7 @@ public class PersistentComponentDescription implements Serializable {
         }
     }
 
-    public NodeIdentifier getComponentNodeIdentifier() {
+    public LogicalNodeId getComponentNodeIdentifier() {
         return componentNodeIdentifier;
     }
 

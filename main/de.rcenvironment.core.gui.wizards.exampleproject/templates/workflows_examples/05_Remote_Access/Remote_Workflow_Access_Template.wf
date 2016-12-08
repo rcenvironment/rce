@@ -1,11 +1,13 @@
 {
   "identifier" : "1b5103aa-eceb-48ba-98ef-d64d07060c0d",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "name" : "Remote_Workflow_Access_Template",
+  "labels" : "[{\"identifier\":\"16a7a643-6484-4be2-a41d-6c288fb18793\",\"headerText\":\"\",\"text\":\"Example workflow: 'Remote Access'\\r\\n\\r\\nThis workflow is a template for the Remote Access feature. See the user guide for usage and details.\\r\\n\\r\\n\",\"location\":\"56:19\",\"size\":\"603:94\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"}]",
   "nodes" : [ {
     "identifier" : "b5aad880-427a-4de4-85cb-dcda8da37cc2",
     "name" : "Input Provider",
     "location" : "147:156",
+    "zIndex" : "1",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.inputprovider",
@@ -35,6 +37,7 @@
     "identifier" : "4a9b049a-8e58-4d16-9ded-bb7347b0c81b",
     "name" : "Output Writer",
     "location" : "522:156",
+    "zIndex" : "2",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.outputwriter",
@@ -63,6 +66,7 @@
     "identifier" : "e66e72d9-bcd2-4f2e-9229-6a9703c3027b",
     "name" : "Placeholder",
     "location" : "320:137",
+    "zIndex" : "0",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.script",
@@ -120,6 +124,5 @@
     "output" : "19dc0a85-175b-4e34-9a1c-c77674d5bc9f",
     "target" : "4a9b049a-8e58-4d16-9ded-bb7347b0c81b",
     "input" : "8d50cce8-af3e-4567-8bfd-7f842e2bbca0"
-  } ],
-  "labels" : "[{\"identifier\":\"16a7a643-6484-4be2-a41d-6c288fb18793\",\"text\":\"Example workflow: 'Remote Access'\\r\\n\\r\\nThis workflow is a template for the Remote Access feature. See the user guide for usage and details.\\r\\n\\r\\n\",\"location\":\"56:19\",\"size\":\"603:94\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"}]"
+  } ]
 }

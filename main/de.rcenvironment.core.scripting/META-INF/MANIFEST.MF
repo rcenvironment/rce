@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Scripting
 Bundle-SymbolicName: de.rcenvironment.core.scripting;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-ManifestVersion: 2
 Export-Package: de.rcenvironment.core.scripting,
  de.rcenvironment.core.scripting.internal,
@@ -23,13 +23,14 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.datamodel.types.api,
  de.rcenvironment.core.notification,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.legacy,
  de.rcenvironment.core.utils.common.textstream,
  de.rcenvironment.core.utils.executor,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.scripting,
+ de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",

@@ -118,7 +118,14 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     public Long getLong(String relativePath, Long defaultValue) {
         JsonNode treeLocation = navigatePath(relativePath);
         if (treeLocation != null) {
-            return useDefaultValueIfNull(treeLocation.getLongValue(), defaultValue);
+            if (!treeLocation.isIntegralNumber()) {
+                // TODO (p2) improve: print configuration tree location to make this more user-friendly
+                log.error(
+                    "Expected an integer configuration value, but found \"" + treeLocation.asText()
+                        + "\"; treating it as the default value \"" + defaultValue + "\"");
+                return defaultValue;
+            }
+            return treeLocation.getLongValue();
         } else {
             return defaultValue;
         }
@@ -133,7 +140,15 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
     public Integer getInteger(String relativePath, Integer defaultValue) {
         JsonNode treeLocation = navigatePath(relativePath);
         if (treeLocation != null) {
-            return useDefaultValueIfNull(treeLocation.getIntValue(), defaultValue);
+            // TODO (p1) >8.0.0 check how this reacts to integer over-/underflows
+            if (!treeLocation.isIntegralNumber()) {
+                // TODO (p2) improve: print configuration tree location to make this more user-friendly
+                log.error(
+                    "Expected an integer configuration value, but found \"" + treeLocation.asText()
+                        + "\"; treating it as the default value \"" + defaultValue + "\"");
+                return defaultValue;
+            }
+            return treeLocation.getIntValue();
         } else {
             return defaultValue;
         }
@@ -184,19 +199,19 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         }
         ((ObjectNode) segmentRootNode).put(key, newArrayNode);
     }
-    
+
     @Override
     public void setInteger(String key, Integer value) throws ConfigurationException {
         validateNodeExistsAndIsAnObjectNode();
         ((ObjectNode) segmentRootNode).put(key, value);
     }
-    
+
     @Override
     public void setLong(String key, Long value) throws ConfigurationException {
         validateNodeExistsAndIsAnObjectNode();
         ((ObjectNode) segmentRootNode).put(key, value);
     }
-    
+
     @Override
     public List<String> getStringArray(String relativePath) throws ConfigurationException {
         validateNodeExistsAndIsAnObjectNode();
@@ -204,7 +219,7 @@ class WritableConfigurationSegmentImpl implements WritableConfigurationSegment {
         for (JsonNode node : segmentRootNode.path(relativePath)) {
             list.add(node.asText());
         }
-        
+
         return list;
     }
 

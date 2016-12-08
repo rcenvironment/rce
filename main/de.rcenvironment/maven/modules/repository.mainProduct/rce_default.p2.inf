@@ -10,6 +10,7 @@ instructions.configure=\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:en);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeProgramArg(programArg:-data @noDefault);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dbundles.configuration.location=configuration);\
+	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Dosgi.requiredJavaVersion=1.7);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xms512m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1024m);\
 	org.eclipse.equinox.p2.touchpoint.eclipse.removeJvmArg(jvmArg:-Xmx1280m);\
@@ -69,3 +70,28 @@ units.3.provides.1.name=de.rcenvironment.products.rce.default.browser.mozilla
 units.3.provides.1.version=$version$
 units.3.instructions.configure=org.eclipse.equinox.p2.touchpoint.eclipse.addJvmArg(jvmArg:-Dorg.eclipse.swt.browser.DefaultType=mozilla);
 
+# We are rewriting the metadata of the launcher here exactly like they were before adding our custom launcher, except that we do not list the
+# touchpoints that were responsible for adding the startup parameter, as we are doing this in our own launcher now.
+units.4.id=toolingorg.eclipse.equinox.launcher
+units.4.version=1.2.0.v20110502
+units.4.hostRequirements.0.namespace=osgi.bundle
+units.4.hostRequirements.0.name=org.eclipse.equinox.launcher
+units.4.hostRequirements.0.range=1.2.0.v20110502
+units.4.hostRequirements.1.namespace=org.eclipse.equinox.p2.eclipse.type
+units.4.hostRequirements.1.name=bundle
+units.4.hostRequirements.1.range=[1.0.0,2.0.0)
+units.4.hostRequirements.1.greedy=false
+units.4.properties.0.name=org.eclipse.equinox.p2.type.fragment
+units.4.properties.0.value=true
+units.4.provides.0.namespace=org.eclipse.equinox.p2.iu
+units.4.provides.0.name=toolingorg.eclipse.equinox.launcher
+units.4.provides.0.version=1.2.0.v20110502
+units.4.provides.1.namespace=org.eclipse.equinox.p2.flavor
+units.4.provides.1.name=tooling
+units.4.provides.1.version=1.0.0
+units.4.requires.0.namespace=osgi.bundle
+units.4.requires.0.name=org.eclipse.equinox.launcher
+units.4.requires.0.version=1.2.0.v20110502
+units.4.requires.1.namespace=org.eclipse.equinox.p2.eclipse.type
+units.4.requires.1.name=bundle
+units.4.requires.1.version=[1.0.0,2.0.0)

@@ -8,7 +8,7 @@
 
 package de.rcenvironment.components.optimizer.common;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 
 /**
@@ -35,6 +35,6 @@ public interface OptimizerResultService {
      * @return the created {@link OptimizerReceiver}
      * @throws RemoteOperationException 
      */
-    OptimizerReceiver createReceiver(final String identifier, final NodeIdentifier platform) throws RemoteOperationException;
+    OptimizerReceiver createReceiver(final String identifier, final ResolvableNodeId platform) throws RemoteOperationException;
 
 }

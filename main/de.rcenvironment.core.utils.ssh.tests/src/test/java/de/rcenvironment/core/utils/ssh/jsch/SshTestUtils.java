@@ -13,11 +13,11 @@ import java.io.IOException;
 import java.util.Random;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.sshd.SshServer;
 import org.apache.sshd.server.Command;
 import org.apache.sshd.server.CommandFactory;
 import org.apache.sshd.server.Environment;
-import org.apache.sshd.server.command.UnknownCommand;
+import org.apache.sshd.server.SshServer;
+import org.apache.sshd.server.scp.UnknownCommand;
 
 import com.jcraft.jsch.Session;
 

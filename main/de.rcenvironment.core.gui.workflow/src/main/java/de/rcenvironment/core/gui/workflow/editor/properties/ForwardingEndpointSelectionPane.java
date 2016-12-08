@@ -16,34 +16,25 @@ import org.eclipse.swt.widgets.Display;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.EndpointActionType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
-import de.rcenvironment.core.gui.utils.common.endpoint.EndpointHelper;
 
 /**
- * A UI part to display and edit a set of endpoints managed by a {@link DynamicEndpointManager).
- * This one is for forwarding values.
+ * A UI part to display and edit a set of endpoints managed by a {@link DynamicEndpointManager). This one is for forwarding values.
  *
  * @author Sascha Zur
  */
 public class ForwardingEndpointSelectionPane extends EndpointSelectionPane {
 
-    public ForwardingEndpointSelectionPane(String genericEndpointTitle, EndpointType direction,
-        final WorkflowNodeCommand.Executor executor, boolean readonly, String dynamicEndpointIdToManage, boolean showOnlyManagedEndpoints) {
-        super(genericEndpointTitle, direction, executor, readonly, dynamicEndpointIdToManage, showOnlyManagedEndpoints, true);
-    }
-
-    public ForwardingEndpointSelectionPane(String genericEndpointTitle, EndpointType direction,
-        final WorkflowNodeCommand.Executor executor, boolean readonly, String dynamicEndpointIdToManage, boolean showOnlyManagedEndpoints,
-        boolean showInputExecutionConstraint) {
-        super(genericEndpointTitle, direction, executor, readonly, dynamicEndpointIdToManage, showOnlyManagedEndpoints,
-            showInputExecutionConstraint);
+    public ForwardingEndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage,
+        String[] dynEndpointIdsToShow, WorkflowNodeCommand.Executor executor) {
+        super(title, direction, dynEndpointIdToManage, dynEndpointIdsToShow, new String[] {}, executor, false, true);
     }
 
     @Override
     protected void onAddClicked() {
         EndpointInputWithOutputEditDialog dialog =
             new EndpointInputWithOutputEditDialog(Display.getDefault().getActiveShell(), EndpointActionType.ADD,
-                configuration, endpointType, endpointIdToManage, false,
-                endpointManager.getDynamicEndpointDefinition(endpointIdToManage)
+                configuration, endpointType, dynEndpointIdToManage, false,
+                endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage)
                     .getMetaDataDefinition(),
                 new HashMap<String, String>());
         onAddClicked(dialog);
@@ -52,14 +43,14 @@ public class ForwardingEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void onEditClicked() {
         final String name = (String) table.getSelection()[0].getData();
-        boolean isStaticEndpoint = EndpointHelper.getStaticEndpointNames(endpointType, configuration).contains(name);
+        boolean isStaticEndpoint = endpointManager.getEndpointDescription(name).getEndpointDefinition().isStatic();
         EndpointDescription endpoint = endpointManager.getEndpointDescription(name);
         Map<String, String> newMetaData = cloneMetaData(endpoint.getMetaData());
 
         EndpointInputWithOutputEditDialog dialog =
             new EndpointInputWithOutputEditDialog(Display.getDefault().getActiveShell(),
                 EndpointActionType.EDIT, configuration, endpointType,
-                endpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
+                dynEndpointIdToManage, isStaticEndpoint, endpoint.getEndpointDefinition()
                     .getMetaDataDefinition(),
                 newMetaData);
 

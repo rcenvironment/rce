@@ -41,14 +41,16 @@ import org.eclipse.equinox.app.IApplication;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.shutdown.HeadlessShutdown;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.TextStreamWatcherFactory;
 import de.rcenvironment.core.utils.common.OSFamily;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.TextStreamWatcher;
 import de.rcenvironment.core.utils.common.textstream.receivers.AbstractTextOutputReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Provides the actual operations to interact with external installations and profiles. Separated from the coordinating service for
@@ -74,14 +76,14 @@ public class InstanceOperationsImpl implements InstanceOperations {
 
     private final Log log = LogFactory.getLog(getClass());
 
-    private SharedThreadPool threadPool;
+    private AsyncTaskService threadPool;
 
     private DualHashBidiMap<File, Future<Integer>> profileToFutureMap = new DualHashBidiMap<File, Future<Integer>>();
 
     private Map<File, FileLock> profileToLockMap = new ConcurrentHashMap<>();
 
     public InstanceOperationsImpl() {
-        this.threadPool = SharedThreadPool.getInstance();
+        this.threadPool = ConcurrencyUtils.getAsyncTaskService();
     }
 
     /**
@@ -125,7 +127,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
 
                             @Override
                             public void startStdout() {
-                                new TextStreamWatcher(executor.getStdout(), new AbstractTextOutputReceiver() {
+                                TextStreamWatcherFactory.create(executor.getStdout(), new AbstractTextOutputReceiver() {
 
                                     private final File profile = executor.getProfile();
 
@@ -145,7 +147,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
 
                             @Override
                             public void startStderr() {
-                                new TextStreamWatcher(executor.getStderr(), new AbstractTextOutputReceiver() {
+                                TextStreamWatcherFactory.create(executor.getStderr(), new AbstractTextOutputReceiver() {
 
                                     private final File profile = executor.getProfile();
 
@@ -173,7 +175,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
 
                         @Override
                         public void startStdout() {
-                            new TextStreamWatcher(executor.getStdout(), new AbstractTextOutputReceiver() {
+                            TextStreamWatcherFactory.create(executor.getStdout(), new AbstractTextOutputReceiver() {
 
                                 private final File profile = executor.getProfile();
 
@@ -192,7 +194,7 @@ public class InstanceOperationsImpl implements InstanceOperations {
 
                         @Override
                         public void startStderr() {
-                            new TextStreamWatcher(executor.getStderr(), new AbstractTextOutputReceiver() {
+                            TextStreamWatcherFactory.create(executor.getStderr(), new AbstractTextOutputReceiver() {
 
                                 private final File profile = executor.getProfile();
 

@@ -27,6 +27,7 @@ import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagemen
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.component.execution.api.ComponentLog;
 import de.rcenvironment.core.component.model.spi.DefaultComponent;
+import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
@@ -65,6 +66,8 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
 
     private String toolVersion;
 
+    private String hostId;
+
     private String connectionId;
 
     private ComponentLog componentLog;
@@ -83,6 +86,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
         datamanagementService = componentContext.getService(ComponentDataManagementService.class);
         sshService = componentContext.getService(SshConnectionService.class);
         toolName = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_TOOL_NAME);
+        hostId = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_HOST_ID);
         toolVersion = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_TOOL_VERSION);
         connectionId = componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_CONNECTION);
         isWorkflow = Boolean.parseBoolean(componentContext.getConfigurationValue(SshRemoteAccessConstants.KEY_IS_WORKFLOW));
@@ -178,8 +182,9 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
             command = StringUtils.format("ra run-wf %s --show-output %s %s %s", sessionToken, formattedToolName, formattedVersion,
                 inputShortText, inputDir.getName(), outputDir.getName());
         } else {
-            command = StringUtils.format("ra run-tool %s --show-output %s %s %s", sessionToken, formattedToolName, formattedVersion,
-                inputShortText, inputDir.getName(), outputDir.getName());
+            command =
+                StringUtils.format("ra run-tool %s --show-output -n %s %s %s %s", sessionToken, hostId, formattedToolName,
+                    formattedVersion, inputShortText, inputDir.getName(), outputDir.getName());
         }
 
         // Parse final state of component
@@ -193,17 +198,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
                 LineIterator it = IOUtils.lineIterator(stdoutStream, (String) null);
                 while (it.hasNext()) {
                     String line = it.nextLine();
-                    if (line.startsWith(StringUtils.format("[%s] StdOut: ", sessionToken))) {
-                        componentLog.toolStdout(line.substring(line.indexOf(COLON) + 2));
-                    } else if (line.startsWith(StringUtils.format("[%s] State: ", sessionToken))) {
-                        componentLog.toolStdout(line.substring(line.indexOf("]") + 2));
-                        // Parse state from line
-                        state = line.substring(line.indexOf(COLON) + 2);
-                    } else if (line.startsWith(StringUtils.format("[%s] StdErr: ", sessionToken))) {
-                        componentLog.toolStderr(line.substring(line.indexOf(COLON) + 2));
-                    } else {
-                        LOG.error(line);
-                    }
+                    state = parseLogLine(sessionToken, state, line);
                 }
 
                 rceExecutor.waitForTermination();
@@ -220,7 +215,7 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
 
         // Check if final state was "FINISHED"
         if (!state.equals(FinalWorkflowState.FINISHED.toString())) {
-            throw new ComponentException("Remote component execution failed.");
+            throw new ComponentException("Remote component or workflow ended in state: " + state);
         }
 
         // Download output directory
@@ -248,4 +243,22 @@ public class SshRemoteAccessClientComponent extends DefaultComponent {
 
     }
 
+    private String parseLogLine(String sessionToken, String state, String line) {
+        if (line.startsWith(StringUtils.format("[%s] StdOut: ", sessionToken))) {
+            componentLog.toolStdout(line.substring(line.indexOf(COLON) + 2));
+        } else if (line.startsWith(StringUtils.format("[%s] State: ", sessionToken))) {
+            // Parse state from line
+            state = line.substring(line.indexOf(COLON) + 2);
+            if (isWorkflow) {
+                componentLog.toolStdout("Workflow state changed, new state: " + WorkflowState.valueOf(state).getDisplayName());
+            } else {
+                componentLog.toolStdout("Tool state changed, new state: " + WorkflowState.valueOf(state).getDisplayName());
+            }
+        } else if (line.startsWith(StringUtils.format("[%s] StdErr: ", sessionToken))) {
+            componentLog.toolStderr(line.substring(line.indexOf(COLON) + 2));
+        } else {
+            LOG.error(line);
+        }
+        return state;
+    }
 }

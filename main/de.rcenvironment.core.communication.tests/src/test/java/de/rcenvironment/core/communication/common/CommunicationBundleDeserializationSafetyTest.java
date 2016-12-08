@@ -12,9 +12,11 @@ import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 
+import org.apache.commons.logging.LogFactory;
 import org.junit.Test;
 
 import de.rcenvironment.core.utils.common.security.AbstractDeserializationClasspathCheck;
+import de.rcenvironment.core.utils.testing.CommonTestOptions;
 
 /**
  * Checks for potential security issues related to deserialization of data received from external sources, running in the classpath of the
@@ -32,8 +34,13 @@ public class CommunicationBundleDeserializationSafetyTest extends AbstractDeseri
     @Test
     public void testForKnownUnsafeClassesInClasspath() {
 
-        boolean unsafeClassFound = checkForKnownUnsafeClassesInClasspath();
+        if (!CommonTestOptions.isExtendedTestingEnabled()) {
+            LogFactory.getLog(getClass()).info(
+                "Skipping classpath check for potentially insecure classes; only performed in 'extended' testing");
+            return;
+        }
 
+        boolean unsafeClassFound = checkForKnownUnsafeClassesInClasspath();
         assertFalse("Found at least one known unsafe or suspicious class in the available classpath; check log output for details",
             unsafeClassFound);
     }

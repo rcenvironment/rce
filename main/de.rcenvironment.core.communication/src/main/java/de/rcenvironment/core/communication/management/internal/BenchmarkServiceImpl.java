@@ -20,13 +20,14 @@ import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.BenchmarkService;
 import de.rcenvironment.core.communication.management.BenchmarkSetup;
 import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 
@@ -41,7 +42,7 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
 
     private PlatformService platformService;
 
-    private BundleContext bundleContext;
+    private LiveNetworkIdResolutionService idResolutionService;
 
     /**
      * Internal implementation of {@link BenchmarkSetup}.
@@ -66,7 +67,8 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
     @Override
     public BenchmarkSetup parseBenchmarkDescription(String definition) {
         List<BenchmarkSubtaskImpl> subtasks = new ArrayList<BenchmarkSubtaskImpl>();
-        Pattern cmdPattern = Pattern.compile("([0-9a-f]{32}|\\*|\\*\\*)\\((\\d*),(\\d*),(\\d*),(\\d*),(\\d*)\\)");
+        // TODO should use length constants instead; would be nice to also support instance ids and "upcast"
+        Pattern cmdPattern = Pattern.compile("([0-9a-f]{32}(?::[0-9a-f]{10})?|\\*|\\*\\*)\\((\\d*),(\\d*),(\\d*),(\\d*),(\\d*)\\)");
         Matcher matcher = cmdPattern.matcher(definition);
 
         while (matcher.find()) {
@@ -78,17 +80,22 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
             int responseDelay = parseInt(matcher.group(5), 0);
             int numSenders = parseInt(matcher.group(6), 1);
 
-            List<NodeIdentifier> targetNodes = new ArrayList<NodeIdentifier>();
+            List<InstanceNodeSessionId> targetNodes = new ArrayList<InstanceNodeSessionId>();
             if (targetNodeString.equals("*")) {
                 // * = add all, except "self"
-                Set<NodeIdentifier> knownNodes = new HashSet<NodeIdentifier>(commService.getReachableNodes());
-                knownNodes.remove(platformService.getLocalNodeId());
+                Set<InstanceNodeSessionId> knownNodes = new HashSet<InstanceNodeSessionId>(commService.getReachableInstanceNodes());
+                knownNodes.remove(platformService.getLocalInstanceNodeSessionId());
                 targetNodes.addAll(knownNodes);
             } else if (targetNodeString.equals("**")) {
                 // ** = add all, including "self"
-                targetNodes.addAll(commService.getReachableNodes());
+                targetNodes.addAll(commService.getReachableInstanceNodes());
             } else {
-                targetNodes.add(NodeIdentifierFactory.fromNodeId(targetNodeString));
+                try {
+                    targetNodes.add(idResolutionService.resolveInstanceNodeIdStringToInstanceNodeSessionId(targetNodeString));
+                } catch (IdentifierException e) {
+                    throw new IllegalArgumentException("Could not resolve '" + targetNodeString
+                        + "' to a valid node within the current network");
+                }
             }
             BenchmarkSubtaskImpl subtask =
                 new BenchmarkSubtaskImpl(targetNodes, numMessages, requestSize, responseSize, responseDelay, numSenders);
@@ -109,7 +116,7 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
     @Override
     public void asyncExecBenchmark(BenchmarkSetup setup, TextOutputReceiver outputReceiver) {
         BenchmarkProcess benchmark = createBenchmarkProcess(setup, outputReceiver);
-        SharedThreadPool.getInstance().execute(benchmark);
+        ConcurrencyUtils.getAsyncTaskService().execute(benchmark);
     }
 
     @Override
@@ -123,12 +130,14 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
         return new byte[respSize];
     }
 
-    protected void activate(BundleContext context) {
-        this.bundleContext = context;
-    }
+    protected void activate(BundleContext context) {}
 
     protected void bindCommunicationService(CommunicationService newCommunicationService) {
         this.commService = newCommunicationService;
+    }
+
+    protected void bindLiveNetworkIdResolutionService(LiveNetworkIdResolutionService newInstance) {
+        this.idResolutionService = newInstance;
     }
 
     protected void bindPlatformService(PlatformService newService) {
@@ -136,7 +145,7 @@ public class BenchmarkServiceImpl implements BenchmarkService, RemoteBenchmarkSe
     }
 
     private BenchmarkProcess createBenchmarkProcess(BenchmarkSetup setup, TextOutputReceiver outputReceiver) {
-        BenchmarkProcess benchmark = new BenchmarkProcess(setup, outputReceiver, commService, bundleContext);
+        BenchmarkProcess benchmark = new BenchmarkProcess(setup, outputReceiver, commService);
         return benchmark;
     }
 

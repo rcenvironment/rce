@@ -78,5 +78,11 @@ public final class MetaDataKeys {
     /** Flag for deletion marker. */
     public static final String WORKFLOW_MARKED_FOR_DELETION = "rce.common.workflow_marked_for_deletion";
 
+    /** Key for data type. */
+    public static final String DATA_TYPE = "rce.common.data_type";
+
+    /** Key for data type conversion information. */
+    public static final String DATA_TYPE_CONVERSION = "rce.common.data_type_conversion";
+
     private MetaDataKeys() {}
 }

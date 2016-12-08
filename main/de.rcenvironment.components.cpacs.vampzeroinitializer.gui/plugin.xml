@@ -15,7 +15,7 @@
          <!-- XPathChooserView -->
          <propertySection
                tab="workflow.editor.tab.initialization.XPathChooser"
-               class="de.rcenvironment.core.gui.xpathchooser.XPathChooserPropertyView"
+               class="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerInputsOutputsSection"
                id="workflow.editor.tab.initialization.XPathChooserSection"
                filter="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerComponentFilter">
          </propertySection>
@@ -41,14 +41,6 @@
         </propertyTabs>
     </extension>
         
-    <!--  Configuration validation -->
-    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerWorkflowNodeValidator"
-            filter="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerComponentFilter">
-       </validator>
-    </extension>
-           
    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.cpacs.vampzeroinitializer.gui.VampZeroInitializerHistoryDataItemSubtreeBuilder"/>
    </extension>

@@ -14,6 +14,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -35,7 +37,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUtils;
 import de.rcenvironment.core.utils.common.security.StringSubstitutionSecurityUtils.SubstitutionContext;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * A {@link CommandPlugin} providing "ra/ra-admin [...]" commands.
@@ -43,6 +45,8 @@ import de.rcenvironment.core.utils.incubator.IdGenerator;
  * @author Robert Mischke
  */
 public class RemoteAccessCommandPlugin implements CommandPlugin {
+
+    private static final int SEC_TO_MSEC = 1000;
 
     private static final String WORKFLOW_STATE_CHANGE_CONSOLEROW_PREFIX = ConsoleRow.WorkflowLifecyleEventType.NEW_STATE.name() + ":";
 
@@ -124,7 +128,8 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
             if (!validateToolOrWorkflowParameterString(parameters)) {
                 throw CommandException.executionError(StringUtils.format(
                     "The parameter string contains at least one forbidden character. "
-                        + "More information is available in the RCE instance's log files.", sessionToken), context);
+                        + "More information is available in the RCE instance's log files.",
+                    sessionToken), context);
             }
 
             log.debug("Executing 'run' command in the context of temporary account " + account.getLoginName()
@@ -235,9 +240,13 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_PROTOCOL_VERSION, "", true,
             "prints the protocol version of this interface"));
         // ra list-tools
-        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_TOOLS, "[-f/--format {csv|token-list}]", true,
+        contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_TOOLS, "[-f/--format {csv|token-list}] "
+            + "[--load-data <time span> <time limit>]", true,
             "lists all available tool ids and versions for the \"" + SUBCOMMAND_RUN_TOOL + "\" command",
-            "-f/--format: specifies the output format; allowed values are \"csv\" (default) and \"token-stream\""));
+            "-f/--format: specifies the output format; allowed values are \"csv\" (default) and \"token-stream\"",
+            "--with-load-data: fetch CPU/RAM load data for all tool nodes and include them in the output",
+            "time span - the maximum time span, in seconds, to aggregate/average load data over",
+            "time limit - the maximum time, in millisedoncs, to wait for each node's load data response"));
         // ra list-wfs
         contributions.add(new CommandDescription(RA_COMMAND + " " + SUBCOMMAND_LIST_WORKFLOWS, "", true,
             "lists all available workflow ids and versions for the \"" + SUBCOMMAND_LIST_WORKFLOWS + "\" command"));
@@ -355,19 +364,29 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
     }
 
     private void performProtocolVersion(CommandContext context) {
-        context.println(RemoteAccessConstants.PROTOCOL_VERSION);
+        context.println(RemoteAccessConstants.PROTOCOL_VERSION_STRING);
     }
 
     private void performListTools(CommandContext context) throws CommandException {
-        String format = "csv";
-        if (context.consumeNextTokenIfEquals("-f") || context.consumeNextTokenIfEquals("--format")) {
-            format = context.consumeNextToken();
-        }
         try {
-            remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), format);
-        } catch (IllegalArgumentException e) {
-            throw CommandException.syntaxError(e.getMessage(), context);
+            // output format parameter
+            String format = "csv";
+            if (context.consumeNextTokenIfEquals("-f") || context.consumeNextTokenIfEquals("--format")) {
+                format = context.consumeNextToken();
+            }
+            // load data parameters
+            if (context.consumeNextTokenIfEquals("--with-load-data")) {
+                final int timeSpanSec = parseRequiredPositiveIntParameter(context, "time span");
+                final int timeLimitMsec = parseRequiredPositiveIntParameter(context, "time limit");
+                remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), format, true,
+                    timeSpanSec * SEC_TO_MSEC, timeLimitMsec);
+            } else {
+                remoteAccessService.printListOfAvailableTools(context.getOutputReceiver(), format, false, 0, 0);
+            }
+        } catch (IllegalArgumentException | InterruptedException | ExecutionException | TimeoutException e) {
+            throw CommandException.syntaxError(e.toString(), context);
         }
+
     }
 
     private void performListWfs(CommandContext context) throws CommandException {
@@ -386,7 +405,7 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
         String token = context.consumeNextToken();
         boolean useCompactOutput = OPTION_COMPACT_LONG_FORM.equals(token) || OPTION_COMPACT_SHORT_FORM.equals(token);
 
-        String sessionToken = IdGenerator.randomUUIDWithoutDashes().substring(0, 8); // TODO improve
+        String sessionToken = IdGenerator.fastRandomHexString(8);
         String usedCommandVariant = context.getOriginalTokens().get(0); // e.g. "ra" or "ra-admin"
         String virtualScpRootPath = getVirtualScpRootPath(usedCommandVariant, sessionToken);
 
@@ -592,4 +611,25 @@ public class RemoteAccessCommandPlugin implements CommandPlugin {
             throw CommandException.syntaxError(StringUtils.format("Invalid %s: %s", description, errorMsg), context);
         }
     }
+
+    // TODO (p2) refactor into common utility method; duplicated in System Monitoring plugin
+    private int parseRequiredPositiveIntParameter(final CommandContext context, String name) throws CommandException {
+        final String parameter = context.consumeNextToken();
+        if (parameter == null) {
+            throw CommandException.wrongNumberOfParameters(context);
+        }
+        final int timespan;
+        try {
+            timespan = Integer.parseInt(parameter);
+            if (timespan <= 0) {
+                throw CommandException.syntaxError("The " + name
+                    + " parameter must be positive: " + parameter, context);
+            }
+        } catch (NumberFormatException e) {
+            throw CommandException.syntaxError("The " + name
+                + " parameter must be an integer number: " + parameter, context);
+        }
+        return timespan;
+    }
+
 }

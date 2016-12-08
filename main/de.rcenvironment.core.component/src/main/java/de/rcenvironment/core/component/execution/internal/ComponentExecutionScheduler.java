@@ -21,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
+import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
@@ -86,10 +87,6 @@ public class ComponentExecutionScheduler {
 
     private final Set<String> idsNotAValueDatumsSent = Collections.synchronizedSet(new HashSet<String>());
 
-    private final Set<String> resetDataIdsForwarded = Collections.synchronizedSet(new HashSet<String>());
-
-    private final Set<String> failureDataIdsForwarded = Collections.synchronizedSet(new HashSet<String>());
-
     private final AtomicBoolean loopResetRequested = new AtomicBoolean(false);
 
     private final Set<String> resetDataIdsSent = Collections.synchronizedSet(new HashSet<String>());
@@ -102,9 +99,13 @@ public class ComponentExecutionScheduler {
 
     private int inputsCount = 0;
 
+    private Set<String> inputsConsideredForFinished = new HashSet<>();
+
     private AtomicReference<State> state = new AtomicReference<>(State.IDLING);
 
     private boolean isEnabled = false;
+    
+    private volatile boolean schedulingFailed = false;
 
     /**
      * States a component can be form a scheduling perspective.
@@ -129,12 +130,28 @@ public class ComponentExecutionScheduler {
     }
 
     protected void initialize(ComponentExecutionContext compExeContext) throws ComponentExecutionException {
+
         EndpointDescriptionsManager inputDescriptionsManager = compExeContext.getComponentDescription().getInputDescriptionsManager();
         for (EndpointGroupDescription groupDescription : inputDescriptionsManager.getEndpointGroupDescriptions()) {
             endpointGroupDescriptions.put(groupDescription.getName(), groupDescription);
         }
 
+        int inputsOuterCount = 0;
+        Set<String> inputsSame = new HashSet<>();
         for (EndpointDescription endpointDescription : inputDescriptionsManager.getEndpointDescriptions()) {
+            
+            switch (endpointDescription.getEndpointDefinition().getEndpointCharacter()) {
+            case OUTER_LOOP:
+                inputsOuterCount++;
+                break;
+            case SAME_LOOP:
+                inputsSame.add(endpointDescription.getName());
+                break;
+            default:
+                throw new IllegalArgumentException(
+                    "Endpoint type unknown: " + endpointDescription.getEndpointDefinition().getEndpointCharacter());
+            }
+            
             endpointDataTypes.put(endpointDescription.getName(), endpointDescription.getDataType());
             endpointDatums.put(endpointDescription.getName(), new LinkedList<EndpointDatum>());
             Map<String, String> metaData = endpointDescription.getMetaData();
@@ -183,7 +200,20 @@ public class ComponentExecutionScheduler {
                 addToRequiredInputsOrGroups(inputDescriptionsManager, endpointDescription);
             }
         }
+        
+        if (!isDriver(compExeContext) && inputsOuterCount > 0 || isNestedDriver(compExeContext)) {
+            inputsConsideredForFinished.removeAll(inputsSame);
+        }
 
+    }
+    
+    boolean isNestedDriver(ComponentExecutionContext compExeContext) {
+        return Boolean.valueOf(compExeContext.getComponentDescription().getConfigurationDescription()
+            .getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
+    }
+    
+    boolean isDriver(ComponentExecutionContext compExeContext) {
+        return compExeContext.getComponentDescription().getComponentInterface().getIsLoopDriver();
     }
 
     protected synchronized void validateAndQueueEndpointDatum(EndpointDatum datum) {
@@ -202,9 +232,12 @@ public class ComponentExecutionScheduler {
     }
 
     private void postSchedulingFailedEvent(ComponentExecutionException e) {
-        compExeRelatedInstances.compStateMachine
-            .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.SCHEDULING_FAILED, e));
-        isEnabled = false;
+        if (!schedulingFailed) {
+            compExeRelatedInstances.compStateMachine
+                .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.SCHEDULING_FAILED, e));
+            schedulingFailed = true;
+            isEnabled = false;            
+        }
     }
 
     private void postNewSchedulingStateEvent() {
@@ -212,7 +245,7 @@ public class ComponentExecutionScheduler {
             .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.NEW_SCHEDULING_STATE));
         isEnabled = false;
     }
-    
+
     protected synchronized boolean isEnabled() {
         return isEnabled;
     }
@@ -225,7 +258,7 @@ public class ComponentExecutionScheduler {
         }
         setEnabled(true);
     }
-    
+
     protected synchronized void disable() {
         setEnabled(false);
     }
@@ -236,7 +269,6 @@ public class ComponentExecutionScheduler {
             updateSchedulingState();
         }
     }
-    
 
     protected State getSchedulingState() {
         return state.get();
@@ -280,19 +312,24 @@ public class ComponentExecutionScheduler {
     }
 
     private void addToNotRequiredInputs(EndpointDescription endpointDescription) {
-        inputsCount++;
+        increaseInputCount(endpointDescription);
         notRequiredInputs.add(endpointDescription.getName());
     }
 
     private void addToRequiredInputsOrGroups(EndpointDescriptionsManager endpointDescriptionsManager,
         EndpointDescription endpointDescription) {
-        inputsCount++;
+        increaseInputCount(endpointDescription);
         if (endpointDescription.getParentGroupName() == null || endpointDescription.getParentGroupName().equals("null")) {
             requiredInputsOrGroups.add(endpointDescription.getName());
         } else {
             requiredInputsOrGroups.add(getTopLevelGroup(endpointDescriptionsManager, endpointDescription.getParentGroupName()));
             fillGroups(endpointDescriptionsManager, endpointDescription.getName(), endpointDescription.getParentGroupName());
         }
+    }
+
+    private void increaseInputCount(EndpointDescription endpointDescription) {
+        inputsCount++;
+        inputsConsideredForFinished.add(endpointDescription.getName());
     }
 
     private void fillGroups(EndpointDescriptionsManager endpointDescriptionsManager, String inputOrGroupName, String groupName) {
@@ -418,14 +455,8 @@ public class ComponentExecutionScheduler {
                 .equals(compExeRelatedInstances.compExeCtx.getExecutionIdentifier())) { // sanity check
                 throw new ComponentExecutionException("Internal error: Received failure datum, but component is not the recipient,"
                     + " , there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
-            } else if (failureDataIdsForwarded.contains(internalDatum.getIdentifier())) { // sanity check
-                throw new ComponentExecutionException(StringUtils.format(
-                    "Received failure datum twice (was forwarded at input '%s'); id: " + internalDatum.getIdentifier()
-                        + "; Review the connections of your (nested) loop(s). Refer to the user guide if in doubt.",
-                    endpointDatum.getInputName()));
             } else {
                 failureDatumToFoward.set(endpointDatum);
-                failureDataIdsForwarded.add(internalDatum.getIdentifier());
             }
             break;
         case NestedLoopReset:
@@ -450,14 +481,8 @@ public class ComponentExecutionScheduler {
                     .equals(compExeRelatedInstances.compExeCtx.getExecutionIdentifier())) { // sanity check
                     throw new ComponentExecutionException("Internal error: Received reset datum, but component is not the final"
                         + " recipient; there are still hops to traverse left: " + internalDatum.getHopsToTraverse());
-                } else if (resetDataIdsForwarded.contains(internalDatum.getIdentifier())) { // sanity check
-                    throw new ComponentExecutionException(StringUtils.format(
-                        "Received reset datum twice (was forwarded at input '%s'); id: " + internalDatum.getIdentifier()
-                            + "; Review the connections of your (nested) loop(s). Refer to the user guide if in doubt.",
-                        endpointDatum.getInputName()));
                 } else {
                     resetDatumToFoward.set(endpointDatum);
-                    resetDataIdsForwarded.add(internalDatum.getIdentifier());
                 }
             }
             break;
@@ -472,7 +497,7 @@ public class ComponentExecutionScheduler {
         endpointDatumToAdd.setValue(typedDatumFactory.createNotAValue(
             ((InternalTDImpl) endpointDatumToConvert.getValue()).getIdentifier(), NotAValueTD.Cause.Failure));
         endpointDatumToAdd.setDataManagementId(dmId);
-        endpointDatumToAdd.setWorkfowNodeId(endpointDatumToConvert.getWorkflowNodeId());
+        endpointDatumToAdd.setWorkflowNodeId(endpointDatumToConvert.getWorkflowNodeId());
         endpointDatumToAdd.setOutputsComponentExecutionIdentifier(endpointDatumToConvert.getOutputsComponentExecutionIdentifier());
         endpointDatumToAdd.setOutputsNodeId(endpointDatumToConvert.getOutputsNodeId());
         endpointDatumToAdd.setWorkflowExecutionIdentifier(endpointDatumToConvert.getWorkflowExecutionIdentifier());
@@ -520,7 +545,7 @@ public class ComponentExecutionScheduler {
         State newState;
         if (isExecutable()) {
             newState = checkForNotAValueDatums();
-        } else if (finishedInputs.size() == inputsCount) {
+        } else if (finishedInputs.containsAll(inputsConsideredForFinished)) {
             checkIfDatumAtConsumingInputsLeft();
             newState = State.FINISHED;
         } else if (resetDatumToFoward.get() != null) {

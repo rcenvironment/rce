@@ -15,8 +15,12 @@ import org.osgi.framework.BundleContext;
 import org.osgi.framework.ServiceReference;
 import org.osgi.framework.ServiceRegistration;
 
+import de.rcenvironment.core.toolkitbridge.api.StaticToolkitHolder;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.toolkit.modules.statistics.api.CounterCategory;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsFilterLevel;
+import de.rcenvironment.toolkit.modules.statistics.api.StatisticsTrackerService;
 
 /**
  * A {@link ServiceRegistryAccess} implementation that registers and acquires services at the OSGi service registry.
@@ -31,8 +35,13 @@ public class OsgiServiceRegistryAccess implements ServiceRegistryPublisherAccess
 
     private final List<ServiceReference<?>> serviceReferences = new ArrayList<ServiceReference<?>>();
 
+    private final CounterCategory counterCategory;
+
     public OsgiServiceRegistryAccess(BundleContext bundleContext) {
         this.bundleContext = bundleContext;
+        counterCategory =
+            StaticToolkitHolder.getService(StatisticsTrackerService.class).getCounterCategory(
+                "Additional Service registrations via OsgiServiceRegistryAccess API", StatisticsFilterLevel.DEVELOPMENT);
     }
 
     @Override
@@ -62,6 +71,7 @@ public class OsgiServiceRegistryAccess implements ServiceRegistryPublisherAccess
         synchronized (serviceRegistrations) {
             serviceRegistrations.add(bundleContext.registerService(clazz.getName(), implementation, null));
         }
+        counterCategory.count(clazz.getName());
     }
 
     @Override

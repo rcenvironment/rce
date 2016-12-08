@@ -17,29 +17,29 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 
 /**
- * A mock {@link StatefulComponentDataManagementService} that creates local temporary files and uses
- * their absolute paths as references. Useful for testing wrappers without a full data management
- * backend.
+ * A mock {@link StatefulComponentDataManagementService} that creates local temporary files and uses their absolute paths as references.
+ * Useful for testing wrappers without a full data management backend.
  * 
  * @author Robert Mischke
  */
 public class TempFileMockComponentDataManagementService implements StatefulComponentDataManagementService {
 
     private static Log log = LogFactory.getLog(TempFileMockComponentDataManagementService.class);
-    
+
     private TempFileService tempFileService = TempFileServiceAccess.getInstance();
 
     // method does not make sense in this context, because this method implementation is only
     // intended to work locally
     @Override
-    public void copyReferenceToLocalFile(String reference, File targetFile, Collection<NodeIdentifier> platforms) throws IOException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, Collection<ResolvableNodeId> platforms) throws IOException {
         // false = do not preserve timestamp
         FileUtils.copyFile(new File(reference), targetFile, false);
     }
@@ -47,13 +47,13 @@ public class TempFileMockComponentDataManagementService implements StatefulCompo
     // method does not make sense in this context, because this method implementation is only
     // intended to work locally
     @Override
-    public void copyReferenceToLocalFile(String reference, File targetFile, NodeIdentifier platform) throws IOException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId platform) throws IOException {
         // false = do not preserve timestamp
         FileUtils.copyFile(new File(reference), targetFile, false);
     }
 
     @Override
-    public String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException {
+    public String retrieveStringFromReference(String reference, InstanceNodeSessionId nodeId) throws IOException {
         return FileUtils.readFileToString(new File(reference));
     }
 
@@ -103,12 +103,13 @@ public class TempFileMockComponentDataManagementService implements StatefulCompo
     }
 
     @Override
-    public void copyFileReferenceTDToLocalFile(FileReferenceTD fileReference, File targetFile, NodeIdentifier node) throws IOException {
+    public void copyFileReferenceTDToLocalFile(FileReferenceTD fileReference, File targetFile, InstanceNodeSessionId node)
+        throws IOException {
         // not supported, calls are silently ignored
     }
 
     @Override
-    public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NodeIdentifier node)
+    public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, InstanceNodeSessionId node)
         throws IOException {
         // not supported, calls are silently ignored
     }

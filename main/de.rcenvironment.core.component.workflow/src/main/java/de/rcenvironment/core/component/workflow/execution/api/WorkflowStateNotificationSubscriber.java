@@ -17,9 +17,9 @@ import de.rcenvironment.core.component.workflow.execution.spi.SingleWorkflowStat
 import de.rcenvironment.core.notification.DefaultNotificationSubscriber;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Subscriber for {@link WorkflowState} notifications.
@@ -106,7 +106,7 @@ public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubs
     private synchronized void startCheckingForWorkflowNotAlive() {
         if (isWorkflowAliveCheckTask == null) {
             latestIsAliveReceived = System.currentTimeMillis();
-            isWorkflowAliveCheckTask = SharedThreadPool.getInstance().scheduleAtFixedRate(new Runnable() {
+            isWorkflowAliveCheckTask = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
 
                 @TaskDescription("Check workflow is alive")
                 @Override
@@ -119,7 +119,7 @@ public class WorkflowStateNotificationSubscriber extends DefaultNotificationSubs
                                 + "because the network connection to the workflow host node was interrupted",
                                 singleWfExecutionId);
                             singleWfStateChangeListener.onWorkflowNotAliveAnymore(errorMessage);
-                            SharedThreadPool.getInstance().submit(new Runnable() {
+                            ConcurrencyUtils.getAsyncTaskService().submit(new Runnable() {
     
                                 @TaskDescription("Stop checking workflow is alive")
                                 @Override

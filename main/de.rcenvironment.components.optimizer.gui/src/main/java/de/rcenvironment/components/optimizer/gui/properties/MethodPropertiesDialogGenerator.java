@@ -21,6 +21,7 @@ import org.eclipse.swt.events.ModifyEvent;
 import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.graphics.ImageData;
 import org.eclipse.swt.layout.GridData;
@@ -36,6 +37,8 @@ import org.eclipse.swt.widgets.Widget;
 
 import de.rcenvironment.components.optimizer.common.MethodDescription;
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
+import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.incubator.NumericalTextConstraintListener;
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 
@@ -45,9 +48,12 @@ import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
  * @author Sascha Zur
  */
 public class MethodPropertiesDialogGenerator extends Dialog {
-
+    
+    private static final  String TRUE = "true";
+    
     private final MethodDescription methodDescription;
-
+    
+    
     private Map<Widget, String> widgetToKeyMap;
 
     protected MethodPropertiesDialogGenerator(Shell parentShell, MethodDescription methodDescription) {
@@ -71,7 +77,8 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         Composite dialogContainer = (Composite) super.createDialogArea(parent);
         CTabFolder settingsTabFolder = new CTabFolder(dialogContainer, SWT.BORDER);
         if (methodDescription != null) {
-            if (methodDescription.getCommonSettings() != null && !methodDescription.getCommonSettings().isEmpty()) {
+            if (methodDescription.getCommonSettings() != null
+                && checkIfSettingsAreGUIRelevant(methodDescription.getCommonSettings())) {
                 CTabItem commonSettingsTab = new CTabItem(settingsTabFolder, SWT.NONE);
                 commonSettingsTab.setText("Common Settings");
                 Composite commonSettingsContainer = new Composite(settingsTabFolder, SWT.NONE);
@@ -80,7 +87,8 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                 commonSettingsTab.setControl(commonSettingsContainer);
             }
 
-            if (methodDescription.getSpecificSettings() != null && !methodDescription.getSpecificSettings().isEmpty()) {
+            if (methodDescription.getSpecificSettings() != null
+                && checkIfSettingsAreGUIRelevant(methodDescription.getSpecificSettings())) {
                 CTabItem specificSettingsTab = new CTabItem(settingsTabFolder, SWT.NONE);
                 specificSettingsTab.setText("Algorithm Specific Settings");
                 Composite specificSettingsContainer = new Composite(settingsTabFolder, SWT.NONE);
@@ -88,7 +96,9 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                 createSettings(methodDescription.getSpecificSettings(), specificSettingsContainer);
                 specificSettingsTab.setControl(specificSettingsContainer);
             }
-            if (methodDescription.getResponsesSettings() != null && !methodDescription.getResponsesSettings().isEmpty()) {
+            if (methodDescription.getResponsesSettings() != null
+                && checkIfSettingsAreGUIRelevant(methodDescription.getResponsesSettings())) {
+                
                 CTabItem responsesSettingsTab = new CTabItem(settingsTabFolder, SWT.NONE);
                 responsesSettingsTab.setText("Responses Settings");
                 Composite responsesSettingsContainer = new Composite(settingsTabFolder, SWT.NONE);
@@ -99,6 +109,24 @@ public class MethodPropertiesDialogGenerator extends Dialog {
         }
         return dialogContainer;
     }
+    
+    private boolean checkIfSettingsAreGUIRelevant(Map<String, Map<String, String> > settings) {
+        boolean returnValue = true;
+        if (settings.isEmpty()) {
+            returnValue = false;
+        }
+        
+        if (settings != null) {
+            for (String key : settings.keySet()) {
+                if (settings.get(key).get(OptimizerComponentConstants.DONT_SHOW_KEY) != null) {
+                    returnValue = false;
+                }
+            }
+        }
+        
+        return returnValue;
+    }
+    
 
     private void createSettings(Map<String, Map<String, String>> settings, Composite container) {
         if (settings != null) {
@@ -128,7 +156,7 @@ public class MethodPropertiesDialogGenerator extends Dialog {
             for (String key : sortedSettings) {
                 Map<String, String> currentSetting = settings.get(key);
                 if (settings.get(key).get(OptimizerComponentConstants.DONT_SHOW_KEY) == null
-                    || !settings.get(key).get(OptimizerComponentConstants.DONT_SHOW_KEY).equalsIgnoreCase("true")) {
+                    || !settings.get(key).get(OptimizerComponentConstants.DONT_SHOW_KEY).equalsIgnoreCase(TRUE)) {
                     String value = currentSetting.get(OptimizerComponentConstants.VALUE_KEY);
                     if (value == null || value.equals("")) {
                         value = currentSetting.get(OptimizerComponentConstants.DEFAULT_VALUE_KEY);
@@ -139,6 +167,7 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                                 currentSetting.get(OptimizerComponentConstants.GUINAME_KEY),
                                 currentSetting.get(OptimizerComponentConstants.DATA_TYPE_KEY),
                                 value);
+                        newTextfield.setData(key);
                         widgetToKeyMap.put(newTextfield, key);
                         newTextfield.addModifyListener(new MethodPropertiesModifyListener());
                     } else if (settings.get(key).get(
@@ -148,6 +177,7 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                             currentSetting.get(OptimizerComponentConstants.CHOICES_KEY),
                             value);
                         widgetToKeyMap.put(newCombo, key);
+                        newCombo.setData(key);
                         newCombo.addModifyListener(new MethodPropertiesModifyListener());
                     } else if (settings.get(key).get(OptimizerComponentConstants.SWTWIDGET_KEY)
                         .equals(OptimizerComponentConstants.WIDGET_CHECK)) {
@@ -155,17 +185,95 @@ public class MethodPropertiesDialogGenerator extends Dialog {
                             currentSetting.get(OptimizerComponentConstants.GUINAME_KEY),
                             value);
                         widgetToKeyMap.put(newCheckbox, key);
+                        newCheckbox.setData(key);
                         newCheckbox.addSelectionListener(new SelectionChangedListener());
                     }
                 }
             }
+
+            new Label(container, SWT.NONE).setText("");
+            Label horizontalLine = new Label(container, SWT.SEPARATOR | SWT.HORIZONTAL);
+            GridData lineGridData = new GridData(GridData.FILL_HORIZONTAL | SWT.END);
+            horizontalLine.setLayoutData(lineGridData);
+            new Label(container, SWT.NONE).setText("");
+            Button loadDefaults = new Button(container, SWT.PUSH);
+            loadDefaults.setImage(ImageManager.getInstance().getImageDescriptor(StandardImages.RESTORE_DEFAULT).createImage());
+            GridData gridData = new GridData();
+            gridData.horizontalAlignment = SWT.RIGHT;
+            loadDefaults.setLayoutData(gridData);
+            loadDefaults.setText(Messages.restoreDefaultAlgorithmProperties);
+            loadDefaults.addSelectionListener(new DefaultSelectionListener(container, settings));
         }
     }
+    
+    /**
+     * 
+     * Implements the selection listener for the "load default" values button.
+     *
+     * @author Jascha Riedel
+     */
+    private class DefaultSelectionListener implements SelectionListener {
+
+        private Composite container;
+        
+        private Map<String, Map<String, String> > settings;
+        
+        DefaultSelectionListener(Composite container, Map<String, Map<String, String> > settings) {
+            this.container = container;
+            this.settings = settings;
+        }
+        
+        
+        @Override
+        public void widgetDefaultSelected(SelectionEvent arg0) {
+        }
+
+        @Override
+        public void widgetSelected(SelectionEvent arg0) {
+            for (Object field : container.getChildren()) {
+                if (field instanceof Text) {
+                    String key = (String) ((Text) field).getData();
+                    if (key != null) {
+                        String value = settings.get(key).get(OptimizerComponentConstants.DEFAULT_VALUE_KEY);
+                        if (value != null) {
+                            ((Text) field).setText(value);
+                        }
+                    }
+                }
+                if (field instanceof Combo) {
+                    String key = (String) ((Combo) field).getData();
+                    if (key != null) {
+                        String value = settings.get(key).get(OptimizerComponentConstants.DEFAULT_VALUE_KEY);
+                        if (value != null) {
+                            ((Combo) field).setText(value);
+                        }
+                    }
+                    
+                }
+                if (field instanceof Button) {
+                    String key = (String) ((Button) field).getData();
+                    
+                    if (key != null) {
+                        String value = settings.get(key).get(OptimizerComponentConstants.DEFAULT_VALUE_KEY);
+                        if (value != null) {
+                            if (value.equals(TRUE) || value.equals("false")) {
+                                ((Button) field).setSelection(Boolean.parseBoolean(value));
+                            } else {
+                                ((Button) field).setText(value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+    }
+
 
     private Button createLabelAndCheckbox(Composite container, String text, String value) {
         new Label(container, SWT.NONE).setText(text);
         Button result = new Button(container, SWT.CHECK);
-        if (value.equals("true")) {
+        if (value.equals(TRUE)) {
             result.setSelection(true);
         } else {
             result.setSelection(false);

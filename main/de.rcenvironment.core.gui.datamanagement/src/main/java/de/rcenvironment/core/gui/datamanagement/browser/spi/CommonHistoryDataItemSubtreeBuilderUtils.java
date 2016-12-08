@@ -11,6 +11,7 @@ package de.rcenvironment.core.gui.datamanagement.browser.spi;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
@@ -27,8 +28,13 @@ import de.rcenvironment.core.component.datamanagement.api.CommonComponentHistory
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.api.DefaultComponentHistoryDataItem;
 import de.rcenvironment.core.component.datamanagement.api.EndpointHistoryDataItem;
+import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.DataTypeException;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.datamodel.api.TypedDatum;
+import de.rcenvironment.core.datamodel.api.TypedDatumConverter;
+import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.MatrixTD;
@@ -59,9 +65,18 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
      */
     public static final int MAX_LABEL_LENGTH = 30;
 
+    private static final String STRING_CONVERSION_INFORMATION =
+        "{\"guiName\":\"Converted from data type %s\", \"value\":\"%s\"}";
+
+    private static final String NOT_CONVERTIBLE_MESSAGE = "Datum of type '%s' is not convertible to data type '%s' expected by input '%s'";
+
     private static final int MAX_NON_PERSISTENT_ENTRIES = 1000;
 
     private static final String LEAF_TEXT_FORMAT = "%s: %s";
+
+    private static final List<String> META_DATA_KEYS_TO_HIDE = new ArrayList<String>(Arrays.asList(
+        // Set all meta data keys that should not be displayed in the workflow data browser.
+        MetaDataKeys.DATA_TYPE));
 
     private static Log logger = LogFactory.getLog(CommonHistoryDataItemSubtreeBuilderUtils.class);
 
@@ -235,6 +250,23 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
         }
     }
 
+    private static String getAbbreviatedContent(TypedDatum datum) {
+        DataType dataType = datum.getDataType();
+        switch (dataType) {
+        case SmallTable:
+            SmallTableTD table = (SmallTableTD) datum;
+            return table.toLengthLimitedString(MAX_LABEL_LENGTH);
+        case Vector:
+            VectorTD vector = (VectorTD) datum;
+            return vector.toLengthLimitedString(MAX_LABEL_LENGTH);
+        case Matrix:
+            MatrixTD matrix = (MatrixTD) datum;
+            return matrix.toLengthLimitedString(MAX_LABEL_LENGTH);
+        default:
+            return datum.toString();
+        }
+    }
+
     private static String handleBooleanDigitShortTextLabel(EndpointHistoryDataItem item, String endpointName, DMBrowserNode node) {
         String fullContent = item.getValue().toString();
         return handleLabel(fullContent, org.apache.commons.lang3.StringUtils.abbreviate(fullContent, MAX_LABEL_LENGTH), endpointName, node);
@@ -297,48 +329,100 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
 
     private static void handleDataItem(EndpointHistoryDataItem item, String name, DMBrowserNode parent,
         String historyItemDataReferenceId, EndpointType endpointType, Map<String, String> endpointMetaData) {
+        boolean hasMetaData = endpointMetaData != null && !endpointMetaData.isEmpty();
+        //Handle older DB entries that did not store the endpoint data type, but only the typed datum data type (<RCE 8.0)
         DataType currentDataType = item.getValue().getDataType();
+        if (hasMetaData) {
+            if (endpointMetaData.containsKey(MetaDataKeys.DATA_TYPE) && currentDataType != DataType.NotAValue) {
+                //Replace currentDataType if the data type of the endoint is stored in the db (>RCE 8.0)
+                currentDataType = DataType.byShortName(endpointMetaData.get(MetaDataKeys.DATA_TYPE));
+                if (!item.getValue().getDataType().equals(currentDataType)) {
+                    try {
+                        // create a dummy instance; this is required by the OSGi ServiceRegistryAccess to determine the caller's bundle -
+                        // flink
+                        CommonHistoryDataItemSubtreeBuilderUtils dummyInstance = new CommonHistoryDataItemSubtreeBuilderUtils();
+                        ServiceRegistryAccess registryAccess = ServiceRegistry.createAccessFor(dummyInstance);
+                        TypedDatumConverter converter = registryAccess.getService(TypedDatumService.class).getConverter();
+                        endpointMetaData.put(MetaDataKeys.DATA_TYPE_CONVERSION,
+                            StringUtils.format(
+                                STRING_CONVERSION_INFORMATION,
+                                item.getValue().getDataType().getDisplayName(), getAbbreviatedContent(item.getValue())));
+                        item = new EndpointHistoryDataItem(item.getTimestamp(), item.getEndpointName(),
+                            converter.castOrConvert(item.getValue(), currentDataType));
+
+                    } catch (DataTypeException e) {
+                        throw new RuntimeException(
+                            StringUtils.format(NOT_CONVERTIBLE_MESSAGE, item.getValue().getDataType(), currentDataType, name));
+                    }
+                }
+            }
+        }
         DMBrowserNodeType type = getDMBrowserNodeTypeByDataType(currentDataType);
         DMBrowserNode node = null;
-        boolean hasMetaData = endpointMetaData != null && !endpointMetaData.isEmpty();
-        if (currentDataType != DataType.DirectoryReference && !hasMetaData) {
+        if (currentDataType != DataType.DirectoryReference && (!hasMetaDataToDisplay(endpointMetaData))) {
             node = DMBrowserNode.addNewLeafNode(name, type, parent);
+        } else if (hasMetaDataToDisplay(endpointMetaData)) {
+            DMBrowserNode outputNameNode = DMBrowserNode.addNewChildNode(name, type, parent);
+            node = DMBrowserNode.addNewLeafNode(name, type, outputNameNode);
         } else {
             node = DMBrowserNode.addNewChildNode(name, type, parent);
         }
 
-        if (currentDataType == DataType.SmallTable) {
+
+        switch (currentDataType) {
+        case SmallTable:
             handleSmallTableLabel(item, name, node);
-        } else if (currentDataType == DataType.Vector) {
+            break;
+        case Vector:
             handleVectorLabel(item, name, node);
-        } else if (currentDataType == DataType.ShortText
-            || currentDataType == DataType.Boolean
-            || currentDataType == DataType.Integer
-            || currentDataType == DataType.Float) {
+            break;
+        case ShortText:
+        case Boolean:
+        case Integer:
+        case Float:
             handleBooleanDigitShortTextLabel(item, name, node);
-        } else if (currentDataType == DataType.NotAValue) {
+            break;
+        case NotAValue:
             handleNotAValueLabel(item, name, node);
-        } else if (currentDataType == DataType.Matrix) {
+            break;
+        case Matrix:
             handleMatrixLabel(item, name, node);
-        } else if (currentDataType == DataType.FileReference) {
+            break;
+        case FileReference:
             addFileReference(item, node);
-        } else if (currentDataType == DataType.DirectoryReference) {
+            break;
+        case DirectoryReference:
             addDirectoryReference(item, node);
-        } else {
+            break;
+        default:
             node.setTitle(StringUtils.format(LEAF_TEXT_FORMAT, name, item.getValue()));
         }
-        if (endpointMetaData != null) {
+
+        if (hasMetaDataToDisplay(endpointMetaData)) {
             for (Entry<String, String> property : endpointMetaData.entrySet()) {
-                try {
-                    JsonNode tree = mapper.readTree(property.getValue());
-                    DMBrowserNode.addNewLeafNode(StringUtils.format("%s: %s", tree.get("guiName"), tree.get("value")), type, node);
-                } catch (IOException e) {
-                    logger.error("Could not parse endpoint properties from json string " + property.getValue());
+                if (!property.getKey().equals(MetaDataKeys.DATA_TYPE)) {
+                    try {
+                        JsonNode tree = mapper.readTree(property.getValue());
+                        DMBrowserNode.addNewLeafNode(StringUtils.format("%s: %s", tree.get("guiName").asText(), tree.get("value").asText()),
+                            DMBrowserNodeType.InformationText, node.getParent());
+                    } catch (IOException e) {
+                        logger.error("Could not parse endpoint properties from json string " + property.getValue());
+                    }
                 }
             }
         }
     }
 
+    private static boolean hasMetaDataToDisplay(Map<String, String> endpointMetaData) {
+        if (endpointMetaData != null && !endpointMetaData.isEmpty()) {
+            for (String key : endpointMetaData.keySet()) {
+                if (!META_DATA_KEYS_TO_HIDE.contains(key)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
     /**
      * Builds directory subtree for endpoint.
      * 
@@ -397,5 +481,4 @@ public final class CommonHistoryDataItemSubtreeBuilderUtils {
             }
         }
     }
-
 }

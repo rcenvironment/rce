@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication
 Bundle-SymbolicName: de.rcenvironment.core.communication;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.channel,
  de.rcenvironment.core.communication.common,
@@ -37,8 +37,9 @@ Import-Package: com.jcraft.jsch;version="0.1.45",
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.toolkitbridge.api,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.common.service,
@@ -46,6 +47,12 @@ Import-Package: com.jcraft.jsch;version="0.1.45",
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.ssh.jsch,
  de.rcenvironment.core.utils.ssh.jsch.executor,
+ de.rcenvironment.toolkit.modules.concurrency.api,
+ de.rcenvironment.toolkit.modules.concurrency.api.threadcontext,
+ de.rcenvironment.toolkit.modules.concurrency.utils,
+ de.rcenvironment.toolkit.modules.statistics.api,
+ de.rcenvironment.toolkit.modules.statistics.utils,
+ de.rcenvironment.toolkit.utils.common,
  edu.uci.ics.jung.algorithms.filters;version="2.0.1",
  edu.uci.ics.jung.algorithms.shortestpath;version="2.0.1",
  edu.uci.ics.jung.graph;version="2.0.1",

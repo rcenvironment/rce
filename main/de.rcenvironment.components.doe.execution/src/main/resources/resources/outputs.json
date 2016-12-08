@@ -1,37 +1,28 @@
 {
     "staticOutputs": [
         {
-            "name": "Outer loop done",
+            "name": "Done",
+            "character": "outerLoop",
             "dataTypes": [
                 "Boolean"
             ],
             "defaultDataType": "Boolean",
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "InnerLoopEndpoint"
-                }
-            }
+             "readOnly": "true"
         },
         {
-            "name": "Done",
-            "dataTypes": [
-                "Boolean"
-            ],
-            "defaultDataType": "Boolean",
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "OuterLoopEndpoint"
-                }
-            }
+        	"name": "Number of samples",
+        	"character": "sameLoop",
+        	"dataTypes": [
+        		"Integer"
+        	],
+        	"defaultDataType": "Integer",
+        	"readOnly": "true"
         }
     ],
     "dynamicOutputs": [
         {
             "identifier": "default",
+            "character": "sameLoop",
             "dataTypes": [
                 "Float"
             ],
@@ -54,16 +45,12 @@
                     "visibility": "shown",
                     "defaultValue": "1",
                     "validation": "required"
-                },
-                 "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "SelfLoopEndpoint"
                 }
             }
         },
         {
             "identifier": "toForward",
+            "character": "sameLoop",
             "dataTypes": [
                 "Boolean",
                 "ShortText",

@@ -23,14 +23,19 @@
 			id="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor" 
 			name="Workflow Editor">
 		</editor>
-  <editor
-        class="de.rcenvironment.core.gui.workflow.view.ReadOnlyWorkflowRunEditor"
-        default="false"
-        filenames="*.wfr"
-        icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/workflow16.gif"
-        id="de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor"
-        name="Workflow Viewer">
-  </editor>
+  		<editor class="de.rcenvironment.core.gui.workflow.view.WorkflowRunEditor"
+        	default="false"
+        	filenames="*.wfr"
+        	icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/workflow16.gif"
+        	id="de.rcenvironment.core.gui.workflow.editor.WorkflowRunEditor"
+        	name="Workflow Viewer">
+        </editor>
+  		<editor class="de.rcenvironment.core.gui.workflow.editor.ReadOnlyWorkflowEditor"
+			default="false"  
+			icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/workflow16_disabled.gif"
+			id="de.rcenvironment.rce.gui.workflow.editor.ReadOnlyWorkflowEditor" 
+			name="Read-only Workflow Editor">
+		</editor>
 	</extension>
 	
 	<!--  Preference Page -->
@@ -307,6 +312,11 @@
             id="de.rcenvironment.core.gui.workflowproject.create"
             name="%createWorkflowProjectName">
       </command>
+      <command
+            description="%createWorkflowProjectDescription"
+            id="de.rcenvironment.core.gui.component.verify"
+            name="%createWorkflowProjectName">
+      </command>
       <category
             description="%advancedTabCategoryDescription"
             id="de.rcenvironment.core.gui.advancedtab"
@@ -343,6 +353,22 @@
             name="delete">
       </command>
       <command
+      		id="de.rcenvironment.core.gui.workflow.part.sendback"
+      		name="sendpartback">
+	  </command>
+	  <command
+      		id="de.rcenvironment.core.gui.workflow.part.sendforward"
+      		name="sendpartforward">
+	  </command>
+	  <command
+      		id="de.rcenvironment.core.gui.workflow.part.sendtobackground"
+      		name="sendparttobackground">
+	  </command>
+	  <command
+      		id="de.rcenvironment.core.gui.workflow.part.sendtoforeground"
+      		name="sendparttoforeground">
+	  </command>
+      <command
             id="de.rcenvironment.core.gui.workflow.connectioneditor"
             name="connectioneditor">
       </command>
@@ -370,6 +396,14 @@
             id="de.rcenvironment.core.gui.workflow.integration"
             name="%toolIntegrationName ">
       </category>
+      <command
+            id="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool"
+            name="SelectConnectionTool">
+      </command>
+      <command
+            id="de.rcenvironment.core.gui.workflow.editor.selectselectiontool"
+            name="SelectSelectionTool">
+      </command>
    </extension>
    <extension
          point="org.eclipse.ui.menus">
@@ -396,6 +430,11 @@
                style="push"
                tooltip="%executeWorkflowTooltip">
          </command>
+         <command
+                  commandId="de.rcenvironment.core.gui.component.verify"
+                  label="Verify tool results..."
+                  style="push">
+            </command>
       </menuContribution>
       <menuContribution
             locationURI="menu:window?after=preferences">
@@ -515,12 +554,87 @@
                label="%delete"
                style="push">
          </command>
-         <separator name="separator2" visible="true" />
+         <separator name="separator3" visible="true" />
+         <command
+               commandId="de.rcenvironment.core.gui.workflow.part.sendback"
+               icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/sendBack.png"
+               label="%sendback"
+               style="push">
+               <visibleWhen>
+	       		<or>
+           			<reference
+						definitionId="workflowLabelsSelected">
+			   		</reference>
+		       		<reference
+		       		 	definitionId="workflowNodesSelected">
+	       		 	</reference>
+			   	</or>
+			   </visibleWhen>
+         </command>
+         <command
+               commandId="de.rcenvironment.core.gui.workflow.part.sendforward"
+               icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/sendForward.png"
+               label="%sendforward"
+               style="push">
+               <visibleWhen>
+                <or>
+           			<reference
+						definitionId="workflowLabelsSelected">
+			   		</reference>
+		       		<reference
+		       		 	definitionId="workflowNodesSelected">
+	       		 	</reference>
+			   	</or>
+			   </visibleWhen>
+         </command>
+         <command
+               commandId="de.rcenvironment.core.gui.workflow.part.sendtobackground"
+               icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/sendToBackground.png"
+               label="%sendtobackground"
+               style="push">
+               <visibleWhen>
+	       		<or>
+           			<reference
+						definitionId="workflowLabelsSelected">
+			   		</reference>
+		       		<reference
+		       		 	definitionId="workflowNodesSelected">
+	       		 	</reference>
+			   	</or>
+			   </visibleWhen>
+         </command>
+         <command
+               commandId="de.rcenvironment.core.gui.workflow.part.sendtoforeground"
+               icon="platform:/plugin/de.rcenvironment.core.gui.resources/resources/images/sendToForeground.png"
+               label="%sendtoforeground"
+               style="push">
+               <visibleWhen>
+	       		<or>
+           			<reference
+						definitionId="workflowLabelsSelected">
+			   		</reference>
+		       		<reference
+		       		 	definitionId="workflowNodesSelected">
+	       		 	</reference>
+			   	</or>
+			   </visibleWhen>
+         </command>
+         <separator name="separator4" visible="true" />
          <command
                commandId="de.rcenvironment.core.gui.workflow.node.disable"
                icon="resources/icons/disable.gif"
                label="Set Dis-/Enabled"
                style="push">
+               <visibleWhen>
+	       		<or>
+           			<reference
+						definitionId="workflowLabelsSelected">
+			   		</reference>
+		       		<reference
+		       		 	definitionId="workflowNodesSelected">
+	       		 	</reference>
+			   	</or>
+			   </visibleWhen>
          </command>
       </menuContribution>
       <menuContribution
@@ -594,7 +708,11 @@
             class="de.rcenvironment.core.gui.workflow.editor.ShowNewWorkflowProjectWizardHandler"
             commandId="de.rcenvironment.core.gui.workflowproject.create">
       </handler>
-            <handler
+      <handler
+            class="de.rcenvironment.core.gui.workflow.verify.OpenComponentResultVerificationWizardHandler"
+            commandId="de.rcenvironment.core.gui.component.verify">
+      </handler>
+      <handler
             class="de.rcenvironment.core.gui.workflow.AdvancedTabVisibilityHandler"
             commandId="de.rcenvironment.core.gui.advanced.show">
       </handler>
@@ -700,6 +818,47 @@
             </reference>
          </visibleWhen>
       </handler>
+      
+      <handler
+      		class="de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowPartSendBackHandler"
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendback">
+      		<enabledWhen>
+      			<reference
+      				definitionId="workflowNodeXorworkflowLabelSelected">
+  				</reference>
+			</enabledWhen>
+      </handler>
+      
+      <handler
+      		class="de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowPartSendForwardHandler"
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendforward">
+      		<enabledWhen>
+      			<reference
+      				definitionId="workflowNodeXorworkflowLabelSelected">
+  				</reference>
+			</enabledWhen>
+      </handler>
+      
+      <handler
+      		class="de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowPartSendToBackgroundHandler"
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendtobackground">
+      		<enabledWhen>
+      			<reference
+      				definitionId="workflowNodeXorworkflowLabelSelected">
+  				</reference>
+			</enabledWhen>
+      </handler>
+      
+      <handler
+      		class="de.rcenvironment.core.gui.workflow.editor.handlers.WorkflowPartSendToForegroundHandler"
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendtoforeground">
+      		<enabledWhen>
+      			<reference
+      				definitionId="workflowNodeXorworkflowLabelSelected">
+  				</reference>
+			</enabledWhen>
+      </handler>
+      
       <handler
             class="de.rcenvironment.core.gui.workflow.editor.handlers.OpenPropertiesViewHandler"
             commandId="de.rcenvironment.core.gui.workflow.propertiesview">
@@ -719,7 +878,7 @@
             commandId="de.rcenvironment.core.gui.workflow.helpview">
          <enabledWhen>
             <reference
-                  definitionId="workflowNodeSelected">
+                  definitionId="enableContextHelp">
             </reference>
          </enabledWhen>
          <visibleWhen>
@@ -742,6 +901,24 @@
             </reference>
          </visibleWhen>
       </handler>
+      <handler
+      		class="de.rcenvironment.core.gui.workflow.editor.handlers.SelectConnectionToolHandler"
+      		commandId="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool">
+      		 <enabledWhen>
+    	     	<reference
+    	     		definitionId="workflowSelected">
+	     		</reference>
+         	</enabledWhen>
+	   </handler>
+	   <handler
+      		class="de.rcenvironment.core.gui.workflow.editor.handlers.SelectSelectionToolHandler"
+      		commandId="de.rcenvironment.core.gui.workflow.editor.selectselectiontool">
+      		 <enabledWhen>
+    	     	<reference
+    	     		definitionId="workflowSelected">
+	     		</reference>
+         	</enabledWhen>
+	   </handler>
    </extension>
    <extension
          point="org.eclipse.core.expressions.definitions">
@@ -870,6 +1047,31 @@
             </with>
         </and>
       </definition>
+      <definition
+            id="onlyWorkflowNodesSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate ifEmpty = "false">
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart">
+	            </instanceof>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="*">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
          <definition
             id="workflowNodeOrLabelSelected">
         <and>
@@ -905,6 +1107,7 @@
             </with>
         </and>
       </definition>
+      
       <definition
             id="workflowNodeSelected">
         <and>
@@ -935,7 +1138,57 @@
             </with>
         </and>
       </definition>
-         <definition
+      
+      
+      
+      <definition
+            id="enableContextHelp">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	        	<and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowNodePart">
+	            </instanceof>
+	            </and>
+	            <and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.ConnectionPart">
+	            </instanceof>
+	            </and>
+	           	<and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart">
+	            </instanceof>
+	            </and>
+	            <and>
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowPart">
+	            </instanceof>
+	            </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="1">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+      
+      
+      <definition
             id="workflowLabelSelected">
         <and>
 			<with
@@ -965,7 +1218,61 @@
             </with>
         </and>
       </definition>
-      
+      <definition
+            id="workflowLabelsSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate
+	        	operator="or">
+	        	<or>
+	               <and>
+	             <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart">
+	            </instanceof>
+	            </and>
+	            </or>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="*">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
+      <definition
+            id="onlyWorkflowLabelsSelected">
+        <and>
+			<with
+	            variable="selection"> 
+	        <iterate ifEmpty = "false">
+	            <instanceof
+	            	value="de.rcenvironment.core.gui.workflow.parts.WorkflowLabelPart">
+	            </instanceof>
+			</iterate>
+			</with>
+			<with
+	        	variable="selection">
+	            <count
+	            	value="*">
+	            </count>
+			</with>
+			<with
+              	variable="activeEditorId">
+	               <equals
+	                     value="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
+	               </equals>
+            </with>
+        </and>
+      </definition>
             <!-- ### -->
 	<definition
             id="connectionSelected">
@@ -1042,6 +1349,29 @@
 	               </equals>
             </with>
       </definition>
+      <definition
+      	id="workflowNodeXorworkflowLabelSelected">
+  	      	<and>
+  				<or>
+  					<reference
+						definitionId="onlyWorkflowLabelsSelected">
+					</reference>
+					<reference
+						definitionId="onlyWorkflowNodesSelected">
+					</reference>
+				</or>
+				<not>
+					<and>
+						<reference
+							definitionId="onlyWorkflowLabelsSelected">
+						</reference>
+						<reference
+							definitionId="onlyWorkflowNodesSelected">
+						</reference>
+					</and>
+				</not>
+			</and>
+  	  </definition>
    </extension>
    <extension
          id="de.rcenvironment.core.gui.workflow.keybinding.execute"
@@ -1059,6 +1389,11 @@
             commandId="de.rcenvironment.core.gui.workflowproject.create"
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="M1+M2+N">
+      </key>
+      <key
+            commandId="de.rcenvironment.core.gui.component.verify"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M1+M2+V">
       </key>
    </extension>
    <extension
@@ -1093,7 +1428,30 @@
             contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
             sequence="DEL">
       </key>
-      
+      <key
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendback"
+      		schemeId="de.rcenvironment.core.start.gui.binding"
+      		contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
+      		sequence="M2+ARROW_DOWN">
+      </key>
+      <key
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendforward"
+      		schemeId="de.rcenvironment.core.start.gui.binding"
+      		contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
+      		sequence="M2+ARROW_UP">
+      </key>
+      <key
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendtobackground"
+      		schemeId="de.rcenvironment.core.start.gui.binding"
+      		contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
+      		sequence="M2+PAGE_DOWN">
+      </key>
+      <key
+      		commandId="de.rcenvironment.core.gui.workflow.part.sendtoforeground"
+      		schemeId="de.rcenvironment.core.start.gui.binding"
+      		contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
+      		sequence="M2+PAGE_UP">
+      </key>
             <!-- ### -->
       <key
             commandId="de.rcenvironment.core.gui.workflow.bendpoints.delete"
@@ -1118,7 +1476,7 @@
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             contextId="de.rcenvironment.rce.gui.workflow.editor.scope"
             sequence="F1">
-      </key>      
+      </key>     
    </extension>
    <extension
          id="de.rcenvironment.core.gui.workflow.keybinding.workflow.edit"
@@ -1128,6 +1486,20 @@
             schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
             sequence="M3+C">
       </key>
+   </extension>
+   <extension
+   		id="de.rcenvironment.core.gui.workflow.keybinding.workflow.tools"
+   		point="org.eclipse.ui.bindings">
+   		<key
+            commandId="de.rcenvironment.core.gui.workflow.editor.selectconnectiontool"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M3+D">
+     	</key> 
+     	<key
+            commandId="de.rcenvironment.core.gui.workflow.editor.selectselectiontool"
+            schemeId="org.eclipse.ui.defaultAcceleratorConfiguration"
+            sequence="M3+S">
+      	</key> 
    </extension>
    <extension
          point="org.eclipse.ui.activities">
@@ -1154,4 +1526,17 @@
    			parentId="org.eclipse.ui.contexts.window">
    		</context>
    </extension>
+   
+   
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
+   </extension>
+   
+   <extension point="org.eclipse.help.toc">
+  		<toc file="help/toc_connections.xml"/>
+  		<toc file="help/toc_workflow_label.xml"/>
+  		<toc file="help/toc_workflow_editor.xml"/>
+  		<toc file="help/toc_runtime_workflow_editor.xml"/>
+   </extension>
+   
 </plugin>

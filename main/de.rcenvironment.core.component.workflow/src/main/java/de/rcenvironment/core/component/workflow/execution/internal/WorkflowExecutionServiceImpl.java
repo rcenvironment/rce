@@ -14,7 +14,6 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.text.ParseException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -26,7 +25,6 @@ import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ScheduledFuture;
 
-import org.apache.commons.collections4.map.LRUMap;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
@@ -35,7 +33,9 @@ import org.osgi.framework.BundleContext;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
@@ -59,13 +59,13 @@ import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDes
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateService;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateUtils;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link WorkflowExecutionService}.
@@ -75,8 +75,6 @@ import de.rcenvironment.core.utils.incubator.DebugSettings;
  */
 public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
-    protected static final String WORKFLOW_FILE_ENDING = ".wf";
-    
     private static final String FAILED_TO_LOAD_WORKFLOW_FILE = "Failed to load workflow file: ";
 
     private static final Log LOG = LogFactory.getLog(WorkflowExecutionServiceImpl.class);
@@ -86,8 +84,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
      * running or paused, or in the transitional states in-between.
      */
     private static final int ACTIVE_WORKFLOW_HEARTBEAT_NOTIFICATION_INTERVAL_MSEC = 6 * 1000;
-
-    private static final int CACHE_SIZE = 20;
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
@@ -107,8 +103,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     private RemotableComponentExecutionControllerService componentExecutionControllerService;
 
-    private Map<String, WeakReference<RemotableWorkflowExecutionControllerService>> wfExeCtrlServices = new LRUMap<>(CACHE_SIZE);
-
     private Set<WorkflowExecutionInformation> workflowExecutionInformations;
 
     private Object wfExeFetchLock = new Object();
@@ -117,7 +111,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     protected void activate(BundleContext context) {
 
-        heartbeatSendFuture = SharedThreadPool.getInstance().scheduleAtFixedRate(new Runnable() {
+        heartbeatSendFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
 
             @Override
             @TaskDescription("Send heartbeat for active workflows")
@@ -128,7 +122,6 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                     switch (wfExeInfo.getWorkflowState()) {
                     case INIT:
                     case PREPARING:
-                    case PREPARED:
                     case STARTING:
                     case RUNNING:
                     case PAUSING:
@@ -148,12 +141,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                     }
                 }
             }
-            
+
             private Set<WorkflowExecutionInformation> getWorkflowExecutionInformation() {
                 Set<WorkflowExecutionInformation> wfExeInfoSnapshot = new HashSet<>();
                 try {
-                    wfExeInfoSnapshot
-                        .addAll(getExecutionControllerService(platformService.getLocalNodeId()).getWorkflowExecutionInformations());
+                    wfExeInfoSnapshot.addAll(wfExeCtrlService.getWorkflowExecutionInformations());
                 } catch (ExecutionControllerException | RemoteOperationException e) {
                     LOG.error("Failed to fetch local workflow execution informations: " + e.getMessage());
                 }
@@ -259,7 +251,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                 if (e.getParsedWorkflowDescription() != null && callback.arePartlyParsedWorkflowConsiderValid()) {
                     // backup the orginal workflow file and overwrite it with the reduced but valid workflow description
                     String backupFilename =
-                        PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + WORKFLOW_FILE_ENDING;
+                        PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + WorkflowConstants.WORKFLOW_FILE_ENDING;
                     FileUtils.copyFile(wfFile, new File(wfFile.getParentFile().getAbsolutePath(), backupFilename));
                     wd = e.getParsedWorkflowDescription();
                     try (FileOutputStream fos = new FileOutputStream(wfFile);
@@ -284,8 +276,9 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
             LOG.debug(message);
             callback.onSilentWorkflowFileUpdated(message);
         } else {
-            String message = StringUtils.format("'%s' is updated (non-silent); backup file generated: %s (full path: %s)", wfFile.getName(),
-                backupFilename, wfFile.getAbsolutePath());
+            String message =
+                StringUtils.format("'%s' is updated (non-silent); backup file generated: %s (full path: %s)", wfFile.getName(),
+                    backupFilename, wfFile.getAbsolutePath());
             LOG.debug(message);
             callback.onNonSilentWorkflowFileUpdated(message, backupFilename);
         }
@@ -301,23 +294,23 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     @Override
     public WorkflowDescriptionValidationResult validateWorkflowDescription(WorkflowDescription workflowDescription) {
-        NodeIdentifier missingControllerNodeId = null;
-        Map<String, NodeIdentifier> missingComponentsNodeIds = new HashMap<>();
+        LogicalNodeId missingControllerNodeId = null;
+        Map<String, LogicalNodeId> missingComponentsNodeIds = new HashMap<>();
 
-        NodeIdentifier controllerNode = workflowDescription.getControllerNode();
+        LogicalNodeId controllerNode = workflowDescription.getControllerNode();
         if (controllerNode == null) {
-            controllerNode = platformService.getLocalNodeId();
+            controllerNode = platformService.getLocalDefaultLogicalNodeId();
         }
-        if (!workflowHostService.getWorkflowHostNodesAndSelf().contains(controllerNode)) {
+        if (!workflowHostService.getLogicalWorkflowHostNodesAndSelf().contains(controllerNode)) {
             missingControllerNodeId = controllerNode;
         }
 
         DistributedComponentKnowledge compKnowledge = componentKnowledgeService.getCurrentComponentKnowledge();
 
         for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
-            NodeIdentifier componentNode = node.getComponentDescription().getNode();
+            LogicalNodeId componentNode = node.getComponentDescription().getNode();
             if (componentNode == null) {
-                componentNode = platformService.getLocalNodeId();
+                componentNode = platformService.getLocalDefaultLogicalNodeId();
             }
             if (!ComponentUtils.hasComponent(compKnowledge.getAllInstallations(), node.getComponentDescription().getIdentifier(),
                 componentNode)) {
@@ -348,7 +341,7 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
         Map<String, String> authTokens = createAndRegisterLocalComponentExecutionAuthTokens((wfExeCtx).getWorkflowDescription());
         return getExecutionControllerService(wfExeCtx.getNodeId()).createExecutionController(wfExeCtx, authTokens,
-            !platformService.isLocalNode(wfExeCtx.getNodeId()));
+            !platformService.matchesLocalInstance(wfExeCtx.getNodeId()));
     }
 
     /**
@@ -360,11 +353,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
     private Map<String, String> createAndRegisterLocalComponentExecutionAuthTokens(WorkflowDescription workflowDescription) {
         Map<String, String> compIdToTokenMapping = new HashMap<String, String>();
         for (WorkflowNode wfNode : workflowDescription.getWorkflowNodes()) {
-            NodeIdentifier node = wfNode.getComponentDescription().getNode();
+            LogicalNodeId node = wfNode.getComponentDescription().getNode();
             // Use empty string instead of null to avoid "remote method not found" issue. If null is
             // passed the method can not be inspected
             String token = "";
-            if (node == null || platformService.isLocalNode(node)) {
+            if (node == null || platformService.matchesLocalInstance(node)) {
                 token = UUID.randomUUID().toString();
                 try {
                     componentExecutionControllerService.addComponentExecutionAuthToken(token);
@@ -378,39 +371,39 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
         return compIdToTokenMapping;
     }
 
-    private void performStartOnExecutionController(String executionId, NodeIdentifier node) throws ExecutionControllerException,
+    private void performStartOnExecutionController(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
         RemoteOperationException {
         getExecutionControllerService(node).performStart(executionId);
     }
 
     @Override
-    public void cancel(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void cancel(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performCancel(executionId);
     }
 
     @Override
-    public void pause(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void pause(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performPause(executionId);
     }
 
     @Override
-    public void resume(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void resume(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performResume(executionId);
     }
 
     @Override
-    public void dispose(String executionId, NodeIdentifier node) throws ExecutionControllerException, RemoteOperationException {
+    public void dispose(String executionId, ResolvableNodeId node) throws ExecutionControllerException, RemoteOperationException {
         getExecutionControllerService(node).performDispose(executionId);
     }
 
     @Override
-    public WorkflowState getWorkflowState(String executionId, NodeIdentifier node) throws ExecutionControllerException,
+    public WorkflowState getWorkflowState(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
         RemoteOperationException {
         return getExecutionControllerService(node).getWorkflowState(executionId);
     }
 
     @Override
-    public Long getWorkflowDataManagementId(String executionId, NodeIdentifier node) throws ExecutionControllerException,
+    public Long getWorkflowDataManagementId(String executionId, ResolvableNodeId node) throws ExecutionControllerException,
         RemoteOperationException {
         return getExecutionControllerService(node).getWorkflowDataManagementId(executionId);
     }
@@ -439,10 +432,11 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
                 if (forceRefresh || workflowExecutionInformations == null) {
                     Set<WorkflowExecutionInformation> tempWfExeInfos = new HashSet<>();
 
-                    CallablesGroup<Collection> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Collection.class);
+                    CallablesGroup<Collection> callablesGroup =
+                        ConcurrencyUtils.getFactory().createCallablesGroup(Collection.class);
 
-                    for (NodeIdentifier node : workflowHostService.getWorkflowHostNodesAndSelf()) {
-                        final NodeIdentifier finalNode = node;
+                    for (InstanceNodeSessionId node : workflowHostService.getWorkflowHostNodesAndSelf()) {
+                        final InstanceNodeSessionId finalNode = node;
                         callablesGroup.add(new Callable<Collection>() {
 
                             @Override
@@ -481,18 +475,10 @@ public class WorkflowExecutionServiceImpl implements WorkflowExecutionService {
 
     }
 
-    private RemotableWorkflowExecutionControllerService getExecutionControllerService(NodeIdentifier node) throws RemoteOperationException {
-        RemotableWorkflowExecutionControllerService wfCtrlService = null;
-        synchronized (wfExeCtrlServices) {
-            if (wfExeCtrlServices.containsKey(node.getIdString())) {
-                wfCtrlService = wfExeCtrlServices.get(node.getIdString()).get();
-            }
-            if (wfCtrlService == null) {
-                wfCtrlService = communicationService.getRemotableService(RemotableWorkflowExecutionControllerService.class, node);
-                wfExeCtrlServices.put(node.getIdString(), new WeakReference<RemotableWorkflowExecutionControllerService>(wfCtrlService));
-            }
-        }
-        return wfCtrlService;
+    private RemotableWorkflowExecutionControllerService getExecutionControllerService(ResolvableNodeId node)
+        throws RemoteOperationException {
+        // fetching the service proxy on each call, assuming that it will be cached centrally if necessary
+        return communicationService.getRemotableService(RemotableWorkflowExecutionControllerService.class, node);
     }
 
     protected void bindCommunicationService(CommunicationService newService) {

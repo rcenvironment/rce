@@ -29,7 +29,7 @@ import java.util.concurrent.TimeoutException;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetup;
 import de.rcenvironment.core.communication.connection.api.ConnectionSetupService;
@@ -47,7 +47,9 @@ import de.rcenvironment.core.communication.testutils.VirtualInstance;
 import de.rcenvironment.core.communication.testutils.VirtualInstanceGroup;
 import de.rcenvironment.core.communication.transport.virtual.testutils.VirtualTopology;
 import de.rcenvironment.core.configuration.ConfigurationService;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.utils.testing.CommonTestOptions;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Base class providing tests that can operate using duplex as well as non-duplex transports. A common use case is setting up a topology
@@ -66,14 +68,15 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
      */
     private static final int CONNECTION_OPERATION_WAIT_MSEC = 5000;
 
-    private static final int CONCURRENT_CS_TEST_NUM_CLIENTS = 20;
+    // simulated number of clients for concurrent connection setups testing; 5 for standard, 20 for extended testing
+    private static final int CONCURRENT_CS_TEST_NUM_CLIENTS = CommonTestOptions.selectStandardOrExtendedValue(5, 20);
 
     private static final int CONCURRENT_CS_TEST_TIMEOUT_MSEC = 10000;
 
     private static final String MESSAGE_INSTANCES_DID_NOT_CONVERGE_AT_ITERATION = "Instances did not converge at iteration index ";
 
-    // TODO review: reduced test size from 10 to 5 to reduce duration; find best trade-off
-    private static final int TEST_SIZE = 10;
+    // test size 5 for fast/standard testing, 10 for extended testing
+    private static final int TEST_SIZE = CommonTestOptions.selectStandardOrExtendedValue(5, 10);
 
     protected final Random randomGenerator = new Random();
 
@@ -108,15 +111,17 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         waitForNextMessage();
         waitForNetworkSilence();
 
-        NetworkResponse serverResponse = client.performRoutedRequest("c2s", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, server.getNodeId());
+        NetworkResponse serverResponse =
+            client.performRoutedRequest("c2s", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, server.getInstanceNodeSessionId());
         assertNotNull("C2S communication failed", serverResponse);
         assertTrue("C2S communication failed: " + NetworkFormatter.networkResponseToString(serverResponse), serverResponse.isSuccess());
-        assertEquals(TestNetworkRequestHandler.getTestResponse("c2s", server.getNodeId()),
+        assertEquals(TestNetworkRequestHandler.getTestResponse("c2s", server.getInstanceNodeSessionId()),
             serverResponse.getDeserializedContent());
-        NetworkResponse clientResponse = server.performRoutedRequest("s2c", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, client.getNodeId());
+        NetworkResponse clientResponse =
+            server.performRoutedRequest("s2c", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, client.getInstanceNodeSessionId());
         assertNotNull("S2C communication failed", clientResponse);
         assertTrue("S2C communication failed", clientResponse.isSuccess());
-        assertEquals(TestNetworkRequestHandler.getTestResponse("s2c", client.getNodeId()),
+        assertEquals(TestNetworkRequestHandler.getTestResponse("s2c", client.getInstanceNodeSessionId()),
             clientResponse.getDeserializedContent());
 
         // Systemx.out.println(NetworkFormatter.summary(client.getTopologyMap()));
@@ -299,14 +304,14 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
 
         // check for consistently converged properties on all nodes
         for (VirtualInstance vi : allInstances) {
-            Map<NodeIdentifier, Map<String, String>> allNodeProperties = vi.getNodePropertiesService().getAllNodeProperties();
+            Map<InstanceNodeSessionId, Map<String, String>> allNodeProperties = vi.getNodePropertiesService().getAllNodeProperties();
             assertEquals(allInstances.length, allNodeProperties.size());
             // each node should see proper "nodeId" properties fields for each node
             for (VirtualInstance vi2 : allInstances) {
-                NodeIdentifier nodeId = vi2.getNodeId();
+                InstanceNodeSessionId nodeId = vi2.getInstanceNodeSessionId();
                 Map<String, String> nodeProperties = allNodeProperties.get(nodeId);
-                assertNotNull("No metadata for node " + nodeId + " at " + vi.getNodeId(), nodeProperties);
-                assertEquals(nodeId.getIdString(), nodeProperties.get("nodeId"));
+                assertNotNull("No metadata for node " + nodeId + " at " + vi.getInstanceNodeSessionId(), nodeProperties);
+                assertEquals(nodeId.getInstanceNodeSessionIdString(), nodeProperties.get(NodePropertyConstants.KEY_NODE_ID));
             }
         }
 
@@ -316,19 +321,19 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         prepareWaitForNextMessage();
         for (VirtualInstance vi : allInstances) {
             vi.getNodePropertiesService().addOrUpdateLocalNodeProperty(insertionTestMetadataKey,
-                vi.getNodeId().getIdString() + insertionTestDataSuffix);
+                vi.getInstanceNodeSessionId().getInstanceNodeSessionIdString() + insertionTestDataSuffix);
         }
         waitForNextMessage();
         waitForNetworkSilence();
 
         // check for consistent *injected* properties on all nodes
         for (VirtualInstance vi : allInstances) {
-            Map<NodeIdentifier, Map<String, String>> allNodeProperties = vi.getNodePropertiesService().getAllNodeProperties();
+            Map<InstanceNodeSessionId, Map<String, String>> allNodeProperties = vi.getNodePropertiesService().getAllNodeProperties();
             assertEquals(allInstances.length, allNodeProperties.size());
             // each node should see proper "nodeId" property fields for each node
             for (VirtualInstance vi2 : allInstances) {
-                NodeIdentifier nodeId = vi2.getNodeId();
-                assertEquals(nodeId.getIdString() + insertionTestDataSuffix,
+                InstanceNodeSessionId nodeId = vi2.getInstanceNodeSessionId();
+                assertEquals(nodeId.getInstanceNodeSessionIdString() + insertionTestDataSuffix,
                     allNodeProperties.get(nodeId).get(insertionTestMetadataKey));
             }
         }
@@ -351,7 +356,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
      */
     @Test(timeout = CONCURRENT_CS_TEST_TIMEOUT_MSEC)
     public void testConcurrentConnectionSetupBehaviour() throws Exception {
-        final VirtualInstance server = new VirtualInstance(DEFAULT_SERVER_NODE_ID, DEFAULT_SERVER_NODE_ID, false); // no relay
+        final VirtualInstance server = new VirtualInstance(DEFAULT_SERVER_NODE_ID, false); // no relay
         server.registerNetworkTransportProvider(transportProvider);
         server.addServerConfigurationEntry(contactPointGenerator.createContactPoint());
         server.start();
@@ -365,7 +370,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         final CountDownLatch serverShutdownCdl = new CountDownLatch(1);
         final CountDownLatch phase2Cdl = new CountDownLatch(CONCURRENT_CS_TEST_NUM_CLIENTS);
 
-        SharedThreadPool threadPool = SharedThreadPool.getInstance();
+        AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
         for (int i = 1; i <= CONCURRENT_CS_TEST_NUM_CLIENTS; i++) {
             final int i2 = i;
             threadPool.execute(new Runnable() {
@@ -377,7 +382,7 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
                         VirtualInstance client = new VirtualInstance("client-" + i2);
                         client.registerNetworkTransportProvider(transportProvider);
                         client.start();
-                        log.debug("Created client " + client.getNodeId());
+                        log.debug("Created client " + client.getInstanceNodeSessionId());
                         ConnectionSetupServiceImpl clientConnectionSetupService =
                             (ConnectionSetupServiceImpl) client.getConnectionSetupService();
 
@@ -518,11 +523,11 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
     @Test
     public void testRelayBehaviour() throws Exception {
         // create instances manually to control the "is relay" settings
-        VirtualInstance c1 = new VirtualInstance("c1", "c1", false); // actually irrelevant
-        VirtualInstance c2 = new VirtualInstance("c2", "c2", false);
-        VirtualInstance c3 = new VirtualInstance("c3", "c3", false); // actually irrelevant
-        VirtualInstance s1 = new VirtualInstance("s1", "s1", true);
-        VirtualInstance s2 = new VirtualInstance("s2", "s2", true);
+        VirtualInstance c1 = new VirtualInstance("c1", false); // actually irrelevant
+        VirtualInstance c2 = new VirtualInstance("c2", false);
+        VirtualInstance c3 = new VirtualInstance("c3", false); // actually irrelevant
+        VirtualInstance s1 = new VirtualInstance("s1", true);
+        VirtualInstance s2 = new VirtualInstance("s2", true);
 
         VirtualInstanceGroup allNodes = new VirtualInstanceGroup(c1, c2, c3, s1, s2);
         allInstances = allNodes.toArray();
@@ -583,17 +588,17 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
         for (VirtualInstance i1 : allInstances) {
             for (VirtualInstance i2 : allInstances) {
                 boolean expected = visibilityMatrix.get(i1).get(i2);
-                assertEquals("Raw network graph visibility: " + i1.getNodeId() + " ->" + i2.getNodeId(), expected, i1.getRawNetworkGraph()
-                    .getNodeIds().contains(i2.getNodeId()));
+                assertEquals("Raw network graph visibility: " + i1.getInstanceNodeSessionId() + " ->" + i2.getInstanceNodeSessionId(),
+                    expected, i1.getRawNetworkGraph().getNodeIds().contains(i2.getInstanceNodeSessionId()));
             }
         }
 
         // verify expected visible node counts (as a cross-check)
-        Set<NodeIdentifier> c1VisibleNodes = c1.getRawNetworkGraph().getNodeIds();
-        Set<NodeIdentifier> c2VisibleNodes = c2.getRawNetworkGraph().getNodeIds();
-        Set<NodeIdentifier> c3VisibleNodes = c3.getRawNetworkGraph().getNodeIds();
-        Set<NodeIdentifier> s1VisibleNodes = s1.getRawNetworkGraph().getNodeIds();
-        Set<NodeIdentifier> s2VisibleNodes = s2.getRawNetworkGraph().getNodeIds();
+        Set<InstanceNodeSessionId> c1VisibleNodes = c1.getRawNetworkGraph().getNodeIds();
+        Set<InstanceNodeSessionId> c2VisibleNodes = c2.getRawNetworkGraph().getNodeIds();
+        Set<InstanceNodeSessionId> c3VisibleNodes = c3.getRawNetworkGraph().getNodeIds();
+        Set<InstanceNodeSessionId> s1VisibleNodes = s1.getRawNetworkGraph().getNodeIds();
+        Set<InstanceNodeSessionId> s2VisibleNodes = s2.getRawNetworkGraph().getNodeIds();
         assertEquals(3, c1VisibleNodes.size());
         assertEquals(3, s1VisibleNodes.size());
         assertEquals(5, c2VisibleNodes.size());
@@ -612,22 +617,24 @@ public abstract class AbstractSwitchableVirtualInstanceTest extends AbstractVirt
                 // the "negative" (forbidden) paths are not really tested as the network graph should simply not contain
                 // the target node, which was already tested above - misc_ro
                 // TODO add test that non-relays actually refuse to forward requests
-                NetworkResponse response = i1.performRoutedRequest("test", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, i2.getNodeId());
+                NetworkResponse response =
+                    i1.performRoutedRequest("test", ProtocolConstants.VALUE_MESSAGE_TYPE_TEST, i2.getInstanceNodeSessionId());
                 boolean success = response.isSuccess();
-                assertEquals("Messaging result: " + i1.getNodeId() + " ->" + i2.getNodeId(), expected, success);
+                assertEquals("Messaging result: " + i1.getInstanceNodeSessionId() + " ->" + i2.getInstanceNodeSessionId(), expected,
+                    success);
             }
         }
 
         // test node property visibilty;
         for (VirtualInstance i1 : allInstances) {
-            Map<NodeIdentifier, Map<String, String>> allNodeProperties = i1.getNodePropertiesService().getAllNodeProperties();
+            Map<InstanceNodeSessionId, Map<String, String>> allNodeProperties = i1.getNodePropertiesService().getAllNodeProperties();
             assertEquals("Node " + i1 + " knows a different number of nodes with published properties "
                 + "than its total number known network nodes", i1.getRawNetworkGraph().getNodeCount(), allNodeProperties.size());
             // check that all node id properties (simplest differing one to test) are actually visible
-            for (Entry<NodeIdentifier, Map<String, String>> e : allNodeProperties.entrySet()) {
-                NodeIdentifier targetNodeId = e.getKey();
+            for (Entry<InstanceNodeSessionId, Map<String, String>> e : allNodeProperties.entrySet()) {
+                InstanceNodeSessionId targetNodeId = e.getKey();
                 Map<String, String> targetProperties = e.getValue();
-                assertEquals(targetNodeId.getIdString(), targetProperties.get(NodePropertyConstants.KEY_NODE_ID));
+                assertEquals(targetNodeId.getInstanceNodeSessionIdString(), targetProperties.get(NodePropertyConstants.KEY_NODE_ID));
             }
         }
 

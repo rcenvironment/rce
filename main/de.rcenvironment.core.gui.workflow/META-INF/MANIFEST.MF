@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core GUI Workflow
 Bundle-SymbolicName: de.rcenvironment.core.gui.workflow;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui.views.properties.tabbed,
@@ -45,11 +45,12 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.notification,
  de.rcenvironment.core.start.common,
  de.rcenvironment.core.start.gui,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.channel.legacy,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.incubator,
+ de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.collections4;version="4.0.0",
  org.apache.commons.io;version="2.0.1",
@@ -69,6 +70,7 @@ Import-Package: de.rcenvironment.core.authentication,
  org.eclipse.ui.part
 Export-Package: de.rcenvironment.core.gui.workflow,
  de.rcenvironment.core.gui.workflow.editor,
+ de.rcenvironment.core.gui.workflow.editor.commands,
  de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
  de.rcenvironment.core.gui.workflow.editor.documentation,
  de.rcenvironment.core.gui.workflow.editor.properties,

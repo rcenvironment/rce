@@ -50,9 +50,13 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
 
     private static final String V3_3 = "3.3";
 
+    private static final String V4 = "4";
+
     private static final String OUTPUT_NAME = "name";
 
     private static final String STATIC_OUTPUTS = "staticOutputs";
+
+    private static final String DYNAMIC_INPUTS = "dynamicInputs";
 
     private static final String EP_IDENTIFIER = "epIdentifier";
 
@@ -75,7 +79,7 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
                 if (persistentComponentDescriptionVersion.compareTo(V3_0) < 0) {
                     versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.FOR_VERSION_THREE;
                 }
-                if (persistentComponentDescriptionVersion.compareTo(V3_1) < 0) {
+                if (persistentComponentDescriptionVersion.compareTo(V4) < 0) {
                     versionsToUpdate = versionsToUpdate | PersistentDescriptionFormatVersion.AFTER_VERSION_THREE;
                 }
             }
@@ -105,6 +109,8 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
                     description = updateFrom31To32(description);
                 case V3_2:
                     description = updateFrom32To33(description);
+                case V3_3:
+                    description = updateFrom33To4(description);
                 default:
                     // nothing to do here
                 }
@@ -121,6 +127,17 @@ public class ParametricStudyPersistentComponentDescriptionUpdater implements Per
                 }
             }
         }
+        return description;
+    }
+
+    private PersistentComponentDescription updateFrom33To4(PersistentComponentDescription description)
+        throws JsonProcessingException, IOException {
+        description =
+            PersistentComponentDescriptionUpdaterUtils.removeOuterLoopDoneEndpoints(description);
+        description = PersistentComponentDescriptionUpdaterUtils.removeEndpointCharacterInfoFromMetaData(description);
+        description = PersistentComponentDescriptionUpdaterUtils.reassignEndpointIdentifiers(description, DYNAMIC_INPUTS, "toForward",
+            "startToForward", "_start");
+        description.setComponentVersion(V4);
         return description;
     }
 

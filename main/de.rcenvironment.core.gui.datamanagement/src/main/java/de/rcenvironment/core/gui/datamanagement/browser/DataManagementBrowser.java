@@ -58,6 +58,7 @@ import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.ISelection;
 import org.eclipse.jface.viewers.ISelectionProvider;
 import org.eclipse.jface.viewers.IStructuredSelection;
+import org.eclipse.jface.viewers.TreeSelection;
 import org.eclipse.jface.viewers.TreeViewer;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.KeyEvent;
@@ -81,8 +82,8 @@ import org.eclipse.ui.part.ViewPart;
 import de.rcenvironment.core.authentication.AuthenticationException;
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.datamanagement.DataManagementService;
 import de.rcenvironment.core.datamanagement.FileDataService;
@@ -123,6 +124,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private static final String BRACKET_OPEN = "[";
 
     private static final String BRACKET_CLOSE = "]";
+    
+    private static final String LOCAL = "local";
 
     private static final MetaData META_DATA_WORKFLOW_FINAL_STATE = new MetaData(MetaDataKeys.WORKFLOW_FINAL_STATE, true, true);
 
@@ -182,7 +185,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private Action sortTimestampDesc;
 
     private ServiceRegistryAccess serviceRegistryAccess;
-
 
     /**
      * An {@link Action} to export data management entries to local files.
@@ -287,7 +289,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                             public void run() {
                                 String location;
                                 if (job.getTargetFile() != null) {
-                                    location =  StringUtils.format(Messages.exportSuccessText, browserNodesToSave.toString(),
+                                    location = StringUtils.format(Messages.exportSuccessText, browserNodesToSave.toString(),
                                         job.getTargetFile().getAbsolutePath()).replace(BRACKET_OPEN, "").replace(BRACKET_CLOSE, "");
                                 } else {
                                     location = StringUtils.format(Messages.exportSuccessText,
@@ -334,11 +336,11 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         private final class ExportJob extends Job {
 
             private static final String DOT = ".";
-            
+
             private List<DMBrowserNode> browserNodesToSave;
 
             private File targetDirectory;
-            
+
             private File targetFile;
 
             protected ExportJob(String title, List<DMBrowserNode> browserNodesToSave, File ordnerPath) {
@@ -356,8 +358,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 monitor.worked(1);
                 for (final DMBrowserNode browserNodeToSave : browserNodesToSave) {
                     DMBrowserNode workflowNode = browserNodeToSave.getNodeWithTypeWorkflow();
-                    if (workflowNode.getWorkflowHostName().equals("local")
-                        || isWorkflowHostReachable(workflowNode.getNodeIdentifier().getIdString())) {
+                    if (workflowNode.getWorkflowHostName().equals(LOCAL)
+                        || isWorkflowHostReachable(workflowNode.getNodeIdentifier())) {
                         saveNode(browserNodeToSave);
                     } else {
                         return Status.CANCEL_STATUS;
@@ -366,7 +368,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 monitor.worked(1);
                 return Status.OK_STATUS;
             }
-            
+
             protected File getTargetFile() {
                 return targetFile;
             }
@@ -461,7 +463,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             }
 
             private void save(final String dataReferenceId, final String fileReferencePath, final String filename,
-                final File directory, NodeIdentifier rceNodeIdentifier) {
+                final File directory, ResolvableNodeId rceNodeIdentifier) {
                 try {
                     DataManagementWorkbenchUtils.getInstance().saveReferenceToFile(dataReferenceId, fileReferencePath,
                         new File(directory, filename).getAbsolutePath(), rceNodeIdentifier);
@@ -486,7 +488,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     private final class OpenInTiglAction extends SelectionProviderAction {
 
         private final String[] supportedFileExtensions = new String[] { "xml", "brep", "step", "stp", "iges", "igs", "stl", "mesh" };
-        
+
         private OpenInTiglAction(ISelectionProvider provider, String text) {
             super(provider, text);
         }
@@ -848,7 +850,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     showView("de.rcenvironment.gui.Timeline", nodeSelected.getNodeWithTypeWorkflow().getWorkflowID(),
                         IWorkbenchPage.VIEW_ACTIVATE);
                 ((TimelineView) view).initialize(Long.parseLong(nodeSelected.getNodeWithTypeWorkflow().getWorkflowID()),
-                    NodeIdentifierFactory.fromNodeId(nodeSelected.getNodeWithTypeWorkflow().getWorkflowHostID()));
+                    nodeSelected.getNodeWithTypeWorkflow().getWorkflowControllerNode());
             } catch (PartInitException e) {
                 log.error("Failed to open timeline view for workflow: " + nodeSelected.getName(), e);
             }
@@ -887,7 +889,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
             if (nodeTitle.matches(".*: .*")) {
                 nodeTitle = nodeTitle.split(": ")[1];
             }
-   
+
             ClipboardHelper.setContent(nodeTitle);
         }
 
@@ -907,7 +909,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         @Override
         public void run() {
             viewer.collapseAll();
-            expandedNodes = new Object[]{};
+            expandedNodes = new Object[] {};
         }
 
     }
@@ -948,20 +950,20 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 }
             }
             setEnabled(enabled);
-            setChecked((selectedNodes.isEmpty() || selectedNodes.iterator().next().getType() == DMBrowserNodeType.Workflow)
+            setChecked((selectedNodes.isEmpty() || containsNodeTypeWorkflow(selectedNodes))
                 && treeSorter.getSortingType() == sortingType);
         }
 
         @Override
         public void run() {
-            if (selectedNodes.isEmpty() || selectedNodes.iterator().next().getType() == DMBrowserNodeType.Workflow) {
+            if (selectedNodes.isEmpty() || containsNodeTypeWorkflow(selectedNodes)) {
                 treeSorter.setSortingType(sortingType);
                 treeSorter.enableSorting(true);
                 viewer.refresh();
                 setSortActionsChecked();
             } else {
                 for (DMBrowserNode node : selectedNodes) {
-                    if (node.areChildrenKnown()) {
+                    if (treeSorter.isSortable(node, sortingType) && node.areChildrenKnown()) {
                         treeSorter.enableSorting(false);
                         setComparator(node);
                         setChecked(false);
@@ -969,6 +971,15 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                     }
                 }
             }
+        }
+
+        private boolean containsNodeTypeWorkflow(List<DMBrowserNode> nodes) {
+            for (DMBrowserNode node : nodes) {
+                if (node.getType().equals(DMBrowserNodeType.Workflow)) {
+                    return true;
+                }
+            }
+            return false;
         }
 
         private void setSortActionsChecked() {
@@ -1095,39 +1106,32 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         public void keyPressed(KeyEvent event) {
             if (event.stateMask == SWT.CTRL) {
                 if (event.keyCode == 'a') {
+                    // add shortcut for select all action
                     viewer.getTree().selectAll();
                     getSite().getSelectionProvider().setSelection(viewer.getSelection());
                 } else if (event.keyCode == 'c' && copyAction.isEnabled()) {
+                    // add shortcut for copy action
                     copyAction.run();
                 } else if (event.keyCode == 't' && timelineAction.isEnabled()) {
+                    // add shortcut for open timeline action
                     timelineAction.run();
-                }
-            } else if (event.keyCode == SWT.DEL) {
-                // add shortcut for delete action
-                if (deleteNodeAction.isEnabled()) {
-                    deleteNodeAction.run();
-                }
-                // add shortcut for refresh action
-            } else if (event.keyCode == SWT.DEL) {
-                // add shortcut for delete action
-                if (deleteNodeAction.isEnabled()) {
-                    deleteNodeAction.run();
-                }
-                // add shortcut for refresh action
-            } else if (event.stateMask == SWT.CTRL && event.keyCode == SWT.F5) {
-                if (refreshNodeAction.isEnabled()) {
+                } else if (event.keyCode == SWT.F5 && refreshNodeAction.isEnabled()) {
+                    // add shortcut for refresh selected action
                     refreshNodeAction.run();
                 }
+            } else if (event.keyCode == SWT.DEL) {
+                // add shortcut for delete action
+                if (deleteNodeAction.isEnabled()) {
+                    deleteNodeAction.run();
+                }
             } else if (event.keyCode == SWT.F5) {
+                // add shortcut for refresh all action
                 actionRefreshAll.run();
             }
         }
 
         @Override
-        public void keyReleased(KeyEvent arg0) {
-            // TODO Auto-generated method stub
-
-        }
+        public void keyReleased(KeyEvent arg0) {}
 
     }
 
@@ -1137,7 +1141,6 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     public DataManagementBrowser() {
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
     }
-
 
     /**
      * Registers an event listener for network changes as an OSGi service (whiteboard pattern).
@@ -1321,6 +1324,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         openTiglAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.TIGL_ICON));
 
         doubleClickAction = openInEditorAction;
+
         deleteNodeAction =
             new CustomDeleteAction(selectionProvider, Messages.deleteNodeActionContextMenuLabel + Messages.shortcutDelete, false);
         deleteNodeAction.setImageDescriptor(ImageManager.getInstance().getImageDescriptor(StandardImages.DELETE_16));
@@ -1375,6 +1379,8 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
         }
 
         expandedNodes = viewer.getVisibleExpandedElements();
+        viewer.getTree().setEnabled(true);
+        viewer.getTree().setFocus();
         viewer.refresh();
     }
 
@@ -1408,7 +1414,15 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
             @Override
             public void doubleClick(DoubleClickEvent event) {
-                doubleClickAction.run();
+                if (event.getSelection() instanceof TreeSelection) {
+                    TreeSelection sel = (TreeSelection) event.getSelection();
+                    if (sel.getFirstElement() instanceof DMBrowserNode) {
+                        DMBrowserNode node = (DMBrowserNode) sel.getFirstElement();
+                        if (node.isLeafNode()) {
+                            doubleClickAction.run();
+                        }
+                    }
+                }
             }
         });
     }
@@ -1424,26 +1438,26 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     /**
      * @return list with the reachable host's
      */
-    private Set<NodeIdentifier> registerWorkflowHostService() {
+    private Set<InstanceNodeSessionId> registerWorkflowHostService() {
         WorkflowHostService workflowHostService = serviceRegistryAccess.getService(WorkflowHostService.class);
         return workflowHostService.getWorkflowHostNodes();
     }
 
-    private boolean isWorkflowHostReachable(final String nodeID) {
-        Set<NodeIdentifier> registeredNodeID = registerWorkflowHostService();
-        for (NodeIdentifier nodeIdentifier : registeredNodeID) {
-            if (nodeID.equals(nodeIdentifier.getIdString())) {
+    private boolean isWorkflowHostReachable(ResolvableNodeId nodeID) {
+        Set<InstanceNodeSessionId> registeredNodeID = registerWorkflowHostService();
+        for (InstanceNodeSessionId nodeIdentifier : registeredNodeID) {
+            if (nodeID.isSameInstanceNodeAs(nodeIdentifier)) {
                 return true;
             }
         }
         return false;
     }
 
-    private void disableUnreachableNode(final String unreachableID) {
+    private void disableUnreachableNode(final ResolvableNodeId unreachableID) {
         for (TreeItem item : viewer.getTree().getItems()) {
             DMBrowserNode node = (DMBrowserNode) item.getData();
-            String nodeID = node.getNodeIdentifier().getIdString();
-            if (node.isEnabled() && nodeID.equals(unreachableID)) {
+            ResolvableNodeId nodeID = node.getNodeIdentifier();
+            if (node.isEnabled() && nodeID.isSameInstanceNodeAs(unreachableID)) {
                 node.setTitle(StringUtils.format(NODE_TEXT_FORMAT_TITLE_PLUS_HOSTNAME, node.getTitle(),
                     "[offline]"));
                 disableNode(node);
@@ -1481,9 +1495,9 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
                 }
                 if (node.getType() != DMBrowserNodeType.HistoryRoot) {
                     DMBrowserNode workflowNode = node.getNodeWithTypeWorkflow();
-                    if (workflowNode != null && !workflowNode.getWorkflowHostName().equals("local")
-                        && !isWorkflowHostReachable(workflowNode.getNodeIdentifier().getIdString())) {
-                        disableUnreachableNode(workflowNode.getNodeIdentifier().getIdString());
+                    if (workflowNode != null && !workflowNode.getWorkflowHostName().equals(LOCAL)
+                        && !isWorkflowHostReachable(workflowNode.getNodeIdentifier())) {
+                        disableUnreachableNode(workflowNode.getNodeIdentifier());
                     }
                 }
 
@@ -1502,7 +1516,14 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
 
     @Override
     public void handleContentRetrievalError(final DMBrowserNode node, final Exception cause) {
-        log.error("Retrieving data from data management failed", cause);
+        if (cause instanceof CommunicationException) {
+            // Since this type of exception can occur often during normal operation (e.g. remote node is offline) and is not an error, we do
+            // not print the whole stack trace.
+            log.warn("Retrieving data from data management failed: " + cause.getMessage());
+        } else {
+            log.error("Retrieving data from data management failed", cause);
+        }
+
         Display.getDefault().asyncExec(new Runnable() {
 
             @Override
@@ -1524,7 +1545,7 @@ public class DataManagementBrowser extends ViewPart implements DMBrowserNodeCont
     // recursively browse parent nodes until history root is found
     private void findAndDisableRootnode(DMBrowserNode node) {
         if (node.getParent().getType() == DMBrowserNodeType.HistoryRoot) {
-            disableUnreachableNode(node.getNodeIdentifier().getIdString());
+            disableUnreachableNode(node.getNodeIdentifier());
         } else {
             findAndDisableRootnode(node.getParent());
         }

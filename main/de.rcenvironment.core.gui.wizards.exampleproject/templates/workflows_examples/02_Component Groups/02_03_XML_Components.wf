@@ -1,11 +1,11 @@
 {
   "identifier" : "2610a723-29fb-45a7-b68c-1232949946bd",
-  "workflowVersion" : "4",
-  "name" : "XML_Loader_XML_Merger_2015-10-14_11:06:07_01",
+  "workflowVersion" : "5",
   "nodes" : [ {
     "identifier" : "ede2f6d0-21f7-467b-b211-16e8847262ae",
     "name" : "Input Provider XML_1",
     "location" : "323:313",
+    "zIndex" : "0",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.inputprovider",
@@ -24,7 +24,6 @@
       "identifier" : "f240bd5b-d34d-412c-95c9-6becba24e2d9",
       "name" : "MappingFile",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "FileReference",
       "metadata" : {
         "fileSourceType" : "atWorkflowStart",
@@ -34,7 +33,6 @@
       "identifier" : "0b8fe408-34d8-4e64-bc5e-ea957f50267b",
       "name" : "XMLFile_1",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "FileReference",
       "metadata" : {
         "fileSourceType" : "atWorkflowStart",
@@ -44,7 +42,6 @@
       "identifier" : "42407623-3f43-4710-bca1-4c56ee40d44f",
       "name" : "XMLFile_2",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "FileReference",
       "metadata" : {
         "fileSourceType" : "atWorkflowStart",
@@ -55,6 +52,7 @@
     "identifier" : "01732c60-224f-431c-b755-f77585fe258b",
     "name" : "Output Writer",
     "location" : "631:314",
+    "zIndex" : "1",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.outputwriter",
@@ -88,7 +86,7 @@
       "datatype" : "ShortText",
       "metadata" : {
         "filename" : "-",
-        "folderForSaving" : "[root]",
+        "folderForSaving" : "-",
         "inputExecutionConstraint_4aae3eea" : "Required",
         "inputHandling_73b1056e" : "Queue"
       }
@@ -101,6 +99,7 @@
     "identifier" : "b707d4e9-d642-4080-9f9e-a2038da06672",
     "name" : "XML Merger",
     "location" : "491:313",
+    "zIndex" : "2",
     "active" : "true",
     "component" : {
       "identifier" : "de.rcenvironment.xmlmerger",
@@ -115,8 +114,6 @@
     "staticInputs" : [ {
       "identifier" : "5d4b1f09-e23b-4930-ae4b-56c8e30c5413",
       "name" : "XML",
-      "epIdentifier" : null,
-      "group" : null,
       "datatype" : "FileReference",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
@@ -125,8 +122,6 @@
     }, {
       "identifier" : "e058fac8-4036-4cff-91f4-4c5735cdc841",
       "name" : "XML to integrate",
-      "epIdentifier" : null,
-      "group" : null,
       "datatype" : "FileReference",
       "metadata" : {
         "inputExecutionConstraint_4aae3eea" : "Required",
@@ -137,21 +132,18 @@
       "identifier" : "a8446816-0d9b-4fd0-8876-62527e54e4c1",
       "name" : "Mapping file",
       "epIdentifier" : "mappingFile",
-      "group" : null,
+      "group" : "null",
       "datatype" : "FileReference"
     } ],
     "staticOutputs" : [ {
       "identifier" : "dd2668af-1b6e-415f-a028-ef939b03aed7",
       "name" : "XML",
-      "epIdentifier" : null,
-      "group" : null,
       "datatype" : "FileReference"
     } ],
     "dynamicOutputs" : [ {
       "identifier" : "67205b28-5ebd-480f-b555-6079fe298e4a",
       "name" : "valueFromXML",
       "epIdentifier" : "default",
-      "group" : null,
       "datatype" : "ShortText",
       "metadata" : {
         "variable.xpath" : "/cpacs/header/version"
@@ -184,5 +176,5 @@
     "target" : "01732c60-224f-431c-b755-f77585fe258b",
     "input" : "f5d93725-6a79-40c9-a377-0086eb766ce2"
   } ],
-  "labels" : "[{\"identifier\":\"3357d6f2-4e8c-4dc4-a748-38894cc736aa\",\"text\":\"Example workflow: 'XML Merger'\\r\\nObjective: Introducing the XML components\\r\\n\\r\\nXML is a file format that is often used for exchanging data between different tools.\\r\\nThe XML merger component is used to integrate the contents of one XML file\\r\\n(input: 'XML to integrate') into another XML file (input: 'XML'). The rules for this\\r\\nintegration are given by a mapping file (see the \\\"mapping\\\" tab of the XML Merger). \\r\\nFurthermore, in XML components like the XML Merger you can add dynamic inputs and\\r\\noutputs of simple data types, which allow you to change entries in the XML file or to\\r\\nextract certain entries from the XML file. In this example workflow, the value for the\\r\\nentry \\\"/cpacs/header/version\\\" is extracted and sent to the next workflow component.\\r\\n\",\"location\":\"30:13\",\"size\":\"544:212\",\"alpha\":\"204\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"alignmentType\":\"CENTER\",\"border\":\"false\",\"textSize\":\"10\"},{\"identifier\":\"758ccaaf-a67d-4e64-861b-4ee5499e5ba0\",\"text\":\"Please select the following files\\r\\nfrom the Workflow Examples Project\\r\\nat workflow start:\\r\\n\\r\\nXMLFile_1 --> CPACS.xml\\r\\nXMLFile_2 --> XMLMerger_Integrate.xml\\r\\nMappingFile --> MappingRules.xsl\\r\\n\",\"location\":\"30:261\",\"size\":\"264:154\",\"alpha\":\"102\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"alignmentType\":\"CENTER\",\"border\":\"true\",\"textSize\":\"9\"}]"
+  "labels" : "[{\"identifier\":\"3357d6f2-4e8c-4dc4-a748-38894cc736aa\",\"headerText\":\"\",\"text\":\"Example workflow: 'XML Merger'\\r\\nObjective: Introducing the XML components\\r\\n\\r\\nXML is a file format that is often used for exchanging data between different tools. The XML merger component is used to integrate the contents of one XML file (input: 'XML to integrate') into another XML file (input: 'XML'). The rules for this integration are given by a mapping file (see the \\\"mapping\\\" tab of the XML Merger). Furthermore, in XML components like the XML Merger you can add dynamic inputs and outputs of simple data types, which allow you to change entries in the XML file or to extract certain entries from the XML file. In this example workflow, the value for the entry \\\"/cpacs/header/version\\\" is extracted and sent to the next workflow component.\\r\\n\",\"location\":\"30:13\",\"size\":\"544:212\",\"alpha\":\"204\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"0:255:64\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"false\",\"headerSize\":\"12\",\"textSize\":\"10\",\"zIndex\":\"0\"},{\"identifier\":\"758ccaaf-a67d-4e64-861b-4ee5499e5ba0\",\"headerText\":\"\",\"text\":\"Please select the following files from the Workflow Examples Project at workflow start:\\r\\n\\r\\nXMLFile_1 --> CPACS.xml\\r\\nXMLFile_2 --> XMLMerger_Integrate.xml\\r\\nMappingFile --> MappingRules.xsl\\r\\n\",\"location\":\"30:261\",\"size\":\"264:154\",\"alpha\":\"102\",\"colorHeader\":\"0:0:0\",\"colorText\":\"0:0:0\",\"colorBackground\":\"255:255:0\",\"labelPosition\":\"CENTER\",\"textAlignmentType\":\"LEFT\",\"headerAlignmentType\":\"CENTER\",\"border\":\"true\",\"headerSize\":\"12\",\"textSize\":\"9\",\"zIndex\":\"1\"}]"
 }

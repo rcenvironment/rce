@@ -17,8 +17,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.executor.LocalApacheCommandLineExecutor;
 import de.rcenvironment.core.utils.incubator.FileSystemOperations;
@@ -73,7 +73,7 @@ public class DeploymentOperationsImpl {
 
         // show download progress
         if (showProgress) {
-            SharedThreadPool.getInstance().execute(new Runnable() {
+            ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                 @Override
                 public void run() {
@@ -130,7 +130,7 @@ public class DeploymentOperationsImpl {
         }
         File execfile = new File(installationDir, RCE);
         if (execfile.exists()) {
-            //If the file "rce" exists, this is a linux platform and we have to make the file executable.
+            // If the file "rce" exists, this is a linux platform and we have to make the file executable.
             final LocalApacheCommandLineExecutor executor = new LocalApacheCommandLineExecutor(installationDir);
             executor.start(StringUtils.format("chmod +x %s", execfile.getAbsolutePath()));
         }
@@ -163,7 +163,27 @@ public class DeploymentOperationsImpl {
         }
 
         if (containsFeaturesFolder && containsP2Folder && containsPluginsFolder && containsRCEExecutable) {
-            FileSystemOperations.deleteSandboxDirectory(installationDir);
+            int i = 5;
+            final int waitTime = 100;
+            boolean wasDeleted = false;
+            do {
+                FileSystemOperations.deleteSandboxDirectory(installationDir);
+                if (!installationDir.exists()) {
+                    wasDeleted = true;
+                    break;
+                }
+                try {
+                    Thread.sleep(waitTime);
+                } catch (InterruptedException e) {
+                    throw new IOException("Failed to delete installation directory at location " + installationDir.getAbsolutePath()
+                        + ". Task was interrupted.");
+                }
+                i--;
+            } while (i > 0);
+            if (!wasDeleted) {
+                throw new IOException("Could not delete installation directory at location " + installationDir.getAbsolutePath()
+                    + ". Most likely it is used by another program.");
+            }
         } else {
             throw new IOException("Installation directory seems to be no valid RCE installation");
         }

@@ -11,7 +11,7 @@ package de.rcenvironment.core.notification;
 import java.io.Serializable;
 import java.util.Date;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.utils.common.ComparatorUtils;
 
 /**
@@ -32,7 +32,7 @@ public class NotificationHeader implements Comparable<NotificationHeader>, Seria
 
     private String notificationId = null;
 
-    private NodeIdentifier publishPlatform = null;
+    private InstanceNodeSessionId publishPlatform = null;
 
     /**
      * Creates a new {@link NotificationHeader} with the given information.
@@ -42,7 +42,7 @@ public class NotificationHeader implements Comparable<NotificationHeader>, Seria
      * @param edition The edition of the associated notification. It is increased with each new
      *        notification and is required to compare two {@link NotificationHeader}.
      */
-    public NotificationHeader(String notificationIdentifier, long edition, NodeIdentifier publisherPlatform) {
+    public NotificationHeader(String notificationIdentifier, long edition, InstanceNodeSessionId publisherPlatform) {
         timestamp = new Date();
         notificationId = notificationIdentifier;
         number = edition;
@@ -82,7 +82,7 @@ public class NotificationHeader implements Comparable<NotificationHeader>, Seria
      * 
      * @return the platform.
      */
-    public NodeIdentifier getPublishPlatform() {
+    public InstanceNodeSessionId getPublishPlatform() {
         return publishPlatform;
     }
 

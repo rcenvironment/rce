@@ -23,12 +23,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowFileException;
 import de.rcenvironment.core.component.workflow.execution.spi.WorkflowDescriptionLoaderCallback;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
-import de.rcenvironment.core.component.workflow.testutils.DummyWorkflowDescriptionPersistenceHandlerDefaultStub;
+import de.rcenvironment.core.component.workflow.model.api.WorkflowDescriptionPersistenceHandlerTestUtils;
 import de.rcenvironment.core.component.workflow.update.api.PersistentWorkflowDescriptionUpdateUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
@@ -62,6 +62,7 @@ public class WorkflowExecutionServiceImplTest {
     @Before
     public void setUp() throws IOException {
         tempDir = tempFileService.createManagedTempDir();
+        WorkflowDescriptionPersistenceHandlerTestUtils.initializeStaticFieldsOfWorkflowDescriptionPersistenceHandler();
     }
 
     /**
@@ -84,14 +85,14 @@ public class WorkflowExecutionServiceImplTest {
     @Test
     public void testLoadWorkflowDescriptionFromFile() throws WorkflowFileException, IOException {
 
-        NodeIdentifier localNodeIdMock = EasyMock.createStrictMock(NodeIdentifier.class);
+        LogicalNodeId logicalNodeIdMock = EasyMock.createStrictMock(LogicalNodeId.class);
 
         final PlatformService platformServiceMock = EasyMock.createStrictMock(PlatformService.class);
-        EasyMock.expect(platformServiceMock.getLocalNodeId()).andStubReturn(localNodeIdMock);
+        EasyMock.expect(platformServiceMock.getLocalDefaultLogicalNodeId()).andStubReturn(logicalNodeIdMock);
         EasyMock.replay(platformServiceMock);
 
-        new DummyWorkflowDescriptionPersistenceHandlerDefaultStub(platformServiceMock);
-
+        WorkflowDescriptionPersistenceHandlerTestUtils.createWorkflowDescriptionPersistenceHandlerTestInstance();
+        
         WorkflowExecutionServiceImpl wfExeService = new WorkflowExecutionServiceImpl();
 
         File wfFileOrigin = new File(tempDir, "test_origin.wf");
@@ -101,7 +102,7 @@ public class WorkflowExecutionServiceImplTest {
         FileUtils.copyFile(wfFileOrigin, wfFile);
 
         String expectedBackupFileName =
-            PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + WorkflowExecutionServiceImpl.WORKFLOW_FILE_ENDING;
+            PersistentWorkflowDescriptionUpdateUtils.getFilenameForBackupFile(wfFile) + WorkflowConstants.WORKFLOW_FILE_ENDING;
         WorkflowDescriptionLoaderCallback callbackMock = EasyMock.createStrictMock(WorkflowDescriptionLoaderCallback.class);
         EasyMock.expect(callbackMock.arePartlyParsedWorkflowConsiderValid()).andReturn(true);
         callbackMock.onWorkflowFileParsingPartlyFailed(expectedBackupFileName);

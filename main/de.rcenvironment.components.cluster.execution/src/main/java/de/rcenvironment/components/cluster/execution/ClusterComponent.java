@@ -47,21 +47,21 @@ import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.cluster.ClusterQueuingSystem;
 import de.rcenvironment.core.utils.cluster.ClusterQueuingSystemConstants;
 import de.rcenvironment.core.utils.cluster.ClusterService;
 import de.rcenvironment.core.utils.cluster.ClusterServiceManager;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.validation.ValidationFailureException;
 import de.rcenvironment.core.utils.executor.CommandLineExecutor;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfiguration;
 import de.rcenvironment.core.utils.ssh.jsch.SshSessionConfigurationFactory;
 import de.rcenvironment.core.utils.ssh.jsch.executor.context.JSchExecutorContext;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Submits a job to a cluster batch system with upload and download of directories.
@@ -315,7 +315,8 @@ public class ClusterComponent extends DefaultComponent {
 
         componentLog.componentInfo("Uploading input directories...");
         int count = 0;
-        CallablesGroup<RuntimeException> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(RuntimeException.class);
+        CallablesGroup<RuntimeException> callablesGroup =
+            ConcurrencyUtils.getFactory().createCallablesGroup(RuntimeException.class);
 
         for (final DirectoryReferenceTD inputDir : inputDirs) {
             final int countSnapshot = count++;
@@ -552,7 +553,8 @@ public class ClusterComponent extends DefaultComponent {
 
     private void downloadDirectoriesAndSendToOutputsOnJobFinished(Queue<BlockingQueue<String>> queues) throws ComponentException {
 
-        CallablesGroup<ComponentException> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(ComponentException.class);
+        CallablesGroup<ComponentException> callablesGroup =
+            ConcurrencyUtils.getFactory().createCallablesGroup(ComponentException.class);
 
         int i = 0;
         for (BlockingQueue<String> queue : queues) {

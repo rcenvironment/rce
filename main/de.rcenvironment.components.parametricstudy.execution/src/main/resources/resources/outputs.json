@@ -2,25 +2,25 @@
     "staticOutputs":[
         {
             "name":"Design variable",
+            "character": "sameLoop",
             "dataTypes":[
                 "Float"
             ],
             "defaultDataType":"Float",
             "metaData":{
+            	"UseInputAsFromValue": {
+            		"guiName": "Use Input as 'From' value",
+        			"guiPosition":"0",
+        			"guiGroup":"Range",
+        			"dataType":"hiddenBool",
+        			"defaultValue": "false",
+        			"possibleValues":[
+        				"true",
+        				"false"
+    				]
+        		},
                 "FromValue":{
                     "guiName":"From",
-                    "guiPosition":"0",
-                    "guiGroup":"Range",
-                    "dataType":"float",
-                    "possibleValues":[
-                        "*"
-                    ],
-                    "visibility":"shown",
-                    "defaultValue":"0",
-                    "validation": "required"
-                },
-                "ToValue":{
-                    "guiName":"To",
                     "guiPosition":"1",
                     "guiGroup":"Range",
                     "dataType":"float",
@@ -28,20 +28,56 @@
                         "*"
                     ],
                     "visibility":"shown",
-                    "defaultValue":"10",
-                    "validation": "required"
+                    "defaultValue":"0",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "UseInputAsFromValue": [
+                            "false"
+                        ]
+                    }
                 },
-                "fitStepSizeToBounds":{
-                    "guiName":"Fit step size to bounds",
+                "UseInputAsToValue": {
+            		"guiName": "Use Input as 'To' value",
+        			"guiPosition":"2",
+        			"guiGroup":"Range",
+        			"dataType":"hiddenBool",
+        			"defaultValue": "false",
+        			"possibleValues":[
+        				"true",
+        				"false"
+    				]
+        		},
+                "ToValue":{
+                    "guiName":"To",
                     "guiPosition":"3",
                     "guiGroup":"Range",
-                    "dataType":"bool",
+                    "dataType":"float",
+                    "possibleValues":[
+                        "*"
+                    ],
                     "visibility":"shown",
-                    "defaultValue":"true"
+                    "defaultValue":"10",
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "UseInputAsToValue": [
+                            "false"
+                        ]
+                    }
                 },
+                "UseInputAsStepSizeValue": {
+            		"guiName": "Use Input as 'Step Size' value",
+        			"guiPosition":"4",
+        			"guiGroup":"Range",
+        			"dataType":"hiddenBool",
+        			"defaultValue": "false",
+        			"possibleValues":[
+        				"true",
+        				"false"
+    				]
+        		},
                 "StepSize":{
                     "guiName":"Step size",
-                    "guiPosition":"2",
+                    "guiPosition":"5",
                     "guiGroup":"Range",
                     "dataType":"float_greater_zero",
                     "possibleValues":[
@@ -49,17 +85,36 @@
                     ],
                     "visibility":"shown",
                     "defaultValue":"1",
-                    "validation": "required"
+                    "validation": "required",
+                    "guiActivationFilter": {
+                        "UseInputAsStepSizeValue": [
+                            "false"
+                        ]
+                    }
                 },
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "SelfLoopEndpoint"
+            	"fitStepSizeToBounds":{
+                    "guiName":"Fit step size to bounds",
+                    "guiPosition":"6",
+                    "guiGroup":"Range",
+                    "dataType":"bool",
+                    "visibility":"shown",
+                    "defaultValue":"true"
                 }
             }
         },
         {
+            "name":"Done",
+            "character": "outerLoop",
+            "dataTypes":[
+                "Boolean"
+            ],
+            "defaultDataType":"Boolean"
+        }
+    ],
+    "dynamicOutputs":[
+        {
             "identifier":"toForward",
+            "character": "sameLoop",
             "dataTypes":[
                 "Boolean",
                 "ShortText",
@@ -72,35 +127,6 @@
             ],
             "defaultDataType":"FileReference",
             "readOnly": "true"
-        },
-        {
-            "name":"Done",
-            "dataTypes":[
-                "Boolean"
-            ],
-            "defaultDataType":"Boolean",
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "OuterLoopEndpoint"
-                }
-            }
-        },
-        {
-            "name":"Outer loop done",
-            "dataTypes":[
-                "Boolean"
-            ],
-            "defaultDataType":"Boolean",
-            "metaData": {
-                "loopEndpointType_5e0ed1cd": {
-                    "visibility": "developerConfigurable",
-                    "dataType": "String",
-                    "defaultValue": "InnerLoopEndpoint"
-                }
-            }
         }
-        
     ]
 }

@@ -8,16 +8,16 @@
 
 package de.rcenvironment.core.embedded.ssh.internal;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
-import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Class to describe the different roles and their privileges.
  * 
  * @author Sebastian Holtappels
+ * @author Brigitte Boden
  */
 public final class SshAccountRole {
 
@@ -25,85 +25,79 @@ public final class SshAccountRole {
 
     private List<String> allowedCommandPatterns;
 
-    private List<String> allowedScpPath;
-
     private String allowedCommandRegEx = null;
 
-    public SshAccountRole() {}
-
-    public SshAccountRole(String roleName, List<String> allowedCommandPatterns, List<String> allowedScpPath) {
+    public SshAccountRole(String roleName) {
         this.roleName = roleName;
-        this.allowedCommandPatterns = allowedCommandPatterns;
-        this.allowedScpPath = allowedScpPath;
-    }
-
-    /**
-     * 
-     * Method to validate the Console Role.
-     * 
-     * @param logger the logger to be used to log
-     * @return true if valid else false
-     */
-    public boolean validateRole(Log logger) {
-        boolean isValid = true;
-        // role name is not null
-        if (roleName == null) {
-            isValid = false;
+        this.allowedCommandPatterns = new ArrayList<String>();
+        
+        //Set allowed command patterns for role name
+        switch(roleName) {
+        case SshConstants.ROLE_NAME_REMOTE_ACCESS_USER:
+        case SshConstants.ROLE_NAME_REMOTE_ACCESS_USER_ALIAS:
+            allowedCommandPatterns.add("ra .*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_SYSMON);
+            break;
+        case SshConstants.ROLE_NAME_REMOTE_ACCESS_ADMIN:
+            allowedCommandPatterns.add("ra.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_SYSMON);
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_COMPONENTS);
+            break;
+        case SshConstants.ROLE_NAME_WORKFLOW_OBSERVER:
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_COMPONENTS);
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_NET_INFO);
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_SYSMON);
+            allowedCommandPatterns.add("wf list");
+            allowedCommandPatterns.add("wf details");
+            allowedCommandPatterns.add("wf");
+            break;
+        case SshConstants.ROLE_NAME_WORKFLOW_ADMIN:
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_COMPONENTS);
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_NET_INFO);
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_SYSMON);
+            allowedCommandPatterns.add("wf.*");
+            break;
+        case SshConstants.ROLE_NAME_LOCAL_ADMIN:
+            allowedCommandPatterns.add("cn.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_COMPONENTS);
+            allowedCommandPatterns.add("mail.*");
+            allowedCommandPatterns.add("net.*");
+            allowedCommandPatterns.add("restart");
+            allowedCommandPatterns.add("shutdown");
+            allowedCommandPatterns.add("stop");
+            allowedCommandPatterns.add("stats");
+            allowedCommandPatterns.add("tasks.*");
+            break;
+        case SshConstants.ROLE_NAME_IM_ADMIN:
+            allowedCommandPatterns.add("im.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_NET_INFO);
+            break;
+        case SshConstants.ROLE_NAME_IM_DELEGATE:
+            allowedCommandPatterns.add("cn.*");
+            allowedCommandPatterns.add(SshConstants.COMMAND_PATTERN_COMPONENTS);
+            allowedCommandPatterns.add("net.*");
+            allowedCommandPatterns.add("restart");
+            allowedCommandPatterns.add("shutdown");
+            allowedCommandPatterns.add("stop");
+            allowedCommandPatterns.add("stats");
+            allowedCommandPatterns.add("tasks.*");
+            allowedCommandPatterns.add("wf.*");
+            allowedCommandPatterns.add("ra-admin.*");
+            break;
+        case SshConstants.ROLE_NAME_DEVELOPER:
+            allowedCommandPatterns.add(".*");
+            break;
+        case SshConstants.ROLE_NAME_DEFAULT:
+            break;
+        default:
+            this.roleName = SshConstants.ROLE_NAME_DEFAULT;
+            LogFactory.getLog(getClass()).warn("Tried to create a role with a name that is not allowed: " + roleName);
         }
-        // role has privileges
-        if (allowedCommandPatterns == null || allowedCommandPatterns.isEmpty()) {
-            logger.warn("Allowed command patterns must not be empty. (Role + " + roleName + ")");
-            isValid = false;
-        } else {
-            // no privilege is null or an empty string
-            for (String pattern : allowedCommandPatterns) {
-                if (pattern == null || pattern.isEmpty()) {
-                    logger.warn("Found empty \"allowed command pattern\" for role " + roleName);
-                    isValid = false;
-                } else {
-                    try {
-                        Pattern.compile(pattern);
-                    } catch (PatternSyntaxException e) {
-                        logger.warn("Allowed command pattern " + pattern + " for role " + roleName
-                            + " is not a valid regular expression.");
-                        isValid = false;
-                    }
-                }
-            }
-        }
-        if (allowedScpPath != null && !allowedScpPath.isEmpty()) {
-            for (String path : allowedScpPath) {
-                if (path == null || path.isEmpty()) {
-                    logger.warn("Found empty \"allowed scp path\" for role " + roleName);
-                    isValid = false;
-                }
-            }
-        }
-        return isValid;
+        
     }
 
     public String getRoleName() {
         return roleName;
-    }
-
-    public void setRoleName(String roleName) {
-        this.roleName = roleName;
-    }
-
-    public List<String> getAllowedCommandPatterns() {
-        return allowedCommandPatterns;
-    }
-
-    public void setAllowedCommandPatterns(List<String> allowedCommandPatterns) {
-        this.allowedCommandPatterns = allowedCommandPatterns;
-    }
-
-    public List<String> getAllowedScpPath() {
-        return allowedScpPath;
-    }
-
-    public void setAllowedScpPath(List<String> allowedScpPath) {
-        this.allowedScpPath = allowedScpPath;
     }
 
     /**

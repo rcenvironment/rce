@@ -12,7 +12,7 @@ import java.io.File;
 import java.io.IOException;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementUtil;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
@@ -78,7 +78,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     }
 
     @Override
-    public void copyReferenceToLocalFile(String reference, File targetFile, NodeIdentifier nodeId) throws IOException {
+    public void copyReferenceToLocalFile(String reference, File targetFile, ResolvableNodeId nodeId) throws IOException {
         try {
             dataManagementService.copyReferenceToLocalFile(reference, targetFile, nodeId);
         } catch (CommunicationException e) {
@@ -89,7 +89,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     }
 
     @Override
-    public String retrieveStringFromReference(String reference, NodeIdentifier nodeId) throws IOException {
+    public String retrieveStringFromReference(String reference, ResolvableNodeId nodeId) throws IOException {
         try {
             return dataManagementService.retrieveStringFromReference(reference, nodeId);
         } catch (CommunicationException e) {
@@ -161,7 +161,7 @@ public class ComponentDataManagementServiceImpl implements ComponentDataManageme
     }
 
     @Override
-    public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, NodeIdentifier node)
+    public void copyDirectoryReferenceTDToLocalDirectory(DirectoryReferenceTD dirReference, File targetDir, ResolvableNodeId node)
         throws IOException {
         try {
             dataManagementService.copyReferenceToLocalDirectory(dirReference.getDirectoryReference(), targetDir, node);

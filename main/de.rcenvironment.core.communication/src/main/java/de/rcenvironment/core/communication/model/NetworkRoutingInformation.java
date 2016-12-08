@@ -15,7 +15,7 @@ import java.util.Set;
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.routing.internal.v2.NoRouteToNodeException;
 
 /**
@@ -29,14 +29,14 @@ public interface NetworkRoutingInformation {
     /**
      * @return the set of all nodes that are reachable from the local node of the source graph
      */
-    Set<NodeIdentifier> getReachableNodes();
+    Set<InstanceNodeSessionId> getReachableNodes();
 
     /**
      * @param targetNodeId the id of the network node to contact
      * @return the first link of the shortes path to the target node
      * @throws NoRouteToNodeException if the target node is either the local node, or an unreachable node
      */
-    NetworkGraphLink getNextLinkTowards(NodeIdentifier targetNodeId) throws NoRouteToNodeException;
+    NetworkGraphLink getNextLinkTowards(InstanceNodeSessionId targetNodeId) throws NoRouteToNodeException;
 
     /**
      * @param targetNode the network node to contact
@@ -49,7 +49,7 @@ public interface NetworkRoutingInformation {
      * @param destination the target node's id
      * @return a full path to the target node; used for unit testing
      */
-    List<? extends NetworkGraphLink> getRouteTo(NodeIdentifier destination);
+    List<? extends NetworkGraphLink> getRouteTo(InstanceNodeSessionId destination);
 
     /**
      * @return the set of links in the routing spanning tree
@@ -59,6 +59,6 @@ public interface NetworkRoutingInformation {
     /**
      * @return the set of outgoing links for each node in the routing spanning tree
      */
-    Map<NodeIdentifier, List<NetworkGraphLink>> getSpanningTreeLinkMap();
+    Map<InstanceNodeSessionId, List<NetworkGraphLink>> getSpanningTreeLinkMap();
 
 }

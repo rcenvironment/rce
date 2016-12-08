@@ -11,7 +11,7 @@ package de.rcenvironment.core.datamanagement.internal;
 import java.net.URI;
 import java.util.UUID;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaDataSet;
 
@@ -26,7 +26,7 @@ public class DistributedMetaDataServiceImplTest {
 
     private MetaDataServiceImpl metaDataService;
 
-    private NodeIdentifier pi;
+    private InstanceNodeSessionId pi;
 
     private UUID referenceID;
 

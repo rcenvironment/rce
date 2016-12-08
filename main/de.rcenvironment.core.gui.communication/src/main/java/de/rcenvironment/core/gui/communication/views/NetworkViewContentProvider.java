@@ -21,7 +21,7 @@ import org.eclipse.jface.viewers.ITreeContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
 import de.rcenvironment.core.communication.common.NetworkGraphNode;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.gui.communication.views.internal.AnchorPoints;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext;
 import de.rcenvironment.core.gui.communication.views.model.NetworkGraphNodeWithContext.Context;
@@ -30,7 +30,7 @@ import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewN
 import de.rcenvironment.core.gui.communication.views.spi.ContributedNetworkViewNodeWithParent;
 import de.rcenvironment.core.gui.communication.views.spi.NetworkViewContributor;
 import de.rcenvironment.core.gui.communication.views.spi.SelfRenderingNetworkViewNode;
-import de.rcenvironment.core.monitoring.system.api.SystemMonitoringDataSnapshot;
+import de.rcenvironment.core.monitoring.system.api.model.FullSystemAndProcessDataSnapshot;
 
 /**
  * The network view content provider.
@@ -165,7 +165,8 @@ public class NetworkViewContentProvider implements IStructuredContentProvider, I
             result = contribList.toArray();
             break;
         case RESOURCE_MONITORING_FOLDER:
-            SystemMonitoringDataSnapshot monitoringDataModel = model.getMonitoringDataModelMap().get(typedParentNode.getNode().getNodeId());
+            FullSystemAndProcessDataSnapshot monitoringDataModel =
+                model.getMonitoringDataModelMap().get(typedParentNode.getNode().getNodeId());
             if (monitoringDataModel != null) {
                 result =
                     createNodeSystemResources(monitoringDataModel, typedParentNode
@@ -200,7 +201,7 @@ public class NetworkViewContentProvider implements IStructuredContentProvider, I
         return result;
     }
 
-    private Object[] createNodeSystemResources(SystemMonitoringDataSnapshot monitoringDataModel, NodeIdentifier nodeId) {
+    private Object[] createNodeSystemResources(FullSystemAndProcessDataSnapshot monitoringDataModel, InstanceNodeSessionId nodeId) {
         return null;
     }
 

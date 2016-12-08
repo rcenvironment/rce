@@ -72,6 +72,7 @@ public class AbstractNetworkMessage implements NetworkMessage {
         }
         // lazy init / caching of deserialized form
         if (deserializedContent == null) {
+            // note: this requires a deserialization context to be set for the current thread; see NodeIdentifierContextHolder class
             deserializedContent = MessageUtils.deserializeObject(contentBytes);
         }
         return deserializedContent;

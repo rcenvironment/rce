@@ -13,8 +13,6 @@ import java.util.Map;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -30,18 +28,19 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  */
 public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointCommand {
 
+    private static final String DESIGN_VARIABLE = "Design";
+
     private final EndpointType direction;
 
     private final boolean hasGradient;
 
-    private final Map<String, String> gradientMetadata = new HashMap<String, String>();
+    private final Map<String, String> gradientMetadata = new HashMap<>();
 
     public OptimizerAddDynamicEndpointCommand(EndpointType direction, String name, String id, DataType type,
         Map<String, String> metaData, Refreshable... refreshable) {
         super(direction, id, name, type, metaData, refreshable);
         this.direction = direction;
         hasGradient = Boolean.parseBoolean(metaData.get(OptimizerComponentConstants.HAS_GRADIENT));
-        metaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
     }
 
     @Override
@@ -60,12 +59,11 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
             gradientMetadata.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                 EndpointDefinition.InputExecutionContraint.Required.name());
         }
-        gradientMetadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
         switch (direction) {
         case INPUT:
             if (hasGradient) {
                 for (EndpointDescription e : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                    if (!e.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                    if (e.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                         endpointDescManager.addDynamicEndpointDescription(OptimizerComponentConstants.ID_GRADIENTS,
                             OptimizerDynamicEndpointCommandHelper.createGradientChannelName(name, e.getName()), e.getDataType(),
                             gradientMetadata);
@@ -89,7 +87,6 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
                         gradientMetadata.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                             EndpointDefinition.InputExecutionContraint.Required.name());
                     }
-                    gradientMetadata.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.SelfLoopEndpoint.name());
 
                     workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_GRADIENTS,
                         OptimizerDynamicEndpointCommandHelper.createGradientChannelName(function.getName(), name),
@@ -98,7 +95,6 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
             }
             Map<String, String> optimalMetaData = new HashMap<>();
             optimalMetaData.putAll(metaData);
-            optimalMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
 
             endpointDescManager.addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA, name
                 + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX, type,
@@ -107,8 +103,7 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
                 && metaData.get(OptimizerComponentConstants.META_STARTVALUE).isEmpty())
                 || (metaData.get(OptimizerComponentConstants.META_HAS_STARTVALUE) != null
                     && !Boolean.parseBoolean(metaData.get(OptimizerComponentConstants.META_HAS_STARTVALUE)))) {
-                Map<String, String> startValueMetaData = new HashMap<String, String>();
-                startValueMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                Map<String, String> startValueMetaData = new HashMap<>();
                 startValueMetaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                     EndpointDefinition.InputExecutionContraint.Required.name());
                 workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
@@ -119,8 +114,7 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
                 && !endpoint.getMetaDataValue(OptimizerComponentConstants.META_USE_STEP).isEmpty())) {
                 if (endpoint.getMetaDataValue(OptimizerComponentConstants.META_USE_UNIFIED_STEP) != null
                     && !Boolean.parseBoolean(endpoint.getMetaDataValue(OptimizerComponentConstants.META_USE_UNIFIED_STEP))) {
-                    Map<String, String> stepValueMetaData = new HashMap<String, String>();
-                    stepValueMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE, LoopEndpointType.OuterLoopEndpoint.name());
+                    Map<String, String> stepValueMetaData = new HashMap<>();
                     stepValueMetaData.put(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT,
                         EndpointDefinition.InputExecutionContraint.Required.name());
                     workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
@@ -147,7 +141,7 @@ public class OptimizerAddDynamicEndpointCommand extends AddDynamicEndpointComman
         case INPUT:
             if (hasGradient) {
                 for (EndpointDescription e : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                    if (!e.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                    if (e.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                         endpointDescManager.removeDynamicEndpointDescription(
                             OptimizerDynamicEndpointCommandHelper.createGradientChannelName(name, e.getName()));
                     }

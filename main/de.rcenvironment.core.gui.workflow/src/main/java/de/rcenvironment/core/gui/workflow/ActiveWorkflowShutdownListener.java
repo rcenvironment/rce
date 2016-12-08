@@ -33,6 +33,7 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionInformati
 import de.rcenvironment.core.component.execution.api.ComponentExecutionService;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
+import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
@@ -45,14 +46,14 @@ import de.rcenvironment.core.notification.DefaultNotificationSubscriber;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Prevents the Workbench to be closed as long as there are active workflows.
@@ -63,9 +64,9 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
 
     private static final String WORKFLOW_HANDLE_ERROR = "Failed to handle active workflows during shutdown";
-   
+
     private static final Log LOGGER = LogFactory.getLog(ActiveWorkflowShutdownListener.class);
-    
+
     /**
      * In case active workflows exist the user is presented a dialog to confirm the disposal.
      * 
@@ -75,18 +76,18 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
     public boolean preShutdown(final IWorkbench workbench, final boolean forced) {
 
         boolean shutdown = true;
-        
+
         final Map<String, WorkflowState> wfStates = new HashMap<>();
         final Map<String, ComponentState> compStates = new HashMap<>();
 
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         final WorkflowExecutionService wfExeService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
-        
+
         // Note: it is worked on snapshots. newly created workflow or component instances will not be considered. this needs to be improved
         // by adding support for kind of graceful shutdown
         final Set<WorkflowExecutionInformation> localWfExeInfosSnapshot = wfExeService.getLocalWorkflowExecutionInformations();
         final Set<WorkflowExecutionInformation> localActiveWfExeInfosSnapshot = getActiveWorkflows(localWfExeInfosSnapshot, wfStates);
-        
+
         final ComponentExecutionService compExeService = serviceRegistryAccess.getService(ComponentExecutionService.class);
         final Set<ComponentExecutionInformation> localCompExeInfosSnapshot = compExeService.getLocalComponentExecutionInformations();
         final Set<ComponentExecutionInformation> localActiveCompExeInfosSnapshot = getActiveComponents(compExeService,
@@ -134,23 +135,23 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
         } catch (IllegalStateException e) {
             LOGGER.error(WORKFLOW_HANDLE_ERROR, e);
         }
-        
+
         if (shutdown && wfOrCompActive) {
             final DistributedNotificationService notificationService = serviceRegistryAccess
                 .getService(DistributedNotificationService.class);
-            
+
             Job job = new Job("Cancel and dispose all active workflows") {
 
                 @Override
                 protected IStatus run(IProgressMonitor monitor) {
                     List<String> cancelledDisposedWfExeIds = new ArrayList<>();
-                    
-                    CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+
+                    CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
                     for (WorkflowExecutionInformation wfExeInfo : localWfExeInfosSnapshot) {
                         final WorkflowExecutionInformation finalWfExeInfo = wfExeInfo;
                         if (!cancelledDisposedWfExeIds.contains(finalWfExeInfo.getExecutionIdentifier())) {
                             callablesGroup.add(new Callable<Void>() {
-    
+
                                 @Override
                                 @TaskDescription("Call method of workflow component")
                                 public Void call() throws Exception {
@@ -161,30 +162,31 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                             cancelledDisposedWfExeIds.add(finalWfExeInfo.getExecutionIdentifier());
                         }
                     }
-                    
+
                     // as it causes errors, currently remote workflows with local active component are not cancelled (as it was before). Due
                     // to heartbeat sending, the remote workflow controller will recognize the missing components and will fail. That is an
                     // improvement in 6.0.0 compared to 5.2.1 -seid_do
-                    //                    for (ComponentExecutionInformation compExeInfo : localCompExeInfosSnapshot) {
-//                        final ComponentExecutionInformation finalCompExeInfo = compExeInfo;
-//                        if (!cancelledDisposedWfExeIds.contains(finalCompExeInfo.getWorkflowExecutionIdentifier())) {
-//                            callablesGroup.add(new Callable<Void>() {
-//    
-//                                @Override
-//                                @TaskDescription("Call method of workflow component")
-//                                public Void call() throws Exception {
-//                                    cancelAndDisposeWorkflow(wfExeService, notificationService,
-//                                        finalCompExeInfo.getWorkflowExecutionIdentifier(),
-//                                        finalCompExeInfo.getWorkflowNodeId(), finalCompExeInfo.getWorkflowInstanceName(),
-//                                        wfStates.get(finalCompExeInfo.getWorkflowExecutionIdentifier()));
-//                                    return null;
-//                                }
-//                            }, "Cancel/dispose workflow: " + finalCompExeInfo.getWorkflowExecutionIdentifier());
-//                            cancelledDisposedWfExeIds.add(finalCompExeInfo.getWorkflowExecutionIdentifier());
-//                        }
-//                    }
+                    // for (ComponentExecutionInformation compExeInfo : localCompExeInfosSnapshot) {
+                    // final ComponentExecutionInformation finalCompExeInfo = compExeInfo;
+                    // if (!cancelledDisposedWfExeIds.contains(finalCompExeInfo.getWorkflowExecutionIdentifier())) {
+                    // callablesGroup.add(new Callable<Void>() {
+                    //
+                    // @Override
+                    // @TaskDescription("Call method of workflow component")
+                    // public Void call() throws Exception {
+                    // cancelAndDisposeWorkflow(wfExeService, notificationService,
+                    // finalCompExeInfo.getWorkflowExecutionIdentifier(),
+                    // finalCompExeInfo.getWorkflowNodeId(), finalCompExeInfo.getWorkflowInstanceName(),
+                    // wfStates.get(finalCompExeInfo.getWorkflowExecutionIdentifier()));
+                    // return null;
+                    // }
+                    // }, "Cancel/dispose workflow: " + finalCompExeInfo.getWorkflowExecutionIdentifier());
+                    // cancelledDisposedWfExeIds.add(finalCompExeInfo.getWorkflowExecutionIdentifier());
+                    // }
+                    // }
 
                     callablesGroup.executeParallel(new AsyncExceptionListener() {
+
                         @Override
                         public void onAsyncException(Exception e) {
                             LOGGER.error("Failed to cancel/dispose workflow", e);
@@ -193,7 +195,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
 
                     return Status.OK_STATUS;
                 }
-                
+
                 @Override
                 public boolean belongsTo(Object family) {
                     return family == UncompletedJobsShutdownListener.MUST_BE_COMPLETED_ON_SHUTDOWN_JOB_FAMILY;
@@ -204,12 +206,12 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
         }
         return shutdown;
     }
-    
+
     private void cancelAndDisposeWorkflow(final WorkflowExecutionService workflowExecutionService,
         final DistributedNotificationService notificationService, final WorkflowExecutionInformation wfExeInfo) {
-        
+
         final CountDownLatch wfDisposedLatch = new CountDownLatch(2);
-        
+
         WorkflowStateNotificationSubscriber workflowStateChangeListener =
             new WorkflowStateNotificationSubscriber(new SingleWorkflowStateChangeListener() {
 
@@ -220,6 +222,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                     switch (newState) {
                     case CANCELLED:
                     case FAILED:
+                    case RESULTS_REJECTED:
                     case FINISHED:
                         try {
                             workflowExecutionService.dispose(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
@@ -236,7 +239,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                         break;
                     }
                 }
-                
+
                 @Override
                 public void onWorkflowNotAliveAnymore(String errorMessage) {
                     LOGGER.error(StringUtils.format("Failed to dispose workflow '%s' (%s) - %s",
@@ -245,15 +248,14 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 }
 
             }, wfExeInfo.getExecutionIdentifier());
-        
+
         try {
             notificationService.subscribe(WorkflowConstants.STATE_NOTIFICATION_ID + wfExeInfo.getExecutionIdentifier(),
                 workflowStateChangeListener, wfExeInfo.getNodeId());
-            notificationService.subscribe(StringUtils.format("%s%s" + ConsoleRow.NOTIFICATION_SUFFIX,
-                wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId().getIdString()), new ConsoleRowSubscriber(wfDisposedLatch),
-                wfExeInfo.getNodeId());
-            if (wfExeInfo.getWorkflowState() != WorkflowState.FINISHED && wfExeInfo.getWorkflowState() != WorkflowState.FAILED
-                && wfExeInfo.getWorkflowState() != WorkflowState.CANCELLED) {
+            notificationService.subscribe(
+                ConsoleRowUtils.composeConsoleNotificationId(wfExeInfo.getNodeId(), wfExeInfo.getExecutionIdentifier()),
+                new ConsoleRowSubscriber(wfDisposedLatch), wfExeInfo.getNodeId());
+            if (!WorkflowConstants.FINAL_WORKFLOW_STATES.contains(wfExeInfo.getWorkflowState())) {
                 workflowExecutionService.cancel(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
             } else {
                 workflowExecutionService.dispose(wfExeInfo.getExecutionIdentifier(), wfExeInfo.getNodeId());
@@ -270,16 +272,15 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
             Thread.currentThread().interrupt();
         }
     }
-    
-    private Set<WorkflowExecutionInformation> getActiveWorkflows(Set<WorkflowExecutionInformation> localWfExeInfos, 
+
+    private Set<WorkflowExecutionInformation> getActiveWorkflows(Set<WorkflowExecutionInformation> localWfExeInfos,
         Map<String, WorkflowState> wfStates) {
         Set<WorkflowExecutionInformation> activeWfExeInfos = new HashSet<>();
         Iterator<WorkflowExecutionInformation> iterator = localWfExeInfos.iterator();
         while (iterator.hasNext()) {
             WorkflowExecutionInformation wfExeInfo = iterator.next();
             WorkflowState state = wfExeInfo.getWorkflowState();
-            if (state != WorkflowState.FINISHED && state != WorkflowState.FAILED
-                && state != WorkflowState.CANCELLED && state != WorkflowState.DISPOSED) {
+            if (!WorkflowConstants.FINAL_WORKFLOW_STATES_WITH_DISPOSED.contains(state)) {
                 activeWfExeInfos.add(wfExeInfo);
             }
             if (state == WorkflowState.DISPOSED) {
@@ -289,7 +290,7 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
         }
         return activeWfExeInfos;
     }
-    
+
     private Set<ComponentExecutionInformation> getActiveComponents(ComponentExecutionService componentExecutionService,
         Set<ComponentExecutionInformation> localCompExeInfos, Map<String, ComponentState> compStates) {
         Set<ComponentExecutionInformation> activeCompExeInfos = new HashSet<>();
@@ -307,16 +308,15 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
                 }
                 compStates.put(compExeInfo.getExecutionIdentifier(), state);
             } catch (RemoteOperationException | ExecutionControllerException e) {
-                LOGGER.error(StringUtils.format("Failed to get state for component '%s' (%s); cause: %s", 
+                LOGGER.error(StringUtils.format("Failed to get state for component '%s' (%s); cause: %s",
                     compExeInfo.getInstanceName(), compExeInfo.getExecutionIdentifier(), e.toString()));
             }
         }
         return activeCompExeInfos;
     }
 
-
     @Override
-    public void postShutdown(final IWorkbench workbench) {} 
+    public void postShutdown(final IWorkbench workbench) {}
 
     /**
      * Listens for workflow disposed status on console row level.
@@ -324,20 +324,20 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
      * @author Doreen Seider
      */
     private static class ConsoleRowSubscriber extends DefaultNotificationSubscriber {
-        
+
         private static final long serialVersionUID = 6177970783784847691L;
-        
+
         private final transient CountDownLatch wfDisposeLatch;
 
         ConsoleRowSubscriber(CountDownLatch countDownLatch) {
             this.wfDisposeLatch = countDownLatch;
         }
-        
+
         @Override
         public Class<?> getInterface() {
             return NotificationSubscriber.class;
         }
-        
+
         @Override
         protected void processNotification(Notification notification) {
             Serializable body = notification.getBody();
@@ -355,5 +355,5 @@ final class ActiveWorkflowShutdownListener implements IWorkbenchListener {
             }
         }
     }
-    
+
 }

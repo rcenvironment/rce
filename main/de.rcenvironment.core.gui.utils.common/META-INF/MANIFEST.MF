@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core GUI Utils Common Bundle
 Bundle-SymbolicName: de.rcenvironment.core.gui.utils.common;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-ManifestVersion: 2
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ActivationPolicy: lazy
@@ -11,6 +11,8 @@ Import-Package: de.rcenvironment.core.component.model.spi,
  de.rcenvironment.core.configuration,
  de.rcenvironment.core.datamodel.api,
  de.rcenvironment.core.utils.common,
+ de.rcenvironment.core.utils.common.excel.legacy,
+ de.rcenvironment.core.utils.common.variables.legacy,
  de.rcenvironment.core.utils.incubator.configuration,
  de.rcenvironment.core.utils.incubator.configuration.annotation,
  org.apache.commons.logging;version="1.1.1",
@@ -24,4 +26,5 @@ Require-Bundle: org.eclipse.core.runtime,
 Export-Package: de.rcenvironment.core.gui.utils.common,
  de.rcenvironment.core.gui.utils.common.components,
  de.rcenvironment.core.gui.utils.common.configuration,
- de.rcenvironment.core.gui.utils.common.endpoint
+ de.rcenvironment.core.gui.utils.common.endpoint,
+ de.rcenvironment.core.gui.utils.common.widgets

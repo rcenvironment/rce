@@ -15,7 +15,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
@@ -35,17 +35,17 @@ public final class NodeIdentifierConfigurationHelper {
 
     /**
      * Compares NodeIdentifier instances by their name.
-     *
+     * 
      * @author Christian Weiss
      */
-    private static final class NodeIdentifierNameComparator implements Comparator<NodeIdentifier> {
+    private static final class NodeIdentifierNameComparator implements Comparator<LogicalNodeId> {
 
         private static final int LT = -1;
 
         private static final int GT = 1;
 
         @Override
-        public int compare(NodeIdentifier o1, NodeIdentifier o2) {
+        public int compare(LogicalNodeId o1, LogicalNodeId o2) {
             int result;
             if (o1 == null && o2 == null) {
                 result = 0;
@@ -54,7 +54,7 @@ public final class NodeIdentifierConfigurationHelper {
             } else if (o2 == null) {
                 result = GT;
             } else {
-                result = o1.toString().compareTo(o2.toString());
+                result = o1.getLogicalNodeIdString().compareTo(o2.getLogicalNodeIdString());
             }
             return result;
         }
@@ -79,9 +79,9 @@ public final class NodeIdentifierConfigurationHelper {
     /**
      * @return platforms
      */
-    public List<NodeIdentifier> getWorkflowControllerNodesSortedByName() {
-        List<NodeIdentifier> result = new ArrayList<NodeIdentifier>(serviceRegistryAccess.getService(WorkflowHostService.class)
-            .getWorkflowHostNodes());
+    public List<LogicalNodeId> getWorkflowControllerNodesSortedByName() {
+        List<LogicalNodeId> result = new ArrayList<LogicalNodeId>(serviceRegistryAccess.getService(WorkflowHostService.class)
+            .getLogicalWorkflowHostNodes());
         Collections.sort(result, NODE_IDENTIFIER_COMPARATOR);
         return result;
     }
@@ -92,7 +92,7 @@ public final class NodeIdentifierConfigurationHelper {
      * @param compDesc Description of the component.
      * @return List of platform the component is installed on.
      */
-    public Map<NodeIdentifier, Integer> getTargetPlatformsForComponent(ComponentDescription compDesc) {
+    public Map<LogicalNodeId, Integer> getTargetPlatformsForComponent(ComponentDescription compDesc) {
 
         return ComponentUtils.getNodesForComponent(installations, compDesc);
 
@@ -102,7 +102,7 @@ public final class NodeIdentifierConfigurationHelper {
      * @param nodes nodes to sort
      * @return sorted list of nodes
      */
-    public List<NodeIdentifier> sortNodes(List<NodeIdentifier> nodes) {
+    public List<LogicalNodeId> sortNodes(List<LogicalNodeId> nodes) {
         Collections.sort(nodes, NODE_IDENTIFIER_COMPARATOR);
         return nodes;
     }
@@ -110,7 +110,7 @@ public final class NodeIdentifierConfigurationHelper {
     /**
      * 
      * Refresh installations when connection is reestablished or lost.
-     *
+     * 
      */
     public synchronized void refreshInstallations() {
 

@@ -36,7 +36,7 @@ public final class SshConstants {
     /**
      * Constant for exit command.
      */
-    public static final String DEFAULT_COMMANDS = "help|exit";
+    public static final String DEFAULT_COMMANDS = "help|exit|(version.*)";
 
     /**
      * Constant for scp command.
@@ -47,11 +47,6 @@ public final class SshConstants {
      * Constant for the name of the configuration file.
      */
     public static final String CONFIGURATION_NAME = "de.rcenvironment.core.embedded.ssh";
-
-    /**
-     * Constant for the name of the configuration file.
-     */
-    public static final String DEFAULT_ROLE_PRIVILEGES = ".*";
 
     /**
      * Lowest possible port. used to check if configured port is valid.
@@ -165,6 +160,78 @@ public final class SshConstants {
      * Prefix for temporary user accounts.
      */
     public static final String TEMP_USER_PREFIX = "t_";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_REMOTE_ACCESS_USER = "remote_access_user";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_REMOTE_ACCESS_USER_ALIAS = "remote access";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_REMOTE_ACCESS_ADMIN = "remote_access_admin";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_WORKFLOW_OBSERVER = "workflow_observer";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_WORKFLOW_ADMIN = "workflow_admin";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_LOCAL_ADMIN = "local_admin";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_IM_ADMIN = "instance_management_admin";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_IM_DELEGATE = "instance_management_delegate_user";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_DEVELOPER = "developer";
+
+    /**
+     * Names of predefined roles.
+     */
+    public static final String ROLE_NAME_DEFAULT = "default";
+
+    /**
+     * Allowed role names.
+     */
+    public static final String[] PREDEFINED_ROLE_NAMES = { ROLE_NAME_REMOTE_ACCESS_USER, ROLE_NAME_REMOTE_ACCESS_USER_ALIAS,
+        ROLE_NAME_REMOTE_ACCESS_ADMIN, ROLE_NAME_WORKFLOW_OBSERVER, ROLE_NAME_WORKFLOW_ADMIN, ROLE_NAME_LOCAL_ADMIN, ROLE_NAME_IM_ADMIN,
+        ROLE_NAME_IM_DELEGATE, ROLE_NAME_DEVELOPER, ROLE_NAME_DEFAULT};
+
+    /**
+     * Command patterns.
+     */
+    public static final String COMMAND_PATTERN_SYSMON = "sysmon.*";
+
+    /**
+     * Command patterns.
+     */
+    public static final String COMMAND_PATTERN_COMPONENTS = "components.*";
+
+    /**
+     * Command patterns.
+     */
+    public static final String COMMAND_PATTERN_NET_INFO = "net info|net";
 
     private SshConstants() {}
 }

@@ -23,8 +23,8 @@ import de.rcenvironment.core.utils.scripting.ScriptLanguage.NoEngineException;
  * 
  * @author Christian Weiss
  * @author Robert Mischke (make Jython available from OSGi import)
- * @author Sascha Zur (get script engine by name not extention, because jython and python have the
- *         same)
+ * @author Sascha Zur (get script engine by name not extention, because jython and python have the same)
+ * @author Doreen Seider (added JVM options for Jython 2.7.0 support)
  */
 public class ScriptingServiceImpl implements ScriptingService {
 
@@ -33,6 +33,7 @@ public class ScriptingServiceImpl implements ScriptingService {
     public ScriptingServiceImpl() {
         // assertion: Jython should not be registered yet
         if (!supportsScriptLanguage(ScriptLanguage.Jython)) {
+//            ScriptingUtils.setJVMPropertiesForJython270Support();
             engineManager.registerEngineName(ScriptLanguage.Jython.getName(), new PyScriptEngineFactory());
         }
 

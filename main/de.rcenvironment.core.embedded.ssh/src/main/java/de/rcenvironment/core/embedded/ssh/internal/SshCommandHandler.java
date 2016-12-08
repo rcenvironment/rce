@@ -29,9 +29,9 @@ import org.apache.sshd.server.session.ServerSession;
 import de.rcenvironment.core.command.api.CommandExecutionResult;
 import de.rcenvironment.core.command.api.CommandExecutionService;
 import de.rcenvironment.core.embedded.ssh.api.SshAccount;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Class for handling command execution. Does not handle SCP-Commands.
@@ -86,7 +86,7 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
         if (isPotentiallyAllowedToRunCommands()) {
             outputAdapter.setActiveUser(loginName);
             // TODO review: thread safety? - misc_ro
-            SharedThreadPool.getInstance().execute(this);
+            ConcurrencyUtils.getAsyncTaskService().execute(this);
         } else {
             outputAdapter.addOutput("Your account is not allowed to run an interactive shell or execute commands.");
             logger.warn("Blocked command/shell access for account " + loginName);
@@ -103,14 +103,18 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
     @Override
     @TaskDescription("SSH command session")
     public void run() {
-        logger.debug("Started SSH command shell");
         try {
             if (sshCommand == null) {
                 // run interactive shell/console
+                logger.debug(StringUtils.format("Starting interactive shell for user \"%s\"", loginName));
                 runInteractiveShellLoop();
                 callback.onExit(0);
+                logger.debug(StringUtils.format("Finished interactive shell for user \"%s\"", loginName));
             } else {
                 // execute single provided command and exit
+                // note: this logs all incoming commands, but at the current time, DEBUG level logging is considered to be safe (ie not
+                // accessible from remote nodes)
+                logger.debug(StringUtils.format("Starting command execution for user \"%s\": %s", loginName, sshCommand));
                 CommandExecutionResult result = executeSingleCommand(sshCommand);
                 switch (result) {
                 case DEFAULT:
@@ -124,14 +128,15 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
                 default:
                     throw new IllegalArgumentException();
                 }
+                logger.debug(StringUtils.format("Finished command execution for user \"%s\": %s", loginName, sshCommand));
             }
         } catch (IOException e) {
             // not logging the full stacktrace as it is usually irrelevant, and this case happens frequently
-            logger.error("I/O error in interactive SSH session - the client may have closed the connection: " + e.toString());
+            logger.error(StringUtils.format("I/O error in SSH session - the client may have closed the connection (user \"%s\"): %s",
+                loginName, e.toString()));
             callback.onExit(1);
         }
         // End Console (Closes the connection)
-        logger.debug("Command processing for shell ended for user: " + loginName);
     }
 
     @Override
@@ -186,8 +191,6 @@ public class SshCommandHandler implements Command, Runnable, SessionAware {
                     // stop interactive shell on exit command
                     return CommandExecutionResult.EXIT_REQUESTED;
                 } else {
-                    // TODO review: this logs all console commands, which may be a problem when the log is accessible from remote - misc_ro
-                    logger.debug(StringUtils.format("Executing shell command '%s' for user '%s'", command, loginName));
                     // TODO pass invoker information for non-temporary accounts as well
                     return sendToExecutionService(command, userAccount);
                 }

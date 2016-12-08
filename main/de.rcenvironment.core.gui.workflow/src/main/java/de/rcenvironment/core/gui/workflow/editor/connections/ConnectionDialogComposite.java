@@ -481,30 +481,9 @@ public class ConnectionDialogComposite extends Composite {
      * @param newModel The new model for the connection trees and canvas.
      */
     public void updateConnectionViewer(WorkflowDescription newModel) {
-
-        workflowDescription = newModel;
-        if (!sourceTree.isDisposed() || !targetTree.isDisposed()) {
-            sourceTreeViewer.setInput(workflowDescription);
-            targetTreeViewer.setInput(workflowDescription);
-
-            sourceTreeViewer.getControl().setRedraw(false);
-            targetTreeViewer.getControl().setRedraw(false);
-
+        if (!sourceTree.isDisposed() && !targetTree.isDisposed() && !canvas.isDisposed()) {
             targetTreeViewer.refresh(true);
             sourceTreeViewer.refresh(true);
-
-            targetTreeViewer.expandAll();
-            sourceTreeViewer.expandAll();
-
-            sourceTreeViewer.getControl().setRedraw(true);
-            targetTreeViewer.getControl().setRedraw(true);
-
-            sourceTreeViewer.getControl().redraw();
-            targetTreeViewer.getControl().redraw();
-        }
-
-        if (!canvas.isDisposed()) {
-            canvas.updateCanvas(workflowDescription);
             canvas.repaint();
         }
     }

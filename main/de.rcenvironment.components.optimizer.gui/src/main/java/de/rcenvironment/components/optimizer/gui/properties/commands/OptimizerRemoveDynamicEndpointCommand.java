@@ -13,8 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import de.rcenvironment.components.optimizer.common.OptimizerComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
+import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -28,6 +27,8 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  */
 
 public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpointCommand {
+
+    private static final String DESIGN_VARIABLE = "Design";
 
     public OptimizerRemoveDynamicEndpointCommand(EndpointType direction,
         List<String> names, String id, Refreshable... refreshable) {
@@ -43,7 +44,7 @@ public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpoint
             switch (direction) {
             case INPUT:
                 for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                    if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                    if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                         if (!workflowNode.getInputDescriptionsManager().isValidEndpointName(
                             OptimizerDynamicEndpointCommandHelper.createGradientChannelName(name, variable.getName()))) {
                             workflowNode.getInputDescriptionsManager().removeDynamicEndpointDescription(
@@ -107,14 +108,16 @@ public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpoint
             switch (direction) {
             case INPUT:
                 for (EndpointDescription variable : workflowNode.getOutputDescriptionsManager().getDynamicEndpointDescriptions()) {
-                    if (!variable.getName().contains(OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX)) {
+                    if (variable.getDynamicEndpointIdentifier().equals(DESIGN_VARIABLE)) {
                         if (oldDescription.getMetaDataValue(OptimizerComponentConstants.HAS_GRADIENT) != null
                             && Boolean.parseBoolean(oldDescription.getMetaDataValue(OptimizerComponentConstants.HAS_GRADIENT))
                             && workflowNode.getInputDescriptionsManager().isValidEndpointName(
                                 OptimizerDynamicEndpointCommandHelper.createGradientChannelName(name, variable.getName()))) {
-                            Map<String, String> gradientData = new HashMap<String, String>();
+                            Map<String, String> gradientData = new HashMap<>();
                             for (String key : oldDescription.getMetaData().keySet()) {
-                                if (!key.equals(OptimizerComponentConstants.METADATA_VECTOR_SIZE)) {
+                                if (!key.equals(OptimizerComponentConstants.METADATA_VECTOR_SIZE)
+                                    && !key.equals(ComponentConstants.INPUT_METADATA_KEY_INPUT_DATUM_HANDLING)
+                                    && !key.equals(ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT)) {
                                     gradientData.put(key, "-");
                                 } else {
                                     gradientData.put(key, oldDescription.getMetaDataValue(key));
@@ -140,7 +143,6 @@ public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpoint
                             OptimizerDynamicEndpointCommandHelper.createGradientChannelName(function.getName(), name),
                             oldDescription.getDataType(), new HashMap<String, String>());
                     }
-
                 }
                 getWorkflowNode().getOutputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_OPTIMA,
                     name + OptimizerComponentConstants.OPTIMUM_VARIABLE_SUFFIX,
@@ -158,9 +160,7 @@ public class OptimizerRemoveDynamicEndpointCommand extends RemoveDynamicEndpoint
                     && !oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_STEP).isEmpty())) {
                     if (oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_UNIFIED_STEP) != null
                         && !Boolean.parseBoolean(oldDescription.getMetaData().get(OptimizerComponentConstants.META_USE_UNIFIED_STEP))) {
-                        Map<String, String> stepValueMetaData = new HashMap<String, String>();
-                        stepValueMetaData.put(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE,
-                            LoopEndpointType.OuterLoopEndpoint.name());
+                        Map<String, String> stepValueMetaData = new HashMap<>();
                         workflowNode.getInputDescriptionsManager().addDynamicEndpointDescription(OptimizerComponentConstants.ID_STARTVALUES,
                             name + OptimizerComponentConstants.STEP_VALUE_SIGNATURE, oldDescription.getDataType(), stepValueMetaData);
                     }

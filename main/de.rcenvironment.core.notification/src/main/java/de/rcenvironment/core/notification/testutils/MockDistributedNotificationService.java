@@ -13,7 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
@@ -40,21 +41,22 @@ public class MockDistributedNotificationService implements DistributedNotificati
     public <T extends Serializable> void send(String notificationId, T notificationBody) {}
 
     @Override
-    public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publisherPlatform) {
+    public Map<String, Long> subscribe(String notificationId, NotificationSubscriber subscriber, ResolvableNodeId publisherPlatform) {
         return null;
     }
 
     @Override
-    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, NodeIdentifier publishPlatform) {}
+    public void unsubscribe(String notificationId, NotificationSubscriber subscriber, ResolvableNodeId publishPlatform) {}
 
     @Override
-    public Map<String, List<Notification>> getNotifications(String notificationId, NodeIdentifier publishPlatform)
+    public Map<String, List<Notification>> getNotifications(String notificationId, ResolvableNodeId publishPlatform)
         throws RemoteOperationException {
         return null;
     }
 
     @Override
-    public Map<NodeIdentifier, Map<String, Long>> subscribeToAllReachableNodes(String notificationId, NotificationSubscriber subscriber) {
+    public Map<InstanceNodeSessionId, Map<String, Long>> subscribeToAllReachableNodes(
+        String notificationId, NotificationSubscriber subscriber) {
         return null;
     }
 

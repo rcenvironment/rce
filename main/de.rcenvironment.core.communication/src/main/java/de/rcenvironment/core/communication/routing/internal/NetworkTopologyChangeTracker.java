@@ -14,14 +14,14 @@ import java.util.Set;
 
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.internal.NetworkGraphImpl;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Keeps track of the last known topology information, and generates change events on relevant updates.
@@ -30,27 +30,27 @@ import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
  */
 class NetworkTopologyChangeTracker {
 
-    private Set<NodeIdentifier> lastReachableNodes; // invariant: must always contain an *immutable* set
+    private Set<InstanceNodeSessionId> lastReachableNodes; // invariant: must always contain an *immutable* set
 
     private final AsyncOrderedCallbackManager<NetworkTopologyChangeListener> callbackManager;
 
     private NetworkGraphImpl cachedReachableNetworkGraph;
 
     NetworkTopologyChangeTracker() {
-        this.lastReachableNodes = Collections.unmodifiableSet(new HashSet<NodeIdentifier>()); // see invariant
-        this.callbackManager = new AsyncOrderedCallbackManager<NetworkTopologyChangeListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
+        this.lastReachableNodes = Collections.unmodifiableSet(new HashSet<InstanceNodeSessionId>()); // see invariant
+        this.callbackManager =
+            ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
     }
 
     public synchronized boolean updateReachableNetwork(final NetworkGraphImpl reachableNetworkGraph) {
-        Set<NodeIdentifier> addedNodes;
-        Set<NodeIdentifier> removedNodes;
+        Set<InstanceNodeSessionId> addedNodes;
+        Set<InstanceNodeSessionId> removedNodes;
 
-        Set<? extends NodeIdentifier> reachableNodeIds = reachableNetworkGraph.getNodeIds();
+        Set<? extends InstanceNodeSessionId> reachableNodeIds = reachableNetworkGraph.getNodeIds();
         // create difference sets
-        addedNodes = new HashSet<NodeIdentifier>(reachableNodeIds);
+        addedNodes = new HashSet<InstanceNodeSessionId>(reachableNodeIds);
         addedNodes.removeAll(lastReachableNodes);
-        removedNodes = new HashSet<NodeIdentifier>(lastReachableNodes);
+        removedNodes = new HashSet<InstanceNodeSessionId>(lastReachableNodes);
         removedNodes.removeAll(reachableNodeIds);
 
         callbackManager.enqueueCallback(new AsyncCallback<NetworkTopologyChangeListener>() {
@@ -66,9 +66,9 @@ class NetworkTopologyChangeTracker {
 
         if (!addedNodes.isEmpty() || !removedNodes.isEmpty()) {
             // create thread-safe copies of sets
-            final Set<NodeIdentifier> newReachableNodesCopy = Collections.unmodifiableSet(reachableNodeIds);
-            final Set<NodeIdentifier> addedNodesCopy = Collections.unmodifiableSet(addedNodes);
-            final Set<NodeIdentifier> removedNodesCopy = Collections.unmodifiableSet(removedNodes);
+            final Set<InstanceNodeSessionId> newReachableNodesCopy = Collections.unmodifiableSet(reachableNodeIds);
+            final Set<InstanceNodeSessionId> addedNodesCopy = Collections.unmodifiableSet(addedNodes);
+            final Set<InstanceNodeSessionId> removedNodesCopy = Collections.unmodifiableSet(removedNodes);
 
             callbackManager.enqueueCallback(new AsyncCallback<NetworkTopologyChangeListener>() {
 
@@ -87,7 +87,7 @@ class NetworkTopologyChangeTracker {
         }
     }
 
-    public synchronized Set<NodeIdentifier> getCurrentReachableNodes() {
+    public synchronized Set<InstanceNodeSessionId> getCurrentReachableNodes() {
         return lastReachableNodes; // immutable set; see invariant
     }
 
@@ -98,14 +98,14 @@ class NetworkTopologyChangeTracker {
      */
     public synchronized void addListener(NetworkTopologyChangeListener listener) {
         // make copies in synchronized block
-        final Set<NodeIdentifier> lastReachableNodesCopy = lastReachableNodes;
+        final Set<InstanceNodeSessionId> lastReachableNodesCopy = lastReachableNodes;
         final NetworkGraphImpl networkGraphCopy = cachedReachableNetworkGraph;
         callbackManager.addListenerAndEnqueueCallback(listener, new AsyncCallback<NetworkTopologyChangeListener>() {
 
             @Override
             public void performCallback(NetworkTopologyChangeListener listener) {
                 // send specific callback to bring the listener up to date
-                listener.onReachableNodesChanged(lastReachableNodesCopy, lastReachableNodesCopy, new HashSet<NodeIdentifier>());
+                listener.onReachableNodesChanged(lastReachableNodesCopy, lastReachableNodesCopy, new HashSet<InstanceNodeSessionId>());
                 if (networkGraphCopy != null) {
                     listener.onReachableNetworkChanged(networkGraphCopy);
                 } else {

@@ -46,12 +46,12 @@ import de.rcenvironment.core.communication.connection.api.DisconnectReason;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.utils.NetworkContactPointUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Default {@link ConnectionSetup} implementation.
@@ -96,7 +96,7 @@ public class ConnectionSetupImpl implements ConnectionSetup {
 
     private final StateMachine stateMachine = new StateMachine();
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private final Log log = LogFactory.getLog(getClass());
 

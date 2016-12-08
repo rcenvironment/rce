@@ -35,7 +35,7 @@ public abstract class WorkflowNodeCommand extends WorkflowCommand {
         return label;
     }
 
-    final void setWorkflowNode(final WorkflowNode workflowNode) {
+    public final void setWorkflowNode(final WorkflowNode workflowNode) {
         this.workflowNode = workflowNode;
     }
 

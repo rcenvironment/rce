@@ -71,6 +71,7 @@ public class SplashHandler extends BasicSplashHandler {
         Image splashImg = descriptor.createImage();
         GC gc = new GC(splashImg);
         gc.setFont(new Font(gc.getDevice(), "Arial", 7, SWT.BOLD));
+        // FIXME: the newly created color object will never be disposed
         gc.setForeground(new Color(null, GRAY, GRAY, GRAY));
         gc.setBackground(new Color(null, WHITE, WHITE, WHITE));
         gc.drawText("Version " + BUNDLE_VERSION.substring(0, BUNDLE_VERSION.lastIndexOf('.')) + releasename, XCOORD, YCOORD);

@@ -14,12 +14,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Encapsulates information about a network node and its direct neighborhood. This is called a link
- * state advertisement and is supposed to be passed across the network.
+ * Encapsulates information about a network node and its direct neighborhood. This is called a link state advertisement and is supposed to
+ * be passed across the network.
  * 
  * @see http://de.wikipedia.org/wiki/Link_State_Advertisement
  * @author Phillip Kroll
@@ -45,7 +45,7 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
 
     private final Collection<TopologyLink> links;
 
-    private final NodeIdentifier owner;
+    private final InstanceNodeSessionId owner;
 
     // TODO temporarily transported on top of the LSA infrastructure
     private String displayName;
@@ -64,7 +64,7 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
     /**
      * The constructor.
      */
-    public LinkStateAdvertisement(NodeIdentifier theOwner, String displayName, boolean isWorkflowHost, long sequenceNumber,
+    public LinkStateAdvertisement(InstanceNodeSessionId theOwner, String displayName, boolean isWorkflowHost, long sequenceNumber,
         int graphChecksum,
         boolean routing, String reason, Collection<TopologyLink> links) {
         this.owner = theOwner;
@@ -89,7 +89,7 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
      * @param isWorkflowHost Is workflow host
      * @return The update LSA.
      */
-    public static LinkStateAdvertisement createUpdateLsa(NodeIdentifier theOwner, String displayName, boolean isWorkflowHost,
+    public static LinkStateAdvertisement createUpdateLsa(InstanceNodeSessionId theOwner, String displayName, boolean isWorkflowHost,
         long sequenceNumber,
         int graphChecksum, boolean routing, Collection<TopologyLink> links) {
         return new LinkStateAdvertisement(theOwner, displayName, isWorkflowHost, sequenceNumber, graphChecksum, routing, REASON_UPDATE,
@@ -107,14 +107,14 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
      * @param sequenceNumber The sequence number
      * @return The startup LSA
      */
-    public static LinkStateAdvertisement createStartUpLsa(NodeIdentifier theOwner, String displayName, boolean isWorkflowHost,
+    public static LinkStateAdvertisement createStartUpLsa(InstanceNodeSessionId theOwner, String displayName, boolean isWorkflowHost,
         long sequenceNumber, boolean routing,
         Collection<TopologyLink> links) {
         return new LinkStateAdvertisement(theOwner, displayName, isWorkflowHost, 1, 0, routing, REASON_STARTUP, links);
     }
 
     /**
-     * Create shut down LSA. 
+     * Create shut down LSA.
      * 
      * @param theOwner The owner
      * @param sequenceNumber The sequnce number
@@ -122,7 +122,7 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
      * @param isWorkflowHost Is worfklow host.
      * @return The shut down LSA.
      */
-    public static LinkStateAdvertisement createShutDownLsa(NodeIdentifier theOwner, String displayName, boolean isWorkflowHost,
+    public static LinkStateAdvertisement createShutDownLsa(InstanceNodeSessionId theOwner, String displayName, boolean isWorkflowHost,
         long sequenceNumber) {
         return new LinkStateAdvertisement(theOwner, displayName, isWorkflowHost, sequenceNumber, 0, false, REASON_SHUTDOWN,
             new ArrayList<TopologyLink>());
@@ -141,7 +141,7 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
             copiedLinks.add(link.clone());
         }
         LinkStateAdvertisement clone = new LinkStateAdvertisement(
-            owner.clone(), displayName, isWorkflowHost, sequenceNumber, graphHashCode, routing, reason, copiedLinks);
+            owner, displayName, isWorkflowHost, sequenceNumber, graphHashCode, routing, reason, copiedLinks);
         return clone;
     }
 
@@ -169,7 +169,7 @@ public final class LinkStateAdvertisement implements Serializable, Cloneable {
     /**
      * @return Returns the owner.
      */
-    public NodeIdentifier getOwner() {
+    public InstanceNodeSessionId getOwner() {
         return owner;
     }
 

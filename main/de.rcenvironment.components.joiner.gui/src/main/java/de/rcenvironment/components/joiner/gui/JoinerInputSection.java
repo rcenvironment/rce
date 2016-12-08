@@ -62,11 +62,11 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
     private final EndpointSelectionPane outputPane;
 
     public JoinerInputSection() {
-        inputPane = new EndpointSelectionPane(Messages.inputs,
-            EndpointType.INPUT, this, true, null, false);
+        inputPane = new EndpointSelectionPane(Messages.inputs, EndpointType.INPUT, null,
+            new String[] { JoinerComponentConstants.DYNAMIC_INPUT_ID }, new String[] {}, this, true);
 
-        outputPane = new EndpointSelectionPane(Messages.outputs,
-            EndpointType.OUTPUT, this, true, null, false);
+        outputPane = new EndpointSelectionPane(Messages.outputs, EndpointType.OUTPUT, null,
+            new String[] {}, new String[] { JoinerComponentConstants.OUTPUT_NAME }, this, true);
 
         setPanes(inputPane, outputPane);
     }
@@ -122,15 +122,6 @@ public class JoinerInputSection extends DefaultEndpointPropertySection {
         }
     }
 
-    @Override
-    public void refreshSection() {
-        super.refreshSection();
-        configurationComposite.setSize(parentComposite.getParent().getSize().x, COMPOSITES_HEIGHT);
-        endpointsComposite.setSize(parentComposite.getParent().getSize().x, COMPOSITES_HEIGHT);
-        parentComposite.setSize(parentComposite.getParent().getSize().x, COMPOSITES_HEIGHT);
-        inputCountSpinner.setSize(CONFIG_COMBO_WIDTH, inputCountSpinner.getSize().y);
-        dataTypeCombo.setSize(CONFIG_COMBO_WIDTH, dataTypeCombo.getSize().y);
-    };
 
     /**
      * Edits endpoint's data types.

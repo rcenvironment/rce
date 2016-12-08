@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.componentgroups.standard.feature"
       label="RCE Standard Components Feature"
-      version="7.1.5.qualifier"
+      version="8.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
@@ -130,7 +130,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
       <import plugin="de.rcenvironment.core.scripting"/>
       <import plugin="de.rcenvironment.core.utils.executor"/>
       <import plugin="de.rcenvironment.core.configuration"/>
-      <import plugin="de.rcenvironment.core.gui.workflow.scripting"/>
       <import plugin="de.rcenvironment.core.component.wrapper"/>
       <import plugin="de.rcenvironment.core.utils.cluster"/>
       <import plugin="de.rcenvironment.core.utils.ssh"/>

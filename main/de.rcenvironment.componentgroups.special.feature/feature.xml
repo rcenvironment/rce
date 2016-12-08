@@ -2,11 +2,11 @@
 <feature
       id="de.rcenvironment.componentgroups.special.feature"
       label="RCE Special Components Feature"
-      version="7.1.5.qualifier"
+      version="8.0.0.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
-      Excel and SQL workflow components for RCE (Remote Component Environment).
+      Excel workflow component for RCE (Remote Component Environment).
    </description>
 
    <copyright url="http://www.rcenvironment.de">
@@ -157,27 +157,6 @@ This Agreement is governed by the laws of the State of New York and the intellec
          id="de.rcenvironment.components.excel.gui"
          os="win32"
          ws="win32"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.sql.common"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.sql.execution"
-         download-size="0"
-         install-size="0"
-         version="0.0.0"
-         unpack="false"/>
-
-   <plugin
-         id="de.rcenvironment.components.sql.gui"
          download-size="0"
          install-size="0"
          version="0.0.0"

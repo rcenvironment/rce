@@ -8,7 +8,6 @@
  
 package de.rcenvironment.core.gui.cluster.internal;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.eclipse.jface.dialogs.MessageDialog;
 import org.eclipse.swt.widgets.Composite;
 
@@ -43,8 +42,7 @@ public final class ErrorMessageDialogFactory {
      */
     public static MessageDialog createMessageDialogForConnectionFailure(Composite parent, Exception e) {
         MessageDialog dialog = new MessageDialog(parent.getShell(), Messages.connectionFailureDialogTitle, null,
-                StringUtils.format(Messages.connectionFailureDialogMessage, ExceptionUtils.getRootCauseMessage(e)), MessageDialog.ERROR,
-                new String[] { Messages.ok }, 0);
+            Messages.connectionFailureDialogMessage, MessageDialog.ERROR, new String[] { Messages.ok }, 0);
         return dialog;
     }
 

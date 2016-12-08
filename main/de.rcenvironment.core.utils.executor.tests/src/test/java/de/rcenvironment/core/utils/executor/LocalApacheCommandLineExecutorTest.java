@@ -192,14 +192,14 @@ public class LocalApacheCommandLineExecutorTest extends CommonExecutorTests {
     public void testCancellationOfStartedExecutor() throws IOException, InterruptedException {
         String commandString;
         if (Platform.isWindows()) {
-            commandString = StringUtils.format(ProcessUtilsTests.WINDOWS_WAIT_COMMAND_TEMPLATE, HUNDRED_SECONDS);
+            commandString = StringUtils.format(ProcessUtilsTest.WINDOWS_WAIT_COMMAND_TEMPLATE, HUNDRED_SECONDS);
         } else if (Platform.isLinux()) {
-            commandString = StringUtils.format(ProcessUtilsTests.LINUX_WAIT_COMMAND_TEMPLATE, HUNDRED_SECONDS);
+            commandString = StringUtils.format(ProcessUtilsTest.LINUX_WAIT_COMMAND_TEMPLATE, HUNDRED_SECONDS);
         } else {
             throw new IllegalStateException(UNKOWN_PLATFORM);
         }
         executor.start(commandString);
-        Thread.sleep(ProcessUtilsTests.ONE_SECOND_AS_MILLIS);
+        Thread.sleep(ProcessUtilsTest.ONE_SECOND_AS_MILLIS);
         assertTrue(executor.cancel());
         int exitCode = executor.waitForTermination();
         assertThat(exitCode, not(0)); // indicates failure during execution        
@@ -215,16 +215,34 @@ public class LocalApacheCommandLineExecutorTest extends CommonExecutorTests {
     public void testCancellationOfFinishedExecutor() throws IOException, InterruptedException {
         String commandString;
         if (Platform.isWindows()) {
-            commandString = StringUtils.format(ProcessUtilsTests.WINDOWS_WAIT_COMMAND_TEMPLATE, 5);
+            commandString = StringUtils.format(ProcessUtilsTest.WINDOWS_WAIT_COMMAND_TEMPLATE, 5);
         } else if (Platform.isLinux()) {
-            commandString = StringUtils.format(ProcessUtilsTests.LINUX_WAIT_COMMAND_TEMPLATE, 5);
+            commandString = StringUtils.format(ProcessUtilsTest.LINUX_WAIT_COMMAND_TEMPLATE, 5);
         } else {
             throw new IllegalStateException(UNKOWN_PLATFORM);
         }
         executor.start(commandString);
-        Thread.sleep(ProcessUtilsTests.ONE_SECOND_AS_MILLIS);
+        Thread.sleep(ProcessUtilsTest.ONE_SECOND_AS_MILLIS);
         int exitCode = executor.waitForTermination();
-        assertEquals(exitCode, 0); // indicates failure during execution
+        assertEquals(exitCode, 0);
         assertTrue(executor.cancel());
+    }
+    
+    /**
+     * Tests if a script containing an improper shebang line is properly rejected.
+     * 
+     * @throws IOException on I/O errors
+     * @throws InterruptedException on thread interruption
+     */
+    @Test
+    public void testRejectionOfInvalidShebang() throws IOException, InterruptedException {
+        String commandString = "#!/bin/sh7 \n if [true] \n echo 'oh snap...' \n fi";
+        if (!OSFamily.isLinux()) {
+            log.info(MESSAGE_LINUX_SPECIFIC_TEST_SKIPPED);
+            return;
+        }
+        executor.start(commandString);
+        int exitCode = executor.waitForTermination();
+        assertThat(exitCode, not(0)); // indicates failure during execution  
     }
 }

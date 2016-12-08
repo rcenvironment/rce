@@ -22,7 +22,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.notification.DefaultNotificationSubscriber;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationHeader;
@@ -35,6 +35,7 @@ import de.rcenvironment.core.notification.NotificationTestConstants;
  * 
  * @author Andre Nurzenski
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 @SuppressWarnings("serial")
 public class NotificationServiceImplTest {
@@ -47,7 +48,7 @@ public class NotificationServiceImplTest {
 
     private String notificationId = null;
 
-    private NodeIdentifier myPublisherPlatform = null;
+    private InstanceNodeSessionId myPublisherPlatform = null;
 
     private String myOtherPublisherName = null;
 
@@ -63,7 +64,7 @@ public class NotificationServiceImplTest {
     public NotificationServiceImplTest() throws Exception {
 
         notificationId = NotificationTestConstants.NOTIFICATION_ID;
-        myPublisherPlatform = NotificationTestConstants.LOCALHOST;
+        myPublisherPlatform = NotificationTestConstants.LOCAL_INSTANCE_SESSION;
         myOtherPublisherName = NotificationTestConstants.OTHER_NOTIFICATION_IDENTIFIER;
         notificationSubscriber = new DefaultNotificationSubscriber() {
 

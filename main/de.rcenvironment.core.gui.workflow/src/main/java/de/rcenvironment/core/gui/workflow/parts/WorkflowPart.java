@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.eclipse.core.runtime.IAdaptable;
-import org.eclipse.draw2d.Border;
 import org.eclipse.draw2d.ConnectionLayer;
 import org.eclipse.draw2d.Figure;
 import org.eclipse.draw2d.FigureListener;
@@ -56,6 +55,7 @@ import de.rcenvironment.core.gui.workflow.WorkflowNodeLabelConnectionHelper;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditor;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowLabelMoveCommand;
 import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeMoveCommand;
+import de.rcenvironment.core.gui.workflow.editor.handlers.OvalBorderMoveHandle;
 
 /**
  * Part holding a {@link WorkflowDescription}.
@@ -63,6 +63,7 @@ import de.rcenvironment.core.gui.workflow.editor.commands.WorkflowNodeMoveComman
  * @author Heinrich Wendel
  * @author Sascha Zur
  * @author Oliver Seebach
+ * @author Jascha Riedel (sortWorkflowLabels)
  * 
  */
 public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyChangeListener, IAdaptable {
@@ -75,6 +76,8 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         ((PropertiesChangeSupport) getModel()).addPropertyChangeListener(this);
         updateConnectionWrappers();
         propertyChange(new PropertyChangeEvent(this, WorkflowDescription.PROPERTY_CONNECTIONS, null, null));
+        propertyChange(new PropertyChangeEvent(this, WorkflowDescription.PROPERTY_NODES, null, null));
+        propertyChange(new PropertyChangeEvent(this, WorkflowDescription.PROPERTY_LABEL, null, null));
     }
 
     @Override
@@ -97,8 +100,10 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
                 }
             }
         } else if (WorkflowDescription.PROPERTY_NODES.equals(prop)) {
+            ((WorkflowDescription) getModel()).sortWorkflowNodesByZIndex();
             refreshChildren();
         } else if (WorkflowDescription.PROPERTY_LABEL.equals(prop)) {
+            ((WorkflowDescription) getModel()).sortWorkflowLabelsByZIndex();
             refreshChildren();
         }
     }
@@ -178,7 +183,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
                 if ((c.getSourceNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
                     && c.getTargetNode().getIdentifier().equals(wrapper.getTarget().getIdentifier()))
                     || c.getTargetNode().getIdentifier().equals(wrapper.getSource().getIdentifier())
-                    && c.getSourceNode().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
+                        && c.getSourceNode().getIdentifier().equals(wrapper.getTarget().getIdentifier())) {
                     wrapper.incrementNumberOfConnections();
                 }
             }
@@ -205,6 +210,7 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
         installEditPolicy(EditPolicy.LAYOUT_ROLE, new WorkflowXYLayoutEditPolicy());
         installEditPolicy("Snap Feedback", new SnapFeedbackPolicy());
     }
+
 
     /**
      * Policy responsible for creating new WorkflowNodes.
@@ -300,46 +306,19 @@ public class WorkflowPart extends AbstractGraphicalEditPart implements PropertyC
             }
         }
 
-        /**
-         * A new handle for oval borders.
-         * 
-         * @author Sascha Zur
-         * @author Oliver Seebach
-         * 
-         */
-        private class OvalBorderMoveHandle extends MoveHandle {
-
-            private static final int BORDERWIDTH = 2;
-
-            OvalBorderMoveHandle(GraphicalEditPart owner) {
-                super(owner);
-            }
-
-            @Override
-            public Border getBorder() {
-                RoundedLineBorder border = new RoundedLineBorder();
-                border.setWidth(BORDERWIDTH);
-                return border;
-            }
-
-            @Override
-            protected void paintFigure(Graphics graphics) {
-                graphics.drawOval(new Rectangle(getBounds().x, getBounds().y, getBounds().width - 1, getBounds().height - 1));
-            }
-        }
 
         @Override
         protected Command getCreateCommand(final CreateRequest request) {
 
             Object childClass = request.getNewObjectType();
             if (childClass == WorkflowNode.class) {
-                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper((WorkflowNode) request.getNewObject()
-                    , (WorkflowDescription) getHost().getModel(), (Rectangle) getConstraintFor(request));
+                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper((WorkflowNode) request.getNewObject(),
+                    (WorkflowDescription) getHost().getModel(), (Rectangle) getConstraintFor(request));
                 return helper.createCommand();
             }
             if (childClass == WorkflowLabel.class) {
-                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper((WorkflowLabel) request.getNewObject()
-                    , (WorkflowDescription) getHost().getModel(), (Rectangle) getConstraintFor(request));
+                WorkflowNodeLabelConnectionHelper helper = new WorkflowNodeLabelConnectionHelper((WorkflowLabel) request.getNewObject(),
+                    (WorkflowDescription) getHost().getModel(), (Rectangle) getConstraintFor(request));
                 return helper.createCommand();
             }
             return null;

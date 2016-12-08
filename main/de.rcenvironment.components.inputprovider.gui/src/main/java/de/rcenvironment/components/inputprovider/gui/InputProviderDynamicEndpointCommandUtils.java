@@ -37,12 +37,8 @@ public final class InputProviderDynamicEndpointCommandUtils {
      */
     public static void setValueName(WorkflowNode workflowNode, DataType type, String name) {
         String placeholder = "${" + name + "}";
-        if (type != DataType.ShortText) {
-            setOutputValues(workflowNode, name, placeholder);
-            setOutputValues(workflowNode, name + PlaceholdersMetaDataConstants.DATA_TYPE, getPlaceholderDataType(type));
-        } else {
-            setOutputValues(workflowNode, name, placeholder);
-        }
+        setOutputValues(workflowNode, name, placeholder);
+        setOutputValues(workflowNode, name + PlaceholdersMetaDataConstants.DATA_TYPE, getPlaceholderDataType(type));
     }
 
     private static void setOutputValues(WorkflowNode workflowNode, String name, String value) {

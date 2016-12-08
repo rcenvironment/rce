@@ -20,7 +20,7 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.component.integration.ToolIntegrationContext;
 import de.rcenvironment.core.component.integration.ToolIntegrationService;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 
 /**
  * Manager for the filewatcher of all types of integrations.
@@ -59,7 +59,7 @@ public class ToolIntegrationFileWatcherManager {
 
             ToolIntegrationFileWatcher integrationWatcher = new ToolIntegrationFileWatcher(context,
                 integrationService);
-            SharedThreadPool.getInstance().execute(integrationWatcher, "FileWatcher " + context.getContextId());
+            ConcurrencyUtils.getAsyncTaskService().execute(integrationWatcher, "FileWatcher " + context.getContextId());
             integrationWatcher.registerRecursive(toolIntegrationPath);
             watchers.put(context, integrationWatcher);
             LOGGER.debug("Created new watcher for context " + context.getContextType());
@@ -134,6 +134,16 @@ public class ToolIntegrationFileWatcherManager {
             } catch (IOException e) {
                 LOGGER.debug("Could not register tool directory of tool " + toolName, e);
             }
+        }
+    }
+
+    /**
+     * Shut down all tool integration watcher active.
+     */
+    public void shutdown() {
+        LOGGER.debug("Shutting down file watcher.");
+        for (ToolIntegrationContext context : watchers.keySet()) {
+            unregisterRootDirectory(context);
         }
     }
 

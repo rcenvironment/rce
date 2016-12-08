@@ -15,17 +15,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.impl.NodeIdentifierImpl;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumServiceDefaultStub;
-import de.rcenvironment.core.utils.common.AutoCreationMap;
 import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.toolkit.utils.common.AutoCreationMap;
 
 /**
  * Placeholder implementation of {@link ComponentContext} for writing {@link Component} integration tests.
@@ -60,7 +61,8 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
     private int executionCount;
 
-    private final NodeIdentifier node = new NodeIdentifierImpl("ComponentContextMock");
+    private final LogicalNodeId node = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("ComponentContextMock")
+        .convertToDefaultLogicalNodeId();
 
     private ComponentHistoryDataItem historyDataItem;
 
@@ -76,16 +78,16 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
         private final String endpointId;
 
-        private final String name;
-
         private final DataType dataType;
 
         private final boolean isDynamic;
 
         private final Map<String, String> metaData;
 
-        SimulatedEndpoint(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
-            this.name = name;
+        private final EndpointCharacter endpointCharacter;
+
+        SimulatedEndpoint(String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData,
+            EndpointCharacter endpointCharacter) {
             this.endpointId = endpointId;
             this.dataType = dataType;
             this.isDynamic = isDynamic;
@@ -94,14 +96,11 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
             } else {
                 this.metaData = new HashMap<>();
             }
+            this.endpointCharacter = endpointCharacter;
         }
 
         private String getEndpointId() {
             return endpointId;
-        }
-
-        private String getName() {
-            return name;
         }
 
         private DataType getDataType() {
@@ -114,6 +113,10 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
 
         private Map<String, String> getMetaData() {
             return metaData;
+        }
+
+        private EndpointCharacter getEndpointCharacter() {
+            return endpointCharacter;
         }
 
     }
@@ -158,7 +161,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public LogicalNodeId getNodeId() {
         return node;
     }
 
@@ -231,7 +234,7 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
         }
         if (value.getDataType() != simulatedOutputs.get(outputName).getDataType() && !value.getDataType().equals(DataType.NotAValue)
             && !typedDatumService.getConverter().isConvertibleTo(value, simulatedOutputs.get(outputName).getDataType())) {
-            throw new RuntimeException(StringUtils.format("DataType %s of given value not convertable to defined output DataType %s",
+            throw new RuntimeException(StringUtils.format("DataType %s of given value not convertible to defined output DataType %s",
                 value.getDataType(), simulatedOutputs.get(outputName).getDataType()));
         }
 
@@ -283,7 +286,23 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
      * @param metaData the metadata map of the intput; can be null as a shortcut for an empty map
      */
     public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
-        simulatedInputs.put(name, new SimulatedEndpoint(name, endpointId, dataType, isDynamic, metaData));
+        simulatedInputs.put(name,
+            new SimulatedEndpoint(endpointId, dataType, isDynamic, metaData, EndpointCharacter.SAME_LOOP));
+    }
+
+    /**
+     * Defines/adds a simulated input endpoint for the component. Should be called only before starting the component.
+     * 
+     * @param name the name of the input (as visible to the user in actual workflows)
+     * @param endpointId the internal endpoint ID
+     * @param dataType the {@link DataType} of the input
+     * @param isDynamic true for a dynamic input, false for a static one
+     * @param metaData the metadata map of the intput; can be null as a shortcut for an empty map
+     * @param inputCharacter {@link EndpointCharacter} of the input
+     */
+    public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData,
+        EndpointCharacter inputCharacter) {
+        simulatedInputs.put(name, new SimulatedEndpoint(endpointId, dataType, isDynamic, metaData, inputCharacter));
     }
 
     /**
@@ -296,7 +315,23 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
      * @param metaData the metadata map of the output; can be null as a shortcut for an empty map
      */
     public void addSimulatedOutput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData) {
-        simulatedOutputs.put(name, new SimulatedEndpoint(name, endpointId, dataType, isDynamic, metaData));
+        simulatedOutputs.put(name,
+            new SimulatedEndpoint(endpointId, dataType, isDynamic, metaData, EndpointCharacter.SAME_LOOP));
+    }
+
+    /**
+     * Defines/adds a simulated output endpoint for the component. Should be called only before starting the component.
+     * 
+     * @param name the name of the output (as visible to the user in actual workflows)
+     * @param endpointId the internal endpoint ID
+     * @param dataType the {@link DataType} of the input
+     * @param isDynamic true for a dynamic output, false for a static one
+     * @param metaData the metadata map of the output; can be null as a shortcut for an empty map
+     * @param outputCharacter {@link EndpointCharacter} of the input
+     */
+    public void addSimulatedOutput(String name, String endpointId, DataType dataType, boolean isDynamic, Map<String, String> metaData,
+        EndpointCharacter outputCharacter) {
+        simulatedOutputs.put(name, new SimulatedEndpoint(endpointId, dataType, isDynamic, metaData, outputCharacter));
     }
 
     /**
@@ -401,6 +436,16 @@ public class ComponentContextMock extends ComponentContextDefaultStub {
     @Override
     public Set<String> getInputsNotConnected() {
         return inputsNotConnected;
+    }
+
+    @Override
+    public EndpointCharacter getInputCharacter(String inputName) {
+        return simulatedInputs.get(inputName).getEndpointCharacter();
+    }
+
+    @Override
+    public EndpointCharacter getOutputCharacter(String outputName) {
+        return simulatedOutputs.get(outputName).getEndpointCharacter();
     }
 
     /**

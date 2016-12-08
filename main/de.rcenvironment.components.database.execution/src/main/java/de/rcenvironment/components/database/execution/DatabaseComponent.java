@@ -10,6 +10,7 @@ package de.rcenvironment.components.database.execution;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -57,6 +58,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
 @LocalExecutionOnly
 public class DatabaseComponent extends DefaultComponent {
 
+    private static final String ERROR_FILLING_SMALL_TABLE = "Error when filling the output '%s' of type small table.";
+    
     private static final String FULL_STOP = ".";
 
     private static final String SAVEPOINT = "RCEdatabaseTrancactionSavepoint";
@@ -255,7 +258,7 @@ public class DatabaseComponent extends DefaultComponent {
         }
 
         // WRITE SUCCESS OUTPUT AND WORKFLOW DATA ITEMS
-        componentContext.writeOutput("Success", typedDatumService.getFactory().createBoolean(true));
+        componentContext.writeOutput(DatabaseComponentConstants.OUTPUT_NAME_SUCCESS, typedDatumService.getFactory().createBoolean(true));
         writeFinalWorkflowDataItem();
     }
 
@@ -734,13 +737,14 @@ public class DatabaseComponent extends DefaultComponent {
                     } else if (resultSet.getObject(i) == null) {
                         smallTableTD.setTypedDatumForCell(tdFactory.createEmpty(), rowInTable, colInTable);
                     } else if (resultSet.getObject(i) instanceof BigDecimal) {
-                        throw new ComponentException("Error when filling the output '" + outputToWriteTo
-                            + "' of type small table. "
-                            + "Note that currently no internal data type represents big decimal values.");
+                        throw new ComponentException(StringUtils.format(ERROR_FILLING_SMALL_TABLE, outputToWriteTo)
+                            + "Note that currently no internal data type represents 'big decimal' values.");
+                    } else if (resultSet.getObject(i) instanceof BigInteger) {
+                        throw new ComponentException(StringUtils.format(ERROR_FILLING_SMALL_TABLE, outputToWriteTo)
+                            + "Note that currently no internal data type represents 'big integer' values.");
                     } else {
-                        throw new ComponentException("Error when filling the output '" + outputToWriteTo
-                            + "' of type small table. "
-                            + "The given data type is currently not supported.");
+                        throw new ComponentException(StringUtils.format(ERROR_FILLING_SMALL_TABLE, outputToWriteTo)
+                            + "The given data type '" + resultSet.getObject(i).getClass().getName() + "' is currently not supported.");
                     }
                     // Datetime currently not supported in DB component - seeb_ol, April 2016
                     // else if (resultSet.getObject(i) instanceof Timestamp) {

@@ -24,7 +24,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.communication.channel.MessageChannelIdFactory;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
@@ -32,8 +32,8 @@ import de.rcenvironment.core.communication.transport.spi.HandshakeInformation;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
 import de.rcenvironment.core.communication.transport.spi.NetworkTransportProvider;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Abstract base class for JMS transport providers. This base class provides the aspects of a JMS transport provider that are independent of
@@ -50,7 +50,7 @@ public abstract class AbstractJmsTransportProvider implements NetworkTransportPr
 
     protected final Log log = LogFactory.getLog(getClass());
 
-    protected final ThreadPool threadPool = SharedThreadPool.getInstance();
+    protected final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     protected final JmsArtifactFactory artifactFactory;
 
@@ -71,11 +71,12 @@ public abstract class AbstractJmsTransportProvider implements NetworkTransportPr
             String connectionId = connectionIdFactory.generateId(false);
 
             JmsMessageChannel remoteInitiatedConnection =
-                new RemoteInitiatedJmsMessageChannel(receivingNodeInformation.getNodeId(), localJmsConnection, associatedSCP);
+                new RemoteInitiatedJmsMessageChannel(receivingNodeInformation.getInstanceNodeSessionId(), localJmsConnection,
+                    associatedSCP);
             remoteInitiatedConnection.setRemoteNodeInformation(remoteNodeInformation);
             remoteInitiatedConnection.setAssociatedMirrorChannelId(remoteHandshakeInformation.getChannelId());
             // FIXME add proper token
-            remoteInitiatedConnection.setShutdownSecurityToken("passive." + remoteNodeInformation.getNodeIdString());
+            remoteInitiatedConnection.setShutdownSecurityToken("passive." + remoteNodeInformation.getInstanceNodeSessionIdString());
             remoteInitiatedConnection.setChannelId(connectionId);
             remoteInitiatedConnection.setInitiatedByRemote(true);
 
@@ -114,7 +115,7 @@ public abstract class AbstractJmsTransportProvider implements NetworkTransportPr
         try {
             try {
                 ConnectionFactory connectionFactory = artifactFactory.createConnectionFactory(ncp);
-                NodeIdentifier localNodeId = ownNodeInformation.getNodeId();
+                InstanceNodeSessionId localNodeId = ownNodeInformation.getInstanceNodeSessionId();
                 newChannel = new SelfInitiatedJmsMessageChannel(localNodeId, connectionFactory, brokenConnectionListener);
                 newChannel.setChannelId(connectionIdFactory.generateId(true));
                 newChannel.connectToJmsBroker();
@@ -136,9 +137,9 @@ public abstract class AbstractJmsTransportProvider implements NetworkTransportPr
                 log.debug("Successfully performed JMS handshake with remote node " + remoteNodeInformation.getLogDescription());
                 // basic check against duplicate node ids; does not guard against non-neighbor nodes
                 // with same id
-                if (remoteNodeInformation.getNodeIdString().equals(localNodeId.getIdString())) {
-                    throw new CommunicationException("Invalid setup: Remote and local node share the same node id: "
-                        + localNodeId.getIdString());
+                if (remoteNodeInformation.getInstanceNodeSessionId().isSameInstanceNodeAs(localNodeId)) {
+                    throw new CommunicationException("Invalid setup: Remote and local node share the same instance node id: "
+                        + localNodeId.getInstanceNodeIdString());
                 }
                 newChannel.markAsEstablished();
                 return newChannel;

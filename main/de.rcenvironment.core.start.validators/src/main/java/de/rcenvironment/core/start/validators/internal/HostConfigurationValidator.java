@@ -49,7 +49,11 @@ public class HostConfigurationValidator extends DefaultInstanceValidator {
         for (Map.Entry<String, ConfigurationSegment> entry : connectionElements.entrySet()) {
 
             ConfigurationSegment segment = entry.getValue();
-            if (segment.getString(HOST).equals(INVALID_IP)) {
+            final String hostString = segment.getString(HOST);
+            if (hostString == null) {
+                continue; // this case is handled within the parameter parsing code; this connection will be ignored
+            }
+            if (hostString.equals(INVALID_IP)) {
                 String message = StringUtils.format(Messages.invalidIPconfig, entry.getKey());
                 return InstanceValidationResultFactory.createResultForFailureWhichRequiresInstanceShutdown(
                     VALIDATIONNAME, message, message);

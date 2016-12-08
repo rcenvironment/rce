@@ -28,8 +28,6 @@ public final class JoinerComponentConstants {
     /**Constant. */
     public static final String OUTPUT_NAME = "Joined";
     /**Constant. */
-    public static final String DYNAMIC_OUTPUT_ID = "joined";
-    /**Constant. */
     public static final String DYNAMIC_INPUT_ID = "toJoin";
     /**Constant. */
     public static final String INPUT_NAME = "Input ";

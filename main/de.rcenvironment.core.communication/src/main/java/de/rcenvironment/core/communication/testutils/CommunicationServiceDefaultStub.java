@@ -10,11 +10,10 @@ package de.rcenvironment.core.communication.testutils;
 
 import java.util.Set;
 
-import org.osgi.framework.BundleContext;
-
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 
 /**
  * Common test/mock implementations of {@link CommunicationService}. These can be used directly, or can as superclasses for custom mock
@@ -29,23 +28,19 @@ import de.rcenvironment.core.communication.common.NodeIdentifier;
 public class CommunicationServiceDefaultStub implements CommunicationService {
 
     @Override
-    public Set<NodeIdentifier> getReachableNodes() {
+    public Set<InstanceNodeSessionId> getReachableInstanceNodes() {
         return null;
     }
 
     @Override
-    public <T> T getRemotableService(Class<T> iface, NodeIdentifier nodeId) {
+    public Set<LogicalNodeId> getReachableLogicalNodes() {
         return null;
     }
 
     @Override
-    public <T> T getService(Class<T> iface, NodeIdentifier nodeId, BundleContext bundleContext)
-        throws IllegalStateException {
+    public <T> T getRemotableService(Class<T> iface, ResolvableNodeId nodeId) {
         return null;
     }
-
-    @Override
-    public void addRuntimeNetworkPeer(String contactPointDefinition) throws CommunicationException {}
 
     @Override
     public String getFormattedNetworkInformation(String type) {

@@ -17,7 +17,10 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.osgi.framework.BundleContext;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.configuration.CommunicationConfiguration;
 import de.rcenvironment.core.communication.configuration.CommunicationIPFilterConfiguration;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
@@ -31,7 +34,6 @@ import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.PersistentSettingsService;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
 
 /**
  * Default {@link NodeConfigurationService} implementation.
@@ -40,11 +42,6 @@ import de.rcenvironment.core.utils.incubator.IdGenerator;
  * @author Sascha Zur
  */
 public class NodeConfigurationServiceImpl implements NodeConfigurationService {
-
-    /**
-     * Constant for the name of the configuration file.
-     */
-    public static final String IP_WHILTELIST_CONFIGURATION_ID = "de.rcenvironment.core.communication.ipfilter";
 
     // TODO temporary hardcoded default for actual RCE instances; see Mantis #8074
     private static final int STARTUP_INITIAL_CONNECT_DELAY_MSEC = 2500;
@@ -71,14 +68,25 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
 
     private boolean localNodeIsRelay;
 
+    private InstanceNodeId localInstanceId;
+
+    private NodeIdentifierService nodeIdentifierService;
+
+    private InstanceNodeSessionId localInstanceSessionId;
+
     public NodeConfigurationServiceImpl() {
         serverContactPoints = new ArrayList<NetworkContactPoint>();
         initialNetworkPeers = new ArrayList<NetworkContactPoint>();
     }
 
     @Override
-    public NodeIdentifier getLocalNodeId() {
-        return localNodeInformation.getNodeId();
+    public NodeIdentifierService getNodeIdentifierService() {
+        return nodeIdentifierService;
+    }
+
+    @Override
+    public InstanceNodeSessionId getInstanceNodeSessionId() {
+        return localNodeInformation.getInstanceNodeSessionId();
     }
 
     @Override
@@ -164,54 +172,69 @@ public class NodeConfigurationServiceImpl implements NodeConfigurationService {
     /**
      * OSGi-DS bind method; made public for unit testing.
      * 
-     * @param newConfigurationService the new {@link ConfigurationService} to set
+     * @param newService the new {@link ConfigurationService} to set
      */
-    public void bindConfigurationService(ConfigurationService newConfigurationService) {
-        configurationService = newConfigurationService;
+    public void bindConfigurationService(ConfigurationService newService) {
+        configurationService = newService;
     }
 
     /**
      * OSGi-DS bind method; made public for unit testing.
      * 
-     * @param newPersistentSettingsService the new {@link PersistentSettingsService} to set
+     * @param newService the new {@link NodeIdentifierService} to set
      */
-    public void bindPersistentSettingsService(PersistentSettingsService newPersistentSettingsService) {
-        persistentSettingsService = newPersistentSettingsService;
+    public void bindNodeIdentifierService(NodeIdentifierService newService) {
+        this.nodeIdentifierService = newService;
+    }
+
+    /**
+     * OSGi-DS bind method; made public for unit testing.
+     * 
+     * @param newService the new {@link PersistentSettingsService} to set
+     */
+    public void bindPersistentSettingsService(PersistentSettingsService newService) {
+        persistentSettingsService = newService;
     }
 
     private void createLocalNodeInformation() {
+        String predefinedInstanceIdString = getStoredOrOverriddenInstanceId();
+
+        if (predefinedInstanceIdString == null) {
+            localInstanceId = nodeIdentifierService.generateInstanceNodeId();
+            persistentSettingsService.saveStringValue(PERSISTENT_SETTINGS_KEY_PLATFORM_ID, localInstanceId.getInstanceNodeIdString());
+            log.info("Generated and stored id " + predefinedInstanceIdString + " for the local node");
+        } else {
+            try {
+                localInstanceId = nodeIdentifierService.parseInstanceNodeIdString(predefinedInstanceIdString);
+                log.info("Reusing the previously stored id " + predefinedInstanceIdString + " for the local node");
+            } catch (IdentifierException e) {
+                throw new IllegalStateException("Invalid stored or overridden instance id '" + predefinedInstanceIdString
+                    + "'; aborting to avoid running with an inconsistent state");
+            }
+        }
+
+        localInstanceSessionId = nodeIdentifierService.generateInstanceNodeSessionId(localInstanceId);
+
+        String instanceName = configurationService.getInstanceName();
+
+        localNodeInformation = new InitialNodeInformationImpl(localInstanceSessionId);
+        localNodeInformation.setDisplayName(instanceName);
+
+    }
+
+    private String getStoredOrOverriddenInstanceId() {
         // check if a node id override is defined
         String nodeId = System.getProperty(SYSTEM_PROPERTY_OVERRIDE_NODE_ID);
         if (nodeId != null) {
-            // validate id form
-            if (nodeId.matches(NODE_ID_OVERRIDE_PATTERN)) {
-                log.info("Overriding node id: " + nodeId);
-            } else {
-                log.warn("Ignoring node id override (property '" + SYSTEM_PROPERTY_OVERRIDE_NODE_ID
-                    + "') as it does not match the pattern '" + NODE_ID_OVERRIDE_PATTERN + "': " + nodeId);
-                // reset to null; this causes fallback to the normal startup behavior
-                nodeId = null;
-            }
+            // no need to validate the value; this will be done below anyway
+            log.info("Overriding node id: " + nodeId);
         }
         // standard procedure
         if (nodeId == null) {
             // check for existing persistent node id
             nodeId = persistentSettingsService.readStringValue(PERSISTENT_SETTINGS_KEY_PLATFORM_ID);
-            if (nodeId == null) {
-                // not found -> generate and save
-                nodeId = IdGenerator.randomUUIDWithoutDashes();
-                persistentSettingsService.saveStringValue(PERSISTENT_SETTINGS_KEY_PLATFORM_ID, nodeId);
-                log.info("Generated and stored id " + nodeId + " for the local node");
-            } else {
-                log.info("Reusing the previously stored id " + nodeId + " for the local node");
-            }
         }
-
-        String instanceName = configurationService.getInstanceName();
-
-        localNodeInformation = new InitialNodeInformationImpl(nodeId);
-        localNodeInformation.setDisplayName(instanceName);
-
+        return nodeId;
     }
 
     private void parseNetworkConfiguration() {

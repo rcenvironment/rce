@@ -17,9 +17,6 @@ import de.rcenvironment.core.datamodel.api.TypedDatum;
  */
 public interface NotAValueTD extends TypedDatum {
     
-    /** Suffix used to indicate whether {@link NotAValueTD} was caused by a component failure. (Will be removed in 8.0.) */
-    String FAILURE_CAUSE_SUFFIX = "_flr";
-
     /**
      * Cause why {@link NotAValueTD} was sent.
      * 

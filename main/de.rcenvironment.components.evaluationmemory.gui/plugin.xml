@@ -65,12 +65,6 @@
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />
    </extension>
-   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator 
-      		class="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryComponentWorkflowNodeValidator"
-            filter="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryComponentFilter">
-      </validator>
-   </extension>
     <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.evaluationmemory.gui.EvaluationMemoryHistoryDataItemSubtreeBuilder"/>
    </extension> 

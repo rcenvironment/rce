@@ -85,7 +85,8 @@ public class ScriptSection extends AbstractScriptSection {
   
     private void enableButtonAndScriptArea(boolean enabled) {
         openInEditorButton.setEnabled(enabled);
-        newScriptArea.setEnabled(enabled);
+        scriptingText.setEditable(enabled);
+        scriptingText.setBackgroundEnabled(enabled);
     }
     
 }

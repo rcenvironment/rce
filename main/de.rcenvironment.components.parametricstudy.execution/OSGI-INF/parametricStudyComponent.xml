@@ -12,7 +12,7 @@
 	
 	<property name="rce.component.name" type="String" value="Parametric Study"/>
 	
-	<property name="rce.component.version" type="String" value="3.3"/>
+	<property name="rce.component.version" type="String" value="4"/>
 	
 	<property name="rce.component.group" type="String" value="Evaluation"/>
 	

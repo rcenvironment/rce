@@ -11,7 +11,7 @@ package de.rcenvironment.core.communication.nodeproperties.spi;
 import java.util.Collection;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 
 /**
@@ -27,5 +27,5 @@ public class NodePropertiesChangeListenerAdapter implements NodePropertiesChange
         Collection<? extends NodeProperty> updatedProperties, Collection<? extends NodeProperty> removedProperties) {}
 
     @Override
-    public void onNodePropertyMapsOfNodesChanged(Map<NodeIdentifier, Map<String, String>> updatedPropertyMaps) {}
+    public void onNodePropertyMapsOfNodesChanged(Map<InstanceNodeSessionId, Map<String, String>> updatedPropertyMaps) {}
 }

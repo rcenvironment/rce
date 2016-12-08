@@ -23,31 +23,39 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+import de.rcenvironment.components.parametricstudy.common.ParametricStudyComponentConstants;
 import de.rcenvironment.components.parametricstudy.common.ParametricStudyService;
 import de.rcenvironment.components.parametricstudy.common.StudyDataset;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyStructure;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.execution.api.Component;
+import de.rcenvironment.core.component.execution.api.Component.FinalComponentState;
 import de.rcenvironment.core.component.testutils.ComponentContextMock;
 import de.rcenvironment.core.component.testutils.ComponentTestWrapper;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
 import de.rcenvironment.core.datamodel.types.api.BooleanTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 
 /**
  * Integration test for {@link ParametricStudyComponent}.
  * 
  * @author Oliver Seebach
  * @author Doreen Seider
+ * @author Jascha Riedel
  */
 public class ParametricStudyComponentTest {
+
+    private static final int FIVE_HUNDRED_INT = 500;
+    
+    private static final int HUNDRED_THOUSAND_INT = 100000;
 
     private static final String ONE_ONE = "1.1";
 
@@ -57,8 +65,6 @@ public class ParametricStudyComponentTest {
 
     private static final int LARGE_NUMBER = 100000;
 
-    private static final String TRUE = "true";
-
     private static final String FIT_STEP_SIZE_TO_BOUNDS = "fitStepSizeToBounds";
 
     private static final String FIVE = "5";
@@ -66,6 +72,10 @@ public class ParametricStudyComponentTest {
     private static final String TEN = "10";
 
     private static final String ONE = "1";
+
+    private static final String TWO = "2";
+
+    private static final String MINUS = "-";
 
     private static final String RETURN_VALUE = "ReturnValue";
 
@@ -136,16 +146,19 @@ public class ParametricStudyComponentTest {
      * 
      * @param from Start value of parametric study range
      * @param to End value of parametric study range
-     * @param step Step size of parametric study range
+     * @param stepSize Step size of parametric study range
      * @return
      */
-    private Map<String, String> generateParametricStudyMetadata(String from, String to, String step, String fitStepSizeToBounds) {
+    private Map<String, String> generateParametricStudyMetadata(String from, Boolean useInputAsFrom, String to, Boolean useInputAsTo,
+        String stepSize, Boolean useInputAsStepSize, Boolean fitStepSizeToBounds) {
         Map<String, String> metadata = new HashMap<>();
         metadata.put(FROM_VALUE, from);
+        metadata.put(ParametricStudyComponentConstants.OUTPUT_METADATA_USE_INPUT_AS_FROM_VALUE, useInputAsFrom.toString());
         metadata.put(TO_VALUE, to);
-        metadata.put(STEP_SIZE, step);
-        metadata.put(FIT_STEP_SIZE_TO_BOUNDS, fitStepSizeToBounds);
-        metadata.putAll(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        metadata.put(ParametricStudyComponentConstants.OUTPUT_METADATA_USE_INPUT_AS_TO_VALUE, useInputAsTo.toString());
+        metadata.put(STEP_SIZE, stepSize);
+        metadata.put(ParametricStudyComponentConstants.OUTPUT_METADATA_USE_INPUT_AS_STEPSIZE_VALUE, useInputAsStepSize.toString());
+        metadata.put(FIT_STEP_SIZE_TO_BOUNDS, fitStepSizeToBounds.toString());
         return metadata;
     }
 
@@ -156,7 +169,7 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testNoInputsSimple() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, TEN, ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TEN, false, ONE, false, false);
         addSimulatedOutputs(metadata);
         component.start();
 
@@ -164,7 +177,7 @@ public class ParametricStudyComponentTest {
         final Double[] expectedValues = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0 };
         assertEquals(true, assertListsEqual(context.getCapturedOutput(DESIGN_VARIABLE), expectedValues));
 
-        checkDoneOutputs(true, false);
+        checkDoneOutputs(true);
 
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
     }
@@ -176,7 +189,7 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testNoInputsSimpleDescending() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(TEN, ONE, ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(TEN, false, ONE, false, ONE, false, false);
         addSimulatedOutputs(metadata);
         component.start();
 
@@ -184,7 +197,7 @@ public class ParametricStudyComponentTest {
         final Double[] expectedValues = { 10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0 };
         assertEquals(true, assertListsEqual(context.getCapturedOutput(DESIGN_VARIABLE), expectedValues));
 
-        checkDoneOutputs(true, false);
+        checkDoneOutputs(true);
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
     }
 
@@ -195,9 +208,9 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void test1InputSimple() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, FIVE, ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, FIVE, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
 
         component.start();
         checkDoneOutputs(false);
@@ -241,9 +254,9 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void test1InputSimpleDescending() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(FIVE, ONE, ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(FIVE, false, ONE, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
 
         component.start();
         checkDoneOutputs(false);
@@ -273,10 +286,10 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void test2InputsSimple() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, FIVE, ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, FIVE, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, null);
-        context.addSimulatedInput(RETURN_VALUE_2, "", DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE_2, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
 
         component.start();
         checkDoneOutputs(false);
@@ -306,13 +319,13 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testNoInputsManyIterations() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, String.valueOf(LARGE_NUMBER), ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, String.valueOf(LARGE_NUMBER), false, ONE, false, false);
         addSimulatedOutputs(metadata);
         component.start();
 
         assertEquals(LARGE_NUMBER, context.getCapturedOutput(DESIGN_VARIABLE).size());
 
-        checkDoneOutputs(true, false);
+        checkDoneOutputs(true);
         component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
     }
 
@@ -323,9 +336,9 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void test1InputManyIterations() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, String.valueOf(LARGE_NUMBER), ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, String.valueOf(LARGE_NUMBER), false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
 
         component.start();
         checkDoneOutputs(false);
@@ -350,7 +363,7 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testInvalidStepSize() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(TEN, ONE, "-1.1", TRUE);
+        Map<String, String> metadata = generateParametricStudyMetadata(TEN, false, ONE, false, "-1.1", false, true);
         context.addSimulatedOutput(DESIGN_VARIABLE, "", DataType.Float, false, metadata);
 
         exception.expect(ComponentException.class);
@@ -368,9 +381,10 @@ public class ParametricStudyComponentTest {
     @Test
     public void test1InputLargeNumberNonIntegerStepWidth() throws ComponentException {
         final double stepWidth = 0.123;
-        Map<String, String> metadata = generateParametricStudyMetadata("0", String.valueOf(LARGE_NUMBER), String.valueOf(stepWidth), null);
+        Map<String, String> metadata = generateParametricStudyMetadata("0", false, String.valueOf(LARGE_NUMBER), false,
+            String.valueOf(stepWidth), false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
 
         component.start();
 
@@ -396,7 +410,7 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testNoInputsFitToStepWidth() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, TEN, ONE_ONE, TRUE);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TEN, false, ONE_ONE, false, true);
         addSimulatedOutputs(metadata);
         component.start();
 
@@ -417,9 +431,9 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void test1InputFitToStepWidth() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, TEN, ONE_ONE, TRUE);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TEN, false, ONE_ONE, false, true);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, null);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
         component.start();
 
         // Component takes step size one size bigger to match the given end value
@@ -446,7 +460,7 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testNoInputsFitToStepWidthDescending() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(TEN, ONE, ONE_ONE, TRUE);
+        Map<String, String> metadata = generateParametricStudyMetadata(TEN, false, ONE, false, ONE_ONE, false, true);
         addSimulatedOutputs(metadata);
         component.start();
 
@@ -467,17 +481,24 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testForwardingValue() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, "2", ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TWO, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        component.start();
+        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true, null);
+        context.addSimulatedInput(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+            LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, DataType.Integer, true, null, EndpointCharacter.OUTER_LOOP);
+        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true, null);
 
+        component.start();
         assertEquals(0, context.getCapturedOutput(N).size());
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+
+        context.setInputValue(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, typedDatumFactory.createInteger(3));
+        component.processInputs();
+
+        assertEquals(1, context.getCapturedOutput(N).size());
         assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
         assertEquals(1.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+        assertEquals(3, ((IntegerTD) context.getCapturedOutput(N).get(0)).getIntValue());
 
         context.setInputValue(N, typedDatumFactory.createInteger(7));
         component.processInputs();
@@ -505,15 +526,12 @@ public class ParametricStudyComponentTest {
      */
     @Test
     public void testForwardingStartValue() throws ComponentException {
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, "2", ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TWO, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true, null);
         context.addSimulatedInput(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+            LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, DataType.Integer, true, null, EndpointCharacter.OUTER_LOOP);
+        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true, null);
         component.start();
 
         assertEquals(0, context.getCapturedOutput(N).size());
@@ -554,22 +572,18 @@ public class ParametricStudyComponentTest {
     @Test
     public void testReset() throws ComponentException {
         context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(true));
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, "2.0", ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TWO, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true, null);
         context.addSimulatedInput(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        context.addSimulatedInput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, "", DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+            LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, DataType.Integer, true, null, EndpointCharacter.OUTER_LOOP);
+        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Integer, true, null);
 
         component.start();
 
         testOneLoopRun();
         testOneLoopRun();
+
     }
 
     /**
@@ -580,9 +594,9 @@ public class ParametricStudyComponentTest {
     @Test
     public void testDataTypes() throws ComponentException {
         context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(true));
-        Map<String, String> metadata = generateParametricStudyMetadata(ONE, "2.0", ONE, null);
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, TWO, false, ONE, false, false);
         addSimulatedOutputs(metadata);
-        
+
         context.addSimulatedInput(RETURN_VALUE, "", DataType.Float, true, new HashMap<String, String>());
         context.addSimulatedInput(RETURN_VALUE_2, "", DataType.Integer, true, new HashMap<String, String>());
         final double value = 5.4;
@@ -591,7 +605,320 @@ public class ParametricStudyComponentTest {
         component.start();
         component.processInputs();
     }
-    
+
+    /**
+     * 
+     * Tests the "From Value" Input as simple test without any other Inputs.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testInputFromValueOnlyParameterInputs() throws ComponentException {
+        Map<String, String> metaData = generateParametricStudyMetadata(MINUS, true, TEN, false, ONE, false, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+
+        component.start();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE, typedDatumFactory.createFloat(1.0));
+        component.processInputs();
+        assertEquals(10, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        final Double[] expectedValues = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0 };
+        assertEquals(true, assertListsEqual(context.getCapturedOutput(DESIGN_VARIABLE), expectedValues));
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * 
+     * Tests the "To Value" Input as simple test without any other Inputs.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testInputToValueOnlyParameterInputs() throws ComponentException {
+        Map<String, String> metaData = generateParametricStudyMetadata(ONE, false, MINUS, true, ONE, false, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_TO_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+
+        component.start();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_TO_VALUE, typedDatumFactory.createFloat(10));
+        component.processInputs();
+        assertEquals(10, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        final Double[] expectedValues = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0 };
+        assertEquals(true, assertListsEqual(context.getCapturedOutput(DESIGN_VARIABLE), expectedValues));
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * 
+     * Tests the "StepSize Value" Input as simple test without any other Inputs.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testInputStepSizeValueOnlyParameterInputs() throws ComponentException {
+        Map<String, String> metaData = generateParametricStudyMetadata(ONE, false, TEN, false, MINUS, true, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_STEPSIZE_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+
+        component.start();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_STEPSIZE_VALUE, typedDatumFactory.createFloat(1));
+        component.processInputs();
+        assertEquals(10, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        final Double[] expectedValues = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0 };
+        assertEquals(true, assertListsEqual(context.getCapturedOutput(DESIGN_VARIABLE), expectedValues));
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * 
+     * Tests all input parameters in one run as simple test without any other Inputs.
+     * 
+     * @throws ComponentException on unexpected errors
+     */
+    @Test
+    public void testAllInputParametersOnlyParameterInputs() throws ComponentException {
+        Map<String, String> metaData = generateParametricStudyMetadata(MINUS, true, MINUS, true, MINUS, true, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_TO_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_STEPSIZE_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+
+        component.start();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE, typedDatumFactory.createFloat(1.0));
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_TO_VALUE, typedDatumFactory.createFloat(10));
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_STEPSIZE_VALUE, typedDatumFactory.createFloat(1));
+        component.processInputs();
+        assertEquals(10, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        final Double[] expectedValues = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0 };
+        assertEquals(true, assertListsEqual(context.getCapturedOutput(DESIGN_VARIABLE), expectedValues));
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * 
+     * Test Input Parameter From Value with "waiting for evaluation result".
+     * 
+     * @throws ComponentException on unexpected errors.
+     */
+    @Test
+    public void testInputParameterWithEvaluationResult() throws ComponentException {
+        Map<String, String> metaData = generateParametricStudyMetadata(MINUS, true, TWO, false, ONE, false, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+
+        component.start();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE, typedDatumFactory.createFloat(1));
+
+        component.processInputs();
+
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(1.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+        context.setInputValue(RETURN_VALUE, typedDatumFactory.createFloat(5.0));
+
+        component.processInputs();
+        context.setInputValue(RETURN_VALUE, typedDatumFactory.createFloat(5.0));
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(2.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+
+        component.processInputs(); // processes last evaluation result
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * 
+     * Test one of the parameter inputs in combination with a forwarding endpoint.
+     * 
+     * @throws ComponentException on unexpected error.
+     */
+    @Test
+    public void testInputParameterWithForwardEndpoint() throws ComponentException {
+        Map<String, String> metaData = generateParametricStudyMetadata(MINUS, true, TWO, false, ONE, false, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+        context.addSimulatedInput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true, null);
+        context.addSimulatedInput(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
+            LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, DataType.Float, true, null, EndpointCharacter.OUTER_LOOP);
+        context.addSimulatedOutput(N, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true, null);
+
+        component.start();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(0, context.getCapturedOutput(N).size());
+
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE, typedDatumFactory.createFloat(1.0));
+        context.setInputValue(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, typedDatumFactory.createFloat(3.0));
+
+        component.processInputs();
+
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(1.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+        assertEquals(1, context.getCapturedOutput(N).size());
+        assertEquals(3.0, ((FloatTD) context.getCapturedOutput(N).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(N, typedDatumFactory.createFloat(4.0));
+
+        component.processInputs();
+
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(2.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+        assertEquals(1, context.getCapturedOutput(N).size());
+        assertEquals(4.0, ((FloatTD) context.getCapturedOutput(N).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(N, typedDatumFactory.createFloat(5.0));
+
+        component.processInputs();
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(0, context.getCapturedOutput(N).size());
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * 
+     * Test if input parameter originates from a driving component (i. e. nested loop)
+     * 
+     * @throws ComponentException on unexpected error.
+     */
+    @Test
+    public void testInputParameterInNestedLoop() throws ComponentException {
+        context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(true));
+        Map<String, String> metaData = generateParametricStudyMetadata(MINUS, true, TWO, false, ONE, false, false);
+        addSimulatedOutputs(metaData);
+
+        context.addSimulatedInput(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE,
+            ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS,
+            DataType.Float, true, metaData);
+        context.addSimulatedInput(RETURN_VALUE, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, DataType.Float, true, null);
+
+        component.start();
+
+        // context.setInputValue(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, typedDatumFactory.createBoolean(false));
+
+        // first run
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE, typedDatumFactory.createFloat(1.0));
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        component.processInputs();
+
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(1.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+        checkDoneOutputs(false);
+
+        context.setInputValue(RETURN_VALUE, typedDatumFactory.createFloat(5.0));
+        component.processInputs();
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(2.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(RETURN_VALUE, typedDatumFactory.createFloat(5.0));
+        component.processInputs();
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        component.reset();
+        checkDoneOutputs(true);
+
+        // second run
+        context.setInputValue(ParametricStudyComponentConstants.INPUT_NAME_FROM_VALUE, typedDatumFactory.createFloat(2.0));
+
+        assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
+
+        component.processInputs();
+
+        assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
+        assertEquals(2.0, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
+
+        context.setInputValue(RETURN_VALUE, typedDatumFactory.createFloat(5.0));
+        component.processInputs();
+        component.reset();
+
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(FinalComponentState.FINISHED);
+    }
+
+    /**
+     * Test if the components cancels sending new design variables in case the component run (start) was canceled.
+     * 
+     * @throws ComponentException on unexpected error.
+     */
+    @Test(timeout = FIVE_HUNDRED_INT)
+    public void testCancelStart() throws ComponentException {
+        Map<String, String> metadata = generateParametricStudyMetadata(ONE, false, "100000", false, ONE, false, false);
+        addSimulatedOutputs(metadata);
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
+            
+            @Override
+            public void run() {
+                try {
+                    final int hundred = 100;
+                    Thread.sleep(hundred);
+                } catch (InterruptedException e) {
+                    return; // test timeout will apply as onStartInterrupted is not called
+                }
+                component.onStartInterrupted(null);    
+            }
+        });
+        component.start();
+
+        assertTrue(context.getCapturedOutput(DESIGN_VARIABLE).size() < HUNDRED_THOUSAND_INT);
+        
+        checkDoneOutputs(true);
+
+        component.tearDownAndDispose(Component.FinalComponentState.FINISHED);
+    }
+
     private void testOneLoopRun() throws ComponentException {
         assertEquals(0, context.getCapturedOutput(N).size());
         assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
@@ -602,7 +929,6 @@ public class ParametricStudyComponentTest {
         assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
         assertEquals(1, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
         assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
-        assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
 
         context.setInputValue(N, typedDatumFactory.createInteger(7));
         component.processInputs();
@@ -610,14 +936,12 @@ public class ParametricStudyComponentTest {
         assertEquals(1, context.getCapturedOutput(DESIGN_VARIABLE).size());
         assertEquals(2, ((FloatTD) context.getCapturedOutput(DESIGN_VARIABLE).get(0)).getFloatValue(), 0);
         assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
-        assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
 
         context.setInputValue(N, typedDatumFactory.createInteger(9));
         component.processInputs();
         assertEquals(0, context.getCapturedOutput(N).size());
         assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
         assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
-        assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
 
         assertEquals(2, context.getCapturedOutputResets().size());
         assertTrue(context.getCapturedOutputResets().contains(DESIGN_VARIABLE));
@@ -626,55 +950,30 @@ public class ParametricStudyComponentTest {
         assertEquals(0, context.getCapturedOutput(N).size());
         assertEquals(0, context.getCapturedOutput(DESIGN_VARIABLE).size());
         assertEquals(1, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE).size());
-        assertEquals(0, context.getCapturedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE).size());
     }
 
     private void addSimulatedOutputs(Map<String, String> metadata) {
-        metadata.putAll(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
         context.addSimulatedOutput(DESIGN_VARIABLE, "", DataType.Float, false, metadata);
-        context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, "", DataType.Boolean, false,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-        context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, "", DataType.Boolean, false,
-            LoopComponentConstants.createMetaData(LoopEndpointType.InnerLoopEndpoint));
+        context.addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, "", DataType.Boolean, false, null,
+            EndpointCharacter.OUTER_LOOP);
     }
 
     private void checkDoneOutputs(boolean done) {
-        checkDoneOutputs(done, done);
-    }
-
-    private void checkDoneOutputs(boolean done, boolean outerLoopDone) {
-        checkDoneOutputs(done, outerLoopDone, false, 0);
+        checkDoneOutputs(done, false, 0);
     }
 
     private void checkDoneOutputs(boolean done, boolean outputsClosed, int dynOutputCount) {
-        checkDoneOutputs(done, done, outputsClosed, dynOutputCount);
-    }
-
-    private void checkDoneOutputs(boolean done, boolean outerLoopDone, boolean outputsClosed, int dynOutputCount) {
         int countLoopDone;
-        int countOuterLoopDone;
         if (done) {
             countLoopDone = 1;
         } else {
             countLoopDone = 0;
         }
-        if (outerLoopDone) {
-            countOuterLoopDone = 1;
-        } else {
-            countOuterLoopDone = 0;
-        }
         assertEquals(countLoopDone, context.getCapturedOutput(DONE).size());
-        assertEquals(countOuterLoopDone, context.getCapturedOutput("Outer loop done").size());
         if (done) {
             assertTrue(((BooleanTD) context.getCapturedOutput(DONE).get(0)).getBooleanValue());
             if (outputsClosed) {
-                assertEquals(3 + dynOutputCount, context.getCapturedOutputClosings().size());
-            }
-        }
-        if (outerLoopDone) {
-            assertTrue(((BooleanTD) context.getCapturedOutput("Outer loop done").get(0)).getBooleanValue());
-            if (outputsClosed) {
-                assertEquals(3 + dynOutputCount, context.getCapturedOutputClosings().size());
+                assertEquals(2 + dynOutputCount, context.getCapturedOutputClosings().size());
             }
         }
     }

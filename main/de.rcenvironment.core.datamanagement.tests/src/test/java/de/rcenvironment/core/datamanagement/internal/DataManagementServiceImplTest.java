@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.datamanagement.internal;
 
 import static org.junit.Assert.assertEquals;
@@ -24,18 +24,20 @@ import org.junit.Test;
 
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
+import de.rcenvironment.core.utils.testing.CommonTestOptions;
 
 /**
  * Tests for {@link DataManagementServiceImpl}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (added test size switch)
  */
 public class DataManagementServiceImplTest {
-    
+
     private TempFileService tempFileService = TempFileServiceAccess.getInstance();
-    
+
     private List<File> tempFiles = new ArrayList<>();
-    
+
     /**
      * Set up.
      */
@@ -43,7 +45,7 @@ public class DataManagementServiceImplTest {
     public static void setUpTempFileTestEnvironment() {
         TempFileServiceAccess.setupUnitTestEnvironment();
     }
-    
+
     /**
      * Clean up.
      * 
@@ -55,7 +57,7 @@ public class DataManagementServiceImplTest {
             tempFileService.disposeManagedTempDirOrFile(tempFile);
         }
     }
-    
+
     /**
      * Tests packing and unpacking of tar archives.
      * 
@@ -63,10 +65,10 @@ public class DataManagementServiceImplTest {
      */
     @Test
     public void testTarGzUnPacking() throws IOException {
-        // set to 1000 as this caused a StackOverflowError with older implementation of
+        // testing with 1000 files in "extended" testing as this caused a StackOverflowError with older implementation of
         // DataManagementServiceImpl#createFileOrDirForTarEntry (see https://mantis.sc.dlr.de/view.php?id=13499)
-        final int fileCount = 1000;
-        
+        final int fileCount = CommonTestOptions.selectStandardOrExtendedValue(20, 1000);
+
         DataManagementServiceImpl dmService = new DataManagementServiceImpl();
         TempFileServiceAccess.setupUnitTestEnvironment();
         File rootDir = tempFileService.createManagedTempDir();
@@ -75,32 +77,32 @@ public class DataManagementServiceImplTest {
         for (int i = 0; i < 5; i++) {
             dir = createDirAndBunchOfFiles(dir, fileCount);
         }
-        
+
         File archiveFile = tempFileService.createTempFileWithFixedFilename("arc.tar.gz");
         tempFiles.add(archiveFile);
         dmService.createTarGz(rootDir, archiveFile);
-        
+
         File targetDir = tempFileService.createManagedTempDir();
         tempFiles.add(targetDir);
         dmService.createDirectoryFromTarGz(archiveFile, targetDir);
-        
+
         File[] targetDirFileList = targetDir.listFiles();
         assertEquals(1, targetDirFileList.length);
-        
+
         compareDirectories(rootDir, targetDirFileList[0]);
     }
-    
+
     private void compareDirectories(File rootDir, File targetRootDir) throws IOException {
         assertEquals(rootDir.getName(), targetRootDir.getName());
-        
+
         List<File> rootDirFileList = Arrays.asList(rootDir.listFiles());
         Collections.sort(rootDirFileList);
-        
+
         List<File> targetRootDirFileList = Arrays.asList(targetRootDir.listFiles());
         Collections.sort(targetRootDirFileList);
-        
+
         assertEquals(rootDirFileList.size(), targetRootDirFileList.size());
-        
+
         for (int i = 0; i < rootDirFileList.size(); i++) {
             File rootDirFile = rootDirFileList.get(i);
             File targetRootDirFile = targetRootDirFileList.get(i);
@@ -113,7 +115,7 @@ public class DataManagementServiceImplTest {
             }
         }
     }
-    
+
     private File createDirAndBunchOfFiles(File rootDir, int fileCount) throws IOException {
         File dir = new File(rootDir, String.valueOf("0"));
         dir.mkdirs();

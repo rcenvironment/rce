@@ -7,7 +7,8 @@
  */
 package de.rcenvironment.core.gui.workflow.view.timeline;
 
-import org.eclipse.swt.graphics.RGB;
+import de.rcenvironment.core.gui.resources.api.ColorSource;
+import de.rcenvironment.core.gui.resources.api.StandardColors;
 
 /**
  * 
@@ -15,25 +16,21 @@ import org.eclipse.swt.graphics.RGB;
  *
  */
 public final class TimelineViewConstants {
-      
-    /***/
-    public static final RGB CANVAS_COLOR_BACKGROUND_PREVIEW = new RGB(100, 100, 100);
 
     /***/
-    public static final RGB CANVAS_COLOR_BACKGROUND = new RGB(255, 255, 255);
+    public static final ColorSource CANVAS_COLOR_BACKGROUND = StandardColors.RCE_WHITE;
 
     /***/
-    public static final RGB CANVAS_COLOR_BACKGROUND_LINE = new RGB(0, 0, 0);
+    public static final ColorSource CANVAS_COLOR_BACKGROUND_LINE = StandardColors.RCE_BLACK;
     
     /***/
-    public static final RGB CANVAS_COLOR_SELECTION_AREA = new RGB(255, 255, 255);
+    public static final ColorSource CANVAS_COLOR_SELECTION_AREA = StandardColors.RCE_WHITE;
     
     /***/
     public static final int CANVAS_SELECTION_AREA_OPACITY = 140;
     
     /***/
     public static final int CANVAS_DEFAULT_OPACITY = 1000;
-    
     
     /**
      * Key for workflow-name in json-string.

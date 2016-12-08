@@ -19,8 +19,8 @@ import org.easymock.EasyMock;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.EndpointType;
@@ -29,26 +29,27 @@ import de.rcenvironment.core.datamodel.api.EndpointType;
  * Test cases for {@link WorkflowDescription}.
  * 
  * @author Heinrich Wendel
+ * @author Robert Mischke (id adaptations and some cleanup)
  */
 public class WorkflowDescriptionTest {
+
+    private static final String DEFAULT_TEST_WORKFLOW_ID = "testWfId";
 
     private static final Random RANDOM = new Random(System.currentTimeMillis());
 
     private ComponentDescription cd = EasyMock.createNiceMock(ComponentDescription.class);
 
-    private String id = "neNummer";
-
     /** Test. */
     @Test
     public void testWorkflowDescription() {
-        WorkflowDescription desc = new WorkflowDescription("test");
-        assertEquals("test", desc.getIdentifier());
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
+        assertEquals(DEFAULT_TEST_WORKFLOW_ID, desc.getIdentifier());
     }
 
     /** Test. */
     @Test
     public void testGetName() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         desc.setName("test2");
         assertEquals("test2", desc.getName());
     }
@@ -56,7 +57,7 @@ public class WorkflowDescriptionTest {
     /** Test. */
     @Test
     public void testGetWorkflowVersion() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         final int version = 7;
         desc.setWorkflowVersion(version);
         assertEquals(version, desc.getWorkflowVersion());
@@ -65,7 +66,7 @@ public class WorkflowDescriptionTest {
     /** Test. */
     @Test
     public void testGetAdditionalInformation() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         String value = "test ... " + RANDOM.nextLong();
         String expectedValue = new String(value);
         desc.setAdditionalInformation(value);
@@ -74,18 +75,18 @@ public class WorkflowDescriptionTest {
 
     /** Test. */
     @Test
-    public void testGetTargetPlatform() {
-        WorkflowDescription desc = new WorkflowDescription(id);
-        NodeIdentifier tp = NodeIdentifierFactory.fromHostAndNumberString("test:1");
-        desc.setControllerNode(tp);
-        assertEquals(tp, desc.getControllerNode());
+    public void testGetControllerNode() {
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
+        InstanceNodeSessionId tp = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName(DEFAULT_TEST_WORKFLOW_ID);
+        desc.setControllerNode(tp.convertToDefaultLogicalNodeId());
+        assertEquals(tp.convertToDefaultLogicalNodeId(), desc.getControllerNode());
     }
 
     /** Test. */
     @Test
     @Ignore
     public void testGetWorkflowNodes() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         WorkflowNodeChangeListener l1 = new WorkflowNodeChangeListener(WorkflowDescription.PROPERTY_NODES);
         desc.addPropertyChangeListener(l1);
 
@@ -109,7 +110,7 @@ public class WorkflowDescriptionTest {
     @Test
     @Ignore
     public void testGetWorkflowNode() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         WorkflowNode node = new WorkflowNode(cd);
         try {
             desc.getWorkflowNode(node.getIdentifier());
@@ -124,7 +125,7 @@ public class WorkflowDescriptionTest {
     @Test
     @Ignore
     public void testGetConnections() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
 
         WorkflowNodeChangeListener l1 = new WorkflowNodeChangeListener(WorkflowDescription.PROPERTY_CONNECTIONS);
 
@@ -155,10 +156,10 @@ public class WorkflowDescriptionTest {
     /** Test. */
     @Test
     public void testClone() {
-        WorkflowDescription desc = new WorkflowDescription(id);
+        WorkflowDescription desc = new WorkflowDescription(DEFAULT_TEST_WORKFLOW_ID);
         desc.clone();
     }
-    
+
     /**
      * Dummy implementation of {@link PropertyChangeListener}.
      * 

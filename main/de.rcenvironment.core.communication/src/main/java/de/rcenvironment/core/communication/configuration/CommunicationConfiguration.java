@@ -97,7 +97,7 @@ public class CommunicationConfiguration {
                     remoteContactPoints.add(connection);
                 } catch (ConfigurationException e) {
                     // TODO >6.0.0: change to throw exception to outside?
-                    log.error("Error in connection entry " + entry.getKey(), e);
+                    log.error("Error in network connection entry \"" + entry.getKey() + "\": " + e.getMessage());
                 }
             }
         }
@@ -111,7 +111,7 @@ public class CommunicationConfiguration {
                     providedContactPoints.add(serverPort);
                 } catch (ConfigurationException e) {
                     // TODO >6.0.0: change to throw exception to outside?
-                    log.error("Error in server port entry " + entry.getKey(), e);
+                    log.error("Error in server port entry " + entry.getKey() + ": " + e.getMessage());
                 }
             }
         }
@@ -120,7 +120,14 @@ public class CommunicationConfiguration {
     private String parseConnectionEntry(ConfigurationSegment connectionPart) throws ConfigurationException {
         // TODO mapping to old string approach to reduce code changes; improve later
         String host = connectionPart.getString("host");
-        int port = connectionPart.getLong("port").intValue();
+        if (host == null) {
+            throw new ConfigurationException("Missing required parameter \"host\"");
+        }
+        final Long portString = connectionPart.getLong("port");
+        if (portString == null) {
+            throw new ConfigurationException("Missing required parameter \"port\"");
+        }
+        int port = portString.intValue();
         StringBuilder options = new StringBuilder();
         Long autoRetryInitialDelay = connectionPart.getLong("autoRetryInitialDelay");
         if (autoRetryInitialDelay != null) {

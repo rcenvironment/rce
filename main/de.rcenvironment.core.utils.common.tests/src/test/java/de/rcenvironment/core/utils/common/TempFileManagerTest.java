@@ -27,7 +27,9 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.ExpectedException;
 
 import de.rcenvironment.core.utils.common.TempFileManager.TempFileServiceImpl;
 
@@ -42,6 +44,12 @@ public class TempFileManagerTest {
 
     private static final int PARALLEL_TEST_TIMEOUT_MSEC = 30000;
 
+    /**
+     * Expected exception.
+     */
+    @Rule
+    public ExpectedException expectedException = ExpectedException.none();
+    
     private TempFileServiceImpl defaultInstance;
 
     /**
@@ -112,6 +120,20 @@ public class TempFileManagerTest {
         assertEquals(testDirName, collidingDir.getName());
         assertTrue(collidingFile.isFile());
         assertEquals(testDirName, collidingFile.getName());
+    }
+
+    /**
+     * Test if invalid filenames are properly rejected.
+     * 
+     * @throws IOException expected
+     */
+    @Test
+    @Ignore
+    public void testCreateTempFileWithInvalidFilename() throws IOException {
+        String filename = "te*st.exe";
+        expectedException.expect(IOException.class);
+        expectedException.expectMessage(StringUtils.format("The filename %s is not valid on all supported platforms.", filename));
+        defaultInstance.createTempFileWithFixedFilename(filename);
     }
 
     /**

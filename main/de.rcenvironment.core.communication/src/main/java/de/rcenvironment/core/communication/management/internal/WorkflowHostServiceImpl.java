@@ -18,8 +18,8 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.communication.common.WorkflowHostUtils;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
@@ -29,12 +29,12 @@ import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertyConstants;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListener;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListenerAdapter;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
 
 /**
  * Default {@link WorkflowHostService} implementation.
@@ -49,19 +49,22 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
 
     private NodePropertiesService nodePropertiesService;
 
-    private final Set<NodeIdentifier> workflowHostsWorkingCopy = new HashSet<NodeIdentifier>();
+    private final Set<InstanceNodeSessionId> workflowHostsWorkingCopy = new HashSet<InstanceNodeSessionId>();
 
-    private Set<NodeIdentifier> workflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<NodeIdentifier>());
+    private Set<InstanceNodeSessionId> workflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<InstanceNodeSessionId>());
 
-    private Set<NodeIdentifier> workflowHostsAndSelfSnapshot = Collections.unmodifiableSet(new HashSet<NodeIdentifier>());
+    private Set<InstanceNodeSessionId> workflowHostsAndSelfSnapshot = Collections.unmodifiableSet(new HashSet<InstanceNodeSessionId>());
 
     private final AsyncOrderedCallbackManager<WorkflowHostSetListener> callbackManager =
-        new AsyncOrderedCallbackManager<WorkflowHostSetListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
+        ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
     private final Log log = LogFactory.getLog(getClass());
 
-    private NodeIdentifier localNodeId;
+    private InstanceNodeSessionId localNodeId;
+
+    private Set<LogicalNodeId> logicalWorkflowHostsSnapshot;
+
+    private Set<LogicalNodeId> logicalWorkflowHostsAndSelfSnapshot;
 
     /**
      * OSGi-DS lifecycle method.
@@ -70,13 +73,21 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
         boolean isWorkflowHost = platformService.isWorkflowHost();
         nodePropertiesService.addOrUpdateLocalNodeProperty(WorkflowHostUtils.KEY_IS_WORKFLOW_HOST,
             NodePropertyConstants.wrapBoolean(isWorkflowHost));
-        localNodeId = platformService.getLocalNodeId();
+        localNodeId = platformService.getInstanceNodeSessionId();
 
         // create initial placeholders
-        workflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<NodeIdentifier>());
-        Set<NodeIdentifier> tempWorkflowHostsAndSelf = new HashSet<NodeIdentifier>();
+        workflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<InstanceNodeSessionId>());
+
+        logicalWorkflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<LogicalNodeId>());
+
+        Set<InstanceNodeSessionId> tempWorkflowHostsAndSelf = new HashSet<>();
         tempWorkflowHostsAndSelf.add(localNodeId);
         workflowHostsAndSelfSnapshot = Collections.unmodifiableSet(tempWorkflowHostsAndSelf);
+
+        Set<LogicalNodeId> tempLogicalWorkflowHostsAndSelf = new HashSet<>();
+        // note: ok to simply use the local default logical node here as long as workflow hosts are not logical-node-specific
+        tempLogicalWorkflowHostsAndSelf.add(localNodeId.convertToDefaultLogicalNodeId());
+        logicalWorkflowHostsAndSelfSnapshot = Collections.unmodifiableSet(tempLogicalWorkflowHostsAndSelf);
     }
 
     @Override
@@ -96,8 +107,8 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
         result.add(new AdditionalServiceDeclaration(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
 
             @Override
-            public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
-                Set<NodeIdentifier> removedWfHosts) {
+            public void onReachableWorkflowHostsChanged(Set<InstanceNodeSessionId> reachableWfHosts,
+                Set<InstanceNodeSessionId> addedWfHosts,                Set<InstanceNodeSessionId> removedWfHosts) {
                 log.debug("List of reachable workflow hosts updated: " + reachableWfHosts);
             }
         }));
@@ -123,13 +134,23 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
     }
 
     @Override
-    public synchronized Set<NodeIdentifier> getWorkflowHostNodes() {
+    public synchronized Set<InstanceNodeSessionId> getWorkflowHostNodes() {
         return workflowHostsSnapshot;
     }
 
     @Override
-    public synchronized Set<NodeIdentifier> getWorkflowHostNodesAndSelf() {
+    public synchronized Set<LogicalNodeId> getLogicalWorkflowHostNodes() {
+        return logicalWorkflowHostsSnapshot;
+    }
+
+    @Override
+    public synchronized Set<InstanceNodeSessionId> getWorkflowHostNodesAndSelf() {
         return workflowHostsAndSelfSnapshot;
+    }
+
+    @Override
+    public synchronized Set<LogicalNodeId> getLogicalWorkflowHostNodesAndSelf() {
+        return logicalWorkflowHostsAndSelfSnapshot;
     }
 
     /**
@@ -139,7 +160,7 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
      */
     public synchronized void addWorkflowHostSetListener(WorkflowHostSetListener listener) {
         // create copy in synchronized block
-        final Set<NodeIdentifier> currentWorkflowHostsCopy = workflowHostsSnapshot;
+        final Set<InstanceNodeSessionId> currentWorkflowHostsCopy = workflowHostsSnapshot;
         callbackManager.addListenerAndEnqueueCallback(listener, new AsyncCallback<WorkflowHostSetListener>() {
 
             @Override
@@ -171,7 +192,7 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
                 if (!value) {
                     continue;
                 }
-                NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(property.getNodeIdString());
+                InstanceNodeSessionId nodeId = property.getInstanceNodeSessionId();
                 boolean setChanged = workflowHostsWorkingCopy.add(nodeId);
                 if (setChanged) {
                     relevantModification = true;
@@ -184,7 +205,7 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
 
         for (NodeProperty property : updatedProperties) {
             if (WorkflowHostUtils.isWorkflowHostProperty(property)) {
-                NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(property.getNodeIdString());
+                InstanceNodeSessionId nodeId = property.getInstanceNodeSessionId();
                 boolean value = WorkflowHostUtils.getWorkflowHostPropertyValue(property);
                 if (value) {
                     boolean setChanged = workflowHostsWorkingCopy.add(nodeId);
@@ -209,7 +230,7 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
 
         for (NodeProperty property : removedProperties) {
             if (WorkflowHostUtils.isWorkflowHostProperty(property)) {
-                NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(property.getNodeIdString());
+                InstanceNodeSessionId nodeId = property.getInstanceNodeSessionId();
                 // removed properties are only relevant if the node was a workflow host before
                 if (!workflowHostsWorkingCopy.contains(nodeId)) {
                     continue;
@@ -226,11 +247,16 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
 
         if (relevantModification) {
             // create new detached copy
-            workflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<NodeIdentifier>(workflowHostsWorkingCopy));
+            workflowHostsSnapshot = Collections.unmodifiableSet(new HashSet<InstanceNodeSessionId>(workflowHostsWorkingCopy));
+            // FIXME >8.0 preliminary - this only supports the *default* logical node ids, not the ones published via other mechanisms
+            logicalWorkflowHostsSnapshot = convertFromInstanceIdsToLogicalNodesSet(workflowHostsSnapshot);
+
             // could be optimized, but for now, just create a copy and add the local node
-            Set<NodeIdentifier> tempWorkflowHostsAndSelf = new HashSet<NodeIdentifier>(workflowHostsWorkingCopy);
+            Set<InstanceNodeSessionId> tempWorkflowHostsAndSelf = new HashSet<InstanceNodeSessionId>(workflowHostsWorkingCopy);
             tempWorkflowHostsAndSelf.add(localNodeId);
             workflowHostsAndSelfSnapshot = Collections.unmodifiableSet(tempWorkflowHostsAndSelf);
+            // FIXME >8.0 preliminary - this only supports the *default* logical node ids, not the ones published via other mechanisms
+            logicalWorkflowHostsAndSelfSnapshot = convertFromInstanceIdsToLogicalNodesSet(workflowHostsAndSelfSnapshot);
 
             callbackManager.enqueueCallback(new AsyncCallback<WorkflowHostSetListener>() {
 
@@ -241,5 +267,14 @@ public class WorkflowHostServiceImpl implements WorkflowHostService, AdditionalS
                 }
             });
         }
+    }
+
+    private Set<LogicalNodeId> convertFromInstanceIdsToLogicalNodesSet(Set<InstanceNodeSessionId> input) {
+        // FIXME >8.0 preliminary - this only supports the *default* logical node ids, not the ones published via other mechanisms
+        final Set<LogicalNodeId> tempSet = new HashSet<LogicalNodeId>();
+        for (InstanceNodeSessionId instanceSessionId : input) {
+            tempSet.add(instanceSessionId.convertToDefaultLogicalNodeId());
+        }
+        return Collections.unmodifiableSet(tempSet);
     }
 }

@@ -27,7 +27,7 @@ public interface RemotableComponentExecutionControllerService extends RemotableE
      * @param referenceTimestamp current timestamp on workflow node
      * @return execution identifier of the component instance
      * @throws ComponentExecutionException if instantiating component failed
-       @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
+     * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      */
     String createExecutionController(ComponentExecutionContext executionContext, String executionAuthToken, Long referenceTimestamp)
@@ -54,23 +54,47 @@ public interface RemotableComponentExecutionControllerService extends RemotableE
 
     /**
      * Add a new execution auth token.
+     * 
      * @param authToken new auth token, which authorizes for execution
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      */
     void addComponentExecutionAuthToken(String authToken) throws RemoteOperationException;
-    
+
     /**
+     * @param verificationToken verification token used to verify results of a certain component run
+     * @return {@link ComponentExecutionInformation} of the component related to the verification token or <code>null</code> if no one
+     *         related was found
+     * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
+     *         locally)
+     */
+    ComponentExecutionInformation getComponentExecutionInformation(String verificationToken) throws RemoteOperationException;
+
+    /**
+     * Verifies the results of the last component run if verification was requested.
+     * 
+     * @param executionId execution identifier of the related component
+     * @param verificationToken verification token used to verify results of a certain component run
+     * @param verified <code>true</code> if results are verified otherwise <code>false</code>
+     * @return <code>true</code> if verification result could be applied successfully, otherwise <code>false</code> (most likely reason:
+     *         invalid verification token or component not in state {@link ComponentState#WAITING_FOR_APPROVAL} (anymore))
+     * @throws RemoteOperationException if called from remote and remote method call failed
+     * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
+     */
+    Boolean performVerifyResults(String executionId, String verificationToken, Boolean verified)
+        throws ExecutionControllerException, RemoteOperationException;
+
+        /**
      * Called if asynchronous sending of an {@link EndpointDatum} failed.
      * 
      * @param executionId execution identifier of the component that requested sending the {@link EndpointDatum}
-     * @param endpointDatum affected {@link EndpointDatum}
+     * @param serializedEndpointDatum affected {@link EndpointDatum} given as serialized string (see {@link EndpointDatumSerializer})
      * @param e {@link RemoteOperationException} thrown
      * @throws RemoteOperationException if called from remote and remote method call failed (cannot occur if controller and components run
      *         locally)
      * @throws ExecutionControllerException if {@link ExecutionController} is not available (anymore)
      */
-    void onSendingEndointDatumFailed(String executionId, EndpointDatum endpointDatum, RemoteOperationException e) 
+    void onSendingEndointDatumFailed(String executionId, String serializedEndpointDatum, RemoteOperationException e) 
         throws ExecutionControllerException, RemoteOperationException;
 
 }

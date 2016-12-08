@@ -73,8 +73,6 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
 
     private static final String ADD_TAB_LABEL = "< + >";
 
-    private static final String INITIAL_STATEMENT_NAME = "Statement";
-
     private static final String NEW_STATEMENT_NAME = "Statement";
 
     private static Map<String, String> templatesMap = new HashMap<>();
@@ -243,13 +241,13 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
         return newCTabItem;
     }
 
-    private CTabItem addInitialCTabItemToFolder() {
-        DatabaseStatement initialModel = new DatabaseStatement();
-        initialModel.setName(INITIAL_STATEMENT_NAME);
-        initialModel.setIndex(0);
-        CTabItem newItem = addCTabItemToFolder(initialModel, false);
-        return newItem;
-    }
+//    private CTabItem addInitialCTabItemToFolder() {
+//        DatabaseStatement initialModel = new DatabaseStatement();
+//        initialModel.setName(INITIAL_STATEMENT_NAME);
+//        initialModel.setIndex(0);
+//        CTabItem newItem = addCTabItemToFolder(initialModel, false);
+//        return newItem;
+//    }
 
     private String determineNextValidStatementName(String currentName) {
         String nextValidName = currentName;
@@ -341,15 +339,8 @@ public class DatabaseStatementSection extends ValidatingWorkflowNodePropertySect
             for (DatabaseStatement model : models) {
                 addCTabItemToFolder(model, false);
             }
-        } else {
-            // just show the initial one
-            CTabItem newItem = addInitialCTabItemToFolder();
-            newItem.setText(INITIAL_STATEMENT_NAME);
-            DatabaseStatement model = new DatabaseStatement();
-            model.setName(INITIAL_STATEMENT_NAME);
-            model.setWillWriteToOutput(false);
-            model.setIndex(1); // as the initial one always is index 1
-        }
+        } 
+
         // and the plus item
         statementsFolder.setSelection(0);
         addPlusCTabItemToFolder();

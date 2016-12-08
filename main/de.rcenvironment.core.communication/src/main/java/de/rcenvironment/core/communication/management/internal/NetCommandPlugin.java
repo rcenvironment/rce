@@ -26,7 +26,7 @@ import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.communication.api.CommunicationService;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.BenchmarkService;
 import de.rcenvironment.core.communication.management.BenchmarkSetup;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
@@ -227,11 +227,11 @@ public class NetCommandPlugin implements CommandPlugin {
     }
 
     private void performNetNp(CommandContext context) {
-        Set<NodeIdentifier> nodes = communicationService.getReachableNodes();
-        Map<NodeIdentifier, Map<String, String>> allMetadata = nodePropertiesService.getAllNodeProperties(nodes);
+        Set<InstanceNodeSessionId> nodes = communicationService.getReachableInstanceNodes();
+        Map<InstanceNodeSessionId, Map<String, String>> allMetadata = nodePropertiesService.getAllNodeProperties(nodes);
         context.println("Known node properties:");
-        for (Map.Entry<NodeIdentifier, Map<String, String>> entry1 : allMetadata.entrySet()) {
-            NodeIdentifier nodeId = entry1.getKey();
+        for (Map.Entry<InstanceNodeSessionId, Map<String, String>> entry1 : allMetadata.entrySet()) {
+            InstanceNodeSessionId nodeId = entry1.getKey();
             context.println(nodeId.toString());
             Map<String, String> map = entry1.getValue();
             for (Map.Entry<String, String> entry2 : map.entrySet()) {

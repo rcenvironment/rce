@@ -39,6 +39,8 @@ public class ConsoleRowImpl implements ConsoleRow {
 
     private long timestamp;
     
+    private int componentRun;
+    
     private long sequenceNumber;
     
     @Override
@@ -79,6 +81,11 @@ public class ConsoleRowImpl implements ConsoleRow {
     @Override
     public String getPayload() {
         return payload;
+    }
+    
+    @Override
+    public int getComponentRun() {
+        return componentRun;
     }
     
     @Override
@@ -129,6 +136,10 @@ public class ConsoleRowImpl implements ConsoleRow {
         this.sequenceNumber = sequenceNumber;
     }
     
+    public void setComponentRun(int componentRun) {
+        this.componentRun = componentRun;
+    }
+    
     @Override
     public void setIndex(long index) {
         this.index = index;
@@ -153,7 +164,7 @@ public class ConsoleRowImpl implements ConsoleRow {
         }
         return compareResult;
     }
-
+    
     @Override
     public String toString() {
         SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd - HH:mm:ss,SSS");

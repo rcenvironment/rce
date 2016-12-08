@@ -15,7 +15,7 @@
                enablesFor="1">
          </propertySection>
          <propertySection
-               class="de.rcenvironment.core.gui.workflow.editor.properties.DefaultEndpointPropertySection"
+               class="de.rcenvironment.components.examples.decrypter.gui.DecrypterInputsOutputsSection"
                enablesFor="1"
                filter="de.rcenvironment.components.examples.decrypter.gui.DecrypterComponentFilter"
                id="workflow.editor.tab.Properties.Section.InputsOutputs"
@@ -43,15 +43,6 @@
         
 
    </extension>
-	<!--  Configuration validation -->
-	<!--  This code activates the automatic GUI validation -->
-    <extension
-         point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.examples.decrypter.gui.DecrypterWorkflowNodeValidator"
-            filter="de.rcenvironment.components.examples.decrypter.gui.DecrypterComponentFilter">
-       </validator>
-    </extension>
     <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
       <contexts file="resources/help/contexts.xml" plugin="de.rcenvironment.components.examples.decrypter.execution" />

@@ -29,28 +29,35 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.datamanagement.MetaDataService;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 
 /**
  * Tests for {@link ComponentExecutionStorageBridge}.
  * 
  * @author Doreen Seider
- *
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
+// TODO review: several of these tests seem to use the same node as input source and storage node;
+// wouldn't it be better to separate them for a stronger test setup? - misc_ro
 public class ComponentExecutionStorageBridgeTest {
 
     private static final String OUTPUT = "output";
 
     private static final String HISTORY = "history";
 
-    private static final NodeIdentifier STORAGE_NODE_ID = NodeIdentifierFactory.fromNodeId("storage-node");
+    private static final InstanceNodeSessionId STORAGE_NODE_SESSION_ID = NodeIdentifierTestUtils
+        .createTestInstanceNodeSessionIdWithDisplayName("storage-node");
 
-    private static final NodeIdentifier NODE_ID = NodeIdentifierFactory.fromNodeId("node");
+    private static final LogicalNodeId STORAGE_NODE_LOGICAL_NODE_ID = STORAGE_NODE_SESSION_ID.convertToDefaultLogicalNodeId();
+
+    private static final InstanceNodeSessionId NODE_ID = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("node");
 
     private static final Long DM_INSTANCE_ID = Long.valueOf(1);
 
@@ -98,16 +105,17 @@ public class ComponentExecutionStorageBridgeTest {
         Capture<String> nodeIdStringCapture = new Capture<>();
         Capture<Integer> exeCountCapture = new Capture<>();
         Capture<Long> startTimeCapture = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture1 = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture1 = new Capture<>();
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.captureLong(instanceDmIdCapture),
             EasyMock.capture(nodeIdStringCapture), EasyMock.captureInt(exeCountCapture), EasyMock.captureLong(startTimeCapture),
             EasyMock.capture(storageNodeIdCapture1))).andReturn(compExeDmId);
 
         Capture<Long> compExeDmIdCapture = new Capture<>();
         Capture<Long> endTimeCapture = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture2 = new Capture<>();
+        Capture<FinalComponentRunState> finalStateCapture = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = new Capture<>();
         metaDataServiceMock.setComponentRunFinished(EasyMock.captureLong(compExeDmIdCapture), EasyMock.captureLong(endTimeCapture),
-            EasyMock.capture(storageNodeIdCapture2));
+            EasyMock.capture(finalStateCapture), EasyMock.capture(storageNodeIdCapture2));
 
         EasyMock.replay(metaDataServiceMock);
 
@@ -118,22 +126,21 @@ public class ComponentExecutionStorageBridgeTest {
         storageBridge.addComponentExecution(compExeCtxMock, exeCount);
 
         assertEquals(DM_INSTANCE_ID, instanceDmIdCapture.getValue());
-        assertEquals(NODE_ID.getIdString(), nodeIdStringCapture.getValue());
+        assertEquals(NODE_ID.convertToDefaultLogicalNodeId().getLogicalNodeIdString(), nodeIdStringCapture.getValue());
         assertEquals(exeCount, exeCountCapture.getValue());
         assertTrue(System.currentTimeMillis() >= startTimeCapture.getValue().longValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture1.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture1.getValue());
 
         assertEquals(compExeDmId, storageBridge.getComponentExecutionDataManagementId());
         compExeRelatedInstancesStub.compExeRelatedStates.isComponentCancelled.set(true);
         assertEquals(compExeDmId, storageBridge.getComponentExecutionDataManagementId());
-        
-        storageBridge.setComponentExecutionFinished();
+
+        storageBridge.setComponentExecutionFinished(FinalComponentRunState.FINISHED);
         assertEquals(compExeDmId, compExeDmIdCapture.getValue());
         assertTrue(System.currentTimeMillis() >= endTimeCapture.getValue().longValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture2.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture2.getValue());
 
         assertNull(storageBridge.getComponentExecutionDataManagementId());
-
     }
 
     /**
@@ -142,7 +149,8 @@ public class ComponentExecutionStorageBridgeTest {
      * 
      * @throws ComponentExecutionException on unexpected errors
      */
-    @Ignore // as long as retrying is disabled
+    @Ignore
+    // as long as retrying is disabled
     @Test
     public void testHandlingOfRetriesOnFailure() throws ComponentExecutionException {
         final AtomicInteger failureCount = new AtomicInteger(0);
@@ -165,7 +173,7 @@ public class ComponentExecutionStorageBridgeTest {
         ComponentExecutionStorageBridge storageBridge =
             new ComponentExecutionStorageBridge(createCompExeRelatedInstancesStub(compExeCtxMock));
         storageBridge.bindMetaDataService(metaDataServiceStub);
-        
+
         storageBridge.addComponentExecution(compExeCtxMock, 0);
         failureCount.set(0);
         storageBridge.addInput(INPUT_NAME, Long.valueOf(0));
@@ -176,7 +184,7 @@ public class ComponentExecutionStorageBridgeTest {
         failureCount.set(0);
         storageBridge.setOrUpdateHistoryDataItem(HISTORY);
         failureCount.set(0);
-        storageBridge.setComponentExecutionFinished();
+        storageBridge.setComponentExecutionFinished(FinalComponentRunState.FINISHED);
     }
 
     /**
@@ -224,7 +232,7 @@ public class ComponentExecutionStorageBridgeTest {
         }
 
         try {
-            storageBridge.setComponentExecutionFinished();
+            storageBridge.setComponentExecutionFinished(FinalComponentRunState.FINISHED);
             fail(FAIL_MESSAGE);
         } catch (ComponentExecutionException e) {
             assertTrue(true);
@@ -258,7 +266,7 @@ public class ComponentExecutionStorageBridgeTest {
         throws ComponentExecutionException, CommunicationException {
         MetaDataService metaDataServiceMock = EasyMock.createNiceMock(MetaDataService.class);
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
-            EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(Long.valueOf(1));
+            EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(Long.valueOf(1));
         EasyMock.replay(metaDataServiceMock);
 
         ComponentExecutionContext compExeCtxMock = createComponentExecutionContextMock();
@@ -266,11 +274,11 @@ public class ComponentExecutionStorageBridgeTest {
         ComponentExecutionStorageBridge storageBridge =
             new ComponentExecutionStorageBridge(createCompExeRelatedInstancesStub(compExeCtxMock));
         storageBridge.bindMetaDataService(metaDataServiceMock);
-        
+
         callMethodsExpectingActiveComponentRun(storageBridge);
 
         storageBridge.addComponentExecution(compExeCtxMock, 1);
-        storageBridge.setComponentExecutionFinished();
+        storageBridge.setComponentExecutionFinished(FinalComponentRunState.FINISHED);
 
         callMethodsExpectingActiveComponentRun(storageBridge);
 
@@ -279,7 +287,7 @@ public class ComponentExecutionStorageBridgeTest {
     private void callMethodsExpectingActiveComponentRun(ComponentExecutionStorageBridge storageBridge) {
         String expectedExceptionMessage = "No component run";
         try {
-            storageBridge.setComponentExecutionFinished();
+            storageBridge.setComponentExecutionFinished(FinalComponentRunState.FINISHED);
             fail(FAIL_MESSAGE);
         } catch (ComponentExecutionException e) {
             assertTrue(e.getMessage().contains(expectedExceptionMessage));
@@ -322,13 +330,13 @@ public class ComponentExecutionStorageBridgeTest {
         MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
-            EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(compExeDmId);
+            EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(compExeDmId);
 
         Capture<Long> compExeDmIdCapture = new Capture<>();
         Capture<Long> typedDatumIdCapture = new Capture<>();
         Capture<Long> endpointInstanceIdCapture = new Capture<>();
         Capture<Integer> inputCountCapture = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
         metaDataServiceMock.addInputDatum(EasyMock.captureLong(compExeDmIdCapture),
             EasyMock.captureLong(typedDatumIdCapture), EasyMock.captureLong(endpointInstanceIdCapture),
             EasyMock.captureInt(inputCountCapture), EasyMock.capture(storageNodeIdCapture));
@@ -337,7 +345,7 @@ public class ComponentExecutionStorageBridgeTest {
         Capture<Long> typedDatumIdCapture2 = new Capture<>();
         Capture<Long> endpointInstanceIdCapture2 = new Capture<>();
         Capture<Integer> inputCountCapture2 = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture2 = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = new Capture<>();
         metaDataServiceMock.addInputDatum(EasyMock.captureLong(compExeDmIdCapture2),
             EasyMock.captureLong(typedDatumIdCapture2), EasyMock.captureLong(endpointInstanceIdCapture2),
             EasyMock.captureInt(inputCountCapture2), EasyMock.capture(storageNodeIdCapture2));
@@ -356,7 +364,7 @@ public class ComponentExecutionStorageBridgeTest {
         assertEquals(typedDatumId1, typedDatumIdCapture.getValue());
         assertEquals(INPUT_INSTANCE_DM_ID, endpointInstanceIdCapture.getValue());
         assertEquals(0, inputCountCapture.getValue().intValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture.getValue());
 
         storageBridge.addInput(INPUT_NAME, typedDatumId2);
 
@@ -364,13 +372,13 @@ public class ComponentExecutionStorageBridgeTest {
         assertEquals(typedDatumId2, typedDatumIdCapture2.getValue());
         assertEquals(INPUT_INSTANCE_DM_ID, endpointInstanceIdCapture2.getValue());
         assertEquals(1, inputCountCapture2.getValue().intValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture2.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture2.getValue());
 
         try {
             storageBridge.addInput(INPUT_NAME, null);
             fail("Exception expected");
         } catch (ComponentExecutionException e) {
-            assertTrue(e.getMessage().contains("id of related ouput was null"));
+            assertTrue(e.getMessage().contains("id of related output was null"));
         }
     }
 
@@ -389,13 +397,13 @@ public class ComponentExecutionStorageBridgeTest {
         MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
-            EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(compExeDmId);
+            EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(compExeDmId);
 
         Capture<Long> compExeDmIdCapture = new Capture<>();
         Capture<Long> endpointInstanceIdCapture = new Capture<>();
         Capture<String> typedDatumStringCapture = new Capture<>();
         Capture<Integer> outputCountCapture = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
         EasyMock.expect(metaDataServiceMock.addOutputDatum(EasyMock.captureLong(compExeDmIdCapture),
             EasyMock.captureLong(endpointInstanceIdCapture), EasyMock.capture(typedDatumStringCapture),
             EasyMock.captureInt(outputCountCapture), EasyMock.capture(storageNodeIdCapture))).andReturn(Long.valueOf(5));
@@ -404,7 +412,7 @@ public class ComponentExecutionStorageBridgeTest {
         Capture<Long> endpointInstanceIdCapture2 = new Capture<>();
         Capture<String> typedDatumStringCapture2 = new Capture<>();
         Capture<Integer> outputCountCapture2 = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture2 = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture2 = new Capture<>();
         EasyMock.expect(metaDataServiceMock.addOutputDatum(EasyMock.captureLong(compExeDmIdCapture2),
             EasyMock.captureLong(endpointInstanceIdCapture2), EasyMock.capture(typedDatumStringCapture2),
             EasyMock.captureInt(outputCountCapture2), EasyMock.capture(storageNodeIdCapture2))).andReturn(Long.valueOf(9));
@@ -423,7 +431,7 @@ public class ComponentExecutionStorageBridgeTest {
         assertEquals(OUTPUT_INSTANCE_DM_ID, endpointInstanceIdCapture.getValue());
         assertEquals(outputString1, typedDatumStringCapture.getValue());
         assertEquals(0, outputCountCapture.getValue().intValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture.getValue());
 
         storageBridge.addOutput(OUTPUT_NAME, outputString2);
 
@@ -431,7 +439,7 @@ public class ComponentExecutionStorageBridgeTest {
         assertEquals(OUTPUT_INSTANCE_DM_ID, endpointInstanceIdCapture2.getValue());
         assertEquals(outputString2, typedDatumStringCapture2.getValue());
         assertEquals(1, outputCountCapture2.getValue().intValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture2.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture2.getValue());
     }
 
     /**
@@ -449,11 +457,11 @@ public class ComponentExecutionStorageBridgeTest {
         MetaDataService metaDataServiceMock = EasyMock.createStrictMock(MetaDataService.class);
 
         EasyMock.expect(metaDataServiceMock.addComponentRun(EasyMock.anyLong(), EasyMock.anyObject(String.class), EasyMock.anyInt(),
-            EasyMock.anyLong(), EasyMock.anyObject(NodeIdentifier.class))).andReturn(compExeDmId);
+            EasyMock.anyLong(), EasyMock.anyObject(InstanceNodeSessionId.class))).andReturn(compExeDmId);
 
         Capture<Long> compExeDmIdCapture = new Capture<>();
         Capture<String> historyDataItemCapture = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
         metaDataServiceMock.setOrUpdateHistoryDataItem(EasyMock.captureLong(compExeDmIdCapture),
             EasyMock.capture(historyDataItemCapture), EasyMock.capture(storageNodeIdCapture));
 
@@ -469,7 +477,7 @@ public class ComponentExecutionStorageBridgeTest {
 
         assertEquals(compExeDmId, compExeDmIdCapture.getValue());
         assertEquals(historyDataItem, historyDataItemCapture.getValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture.getValue());
 
     }
 
@@ -488,7 +496,7 @@ public class ComponentExecutionStorageBridgeTest {
 
         Capture<Long> compInstanceDmIdCapture = new Capture<>();
         Capture<FinalComponentState> finalCompStateCapture = new Capture<>();
-        Capture<NodeIdentifier> storageNodeIdCapture = new Capture<>();
+        Capture<InstanceNodeSessionId> storageNodeIdCapture = new Capture<>();
         metaDataServiceMock.setComponentInstanceFinalState(EasyMock.captureLong(compInstanceDmIdCapture),
             EasyMock.capture(finalCompStateCapture), EasyMock.capture(storageNodeIdCapture));
 
@@ -503,14 +511,16 @@ public class ComponentExecutionStorageBridgeTest {
 
         assertEquals(DM_INSTANCE_ID, compInstanceDmIdCapture.getValue());
         assertEquals(finalState, finalCompStateCapture.getValue());
-        assertEquals(STORAGE_NODE_ID, storageNodeIdCapture.getValue());
+        assertEquals(STORAGE_NODE_LOGICAL_NODE_ID, storageNodeIdCapture.getValue());
 
     }
 
     private ComponentExecutionContext createComponentExecutionContextMock() {
         ComponentExecutionContext componentExecutionContextMock = EasyMock.createNiceMock(ComponentExecutionContext.class);
-        EasyMock.expect(componentExecutionContextMock.getNodeId()).andReturn(NODE_ID).anyTimes();
-        EasyMock.expect(componentExecutionContextMock.getDefaultStorageNodeId()).andReturn(STORAGE_NODE_ID).anyTimes();
+        EasyMock.expect(componentExecutionContextMock.getNodeId()).andReturn(NODE_ID.convertToDefaultLogicalNodeId()).anyTimes();
+        EasyMock.expect(componentExecutionContextMock.getDefaultStorageNodeId())
+            .andReturn(STORAGE_NODE_SESSION_ID.convertToDefaultLogicalNodeId())
+            .anyTimes();
         EasyMock.expect(componentExecutionContextMock.getInstanceDataManagementId()).andReturn(DM_INSTANCE_ID).anyTimes();
         Map<String, Long> inputDmInstanceIds = new HashMap<>();
         inputDmInstanceIds.put(INPUT_NAME, INPUT_INSTANCE_DM_ID);

@@ -12,7 +12,7 @@ import javax.jms.JMSException;
 
 import de.rcenvironment.core.communication.channel.MessageChannelState;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 
 /**
  * Represents a remote-initiated connection, ie a logical connection that was triggered by a network-level connection by a remote node to
@@ -30,7 +30,7 @@ public class RemoteInitiatedJmsMessageChannel extends AbstractJmsMessageChannel 
      * @param associatedSCP
      * @throws JMSException
      */
-    public RemoteInitiatedJmsMessageChannel(NodeIdentifier localNodeId, Connection connection, ServerContactPoint associatedSCP)
+    public RemoteInitiatedJmsMessageChannel(InstanceNodeSessionId localNodeId, Connection connection, ServerContactPoint associatedSCP)
         throws JMSException {
         super(localNodeId);
         this.connection = connection;

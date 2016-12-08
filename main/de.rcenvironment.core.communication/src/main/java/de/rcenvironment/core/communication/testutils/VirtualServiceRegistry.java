@@ -19,8 +19,8 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.utils.common.AutoCreationMap;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.utils.common.AutoCreationMap;
 
 /**
  * An helper class to set up, bind and activate OSGi-DS service instances for integration testing. Note that only dependency binding and

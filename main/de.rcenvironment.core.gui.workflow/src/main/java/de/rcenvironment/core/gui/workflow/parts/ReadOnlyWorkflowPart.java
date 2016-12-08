@@ -11,17 +11,19 @@ package de.rcenvironment.core.gui.workflow.parts;
 import org.eclipse.gef.EditPolicy;
 import org.eclipse.gef.editpolicies.RootComponentEditPolicy;
 
+import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
+
+
 /**
- * Readonly root edit part holding a WorkflowDescription.
+ * Read-only root edit part holding a {@link WorkflowDescription}.
  * 
- * @author Heinrich Wendel
+ * @author Martin Misiak
  */
 public class ReadOnlyWorkflowPart extends WorkflowPart {
 
     @Override
     protected void createEditPolicies() {
         installEditPolicy(EditPolicy.COMPONENT_ROLE, new RootComponentEditPolicy());
-        installEditPolicy(EditPolicy.LAYOUT_ROLE, new WorkflowXYLayoutEditPolicy());
     }
-
+        
 }

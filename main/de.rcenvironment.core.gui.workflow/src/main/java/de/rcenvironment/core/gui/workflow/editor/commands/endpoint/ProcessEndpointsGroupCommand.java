@@ -20,13 +20,18 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand;
  * undo-redo step.
  *
  * @author Caslav Ilic
+ * @author Martin Misiak
+ * FIXED 0014347: Primitive commands should not appear on the commandstack.
+ * Only the {@link ProcessEndpointsGroupCommand} should. For this {@link #execute()} 
+ * does not forward the commands to the {@link #executor}, rather executes them directly.  
+ * 
  */
 public class ProcessEndpointsGroupCommand extends WorkflowNodeCommand {
 
     protected WorkflowNodeCommand.Executor executor;
 
     protected Refreshable[] refreshable;
-
+    
     protected List<WorkflowNodeCommand> commands = new ArrayList<>();
 
     private boolean executable = true;
@@ -52,7 +57,9 @@ public class ProcessEndpointsGroupCommand extends WorkflowNodeCommand {
     public void execute() {
         if (executable) {
             for (WorkflowNodeCommand command : commands) {
-                executor.execute(command);
+                command.setWorkflowNode(super.getWorkflowNode());
+                command.setCommandStack(super.commandStack);
+                command.execute();
             }
             executable = false;
             undoable = true;

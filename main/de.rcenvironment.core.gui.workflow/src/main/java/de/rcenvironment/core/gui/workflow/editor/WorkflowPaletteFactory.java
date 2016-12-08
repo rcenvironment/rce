@@ -8,7 +8,6 @@
 
 package de.rcenvironment.core.gui.workflow.editor;
 
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -27,16 +26,16 @@ import org.eclipse.gef.palette.ToolEntry;
 import org.eclipse.gef.requests.SimpleFactory;
 import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.swt.graphics.Image;
-import org.eclipse.swt.widgets.Display;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowLabel;
+import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.workflow.Activator;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
@@ -67,7 +66,7 @@ public class WorkflowPaletteFactory {
 
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         PlatformService platformService = serviceRegistryAccess.getService(PlatformService.class);
-        NodeIdentifier localNode = platformService.getLocalNodeId();
+        LogicalNodeId localNode = platformService.getLocalDefaultLogicalNodeId();
 
         Map<String, List<PaletteEntry>> groupedComponents = new HashMap<String, List<PaletteEntry>>();
         componentInstallations = ComponentUtils.eliminateComponentInterfaceDuplicates(componentInstallations, localNode);
@@ -76,22 +75,24 @@ public class WorkflowPaletteFactory {
         for (ComponentInstallation ci : componentInstallations) {
             ComponentInterface componentInterface = ci.getComponentRevision().getComponentInterface();
             // prepare the icon of the component
-            ImageDescriptor image = null;
-            byte[] icon = componentInterface.getIcon16();
-            if (icon != null) {
-                image = ImageDescriptor.createFromImage(new Image(Display.getCurrent(), new ByteArrayInputStream(icon)));
+            ImageDescriptor imageDescriptor = null;
+            Image image = ComponentImageManager.getInstance().getIcon16Image(componentInterface);
+            if (image == null) {
+                imageDescriptor = Activator.getInstance().getImageRegistry().getDescriptor(Activator.IMAGE_RCE_ICON_16);
             } else {
-                image = Activator.getInstance().getImageRegistry().getDescriptor(Activator.IMAGE_RCE_ICON_16);
+                imageDescriptor = ImageDescriptor.createFromImage(image);
             }
+
             String name = componentInterface.getDisplayName();
             ToolIntegrationContextRegistry toolIntegrationRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
             if (componentInterface.getVersion() != null
-                && toolIntegrationRegistry.hasId(componentInterface.getIdentifier())) {
+                && (toolIntegrationRegistry.hasId(componentInterface.getIdentifier()) || componentInterface.getIdentifier()
+                .startsWith(ComponentConstants.COMPONENT_IDENTIFIER_PREFIX + "remoteaccess"))) {
                 name = name + StringUtils.format(WorkflowEditor.COMPONENTNAMES_WITH_VERSION, componentInterface.getVersion());
             }
             // create the palette entry
             CombinedTemplateCreationEntry component = new CombinedTemplateCreationEntry(name, name,
-                new WorkflowNodeFactory(ci), image, image);
+                new WorkflowNodeFactory(ci), imageDescriptor, imageDescriptor);
 
             if (!groupedComponents.containsKey(componentInterface.getGroupName())) {
                 groupedComponents.put(componentInterface.getGroupName(), new ArrayList<PaletteEntry>());
@@ -124,18 +125,14 @@ public class WorkflowPaletteFactory {
         for (String standardGroup : standardGroups) {
             PaletteDrawer componentsDrawer = new PaletteDrawer(standardGroup);
             componentsDrawer.addAll(groupedComponents.get(standardGroup));
-            if (standardGroup.equals(ComponentConstants.COMPONENT_GROUP_TEST)) {
-                componentsDrawer.setInitialState(PaletteDrawer.INITIAL_STATE_CLOSED);
-            }
+            componentsDrawer.setInitialState(PaletteDrawer.INITIAL_STATE_CLOSED);
             palette.add(componentsDrawer);
         }
 
         for (String specialGroup : specialGroups) {
             PaletteDrawer componentsDrawer = new PaletteDrawer(specialGroup);
             componentsDrawer.addAll(groupedComponents.get(specialGroup));
-            if (specialGroup.equals(ComponentConstants.COMPONENT_GROUP_TEST)) {
-                componentsDrawer.setInitialState(PaletteDrawer.INITIAL_STATE_CLOSED);
-            }
+            componentsDrawer.setInitialState(PaletteDrawer.INITIAL_STATE_CLOSED);
             palette.add(componentsDrawer);
         }
 
@@ -150,7 +147,7 @@ public class WorkflowPaletteFactory {
         tool.setLabel(Messages.select);
         palette.setDefaultEntry(tool);
         entries.add(tool);
-        
+
         // Add (solid-line) connection tool
         tool = new ConnectionCreationToolEntry(
             Messages.connection,
@@ -170,11 +167,12 @@ public class WorkflowPaletteFactory {
         toolsGroup.addAll(entries);
         palette.add(toolsGroup);
     }
-    
+
     /**
      * Sorting help for entries.
+     * 
      * @author guer_go
-     *
+     * 
      */
     private class PaletteComperator implements Comparator<PaletteEntry> {
 

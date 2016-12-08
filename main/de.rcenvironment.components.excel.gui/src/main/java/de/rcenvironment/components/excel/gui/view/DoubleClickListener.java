@@ -15,7 +15,7 @@ import org.eclipse.jface.viewers.IDoubleClickListener;
 import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eclipse.swt.widgets.Composite;
 
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
+import de.rcenvironment.components.excel.common.ChannelValue;
 
 
 /**

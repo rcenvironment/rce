@@ -26,7 +26,7 @@ import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.TreeItem;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 
@@ -39,7 +39,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
 
     private TreeViewer treeViewer;
 
-    private List<NodeIdentifier> missingTargetInstancesList;
+    private List<InstanceNodeSessionId> missingTargetInstancesList;
 
     public TreeBehaviour(TreeViewer tree, WorkflowNodeTargetPlatformLabelProvider
         instanceProvider, CheckboxLabelProvider checkboxProvider) {
@@ -345,7 +345,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
 
             if (missingTargetInstancesList != null) {
 
-                for (NodeIdentifier missingID : missingTargetInstancesList) {
+                for (InstanceNodeSessionId missingID : missingTargetInstancesList) {
 
                     String temp = missingID.toString();
                     String missing = temp.substring(1, temp.indexOf(Messages.bracket) - 2);
@@ -634,7 +634,7 @@ public class TreeBehaviour extends AbstractUpdateBehavior {
         }
     }
 
-    public void setMissingTargetInstancesList(List<NodeIdentifier> missingTargetInstancesList) {
+    public void setMissingTargetInstancesList(List<InstanceNodeSessionId> missingTargetInstancesList) {
         this.missingTargetInstancesList = missingTargetInstancesList;
     }
 

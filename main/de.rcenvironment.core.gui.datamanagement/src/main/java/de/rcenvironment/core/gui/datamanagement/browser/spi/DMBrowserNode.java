@@ -21,8 +21,10 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.LogFactory;
 import org.eclipse.swt.graphics.Image;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.datamanagement.commons.DataReference;
 import de.rcenvironment.core.datamanagement.commons.MetaData;
 import de.rcenvironment.core.datamanagement.commons.MetaDataKeys;
@@ -63,6 +65,8 @@ public final class DMBrowserNode {
 
     private List<DMBrowserNode> children = null;
 
+    private final Object lockForChildrenAccess = new Object();
+
     private DataReference dataReference = null;
 
     private String dataReferenceId = null;
@@ -77,7 +81,7 @@ public final class DMBrowserNode {
 
     private String workflowHostName = null;
 
-    private String workflowHostID = null;
+    private LogicalNodeId workflowHostID = null;
 
     private Image icon = null;
 
@@ -89,7 +93,7 @@ public final class DMBrowserNode {
     private Boolean enabled;
 
     private String cachedPath;
-    
+
     private DirectoryReferenceTD dirRefTD = null;
 
     public DMBrowserNode(String title) {
@@ -176,7 +180,7 @@ public final class DMBrowserNode {
                 builder.append("workflow:");
                 builder.append(workflowID);
                 builder.append("_");
-                builder.append(getNodeIdentifier().getIdString());
+                builder.append(getNodeIdentifier().getInstanceNodeIdString()); // assuming this should be unique enough here
                 break;
             default:
                 builder.append(getTitle());
@@ -209,18 +213,29 @@ public final class DMBrowserNode {
      * Defines that this node is not meant to contain children.
      */
     public void markAsLeaf() {
-        children = IMMUTABLE_NO_CHILDREN_LIST;
+        synchronized (lockForChildrenAccess) {
+            children = IMMUTABLE_NO_CHILDREN_LIST;
+        }
     }
 
+    /**
+     * Returns true, iff the node is a leaf node.
+     * 
+     * @return true, iff the node is a leaf node
+     */
     public Boolean isLeafNode() {
-        return areChildrenKnown() && children.isEmpty();
+        synchronized (lockForChildrenAccess) {
+            return areChildrenKnown() && children.isEmpty();
+        }
     }
 
     /**
      * @return true if and only if the children of this node have already been computed
      */
     public boolean areChildrenKnown() {
-        return children != null;
+        synchronized (lockForChildrenAccess) {
+            return children != null;
+        }
     }
 
     /**
@@ -229,20 +244,24 @@ public final class DMBrowserNode {
      * @param child the new child to add
      */
     public void addChild(DMBrowserNode child) {
-        ensureChildListCreated();
-        if (children == IMMUTABLE_NO_CHILDREN_LIST) {
-            throw new IllegalStateException("Parent node for addChild was marked as a leaf before");
+        synchronized (lockForChildrenAccess) {
+            ensureChildListCreated();
+            if (children == IMMUTABLE_NO_CHILDREN_LIST) {
+                throw new IllegalStateException("Parent node for addChild was marked as a leaf before");
+            }
+            children.add(child);
+            child.setParent(this); // checks internally if the parent is already set
         }
-        children.add(child);
-        child.setParent(this); // checks internally if the parent is already set
     }
 
     /**
      * @return a read-only list of this nodes children
      */
     public List<DMBrowserNode> getChildren() {
-        ensureChildListCreated();
-        return Collections.unmodifiableList(children);
+        synchronized (lockForChildrenAccess) {
+            ensureChildListCreated();
+            return Collections.unmodifiableList(children);
+        }
     }
 
     /**
@@ -251,9 +270,11 @@ public final class DMBrowserNode {
      * @param child the child node to remove
      */
     public void removeChild(final DMBrowserNode child) {
-        if (children != null) {
-            if (children.remove(child)) {
-                child.setParent(null);
+        synchronized (lockForChildrenAccess) {
+            if (children != null) {
+                if (children.remove(child)) {
+                    child.setParent(null);
+                }
             }
         }
     }
@@ -262,15 +283,19 @@ public final class DMBrowserNode {
      * Resets the children-state of this node to the initial state.
      */
     public void clearChildren() {
-        children = null;
+        synchronized (lockForChildrenAccess) {
+            children = null;
+        }
     }
 
     /**
      * @return this nodes children as an array.
      */
     public DMBrowserNode[] getChildrenAsArray() {
-        ensureChildListCreated();
-        return children.toArray(new DMBrowserNode[0]);
+        synchronized (lockForChildrenAccess) {
+            ensureChildListCreated();
+            return children.toArray(new DMBrowserNode[0]);
+        }
     }
 
     /**
@@ -279,24 +304,30 @@ public final class DMBrowserNode {
      * @param comparator the {@link Comparator} to use
      */
     public void sortChildren(Comparator<DMBrowserNode> comparator) {
-        ensureChildListCreated();
-        Collections.sort(children, comparator);
+        synchronized (lockForChildrenAccess) {
+            ensureChildListCreated();
+            Collections.sort(children, comparator);
+        }
     }
 
     /**
      * @return the number of children this node has; also returns zero if the children have not been computed yet
      */
     public int getNumChildren() {
-        if (children == null) {
-            return 0;
-        } else {
-            return children.size();
+        synchronized (lockForChildrenAccess) {
+            if (children == null) {
+                return 0;
+            } else {
+                return children.size();
+            }
         }
     }
 
     private void ensureChildListCreated() {
-        if (children == null) {
-            children = new ArrayList<DMBrowserNode>();
+        synchronized (lockForChildrenAccess) {
+            if (children == null) {
+                children = new ArrayList<>();
+            }
         }
     }
 
@@ -315,11 +346,11 @@ public final class DMBrowserNode {
     public DataReference getDataReference() {
         return dataReference;
     }
-    
+
     public void setDirectoryReferenceTD(DirectoryReferenceTD directoryReferenceTD) {
         this.dirRefTD = directoryReferenceTD;
     }
-    
+
     /**
      * @return <code>null</code> in case the {@link #getType()} returns another type than {@link DMBrowserNodeType.DMDirectoryReference}
      */
@@ -328,9 +359,9 @@ public final class DMBrowserNode {
     }
 
     /**
-     * FIXME @weis_cr: javadoc.
+     * TODO (p3) add JavaDoc (or eliminate, as it is deprecated).
      * 
-     * @param parent FIXME javadoc
+     * @param parent as above
      */
     @Deprecated
     public void setParent(DMBrowserNode parent) {
@@ -466,18 +497,20 @@ public final class DMBrowserNode {
 
     /**
      * 
-     * {@link NodeIdentifier} is only available, when node type equals {@link DMBrowserNodeType#Workflow}. Use
+     * {@link InstanceNodeSessionId} is only available, when node type equals {@link DMBrowserNodeType#Workflow}. Use
      * {@link #getNodeWithTypeWorkflow()} to access the the node identifier.
      * 
-     * @return {@link NodeIdentifier}
+     * @return {@link InstanceNodeSessionId}
      */
-    public NodeIdentifier getNodeIdentifier() {
-        if (dataReference != null && dataReference.getNodeIdentifier() != null) {
-            return dataReference.getNodeIdentifier();
+    public ResolvableNodeId getNodeIdentifier() {
+        if (dataReference != null && dataReference.getInstanceId() != null) {
+            return dataReference.getInstanceId();
         } else {
-            String instanceNodeIdentifier = metaData.getValue(new MetaData(MetaDataKeys.NODE_IDENTIFIER, true, true));
-            if (instanceNodeIdentifier != null) {
-                return NodeIdentifierFactory.fromNodeId(instanceNodeIdentifier);
+            if (metaData != null) {
+                String instanceNodeIdentifier = metaData.getValue(new MetaData(MetaDataKeys.NODE_IDENTIFIER, true, true));
+                if (instanceNodeIdentifier != null) {
+                    return NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(instanceNodeIdentifier);
+                }
             }
             return null;
         }
@@ -491,12 +524,12 @@ public final class DMBrowserNode {
         return builtForDeletionPurpose;
     }
 
-    public String getWorkflowHostID() {
+    public LogicalNodeId getWorkflowControllerNode() {
         return workflowHostID;
     }
 
-    public void setWorkflowHostID(String workflowHostID) {
-        this.workflowHostID = workflowHostID;
+    public void setWorkflowControllerNode(LogicalNodeId logicalNodeId) {
+        this.workflowHostID = logicalNodeId;
     }
 
     public String getToolTip() {
@@ -519,14 +552,16 @@ public final class DMBrowserNode {
      * @return true if all children are disabled
      */
     public boolean areAllChildrenDisabled() {
-        if (children != null) {
-            boolean disabled = children.size() > 0;
-            for (DMBrowserNode bn : children) {
-                disabled &= !bn.isEnabled();
+        synchronized (lockForChildrenAccess) {
+            if (children != null) {
+                boolean disabled = children.size() > 0;
+                for (DMBrowserNode bn : children) {
+                    disabled &= !bn.isEnabled();
+                }
+                return disabled;
             }
-            return disabled;
+            return false;
         }
-        return false;
     }
 
     /**

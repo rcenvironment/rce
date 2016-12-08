@@ -106,15 +106,20 @@ public class TempFileServiceAccess {
      * Convenience method for unit tests. Sets a hard-coded sub-folder of the system temporary directory as the "global root".
      */
     public static void setupUnitTestEnvironment() {
-        try {
-            // TODO ignore call if already using same root?
-            // TODO "shut down" any pre-existing instance?
-            currentMmanager = new TempFileManager(getDefaultTestRootDir(), null);
-            setInstance(currentMmanager.getServiceImplementation());
-        } catch (IOException e) {
-            // always expected to work, so using an unchecked exception for test code convenience
-            throw new RuntimeException("Failed to initialize unittest temp directory root", e);
+        if (TempFileServiceAccess.instance == null) {
+            try {
+                // TODO ignore call if already using same root?
+                // TODO "shut down" any pre-existing instance?
+                if (currentMmanager == null) {
+                    currentMmanager = new TempFileManager(getDefaultTestRootDir(), null, true);
+                }
+                setInstance(currentMmanager.getServiceImplementation());
+            } catch (IOException e) {
+                // always expected to work, so using an unchecked exception for test code convenience
+                throw new RuntimeException("Failed to initialize unittest temp directory root", e);
+            }
         }
+
     }
 
     protected static void setInstance(TempFileService newInstance) {
@@ -132,6 +137,7 @@ public class TempFileServiceAccess {
      * "Reset" method for unit/integration tests.
      */
     protected static void discardCurrentSetup() {
+
         currentMmanager = null;
         TempFileServiceAccess.instance = null;
     }

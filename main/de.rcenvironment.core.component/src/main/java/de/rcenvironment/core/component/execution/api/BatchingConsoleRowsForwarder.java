@@ -10,7 +10,9 @@ package de.rcenvironment.core.component.execution.api;
 
 import java.util.List;
 
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
 
 /**
  * Collects single {@link ConsoleRow}s and forwards them as batches to the provided {@link BatchedConsoleRowsProcessor}.
@@ -30,7 +32,7 @@ public class BatchingConsoleRowsForwarder implements SingleConsoleRowsProcessor 
     private final BatchAggregator<ConsoleRow> batchAggregator;
 
     public BatchingConsoleRowsForwarder(final BatchedConsoleRowsProcessor consoleRowsProcessor) {
-        BatchAggregator.BatchProcessor<ConsoleRow> batchProcessor = new BatchAggregator.BatchProcessor<ConsoleRow>() {
+        BatchProcessor<ConsoleRow> batchProcessor = new BatchProcessor<ConsoleRow>() {
 
             @Override
             public void processBatch(List<ConsoleRow> batch) {
@@ -39,7 +41,7 @@ public class BatchingConsoleRowsForwarder implements SingleConsoleRowsProcessor 
             }
 
         };
-        batchAggregator = new BatchAggregator<ConsoleRow>(MAX_BATCH_SIZE, MAX_BATCH_LATENCY_MSEC, batchProcessor);
+        batchAggregator = ConcurrencyUtils.getFactory().createBatchAggregator(MAX_BATCH_SIZE, MAX_BATCH_LATENCY_MSEC, batchProcessor);
     }
 
     @Override

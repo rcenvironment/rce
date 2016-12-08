@@ -17,6 +17,7 @@ import org.eclipse.swt.widgets.Text;
  * or integer input.
  * 
  * @author Sascha Zur
+ * @author Jascha Riedel (#14005)
  */
 public class NumericalTextConstraintListener implements VerifyListener {
 
@@ -38,13 +39,22 @@ public class NumericalTextConstraintListener implements VerifyListener {
     /**
      * Option if a textfield should only allow only inputs >= 0.
      */
-    public static final int GREATER_ZERO = WidgetGroupFactory.GREATER_OR_EQUAL_ZERO;
+    public static final int GREATER_OR_EQUAL_ZERO = WidgetGroupFactory.GREATER_OR_EQUAL_ZERO;
+    
+    /**
+     * Option if a textfield should only allow inputs > 0.
+     */
+    public static final int GREATER_ZERO = WidgetGroupFactory.GREATER_ZERO;
 
     private static final String SMALL_E = "e";
 
     private static final String MINUS = "-";
 
     private static final String E = "E";
+    
+    private static final String ZERO = "0";
+    
+    private static final String DOT = ".";
 
     private final int function;
 
@@ -67,18 +77,28 @@ public class NumericalTextConstraintListener implements VerifyListener {
         if ((function & WidgetGroupFactory.ONLY_INTEGER) > 0) {
             valid &= checkIfInputIsInt(newS);
         }
-
-        if ((function & WidgetGroupFactory.GREATER_OR_EQUAL_ZERO) > 0 && valid) {
+        
+        if ((function & WidgetGroupFactory.GREATER_ZERO) > 0 && ((function & WidgetGroupFactory.ONLY_INTEGER) > 0) && valid) {
             valid &= checkIfGreaterZero(newS);
         }
-
+        
+        if ((function & WidgetGroupFactory.GREATER_OR_EQUAL_ZERO) > 0 && valid) {
+            valid &= checkIfGreaterOrEqualZero(newS);
+        }
+        
+        // allow leading dot
+        if ((newS.equals(DOT) || newS.equals(MINUS + DOT))
+            && ((function & WidgetGroupFactory.ONLY_FLOAT) > 0)) {
+            valid = true;
+        }
+        
         // Allow deleting text entry
         if (newS.isEmpty() && !oldS.isEmpty()) {
             valid = true;
         }
 
         // Allow minus operation if not >= 0
-        if (newS.equals(MINUS) && !((function & WidgetGroupFactory.GREATER_OR_EQUAL_ZERO) > 0)) {
+        if (newS.equals(MINUS) && !((function & (WidgetGroupFactory.GREATER_OR_EQUAL_ZERO | WidgetGroupFactory.GREATER_ZERO)) > 0)) {
             valid = true;
         }
 
@@ -88,7 +108,7 @@ public class NumericalTextConstraintListener implements VerifyListener {
         }
 
         // Check for new exponent entry
-        if ((function & WidgetGroupFactory.ONLY_FLOAT) > 0 && !(oldS.contains(E) || oldS.contains(SMALL_E))
+        if ((function & WidgetGroupFactory.ONLY_FLOAT) > 0 && !(oldS.contains(E) || oldS.contains(SMALL_E) || oldS.endsWith("."))
             && (newS.endsWith(E) || newS.endsWith(SMALL_E))) {
             valid = checkIfInputIsFloat(oldS);
         }
@@ -114,7 +134,7 @@ public class NumericalTextConstraintListener implements VerifyListener {
         e.doit = valid;
     }
 
-    private boolean checkIfGreaterZero(String newS) {
+    private boolean checkIfGreaterOrEqualZero(String newS) {
         try {
             float result = Float.parseFloat(newS);
             return result >= 0;
@@ -122,10 +142,19 @@ public class NumericalTextConstraintListener implements VerifyListener {
             return false;
         }
     }
+    
+    private boolean checkIfGreaterZero(String newS) {
+        try {
+            float result = Float.parseFloat(newS);
+            return result > 0;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
     private boolean checkIfInputIsInt(String newS) {
         try {
-            Integer.parseInt(newS);
+            Long.parseLong(newS);
             return true;
         } catch (NumberFormatException e) {
             return false;

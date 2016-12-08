@@ -27,10 +27,12 @@ import de.rcenvironment.core.gui.workflow.editor.commands.endpoint.RemoveDynamic
 public class InputCoupledWithOutputsSelectionPane extends ForwardingEndpointSelectionPane {
 
     private final String dynEndpointId;
+    
+    private final String addDynOutputId;
+
+    private final String outputNameSuffix;
 
     private final Refreshable outputPane;
-
-    private final String nameSuffix;
 
     private Map<String, String> metaDataInput = new HashMap<>();
 
@@ -38,19 +40,21 @@ public class InputCoupledWithOutputsSelectionPane extends ForwardingEndpointSele
 
     private Map<String, String> metaDataOutputWithSuffix = new HashMap<>();
 
-    public InputCoupledWithOutputsSelectionPane(String title, String dynEndpointId, String nameSuffix,
+    public InputCoupledWithOutputsSelectionPane(String title, String dynEndpointId, String addDynOutputId, String outputNameSuffix,
         WorkflowNodeCommand.Executor executor, Refreshable outputPane) {
-        super(title, EndpointType.INPUT, executor, false, dynEndpointId, true, true);
+        super(title, EndpointType.INPUT, dynEndpointId, new String[] {}, executor);
         this.dynEndpointId = dynEndpointId;
+        this.addDynOutputId = addDynOutputId;
+        this.outputNameSuffix = outputNameSuffix;
         this.outputPane = outputPane;
-        this.nameSuffix = nameSuffix;
     }
 
     @Override
     protected void executeAddCommand(String name, DataType type, Map<String, String> metaData) {
         metaDataInput.putAll(metaData);
-        WorkflowNodeCommand command = new AddDynamicInputWithOutputsCommand(dynEndpointId, name, type, metaDataInput,
-            nameSuffix, this, outputPane);
+        WorkflowNodeCommand command =
+            new AddDynamicInputWithOutputsCommand(dynEndpointId, addDynOutputId, outputNameSuffix, name, type, metaDataInput,
+                this, outputPane);
         ((AddDynamicInputWithOutputsCommand) command).setMetaDataOutput(metaDataOutput);
         ((AddDynamicInputWithOutputsCommand) command).setMetaDataOutputWithSuffix(metaDataOutputWithSuffix);
         execute(command);
@@ -58,7 +62,8 @@ public class InputCoupledWithOutputsSelectionPane extends ForwardingEndpointSele
 
     @Override
     protected void executeEditCommand(EndpointDescription oldDescription, EndpointDescription newDescription) {
-        WorkflowNodeCommand command = new EditDynamicInputWithOutputsCommand(oldDescription, newDescription, nameSuffix, this, outputPane);
+        WorkflowNodeCommand command =
+            new EditDynamicInputWithOutputsCommand(oldDescription, newDescription, outputNameSuffix, this, outputPane);
         ((EditDynamicInputWithOutputsCommand) command).setMetaDataOutput(metaDataOutput);
         ((EditDynamicInputWithOutputsCommand) command).setMetaDataOutputWithSuffix(metaDataOutputWithSuffix);
         execute(command);
@@ -66,7 +71,8 @@ public class InputCoupledWithOutputsSelectionPane extends ForwardingEndpointSele
 
     @Override
     protected void executeRemoveCommand(List<String> names) {
-        final WorkflowNodeCommand command = new RemoveDynamicInputWithOutputsCommand(dynEndpointId, names, nameSuffix, this, outputPane);
+        final WorkflowNodeCommand command =
+            new RemoveDynamicInputWithOutputsCommand(dynEndpointId, addDynOutputId, outputNameSuffix, names, this, outputPane);
         execute(command);
     }
 

@@ -19,7 +19,7 @@ import org.easymock.EasyMock;
 import org.junit.Test;
 
 import de.rcenvironment.core.communication.common.NetworkGraph;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.routing.NetworkRoutingService;
 import de.rcenvironment.core.communication.routing.internal.NetworkRoutingServiceImpl;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
@@ -57,9 +57,9 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
         final VirtualCommunicationBundle communicationBundle = initialNode.getVirtualCommunicationBundle();
         final NetworkRoutingServiceImpl networkRoutingService =
             (NetworkRoutingServiceImpl) communicationBundle.getService(NetworkRoutingService.class);
-        Capture<Set<NodeIdentifier>> reachableNodesCapture = new Capture<Set<NodeIdentifier>>();
-        Capture<Set<NodeIdentifier>> addedNodesCapture = new Capture<Set<NodeIdentifier>>();
-        Capture<Set<NodeIdentifier>> removedNodesCapture = new Capture<Set<NodeIdentifier>>();
+        Capture<Set<InstanceNodeSessionId>> reachableNodesCapture = new Capture<Set<InstanceNodeSessionId>>();
+        Capture<Set<InstanceNodeSessionId>> addedNodesCapture = new Capture<Set<InstanceNodeSessionId>>();
+        Capture<Set<InstanceNodeSessionId>> removedNodesCapture = new Capture<Set<InstanceNodeSessionId>>();
         final NetworkTopologyChangeListener topologyChangeListener = EasyMock.createMock(NetworkTopologyChangeListener.class);
 
         // set expectation on subscription
@@ -75,9 +75,9 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
 
         // check callback parameters
         assertEquals(1, reachableNodesCapture.getValue().size());
-        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getNodeId()));
+        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getInstanceNodeSessionId()));
         assertEquals(1, addedNodesCapture.getValue().size());
-        assertTrue(addedNodesCapture.getValue().contains(initialNode.getNodeId()));
+        assertTrue(addedNodesCapture.getValue().contains(initialNode.getInstanceNodeSessionId()));
         assertEquals(0, removedNodesCapture.getValue().size());
 
         // define expectation on new reachable node
@@ -101,10 +101,10 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
 
         // check callback parameters
         assertEquals(2, reachableNodesCapture.getValue().size());
-        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getNodeId()));
-        assertTrue(reachableNodesCapture.getValue().contains(addedNode1.getNodeId()));
+        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getInstanceNodeSessionId()));
+        assertTrue(reachableNodesCapture.getValue().contains(addedNode1.getInstanceNodeSessionId()));
         assertEquals(1, addedNodesCapture.getValue().size());
-        assertTrue(addedNodesCapture.getValue().contains(addedNode1.getNodeId()));
+        assertTrue(addedNodesCapture.getValue().contains(addedNode1.getInstanceNodeSessionId()));
         assertEquals(0, removedNodesCapture.getValue().size());
 
         // define expectation on 2nd new reachable node
@@ -128,11 +128,11 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
 
         // check callback parameters
         assertEquals(3, reachableNodesCapture.getValue().size());
-        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getNodeId()));
-        assertTrue(reachableNodesCapture.getValue().contains(addedNode1.getNodeId()));
-        assertTrue(reachableNodesCapture.getValue().contains(addedNode2.getNodeId()));
+        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getInstanceNodeSessionId()));
+        assertTrue(reachableNodesCapture.getValue().contains(addedNode1.getInstanceNodeSessionId()));
+        assertTrue(reachableNodesCapture.getValue().contains(addedNode2.getInstanceNodeSessionId()));
         assertEquals(1, addedNodesCapture.getValue().size());
-        assertTrue(addedNodesCapture.getValue().contains(addedNode2.getNodeId()));
+        assertTrue(addedNodesCapture.getValue().contains(addedNode2.getInstanceNodeSessionId()));
         assertEquals(0, removedNodesCapture.getValue().size());
 
         // define expectation on shutting down the first added node
@@ -154,11 +154,11 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
 
         // check callback parameters
         assertEquals(2, reachableNodesCapture.getValue().size());
-        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getNodeId()));
-        assertTrue(reachableNodesCapture.getValue().contains(addedNode2.getNodeId()));
+        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getInstanceNodeSessionId()));
+        assertTrue(reachableNodesCapture.getValue().contains(addedNode2.getInstanceNodeSessionId()));
         assertEquals(0, addedNodesCapture.getValue().size());
         assertEquals(1, removedNodesCapture.getValue().size());
-        assertTrue(removedNodesCapture.getValue().contains(addedNode1.getNodeId()));
+        assertTrue(removedNodesCapture.getValue().contains(addedNode1.getInstanceNodeSessionId()));
 
         // define expectation on shutting down the second added node
         EasyMock.reset(topologyChangeListener);
@@ -179,9 +179,9 @@ public class TopologyChangeEventsIntegrationTest extends AbstractVirtualInstance
 
         // check callback parameters
         assertEquals(1, reachableNodesCapture.getValue().size());
-        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getNodeId()));
+        assertTrue(reachableNodesCapture.getValue().contains(initialNode.getInstanceNodeSessionId()));
         assertEquals(0, addedNodesCapture.getValue().size());
         assertEquals(1, removedNodesCapture.getValue().size());
-        assertTrue(removedNodesCapture.getValue().contains(addedNode2.getNodeId()));
+        assertTrue(removedNodesCapture.getValue().contains(addedNode2.getInstanceNodeSessionId()));
     }
 }

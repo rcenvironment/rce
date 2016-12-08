@@ -31,8 +31,10 @@ import org.codehaus.jackson.type.TypeReference;
 import org.eclipse.core.runtime.Platform;
 import org.osgi.framework.Bundle;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
@@ -124,7 +126,7 @@ public final class ComponentUtils {
      * @param compInstallations given list of available {@link ComponentInstallation}s
      * @return List of nodes the component is installed on.
      */
-    public static Map<NodeIdentifier, Integer> getNodesForComponent(Collection<ComponentInstallation> compInstallations,
+    public static Map<LogicalNodeId, Integer> getNodesForComponent(Collection<ComponentInstallation> compInstallations,
         ComponentDescription compDesc) {
 
         ComponentInterface compInterface = compDesc.getComponentInstallation().getComponentRevision().getComponentInterface();
@@ -138,7 +140,7 @@ public final class ComponentUtils {
             compInterfaceIdWithoutVersion = temp;
         }
 
-        Map<NodeIdentifier, Integer> identifiers = new HashMap<NodeIdentifier, Integer>();
+        Map<LogicalNodeId, Integer> identifiers = new HashMap<LogicalNodeId, Integer>();
         for (ComponentInstallation compInstallation : compInstallations) {
 
             ComponentInterface compInterfaceToCheck = compInstallation.getComponentRevision().getComponentInterface();
@@ -147,7 +149,12 @@ public final class ComponentUtils {
 
             if (compInterfaceIdWithoutVersion.equals(compInterfaceIdToCheckWithoutVersion)) {
 
-                NodeIdentifier node = NodeIdentifierFactory.fromNodeId(compInstallation.getNodeId());
+                final LogicalNodeId node;
+                try {
+                    node = NodeIdentifierUtils.parseLogicalNodeIdString(compInstallation.getNodeId());
+                } catch (IdentifierException e) {
+                    throw NodeIdentifierUtils.wrapIdentifierException(e);
+                }
                 int compared;
                 try {
                     Float versionToCheck = Float.valueOf(compInterfaceToCheck.getVersion());
@@ -177,11 +184,11 @@ public final class ComponentUtils {
      * @param installations given list of available {@link ComponentDescription}s
      * @return Whether the given component is available on the given platform.
      */
-    public static boolean hasComponent(Collection<ComponentInstallation> installations, String componentId, NodeIdentifier node) {
+    public static boolean hasComponent(Collection<ComponentInstallation> installations, String componentId, LogicalNodeId node) {
         for (ComponentInstallation installation : installations) {
 
             if (installation.getComponentRevision().getComponentInterface().getIdentifier().equals(componentId)
-                && installation.getNodeId().equals(node.getIdString())) {
+                && installation.getNodeId().equals(node.getLogicalNodeIdString())) {
                 return true;
             }
         }
@@ -196,7 +203,7 @@ public final class ComponentUtils {
      * @return Whether the given component is available on the given platform.
      */
     public static List<ComponentInstallation> eliminateComponentInterfaceDuplicates(Collection<ComponentInstallation> compInstallations,
-        NodeIdentifier localNode) {
+        LogicalNodeId localNode) {
         List<ComponentInstallation> filteredInstallations = new ArrayList<ComponentInstallation>();
 
         // eliminate duplicates
@@ -213,7 +220,7 @@ public final class ComponentUtils {
                 String filteredCompInterfaceIdWithoutVersion = getComponentInterfaceIdentifierWithoutVersion(filteredCompInterfaceId);
 
                 if (compInterfaceIdWithoutVersion.equals(filteredCompInterfaceIdWithoutVersion)) {
-                    if (compInstallation.getNodeId().equals(localNode.getIdString())) {
+                    if (compInstallation.getNodeId().equals(localNode.getLogicalNodeIdString())) {
                         iterator.remove();
                     } else {
                         contained = true;
@@ -240,14 +247,17 @@ public final class ComponentUtils {
     /**
      * @param compInterfaceId Identifier of {@link ComponentInterface} to search for
      * @param installations {@link ComponentInstallation}s to search
-     * @param node the {@link NodeIdentifier} the component must be installed on
+     * @param node the {@link InstanceNodeSessionId} the component must be installed on
      * @return {@link ComponentInstallation} referring to {@link ComponentInstallation} identifier or <code>null</code>
      */
     public static ComponentInstallation getExactMatchingComponentInstallationForNode(String compInterfaceId,
-        Collection<ComponentInstallation> installations, NodeIdentifier node) {
+        Collection<ComponentInstallation> installations, LogicalNodeId node) {
         for (ComponentInstallation installation : installations) {
             if (installation.getComponentRevision().getComponentInterface().getIdentifier().equals(compInterfaceId)
-                && installation.getNodeId().equals(node.getIdString())) {
+                && installation.getNodeId().equals(node.getLogicalNodeIdString())) {
+                LogFactory.getLog(ComponentUtils.class).debug(
+                    StringUtils.format("Resolved undefined component location for '%s' with installation on '%s'", compInterfaceId,
+                        installation.getNodeId()));
                 return installation;
             }
         }
@@ -257,15 +267,18 @@ public final class ComponentUtils {
     /**
      * @param compInterfaceId Identifier of {@link ComponentInterface} to search for
      * @param installations {@link ComponentInstallation}s to search
-     * @param node the {@link NodeIdentifier} the component must be installed on
+     * @param node the {@link InstanceNodeSessionId} the component must be installed on
      * @return {@link ComponentInstallation} referring to {@link ComponentInstallation} identifier or <code>null</code>
      */
     public static ComponentInstallation getComponentInstallationForNode(String compInterfaceId,
-        Collection<ComponentInstallation> installations, NodeIdentifier node) {
+        Collection<ComponentInstallation> installations, LogicalNodeId node) {
+        if (installations == null) {
+            return null;
+        }
         for (ComponentInstallation installation : installations) {
             if (getComponentInterfaceIdentifierWithoutVersion(installation.getComponentRevision().getComponentInterface().getIdentifier())
                 .equals(getComponentInterfaceIdentifierWithoutVersion(compInterfaceId))
-                && installation.getNodeId().equals(node.getIdString())) {
+                && installation.getNodeId().equals(node.getLogicalNodeIdString())) {
                 return installation;
             }
         }
@@ -299,7 +312,7 @@ public final class ComponentUtils {
      * @return placeholder {@link ComponentDescription}
      */
     public static ComponentInstallation createPlaceholderComponentInstallation(String identifier, String version, String name,
-        String nodeId) {
+        LogicalNodeId nodeId) {
 
         if (name == null) {
             name = "N/A";
@@ -325,7 +338,7 @@ public final class ComponentUtils {
 
         ComponentInstallationImpl componentInstallation = new ComponentInstallationImpl();
         componentInstallation.setInstallationId(componentInterface.getIdentifier());
-        componentInstallation.setNodeId(nodeId);
+        componentInstallation.setNodeIdFromObject(nodeId);
         componentInstallation.setComponentRevision(componentRevision);
 
         return componentInstallation;
@@ -341,7 +354,7 @@ public final class ComponentUtils {
         Matcher matcherOfPlaceholder = getMatcherForPlaceholder(placeholder);
         return (matcherOfPlaceholder.group(ATTRIBUTE1) != null && (matcherOfPlaceholder.group(ATTRIBUTE1)
             .equals(GLOBALATTRIBUTE) | (matcherOfPlaceholder
-                .group(ATTRIBUTE2) != null && matcherOfPlaceholder.group(ATTRIBUTE2).equals(GLOBALATTRIBUTE))));
+            .group(ATTRIBUTE2) != null && matcherOfPlaceholder.group(ATTRIBUTE2).equals(GLOBALATTRIBUTE))));
     }
 
     /**
@@ -593,7 +606,7 @@ public final class ComponentUtils {
             ConfigurationDefinitionConstants.JSON_KEY_CONFIGURATION));
         configDef.setRawPlaceholderMetaDataDefinition(extractDefinitionAsList(placeholdersJson,
             ConfigurationDefinitionConstants.JSON_KEY_PLACEHOLDERS));
-        configDef.setRawActivationFilters(extractDefinitionAsMap(activationFilterJson,
+        configDef.setRawActivationFilter(extractDefinitionAsMap(activationFilterJson,
             ConfigurationDefinitionConstants.JSON_KEY_ACTIVATION_FILTER));
         return configDef;
     }
@@ -613,7 +626,7 @@ public final class ComponentUtils {
             ConfigurationDefinitionConstants.JSON_KEY_CONFIGURATION));
         extConfigDef.setRawPlaceholderMetaDataDefinition(extractDefinitionAsList(placeholdersJson,
             ConfigurationDefinitionConstants.JSON_KEY_PLACEHOLDERS));
-        extConfigDef.setActivationFilter(extractDefinitionAsMap(activationFilterJson,
+        extConfigDef.setRawActivationFilter(extractDefinitionAsMap(activationFilterJson,
             ConfigurationDefinitionConstants.JSON_KEY_ACTIVATION_FILTER));
         return extConfigDef;
     }
@@ -725,7 +738,7 @@ public final class ComponentUtils {
 
     /**
      * Reads the URL for the icon, correcting it if it does not fit.
-     *
+     * 
      * @param bundleName name of the bundle to look
      * @param iconName name of the icon
      * @return correct url, or null, if icon can't be found

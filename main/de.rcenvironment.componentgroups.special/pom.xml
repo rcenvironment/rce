@@ -26,12 +26,6 @@
 		<module>${modules-root}/de.rcenvironment.components.excel.execution</module>
 		<module>${modules-root}/de.rcenvironment.components.excel.gui</module>
 
-		<!-- sql component -->
-		<module>${modules-root}/de.rcenvironment.components.sql.common</module>
-		<module>${modules-root}/de.rcenvironment.components.sql.common.tests</module>
-		<module>${modules-root}/de.rcenvironment.components.sql.execution</module>
-		<module>${modules-root}/de.rcenvironment.components.sql.gui</module>
-
 		<!-- component group feature -->
 		<module>${modules-root}/de.rcenvironment.componentgroups.special.feature</module>
 	</modules>

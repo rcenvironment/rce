@@ -11,6 +11,8 @@ package de.rcenvironment.core.communication.testutils;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
+import de.rcenvironment.core.communication.api.LiveNetworkIdResolutionService;
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.api.PlatformService;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
@@ -19,6 +21,7 @@ import de.rcenvironment.core.communication.connection.api.ConnectionSetupService
 import de.rcenvironment.core.communication.connection.impl.ConnectionSetupServiceImpl;
 import de.rcenvironment.core.communication.connection.internal.MessageChannelServiceImpl;
 import de.rcenvironment.core.communication.internal.CommunicationServiceImpl;
+import de.rcenvironment.core.communication.internal.LiveNetworkIdResolutionServiceImpl;
 import de.rcenvironment.core.communication.internal.PlatformServiceImpl;
 import de.rcenvironment.core.communication.management.CommunicationManagementService;
 import de.rcenvironment.core.communication.management.RemoteBenchmarkService;
@@ -85,6 +88,7 @@ public final class VirtualCommunicationBundleFactory {
             listenerRegistrationService = new MockAdditionalServicesRegistrationService();
 
             serviceRegistry.registerProvidedService(nodeConfigurationService, NodeConfigurationService.class);
+            serviceRegistry.registerProvidedService(nodeConfigurationService.getNodeIdentifierService(), NodeIdentifierService.class);
 
             messageChannelService = new MessageChannelServiceImpl();
             serviceRegistry.registerManagedService(messageChannelService, MessageChannelService.class);
@@ -107,6 +111,8 @@ public final class VirtualCommunicationBundleFactory {
 
             serviceRegistry.registerManagedService(new PlatformServiceImpl(), PlatformService.class);
 
+            serviceRegistry.registerManagedService(new LiveNetworkIdResolutionServiceImpl(), false, LiveNetworkIdResolutionService.class);
+            
             serviceRegistry.registerManagedService(new RemoteServiceCallSenderServiceImpl(), false, RemoteServiceCallSenderService.class);
 
             // register stubs; replace when RPC callbacks should be made testable
@@ -214,18 +220,6 @@ public final class VirtualCommunicationBundleFactory {
     }
 
     private VirtualCommunicationBundleFactory() {}
-
-    /**
-     * Creates a {@link VirtualCommunicationBundle} from a node id and a display/log name.
-     * 
-     * @param nodeId the node id
-     * @param name the name of the node
-     * @param isRelay whether the "is relay" flag of this node should be set
-     * @return the new instance
-     */
-    public static VirtualCommunicationBundle createFromSettings(String nodeId, String name, boolean isRelay) {
-        return new VirtualCommunicationBundleImpl(new NodeConfigurationServiceTestStub(nodeId, name, isRelay));
-    }
 
     /**
      * Creates a {@link VirtualCommunicationBundle} from an existing {@link NodeConfigurationService}.

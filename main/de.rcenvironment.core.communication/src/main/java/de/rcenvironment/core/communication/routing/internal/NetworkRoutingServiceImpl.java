@@ -18,11 +18,14 @@ import java.util.Set;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.channel.MessageChannelService;
+import de.rcenvironment.core.communication.common.IdentifierException;
 import de.rcenvironment.core.communication.common.NetworkGraph;
 import de.rcenvironment.core.communication.common.NetworkGraphLink;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierContextHolder;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.messaging.direct.api.DirectMessagingSender;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
@@ -42,7 +45,7 @@ import de.rcenvironment.core.communication.routing.internal.v2.LinkStateKnowledg
 import de.rcenvironment.core.communication.routing.internal.v2.NoRouteToNodeException;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListenerAdapter;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
@@ -66,11 +69,11 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         // private LinkState localLinkState = new LinkState(new ArrayList<Link>());
 
         @Override
-        public void onLinkStateKnowledgeChanged(Map<NodeIdentifier, LinkState> knowledge) {
+        public void onLinkStateKnowledgeChanged(Map<InstanceNodeSessionId, LinkState> knowledge) {
             if (verboseLogging) {
                 StringBuilder buffer = new StringBuilder();
-                buffer.append(StringUtils.format("New link state knowledge of %s (%d entries):", localNodeId, knowledge.size()));
-                for (Entry<NodeIdentifier, LinkState> entry : knowledge.entrySet()) {
+                buffer.append(StringUtils.format("New link state knowledge of %s (%d entries):", localInstanceSessionId, knowledge.size()));
+                for (Entry<InstanceNodeSessionId, LinkState> entry : knowledge.entrySet()) {
                     buffer.append(StringUtils.format("\n  Link state for %s: %s", entry.getKey(), entry.getValue()));
                 }
                 log.debug(buffer.toString());
@@ -81,14 +84,14 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
                 return;
             }
             // consistency check
-            if (localNodeId == null) {
+            if (localInstanceSessionId == null) {
                 throw new IllegalStateException();
             }
 
-            NetworkGraphImpl rawGraph = new NetworkGraphImpl(localNodeId);
+            NetworkGraphImpl rawGraph = new NetworkGraphImpl(localInstanceSessionId);
 
-            Set<NodeIdentifier> nodeIdsWithLinkState = knowledge.keySet();
-            for (NodeIdentifier nodeId : nodeIdsWithLinkState) {
+            Set<InstanceNodeSessionId> nodeIdsWithLinkState = knowledge.keySet();
+            for (InstanceNodeSessionId nodeId : nodeIdsWithLinkState) {
                 if (nodeId == null) {
                     throw new IllegalArgumentException("Map contained 'null' node id");
                 }
@@ -96,17 +99,17 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             }
             // consistency check
             int expectedGraphSize = knowledge.size();
-            if (!knowledge.containsKey(localNodeId)) {
+            if (!knowledge.containsKey(localInstanceSessionId)) {
                 expectedGraphSize++;
             }
             if (rawGraph.getNodeCount() != expectedGraphSize) {
                 throw new IllegalStateException(StringUtils.format("Graph with %d nodes constructed, but expectes size was %d",
-                    rawGraph.getNodeCount(), localNodeId));
+                    rawGraph.getNodeCount(), localInstanceSessionId));
             }
 
             int totalLinks = 0;
-            for (Map.Entry<NodeIdentifier, LinkState> entry : knowledge.entrySet()) {
-                NodeIdentifier sourceNodeId = entry.getKey();
+            for (Map.Entry<InstanceNodeSessionId, LinkState> entry : knowledge.entrySet()) {
+                InstanceNodeSessionId sourceNodeId = entry.getKey();
                 LinkState linkState = entry.getValue();
                 List<Link> links = linkState.getLinks();
                 addLinks(rawGraph, sourceNodeId, links);
@@ -120,19 +123,25 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             updateFromRawNetworkGraph(rawGraph);
         }
 
-        private void addNode(NetworkGraphImpl rawGraph, NodeIdentifier nodeId) {
+        private void addNode(NetworkGraphImpl rawGraph, InstanceNodeSessionId nodeId) {
             rawGraph.addNode(nodeId);
         }
 
-        private void addLinks(NetworkGraphImpl rawGraph, NodeIdentifier sourceNodeId, List<Link> links) {
+        private void addLinks(NetworkGraphImpl rawGraph, InstanceNodeSessionId sourceNodeId, List<Link> links) {
             for (Link link : links) {
-                NodeIdentifier targetNodeId = NodeIdentifierFactory.fromNodeId(link.getNodeIdString());
+                InstanceNodeSessionId targetNodeId;
+                try {
+                    targetNodeId = nodeIdentifierService.parseInstanceNodeSessionIdString(link.getNodeIdString());
+                } catch (IdentifierException e) {
+                    // note: currently not handling malformed ids here; will throw RTE on failure
+                    throw NodeIdentifierUtils.wrapIdentifierException(e);
+                }
                 rawGraph.addLink(new NetworkGraphLinkImpl(link.getLinkId(), sourceNodeId, targetNodeId));
             }
         }
 
         @Override
-        public void onLinkStatesUpdated(Map<NodeIdentifier, LinkState> delta) {
+        public void onLinkStatesUpdated(Map<InstanceNodeSessionId, LinkState> delta) {
             if (verboseLogging) {
                 log.debug("Updated link states for " + delta.size() + " nodes: " + delta.keySet());
             }
@@ -141,7 +150,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         @Override
         public void onLocalLinkStateUpdated(LinkState linkState) {
             if (verboseLogging) {
-                log.debug("Local link state updated (for " + localNodeId + "): " + linkState);
+                log.debug("Local link state updated (for " + localInstanceSessionId + "): " + linkState);
             }
             // localLinkState = linkState;
         }
@@ -161,7 +170,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
             NetworkGraphImpl rawNetworkGraph;
             synchronized (topologyMap) {
                 log.debug(StringUtils.format("Low-level topology change detected; the topology map of %s"
-                    + " now contains %d node(s) and %d connection(s)", localNodeId,
+                    + " now contains %d node(s) and %d connection(s)", localInstanceSessionId,
                     topologyMap.getNodeCount(), topologyMap.getLinkCount()));
 
                 rawNetworkGraph = (NetworkGraphImpl) topologyMap.toRawNetworkGraph();
@@ -178,7 +187,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     private DirectMessagingSender directMessagingSender;
 
-    private NodeConfigurationService configurationService;
+    private NodeConfigurationService nodeConfigurationService;
 
     private LinkStateRoutingProtocolManager protocolManager;
 
@@ -186,7 +195,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     private volatile NetworkGraphImpl cachedReachableNetworkGraph;
 
-    private NodeIdentifier localNodeId;
+    private InstanceNodeSessionId localInstanceSessionId;
 
     private TopologyMap topologyMap;
 
@@ -204,20 +213,19 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
 
     private int forwardingTimeoutMsec;
 
-    private String localNodeIdString;
+    private NodeIdentifierService nodeIdentifierService;
 
     /**
      * OSGi activate method.
      */
     public void activate() {
-        ownNodeInformation = configurationService.getInitialNodeInformation();
-        routedRequestTimeoutMsec = configurationService.getRequestTimeoutMsec();
-        forwardingTimeoutMsec = configurationService.getForwardingTimeoutMsec();
-        localNodeId = ownNodeInformation.getNodeId();
-        localNodeIdString = localNodeId.getIdString();
+        ownNodeInformation = nodeConfigurationService.getInitialNodeInformation();
+        routedRequestTimeoutMsec = nodeConfigurationService.getRequestTimeoutMsec();
+        forwardingTimeoutMsec = nodeConfigurationService.getForwardingTimeoutMsec();
+        localInstanceSessionId = ownNodeInformation.getInstanceNodeSessionId();
 
         // create initial placeholders
-        NetworkGraphImpl initialRawNetworkGraph = new NetworkGraphImpl(localNodeId);
+        NetworkGraphImpl initialRawNetworkGraph = new NetworkGraphImpl(localInstanceSessionId);
         updateFromRawNetworkGraph(initialRawNetworkGraph);
 
         // initialize tracker with initial graph
@@ -239,15 +247,22 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     }
 
     @Override
-    public NetworkResponse performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver) {
-        return performRoutedRequest(payload, messageType, receiver, routedRequestTimeoutMsec);
+    public NetworkResponse performRoutedRequest(byte[] payload, String messageType, InstanceNodeSessionId receiver) {
+        // TODO find a more generic solution to this
+        final NodeIdentifierService previousService =
+            NodeIdentifierContextHolder.setDeserializationServiceForCurrentThread(nodeIdentifierService);
+        try {
+            return performRoutedRequest(payload, messageType, receiver, routedRequestTimeoutMsec);
+        } finally {
+            NodeIdentifierContextHolder.setDeserializationServiceForCurrentThread(previousService);
+        }
     }
 
     @Override
-    public NetworkResponse performRoutedRequest(byte[] payload, String messageType, NodeIdentifier receiver, int timeoutMsec) {
-        final NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, localNodeId, receiver);
-        if (forceLocalRPCSerialization && receiver.equals(localNodeId)) {
-            return messageChannelService.handleLocalForcedSerializationRPC(request, localNodeId);
+    public NetworkResponse performRoutedRequest(byte[] payload, String messageType, InstanceNodeSessionId receiver, int timeoutMsec) {
+        final NetworkRequest request = NetworkRequestFactory.createNetworkRequest(payload, messageType, localInstanceSessionId, receiver);
+        if (forceLocalRPCSerialization && receiver.equals(localInstanceSessionId)) {
+            return messageChannelService.handleLocalForcedSerializationRPC(request, localInstanceSessionId);
         }
         return sendToNextHopAndAwaitResponse(request, timeoutMsec);
     }
@@ -259,7 +274,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     }
 
     @Override
-    public List<? extends NetworkGraphLink> getRouteTo(NodeIdentifier destination) {
+    public List<? extends NetworkGraphLink> getRouteTo(InstanceNodeSessionId destination) {
         return cachedReachableNetworkGraph.getRoutingInformation().getRouteTo(destination);
     }
 
@@ -305,10 +320,11 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
      */
     public void bindNodeConfigurationService(NodeConfigurationService service) {
         // do not allow rebinding for now
-        if (this.configurationService != null) {
+        if (this.nodeConfigurationService != null) {
             throw new IllegalStateException();
         }
-        this.configurationService = service;
+        this.nodeConfigurationService = service;
+        this.nodeIdentifierService = nodeConfigurationService.getNodeIdentifierService();
     }
 
     /**
@@ -353,7 +369,7 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         if (verboseLogging) {
             log.debug(StringUtils.format(
                 "Updating %s with a raw graph of %d nodes and %d edges resulted in a reachable graph of %d nodes and %d edges",
-                localNodeId,
+                localInstanceSessionId,
                 rawNetworkGraph.getNodeCount(), rawNetworkGraph.getLinkCount(),
                 cachedReachableNetworkGraph.getNodeCount(), cachedReachableNetworkGraph.getLinkCount()));
         }
@@ -376,9 +392,9 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         // extract common metadata for logging
         MessageMetaData metadata = forwardingRequest.accessMetaData();
         String requestId = forwardingRequest.getRequestId();
-        String ownNodeIdString = localNodeId.getIdString();
-        String sender = metadata.getSender().getIdString();
-        String receiver = metadata.getFinalRecipient().getIdString();
+        String localNodeIdString = localInstanceSessionId.getInstanceNodeSessionIdString();
+        String sender = metadata.getSenderIdString();
+        String receiver = metadata.getFinalRecipientIdString();
 
         // TODO while improved in 7.0, this still blocks one thread for each forwarded request
         final NetworkResponse response = sendToNextHopAndAwaitResponse(forwardingRequest, forwardingTimeoutMsec);
@@ -386,13 +402,13 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
         if (response == null) {
             throw new IllegalStateException(
                 StringUtils.format("NULL response after forwarding message from %s to %s at %s (ReqId=%s)", sender,
-                    receiver, ownNodeIdString, requestId));
+                    receiver, localNodeIdString, requestId));
         }
         return response;
     }
 
     private NetworkResponse sendToNextHopAndAwaitResponse(final NetworkRequest request, int timeoutMsec) {
-        WaitForResponseBlocker responseBlocker = new WaitForResponseBlocker(request, localNodeId);
+        WaitForResponseBlocker responseBlocker = new WaitForResponseBlocker(request, localInstanceSessionId);
         sendToNextHopAsync(request, responseBlocker);
         return responseBlocker.await(timeoutMsec);
 
@@ -418,22 +434,22 @@ public class NetworkRoutingServiceImpl implements NetworkRoutingService, Message
     }
 
     private void sendToNextHopAsync(final NetworkRequest request, NetworkResponseHandler responseHandler) {
-        NodeIdentifier receiver = request.accessMetaData().getFinalRecipient();
+        InstanceNodeSessionId receiver = request.accessMetaData().getFinalRecipient();
         NetworkGraphLink nextLink;
         try {
             // TODO move routing into Callable for faster return of caller thread? (still relevant @4.0?) - misc_ro
             nextLink = cachedReachableNetworkGraph.getRoutingInformation().getNextLinkTowards(receiver);
         } catch (NoRouteToNodeException e) {
-            final NodeIdentifier sender = request.accessMetaData().getSender();
+            final InstanceNodeSessionId sender = request.accessMetaData().getSender();
             log.debug(StringUtils.format("Found no route for a request from %s to %s (type=%s, trace=%s)",
                 sender, receiver, request.getMessageType(), request.accessMetaData().getTrace()));
 
             // generate failure response
             final NetworkResponse response;
-            if (localNodeId.equals(sender)) {
-                response = NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localNodeId);
+            if (localInstanceSessionId.equals(sender)) {
+                response = NetworkResponseFactory.generateResponseForNoRouteAtSender(request, localInstanceSessionId);
             } else {
-                response = NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localNodeId);
+                response = NetworkResponseFactory.generateResponseForNoRouteWhileForwarding(request, localInstanceSessionId);
             }
 
             // send to result handler

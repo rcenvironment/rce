@@ -71,12 +71,6 @@
   		<toc file="help/toc.xml"/>
  	</extension>
    
-      <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator 
-      		class="de.rcenvironment.components.database.gui.DatabaseComponentWorkflowNodeValidator"
-            filter="de.rcenvironment.components.database.gui.DatabaseComponentFilter">
-      </validator>
-   </extension>
    <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.database.gui.DatabaseHistoryDataItemSubtreeBuilder"/>
    </extension>

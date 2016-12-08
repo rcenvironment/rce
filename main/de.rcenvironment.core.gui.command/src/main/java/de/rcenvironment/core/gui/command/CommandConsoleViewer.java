@@ -55,10 +55,10 @@ import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.utils.common.ClipboardHelper;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A visual command console for executing RCE commands.
@@ -517,7 +517,7 @@ public class CommandConsoleViewer extends ViewPart {
                         increaseCurrentLine(); // TODO problematic
                         insertRCEPrompt();
                         // run command in separate thread to keep the UI responsive
-                        SharedThreadPool.getInstance().execute(new ExecuteCommand(command));
+                        ConcurrencyUtils.getAsyncTaskService().execute(new ExecuteCommand(command));
                     }
                 }
             } else if (keyEvent.keyCode == SWT.HOME) {

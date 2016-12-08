@@ -5,43 +5,22 @@
 	"accounts" : {
 		"admin" : {
 			"password" : "changeme!_adm",
-			"role" : "admin",
+			"role" : "developer",
 			"enabled" : false
 		},
 		"developer" : {
 			"password" : "changeme!_dev",
-			"role" : "user",
+			"role" : "developer",
 			"enabled" : false
 		},
 		"user" : {
 			"password" : "changeme!_user",
-			"role" : "user",
+			"role" : "local_admin",
 			"enabled" : false
 		},
 		"default" : {
 			"password" : "default",
-			"role" : "guest"
-		}
-	},
-	"roles" : {
-		"admin" : {
-			"allowedCommandPatterns" : [
-				".*"
-			]
-		},
-		"user" : {
-			"allowedCommandPatterns" : [
-				"net info",
-				"components list",
-				"wf run .+",
-				"net add .+"
-			]
-		},
-		"guest" : {
-			"allowedCommandPatterns" : [
-				"net info",
-				"components list"
-			]
+			"role" : "default"
 		}
 	}
 }

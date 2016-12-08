@@ -15,6 +15,8 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.components.excel.common.ChannelValue;
+import de.rcenvironment.components.excel.common.ExcelAddress;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelComponentHistoryDataItem;
 import de.rcenvironment.components.excel.common.ExcelUtils;
@@ -33,8 +35,6 @@ import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 
 /**
@@ -167,7 +167,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                     componentContext.writeOutput(outputName, text);
                 } else if (td != null) {
                     componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to"
-                        + " %s (data type of output '%s')...", DataType.ShortText.getDisplayName(), td, outputName));
+                        + " %s (data type of output '%s')...", td, DataType.ShortText.getDisplayName(), outputName));
                     ShortTextTD text;
                     try {
                         text = typedDatumConverter.castOrConvertUnsafe(td, ShortTextTD.class);
@@ -188,7 +188,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                     componentContext.writeOutput(outputName, number);
                 } else if (td != null) {
                     componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to"
-                        + " %s (data type of output '%s')...", DataType.Float.getDisplayName(), td, outputName));
+                        + " %s (data type of output '%s')...", td, DataType.Float.getDisplayName(), outputName));
                     FloatTD number;
                     try {
                         number = typedDatumConverter.castOrConvert(td, FloatTD.class);
@@ -209,7 +209,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                     componentContext.writeOutput(outputName, number);
                 } else if (td != null) {
                     componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to %s "
-                        + "(data type of output '%s')...", DataType.Integer.getDisplayName(), td, outputName));
+                        + "(data type of output '%s')...", td, DataType.Integer.getDisplayName(), outputName));
                     IntegerTD number;
                     try {
                         number = typedDatumConverter.castOrConvert(td, IntegerTD.class);
@@ -230,7 +230,7 @@ public class ExcelComponent extends ExcelRCEComponent {
                     componentContext.writeOutput(outputName, b);
                 } else if (td != null) {
                     componentLog.componentInfo(StringUtils.format("Trying to convert '%s' (value of cell in Excel) to %s "
-                        + "(data type of output '%s')...", DataType.Boolean.getDisplayName(), td, outputName));
+                        + "(data type of output '%s')...", td, DataType.Boolean.getDisplayName(), outputName));
                     BooleanTD b;
                     try {
                         b = typedDatumConverter.castOrConvert(td, BooleanTD.class);

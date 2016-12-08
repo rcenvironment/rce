@@ -18,12 +18,12 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionContext;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Helper class to call components in parallel.
@@ -44,7 +44,7 @@ public abstract class ParallelComponentCaller {
     }
 
     protected Throwable callParallelAndWait() {
-        CallablesGroup<Throwable> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Throwable.class);
+        CallablesGroup<Throwable> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Throwable.class);
         for (String executionId : compsToConsider) {
             final String finalExecutionId = executionId;
             callablesGroup.add(new Callable<Throwable>() {

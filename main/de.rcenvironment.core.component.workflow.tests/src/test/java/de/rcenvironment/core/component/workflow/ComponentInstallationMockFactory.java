@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow;
 
 import java.util.ArrayList;
@@ -13,6 +13,7 @@ import java.util.List;
 
 import org.easymock.EasyMock;
 
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentRevision;
@@ -21,13 +22,27 @@ import de.rcenvironment.core.component.model.api.ComponentRevision;
  * Factory for {@link ComponentInstallation} instances.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke
  */
 public final class ComponentInstallationMockFactory {
 
     private ComponentInstallationMockFactory() {}
-    
+
     /**
-     * Creates {@link ComponentInstallation} instance.
+     * Creates a {@link ComponentInstallation} instance. This method variant should be preferred over the one taking a node string id for
+     * better abstraction.
+     * 
+     * @param identifier component identifier
+     * @param version component version
+     * @param nodeId node id the component is installed on
+     * @return {@link ComponentInstallation} instance
+     */
+    public static ComponentInstallation createComponentInstallationMock(String identifier, String version, LogicalNodeId nodeId) {
+        return createComponentInstallationMock(identifier, version, nodeId.getLogicalNodeIdString());
+    }
+
+    /**
+     * Creates a {@link ComponentInstallation} instance.
      * 
      * @param identifier component identifier
      * @param version component version
@@ -42,17 +57,17 @@ public final class ComponentInstallationMockFactory {
         EasyMock.expect(compInterface.getIdentifiers()).andStubReturn(identifiers);
         EasyMock.expect(compInterface.getVersion()).andStubReturn(version);
         EasyMock.replay(compInterface);
-        
+
         ComponentRevision compRevision = EasyMock.createStrictMock(ComponentRevision.class);
         EasyMock.expect(compRevision.getComponentInterface()).andStubReturn(compInterface);
         EasyMock.replay(compRevision);
-        
+
         ComponentInstallation compInstallation = EasyMock.createStrictMock(ComponentInstallation.class);
         EasyMock.expect(compInstallation.getComponentRevision()).andStubReturn(compRevision);
         EasyMock.expect(compInstallation.getNodeId()).andStubReturn(nodeId);
         EasyMock.replay(compInstallation);
-        
+
         return compInstallation;
     }
-    
+
 }

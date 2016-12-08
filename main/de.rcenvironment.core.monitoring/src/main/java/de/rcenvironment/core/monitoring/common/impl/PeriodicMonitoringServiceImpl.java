@@ -26,9 +26,11 @@ import de.rcenvironment.core.configuration.CommandLineArguments;
 import de.rcenvironment.core.configuration.ConfigurationSegment;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.monitoring.common.spi.PeriodicMonitoringDataContributor;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsConsumer;
+import de.rcenvironment.toolkit.modules.objectbindings.api.ObjectBindingsService;
 
 /**
  * Implementation of a background task that collects all existing {@link PeriodicMonitoringDataContributor}s, and periodically calls those
@@ -53,6 +55,8 @@ public class PeriodicMonitoringServiceImpl {
     private ScheduledFuture<?> taskFuture;
 
     private int intervalSec = DEFAULT_MONITORING_INTERVAL_SECS;
+
+    private ObjectBindingsService objectBindingsService;
 
     /**
      * The periodic background task performing the actual data collection and dispatch (for example, writing the generated lines to a log
@@ -106,8 +110,22 @@ public class PeriodicMonitoringServiceImpl {
 
         // always start the task, as topics may be enabled at a later time
         // TODO leave at this initial delay or start immediately?
-        taskFuture = SharedThreadPool.getInstance()
+        taskFuture = ConcurrencyUtils.getAsyncTaskService()
             .scheduleAtFixedRate(new BackgroundTask(), TimeUnit.SECONDS.toMillis(intervalSec));
+
+        objectBindingsService.setConsumer(PeriodicMonitoringDataContributor.class,
+            new ObjectBindingsConsumer<PeriodicMonitoringDataContributor>() {
+
+                @Override
+                public void addInstance(PeriodicMonitoringDataContributor instance) {
+                    addContributor(instance);
+                }
+
+                @Override
+                public void removeInstance(PeriodicMonitoringDataContributor instance) {
+                    removeContributor(instance);
+                }
+            });
     }
 
     /**
@@ -120,12 +138,7 @@ public class PeriodicMonitoringServiceImpl {
         }
     }
 
-    /**
-     * OSGi-DS bind method.
-     * 
-     * @param contributor the contributor instance to add
-     */
-    public void addContributor(PeriodicMonitoringDataContributor contributor) {
+    private void addContributor(PeriodicMonitoringDataContributor contributor) {
         synchronized (contributors) {
             for (String id : contributor.getTopicIds()) {
                 // log.debug("Registering monitoring id " + id);
@@ -135,12 +148,7 @@ public class PeriodicMonitoringServiceImpl {
         }
     }
 
-    /**
-     * OSGi-unDS bind method.
-     * 
-     * @param contributor the contributor instance to add
-     */
-    public void removeContributor(PeriodicMonitoringDataContributor contributor) {
+    private void removeContributor(PeriodicMonitoringDataContributor contributor) {
         synchronized (contributors) {
             for (String id : contributor.getTopicIds()) {
                 // note: this assumes unique topic id
@@ -157,6 +165,15 @@ public class PeriodicMonitoringServiceImpl {
      */
     public void bindConfigurationService(ConfigurationService newInstance) {
         configurationService = newInstance;
+    }
+
+    /**
+     * OSGi-DS bind method.
+     * 
+     * @param newInstance the provided service instance
+     */
+    public void bindObjectBindingsService(ObjectBindingsService newInstance) {
+        objectBindingsService = newInstance;
     }
 
     private void loadConfigurationData() {

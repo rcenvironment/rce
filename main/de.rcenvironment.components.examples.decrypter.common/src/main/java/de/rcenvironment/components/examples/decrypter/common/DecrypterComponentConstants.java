@@ -39,13 +39,13 @@ public final class DecrypterComponentConstants {
     public static final String CONIG_KEY_DECRYPTING_PASSPHRASE = "decryptingPassphrase";
 
     /** Constant for static input name. */
-    public static final String INCOMING_ENPOINT_ENCRYPTED_FILE = "Encrypted File";
+    public static final String INPUT_NAME_FILE = "Encrypted File";
 
     /** Constant for the default password. */
     public static final String DEFAULT_PASSWORD = "GoodNewsEveryone";
 
     /** Constant for static output name. */
-    public static final String OUTPUT_NAME = "Decrypted result";
+    public static final String OUTPUT_NAME_RESULT = "Decrypted result";
 
     private DecrypterComponentConstants() {
 

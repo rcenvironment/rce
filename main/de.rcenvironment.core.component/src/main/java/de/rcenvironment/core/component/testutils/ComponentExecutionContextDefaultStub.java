@@ -12,7 +12,8 @@ import java.io.File;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
@@ -58,12 +59,12 @@ public class ComponentExecutionContextDefaultStub implements ComponentExecutionC
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public LogicalNodeId getNodeId() {
         return null;
     }
 
     @Override
-    public NodeIdentifier getDefaultStorageNodeId() {
+    public LogicalNodeId getDefaultStorageNodeId() {
         return null;
     }
 
@@ -83,7 +84,7 @@ public class ComponentExecutionContextDefaultStub implements ComponentExecutionC
     }
 
     @Override
-    public NodeIdentifier getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowNodeId() {
         return null;
     }
 
@@ -127,5 +128,8 @@ public class ComponentExecutionContextDefaultStub implements ComponentExecutionC
         return null;
     }
 
-
+    @Override
+    public ServiceCallContext getServiceCallContext() {
+        return null;
+    }
 }

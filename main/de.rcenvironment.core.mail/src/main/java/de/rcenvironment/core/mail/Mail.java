@@ -8,52 +8,81 @@
 
 package de.rcenvironment.core.mail;
 
-import java.util.List;
-
-import de.rcenvironment.core.utils.incubator.Assertions;
+import jodd.mail.Email;
+import jodd.mail.EmailAddress;
+import jodd.mail.MailAddress;
+import de.rcenvironment.core.utils.common.StringUtils;
 
 /**
- * Class representing an e-mail.
- * 
- * @author Tobias Menden
+ * This class is a utility to make sure that only valid mails can be created.
+ *
+ * @author Tobias Rodehutskors
  */
-public class Mail {
+public final class Mail {
 
-    private static final String ASSERTION_DEFINED = "The parameter must not be null: ";
-    
-    private final List<String> recipients;
+    private Email email;
 
-    private final String subject;
+    /**
+     * Private constructor to avoid creation of unvalidated instances.
+     */
+    private Mail() {
 
-    private final String text;
-
-    private final String replyTo;
-
-    public Mail(List<String> recipients, String subject, String text, String replyTo) throws IllegalArgumentException {
-        Assertions.isDefined(recipients, ASSERTION_DEFINED + "recepient");
-        Assertions.isDefined(subject, ASSERTION_DEFINED + "subject");
-        Assertions.isDefined(text, ASSERTION_DEFINED + "text");
-        Assertions.isDefined(replyTo, ASSERTION_DEFINED + "replyTo");
-        this.recipients = recipients;
-        this.subject = subject;
-        this.text = text;
-        this.replyTo = replyTo;
     }
 
-    public List<String> getRecipients() {
-        return recipients;
+    /**
+     * Creates a new Mail that is valid. If the mail cannot be created, since the given parameters are not valid, a
+     * {@link InvalidMailException} will be thrown.
+     * 
+     * @param recipients An array of recipient email addresses. All these recipients will be added to the TO field of the created mail. At
+     *        least one recipient has to be configured.
+     * @param subject The required subject of this mail.
+     * @param text The text of the mail. You need to specify at least one of text and htmlText.
+     * @param htmlText The HTML text of the mail. You need to specify at least one of text and htmlText.
+     * @throws InvalidMailException On validation errors during the construction of this mail.
+     * @return The validated mail.
+     */
+    public static Mail createMail(String[] recipients, String subject, String text, String htmlText)
+        throws InvalidMailException {
+
+        if (recipients == null || recipients.length < 1) {
+            throw new InvalidMailException("You need to configure at least one valid recipient.");
+        }
+
+        Email tmpEmail = new Email();
+
+        // verify that all recipients are valid mail addresses
+        for (String recipient : recipients) {
+            EmailAddress recipientEmailAddress = new EmailAddress(recipient);
+            if (!recipientEmailAddress.isValid()) {
+                throw new InvalidMailException(StringUtils.format("The email address %s is not valid.", recipient));
+            }
+
+            tmpEmail.addTo(new MailAddress(recipientEmailAddress));
+        }
+
+        if (subject == null) {
+            throw new InvalidMailException("You need to specify a subject.");
+        }
+        tmpEmail.subject(subject);
+
+        if (text == null && htmlText == null) {
+            throw new InvalidMailException("You need to specify either a text or a HTML text.");
+        }
+
+        if (text != null) {
+            tmpEmail.addText(text);
+        }
+
+        if (htmlText != null) {
+            tmpEmail.addHtml(htmlText);
+        }
+
+        Mail mail = new Mail();
+        mail.email = tmpEmail;
+        return mail;
     }
 
-    public String getSubject() {
-        return subject;
+    public Email getMail() {
+        return this.email;
     }
-
-    public String getText() {
-        return text;
-    }
-
-    public String getReplyTo() {
-        return replyTo;
-    }
-
 }

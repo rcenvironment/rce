@@ -44,7 +44,7 @@ import org.eclipse.ui.ISharedImages;
 import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.part.ViewPart;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleModelSnapshot;
 import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowFilter;
@@ -52,7 +52,7 @@ import de.rcenvironment.core.component.workflow.execution.api.ConsoleRowModelSer
 import de.rcenvironment.core.gui.resources.api.FontManager;
 import de.rcenvironment.core.gui.resources.api.StandardFonts;
 import de.rcenvironment.core.gui.workflow.Activator;
-import de.rcenvironment.core.gui.workflow.parts.ReadOnlyWorkflowNodePart.ComponentStateFigureImpl;
+import de.rcenvironment.core.gui.workflow.parts.WorkflowRunNodePart.ComponentStateFigureImpl;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
 
@@ -132,14 +132,14 @@ public class ConsoleView extends ViewPart {
     private Display display;
 
     private ServiceRegistryPublisherAccess serviceRegistryAccess;
-    
+
     private MenuItem copyLineItem;
-    
+
     private MenuItem copyMessageItem;
 
     /**
-     * A timer task that is used to periodically check the {@link ConsoleRowModelService} for modifications. This approach was chosen
-     * over a callback/observer structure to realize rate limiting of GUI updates to ensure responsiveness in high CPU load situations.
+     * A timer task that is used to periodically check the {@link ConsoleRowModelService} for modifications. This approach was chosen over a
+     * callback/observer structure to realize rate limiting of GUI updates to ensure responsiveness in high CPU load situations.
      * 
      * @author Robert Mischke
      */
@@ -280,7 +280,7 @@ public class ConsoleView extends ViewPart {
         sashComposite.setLayout(new GridLayout(1, false));
 
         createTableArrangement(sashComposite);
-        
+
         // Triggers if the copy functions in context menu are enabled
         consoleRowTableViewer.getTable().addMenuDetectListener(new MenuDetectListener() {
 
@@ -290,8 +290,6 @@ public class ConsoleView extends ViewPart {
                 copyMessageItem.setEnabled(!consoleRowTableViewer.getSelection().isEmpty());
             }
         });
-        
-        
 
         // set text field listener
         searchTextField.addKeyListener(new KeyAdapter() {
@@ -383,8 +381,9 @@ public class ConsoleView extends ViewPart {
         serviceRegistryAccess.registerService(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
 
             @Override
-            public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
-                Set<NodeIdentifier> removedWfHosts) {
+            public void onReachableWorkflowHostsChanged(Set<InstanceNodeSessionId> reachableWfHosts,
+                Set<InstanceNodeSessionId> addedWfHosts,
+                Set<InstanceNodeSessionId> removedWfHosts) {
 
                 consoleModel.updateSubscriptions();
                 display.asyncExec(new Runnable() {
@@ -624,7 +623,6 @@ public class ConsoleView extends ViewPart {
         copyLineItem.setImage(Activator.getInstance().getImageRegistry().get(Activator.IMAGE_COPY));
         copyLineItem.addSelectionListener(new CopyToClipboardListener(consoleRowTableViewer));
         consoleRowTableViewer.getControl().setMenu(contextMenu);
-        
 
     }
 
@@ -666,10 +664,9 @@ public class ConsoleView extends ViewPart {
                 } else if ((e.stateMask == (SWT.CTRL + SWT.ALT) && (e.keyCode == 'c')) && copyLineItem.isEnabled()) {
                     CopyToClipboardHelper helper = new CopyToClipboardHelper(table);
                     helper.copyToClipboard(CopyToClipboardHelper.COPY_MESSAGE);
-                } 
+                }
             }
         });
     }
-
 
 }

@@ -25,10 +25,11 @@ import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.configuration.bootstrap.BootstrapConfiguration;
 import de.rcenvironment.core.start.common.Instance;
+import de.rcenvironment.core.toolkitbridge.api.ToolkitBridge;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.incubator.IdGenerator;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * This class either (a) opens a tcp port and listens for orders to shutdown itself or (b) it tries to connect to another running instance
@@ -39,6 +40,8 @@ import de.rcenvironment.core.utils.incubator.IdGenerator;
  * @author Robert Mischke
  */
 public class HeadlessShutdown {
+
+    private static final int SHUTDOWN_TOKEN_LENGTH = 32;
 
     private static final String TOKEN_FILENAME = "shutdown.dat";
 
@@ -65,6 +68,7 @@ public class HeadlessShutdown {
                 writeToLog("Running this instance as a shutdown signal sender");
                 sendShutdownTokenInternal(bootstrapSettings.getTargetShutdownDataDirectory());
             } catch (IOException e) {
+                logger.error("Failed to shutdown external instance: " + e.getMessage());
                 throw new RuntimeException(e);
             } finally {
                 tryToRemoveInternalProfileDir();
@@ -105,7 +109,7 @@ public class HeadlessShutdown {
         int port = serverSocket.getLocalPort();
 
         // generate (pseudo-)random secret token
-        final String secretString = IdGenerator.randomUUIDWithoutDashes();
+        final String secretString = IdGenerator.secureRandomHexString(SHUTDOWN_TOKEN_LENGTH);
 
         String secret = StringUtils.escapeAndConcat(String.valueOf(port), secretString);
         File secretFile = new File(shutdownDataDir, TOKEN_FILENAME);
@@ -115,7 +119,19 @@ public class HeadlessShutdown {
 
         writeToLog("Stored shutdown information at location " + secretFile.getAbsolutePath());
 
-        SharedThreadPool.getInstance().execute(new Runnable() {
+        // necessary as both bundles are on OSGi start level 3, and the wrapped method uses ConcurrencyUtils.getAsyncTaskService()
+        ToolkitBridge.afterToolkitAvailable(new Runnable() {
+
+            @Override
+            public void run() {
+                startShutdownListener(serverSocket, secretString);
+            }
+        });
+
+    }
+
+    private void startShutdownListener(final ServerSocket serverSocket, final String secretString) {
+        ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
             @Override
             @TaskDescription("Service/daemon shutdown listener")
@@ -134,20 +150,19 @@ public class HeadlessShutdown {
                     if (message.contains("shutdown") && message.contains(secretString)) {
                         writeToLog("Received shutdown signal, shutting down");
                         IOUtils.closeQuietly(serverSocket);
-                        Instance.shutdown();
+                        Instance.shutdown(); // non-blocking
                         try {
                             Thread.sleep(REGULAR_SHUTDOWN_WAIT_TIME_MSEC);
-                        } catch (InterruptedException e) {
-                            logger.error(e);
                             writeToLog("Regular shutdown time expired, shutting down hard using System.exit()");
                             System.exit(0);
+                        } catch (InterruptedException e) {
+                            writeToLog("Received expected interrupt before the shutdown timeout expired");
                         }
                     }
                 }
             }
 
         });
-
     }
 
     private Socket waitForConnection(ServerSocket serverSocket) throws IOException {

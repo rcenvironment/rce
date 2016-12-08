@@ -55,6 +55,11 @@ public final class ComponentConstants {
      * Key for full qualified name of the component implementing class.
      */
     public static final String COMPONENT_CLASS_KEY = "rce.component.class";
+    
+    /**
+     * Key for componentValidator id.
+     */
+    public static final String COMPONENT_VALIDATOR_ID_KEY = "rce.component.validator.identifier";
 
     /** Key for component's name. */
     public static final String COMPONENT_NAME_KEY = "rce.component.name";
@@ -180,7 +185,7 @@ public final class ComponentConstants {
     /**
      * Notification identifier for input values notifications.
      */
-    public static final String PORCESSED_INPUT_NOTIFICATION_ID_SUFFIX = ":rce.component.input";
+    public static final String NOTIFICATION_ID_PREFIX_PROCESSED_INPUT = "rce.component.input:";
 
     /** Substring of identifier of placeholder component used if a given one is not available. */
     public static final String PLACEHOLDER_COMPONENT_IDENTIFIER_CLASS = "de.rcenvironment.rce.component.Placeholder_";
@@ -233,6 +238,9 @@ public final class ComponentConstants {
     public static final String CONFIG_KEY_STORE_DATA_ITEM = "storeComponentHistoryData";
 
     /** Constant. */
+    public static final String COMPONENT_CONFIG_KEY_REQUIRES_OUTPUT_APPROVAL = "requiresOutputApproval";
+
+    /** Constant. */
     public static final ComponentColor COMPONENT_COLOR_STANDARD = ComponentColor.YELLOW;
 
     /** Constant. */
@@ -243,6 +251,9 @@ public final class ComponentConstants {
 
     /** Finished component states. */
     public static final List<ComponentState> FININISHED_COMPONENT_STATES = new ArrayList<>();
+    
+    /** Failed component states. */
+    public static final List<ComponentState> FAILED_COMPONENT_STATES = new ArrayList<>();
 
     /** Final component states. */
     public static final List<ComponentState> FINAL_COMPONENT_STATES = new ArrayList<>();
@@ -253,9 +264,11 @@ public final class ComponentConstants {
     static {
         FININISHED_COMPONENT_STATES.add(ComponentState.FINISHED);
         FININISHED_COMPONENT_STATES.add(ComponentState.FINISHED_WITHOUT_EXECUTION);
+        FAILED_COMPONENT_STATES.add(ComponentState.FAILED);
+        FAILED_COMPONENT_STATES.add(ComponentState.RESULTS_REJECTED);
         FINAL_COMPONENT_STATES.addAll(FININISHED_COMPONENT_STATES);
+        FINAL_COMPONENT_STATES.addAll(FAILED_COMPONENT_STATES);
         FINAL_COMPONENT_STATES.add(ComponentState.CANCELED);
-        FINAL_COMPONENT_STATES.add(ComponentState.FAILED);
         FINAL_COMPONENT_STATES_WITH_DISPOSED.addAll(FINAL_COMPONENT_STATES);
         FINAL_COMPONENT_STATES_WITH_DISPOSED.add(ComponentState.DISPOSED);
     }

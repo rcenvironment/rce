@@ -14,6 +14,7 @@ import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.BIN
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_INSTANCE_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_INSTANCE_NAME;
+import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_RUN_FINAL_STATE;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPONENT_RUN_ID;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.COMPRESSION;
 import static de.rcenvironment.core.datamanagement.commons.MetaDataConstants.CONTROLLER_NODE_ID;
@@ -81,7 +82,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
+import de.rcenvironment.core.datamanagement.DataManagementIdMapping;
 import de.rcenvironment.core.datamanagement.commons.BinaryReference;
 import de.rcenvironment.core.datamanagement.commons.ComponentInstance;
 import de.rcenvironment.core.datamanagement.commons.ComponentRun;
@@ -94,6 +96,7 @@ import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamodel.api.CompressionFormat;
 import de.rcenvironment.core.datamodel.api.EndpointType;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
@@ -104,6 +107,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Static part of the Derby meta data backend implementation.
  * 
  * @author Jan Flink
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class DerbyMetaDataBackendOperationsImpl {
 
@@ -168,7 +172,6 @@ public class DerbyMetaDataBackendOperationsImpl {
     private static final String SELECT_ALL = " SELECT * ";
 
     private static final String IN = " IN ";
-
 
     /**
      * Adds a dataset to the workflow run table.
@@ -536,7 +539,10 @@ public class DerbyMetaDataBackendOperationsImpl {
                     .getString(COMPRESSION)), rs
                     .getString(REVISION)));
             }
-            dataRef = new DataReference(dataReferenceKey, NodeIdentifierFactory.fromNodeId(dataRefNodeId), binaryReferences);
+            dataRef =
+                new DataReference(dataReferenceKey, NodeIdentifierUtils.parseInstanceNodeIdStringWithExceptionWrapping(NodeIdentifierUtils
+                    .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(dataRefNodeId).getInstanceNodeIdString()), 
+                    binaryReferences);
             rs.close();
         }
         stmt.close();
@@ -830,6 +836,7 @@ public class DerbyMetaDataBackendOperationsImpl {
         if (dataReferenceKeys.isEmpty()) {
             return true;
         }
+        boolean result = true;
         String sqlRelBinaryDataRef =
             DELETE_FROM + DB_PREFIX + REL_DATAREFERENCE_BINARYREFERENCE + WHERE + DATA_REFERENCE_ID + EQUAL + QMARK;
         String sqlRelCompRunDataRef =
@@ -854,19 +861,19 @@ public class DerbyMetaDataBackendOperationsImpl {
         PreparedStatement stmtDataRef = connection.prepareStatement(sqlDataRef, ResultSet.TYPE_FORWARD_ONLY, ResultSet.CONCUR_READ_ONLY);
         for (Long id : dataReferenceKeys.keySet()) {
             stmtRelBinaryDataRef.setLong(1, id);
-            stmtRelBinaryDataRef.execute();
+            result &= !stmtRelBinaryDataRef.execute();
             stmtRelCompRunDataRef.setLong(1, id);
-            stmtRelCompRunDataRef.execute();
+            result &= !stmtRelCompRunDataRef.execute();
             stmtRelCompInstanceDataRef.setLong(1, id);
-            stmtRelCompInstanceDataRef.execute();
+            result &= !stmtRelCompInstanceDataRef.execute();
             stmtRelWorkflowRunDataRef.setLong(1, id);
-            stmtRelWorkflowRunDataRef.execute();
+            result &= !stmtRelWorkflowRunDataRef.execute();
             for (String key : dataReferenceKeys.get(id)) {
                 stmtBinaryRef.setString(1, key);
-                stmtBinaryRef.execute();
+                result &= !stmtBinaryRef.execute();
             }
             stmtDataRef.setLong(1, id);
-            stmtDataRef.execute();
+            result &= !stmtDataRef.execute();
         }
         stmtRelBinaryDataRef.close();
         stmtRelCompRunDataRef.close();
@@ -874,7 +881,7 @@ public class DerbyMetaDataBackendOperationsImpl {
         stmtRelWorkflowRunDataRef.close();
         stmtBinaryRef.close();
         stmtDataRef.close();
-        return true;
+        return result;
     }
 
     /**
@@ -982,7 +989,7 @@ public class DerbyMetaDataBackendOperationsImpl {
         throws SQLException {
         Long dataReferenceId =
             addDataReference(dataReference.getDataReferenceKey(),
-                dataReference.getNodeIdentifier().getIdString(),
+                DataManagementIdMapping.mapLogicalNodeIdToDbString(dataReference.getInstanceId().convertToDefaultLogicalNodeId()),
                 connection, isRetry);
         Set<Long> binaryReferenceIds =
             addBinaryReferences(dataReference.getBinaryReferences(), connection, isRetry);
@@ -1168,7 +1175,11 @@ public class DerbyMetaDataBackendOperationsImpl {
         String sql = INSERT_INTO + DB_PREFIX + TABLE_ENDPOINT_INSTANCE + "("
             + COMPONENT_INSTANCE_ID + COMMA + NAME + COMMA + TYPE + ")"
             + VALUES + PLACEHOLDER_THREE_VALUES;
+        String sqlProperties = INSERT_INTO + DB_PREFIX + TABLE_ENDPOINT_INSTANCE_PROPERTIES + "("
+            + ENDPOINT_INSTANCE_ID + COMMA + KEY + COMMA + VALUE + ")"
+            + VALUES + PLACEHOLDER_THREE_VALUES;
         PreparedStatement stmt = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+        PreparedStatement stmtProperties = connection.prepareStatement(sqlProperties);
         ResultSet rs;
         for (EndpointInstance ei : endpointInstances) {
             stmt.setLong(1, componentInstanceId);
@@ -1177,12 +1188,20 @@ public class DerbyMetaDataBackendOperationsImpl {
             stmt.execute();
             rs = stmt.getGeneratedKeys();
             if (rs != null && rs.next()) {
-                result.put(ei.getEndpointName(), rs.getLong(1));
+                Long id = rs.getLong(1);
+                result.put(ei.getEndpointName(), id);
+                for (String key : ei.getMetaData().keySet()) {
+                    stmtProperties.setLong(1, id);
+                    stmtProperties.setString(2, key);
+                    stmtProperties.setString(3, ei.getMetaData().get(key));
+                    stmtProperties.execute();
+                }
             }
             if (rs != null) {
                 rs.close();
             }
         }
+        stmtProperties.close();
         stmt.close();
         return result;
     }
@@ -1212,10 +1231,14 @@ public class DerbyMetaDataBackendOperationsImpl {
                 if (rs.getTimestamp(ENDTIME) != null) {
                     endtime = rs.getTimestamp(ENDTIME).getTime();
                 }
+                FinalComponentRunState finalState = null;
+                if (rs.getString(COMPONENT_RUN_FINAL_STATE) != null) {
+                    finalState = FinalComponentRunState.valueOf(rs.getString(COMPONENT_RUN_FINAL_STATE));
+                }
                 results.add(new ComponentRun(rs.getLong(COMPONENT_RUN_ID), rs.getLong(COMPONENT_INSTANCE_ID), rs.getString(NODE_ID).trim(),
                     rs.getInt(COUNTER), rs.getTimestamp(STARTTIME).getTime(), endtime, rs.getString(HISTORY_DATA_ITEM),
                     rs.getBoolean(REFERENCES_DELETED), getProperties(TABLE_COMPONENT_RUN_PROPERTIES, rs.getLong(COMPONENT_RUN_ID),
-                        connection, isRetry)));
+                        connection, isRetry), finalState));
             }
             rs.close();
         }
@@ -1337,12 +1360,16 @@ public class DerbyMetaDataBackendOperationsImpl {
                     new ComponentInstance(rsComponentRuns.getString(COMPONENT_ID), rsComponentRuns.getString(COMPONENT_INSTANCE_NAME),
                         rsComponentRuns.getString(FINAL_STATE));
                 Long crId = rsComponentRuns.getLong(COMPONENT_RUN_ID);
+                FinalComponentRunState finalState = null;
+                if (rsComponentRuns.getString(COMPONENT_RUN_FINAL_STATE) != null) {
+                    finalState = FinalComponentRunState.valueOf(rsComponentRuns.getString(COMPONENT_RUN_FINAL_STATE));
+                }
                 ComponentRun cr =
                     new ComponentRun(rsComponentRuns.getLong(COMPONENT_RUN_ID), rsComponentRuns.getString(NODE_ID).trim(),
                         rsComponentRuns.getInt(COUNTER), rsComponentRuns.getTimestamp(
                             STARTTIME).getTime(), endtime,
                         rsComponentRuns.getString(HISTORY_DATA_ITEM), rsComponentRuns.getBoolean(REFERENCES_DELETED),
-                        getProperties(TABLE_COMPONENT_RUN_PROPERTIES, crId, connection, isRetry));
+                        getProperties(TABLE_COMPONENT_RUN_PROPERTIES, crId, connection, isRetry), finalState);
 
                 cr.setEndpointData(endpointData.get(crId));
                 workflowRun.addComponentRun(ci, cr);
@@ -1441,15 +1468,18 @@ public class DerbyMetaDataBackendOperationsImpl {
     }
 
     /**
-     * Updates the end time of the {@link TimelineInterval} dataset with the given {@link ComponentRun} id.
+     * Updates the end time of the {@link TimelineInterval} dataset with the given {@link ComponentRun} id. Sets the final state of the
+     * component run in the.
      * 
      * @param componentRunId the component run id
      * @param endtime the endtime to update
+     * @param finalState the final state of the run.
      * @param connection the connection to the meta data database
      * @param isRetry true if retrying
      * @throws SQLException thrown on database SQL errors
      */
-    public void setComponentRunFinished(Long componentRunId, Long endtime, Connection connection, boolean isRetry)
+    public void setComponentRunFinished(Long componentRunId, Long endtime, FinalComponentRunState finalState, Connection connection,
+        boolean isRetry)
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_TIMELINE_INTERVAL + SET + ENDTIME + EQUAL + QMARK
             + WHERE + COMPONENT_RUN_ID + EQUAL + QMARK + AND + TYPE + EQUAL + QMARK;
@@ -1459,6 +1489,14 @@ public class DerbyMetaDataBackendOperationsImpl {
         stmt.setString(3, TimelineIntervalType.COMPONENT_RUN.toString());
         stmt.executeUpdate();
         stmt.close();
+
+        String sql2 = UPDATE + DB_PREFIX + TABLE_COMPONENT_RUN + SET + COMPONENT_RUN_FINAL_STATE + EQUAL + QMARK
+            + WHERE + COMPONENT_RUN_ID + EQUAL + QMARK;
+        PreparedStatement stmt2 = connection.prepareStatement(sql2);
+        stmt2.setString(1, finalState.toString());
+        stmt2.setLong(2, componentRunId);
+        stmt2.executeUpdate();
+        stmt2.close();
     }
 
     /**
@@ -1470,7 +1508,7 @@ public class DerbyMetaDataBackendOperationsImpl {
      * @param isRetry true if retrying
      * @throws SQLException thrown on database SQL errors
      */
-    public void setWorklfowRunEndtime(Long workflowRunId, Long endtime, Connection connection, boolean isRetry)
+    public void setWorkflowRunEndtime(Long workflowRunId, Long endtime, Connection connection, boolean isRetry)
         throws SQLException {
         String sql = UPDATE + DB_PREFIX + TABLE_TIMELINE_INTERVAL + SET + ENDTIME + EQUAL + QMARK
             + WHERE + WORKFLOW_RUN_ID + EQUAL + QMARK + AND + TYPE + EQUAL + QMARK;

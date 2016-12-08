@@ -9,11 +9,13 @@
 package de.rcenvironment.core.component.execution.api;
 
 import java.io.File;
+import java.util.List;
 import java.util.Set;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 
 /**
@@ -47,8 +49,7 @@ public interface ComponentContext extends ExecutionContext {
     String getConfigurationMetaDataValue(String configKey, String metaDataKey);
 
     /**
-     * @return all inputs, which are "required" or which are "required if connected" and connected
-     *         to an output
+     * @return all inputs, which are "required" or which are "required if connected" and connected to an output
      */
     Set<String> getInputs();
 
@@ -63,7 +64,7 @@ public interface ComponentContext extends ExecutionContext {
      * @return <code>true</code> if input is dynamic, otherwise <code>false</code>
      */
     boolean isDynamicInput(String inputName);
-    
+
     /**
      * @param outputName name of output
      * @return <code>true</code> if input is dynamic, otherwise <code>false</code>
@@ -96,8 +97,7 @@ public interface ComponentContext extends ExecutionContext {
     String getInputMetaDataValue(String inputName, String metaDataKey);
 
     /**
-     * @return all inputs with a value. I.e. {@link #readInput(String)} will be return a
-     *         {@link TypedDatum}.
+     * @return all inputs with a value. I.e. {@link #readInput(String)} will be return a {@link TypedDatum}.
      */
     Set<String> getInputsWithDatum();
 
@@ -146,24 +146,24 @@ public interface ComponentContext extends ExecutionContext {
     void writeOutput(String outputName, TypedDatum value);
 
     /**
-     * Resets output. A component must reset an output, if it controls an inner loop of a workflow
-     * to indicated that it is done. In other case, it must not reset any output.
+     * Resets output. A component must reset an output, if it controls an inner loop of a workflow to indicated that it is done. In other
+     * case, it must not reset any output.
      * 
      * @param outputName name of output
      */
     void resetOutput(String outputName);
 
     /**
-     * Closes output. A component must close an output, if it control the workflow to indicated that
-     * it is done. In other case it must not close any output.
+     * Closes output. A component must close an output, if it control the workflow to indicated that it is done. In other case it must not
+     * close any output.
      * 
      * @param outputName name of output
      */
     void closeOutput(String outputName);
 
     /**
-     * Closes all outputs. A component must close an output, if it controls the workflow to
-     * indicated that it is done. In other case it must not close any output.
+     * Closes all outputs. A component must close an output, if it controls the workflow to indicated that it is done. In other case it must
+     * not close any output.
      */
     void closeAllOutputs();
 
@@ -193,16 +193,14 @@ public interface ComponentContext extends ExecutionContext {
     /**
      * @param <T> the service class to acquire
      * @param clazz class of service to acquire
-     * @return service instance of desired class or <code>null</code> if the service is not
-     *         available
+     * @return service instance of desired class or <code>null</code> if the service is not available
      */
     <T> T getService(Class<T> clazz);
 
     /**
-     * @return current execution count of the component. Count starts with 1. It is 1 within
-     *         {@link Component#start(ComponentContext)} and is 1 within
-     *         {@link Component#processInputs()} if {@link Component#start(ComponentContext)}
-     *         returns <code>false</code> or 2 otherwise.
+     * @return current execution count of the component. Count starts with 1. It is 1 within {@link Component#start(ComponentContext)} and
+     *         is 1 within {@link Component#processInputs()} if {@link Component#start(ComponentContext)} returns <code>false</code> or 2
+     *         otherwise.
      */
     int getExecutionCount();
 
@@ -224,11 +222,10 @@ public interface ComponentContext extends ExecutionContext {
     /**
      * @return hosting node of associated workflow (controller)
      */
-    NodeIdentifier getWorkflowNodeId();
+    LogicalNodeId getWorkflowNodeId();
 
     /**
-     * Writes intermediate history data. Each new intermediate history data will overwrite a
-     * previous one.
+     * Writes intermediate history data. Each new intermediate history data will overwrite a previous one.
      * 
      * @param historyDataItem {@link ComponentHistoryDataItem} to write
      */
@@ -256,9 +253,35 @@ public interface ComponentContext extends ExecutionContext {
      * @return all not required and not connected inputs
      */
     Set<String> getInputsNotConnected();
-    
+
     /**
      * @return a {@link ComponentLog} instance used to log tool and component messages
      */
     ComponentLog getLog();
+
+    /**
+     * @param inputName name of input
+     * @return {@link EndpointCharacter} of given input
+     */
+    EndpointCharacter getInputCharacter(String inputName);
+
+    /**
+     * @param outputName name of output
+     * @return {@link EndpointCharacter} of given output
+     */
+    EndpointCharacter getOutputCharacter(String outputName);
+
+    /**
+     * 
+     * @param identifier of the dynamic endpoint
+     * @return list with all inputs that have that identifier.
+     */
+    List<String> getDynamicInputsWithIdentifier(String identifier);
+
+    /**
+     * @param identifier of the dynamic endpoint
+     * @return list with all outputs that have that identifier.
+     */
+    List<String> getDynamicOutputsWithIdentifier(String identifier);
+
 }

@@ -75,7 +75,7 @@
    <extension point="org.eclipse.help.toc">
    		<toc file="help/toc.xml"/>
  	</extension>
-   
+ 	
    <!-- Runtime View -->
    	<extension
          point="org.eclipse.ui.views">

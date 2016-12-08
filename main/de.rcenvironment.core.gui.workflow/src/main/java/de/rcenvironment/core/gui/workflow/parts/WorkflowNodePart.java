@@ -10,13 +10,10 @@ package de.rcenvironment.core.gui.workflow.parts;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
-import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.logging.LogFactory;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IConfigurationElement;
 import org.eclipse.core.runtime.Platform;
@@ -48,7 +45,6 @@ import org.eclipse.gef.editpolicies.GraphicalNodeEditPolicy;
 import org.eclipse.gef.requests.CreateConnectionRequest;
 import org.eclipse.gef.requests.ReconnectRequest;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.SWTException;
 import org.eclipse.swt.graphics.Color;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.widgets.Display;
@@ -57,24 +53,25 @@ import org.eclipse.ui.PlatformUI;
 import org.eclipse.ui.views.properties.IPropertySource;
 
 import de.rcenvironment.core.component.api.ComponentUtils;
+import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
 import de.rcenvironment.core.component.integration.ToolIntegrationContextRegistry;
 import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.api.ComponentShape;
 import de.rcenvironment.core.component.model.api.ComponentSize;
 import de.rcenvironment.core.component.model.spi.PropertiesChangeSupport;
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessage;
+import de.rcenvironment.core.component.validation.api.ComponentValidationMessageStore;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
+import de.rcenvironment.core.gui.resources.api.ColorManager;
+import de.rcenvironment.core.gui.resources.api.ComponentImageManager;
 import de.rcenvironment.core.gui.resources.api.ImageManager;
+import de.rcenvironment.core.gui.resources.api.StandardColors;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.editor.WorkflowEditorAction;
 import de.rcenvironment.core.gui.workflow.editor.commands.ConnectionDrawCommand;
 import de.rcenvironment.core.gui.workflow.editor.properties.ComponentPropertySource;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationMessage;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidationSupport;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateEvent;
-import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowNodeValidityStateListener;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.gui.workflow.editor.validator.WorkflowDescriptionValidationUtils;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 
@@ -89,18 +86,17 @@ import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
  * @author Christian Weiss
  * @author Sascha Zur
  * @author Doreen Seider
+ * @author Jascha Riedel (#13765)
  */
 public class WorkflowNodePart extends AbstractGraphicalEditPart implements PropertyChangeListener, NodeEditPart {
 
     /**
-     * The width and height of a small workflow node's bounds.
-     * Must be divisible by two after 1 is subtracted.
+     * The width and height of a small workflow node's bounds. Must be divisible by two after 1 is subtracted.
      */
     public static final int SMALL_WORKFLOW_NODE_WIDTH = 41;
 
     /**
-     * The width and height of a medium sized workflow node.
-     * Must be divisible by four after 1 is subtracted.
+     * The width and height of a medium sized workflow node. Must be divisible by four after 1 is subtracted.
      */
     public static final int WORKFLOW_NODE_WIDTH = 81;
 
@@ -116,9 +112,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     private static final Image LOCAL_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.LOCAL);
 
+    private static final Image IMITATION_MODE_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.IMITATION_MODE);
+
     private static final Image DEPRECATED_IMAGE = ImageManager.getInstance().getSharedImage(StandardImages.DEPRECATED);
 
-    private final WorkflowNodeValidationSupport validationSupport = new WorkflowNodeValidationSupport();
+    private Image imageToDispose = null;
 
     private final IFigure errorFigure = new ImageFigure(ERROR_IMAGE);
     {
@@ -137,14 +135,14 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         warningFigure.setVisible(false);
     }
 
-    private final IFigure localFigure = new ImageFigure(LOCAL_IMAGE);
+    private final IFigure informationFigure = new ImageFigure(LOCAL_IMAGE);
     {
         final int offsetX = 62;
         final int offsetY = 62;
         final int size = 16;
-        localFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
-        localFigure.setToolTip(new Label(Messages.localExecutionOnly));
-        localFigure.setVisible(false);
+        informationFigure.setBounds(new Rectangle(offsetX, offsetY, size, size));
+        informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
+        informationFigure.setVisible(false);
     }
 
     private final IFigure deprecatedFigure = new ImageFigure(DEPRECATED_IMAGE);
@@ -157,25 +155,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         deprecatedFigure.setVisible(false);
     }
 
-    /**
-     * {@link WorkflowNodeValidityStateListener} to update the valid state of this
-     * {@link WorkflowNodePart} using {@link #updateValid(boolean)}.
-     */
-    private final WorkflowNodeValidityStateListener validityStateListener = new WorkflowNodeValidityStateListener() {
-
-        @Override
-        public void handleWorkflowNodeValidityStateEvent(final WorkflowNodeValidityStateEvent event) {
-            updateValid();
-        }
-
-    };
-
     private String currentLabel = "";
 
     private final ToolIntegrationContextRegistry toolIntegrationRegistry;
 
     public WorkflowNodePart() {
-        validationSupport.addWorkflowNodeValidityStateListener(validityStateListener);
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         toolIntegrationRegistry = serviceRegistryAccess.getService(ToolIntegrationContextRegistry.class);
     }
@@ -183,38 +167,39 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     @Override
     public void activate() {
         super.activate();
-        ((PropertiesChangeSupport) getModel()).addPropertyChangeListener(this);
         Display.getDefault().syncExec(new Runnable() {
 
             @Override
             public void run() {
-                verifyValid();
+                WorkflowDescriptionValidationUtils.validateComponent(getWorkflowNode(), false);
+                updateValid();
             }
         });
+        ((PropertiesChangeSupport) getModel()).addPropertyChangeListener(this);
     }
 
     @Override
     public void deactivate() {
         super.deactivate();
-        ((PropertiesChangeSupport) getModel()).removePropertyChangeListener(this);
-        SharedThreadPool.getInstance().execute(new Runnable() {
 
-            @Override
-            @TaskDescription("Clear workflow node in validation support.")
-            public void run() {
-                validationSupport.setWorkflowNodeAndValidation(null);
-            }
-        });
+        // TODO is this the correct method to call the disposal of objects?
+        if (imageToDispose != null) {
+            imageToDispose.dispose();
+        }
+
+        ((PropertiesChangeSupport) getModel()).removePropertyChangeListener(this);
+
     }
 
-    private List<WorkflowNodeValidationMessage> getValidationMessages() {
-        final List<WorkflowNodeValidationMessage> result = new LinkedList<WorkflowNodeValidationMessage>(validationSupport.getMessages());
+    private List<ComponentValidationMessage> getValidationMessages() {
+        final List<ComponentValidationMessage> result = ComponentValidationMessageStore.getInstance()
+            .getMessagesByComponentId(getWorkflowNode().getIdentifier());
         return result;
     }
 
-    private String getValidationMessageText(final WorkflowNodeValidationMessage.Type type) {
+    private String getValidationMessageText(final ComponentValidationMessage.Type type) {
         final StringBuilder builder = new StringBuilder();
-        for (final WorkflowNodeValidationMessage message : getValidationMessages()) {
+        for (final ComponentValidationMessage message : getValidationMessages()) {
             if (type == null || type == message.getType()) {
                 String messageText = message.getAbsoluteMessage();
                 if (messageText == null || messageText.isEmpty()) {
@@ -223,36 +208,42 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                     if (property == null || property.isEmpty()) {
                         messageText = relativeMessage;
                     } else {
-                        messageText = de.rcenvironment.core.utils.common.StringUtils.format("%s: %s", property, relativeMessage);
+                        messageText = de.rcenvironment.core.utils.common.StringUtils.format("%s: %s", property,
+                            relativeMessage);
                     }
                 }
+                builder.append("- ");
                 builder.append(messageText);
-                builder.append("\n");
+                builder.append("\n\n");
             }
         }
         return builder.toString().trim();
     }
 
     /**
-     * Updates the visual indicators for {@link WorkflowNodeValidationMessage}s and refreshes the
-     * graphical representation of this {@link WorkflowNodePart}.
+     * Updates the visual indicators for {@link ComponentValidationMessage}s and refreshes the graphical representation of this
+     * {@link WorkflowNodePart}.
      * 
-     * @param valid true, if validation yielded not {@link WorkflowNodeValidationMessage}s.
      */
-    private void updateValid() {
-        final boolean valid = validationSupport.isValid();
-        final String errorText = getValidationMessageText(WorkflowNodeValidationMessage.Type.ERROR);
+    public void updateValid() {
+        final String errorText = getValidationMessageText(ComponentValidationMessage.Type.ERROR);
         errorFigure.setVisible(!errorText.isEmpty());
-        if (!valid) {
-            errorFigure.setToolTip(new Label(errorText));
-        }
-        final String warningText = getValidationMessageText(WorkflowNodeValidationMessage.Type.WARNING);
+
+        errorFigure.setToolTip(new Label(errorText));
+        final String warningText = getValidationMessageText(ComponentValidationMessage.Type.WARNING);
         warningFigure.setVisible(!warningText.isEmpty());
-        if (!valid) {
-            warningFigure.setToolTip(new Label(warningText));
+        warningFigure.setToolTip(new Label(warningText));
+
+        if (!getWorkflowNode().isEnabled()) {
+            errorFigure.setVisible(false);
+            warningFigure.setVisible(false);
         }
         refresh();
         refreshVisuals();
+        // outcommented because it is likely to cause Mantis Issue #0014726; seeb_ol, November 23, 2016
+//        if (errorText.equals("") && warningText.equals("")) {
+//            getWorkflowNode().setValid(true);
+//        }
     }
 
     protected WorkflowNode getWorkflowNode() {
@@ -262,8 +253,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     @Override
     protected IFigure createFigure() {
         final IFigure figure = createBaseFigure();
-        ComponentInterface ci =
-            ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface();
+        ComponentInterface ci = ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
+            .getComponentRevision().getComponentInterface();
 
         if (ci.getShape() == ComponentShape.CIRCLE) {
             final int size = 16;
@@ -272,7 +263,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             warningFigure.setBounds(new Rectangle(newOffset, newOffset, size, size));
             final int localX = 22;
             final int localY = 20;
-            localFigure.setBounds(new Rectangle(localX, localY, size, size));
+            informationFigure.setBounds(new Rectangle(localX, localY, size, size));
         } else if (ci.getSize() == ComponentSize.SMALL) {
             final int size = 16;
             final int newOffsetX = 22;
@@ -280,48 +271,43 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             warningFigure.setBounds(new Rectangle(newOffsetX, newOffsetY, size, size));
             final int localX = 22;
             final int localY = 22;
-            localFigure.setBounds(new Rectangle(localX, localY, size, size));
+            informationFigure.setBounds(new Rectangle(localX, localY, size, size));
         }
         figure.add(errorFigure);
         figure.add(warningFigure);
-        figure.add(localFigure);
+        figure.add(informationFigure);
         figure.add(deprecatedFigure);
         return figure;
     }
 
     protected IFigure createBaseFigure() {
         Image image = null;
-        byte[] icon = null;
 
-        ComponentInterface ci =
-            ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface();
+        ComponentInterface ci = ((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
+            .getComponentRevision().getComponentInterface();
 
         if (ci.getSize() == ComponentSize.SMALL) {
-            icon = ((WorkflowNode) getModel()).getComponentDescription().getIcon24();
+            image = ComponentImageManager.getInstance().getIcon24Image(ci);
         } else {
-            icon = ((WorkflowNode) getModel()).getComponentDescription().getIcon32();
+            image = ComponentImageManager.getInstance().getIcon32Image(ci);
         }
-        if (icon != null) {
-            try {
-                image = new Image(Display.getCurrent(), new ByteArrayInputStream(icon));
-            } catch (SWTException e) {
-                // The images of integrated tools may be broken, so the default will be used.
-                LogFactory.getLog(getClass()).info("Could not load tool icon, loading default. ", e);
-                image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_32);
-            }
-        } else if (ci.getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
-            if (ci.getSize() == ComponentSize.SMALL) {
-                image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_24_GREY);
+
+        if (image == null) {
+            if (ci.getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
+                if (ci.getSize() == ComponentSize.SMALL) {
+                    image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_24_GREY);
+                } else {
+                    image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_32_GREY);
+                }
             } else {
-                image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_32_GREY);
-            }
-        } else {
-            if (ci.getSize() == ComponentSize.SMALL) {
-                image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_24);
-            } else {
-                image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_32);
+                if (ci.getSize() == ComponentSize.SMALL) {
+                    image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_24);
+                } else {
+                    image = ImageManager.getInstance().getSharedImage(StandardImages.RCE_LOGO_32);
+                }
             }
         }
+
         Color color = getColor(ci);
 
         if (ci.getSize() == ComponentSize.SMALL) {
@@ -343,21 +329,19 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     private Color getColor(ComponentInterface ci) {
-        // TODO this looks like a SWT resource leak (ie, missing dispose() calls)
-        final int dr = 255;
-        final int dg = 247;
-        final int db = 231;
-        Color c = new Color(null, dr, dg, db);
         if (!getWorkflowNode().isEnabled()) {
-            final int grey = 0xDD;
-            c = new Color(null, grey, grey, grey);
+            return ColorManager.getInstance().getSharedColor(StandardColors.RCE_GREY);
         } else if (ci.getColor() == null) {
-            final int r = 0xFF;
-            final int g = 0xCC;
-            final int b = 0xD2;
-            c = new Color(null, r, g, b);
+            return ColorManager.getInstance().getSharedColor(StandardColors.RCE_COLOR_2);
+        } else if (Boolean.valueOf(((WorkflowNode) getModel()).getConfigurationDescription()
+            .getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE))) {
+            return ColorManager.getInstance().getSharedColor(StandardColors.RCE_IMITATION);
+        } else {
+            // TODO There is currently only one ComponentColor specified.
+            // However, the ComponentColor class doesn't store RGB values.
+            // Therefore, the mapping is performed here.
+            return ColorManager.getInstance().getSharedColor(StandardColors.RCE_COLOR_1);
         }
-        return c;
     }
 
     /**
@@ -408,8 +392,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                 b.height--;
                 graphics.drawRectangle(b);
             }
-            graphics.drawImage(icon, new Point(this.getLocation().x + offsetX, this.getLocation().y - 1
-                + offsetY));
+            graphics.drawImage(icon, new Point(this.getLocation().x + offsetX, this.getLocation().y - 1 + offsetY));
         }
     }
 
@@ -425,6 +408,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         } else if (node.getComponentDescription().getIdentifier().startsWith(ComponentUtils.MISSING_COMPONENT_PREFIX)) {
             enabled = "not available";
         }
+        if (Boolean.valueOf(
+            node.getConfigurationDescription().getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE))) {
+            enabled += " (imitation mode)";
+        }
+
         return generateTooltipTextBase(node) + ": " + enabled;
     }
 
@@ -434,8 +422,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             return de.rcenvironment.core.utils.common.StringUtils.format("%s - %s (%s)", node.getName(),
                 node.getComponentDescription().getName(), node.getComponentDescription().getVersion());
         } else {
-            return de.rcenvironment.core.utils.common.StringUtils.format("%s - %s", node.getName(), node.getComponentDescription()
-                .getName());
+            return de.rcenvironment.core.utils.common.StringUtils.format("%s - %s", node.getName(),
+                node.getComponentDescription().getName());
         }
     }
 
@@ -445,8 +433,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
         int width = WORKFLOW_NODE_WIDTH;
         int height = WORKFLOW_NODE_WIDTH;
-        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
-            .getSize() == ComponentSize.SMALL) {
+        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
+            .getComponentInterface().getSize() == ComponentSize.SMALL) {
             width = SMALL_WORKFLOW_NODE_WIDTH;
             height = SMALL_WORKFLOW_NODE_WIDTH;
         }
@@ -456,7 +444,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
         String labelText = getWorkflowNode().getName();
 
-        // try to abbreviate label just, when the name of the workflow has changed in the model
+        // try to abbreviate label just, when the name of the workflow has
+        // changed in the model
         if (!currentLabel.equals(getWorkflowNode().getName())) {
             abbreviateLabel(label, labelText, MAX_LABELTEXT_SIZE);
         }
@@ -466,12 +455,24 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
         setTooltipText();
 
-        localFigure.setVisible(((WorkflowNode) getModel()).getComponentDescription().canOnlyBeExecutedLocally());
-        deprecatedFigure.setVisible(((WorkflowNode) getModel()).getComponentDescription()
-            .getComponentInstallation().getComponentRevision().getComponentInterface().getIsDeprecated());
+        if (((WorkflowNode) getModel()).getComponentDescription().canOnlyBeExecutedLocally()) {
+            ((ImageFigure) informationFigure).setImage(LOCAL_IMAGE);
+            informationFigure.setToolTip(new Label(Messages.localExecutionOnly));
+            informationFigure.setVisible(true);
+        } else if (Boolean.valueOf(((WorkflowNode) getModel()).getConfigurationDescription()
+            .getConfigurationValue(ToolIntegrationConstants.KEY_IS_MOCK_MODE))) {
+            ((ImageFigure) informationFigure).setImage(IMITATION_MODE_IMAGE);
+            informationFigure.setToolTip(new Label(Messages.imitationMode));
+            informationFigure.setVisible(true);
+        } else {
+            informationFigure.setVisible(false);
+        }
 
-        getFigure().setBackgroundColor(getColor(((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
-            .getComponentRevision().getComponentInterface()));
+        deprecatedFigure.setVisible(((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation()
+            .getComponentRevision().getComponentInterface().getIsDeprecated());
+
+        getFigure().setBackgroundColor(getColor(((WorkflowNode) getModel()).getComponentDescription()
+            .getComponentInstallation().getComponentRevision().getComponentInterface()));
         ((GraphicalEditPart) getParent()).setLayoutConstraint(this, label, r);
     }
 
@@ -493,6 +494,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     @Override
     public void propertyChange(PropertyChangeEvent evt) {
         String prop = evt.getPropertyName();
+        ((WorkflowNode) getModel()).setValid(false);
         if (WorkflowNode.PROPERTY_COMMUNICATION_NODE.equals(prop)) {
             refreshVisuals();
         } else if (WorkflowNode.PROPERTY_NODE_ATTRIBUTES.equals(prop)) {
@@ -520,8 +522,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             }
         }
 
-        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
-            .getShape() == ComponentShape.CIRCLE) {
+        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
+            .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
             return new EllipseAnchor(getFigure());
         } else {
             return new ChopboxAnchor(getFigure());
@@ -531,8 +533,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     @Override
     public ConnectionAnchor getSourceConnectionAnchor(Request request) {
-        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
-            .getShape() == ComponentShape.CIRCLE) {
+        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
+            .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
             return new EllipseAnchor(getFigure());
         } else {
             return new ChopboxAnchor(getFigure());
@@ -551,8 +553,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
             }
         }
 
-        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
-            .getShape() == ComponentShape.CIRCLE) {
+        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
+            .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
             return new EllipseAnchor(getFigure());
         } else {
             return new ChopboxAnchor(getFigure());
@@ -561,8 +563,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     @Override
     public ConnectionAnchor getTargetConnectionAnchor(Request request) {
-        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision().getComponentInterface()
-            .getShape() == ComponentShape.CIRCLE) {
+        if (((WorkflowNode) getModel()).getComponentDescription().getComponentInstallation().getComponentRevision()
+            .getComponentInterface().getShape() == ComponentShape.CIRCLE) {
             return new EllipseAnchor(getFigure());
         } else {
             return new ChopboxAnchor(getFigure());
@@ -571,7 +573,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     @Override
     protected List<ConnectionWrapper> getModelSourceConnections() {
-        List<ConnectionWrapper> sourceConnections = new ArrayList<ConnectionWrapper>();
+        List<ConnectionWrapper> sourceConnections = new ArrayList<>();
 
         for (ConnectionWrapper c : ((WorkflowPart) getParent()).getConnections()) {
             if (c.getSource().equals(getModel())) {
@@ -584,7 +586,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
 
     @Override
     protected List<ConnectionWrapper> getModelTargetConnections() {
-        List<ConnectionWrapper> targetConnections = new ArrayList<ConnectionWrapper>();
+        List<ConnectionWrapper> targetConnections = new ArrayList<>();
 
         for (ConnectionWrapper c : ((WorkflowPart) getParent()).getConnections()) {
             if (c.getTarget().equals(getModel())) {
@@ -599,7 +601,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     public Object getAdapter(@SuppressWarnings("rawtypes") Class type) {
         // Enable Snap to grid/geometry in wf editor for the nodepart.
         if (type == SnapToHelper.class) {
-            List<SnapToHelper> helpers = new ArrayList<SnapToHelper>();
+            List<SnapToHelper> helpers = new ArrayList<>();
             if (Boolean.TRUE.equals(getViewer().getProperty(SnapToGeometry.PROPERTY_SNAP_ENABLED))) {
                 helpers.add(new SnapToGeometry(this));
             }
@@ -612,7 +614,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                 return new CompoundSnapToHelper(helpers.toArray(new SnapToHelper[0]));
             }
         } else if (type == IPropertySource.class && getModel() instanceof WorkflowNode) {
-            return new ComponentPropertySource(getViewer().getEditDomain().getCommandStack(), (WorkflowNode) getModel());
+            return new ComponentPropertySource(getViewer().getEditDomain().getCommandStack(),
+                (WorkflowNode) getModel());
         }
         return super.getAdapter(type);
     }
@@ -621,7 +624,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     public void performRequest(Request req) {
         if (req.getType().equals(RequestConstants.REQ_OPEN)) {
             try {
-                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage().showView("org.eclipse.ui.views.PropertySheet");
+                PlatformUI.getWorkbench().getActiveWorkbenchWindow().getActivePage()
+                    .showView("org.eclipse.ui.views.PropertySheet");
             } catch (PartInitException e) {
                 throw new RuntimeException(e);
             }
@@ -636,8 +640,8 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Checks for registered editor actions and if it finds one for the selected component, this is
-     * invoked. As no action is currently required here, the method is deprecated.
+     * Checks for registered editor actions and if it finds one for the selected component, this is invoked. As no action is currently
+     * required here, the method is deprecated.
      */
     @Deprecated
     private void performDefaultAction() {
@@ -669,17 +673,6 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
                 break;
             }
         }
-    }
-
-    /**
-     * Verifies the valid state of the {@link WorkflowNode} and refreshes the visuals of the
-     * {@link WorkflowNodePart}.
-     */
-    public void verifyValid() {
-        WorkflowNode workflowNode = getWorkflowNode();
-        validationSupport.setWorkflowNodeAndValidation(workflowNode);
-        updateValid();
-        workflowNode.setValid(true);
     }
 
     /**
@@ -716,8 +709,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Anchor for the depiction of reconnections, i.e. connections from one component to the same.
-     * Handles the source anchor.
+     * Anchor for the depiction of reconnections, i.e. connections from one component to the same. Handles the source anchor.
      * 
      * @author Oliver Seebach
      */
@@ -730,8 +722,11 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         @Override
         protected Rectangle getBox() {
 
-            int x = getOwner().getBounds().getCenter().x - 4; // - 3 to make sure, the connection is
-                                                              // routed to the left
+            int x = getOwner().getBounds().getCenter().x - 4; // - 3 to make
+                                                              // sure, the
+                                                              // connection is
+                                                              // routed to the
+                                                              // left
             int y = getOwner().getBounds().getCenter().y - getOwner().getBounds().height / 2 - 1;
 
             return new Rectangle(new Point(x, y), new Point(x, y));
@@ -739,8 +734,7 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
     }
 
     /**
-     * Anchor for the depiction of reconnections, i.e. connections from one component to the same.
-     * Handles the target anchor.
+     * Anchor for the depiction of reconnections, i.e. connections from one component to the same. Handles the target anchor.
      * 
      * @author Oliver Seebach
      */
@@ -753,12 +747,16 @@ public class WorkflowNodePart extends AbstractGraphicalEditPart implements Prope
         @Override
         protected Rectangle getBox() {
 
-            int x = getOwner().getBounds().getCenter().x - 4; // - 3 to make sure, the connection is
-                                                              // routed to the left
+            int x = getOwner().getBounds().getCenter().x - 4; // - 3 to make
+                                                              // sure, the
+                                                              // connection is
+                                                              // routed to the
+                                                              // left
             int y = getOwner().getBounds().getCenter().y + getOwner().getBounds().height / 2 + 1;
 
             return new Rectangle(new Point(x, y), new Point(x, y));
         }
 
     }
+
 }

@@ -14,7 +14,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeId;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteInputStream;
 
 /**
@@ -35,9 +35,10 @@ public class DistributableInputStream extends InputStream implements Serializabl
     public DistributableInputStream(DataReference dataRef, InputStream inputStream) {
         this.inputStream = inputStream;
         try {
-            NodeIdentifier nodeId = dataRef.getNodeIdentifier();
-            this.uriToInputStream = new URI("rce://" + nodeId.getIdString() + "/"
-                + dataRef.getDataReferenceKey());
+            InstanceNodeId nodeId = dataRef.getInstanceId();
+            // TODO review/encapsulate; but RCEFileURIUtils is currently an internal class, so it's not a trivial refactoring
+            this.uriToInputStream =
+                new URI("rce://" + nodeId.getInstanceNodeIdString() + "/" + dataRef.getDataReferenceKey());
         } catch (URISyntaxException e) {
             throw new RuntimeException(e);
         }

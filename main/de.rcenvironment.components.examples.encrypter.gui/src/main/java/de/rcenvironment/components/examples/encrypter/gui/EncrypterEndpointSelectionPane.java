@@ -30,17 +30,16 @@ import de.rcenvironment.core.gui.workflow.editor.properties.WorkflowNodeCommand.
  */
 public class EncrypterEndpointSelectionPane extends EndpointSelectionPane {
 
-    public EncrypterEndpointSelectionPane(String genericEndpointTitle, EndpointType direction, Executor executor,
-        boolean readonly, String dynamicEndpointIdToManage, boolean showOnlyManagedEndpoints) {
-        super(genericEndpointTitle, direction, executor, readonly, dynamicEndpointIdToManage, showOnlyManagedEndpoints);
-
+    public EncrypterEndpointSelectionPane(String title, EndpointType direction, String dynEndpointIdToManage,
+        String[] statEndpointNamesToShow, Executor executor, boolean readOnly) {
+        super(title, direction, dynEndpointIdToManage, new String[] {}, statEndpointNamesToShow, executor, readOnly);
     }
 
     @Override
     protected void executeAddCommand(String name, DataType type, Map<String, String> metaData) {
         if (type == DataType.FileReference) {
             WorkflowNodeCommand command = new EncrypterAddDynamicEndpointCommand(endpointType
-                , endpointIdToManage, name, type, metaData, this); // null = this
+                , dynEndpointIdToManage, name, type, metaData, this); // null = this
             execute(command);
         } else {
             super.executeAddCommand(name, type, metaData);
@@ -56,7 +55,7 @@ public class EncrypterEndpointSelectionPane extends EndpointSelectionPane {
     @Override
     protected void executeRemoveCommand(List<String> names) {
         WorkflowNodeCommand command = new EncrypterRemoveDynamicEndpointCommand(endpointType
-            , endpointIdToManage, names, null, this); // null = this
+            , dynEndpointIdToManage, names, null, this); // null = this
         execute(command);
     }
 }

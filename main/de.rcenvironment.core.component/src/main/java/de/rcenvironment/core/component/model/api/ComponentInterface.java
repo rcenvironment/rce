@@ -42,6 +42,11 @@ public interface ComponentInterface {
     String getGroupName();
 
     /**
+     * @return The MD5 hash as a 32 character hex string of the concatenated icons.
+     */
+    String getIconHash();
+    
+    /**
      * @return 16x16 icon data (TODO specify format)
      */
     byte[] getIcon16();

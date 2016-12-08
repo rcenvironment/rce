@@ -1,0 +1,195 @@
+--- RCPTT testcase ---
+Format-Version: 1.0
+Contexts: _wTZJsDblEeaeH4-rLFMbKA,_CkEGoDx2EeaeH4-rLFMbKA,_sSEj4Dx4EeaeH4-rLFMbKA
+Element-Name: BasicBendpoints
+Element-Type: testcase
+Element-Version: 3.0
+External-Reference: 
+Id: _JVccEJq2EeadSNrqTD40Fg
+Runtime-Version: 2.0.0.201506120617
+Save-Time: 10/26/16 11:11 AM
+Testcase-Type: ecl
+
+------=_.description-216f885c-d591-38ce-8ea2-e4f8cb4d6ffa
+Content-Type: text/plain
+Entry-Name: .description
+
+Basic Bendpoint interaction
+
+- Create, move, remove bendpoints
+------=_.description-216f885c-d591-38ce-8ea2-e4f8cb4d6ffa--
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac
+Content-Type: text/ecl
+Entry-Name: .content
+
+with [get-editor "MyWorkflow.wf"] {
+    with [get-palette | get-palette-entry Joiner] {
+        mouse-move 47 8 button1 -height 23 -width 125
+        mouse-press 47 8 button1 -height 23 -width 125
+        get-figure 0 | drag-start 47 8
+    }
+    with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+        drag-enter 1370 307 -detail move
+        drag-over 67 49 -detail copy
+        drag-exit
+        drag-accept 67 49 -detail copy
+    }
+    get-palette | drag-set-data
+    get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 67 49 -detail copy
+    with [get-palette] {
+        drag-end -detail move
+        with [get-palette-entry Joiner] {
+            mouse-move 48 9 button1 -height 23 -width 125
+            mouse-press 48 9 button1 -height 23 -width 125
+            get-figure 0 | drag-start 48 9
+        }
+    }
+    with [get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+        drag-enter 1381 310 -detail move
+        drag-over 249 51 -detail copy
+        drag-exit
+        drag-accept 249 51 -detail copy
+    }
+    get-palette | drag-set-data
+    get-diagram -index 1 | get-edit-part -className WorkflowPart | drop 249 51 -detail copy
+    with [get-palette] {
+        drag-end -detail move
+        with [get-palette-entry "Draw Connection (ALT+D)"] {
+            mouse-move 38 16 button1 -height 33 -width 125
+            mouse-press 38 16 button1 -height 33 -width 125
+            mouse-release 38 16 button1 524288 -height 33 -width 125
+            mouse-move 17 16 -height 33 -width 125
+        }
+    }
+    with [get-diagram -index 1] {
+        with [get-edit-part -className WorkflowPart | get-edit-part -text Joiner] {
+            mouse-move 22 14 button1 -height 41 -width 41
+            mouse-press 22 14 button1 -height 41 -width 41
+            mouse-move 40 16 -mask 524288 -height 41 -width 41
+        }
+        mouse-drag 113 71 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart | get-edit-part -text "Joiner (1)"] {
+            mouse-drag 35 22 button1 524288 -height 41 -width 41
+            mouse-release 35 22 button1 524288 -height 41 -width 41
+            mouse-hover 35 22 -height 41 -width 41
+            mouse-press 35 22 button1 -height 41 -width 41
+            mouse-release 35 22 button1 524288 -height 41 -width 41
+        }
+    }
+}
+with [get-window "Connection Editor"] {
+    with [get-group Source | get-tree] {
+        select "Joiner/Joined"
+        get-item "Joiner/Joined" | drag-start 10 0
+    }
+    with [get-group Target | get-tree] {
+        get-item "Joiner \\(1\\)/Input 001" | drag-enter "-57" 12 -detail move
+        get-item "Joiner \\(1\\)/Input 001" | drag-over "-13" 6 -detail move
+        get-item "Joiner \\(1\\)/Input 001" | drag-exit
+        get-item "Joiner \\(1\\)/Input 001" | drag-accept "-13" 6 -detail move
+    }
+    get-group Source | get-tree | drag-set-data
+    get-group Target | get-tree | get-item "Joiner \\(1\\)/Input 001" | drop "-13" 6 -detail move
+    get-group Source | get-tree | drag-end -detail move
+    get-button OK | click
+}
+with [get-editor "MyWorkflow.wf"] {
+    get-diagram -index 1 | mouse-hover 786 602 -height 737 -width 1393
+    with [get-palette | get-palette-entry "Select (ALT+S)"] {
+        mouse-move 25 10 button1 -height 23 -width 125
+        mouse-press 25 10 button1 -height 23 -width 125
+        mouse-release 25 10 button1 524288 -height 23 -width 125
+        mouse-move 12 10 -height 23 -width 125
+    }
+    with [get-diagram -index 1] {
+        with [get-edit-part -className WorkflowPart | get-edit-part -text "Joiner (1)" | get-target-connection 0] {
+            mouse-move 76 15 button1 -height 22 -width 143
+            mouse-press 76 15 button1 -height 22 -width 143
+            mouse-release 76 15 button1 524288 -height 22 -width 143
+            with [get-handle BendpointCreationHandle] {
+                mouse-hover 3 2 -height 5 -width 5
+                mouse-move 3 2 button1 -height 5 -width 5
+                mouse-press 3 2 button1 -height 5 -width 5
+            }
+        }
+        mouse-move 179 73 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 178 216 button1 524288 -height 737 -width 1393
+            mouse-release 178 216 button1 524288 -height 737 -width 1393
+            with [get-edit-part -text "Joiner (1)" | get-target-connection 0] {
+                get-handle BendpointMoveHandle | mouse-hover 3 3 -height 7 -width 7
+                with [get-handle BendpointCreationHandle] {
+                    mouse-hover 0 0 -height 5 -width 5
+                    mouse-move 0 0 button1 -height 5 -width 5
+                    mouse-press 0 0 button1 -height 5 -width 5
+                }
+            }
+        }
+        mouse-move 143 149 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 354 152 button1 524288 -height 737 -width 1393
+            mouse-release 354 152 button1 524288 -height 737 -width 1393
+            with [get-edit-part -text "Joiner (1)" | get-target-connection 0 | get-handle BendpointCreationHandle 
+                -index 2] {
+                mouse-move 3 4 button1 -height 5 -width 5
+                mouse-press 3 4 button1 -height 5 -width 5
+            }
+        }
+        mouse-move 208 154 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 37 145 button1 524288 -height 737 -width 1393
+            mouse-release 37 145 button1 524288 -height 737 -width 1393
+            with [get-edit-part -text "Joiner (1)" | get-target-connection 0 | get-handle BendpointMoveHandle 
+                -index 1] {
+                mouse-hover 4 0 -height 7 -width 7
+                mouse-move 4 0 button1 -height 7 -width 7
+                mouse-press 4 0 button1 -height 7 -width 7
+            }
+        }
+        mouse-move 179 206 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 185 150 button1 524288 -height 737 -width 1393
+            mouse-release 185 150 button1 524288 -height 737 -width 1393
+            with [get-edit-part -text "Joiner (1)" | get-target-connection 0] {
+                mouse-hover 109 37 -height 78 -width 318
+                with [get-handle BendpointCreationHandle -index 2] {
+                    mouse-move 0 3 button1 -height 5 -width 5
+                    mouse-press 0 3 button1 -height 5 -width 5
+                }
+            }
+        }
+        mouse-move 145 117 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 274 218 button1 524288 -height 737 -width 1393
+            mouse-release 274 218 button1 524288 -height 737 -width 1393
+            with [get-edit-part -text "Joiner (1)" | get-target-connection 0 | get-handle BendpointCreationHandle] {
+                mouse-move 0 3 button1 -height 5 -width 5
+                mouse-press 0 3 button1 -height 5 -width 5
+            }
+        }
+        mouse-move 220 122 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 104 215 button1 524288 -height 737 -width 1393
+            mouse-release 104 215 button1 524288 -height 737 -width 1393
+            with [get-edit-part -text "Joiner (1)" | get-target-connection 0] {
+                mouse-hover 156 60 -height 130 -width 318
+                with [get-handle BendpointCreationHandle -index 2] {
+                    mouse-move 4 2 button1 -height 5 -width 5
+                    mouse-press 4 2 button1 -height 5 -width 5
+                }
+            }
+        }
+        mouse-move 198 142 -mask 524288 -height 737 -width 1393
+        with [get-edit-part -className WorkflowPart] {
+            mouse-drag 184 40 button1 524288 -height 737 -width 1393
+            mouse-release 184 40 button1 524288 -height 737 -width 1393
+        }
+    }
+}
+get-button -index 2 | click
+with [get-editor "MyWorkflow.wf" | get-diagram -index 1 | get-edit-part -className WorkflowPart] {
+    get-property "getModel().getWorkflowNodes().size()" | equals 2 | verify-true
+    get-property "getModel().getConnections().Connection[0].getBendpoints().size()" | equals 5 | verify-true
+    get-property "getModel().getConnections().size()" | equals 1 | verify-true
+}
+------=_.content-0a7243a0-75d3-3d5f-9791-539de0e5b7ac--

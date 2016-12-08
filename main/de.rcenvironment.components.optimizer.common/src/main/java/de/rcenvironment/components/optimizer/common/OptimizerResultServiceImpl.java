@@ -11,7 +11,7 @@ package de.rcenvironment.components.optimizer.common;
 import java.io.Serializable;
 import java.util.List;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationService;
@@ -51,7 +51,7 @@ public class OptimizerResultServiceImpl implements OptimizerResultService {
 
     @Override
     public OptimizerReceiver createReceiver(final String identifier,
-        final NodeIdentifier platform) throws RemoteOperationException {
+        final ResolvableNodeId platform) throws RemoteOperationException {
         final String notificationId = StringUtils.format(OptimizerUtils.STRUCTURE_PATTERN,
             identifier);
         if (distributedNotificationService != null && distributedNotificationService

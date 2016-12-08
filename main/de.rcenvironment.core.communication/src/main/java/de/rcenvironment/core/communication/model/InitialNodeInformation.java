@@ -10,7 +10,7 @@ package de.rcenvironment.core.communication.model;
 
 import java.io.Serializable;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
 
 /**
@@ -25,15 +25,15 @@ public interface InitialNodeInformation extends Serializable {
     /**
      * @return the unique node identifier string
      */
-    String getNodeIdString();
+    String getInstanceNodeSessionIdString();
 
     /**
-     * Convenience method that returns the node id as a {@link NodeIdentifier}. This method may or may not return the same object on
+     * Convenience method that returns the node id as a {@link InstanceNodeSessionId}. This method may or may not return the same object on
      * repeated calls.
      * 
      * @return the wrapped unique node identifier
      */
-    NodeIdentifier getNodeId();
+    InstanceNodeSessionId getInstanceNodeSessionId();
 
     /**
      * @return the assigned name for this node

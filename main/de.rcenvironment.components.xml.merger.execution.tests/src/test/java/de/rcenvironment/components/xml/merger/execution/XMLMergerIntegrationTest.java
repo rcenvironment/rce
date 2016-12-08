@@ -29,7 +29,7 @@ import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 
 import de.rcenvironment.components.xml.merger.common.XmlMergerComponentConstants;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.datamanagement.api.ComponentDataManagementService;
 import de.rcenvironment.core.component.execution.api.Component;
@@ -203,7 +203,7 @@ public class XMLMergerIntegrationTest {
         componentDataManagementServiceMock = EasyMock.createNiceMock(ComponentDataManagementService.class);
         componentDataManagementServiceMock.copyReferenceToLocalFile(EasyMock.anyObject(String.class),
             EasyMock.anyObject(File.class),
-            EasyMock.anyObject(NodeIdentifier.class));
+            EasyMock.anyObject(InstanceNodeSessionId.class));
         EasyMock.expectLastCall().andAnswer(copyReferenceToLocalFileAnswer).anyTimes();
 
         componentDataManagementServiceMock.createFileReferenceTDFromLocalFile(EasyMock.anyObject(ComponentContext.class),

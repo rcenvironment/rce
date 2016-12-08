@@ -5,10 +5,10 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.internal;
 
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatumRecipient;
@@ -24,9 +24,10 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Implementation of {@link EndpointDatumSerializer}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class EndpointDatumSerializerImpl implements EndpointDatumSerializer {
-    
+
     private TypedDatumSerializer typedDatumSerializer;
 
     @Override
@@ -41,11 +42,11 @@ public class EndpointDatumSerializerImpl implements EndpointDatumSerializer {
         }
         parts[2] = endpoint.getInputsComponentExecutionIdentifier();
         parts[3] = endpoint.getInputsComponentInstanceName();
-        parts[4] = endpoint.getInputsNodeId().getIdString();
+        parts[4] = endpoint.getInputsNodeId().getLogicalNodeIdString();
         parts[5] = endpoint.getOutputsComponentExecutionIdentifier();
-        parts[6] = endpoint.getOutputsNodeId().getIdString();
+        parts[6] = endpoint.getOutputsNodeId().getLogicalNodeIdString();
         parts[7] = endpoint.getWorkflowExecutionIdentifier();
-        parts[8] = endpoint.getWorkflowNodeId().getIdString();
+        parts[8] = endpoint.getWorkflowNodeId().getLogicalNodeIdString();
         if (endpoint.getDataManagementId() == null) {
             parts[9] = "";
         } else {
@@ -53,7 +54,7 @@ public class EndpointDatumSerializerImpl implements EndpointDatumSerializer {
         }
         return StringUtils.escapeAndConcat(parts);
     }
-    
+
     @Override
     public EndpointDatum deserializeEndpointDatum(String serializedEndpoint) {
         String[] parts = StringUtils.splitAndUnescape(serializedEndpoint);
@@ -63,20 +64,23 @@ public class EndpointDatumSerializerImpl implements EndpointDatumSerializer {
         } catch (IllegalArgumentException e) {
             endpoint.setValue(typedDatumSerializer.deserialize(parts[1]));
         }
-        
-        EndpointDatumRecipient endpointDatumRecipient = EndpointDatumRecipientFactory.createEndpointDatumRecipient(
-            parts[0], parts[2], parts[3], NodeIdentifierFactory.fromNodeId(parts[4]));
+
+        EndpointDatumRecipient endpointDatumRecipient =
+            EndpointDatumRecipientFactory.createEndpointDatumRecipient(parts[0], parts[2], parts[3],
+                NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(parts[4]));
         endpoint.setEndpointDatumRecipient(endpointDatumRecipient);
         endpoint.setOutputsComponentExecutionIdentifier(parts[5]);
-        endpoint.setOutputsNodeId(NodeIdentifierFactory.fromNodeId(parts[6]));
+        endpoint.setOutputsNodeId(NodeIdentifierUtils
+            .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(parts[6]));
         endpoint.setWorkflowExecutionIdentifier(parts[7]);
-        endpoint.setWorkfowNodeId(NodeIdentifierFactory.fromNodeId(parts[8]));
+        endpoint.setWorkflowNodeId(NodeIdentifierUtils
+            .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(parts[8]));
         if (!parts[9].isEmpty()) {
             endpoint.setDataManagementId(Long.valueOf(parts[9]));
         }
         return endpoint;
     }
-    
+
     protected void bindTypedDatumService(TypedDatumService typedDatumService) {
         typedDatumSerializer = typedDatumService.getSerializer();
     }

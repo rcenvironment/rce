@@ -2,6 +2,7 @@ target/
 .settings/
 .svn/
 sys$command
+*/help/generated/
 /de.rcenvironment/eclipse/launch/profiles/*/internal/
 /de.rcenvironment/eclipse/launch/profiles/*/integration/
 /de.rcenvironment/eclipse/launch/profiles/*/storage/
@@ -14,4 +15,3 @@ sys$command
 # TODO check: these may be obsolete as they are located in <profile>/storage now 
 derby.log
 /de.rcenvironment.core.scripting.tests/cachedir
-help/generated/

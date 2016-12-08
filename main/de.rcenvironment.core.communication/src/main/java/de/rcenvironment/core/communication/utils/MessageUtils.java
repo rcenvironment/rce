@@ -18,7 +18,7 @@ import java.io.Serializable;
 import org.apache.commons.io.IOUtils;
 
 import de.rcenvironment.core.communication.common.SerializationException;
-import de.rcenvironment.core.utils.common.StatsCounter;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 
 /**
  * Message-related utilities like serialization/deserialization.

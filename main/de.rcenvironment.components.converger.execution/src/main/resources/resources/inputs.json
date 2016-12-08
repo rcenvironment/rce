@@ -2,6 +2,7 @@
     "dynamicInputs": [
         {
             "identifier": "valueToConverge",
+            "character": "sameLoop",
             "group": "valuesToConverge",
             "dataTypes": [
                 "Float", 
@@ -20,7 +21,7 @@
                 "hasStartValue": {
                     "guiName": "Has start value",
                     "guiPosition": "0",
-                    "visibility": "shown",
+                    "visibility": "userConfigurable",
                     "defaultValue": "false",
                     "dataType": "bool"
                 },
@@ -39,7 +40,27 @@
             }
         },
         {
+            "identifier": "startToConverge",
+            "character": "outerLoop",
+            "group": "startValues",
+            "dataTypes": [
+                "Float", 
+                "Integer"
+            ],
+            "defaultDataType": "Float",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "readOnly": "true"
+        },
+        {
             "identifier": "toForward",
+            "character": "sameLoop",
             "group": "valuesToConverge",
             "dataTypes": [
                 "Boolean",
@@ -62,13 +83,29 @@
             "defaultInputExecutionConstraint": "Required"
         },
         {
-            "identifier": "outerLoopDone",
-            "group": "innerLoop",
+            "identifier": "startToForward",
+            "character": "outerLoop",
+            "group": "startValues",
             "dataTypes": [
-                "Boolean"
+                "Boolean",
+                "ShortText",
+                "Integer",
+                "Float",
+                "FileReference",
+                "DirectoryReference",
+                "SmallTable",
+                "Vector"
             ],
-            "readOnly": "true",
-            "defaultDataType": "Boolean"
+            "defaultDataType": "FileReference",
+            "inputHandlingOptions": [
+                "Single"
+            ],
+            "defaultInputHandling": "Single",
+            "inputExecutionConstraintOptions": [
+                "Required"
+            ],
+            "defaultInputExecutionConstraint": "Required",
+            "readOnly": "true"
         }
     ],
     "dynamicInputGroups": [

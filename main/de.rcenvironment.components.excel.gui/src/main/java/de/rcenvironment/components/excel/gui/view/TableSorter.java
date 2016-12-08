@@ -11,7 +11,7 @@ package de.rcenvironment.components.excel.gui.view;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerSorter;
 
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
+import de.rcenvironment.components.excel.common.ChannelValue;
 
 
 /**

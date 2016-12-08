@@ -15,8 +15,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDescriptionsMa
 import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
 
 /**
- * Edits one single input and two outputs - one with the same name as the input and one with the
- * same name as the input + given suffix.
+ * Edits one single input and two outputs - one with the same name as the input and one with the same name as the input + given suffix.
  * 
  * @author Sascha Zur
  */
@@ -41,19 +40,18 @@ public class EditDynamicInputWithAnotherInputAndOutputsCommand extends EditDynam
     @Override
     public void execute() {
         EndpointDescriptionsManager inputManager = getProperties().getInputDescriptionsManager();
-        EndpointDescription inputDesc = inputManager.getEndpointDescription(oldDesc.getName() + inputNameSuffix);
+        EndpointDescription addInputDesc = inputManager.getEndpointDescription(oldDesc.getName() + inputNameSuffix);
         Map<String, String> metaData = new HashMap<>();
         metaData.putAll(newDesc.getMetaData());
         metaData.putAll(metaDataInputWithSuffix);
         if (!addOrRemoveOtherInput) {
-            if (inputDesc != null) {
-                inputDesc.setName(newDesc.getName() + inputNameSuffix);
-                inputManager.editDynamicEndpointDescription(oldDesc.getName() + inputNameSuffix,
-                    newDesc.getName() + inputNameSuffix, newDesc.getDataType(), metaData,
-                    newDesc.getDynamicEndpointIdentifier(), inputGroup);
+            if (addInputDesc != null) {
+                addInputDesc.setName(newDesc.getName() + inputNameSuffix);
+                inputManager.editDynamicEndpointDescription(oldDesc.getName() + inputNameSuffix, newDesc.getName() + inputNameSuffix,
+                    newDesc.getDataType(), metaData, addInputDesc.getDynamicEndpointIdentifier(), inputGroup);
             }
         } else {
-            if (inputDesc == null) {
+            if (addInputDesc == null) {
                 InputWithOutputsCommandUtils.addInputWithSuffix(getProperties(), newDesc.getDynamicEndpointIdentifier(), newDesc.getName(),
                     newDesc.getDataType(), inputNameSuffix, inputGroup, metaData);
             } else {

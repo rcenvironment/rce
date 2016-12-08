@@ -16,11 +16,12 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Event type produced by components and workflows.
  *
  * @author Doreen Seider
+ * @author Robert Mischke (tweaked notification setup)
  */
 public interface ConsoleRow extends Comparable<ConsoleRow>, Serializable {
 
     /** Suffix used for publishing console notifications. */
-    String NOTIFICATION_SUFFIX = ":rce.component.console";
+    String NOTIFICATION_ID_PREFIX_CONSOLE_EVENT = "rce.component.console:";
     
     /** Type of the row. */
     enum Type {
@@ -169,6 +170,11 @@ public interface ConsoleRow extends Comparable<ConsoleRow>, Serializable {
      * @return payload of the {@link ConsoleRow}
      */
     String getPayload();
+    
+    /**
+     * @return component execution count
+     */
+    int getComponentRun();
     
     /**
      * @return sequence number (immutable) of the {@link ConsoleRow}

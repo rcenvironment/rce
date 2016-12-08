@@ -11,7 +11,6 @@ package de.rcenvironment.components.excel.common;
 import java.io.File;
 
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 
 /**

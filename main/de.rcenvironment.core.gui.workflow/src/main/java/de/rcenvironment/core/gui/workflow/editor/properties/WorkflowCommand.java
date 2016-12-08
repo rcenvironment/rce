@@ -20,7 +20,7 @@ public abstract class WorkflowCommand {
 
     protected CommandStack commandStack;
 
-    final void setCommandStack(final CommandStack commandStack) {
+    public final void setCommandStack(final CommandStack commandStack) {
         this.commandStack = commandStack;
     }
 

@@ -40,9 +40,10 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableColumn;
+import org.eclipse.swt.widgets.TableItem;
 import org.eclipse.ui.part.ViewPart;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.WorkflowHostService;
 import de.rcenvironment.core.communication.management.WorkflowHostSetListener;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
@@ -55,19 +56,19 @@ import de.rcenvironment.core.component.workflow.execution.spi.MultipleWorkflowsS
 import de.rcenvironment.core.gui.resources.api.ImageManager;
 import de.rcenvironment.core.gui.resources.api.StandardImages;
 import de.rcenvironment.core.gui.workflow.Activator;
-import de.rcenvironment.core.gui.workflow.view.OpenReadOnlyWorkflowRunEditorAction;
+import de.rcenvironment.core.gui.workflow.view.WorkflowRunEditorAction;
 import de.rcenvironment.core.notification.SimpleNotificationService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProcessor;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryPublisherAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * This view shows all running workflows.
@@ -90,7 +91,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
     private final List<String> idsOfRemoteWorkflowsSubscribedFor = new ArrayList<String>();
 
     // guarded by synchronization on itself
-    private final Set<NodeIdentifier> nodesSubscribedForNewWorkflows = new HashSet<NodeIdentifier>();
+    private final Set<InstanceNodeSessionId> nodesSubscribedForNewWorkflows = new HashSet<InstanceNodeSessionId>();
 
     private final WorkflowStateNotificationSubscriber workflowStateChangeListener =
         new WorkflowStateNotificationSubscriber(this);
@@ -126,22 +127,21 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
         workflowExecutionService = serviceRegistryAccess.getService(WorkflowExecutionService.class);
         serviceRegistryPublisherAccess = ServiceRegistry.createPublisherAccessFor(this);
 
-        BatchProcessor<Set<WorkflowExecutionInformation>> batchProcessor = new BatchAggregator
-            .BatchProcessor<Set<WorkflowExecutionInformation>>() {
+        BatchProcessor<Set<WorkflowExecutionInformation>> batchProcessor = new BatchProcessor<Set<WorkflowExecutionInformation>>() {
 
-                @Override
-                public void processBatch(final List<Set<WorkflowExecutionInformation>> batch) {
-                    Display.getDefault().asyncExec(new Runnable() {
+            @Override
+            public void processBatch(final List<Set<WorkflowExecutionInformation>> batch) {
+                Display.getDefault().asyncExec(new Runnable() {
 
-                        @Override
-                        public void run() {
-                            refresh(batch.get(batch.size() - 1));
-                        }
-                    });
-                }
+                    @Override
+                    public void run() {
+                        refresh(batch.get(batch.size() - 1));
+                    }
+                });
+            }
 
-            };
-        batchAggregator = new BatchAggregator<Set<WorkflowExecutionInformation>>(MAX_BATCH_SIZE, MAX_BATCH_LATENCY_MSEC, batchProcessor);
+        };
+        batchAggregator = ConcurrencyUtils.getFactory().createBatchAggregator(MAX_BATCH_SIZE, MAX_BATCH_LATENCY_MSEC, batchProcessor);
     }
 
     /**
@@ -154,8 +154,8 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
         serviceRegistryPublisherAccess.registerService(WorkflowHostSetListener.class, new WorkflowHostSetListener() {
 
             @Override
-            public void onReachableWorkflowHostsChanged(Set<NodeIdentifier> reachableWfHosts, Set<NodeIdentifier> addedWfHosts,
-                Set<NodeIdentifier> removedWfHosts) {
+            public void onReachableWorkflowHostsChanged(Set<InstanceNodeSessionId> reachableWfHosts,
+                Set<InstanceNodeSessionId> addedWfHosts, Set<InstanceNodeSessionId> removedWfHosts) {
                 updateSubscriptionsForNewlyCreatedWorkflows();
                 synchronized (syncUpdateLock) {
                     final Set<WorkflowExecutionInformation> wis = updateWorkflowInformations();
@@ -251,14 +251,14 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
             @Override
             public void mouseDoubleClick(MouseEvent e) {
-                WorkflowExecutionInformation wi = (WorkflowExecutionInformation) ((IStructuredSelection)
-                    viewer.getSelection()).getFirstElement();
+                WorkflowExecutionInformation wi =
+                    (WorkflowExecutionInformation) ((IStructuredSelection) viewer.getSelection()).getFirstElement();
 
                 if (wi == null) {
                     return;
                 }
 
-                new OpenReadOnlyWorkflowRunEditorAction(wi).run();
+                new WorkflowRunEditorAction(wi).run();
             }
         });
 
@@ -341,9 +341,21 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
         viewer.setContentProvider(new WorkflowInformationContentProvider());
         viewer.setLabelProvider(new WorkflowInformationLabelProvider());
+        TableItem[] selectedItems = viewer.getTable().getSelection();
+        String selWiId = null;
+        if (selectedItems.length == 1) {
+            selWiId = ((WorkflowExecutionInformation) selectedItems[0].getData()).getExecutionIdentifier();
+        }
         viewer.setInput(wis);
-        getSite().setSelectionProvider(viewer);
-
+        if (selWiId != null) {
+            for (TableItem i : viewer.getTable().getItems()) {
+                WorkflowExecutionInformation wei = (WorkflowExecutionInformation) i.getData();
+                if (selWiId.equals(wei.getExecutionIdentifier())) {
+                    viewer.getTable().setSelection(i);
+                    break;
+                }
+            }
+        }
         updateSelectedWorkflowState();
     }
 
@@ -357,7 +369,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
             Set<WorkflowExecutionInformation> wis = workflowExecutionService.getWorkflowExecutionInformations(true);
             // subscribe to all new remote ones in parallel and fetch their current states
-            CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+            CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
             List<String> alreadySubscribedWiIds = new ArrayList<String>(idsOfRemoteWorkflowsSubscribedFor);
             idsOfRemoteWorkflowsSubscribedFor.clear();
             for (final WorkflowExecutionInformation wi : wis) {
@@ -480,7 +492,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
                 @Override
                 protected IStatus run(final IProgressMonitor monitor) {
-                    CallablesGroup<Void> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Void.class);
+                    CallablesGroup<Void> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Void.class);
                     for (Object o : selection) {
                         WorkflowExecutionInformation wfExeInfo = (WorkflowExecutionInformation) o;
                         try {
@@ -500,14 +512,15 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
                     });
                     final Set<WorkflowExecutionInformation> wfExeInfos = updateWorkflowInformations();
                     try {
-                        table.getDisplay().asyncExec(new Runnable() {
+                        if (!table.isDisposed()) {
+                            table.getDisplay().asyncExec(new Runnable() {
 
-                            @Override
-                            public void run() {
-                                updateSelectedWorkflowState();
-                                refresh(wfExeInfos);
-                            }
-                        });
+                                @Override
+                                public void run() {
+                                    refresh(wfExeInfos);
+                                }
+                            });
+                        }
                     } finally {
                         monitor.done();
                     }
@@ -526,25 +539,26 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
 
     private void updateSubscriptionsForNewlyCreatedWorkflows() {
         synchronized (nodesSubscribedForNewWorkflows) {
-            CallablesGroup<NodeIdentifier> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(NodeIdentifier.class);
+            CallablesGroup<InstanceNodeSessionId> callablesGroup =
+                ConcurrencyUtils.getFactory().createCallablesGroup(InstanceNodeSessionId.class);
 
             ServiceRegistryAccess registryAccess = ServiceRegistry.createAccessFor(this);
-            Set<NodeIdentifier> nodes = registryAccess.getService(WorkflowHostService.class).getWorkflowHostNodesAndSelf();
-            for (final NodeIdentifier node : nodes) {
+            Set<InstanceNodeSessionId> nodes = registryAccess.getService(WorkflowHostService.class).getWorkflowHostNodesAndSelf();
+            for (final InstanceNodeSessionId node : nodes) {
                 if (!nodesSubscribedForNewWorkflows.contains(node)) {
                     nodesSubscribedForNewWorkflows.add(node);
-                    callablesGroup.add(new Callable<NodeIdentifier>() {
+                    callablesGroup.add(new Callable<InstanceNodeSessionId>() {
 
                         @Override
                         @TaskDescription("Distributed subscriptions for newly created workflow notifications")
-                        public NodeIdentifier call() throws Exception {
+                        public InstanceNodeSessionId call() throws Exception {
                             sns.subscribe(WorkflowConstants.NEW_WORKFLOW_NOTIFICATION_ID, workflowStateChangeListener, node);
                             return node;
                         }
                     });
                 }
             }
-            List<NodeIdentifier> nodesAdded = callablesGroup.executeParallel(new AsyncExceptionListener() {
+            List<InstanceNodeSessionId> nodesAdded = callablesGroup.executeParallel(new AsyncExceptionListener() {
 
                 @Override
                 public void onAsyncException(Exception e) {
@@ -576,9 +590,7 @@ public class WorkflowListView extends ViewPart implements MultipleWorkflowsState
                     } else if (workflowState == WorkflowState.PAUSED) {
                         pauseAction.setEnabled(false);
                         disposeAction.setEnabled(false);
-                    } else if (workflowState == WorkflowState.FINISHED
-                        || workflowState == WorkflowState.CANCELLED
-                        || workflowState == WorkflowState.FAILED) {
+                    } else if (WorkflowConstants.FINAL_WORKFLOW_STATES.contains(workflowState)) {
                         pauseAction.setEnabled(false);
                         resumeAction.setEnabled(false);
                         cancelAction.setEnabled(false);

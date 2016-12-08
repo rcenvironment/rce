@@ -12,6 +12,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputDatumHandling;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition.InputExecutionContraint;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 
 /**
  * Describes scheduling-related information about an input.
@@ -29,22 +30,35 @@ public final class InputMockInformation {
 
     protected final EndpointDefinition.InputExecutionContraint inputExecutionContraint;
     
+    protected final EndpointCharacter endpointCharacter;
+    
     protected final String parentGroup;
 
     protected final boolean connected;
 
     public InputMockInformation(String name, InputDatumHandling inputDatumHandling, InputExecutionContraint inputExecutionContraint,
-        String parentGroup, boolean connected) {
+        EndpointCharacter endpointCharacter, String parentGroup, boolean connected) {
         this.name = name;
         this.inputDatumHandling = inputDatumHandling;
         this.inputExecutionContraint = inputExecutionContraint;
+        this.endpointCharacter = endpointCharacter;
         this.parentGroup = parentGroup;
         this.connected = connected;
     }
-
+    
+    public InputMockInformation(String name, InputDatumHandling inputDatumHandling, InputExecutionContraint inputExecutionContraint,
+        EndpointCharacter endpointCharacter) {
+        this(name, inputDatumHandling, inputExecutionContraint, endpointCharacter, null, true);
+    }
+    
+    public InputMockInformation(String name, InputDatumHandling inputDatumHandling, InputExecutionContraint inputExecutionContraint,
+        String parentGroup, boolean connected) {
+        this(name, inputDatumHandling, inputExecutionContraint, EndpointCharacter.SAME_LOOP, parentGroup, connected);
+    }
+    
     public InputMockInformation(String name, InputDatumHandling inputDatumHandling, InputExecutionContraint inputExecutionContraint,
         boolean connected) {
-        this(name, inputDatumHandling, inputExecutionContraint, null, connected);
+        this(name, inputDatumHandling, inputExecutionContraint, EndpointCharacter.SAME_LOOP, null, connected);
     }
     
     public InputMockInformation(String name, InputDatumHandling inputDatumHandling, InputExecutionContraint inputExecutionContraint) {

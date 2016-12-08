@@ -15,8 +15,8 @@ import java.util.ArrayList;
 import org.easymock.EasyMock;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
-import de.rcenvironment.core.communication.testutils.PlatformServiceDefaultStub;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -30,7 +30,7 @@ import junit.framework.Assert;
  * Utils class for the workflow tests.
  * 
  * @author Sascha Zur
- * 
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public final class WorkflowTestUtils {
 
@@ -79,14 +79,14 @@ public final class WorkflowTestUtils {
      */
     public static WorkflowDescription createWorkflowDescription() {
         WorkflowDescription wd = null;
+        WorkflowDescriptionPersistenceHandlerTestUtils.initializeStaticFieldsOfWorkflowDescriptionPersistenceHandler();
         DummyWorkflowDescriptionPersistenceHandler dwph = new DummyWorkflowDescriptionPersistenceHandler();
         dwph.bindDistributedComponentKnowledgeService(new DistributedComponentKnowledgeServiceDefaultStub());
         dwph.bindComponentDescriptionFactoryService(new ComponentDescriptionFactoryServiceDefaultStub());
-        dwph.bindPlatformService(new PlatformServiceDefaultStub());
         try (InputStream is = WorkflowDescription.class.getResourceAsStream("/workflows_unit_test/DummyUnitTest.wf")) {
             wd = dwph.readWorkflowDescriptionFromStream(is);
         } catch (IOException | WorkflowFileException e) {
-            Assert.fail();
+            Assert.fail(e.toString());
         }
         return wd;
     }
@@ -95,8 +95,12 @@ public final class WorkflowTestUtils {
      * Dummy class to prevent the persistence handle calling getallComponentDescriptions.
      * 
      * @author Sascha Zur
+     * @author Robert Mischke (8.0.0 id adaptations)
      */
     private static final class DummyWorkflowDescriptionPersistenceHandler extends WorkflowDescriptionPersistenceHandler {
+
+        private final InstanceNodeSessionId virtualInstanceId = NodeIdentifierTestUtils
+            .createTestInstanceNodeSessionIdWithDisplayName("local-node-id");
 
         @Override
         protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService newService) {
@@ -108,11 +112,11 @@ public final class WorkflowTestUtils {
             EasyMock.replay(componentKnowledgeService);
 
         }
-        
+
         @Override
         protected void bindPlatformService(PlatformService newService) {
             platformService = EasyMock.createNiceMock(PlatformService.class);
-            EasyMock.expect(platformService.getLocalNodeId()).andReturn(NodeIdentifierFactory.fromNodeId("local-node-id")).anyTimes();
+            EasyMock.expect(platformService.getLocalInstanceNodeSessionId()).andReturn(virtualInstanceId).anyTimes();
             EasyMock.replay(platformService);
 
         }

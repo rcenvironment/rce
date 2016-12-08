@@ -19,23 +19,23 @@ import java.util.Map.Entry;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.core.communication.api.NodeIdentifierService;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListener;
 import de.rcenvironment.core.communication.channel.MessageChannelLifecycleListenerAdapter;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.configuration.NodeConfigurationService;
 import de.rcenvironment.core.communication.nodeproperties.NodePropertiesService;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
 import de.rcenvironment.core.communication.transport.spi.MessageChannel;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallback;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedCallbackManager;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.service.AdditionalServiceDeclaration;
 import de.rcenvironment.core.utils.common.service.AdditionalServicesProvider;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallback;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedCallbackManager;
 
 /**
  * Manager class that creates and publishes the local link state, and keeps track of the link states announced by other nodes in the
@@ -52,8 +52,7 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
     private static final String LSA_PROPERTY_KEY = "lsa";
 
     private final AsyncOrderedCallbackManager<LinkStateKnowledgeChangeListener> callbackManager =
-        new AsyncOrderedCallbackManager<LinkStateKnowledgeChangeListener>(SharedThreadPool.getInstance(),
-            AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
+        ConcurrencyUtils.getFactory().createAsyncOrderedCallbackManager(AsyncCallbackExceptionPolicy.LOG_AND_PROCEED);
 
     private NodePropertiesService nodePropertiesService;
 
@@ -61,11 +60,11 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
 
     private final Map<String, Link> localOutgoingLinks;
 
-    private volatile Map<NodeIdentifier, LinkState> linkStateKnowledgeSnapshot;
+    private volatile Map<InstanceNodeSessionId, LinkState> linkStateKnowledgeSnapshot;
 
     private volatile LinkState localLinkStateSnapshot;
 
-    private NodeIdentifier localNodeId;
+    private InstanceNodeSessionId localNodeId;
 
     private final boolean verboseLogging = DebugSettings.getVerboseLoggingEnabled(getClass());
 
@@ -73,16 +72,18 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
 
     private boolean localNodeIsRelay;
 
+    private NodeIdentifierService nodeIdentifierService;
+
     public DistributedLinkStateManager() {
         localOutgoingLinks = new HashMap<String, Link>();
-        linkStateKnowledgeSnapshot = Collections.unmodifiableMap(new HashMap<NodeIdentifier, LinkState>());
+        linkStateKnowledgeSnapshot = Collections.unmodifiableMap(new HashMap<InstanceNodeSessionId, LinkState>());
     }
 
     /**
      * OSGi-DS lifecycle method.
      */
     public synchronized void activate() {
-        localNodeId = nodeConfigurationService.getLocalNodeId();
+        localNodeId = nodeConfigurationService.getInstanceNodeSessionId();
         localNodeIsRelay = nodeConfigurationService.isRelay();
         localLinkStateSnapshot = new LinkState(localOutgoingLinks.values());
         setNewLocalLinkState(localLinkStateSnapshot);
@@ -122,8 +123,8 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
     }
 
     // linkStateKnowledgeSnapshot is defined as volatile
-    public Map<NodeIdentifier, LinkState> getCurrentKnowledge() {
-        return linkStateKnowledgeSnapshot; 
+    public Map<InstanceNodeSessionId, LinkState> getCurrentKnowledge() {
+        return linkStateKnowledgeSnapshot;
     }
 
     /**
@@ -142,6 +143,7 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
      */
     public void bindNodeConfigurationService(NodeConfigurationService newInstance) {
         this.nodeConfigurationService = newInstance;
+        this.nodeIdentifierService = nodeConfigurationService.getNodeIdentifierService();
     }
 
     /**
@@ -151,7 +153,7 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
      */
     public synchronized void addLinkStateKnowledgeChangeListener(LinkStateKnowledgeChangeListener listener) {
         // copy reference in synchronized block
-        final Map<NodeIdentifier, LinkState> currentKnowledgeSnapshotCopy = linkStateKnowledgeSnapshot;
+        final Map<InstanceNodeSessionId, LinkState> currentKnowledgeSnapshotCopy = linkStateKnowledgeSnapshot;
         // send initial update
         callbackManager.addListenerAndEnqueueCallback(listener, new AsyncCallback<LinkStateKnowledgeChangeListener>() {
 
@@ -173,13 +175,12 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
 
     private synchronized void updateOnNodePropertiesAddedOrModified(Collection<? extends NodeProperty> newProperties) {
         // only used if a relevant change is detected
-        Map<NodeIdentifier, LinkState> deltaMap = null;
+        Map<InstanceNodeSessionId, LinkState> deltaMap = null;
         for (NodeProperty property : newProperties) {
             if (property.getKey().equals(LSA_PROPERTY_KEY)) {
-                String nodeIdString = property.getNodeIdString();
                 String linkStateData = property.getValue();
-                NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(nodeIdString);
-                if (nodeId.equals(localNodeId)) {
+                InstanceNodeSessionId updateSourceInstanceSessionId = property.getInstanceNodeSessionId();
+                if (localNodeId.isSameInstanceNodeSessionAs(updateSourceInstanceSessionId)) {
                     // ignore LSA properties for the local node as they can differ from the actual
                     // local link state in relay mode
                     continue;
@@ -190,11 +191,11 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
                     // log.debug("Parsed LSA: " + deserialized);
                     // lazy init; also serves as marker that there have been relevant changes
                     if (deltaMap == null) {
-                        deltaMap = new HashMap<NodeIdentifier, LinkState>();
+                        deltaMap = new HashMap<InstanceNodeSessionId, LinkState>();
                     }
-                    deltaMap.put(nodeId, deserialized);
+                    deltaMap.put(updateSourceInstanceSessionId, deserialized);
                 } catch (IOException e) {
-                    log.error("Ignoring unreadable link state update for node " + nodeId, e);
+                    log.error("Ignoring unreadable link state update for node " + updateSourceInstanceSessionId, e);
                 }
             }
         }
@@ -206,7 +207,7 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
                     locationInfo = " " + localNodeId.toString();
                 }
                 buffer.append(StringUtils.format("Detected %d LSA property changes%s: ", deltaMap.size(), locationInfo));
-                for (Entry<NodeIdentifier, LinkState> entry : deltaMap.entrySet()) {
+                for (Entry<InstanceNodeSessionId, LinkState> entry : deltaMap.entrySet()) {
                     buffer.append(StringUtils.format("\n  %s -> %s", entry.getKey(), entry.getValue().getLinks()));
                 }
                 log.debug(buffer.toString());
@@ -216,9 +217,9 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
     }
 
     private synchronized void updateOnOutgoingChannelEstablished(MessageChannel connection) {
-        String linkId = connection.getChannelId();
-        String nodeIdString = connection.getRemoteNodeInformation().getNodeIdString();
-        Link link = new Link(linkId, nodeIdString);
+        final String linkId = connection.getChannelId();
+        final String remoteInstanceNodeSessionIdString = connection.getRemoteNodeInformation().getInstanceNodeSessionIdString();
+        final Link link = new Link(linkId, remoteInstanceNodeSessionIdString);
         localOutgoingLinks.put(linkId, link);
         localLinkStateSnapshot = new LinkState(localOutgoingLinks.values());
         setNewLocalLinkState(localLinkStateSnapshot);
@@ -240,7 +241,7 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
         // regardless of relay or non-relay mode, merge the local link state into the effective link
         // state knowledge; to make sure this is not overwritten by the empty pseudo link state
         // property in non-relay mode, "received" local property changes must be ignored - misc_ro
-        Map<NodeIdentifier, LinkState> deltaMap = new HashMap<NodeIdentifier, LinkState>();
+        Map<InstanceNodeSessionId, LinkState> deltaMap = new HashMap<InstanceNodeSessionId, LinkState>();
         deltaMap.put(localNodeId, linkState);
         mergeIntoEffectiveLinkStateKnowledge(deltaMap);
 
@@ -255,14 +256,14 @@ public class DistributedLinkStateManager implements AdditionalServicesProvider {
     }
 
     // NOTE: must be called from synchronized methods only!
-    private void mergeIntoEffectiveLinkStateKnowledge(Map<NodeIdentifier, LinkState> deltaMap) {
+    private void mergeIntoEffectiveLinkStateKnowledge(Map<InstanceNodeSessionId, LinkState> deltaMap) {
         // there have been relevant changes, so replace the current knowledge
-        Map<NodeIdentifier, LinkState> tempMap = new HashMap<NodeIdentifier, LinkState>(linkStateKnowledgeSnapshot);
+        Map<InstanceNodeSessionId, LinkState> tempMap = new HashMap<InstanceNodeSessionId, LinkState>(linkStateKnowledgeSnapshot);
         tempMap.putAll(deltaMap);
         linkStateKnowledgeSnapshot = Collections.unmodifiableMap(tempMap);
         // create immutable copy of new knowledge reference and delta map in synchronized block
-        final Map<NodeIdentifier, LinkState> knowledgeSnapshotCopy = linkStateKnowledgeSnapshot;
-        final Map<NodeIdentifier, LinkState> deltaMapCopy = Collections.unmodifiableMap(deltaMap);
+        final Map<InstanceNodeSessionId, LinkState> knowledgeSnapshotCopy = linkStateKnowledgeSnapshot;
+        final Map<InstanceNodeSessionId, LinkState> deltaMapCopy = Collections.unmodifiableMap(deltaMap);
         // trigger callback
         callbackManager.enqueueCallback(new AsyncCallback<LinkStateKnowledgeChangeListener>() {
 

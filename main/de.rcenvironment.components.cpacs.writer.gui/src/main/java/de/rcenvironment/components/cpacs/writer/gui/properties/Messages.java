@@ -35,18 +35,6 @@ public class Messages extends NLS {
     /** Constant. */
     public static String overwrite;
 
-    /** Validation message. */
-    public static String localFolderNotConfigured;
-
-    /** Validation message. */
-    public static String localFolderNotConfiguredLong;
-
-    /** Validation message. */
-    public static String localFolderPathNotAbsolute;
-
-    /** Validation message. */
-    public static String localFolderPathNotAbsoluteLong;
-
     /** Constant. */
     public static String localFolderTitle;
 

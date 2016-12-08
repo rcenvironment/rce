@@ -1,25 +1,8 @@
 {
-    "staticInputs":[
-        {
-            "name":"Loop done",
-            "group":"root",
-            "dataTypes":[
-                "Boolean"
-            ],
-            "defaultDataType":"Boolean",
-            "inputHandlingOptions":[
-	            "Single"
-            ],
-            "defaultInputHandling":"Single",
-            "inputExecutionConstraintOptions":[
-                "Required"
-            ],
-            "defaultInputExecutionConstraint":"Required"
-		}
-	],
-	"dynamicInputs": [
+    "dynamicInputs": [
         {
             "identifier": "to_evaluate",
+            "character": "outerLoop",
             "group":"to_evaluate",
             "dataTypes": [
                 "Float",
@@ -40,6 +23,7 @@
         },
         {
             "identifier": "evaluation_results",
+            "character": "sameLoop",
             "group":"evaluation_results",
             "dataTypes": [
                 "Float",

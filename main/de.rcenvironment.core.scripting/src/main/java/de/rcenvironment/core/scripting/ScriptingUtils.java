@@ -52,6 +52,8 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * Utils for all scripting elements.
  * 
  * @author Sascha Zur
+ * @author Jascha Riedel (#14029)
+ * @author David Scholz (#14550, #14548)
  */
 public final class ScriptingUtils {
 
@@ -64,7 +66,9 @@ public final class ScriptingUtils {
 
     protected static final Log LOGGER = LogFactory.getLog(ScriptingUtils.class);
 
-    private static final String RCE_NOT_A_VALUE_OUTPUT_LIST = "RCE_NotAValueOutputList";
+    private static final String JYTHON_JAR = "jython-standalone-2.5.1.jar";
+
+    private static final String NOT_A_VALUE_UUID = "not_a_value_7fdc603e";
 
     private static final String USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING = " use Python as script language instead";
 
@@ -123,6 +127,14 @@ public final class ScriptingUtils {
         jythonPath = path;
     }
 
+//    /**
+//     * Set JVM properties required for proper Jython 2.7.0 support.
+//     */
+//    public static void setJVMPropertiesForJython270Support() {
+//        System.setProperty("python.import.site", "false");
+//        System.setProperty("python.console.encoding", "UTF-8");
+//    }
+
     /**
      * Determines the location of the jython.jar.
      * 
@@ -143,7 +155,7 @@ public final class ScriptingUtils {
             String path = file.getAbsolutePath();
             path = path.replaceAll(ESCAPESLASH, SLASH);
             String[] splitted = path.split(SLASH);
-            if (splitted[splitted.length - 1].equals("jython-standalone-2.5.1.jar")) {
+            if (splitted[splitted.length - 1].equals(JYTHON_JAR)) {
                 return path + "/Lib";
             }
         }
@@ -198,7 +210,7 @@ public final class ScriptingUtils {
         currentHeader += StringUtils.format("RCE_CURRENT_RUN_NUMBER = %s\n", componentContext.getExecutionCount());
         currentHeader += wrappingScript;
         currentHeader += "RCE.setDictionary_internal(RCE_Dict_InputChannels)\nimport shutil\n";
-        List<String> notConnected = new LinkedList<String>();
+        List<String> notConnected = new LinkedList<>();
         for (String input : componentContext.getInputsNotConnected()) {
             if (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT) != null
                 && (componentContext.getInputMetaDataValue(input, ComponentConstants.INPUT_METADATA_KEY_INPUT_EXECUTION_CONSTRAINT).equals(
@@ -288,14 +300,11 @@ public final class ScriptingUtils {
                 nameAndValue += input;
                 break;
             case Float:
-                if (((FloatTD) input).getFloatValue() == Double.NEGATIVE_INFINITY) {
-                    nameAndValue += "float(\"-INF\")";
-                } else if (((FloatTD) input).getFloatValue() == Double.POSITIVE_INFINITY) {
-                    nameAndValue += "float(\"INF\")";
-                } else if (((FloatTD) input).toString().equals("NaN")) {
-                    nameAndValue += "float(\"nan\")";
-                } else {
+                String append = replaceNonNumericValue(((FloatTD) input).getFloatValue());
+                if (append.isEmpty()) {
                     nameAndValue += ((FloatTD) input).getFloatValue();
+                } else {
+                    nameAndValue += append;
                 }
                 break;
             case Empty:
@@ -313,7 +322,13 @@ public final class ScriptingUtils {
                             vector.getRowDimension(), MAXIMUM_SMALL_TABLE_ENTRIES));
                 }
                 for (int i = 0; i < vector.getRowDimension(); i++) {
-                    nameAndValue += vector.getFloatTDOfElement(i).getFloatValue() + COMMA;
+                    String appending = replaceNonNumericValue(vector.getFloatTDOfElement(i).getFloatValue());
+                    if (appending.isEmpty()) {
+                        nameAndValue += vector.getFloatTDOfElement(i).getFloatValue();
+                    } else {
+                        nameAndValue += appending;
+                    }
+                    nameAndValue += COMMA;
                 }
                 if (vector.getRowDimension() > 0) {
                     nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
@@ -329,40 +344,7 @@ public final class ScriptingUtils {
                 nameAndValue += CLOSE_LIST_NEWLINE;
                 break;
             case SmallTable:
-                SmallTableTD table = (SmallTableTD) input;
-                nameAndValue += openBracket;
-                if (table.getRowCount() * table.getColumnCount() > MAXIMUM_SMALL_TABLE_ENTRIES) {
-                    throw new ComponentException(
-                        StringUtils.format(
-                            "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
-                                + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
-                            inputName,
-                            table.getRowCount() * table.getColumnCount(), MAXIMUM_SMALL_TABLE_ENTRIES));
-                }
-                for (int i = 0; i < table.getRowCount(); i++) {
-                    if (table.getRowCount() > 1) {
-                        nameAndValue += openBracket;
-                    }
-                    for (int j = 0; j < table.getColumnCount(); j++) {
-                        if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
-                            table.getTypedDatumOfCell(i, j)) instanceof String) {
-                            nameAndValue += QUOTE
-                                + ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j))
-                                + QUOTE + COMMA;
-                        } else {
-                            nameAndValue +=
-                                ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j)) + COMMA;
-                        }
-                    }
-                    nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
-                    if (table.getRowCount() > 1) {
-                        nameAndValue += "],";
-                    } else {
-                        nameAndValue += COMMA;
-                    }
-                }
-                nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
-                nameAndValue += CLOSE_LIST_NEWLINE;
+                nameAndValue = convertSmallTable(openBracket, nameAndValue, inputName, input);
                 break;
             default:
                 break;
@@ -375,6 +357,63 @@ public final class ScriptingUtils {
         dataDefinition = dataDefinition.substring(0, dataDefinition.length() - 1);
         dataDefinition += "}\n";
         return dataDefinition;
+
+    }
+
+    private static String convertSmallTable(final String openBracket, String nameAndValue, String inputName, TypedDatum input)
+        throws ComponentException {
+        SmallTableTD table = (SmallTableTD) input;
+        nameAndValue += openBracket;
+        if (table.getRowCount() * table.getColumnCount() > MAXIMUM_SMALL_TABLE_ENTRIES) {
+            throw new ComponentException(
+                StringUtils.format(
+                    "Small Table of input '%s' exceeds maximum number of entries allowed for Jython (entries: %s; maximum: %s);"
+                        + USE_PYTHON_AS_SCRIPT_LANGUAGE_INSTEAD_STRING,
+                    inputName,
+                    table.getRowCount() * table.getColumnCount(), MAXIMUM_SMALL_TABLE_ENTRIES));
+        }
+        for (int i = 0; i < table.getRowCount(); i++) {
+            if (table.getRowCount() > 1) {
+                nameAndValue += openBracket;
+            }
+            for (int j = 0; j < table.getColumnCount(); j++) {
+                if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
+                    table.getTypedDatumOfCell(i, j)) instanceof String) {
+                    nameAndValue += QUOTE
+                        + ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j))
+                        + QUOTE + COMMA;
+                } else if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
+                    table.getTypedDatumOfCell(i, j)) instanceof Double) {
+                    nameAndValue += replaceNonNumericValue(((FloatTD) table.getTypedDatumOfCell(i, j)).getFloatValue()) + COMMA;
+                } else {
+                    nameAndValue +=
+                        ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(table.getTypedDatumOfCell(i, j)) + COMMA;
+                }
+            }
+            nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
+            if (table.getRowCount() > 1) {
+                nameAndValue += "],";
+            } else {
+                nameAndValue += COMMA;
+            }
+        }
+        nameAndValue = nameAndValue.substring(0, nameAndValue.length() - 1);
+        nameAndValue += CLOSE_LIST_NEWLINE;
+        return nameAndValue;
+    }
+
+    private static String replaceNonNumericValue(double floatValue) {
+        String result = "";
+        if (floatValue == Double.NEGATIVE_INFINITY) {
+            result += "float(\"-INF\")";
+        } else if (floatValue == Double.POSITIVE_INFINITY) {
+            result += "float(\"INF\")";
+        } else if (Double.isNaN(floatValue)) {
+            result += "float(\"nan\")";
+        } else {
+            result += floatValue;
+        }
+        return result;
     }
 
     private static String getMatrix(final String openBracket, String nameAndValue, String inputName, MatrixTD matrix)
@@ -397,6 +436,15 @@ public final class ScriptingUtils {
                     nameAndValue += QUOTE
                         + ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j))
                         + QUOTE + COMMA;
+                } else if (ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(
+                    matrix.getFloatTDOfElement(i, j)) instanceof Double) {
+                    String append = replaceNonNumericValue(matrix.getFloatTDOfElement(i, j).getFloatValue());
+                    if (append.isEmpty()) {
+                        nameAndValue += ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j));
+                    } else {
+                        nameAndValue += append;
+                    }
+                    nameAndValue += COMMA;
                 } else {
                     nameAndValue +=
                         ScriptDataTypeHelper.getObjectOfEntryForPythonOrJython(matrix.getFloatTDOfElement(i, j)) + COMMA;
@@ -429,22 +477,20 @@ public final class ScriptingUtils {
         // send values to outputs, using the Map
         // this block sends the values when the user calls the method RCE.write_output()
         for (String outputName : componentContext.getOutputs()) {
+
             DataType type = componentContext.getOutputDataType(outputName);
             List<Object> datas = map.get(outputName);
             if (datas != null) {
                 for (Object value : datas) {
-                    if (value != null) {
+                    if (value != null && !String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
                         writeOutputByType(value, type, outputName, workingPath, engine, historyDataItem, componentContext);
+                    } else if (String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
+                        componentContext.writeOutput(outputName, typedDatumFactory.createNotAValue());
                     }
                 }
             }
         }
 
-        if (engine.get(RCE_NOT_A_VALUE_OUTPUT_LIST) != null) {
-            for (String endpointName : (List<String>) engine.get(RCE_NOT_A_VALUE_OUTPUT_LIST)) {
-                componentContext.writeOutput(endpointName, typedDatumFactory.createNotAValue());
-            }
-        }
         Map<String, Object> stateMapOutput = (Map<String, Object>) engine.get("RCE_STATE_VARIABLES");
         for (String key : stateMapOutput.keySet()) {
             stateMap.put(key, stateMapOutput.get(key));
@@ -456,11 +502,27 @@ public final class ScriptingUtils {
 
     /**
      * @param engine the {@link ScriptEngine} executing the script which should be considered
+     * @param componentContext the {@link ComponentContext} of the component
      * @return set with names of those output for which a not-a-value {@link TypedDatum} was written
      */
     @SuppressWarnings("unchecked")
-    public static Set<String> getOutputsSendingNotAValue(ScriptEngine engine) {
-        return new HashSet<>((List<String>) engine.get(RCE_NOT_A_VALUE_OUTPUT_LIST));
+    public static Set<String> getOutputsSendingNotAValue(ScriptEngine engine, ComponentContext componentContext) {
+        Map<String, ArrayList<Object>> map = (Map<String, ArrayList<Object>>) engine.get("RCE_Dict_OutputChannels");
+
+        Set<String> returnSet = new HashSet<>();
+
+        for (String outputName : componentContext.getOutputs()) {
+            List<Object> datas = map.get(outputName);
+            if (datas != null) {
+                for (Object value : datas) {
+                    if (value != null && String.valueOf(value).equals((NOT_A_VALUE_UUID))) {
+                        returnSet.add(outputName);
+                        break;
+                    }
+                }
+            }
+        }
+        return returnSet;
     }
 
     @SuppressWarnings("unchecked")
@@ -472,14 +534,39 @@ public final class ScriptingUtils {
             outputValue = typedDatumFactory.createShortText(value.toString());
             break;
         case Boolean:
-            outputValue = typedDatumFactory.createBoolean(Boolean.parseBoolean(value.toString()));
+            String stringValue = value.toString();
+            boolean isNumber = true;
+
+            try {
+                float numberValue = Float.parseFloat(stringValue);
+                if (Math.abs(numberValue) > 0) {
+                    outputValue = typedDatumFactory.createBoolean(true);
+                } else {
+                    outputValue = typedDatumFactory.createBoolean(false);
+                }
+            } catch (NumberFormatException e) {
+                isNumber = false;
+            }
+
+            if (!isNumber && (stringValue.equalsIgnoreCase("0") || stringValue.equalsIgnoreCase("0L") || stringValue.equalsIgnoreCase("0.0")
+                || stringValue.equalsIgnoreCase("0j") || stringValue.equalsIgnoreCase("()") || stringValue.equalsIgnoreCase("[]")
+                || stringValue.isEmpty() || stringValue.equalsIgnoreCase("{}") || stringValue.equalsIgnoreCase("false")
+                || stringValue.equalsIgnoreCase("none"))) {
+
+                outputValue = typedDatumFactory.createBoolean(false);
+
+            } else if (!isNumber) {
+                outputValue = typedDatumFactory.createBoolean(true);
+            }
             break;
         case Float:
             try {
                 outputValue = typedDatumFactory.createFloat(Double.parseDouble(value.toString()));
             } catch (NumberFormatException e) {
-                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float",
-                    value.toString()), e);
+                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float."
+                    + " Possible reasons (not restricted): Output value too big (max. %.1e),"
+                    + " or output value contains non numeric characters.",
+                    value.toString(), Double.MAX_VALUE));
             }
 
             break;
@@ -487,8 +574,11 @@ public final class ScriptingUtils {
             try {
                 outputValue = typedDatumFactory.createInteger(Long.parseLong(value.toString()));
             } catch (NumberFormatException e) {
-                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Float",
-                    value.toString()), e);
+                throw new ComponentException(StringUtils.format("Failed to parse output value '%s' to data type Integer."
+                    + " Possible reasons (not restricted): Output value too big (max. 2E"
+                    + Long.toBinaryString(Long.MAX_VALUE).length() + " - 1),"
+                    + " or output value contains non numeric characters.",
+                    value.toString()));
             }
 
             break;
@@ -559,7 +649,7 @@ public final class ScriptingUtils {
             for (Object columnObject : rowArray) {
                 if (!(columnObject instanceof List)) {
                     throw new ComponentException(
-                          StringUtils.format("Value \"%s\" of output \"%s\" is not of type matrix.", columnObject, name));
+                        StringUtils.format("Value \"%s\" of output \"%s\" is not of type matrix.", columnObject, name));
                 }
                 List<Object> columnArray = (List<Object>) columnObject;
                 if (columnArray.size() == 0) {
@@ -577,14 +667,16 @@ public final class ScriptingUtils {
                         matrix.setFloatTDForElement((FloatTD) cellValue, i, j++);
                     } else if (cellValue instanceof IntegerTD) {
                         matrix.setFloatTDForElement(typedDatumFactory.createFloat(((IntegerTD) cellValue).getIntValue()), i, j++);
+                    } else if (cellValue instanceof ShortTextTD && ((ShortTextTD) cellValue).getShortTextValue().equals("+Infinity")) {
+                        matrix.setFloatTDForElement(typedDatumFactory.createFloat(Double.POSITIVE_INFINITY), i, j++);
                     } else {
                         String elementString = "None";
-                        if (element != null){
+                        if (element != null) {
                             elementString = element.toString();
                         }
                         throw new ComponentException(
                             StringUtils.format("Value \"%s\" of cell (%s, %s) of matrix \"%s\" is not an integer or a float value.",
-                                    elementString, i, j, name));
+                                elementString, i, j, name));
                     }
                 }
                 i++;
@@ -601,14 +693,34 @@ public final class ScriptingUtils {
         }
         List<Object> rowArray = (List<Object>) value;
         TypedDatum[][] result = new TypedDatum[rowArray.size()][];
+        Object first = "";
         if (rowArray.size() > 0 && rowArray.get(0) instanceof List) {
             int i = 0;
+            int size = 0;
             for (Object columnObject : rowArray) {
                 if (!(columnObject instanceof List)) {
                     throw new ComponentException(StringUtils.format("Value \"%s\" is not of type small table.", columnObject));
                 }
                 List<Object> columnArray = (List<Object>) columnObject;
-                result[i] = new TypedDatum[columnArray.size()];
+                if (size == 0) {
+                    first = columnObject;
+                    size = columnArray.size();
+                }
+
+                if (size != columnArray.size()) {
+                    throw new ComponentException(StringUtils.format(
+                        "Each row must have the same number of elements in a small table. "
+                            + "Element count of \"%s\" and \"%s\" does not match.",
+                        first, columnObject));
+                }
+
+                if (columnArray.size() == 0) {
+                    result[i] = new TypedDatum[1];
+                    result[i][0] = typedDatumFactory.createEmpty();
+                } else {
+                    result[i] = new TypedDatum[columnArray.size()];
+                }
+
                 int j = 0;
                 for (Object element : columnArray) {
                     result[i][j++] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
@@ -617,6 +729,7 @@ public final class ScriptingUtils {
             }
         } else {
             int i = 0;
+            // ??
             for (Object element : rowArray) {
                 result[i] = new TypedDatum[1];
                 result[i][0] = ScriptDataTypeHelper.getTypedDatum(element, typedDatumFactory);
@@ -635,9 +748,17 @@ public final class ScriptingUtils {
             }
             if (file.exists()) {
                 if (type.equals("file")) {
+                    if (file.isDirectory()) {
+                        throw new ComponentException(StringUtils.format(
+                            "Failed to write %s to output '%s' as it is a directory.", file.getAbsolutePath(), name));
+                    }
                     outputValue = componentDatamanagementService.createFileReferenceTDFromLocalFile(
                         componentContext, file, file.getName());
                 } else {
+                    if (!file.isDirectory()) {
+                        throw new ComponentException(StringUtils.format(
+                            "Failed to write %s to output '%s' as it is not a directory.", file.getAbsolutePath(), name));
+                    }
                     outputValue = componentDatamanagementService.createDirectoryReferenceTDFromLocalDirectory(componentContext, file,
                         file.getName());
                 }

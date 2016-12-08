@@ -58,9 +58,6 @@ public class Messages extends NLS {
     public static String propertytableGroupGeneral;
 
     /** Constant. */
-    public static String noRootChosen;
-
-    /** Constant. */
     public static String note;
 
     /** Text for OutputLocation Table. */
@@ -84,7 +81,10 @@ public class Messages extends NLS {
     /** Text for root folder dialog. */
     public static String selectRootFolder;
 
-    /** Labels for settings in OutputWriterEndpointEditDialog and OutputLocation Edit Dialog. */
+    /**
+     * Labels for settings in OutputWriterEndpointEditDialog and OutputLocation
+     * Edit Dialog.
+     */
 
     /** Name field. */
     // public static String name;
@@ -131,24 +131,6 @@ public class Messages extends NLS {
     /** Message: Handling option only for file from previous iteration. */
     public static String previousIterationMessage;
 
-    /** Warning if input is connected to no output. */
-    public static String noOutputForInput;
-
-    /** Warning if not input is connected to an output. */
-    public static String noInputForOutput;
-
-    /** Warning if placeholder cannot be matched. */
-    public static String unmatchedPlaceholder;
-
-    /** Warning if header placeholder cannot be matched. */
-    public static String unmatchedHeaderPlaceholder;
-
-    /** Warning if input does not exist. */
-    public static String missingInput;
-
-    /** Warning if output location has connected as well as unconnected inputs. */
-    public static String connectedAndUnconnectedInputs;
-
     /** Confirm dialog on input changes. */
     public static String editingInputWithOutputLocationDialogTitle;
 
@@ -176,8 +158,7 @@ public class Messages extends NLS {
     /** Title for options group. */
     public static String groupTitleInputs;
 
-    private static final String BUNDLE_NAME = Messages.class.getPackage()
-        .getName() + ".messages";
+    private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 
     static {
         // initialize resource bundle
@@ -185,11 +166,12 @@ public class Messages extends NLS {
     }
 
     /*
-     * public static String Type(Type type){ switch (type) { case FILE: return addfile; case FOLDER: return addfolder; default: return null;
-     * } }
+     * public static String Type(Type type){ switch (type) { case FILE: return
+     * addfile; case FOLDER: return addfolder; default: return null; } }
      * 
-     * public static Type getTypeByText(String text){ if (text.contains(addfile)){ return Type.FILE; }else if(text.contains(addfolder)){
-     * return Type.FOLDER; }else{ return null; }
+     * public static Type getTypeByText(String text){ if
+     * (text.contains(addfile)){ return Type.FILE; }else
+     * if(text.contains(addfolder)){ return Type.FOLDER; }else{ return null; }
      * 
      * }
      */

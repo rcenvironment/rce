@@ -55,7 +55,7 @@ public class OutputWriterPropertiesSection extends DefaultEndpointPropertySectio
     public OutputWriterPropertiesSection() {
 
         OutputWriterEndpointSelectionPane outputPane =
-            new OutputWriterEndpointSelectionPane(Messages.inputs, EndpointType.INPUT, this, false, "default", false);
+            new OutputWriterEndpointSelectionPane(Messages.inputs, EndpointType.INPUT, "default", this);
         setColumns(1);
         setPanes(outputPane);
 

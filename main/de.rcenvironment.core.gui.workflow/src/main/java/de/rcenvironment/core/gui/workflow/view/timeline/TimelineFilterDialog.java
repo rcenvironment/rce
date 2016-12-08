@@ -24,8 +24,8 @@ import org.eclipse.jface.viewers.LabelProvider;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.jface.viewers.ViewerFilter;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.KeyEvent;
-import org.eclipse.swt.events.KeyListener;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.graphics.Image;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -42,7 +42,7 @@ import org.eclipse.swt.widgets.TreeItem;
  * 
  * @author Hendrik Abbenhaus
  */
-public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckStateListener {
+public class TimelineFilterDialog extends Dialog implements ICheckStateListener {
 
     /** Initial string. */
     public String initialFilterText = "";
@@ -120,29 +120,12 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
         if (!initialFilterText.equals("")) {
             sourceFilterText.setText(initialFilterText);
         }
-        sourceFilterText.addKeyListener(this);
+        
+        sourceFilterText.addModifyListener(new FilterTextModifyListener(currentCheckedElements));
 
         return container;
     }
 
-    @Override
-    public void keyPressed(KeyEvent arg0) { // sourceFilterText KeyListner
-        //first 
-        this.currentCheckedElements = getCheckedElements().toArray(new TimelineFilterTreeNode[getCheckedElements().size()]);
-        filter.setFilterString(((Text) arg0.getSource()).getText());
-        viewer.refresh();
-        viewer.expandAll();
-    }
-
-    @Override
-    public void keyReleased(KeyEvent arg0) { // sourceFilterText KeyListner
-        keyPressed(arg0);
-        viewer.setCheckedElements(this.currentCheckedElements);
-        for (TimelineFilterTreeNode currentNode : this.currentCheckedElements){
-            updateTree(currentNode, getCheckedElements(), true);
-        }
-    }
-    
     @Override
     protected void okPressed() {
         componentNameFilter.clear();
@@ -354,6 +337,36 @@ public class TimelineFilterDialog extends Dialog implements KeyListener, ICheckS
      */
     public List<Object> getGrayedElements() {
         return Arrays.asList(viewer.getGrayedElements());
+    }
+
+    /**
+     * Listener that updates tree on filter modification.
+     *
+     * @author Oliver Seebach
+     */
+    private final class FilterTextModifyListener implements ModifyListener {
+
+        
+        /**
+         * Constructor receiving the currently checked elements in the tree.
+         * 
+         * @param currentCheckedElements The currently checked elements in the tree
+         */
+        FilterTextModifyListener(TimelineFilterTreeNode[] currentCheckedElements) {
+
+        }
+        
+        @Override
+        public void modifyText(ModifyEvent arg0) {
+            currentCheckedElements = getCheckedElements().toArray(new TimelineFilterTreeNode[getCheckedElements().size()]);
+            filter.setFilterString(((Text) arg0.getSource()).getText());
+            viewer.refresh();
+            viewer.expandAll();
+            viewer.setCheckedElements(currentCheckedElements);
+            for (TimelineFilterTreeNode currentNode : currentCheckedElements){
+                updateTree(currentNode, getCheckedElements(), true);
+            }
+        }
     }
 
     /**

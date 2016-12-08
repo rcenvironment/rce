@@ -17,6 +17,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.codehaus.jackson.annotate.JsonIgnore;
+import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.model.configuration.api.ConfigurationDefinition;
@@ -30,13 +31,12 @@ import de.rcenvironment.core.component.model.configuration.api.ReadOnlyConfigura
  * 
  * @author Doreen Seider
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ConfigurationDefinitionImpl implements Serializable, ConfigurationDefinition {
 
     private static final long serialVersionUID = -3257767738643151923L;
 
     private List<Object> rawConfigurationDef = new ArrayList<Object>();
-
-    private Map<String, Object> configurationDef = new HashMap<String, Object>();
 
     private List<Object> rawPlaceholderMetaDataDef = new ArrayList<Object>();
     
@@ -44,14 +44,128 @@ public class ConfigurationDefinitionImpl implements Serializable, ConfigurationD
 
     private Map<String, String> rawReadOnlyConfiguration = new HashMap<String, String>();
 
-    private Map<String, Object> rawActivationFilters = new HashMap<>();
+    private Map<String, Object> rawActivationFilter = new HashMap<>();
 
+    @JsonIgnore
+    private Map<String, Object> configurationDef = new HashMap<String, Object>();
+
+    @JsonIgnore
     private PlaceholdersMetaDataDefinition placeholderMetaDataDef = new PlaceholdersMetaDataDefinitionImpl();
 
+    @JsonIgnore
     private ConfigurationMetaDataDefinition configurationMetaDataDef = new ConfigurationMetaDataDefinitionImpl();
 
+    @JsonIgnore
     private ReadOnlyConfiguration readOnlyConfiguration = new ReadOnlyConfigurationImpl();
 
+    /**
+     * @param configurationDefs {@link ConfigurationDefinition} objects to merge and set
+     */
+    @JsonIgnore
+    public void setConfigurationDefinitions(Set<ConfigurationDefinition> configurationDefs) {
+        for (ConfigurationDefinition def : configurationDefs) {
+            rawConfigurationDef.addAll(((ConfigurationDefinitionImpl) def).rawConfigurationDef);
+            rawPlaceholderMetaDataDef.addAll(((ConfigurationDefinitionImpl) def).rawPlaceholderMetaDataDef);
+            rawConfigurationMetaDataDef.addAll(((ConfigurationDefinitionImpl) def).rawConfigurationMetaDataDef);
+            rawReadOnlyConfiguration.putAll(((ConfigurationDefinitionImpl) def).rawReadOnlyConfiguration);
+        }
+        setRawConfigurationDefinition(rawConfigurationDef);
+        setRawPlaceholderMetaDataDefinition(rawPlaceholderMetaDataDef);
+        setRawConfigurationMetaDataDefinition(rawConfigurationMetaDataDef);
+        setRawReadOnlyConfiguration(rawReadOnlyConfiguration);
+    }
+
+    @JsonIgnore
+    @Override
+    public Set<String> getConfigurationKeys() {
+        return Collections.unmodifiableSet(configurationDef.keySet());
+    }
+
+    /**
+     * @param key configuration key
+     * @return default value or <code>null</code> if no one is defined
+     */
+    @JsonIgnore
+    @Override
+    public String getDefaultValue(String key) {
+        return (String) ((Map<String, Object>) configurationDef.get(key)).get(ComponentConstants.KEY_DEFAULT_VALUE);
+    }
+    
+    /**
+     * @param key configuration key
+     * @return activation filter for key or <code>null</code> if no one is defined
+     */
+    @JsonIgnore
+    public Map<String, List<String>> getActivationFilter(String key) {
+        return (Map<String, List<String>>) ((Map<String, Object>) configurationDef.get(key))
+            .get(ConfigurationDefinitionConstants.JSON_KEY_ACTIVATION_FILTER);
+    }
+    
+    /**
+     * @param configuration current configuration
+     * @return <code>true</code> if configuration is active and must be considered, otherwise <code>false</code>
+     */
+    @JsonIgnore
+    public boolean isActive(Map<String, String> configuration) {
+        if (rawActivationFilter != null) {
+            for (String key : rawActivationFilter.keySet()) {
+                if (configuration.get(key) == null || !((List<Object>) rawActivationFilter.get(key)).contains(configuration.get(key))) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    /**
+     * Get complete declarative configuration entry from given key.
+     * 
+     * @param key to get configuration from
+     * @return all information about the configuration
+     */
+    @JsonIgnore
+    public Object getConfigurationEntry(String key) {
+        return configurationDef.get(key);
+    }
+
+    @JsonIgnore
+    @Override
+    public ReadOnlyConfiguration getReadOnlyConfiguration() {
+        return readOnlyConfiguration;
+    }
+
+    @JsonIgnore
+    @Override
+    public PlaceholdersMetaDataDefinition getPlaceholderMetaDataDefinition() {
+        return placeholderMetaDataDef;
+    }
+
+    @JsonIgnore
+    @Override
+    public ConfigurationMetaDataDefinition getConfigurationMetaDataDefinition() {
+        return configurationMetaDataDef;
+    }
+    
+    public List<Object> getRawConfigurationDefinition() {
+        return rawConfigurationDef;
+    }
+
+    public List<Object> getRawPlaceholderMetaDataDefinition() {
+        return rawPlaceholderMetaDataDef;
+    }
+
+    public List<Object> getRawConfigurationMetaDataDefinition() {
+        return rawConfigurationMetaDataDef;
+    }
+
+    public Map<String, String> getRawReadOnlyConfiguration() {
+        return rawReadOnlyConfiguration;
+    }
+    
+    public Map<String, Object> getRawActivationFilter() {
+        return rawActivationFilter;
+    }
+    
     /**
      * @param incConfigurationDef raw configuration definition
      */
@@ -92,111 +206,8 @@ public class ConfigurationDefinitionImpl implements Serializable, ConfigurationD
     /**
      * @param incActivationFiler raw activation filter definition
      */
-    public void setRawActivationFilters(Map<String, Object> incActivationFiler) {
-        rawActivationFilters = incActivationFiler;
+    public void setRawActivationFilter(Map<String, Object> incActivationFiler) {
+        rawActivationFilter = incActivationFiler;
     }
 
-    /**
-     * @param configurationDefs {@link ConfigurationDefinition} objects to merge and set
-     */
-    @JsonIgnore
-    public void setConfigurationDefinitions(Set<ConfigurationDefinition> configurationDefs) {
-        for (ConfigurationDefinition def : configurationDefs) {
-            rawConfigurationDef.addAll(((ConfigurationDefinitionImpl) def).rawConfigurationDef);
-            rawPlaceholderMetaDataDef.addAll(((ConfigurationDefinitionImpl) def).rawPlaceholderMetaDataDef);
-            rawConfigurationMetaDataDef.addAll(((ConfigurationDefinitionImpl) def).rawConfigurationMetaDataDef);
-            rawReadOnlyConfiguration.putAll(((ConfigurationDefinitionImpl) def).rawReadOnlyConfiguration);
-        }
-        setRawConfigurationDefinition(rawConfigurationDef);
-        setRawPlaceholderMetaDataDefinition(rawPlaceholderMetaDataDef);
-        setRawConfigurationMetaDataDefinition(rawConfigurationMetaDataDef);
-        setRawReadOnlyConfiguration(rawReadOnlyConfiguration);
-    }
-
-    @JsonIgnore
-    @Override
-    public Set<String> getConfigurationKeys() {
-        return Collections.unmodifiableSet(configurationDef.keySet());
-    }
-
-    /**
-     * @param key configuration key
-     * @return default value or <code>null</code> if no one is defined
-     */
-    @JsonIgnore
-    @Override
-    public String getDefaultValue(String key) {
-        return (String) ((Map<String, Object>) configurationDef.get(key)).get(ComponentConstants.KEY_DEFAULT_VALUE);
-    }
-    
-    /**
-     * @param key configuration key
-     * @return activation filter for key or <code>null</code> if no one is defined
-     */
-    public Map<String, List<String>> getActivationFilter(String key) {
-        return (Map<String, List<String>>) ((Map<String, Object>) configurationDef.get(key))
-            .get(ConfigurationDefinitionConstants.JSON_KEY_ACTIVATION_FILTER);
-    }
-    
-    /**
-     * @param configuration current configuration
-     * @return <code>true</code> if configuration is active and must be considered, otherwise <code>false</code>
-     */
-    public boolean isActive(Map<String, String> configuration) {
-        for (String key : rawActivationFilters.keySet()) {
-            if (configuration.get(key) == null || !((List<Object>) rawActivationFilters.get(key)).contains(configuration.get(key))) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Get complete declarative configuration entry from given key.
-     * 
-     * @param key to get configuration from
-     * @return all information about the configuration
-     */
-    public Object getConfigurationEntry(String key) {
-        return configurationDef.get(key);
-    }
-
-    @JsonIgnore
-    @Override
-    public ReadOnlyConfiguration getReadOnlyConfiguration() {
-        return readOnlyConfiguration;
-    }
-
-    @JsonIgnore
-    @Override
-    public PlaceholdersMetaDataDefinition getPlaceholderMetaDataDefinition() {
-        return placeholderMetaDataDef;
-    }
-
-    @JsonIgnore
-    @Override
-    public ConfigurationMetaDataDefinition getConfigurationMetaDataDefinition() {
-        return configurationMetaDataDef;
-    }
-    
-    public List<Object> getRawConfigurationDefinition() {
-        return rawConfigurationDef;
-    }
-
-    public List<Object> getRawPlaceholderMetaDataDefinition() {
-        return rawPlaceholderMetaDataDef;
-    }
-
-    public List<Object> getRawConfigurationMetaDataDefinition() {
-        return rawConfigurationMetaDataDef;
-    }
-
-    public Map<String, String> getRawReadOnlyConfigurationDefinition() {
-        return rawReadOnlyConfiguration;
-    }
-    
-    public Map<String, Object> getActivationFilter() {
-        return rawActivationFilters;
-    }
-    
 }

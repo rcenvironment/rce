@@ -171,7 +171,7 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
             } else if (reason.equals("Auth fail")) {
                 reason =
                     "Authentication failed. Probably the username or passphrase is wrong, the wrong key file was used or the account is "
-                    + "not enabled on the remote host.";
+                        + "not enabled on the remote host.";
             } else if (reason.equals("USERAUTH fail")) {
                 reason = "Authentication failed. The wrong passphrase for the key file " + config.getSshKeyFileLocation() + " was used.";
             } else if (reason.startsWith("invalid privatekey")) {
@@ -193,22 +193,31 @@ public class SshConnectionSetupImpl implements SshConnectionSetup {
             }
         } catch (IOException | InterruptedException e1) {
             log.warn(StringUtils.format(
-                "Connecting SSH session failed: Could not retreive version of RCE instance on host %s, port %s: %s",
-                config.getDestinationHost(),
-                config.getPort(), e1.toString()));
+                "Connecting SSH session failed: Could not retrieve version of RCE instance on host %s, port %s: %s",
+                config.getDestinationHost(), config.getPort(),
+                e1.toString()));
             session.disconnect();
             session = null;
-            String reason = "The RCE version of the remote instance could not be retreived. Possibly it is not an RCE instance.";
+            String reason = "The RCE version of the remote instance could not be retrieved. Possibly it is not an RCE instance.";
             listener.onConnectionAttemptFailed(this, reason, true, false);
             return null;
         }
-        if (!remoteRCEVersion.equals(SshConnectionConstants.REQUIRED_PROTOCOL_VERSION)) {
-            log.warn(StringUtils.format("Connecting SSH session failed: RCE instance on host %s, port %s has an incompatible version.",
-                config.getDestinationHost(),
-                config.getPort()));
+        if (!remoteRCEVersion.contains(SshConnectionConstants.REQUIRED_PROTOCOL_VERSION)) {
+            log.warn(StringUtils
+                .format(
+                    "Connecting SSH session failed: Either, the RCE instance on host %s, port %s has an incompatible version, "
+                        + "or the user %s does not have the required permissions to run remote access tools and workflows. "
+                        + "(Detected server version information: %s, required version: %s)",
+                    config.getDestinationHost(), config.getPort(), config.getSshAuthUser(),
+                    remoteRCEVersion, SshConnectionConstants.REQUIRED_PROTOCOL_VERSION));
             session.disconnect();
             session = null;
-            String reason = "The remote RCE instance has an incompatible version.";
+            String reason = StringUtils.format(
+                "Either, the remote RCE instance has an incompatible version, or the user %s "
+                    + "does not have the required permissions to run remote access tools and workflows. "
+                    + "\n\n(Detected server version information: %s, required version: %s)",
+                config.getSshAuthUser(),
+                remoteRCEVersion, SshConnectionConstants.REQUIRED_PROTOCOL_VERSION);
             listener.onConnectionAttemptFailed(this, reason, true, false);
             return null;
         }

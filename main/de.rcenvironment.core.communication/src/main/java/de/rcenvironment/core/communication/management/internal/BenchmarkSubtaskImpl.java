@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.management.BenchmarkSubtask;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
@@ -34,7 +34,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
      */
     private static final int NO_DURATION_AVAILABLE_VALUE = -1;
 
-    private final List<NodeIdentifier> targetNodes;
+    private final List<InstanceNodeSessionId> targetNodes;
 
     private final int numMessages;
 
@@ -46,7 +46,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
 
     private final int threadsPerTarget;
 
-    private Map<NodeIdentifier, NodeResultContainer> nodeResults;
+    private Map<InstanceNodeSessionId, NodeResultContainer> nodeResults;
 
     private long subtaskStartTime;
 
@@ -120,8 +120,8 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
         }
     }
 
-    public BenchmarkSubtaskImpl(List<NodeIdentifier> targetNodes, int numMessages, int requestSize, int responseSize, int responseDelay,
-        int threadsPerTarget) {
+    public BenchmarkSubtaskImpl(List<InstanceNodeSessionId> targetNodes, int numMessages, int requestSize, int responseSize,
+        int responseDelay, int threadsPerTarget) {
         this.targetNodes = Collections.unmodifiableList(targetNodes);
         this.numMessages = numMessages;
         this.requestSize = requestSize;
@@ -129,8 +129,8 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
         this.responseDelay = responseDelay;
         this.threadsPerTarget = threadsPerTarget;
 
-        this.nodeResults = Collections.synchronizedMap(new HashMap<NodeIdentifier, BenchmarkSubtaskImpl.NodeResultContainer>());
-        for (NodeIdentifier node : targetNodes) {
+        this.nodeResults = Collections.synchronizedMap(new HashMap<InstanceNodeSessionId, BenchmarkSubtaskImpl.NodeResultContainer>());
+        for (InstanceNodeSessionId node : targetNodes) {
             nodeResults.put(node, new NodeResultContainer());
         }
         subtaskRequestCountdown = new CountDownLatch(numMessages * targetNodes.size());
@@ -142,7 +142,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
      * @see de.rcenvironment.core.communication.management.BenchmarkSubtask#getTargetNodes()
      */
     @Override
-    public List<NodeIdentifier> getTargetNodes() {
+    public List<InstanceNodeSessionId> getTargetNodes() {
         return targetNodes;
     }
 
@@ -177,7 +177,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
     public String formatDescription() {
         StringBuilder builder = new StringBuilder();
         boolean first = true;
-        for (NodeIdentifier node : targetNodes) {
+        for (InstanceNodeSessionId node : targetNodes) {
             if (!first) {
                 builder.append(", ");
             } else {
@@ -212,7 +212,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
     public String[] formatResults() {
         String[] array = new String[targetNodes.size()];
         int i = 0;
-        for (NodeIdentifier targetNode : targetNodes) {
+        for (InstanceNodeSessionId targetNode : targetNodes) {
             NodeResultContainer resultContainer = nodeResults.get(targetNode);
             // synchronize for thread visibility
             synchronized (resultContainer) {
@@ -249,7 +249,7 @@ public class BenchmarkSubtaskImpl implements BenchmarkSubtask {
      * @param duration the total duration
      * @param error null on normal completion, or the generated exception
      */
-    public void recordSingleResult(NodeIdentifier targetNode, long duration, RemoteOperationException error) {
+    public void recordSingleResult(InstanceNodeSessionId targetNode, long duration, RemoteOperationException error) {
         NodeResultContainer resultContainer = nodeResults.get(targetNode);
         synchronized (resultContainer) {
             resultContainer.setNumFinished(resultContainer.getNumFinished() + 1);

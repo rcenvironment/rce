@@ -157,7 +157,6 @@ public class Activator extends AbstractUIPlugin {
         reg.put(WorkflowState.PREPARING.name(), desc);
         reg.put(ComponentState.INIT.name(), desc);
         reg.put(ComponentState.PREPARING.name(), desc);
-        reg.put(WorkflowState.PREPARED.name(), desc);
         reg.put(ComponentState.PREPARED.name(), desc);
 
         // running
@@ -168,11 +167,24 @@ public class Activator extends AbstractUIPlugin {
         reg.put(ComponentState.PROCESSING_INPUTS.name(), desc);
         reg.put(ComponentState.STARTING.name(), desc);
         
-        // waiting
-        path = new Path("resources/icons/states/run_and_wait.png");
+        // waiting for resources
+        path = new Path("resources/icons/states/run_and_wait_for_resources.png");
         url = FileLocator.find(bundle, path, null);
         desc = ImageDescriptor.createFromURL(url);
-        reg.put(ComponentState.WAITING.name(), desc);
+        reg.put(ComponentState.WAITING_FOR_RESOURCES.name(), desc);
+        
+        // waiting for verification
+        path = new Path("resources/icons/states/waiting_for_approval.png");
+        url = FileLocator.find(bundle, path, null);
+        desc = ImageDescriptor.createFromURL(url);
+        reg.put(ComponentState.WAITING_FOR_APPROVAL.name(), desc);
+        
+        // verification failed
+        path = new Path("resources/icons/states/results_rejected.png");
+        url = FileLocator.find(bundle, path, null);
+        desc = ImageDescriptor.createFromURL(url);
+        reg.put(ComponentState.RESULTS_REJECTED.name(), desc);
+        reg.put(WorkflowState.RESULTS_REJECTED.name(), desc);
         
         // pausing
         path = new Path("resources/icons/states/suspend_disabled.gif");
@@ -221,8 +233,8 @@ public class Activator extends AbstractUIPlugin {
         desc = ImageDescriptor.createFromURL(url);
         reg.put(WorkflowState.CANCELING.name(), desc);
         reg.put(WorkflowState.CANCELING_AFTER_FAILED.name(), desc);
+        reg.put(WorkflowState.CANCELING_AFTER_RESULTS_REJECTED.name(), desc);
         reg.put(ComponentState.CANCELLING.name(), desc);
-        reg.put(ComponentState.CANCELLING_AFTER_FAILURE.name(), desc);
         
         // canceled
         path = new Path("resources/icons/states/cancel_enabled.gif");

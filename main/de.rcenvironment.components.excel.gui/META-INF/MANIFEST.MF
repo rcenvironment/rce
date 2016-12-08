@@ -3,7 +3,7 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Excel Component GUI Bundle
 Bundle-SymbolicName: de.rcenvironment.components.excel.gui;singleton:=true
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Import-Package: com.jacob.activeX,
  com.jacob.com,
  de.rcenvironment.components.excel.common,
@@ -30,13 +30,13 @@ Import-Package: com.jacob.activeX,
  de.rcenvironment.core.gui.workflow.editor.validator,
  de.rcenvironment.core.gui.workflow.view,
  de.rcenvironment.core.notification,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.excel.legacy,
  de.rcenvironment.core.utils.common.rpc,
  de.rcenvironment.core.utils.common.security,
  de.rcenvironment.core.utils.incubator,
- de.rcenvironment.rce.components.excel.commons,
+ de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.io;version="2.4.0",
  org.apache.commons.logging;version="1.1.1",
  org.eclipse.ui.dialogs,

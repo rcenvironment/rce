@@ -22,6 +22,7 @@ import de.rcenvironment.core.datamanagement.commons.EndpointInstance;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRun;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunDescription;
 import de.rcenvironment.core.datamanagement.commons.WorkflowRunTimline;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.datamodel.api.TimelineIntervalType;
@@ -108,8 +109,9 @@ public class RemotableMetaDataServiceImpl implements RemotableMetaDataService {
 
     @Override
     @AllowRemoteAccess
-    public void setComponentRunFinished(Long componentRunId, Long endtime) throws RemoteOperationException {
-        metaDataBackendService.setComponentRunFinished(componentRunId, endtime);
+    public void setComponentRunFinished(Long componentRunId, Long endtime, FinalComponentRunState finalState)
+        throws RemoteOperationException {
+        metaDataBackendService.setComponentRunFinished(componentRunId, endtime, finalState);
     }
 
     @Override

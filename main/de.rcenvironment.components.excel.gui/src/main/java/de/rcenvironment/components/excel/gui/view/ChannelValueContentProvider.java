@@ -13,7 +13,7 @@ import java.util.List;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
 import org.eclipse.jface.viewers.Viewer;
 
-import de.rcenvironment.rce.components.excel.commons.ChannelValue;
+import de.rcenvironment.components.excel.common.ChannelValue;
 
 
 /**

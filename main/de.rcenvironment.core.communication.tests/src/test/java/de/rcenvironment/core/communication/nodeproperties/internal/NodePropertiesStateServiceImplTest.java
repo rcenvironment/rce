@@ -24,14 +24,16 @@ import java.util.Set;
 import org.junit.Before;
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 import de.rcenvironment.core.communication.nodeproperties.spi.NodePropertiesChangeListener;
 import de.rcenvironment.core.communication.nodeproperties.spi.RawNodePropertiesChangeListener;
 import de.rcenvironment.core.communication.spi.NetworkTopologyChangeListener;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
 import de.rcenvironment.core.utils.common.service.MockAdditionalServicesRegistrationService;
 
 /**
@@ -53,10 +55,6 @@ public class NodePropertiesStateServiceImplTest {
 
     private static final String VALUE_B2 = "valueB2";
 
-    private static final String NODE_1_ID = "node1";
-
-    private static final String NODE_2_ID = "node2";
-
     private static final int ASYNC_EVENTS_WAIT_MSEC = 200;
 
     private NodePropertiesStateServiceImpl service;
@@ -67,17 +65,21 @@ public class NodePropertiesStateServiceImplTest {
 
     private CallbackCollector callbackCollector;
 
-    private final NodeIdentifier node1;
+    private final InstanceNodeSessionId node1 = NodeIdentifierTestUtils.createTestInstanceNodeSessionId();
 
-    private final NodeIdentifier node2;
+    private final InstanceNodeSessionId node2 = NodeIdentifierTestUtils.createTestInstanceNodeSessionId();
 
-    private final Set<NodeIdentifier> emptySet;
+    private final String node1InstanceSessionIdString = node1.getInstanceNodeSessionIdString();
 
-    private final Set<NodeIdentifier> node1Set;
+    private final String node2InstanceSessionIdString = node2.getInstanceNodeSessionIdString();
 
-    private final Set<NodeIdentifier> node2Set;
+    private final Set<InstanceNodeSessionId> emptySet;
 
-    private final Set<NodeIdentifier> node12Set;
+    private final Set<InstanceNodeSessionId> node1Set;
+
+    private final Set<InstanceNodeSessionId> node2Set;
+
+    private final Set<InstanceNodeSessionId> node12Set;
 
     /**
      * Simple holder for the parameters of a NodePropertiesChangeListener event.
@@ -116,8 +118,8 @@ public class NodePropertiesStateServiceImplTest {
 
         private final List<CallbackHolder> queue = Collections.synchronizedList(new ArrayList<CallbackHolder>());
 
-        private final Map<NodeIdentifier, Map<String, String>> propertyMapsByNode =
-            Collections.synchronizedMap(new HashMap<NodeIdentifier, Map<String, String>>());
+        private final Map<InstanceNodeSessionId, Map<String, String>> propertyMapsByNode =
+            Collections.synchronizedMap(new HashMap<InstanceNodeSessionId, Map<String, String>>());
 
         public void resetQueue() {
             queue.clear();
@@ -131,7 +133,7 @@ public class NodePropertiesStateServiceImplTest {
             return queue.get(index);
         }
 
-        public Map<String, String> getPropertyMapForNode(NodeIdentifier nodeId) {
+        public Map<String, String> getPropertyMapForNode(InstanceNodeSessionId nodeId) {
             return propertyMapsByNode.get(nodeId);
         }
 
@@ -142,20 +144,18 @@ public class NodePropertiesStateServiceImplTest {
         }
 
         @Override
-        public void onNodePropertyMapsOfNodesChanged(Map<NodeIdentifier, Map<String, String>> updatedPropertyMaps) {
+        public void onNodePropertyMapsOfNodesChanged(Map<InstanceNodeSessionId, Map<String, String>> updatedPropertyMaps) {
             propertyMapsByNode.putAll(updatedPropertyMaps); // inner maps are immutable
         }
     }
 
     public NodePropertiesStateServiceImplTest() {
-        node1 = NodeIdentifierFactory.fromNodeId(NODE_1_ID);
-        node2 = NodeIdentifierFactory.fromNodeId(NODE_2_ID);
-        emptySet = new HashSet<NodeIdentifier>();
-        node1Set = new HashSet<NodeIdentifier>();
+        emptySet = new HashSet<InstanceNodeSessionId>();
+        node1Set = new HashSet<InstanceNodeSessionId>();
         node1Set.add(node1);
-        node2Set = new HashSet<NodeIdentifier>();
+        node2Set = new HashSet<InstanceNodeSessionId>();
         node2Set.add(node2);
-        node12Set = new HashSet<NodeIdentifier>();
+        node12Set = new HashSet<InstanceNodeSessionId>();
         node12Set.add(node1);
         node12Set.add(node2);
     }
@@ -167,7 +167,7 @@ public class NodePropertiesStateServiceImplTest {
      */
     @Before
     public void setUp() throws Exception {
-        SharedThreadPool.getInstance().reset();
+        ConcurrencyUtils.getThreadPoolManagement().reset();
 
         service = new NodePropertiesStateServiceImpl();
 
@@ -219,10 +219,10 @@ public class NodePropertiesStateServiceImplTest {
 
         // add a property for a reachable node
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_1_ID, KEY_A, "201", VALUE_A)));
+            StringUtils.escapeAndConcat(node1InstanceSessionIdString, KEY_A, "201", VALUE_A)));
         // add an property for an unreachable node
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_2_ID, KEY_B, "202", VALUE_B)));
+            StringUtils.escapeAndConcat(node2InstanceSessionIdString, KEY_B, "202", VALUE_B)));
 
         // subscribe
         service.addNodePropertiesChangeListener(callbackCollector);
@@ -233,7 +233,7 @@ public class NodePropertiesStateServiceImplTest {
         currentCallback = callbackCollector.get(0);
 
         callbackProperty = currentCallback.added.iterator().next();
-        assertEquals(NODE_1_ID, callbackProperty.getNodeIdString());
+        assertEquals(node1InstanceSessionIdString, callbackProperty.getInstanceNodeSessionIdString());
         assertEquals(KEY_A, callbackProperty.getKey());
         assertEquals(VALUE_A, callbackProperty.getValue());
         assertEquals(0, currentCallback.updated.size());
@@ -272,7 +272,7 @@ public class NodePropertiesStateServiceImplTest {
 
         // add a property
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_1_ID, KEY_A, "301", VALUE_A)));
+            StringUtils.escapeAndConcat(node1InstanceSessionIdString, KEY_A, "301", VALUE_A)));
 
         // verify callback and parameters
         Thread.sleep(ASYNC_EVENTS_WAIT_MSEC);
@@ -280,7 +280,7 @@ public class NodePropertiesStateServiceImplTest {
         currentCallback = callbackCollector.get(0);
         assertEquals(1, currentCallback.added.size());
         callbackProperty = currentCallback.added.iterator().next();
-        assertEquals(NODE_1_ID, callbackProperty.getNodeIdString());
+        assertEquals(node1InstanceSessionIdString, callbackProperty.getInstanceNodeSessionIdString());
         assertEquals(KEY_A, callbackProperty.getKey());
         assertEquals(VALUE_A, callbackProperty.getValue());
         assertEquals(0, currentCallback.updated.size());
@@ -296,7 +296,7 @@ public class NodePropertiesStateServiceImplTest {
 
         // add another property
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_1_ID, KEY_B, "302", VALUE_B)));
+            StringUtils.escapeAndConcat(node1InstanceSessionIdString, KEY_B, "302", VALUE_B)));
 
         // verify callback and parameters
         Thread.sleep(ASYNC_EVENTS_WAIT_MSEC);
@@ -305,7 +305,7 @@ public class NodePropertiesStateServiceImplTest {
 
         assertEquals(1, currentCallback.added.size());
         callbackProperty = currentCallback.added.iterator().next();
-        assertEquals(NODE_1_ID, callbackProperty.getNodeIdString());
+        assertEquals(node1InstanceSessionIdString, callbackProperty.getInstanceNodeSessionIdString());
         assertEquals(KEY_B, callbackProperty.getKey());
         assertEquals(VALUE_B, callbackProperty.getValue());
         assertEquals(0, currentCallback.updated.size());
@@ -322,7 +322,7 @@ public class NodePropertiesStateServiceImplTest {
 
         // update property "keyA"
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_1_ID, KEY_A, "303", VALUE_A2)));
+            StringUtils.escapeAndConcat(node1InstanceSessionIdString, KEY_A, "303", VALUE_A2)));
 
         // verify callback and parameters
         Thread.sleep(ASYNC_EVENTS_WAIT_MSEC);
@@ -332,7 +332,7 @@ public class NodePropertiesStateServiceImplTest {
         assertEquals(0, currentCallback.added.size());
         assertEquals(1, currentCallback.updated.size());
         callbackProperty = currentCallback.updated.iterator().next();
-        assertEquals(NODE_1_ID, callbackProperty.getNodeIdString());
+        assertEquals(node1InstanceSessionIdString, callbackProperty.getInstanceNodeSessionIdString());
         assertEquals(KEY_A, callbackProperty.getKey());
         assertEquals(VALUE_A2, callbackProperty.getValue());
         assertEquals(0, currentCallback.removed.size());
@@ -362,14 +362,14 @@ public class NodePropertiesStateServiceImplTest {
 
         // add a "local" property
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_1_ID, KEY_A, "401", VALUE_A)));
+            StringUtils.escapeAndConcat(node1InstanceSessionIdString, KEY_A, "401", VALUE_A)));
 
         // "connect" node2
         serviceNetworkTopologyChangeListener.onReachableNodesChanged(node12Set, node2Set, emptySet);
 
         // add a "remote" property
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_2_ID, KEY_B, "402", VALUE_B)));
+            StringUtils.escapeAndConcat(node2InstanceSessionIdString, KEY_B, "402", VALUE_B)));
 
         // subscribe
         service.addNodePropertiesChangeListener(callbackCollector);
@@ -397,7 +397,7 @@ public class NodePropertiesStateServiceImplTest {
         assertEquals(0, currentCallback.added.size());
         assertEquals(0, currentCallback.updated.size());
         assertEquals(1, currentCallback.removed.size());
-        verifyPropertyValues(currentCallback.removed.iterator().next(), NODE_2_ID, KEY_B, VALUE_B);
+        verifyPropertyValues(currentCallback.removed.iterator().next(), node2InstanceSessionIdString, KEY_B, VALUE_B);
 
         // check maps
         assertEquals(1, callbackCollector.getPropertyMapForNode(node1).size());
@@ -409,7 +409,7 @@ public class NodePropertiesStateServiceImplTest {
         // create a property change for the disconnected node; this can happen in practice
         // as changes are processed asynchronously
         serviceRawNodePropertiesChangeListener.onRawNodePropertiesAddedOrModified(createTestProperties(
-            StringUtils.escapeAndConcat(NODE_2_ID, KEY_B, "403", VALUE_B2)));
+            StringUtils.escapeAndConcat(node2InstanceSessionIdString, KEY_B, "403", VALUE_B2)));
 
         // verify that no change event was fired for the disconnected node
         Thread.sleep(ASYNC_EVENTS_WAIT_MSEC);
@@ -432,7 +432,7 @@ public class NodePropertiesStateServiceImplTest {
         currentCallback = callbackCollector.get(0);
         currentCallback.verifySetSizes(1, 0, 0);
         currentProperty = currentCallback.added.iterator().next();
-        verifyPropertyValues(currentProperty, NODE_1_ID, KEY_A, VALUE_A);
+        verifyPropertyValues(currentProperty, node1InstanceSessionIdString, KEY_A, VALUE_A);
 
         callbackCollector.resetQueue();
 
@@ -444,7 +444,7 @@ public class NodePropertiesStateServiceImplTest {
         assertEquals(1, callbackCollector.getCount());
         currentCallback = callbackCollector.get(0);
         assertEquals(1, currentCallback.added.size());
-        verifyPropertyValues(currentCallback.added.iterator().next(), NODE_2_ID, KEY_B, VALUE_B2);
+        verifyPropertyValues(currentCallback.added.iterator().next(), node2InstanceSessionIdString, KEY_B, VALUE_B2);
         assertEquals(0, currentCallback.updated.size());
         assertEquals(0, currentCallback.removed.size());
 
@@ -458,7 +458,7 @@ public class NodePropertiesStateServiceImplTest {
     }
 
     private void verifyPropertyValues(NodeProperty callbackProperty, String nodeIdString, String key, String value) {
-        assertEquals(nodeIdString, callbackProperty.getNodeIdString());
+        assertEquals(nodeIdString, callbackProperty.getInstanceNodeSessionIdString());
         assertEquals(key, callbackProperty.getKey());
         assertEquals(value, callbackProperty.getValue());
     }
@@ -466,7 +466,11 @@ public class NodePropertiesStateServiceImplTest {
     private List<NodeProperty> createTestProperties(String... values) {
         final List<NodeProperty> result = new ArrayList<NodeProperty>();
         for (String value : values) {
-            result.add(new NodePropertyImpl(value));
+            try {
+                result.add(new NodePropertyImpl(value, NodeIdentifierTestUtils.getTestNodeIdentifierService()));
+            } catch (IdentifierException e) {
+                throw NodeIdentifierUtils.wrapIdentifierException(e);
+            }
         }
         return result;
     }

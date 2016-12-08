@@ -33,7 +33,7 @@ import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.MessageBox;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -90,7 +90,7 @@ public class ToolIntegrationWizard extends Wizard {
 
     private String integrationType;
 
-    private final Map<String, List<ToolIntegrationWizardPage>> additionalPages = new HashMap<String, List<ToolIntegrationWizardPage>>();
+    private final Map<String, List<ToolIntegrationWizardPage>> additionalPages = new HashMap<>();
 
     private List<ToolIntegrationWizardPage> currentAdditionalPages = null;
 
@@ -109,7 +109,7 @@ public class ToolIntegrationWizard extends Wizard {
      */
     public ToolIntegrationWizard(boolean progressMonitor, String type) {
         setNeedsProgressMonitor(progressMonitor);
-        configurationMap = new HashMap<String, Object>();
+        configurationMap = new HashMap<>();
         configurationMap.put(ToolIntegrationConstants.INTEGRATION_TYPE, ToolIntegrationConstants.COMMON_TOOL_INTEGRATION_CONTEXT_TYPE);
         setWindowTitle(Messages.wizardTitle);
         serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
@@ -121,14 +121,14 @@ public class ToolIntegrationWizard extends Wizard {
 
     @Override
     public void addPages() {
-        List<String> toolNames = new LinkedList<String>();
+        List<String> toolNames = new LinkedList<>();
 
         for (String id : integrationService.getIntegratedComponentIds()) {
             toolNames.add(id.substring(id.lastIndexOf(".") + 1));
         }
 
-        List<String> groupNames = new ArrayList<String>();
-        NodeIdentifier localNode = serviceRegistryAccess.getService(PlatformService.class).getLocalNodeId();
+        List<String> groupNames = new ArrayList<>();
+        LogicalNodeId localNode = serviceRegistryAccess.getService(PlatformService.class).getLocalDefaultLogicalNodeId();
         Collection<ComponentInstallation> installations = getInitialComponentKnowledge().getAllInstallations();
         installations = ComponentUtils.eliminateComponentInterfaceDuplicates(installations, localNode);
         for (ComponentInstallation ci : installations) {
@@ -434,8 +434,8 @@ public class ToolIntegrationWizard extends Wizard {
      * @param configJson where the config came from
      */
     public void setPreviousConfiguration(Map<String, Object> newPreviousConfiguration, File configJson) {
-        Map<String, Object> configurationMapCopy = new HashMap<String, Object>();
-        previousConfiguration = newPreviousConfiguration;
+        Map<String, Object> configurationMapCopy = new HashMap<>();
+        previousConfiguration = new HashMap<>(newPreviousConfiguration);
         if (newPreviousConfiguration != null) {
             configurationMapCopy.putAll(newPreviousConfiguration);
         }

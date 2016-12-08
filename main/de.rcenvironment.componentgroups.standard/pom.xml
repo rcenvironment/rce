@@ -50,6 +50,7 @@
 		<!-- input provider component -->
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.common</module>
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.execution</module>
+		<module>${modules-root}/de.rcenvironment.components.inputprovider.execution.tests</module>
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.gui</module>
 		<module>${modules-root}/de.rcenvironment.components.inputprovider.gui.tests</module>
 
@@ -74,14 +75,14 @@
 		<!-- outputwriter component -->
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.common</module>
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.execution</module>
-		<module>${modules-root}/de.rcenvironment.components.outputwriter.gui</module>
 		<module>${modules-root}/de.rcenvironment.components.outputwriter.execution.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.outputwriter.gui</module>
 
 		<!-- parametric study component -->
 		<module>${modules-root}/de.rcenvironment.components.parametricstudy.common</module>
 		<module>${modules-root}/de.rcenvironment.components.parametricstudy.execution</module>
-		<module>${modules-root}/de.rcenvironment.components.parametricstudy.gui</module>
 		<module>${modules-root}/de.rcenvironment.components.parametricstudy.execution.tests</module>
+		<module>${modules-root}/de.rcenvironment.components.parametricstudy.gui</module>
 
 		<!-- script component -->
 		<module>${modules-root}/de.rcenvironment.components.script.common</module>

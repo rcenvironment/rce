@@ -29,14 +29,6 @@
       </propertyTabs>
    </extension>
    
-   <!--  Configuration validation -->
-    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-       <validator
-            class="de.rcenvironment.components.inputprovider.gui.InputProviderWorkflowNodeValidator"
-            filter="de.rcenvironment.components.inputprovider.gui.InputProviderComponentFilter">
-       </validator>
-    </extension>
-   
     <!-- Dynamic Help -->
    <extension point="org.eclipse.help.contexts">
       <contexts file="help/contexts.xml" plugin="de.rcenvironment" />

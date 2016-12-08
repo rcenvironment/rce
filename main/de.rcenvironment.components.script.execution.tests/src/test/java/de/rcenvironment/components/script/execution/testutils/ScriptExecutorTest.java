@@ -27,6 +27,7 @@ import javax.script.ScriptException;
 import org.easymock.Capture;
 import org.easymock.EasyMock;
 import org.junit.After;
+import org.junit.Before;
 import org.junit.Test;
 
 import de.rcenvironment.components.script.common.ScriptComponentHistoryDataItem;
@@ -46,10 +47,12 @@ import de.rcenvironment.core.datamodel.types.api.DirectoryReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
+import de.rcenvironment.core.datamodel.types.api.MatrixTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.scripting.ScriptingService;
 import de.rcenvironment.core.scripting.ScriptingUtils;
+import de.rcenvironment.core.scripting.python.PythonComponentConstants;
 import de.rcenvironment.core.scripting.python.PythonOutputWriter;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.scripting.ScriptLanguage;
@@ -70,9 +73,10 @@ public abstract class ScriptExecutorTest {
         { "shorttext", DataType.ShortText, "testWert" },
         { "boolean", DataType.Boolean, true },
         { "integer", DataType.Integer, 1L },
-        { "file", DataType.FileReference, "" },
+        { "file", DataType.FileReference, "test.txt" },
         { "dir", DataType.DirectoryReference, "" },
-        { "vec", DataType.Vector, null }
+        { "vec", DataType.Vector, null },
+        { "mat", DataType.Matrix, null }
 
     };
 
@@ -85,9 +89,10 @@ public abstract class ScriptExecutorTest {
      * 
      * @throws ComponentException e
      * @throws ScriptException e
+     * @throws IOException if writer cannot be closed
      */
     @Test
-    public void testExecutorLifecycle() throws ComponentException, ScriptException {
+    public void testExecutorLifecycle() throws ComponentException, ScriptException, IOException {
         ScriptEngine scriptEngine = getScriptingEngine();
         WorkflowConsoleForwardingWriter stdOutWriter = new WorkflowConsoleForwardingWriter(new Object(), context.getLog(), Type.TOOL_OUT);
         WorkflowConsoleForwardingWriter stdErrWriter = new WorkflowConsoleForwardingWriter(new Object(), context.getLog(), Type.TOOL_ERROR);
@@ -97,9 +102,9 @@ public abstract class ScriptExecutorTest {
         EasyMock.expect(cont.getErrorWriter()).andReturn(stdErrWriter).anyTimes();
         EasyMock.replay(cont);
         EasyMock.expect(scriptEngine.getContext()).andReturn(cont).anyTimes();
-        List<Capture<String>> captures = new LinkedList<Capture<String>>();
+        List<Capture<String>> captures = new LinkedList<>();
         for (int i = 0; i < 5; i++) {
-            Capture<String> evalCapture = new Capture<String>();
+            Capture<String> evalCapture = new Capture<>();
             EasyMock.expect(scriptEngine.eval(EasyMock.capture(evalCapture))).andReturn(0);
             captures.add(evalCapture);
         }
@@ -110,8 +115,8 @@ public abstract class ScriptExecutorTest {
         EasyMock.expect(scriptingService.createScriptEngine(getScriptLanguage())).andReturn(scriptEngine).anyTimes();
         EasyMock.replay(scriptingService);
         context.addService(ScriptingService.class, scriptingService);
-
-        TempFileServiceAccess.setupUnitTestEnvironment();
+        context.setConfigurationValue(PythonComponentConstants.PYTHON_INSTALLATION, "hellö");
+        
         testPrepareHook();
 
         executor.prepareExecutor(context);
@@ -125,6 +130,9 @@ public abstract class ScriptExecutorTest {
             stdErrWriter.flush();
         } catch (IOException e) {
             Logger.getGlobal().log(Level.ALL, e.getMessage());
+        } finally {
+            stdOutWriter.close();
+            stdErrWriter.close();
         }
         executor.runScript();
 
@@ -138,12 +146,21 @@ public abstract class ScriptExecutorTest {
     }
 
     /**
+     * Set up tests.
+     */
+    @Before
+    public void setup() {
+        TempFileServiceAccess.setupUnitTestEnvironment();
+    }
+
+    /**
      * Common tear down.
      */
     @After
     public void tearDown() {
         executor = null;
         context = null;
+
     }
 
     protected abstract ScriptEngine getScriptingEngine();
@@ -163,15 +180,23 @@ public abstract class ScriptExecutorTest {
     public void testPostRun() throws ComponentException, IOException {
 
         ScriptEngine scriptEngine = getScriptingEngine();
+        File testfile = null;
+        try {
+            testfile = TempFileServiceAccess.getInstance().createTempFileWithFixedFilename("test.txt");
+            dataInputs[4][2] = testfile.getAbsolutePath();
+        } catch (IOException e) {
+            Assert.fail("Could not create test file. " + e.getMessage());
+            return;
+        }
 
-        addOutputsToEngine(scriptEngine);
+        addOutputsToEngine(scriptEngine, testfile);
         prepareScriptingUtilsAndContext();
 
         executor.setComponentContext(context);
         executor.setHistoryDataItem(new ScriptComponentHistoryDataItem());
         executor.setScriptEngine(scriptEngine);
         executor.setStateMap(new HashMap<String, Object>());
-        executor.setWorkingPath("");
+        executor.setWorkingPath(testfile.getParent());
         executor.setStdoutWriter(EasyMock.createNiceMock(Writer.class));
         executor.setStderrWriter(EasyMock.createNiceMock(Writer.class));
         executor.postRun();
@@ -179,27 +204,43 @@ public abstract class ScriptExecutorTest {
         for (Object[] dataInput : dataInputs) {
             Assert.assertEquals(context.getCapturedOutput((String) dataInput[0]).size(), 1);
         }
+        TempFileServiceAccess.getInstance().disposeManagedTempDirOrFile(testfile);
     }
 
     @SuppressWarnings("rawtypes")
-    private void addOutputsToEngine(ScriptEngine scriptEngine) {
-        Map<String, ArrayList<Object>> outputChannelMap = new HashMap<String, ArrayList<Object>>();
+    private void addOutputsToEngine(ScriptEngine scriptEngine, File testfile) {
+        Map<String, ArrayList<Object>> outputChannelMap = new HashMap<>();
 
         List list = EasyMock.createNiceMock(List.class);
         Iterator it = EasyMock.createNiceMock(Iterator.class);
         EasyMock.expect(it.next()).andReturn(new Integer(1));
         EasyMock.expect(it);
         EasyMock.expect(list.iterator()).andReturn(it);
-        EasyMock.replay(list);
+        EasyMock.expect(list.size()).andReturn(1).anyTimes();
 
+        EasyMock.replay(list);
+        List<List> matrixList = new LinkedList<>();
+        List<Integer> valueList = new LinkedList<>();
+        valueList.add(1);
+        valueList.add(1);
+        valueList.add(1);
+        matrixList.add(valueList);
+        matrixList.add(valueList);
         dataInputs[6][2] = list;
+        dataInputs[7][2] = matrixList;
+
         for (Object[] dataInput : dataInputs) {
             context.addSimulatedOutput((String) dataInput[0], "default", (DataType) dataInput[1], true,
                 new HashMap<String, String>());
-            List<Object> outputValues = new ArrayList<Object>();
-            outputValues.add(dataInput[2]);
+            List<Object> outputValues = new ArrayList<>();
+
+            if (((DataType) dataInput[1]) == DataType.FileReference) {
+                outputValues.add(testfile.getAbsolutePath());
+            } else {
+                outputValues.add(dataInput[2]);
+            }
             outputChannelMap.put((String) dataInput[0], (ArrayList<Object>) outputValues);
-            List<Object> linkedList = new LinkedList<Object>();
+            List<Object> linkedList = new LinkedList<>();
             linkedList.add(dataInput[2]);
             EasyMock.expect(scriptEngine.get((String) dataInput[0])).andReturn(linkedList).anyTimes();
         }
@@ -252,12 +293,13 @@ public abstract class ScriptExecutorTest {
         FloatTD floatMock = EasyMock.createMock(FloatTD.class);
         EasyMock.expect(floatMock.getDataType()).andReturn(DataType.Float);
         EasyMock.replay(floatMock);
-        EasyMock.expect(tdf.createFloat(EasyMock.anyDouble())).andReturn(floatMock);
+        EasyMock.expect(tdf.createFloat(EasyMock.anyDouble())).andReturn(floatMock).anyTimes();
 
-        IntegerTD intMock = EasyMock.createMock(IntegerTD.class);
+        IntegerTD intMock = EasyMock.createNiceMock(IntegerTD.class);
         EasyMock.expect(intMock.getDataType()).andReturn(DataType.Integer);
+        EasyMock.expect(intMock.getIntValue()).andReturn(new Long(1)).anyTimes();
         EasyMock.replay(intMock);
-        EasyMock.expect(tdf.createInteger(EasyMock.anyLong())).andReturn(intMock);
+        EasyMock.expect(tdf.createInteger(EasyMock.anyLong())).andReturn(intMock).anyTimes();
 
         ShortTextTD textMock = EasyMock.createMock(ShortTextTD.class);
         EasyMock.expect(textMock.getDataType()).andReturn(DataType.ShortText);
@@ -268,6 +310,11 @@ public abstract class ScriptExecutorTest {
         EasyMock.expect(vectorMock.getDataType()).andReturn(DataType.Vector);
         EasyMock.replay(vectorMock);
         EasyMock.expect(tdf.createVector(EasyMock.anyInt())).andReturn(vectorMock);
+
+        MatrixTD matrixMock = EasyMock.createNiceMock(MatrixTD.class);
+        EasyMock.expect(matrixMock.getDataType()).andReturn(DataType.Matrix);
+        EasyMock.replay(matrixMock);
+        EasyMock.expect(tdf.createMatrix(EasyMock.anyInt(), EasyMock.anyInt())).andReturn(matrixMock);
 
     }
 }

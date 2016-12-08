@@ -21,9 +21,10 @@ import de.rcenvironment.core.command.spi.CommandDescription;
 import de.rcenvironment.core.command.spi.CommandPlugin;
 import de.rcenvironment.core.configuration.ConfigurationService;
 import de.rcenvironment.core.configuration.ConfigurationService.ConfigurablePathId;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.textstream.TextOutputReceiver;
 import de.rcenvironment.core.utils.common.textstream.receivers.CapturingTextOutReceiver;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * Default implementation of {@link CommandExecutionService}.
@@ -36,7 +37,7 @@ public class CommandExecutionServiceImpl implements CommandExecutionService {
 
     private final CommandPluginDispatcher commandPluginDispatcher;
 
-    private final SharedThreadPool threadPool;
+    private final AsyncTaskService threadPool;
 
     private final Set<CommandDescription> commandDescriptions = new TreeSet<CommandDescription>();
     
@@ -44,7 +45,7 @@ public class CommandExecutionServiceImpl implements CommandExecutionService {
 
     public CommandExecutionServiceImpl() {
         commandPluginDispatcher = new CommandPluginDispatcher();
-        threadPool = SharedThreadPool.getInstance();
+        threadPool = ConcurrencyUtils.getAsyncTaskService();
     }
 
     /**

@@ -46,18 +46,20 @@ import de.rcenvironment.core.component.model.api.ComponentInterface;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.FinalComponentRunState;
 import de.rcenvironment.core.datamodel.api.FinalComponentState;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+import de.rcenvironment.toolkit.utils.common.IdGenerator;
 
 /**
  * Component-specific implementation of {@link AbstractStateMachine}.
@@ -78,14 +80,17 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         // normal life cycle
         { ComponentState.INIT, ComponentState.PREPARING },
         { ComponentState.PREPARING, ComponentState.PREPARED },
-        { ComponentState.PREPARED, ComponentState.WAITING },
-        { ComponentState.WAITING, ComponentState.STARTING },
+        { ComponentState.PREPARED, ComponentState.WAITING_FOR_RESOURCES },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.STARTING },
         { ComponentState.STARTING, ComponentState.IDLING },
-        { ComponentState.IDLING, ComponentState.WAITING },
-        { ComponentState.IDLING_AFTER_RESET, ComponentState.WAITING },
-        { ComponentState.WAITING, ComponentState.PROCESSING_INPUTS },
+        { ComponentState.STARTING, ComponentState.WAITING_FOR_APPROVAL },
+        { ComponentState.IDLING, ComponentState.WAITING_FOR_RESOURCES },
+        { ComponentState.IDLING_AFTER_RESET, ComponentState.WAITING_FOR_RESOURCES },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.PROCESSING_INPUTS },
         { ComponentState.PROCESSING_INPUTS, ComponentState.IDLING },
-        { ComponentState.IDLING, ComponentState.RESETTING },
+        { ComponentState.PROCESSING_INPUTS, ComponentState.WAITING_FOR_APPROVAL },
+        { ComponentState.WAITING_FOR_APPROVAL, ComponentState.IDLING },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.RESETTING },
         { ComponentState.IDLING, ComponentState.IDLING },
         { ComponentState.RESETTING, ComponentState.IDLING_AFTER_RESET },
         { ComponentState.IDLING, ComponentState.TEARING_DOWN },
@@ -100,13 +105,14 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         { ComponentState.PREPARING, ComponentState.CANCELLING },
         { ComponentState.PREPARED, ComponentState.CANCELLING },
         { ComponentState.STARTING, ComponentState.CANCELLING },
-        { ComponentState.WAITING, ComponentState.CANCELLING },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.CANCELLING },
         { ComponentState.PROCESSING_INPUTS, ComponentState.CANCELLING },
+        { ComponentState.WAITING_FOR_APPROVAL, ComponentState.CANCELLING },
         { ComponentState.IDLING, ComponentState.CANCELLING },
         { ComponentState.IDLING_AFTER_RESET, ComponentState.CANCELLING },
         { ComponentState.RESETTING, ComponentState.CANCELLING },
         { ComponentState.STARTING, ComponentState.CANCELLING_AFTER_FAILURE },
-        { ComponentState.WAITING, ComponentState.CANCELLING_AFTER_FAILURE },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.CANCELLING_AFTER_FAILURE },
         { ComponentState.PROCESSING_INPUTS, ComponentState.CANCELLING_AFTER_FAILURE },
         { ComponentState.IDLING, ComponentState.CANCELLING_AFTER_FAILURE },
         { ComponentState.IDLING_AFTER_RESET, ComponentState.CANCELLING_AFTER_FAILURE },
@@ -119,8 +125,9 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         { ComponentState.PREPARING, ComponentState.PAUSING },
         { ComponentState.PREPARED, ComponentState.PAUSING },
         { ComponentState.STARTING, ComponentState.PAUSING },
-        { ComponentState.WAITING, ComponentState.PAUSING },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.PAUSING },
         { ComponentState.PROCESSING_INPUTS, ComponentState.PAUSING },
+        { ComponentState.WAITING_FOR_APPROVAL, ComponentState.PAUSING },
         { ComponentState.IDLING, ComponentState.PAUSING },
         { ComponentState.IDLING_AFTER_RESET, ComponentState.PAUSING },
         { ComponentState.RESETTING, ComponentState.PAUSING },
@@ -130,15 +137,16 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         { ComponentState.PAUSED, ComponentState.RESUMING },
         { ComponentState.RESUMING, ComponentState.PREPARING },
         { ComponentState.RESUMING, ComponentState.PREPARED },
-        { ComponentState.RESUMING, ComponentState.WAITING },
+        { ComponentState.RESUMING, ComponentState.WAITING_FOR_RESOURCES },
         { ComponentState.RESUMING, ComponentState.IDLING },
         { ComponentState.RESUMING, ComponentState.IDLING_AFTER_RESET },
         // failures
         { ComponentState.PREPARING, ComponentState.TEARING_DOWN },
         { ComponentState.PREPARED, ComponentState.TEARING_DOWN },
         { ComponentState.STARTING, ComponentState.TEARING_DOWN },
-        { ComponentState.WAITING, ComponentState.TEARING_DOWN },
+        { ComponentState.WAITING_FOR_RESOURCES, ComponentState.TEARING_DOWN },
         { ComponentState.PROCESSING_INPUTS, ComponentState.TEARING_DOWN },
+        { ComponentState.WAITING_FOR_APPROVAL, ComponentState.TEARING_DOWN },
         { ComponentState.PAUSING, ComponentState.TEARING_DOWN },
         { ComponentState.PAUSED, ComponentState.TEARING_DOWN },
         { ComponentState.RESUMING, ComponentState.TEARING_DOWN },
@@ -147,7 +155,9 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         { ComponentState.CANCELLING, ComponentState.TEARING_DOWN },
         { ComponentState.RESETTING, ComponentState.TEARING_DOWN },
         { ComponentState.TEARING_DOWN, ComponentState.FAILED },
-        { ComponentState.FAILED, ComponentState.DISPOSING }
+        { ComponentState.TEARING_DOWN, ComponentState.RESULTS_REJECTED },
+        { ComponentState.FAILED, ComponentState.DISPOSING },
+        { ComponentState.RESULTS_REJECTED, ComponentState.DISPOSING }
     };
 
     private static ComponentExecutionService comExeService;
@@ -170,16 +180,18 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
     private String errorMessage = null;
 
     private boolean pauseWasRequested = false;
-    
+
     private ComponentStateMachineEvent lastEventBeforePaused;
 
     private ComponentContextImpl componentContext;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private SortedSet<Integer> executionCountOnResets = new TreeSet<>();
 
     private ScheduledFuture<?> heartbeatFuture;
+
+    private volatile String latestVerificationToken;
 
     private Runnable heartbeatRunnable = new Runnable() {
 
@@ -235,10 +247,18 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         eventProcessors.put(ComponentStateMachineEventType.CANCEL_REQUESTED, new CancelRequestedEventProcessor());
         eventProcessors.put(ComponentStateMachineEventType.DISPOSE_REQUESTED, new DisposeRequestedEventProcessor());
         eventProcessors.put(ComponentStateMachineEventType.PREPARATION_SUCCESSFUL, new PreparationSuccessfulEventProcessor());
-        StartOrProcessingInputsSuccessfulEventProcessor startOrProcessingInputsSuccessfulEventProcessor =
-            new StartOrProcessingInputsSuccessfulEventProcessor();
-        eventProcessors.put(ComponentStateMachineEventType.START_SUCCESSFUL, startOrProcessingInputsSuccessfulEventProcessor);
+        eventProcessors.put(ComponentStateMachineEventType.START_SUCCESSFUL, new StartSuccessfulEventProcessor());
+        StartAsRunOrProcessingInputsSuccessfulEventProcessor startOrProcessingInputsSuccessfulEventProcessor =
+            new StartAsRunOrProcessingInputsSuccessfulEventProcessor();
+        eventProcessors.put(ComponentStateMachineEventType.START_AS_RUN_SUCCESSFUL, startOrProcessingInputsSuccessfulEventProcessor);
         eventProcessors.put(ComponentStateMachineEventType.PROCESSING_INPUTS_SUCCESSFUL, startOrProcessingInputsSuccessfulEventProcessor);
+        eventProcessors.put(ComponentStateMachineEventType.RESULT_APPROVAL_REQUESTED, new ResultsApprovalRequestedEventProcessor());
+        eventProcessors.put(ComponentStateMachineEventType.RESULTS_APPROVED, new ResultsApprovedEventProcessor());
+        eventProcessors.put(ComponentStateMachineEventType.RESULTS_REJECTED, new ResultsRejectedEventProcessor());
+        eventProcessors.put(ComponentStateMachineEventType.RESULTS_APPROVED_COMPLETED,
+            new ResultsApprovedCompletedSuccessfulEventProcessor());
+        eventProcessors.put(ComponentStateMachineEventType.RESULTS_REJECTED_COMPLETED,
+            new ResultsRejectedCompletedSuccessfulEventProcessor());
         eventProcessors.put(ComponentStateMachineEventType.IDLE_REQUESTED, new IdleRequestedEventProcessor());
         eventProcessors.put(ComponentStateMachineEventType.RESET_SUCCESSFUL, new ResetSuccessfulEventProcessor());
         eventProcessors.put(ComponentStateMachineEventType.CANCEL_ATTEMPT_SUCCESSFUL, new CancelAttemptSuccessfulEventProcessor());
@@ -254,7 +274,21 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         eventProcessors.put(ComponentStateMachineEventType.PAUSE_ATTEMPT_FAILED, failedEventProcessor);
         eventProcessors.put(ComponentStateMachineEventType.CANCEL_ATTEMPT_FAILED, failedEventProcessor);
         eventProcessors.put(ComponentStateMachineEventType.WF_CRTL_CALLBACK_FAILED, failedEventProcessor);
+        eventProcessors.put(ComponentStateMachineEventType.VERIFICATION_COMPLETION_FAILED, failedEventProcessor);
+        eventProcessors.put(ComponentStateMachineEventType.HANDLE_VERIFICATION_TOKEN_FAILED, failedEventProcessor);
         eventProcessors.put(ComponentStateMachineEventType.TEARED_DOWN, new TearedDownEventProcessor());
+    }
+
+    /**
+     * @return latest verification token if component is in {@link ComponentState#WAITING_FOR_APPROVAL} (or {@link ComponentState#PAUSING}),
+     *         otherwise <code>null</code> in case of another {@link ComponentState} or in case no token exists.
+     */
+    public String getVerificationToken() {
+        if (getState().equals(ComponentState.WAITING_FOR_APPROVAL) || getState().equals(ComponentState.PAUSING)) {
+            return latestVerificationToken;
+        } else {
+            return null;
+        }
     }
 
     public boolean isWorkflowControllerReachable() {
@@ -303,6 +337,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
 
         handleFailureEvent(event);
 
+        ComponentState finalCompState = ComponentState.FAILED;
+
         switch (event.getType()) {
         case WF_CRTL_CALLBACK_FAILED:
         case SCHEDULING_FAILED:
@@ -310,7 +346,7 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             return ComponentState.CANCELLING_AFTER_FAILURE;
         default:
             currentTask = null;
-            tearDownAsync(ComponentState.FAILED);
+            tearDownAsync(finalCompState);
             return ComponentState.TEARING_DOWN;
         }
     }
@@ -427,6 +463,25 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         currentTask = threadPool.submit(new AsyncProcessInputsTask());
     }
 
+    private void handleVerificationTokenAsync(String verificationToken) {
+        ComponentExecutionType compExeType = ComponentExecutor.ComponentExecutionType.HandleVerificationToken;
+        compExeType.setVerificationToken(verificationToken);
+        latestVerificationToken = verificationToken;
+        compExecutorRef.set(new ComponentExecutor(compExeRelatedInstances, compExeType));
+        currentTask = threadPool.submit(new AsyncHandleVerificationTokenTask());
+    }
+
+    private void completeVerificationAsync(boolean outputsApproved) {
+        ComponentExecutionType compExeType = ComponentExecutor.ComponentExecutionType.CompleteVerification;
+        if (outputsApproved) {
+            compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_APPROVED);            
+        } else {
+            compExeType.setFinalComponentStateAfterRun(FinalComponentRunState.RESULTS_REJECTED);
+        }
+        compExecutorRef.set(new ComponentExecutor(compExeRelatedInstances, ComponentExecutor.ComponentExecutionType.CompleteVerification));
+        currentTask = threadPool.submit(new AsyncCompleteVerificationTask(outputsApproved));
+    }
+
     private void resetAsync() {
         compExecutorRef.set(new ComponentExecutor(compExeRelatedInstances, ComponentExecutor.ComponentExecutionType.Reset));
         currentTask = threadPool.submit(new AsyncResetTask());
@@ -451,6 +506,10 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         case FAILED:
             finalCompState = Component.FinalComponentState.FAILED;
             finalStateForDm = FinalComponentState.FAILED;
+            break;
+        case RESULTS_REJECTED:
+            finalCompState = Component.FinalComponentState.RESULTS_REJECTED;
+            finalStateForDm = FinalComponentState.RESULTS_REJECTED;
             break;
         case CANCELED:
             finalCompState = Component.FinalComponentState.CANCELLED;
@@ -555,8 +614,10 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 compExecutorRef.get().executeByConsideringLimitations();
                 if (compExeType == ComponentExecutor.ComponentExecutionType.StartAsRun) {
                     checkForIntermediateButNoFinalHistoryDataItemWritten();
+                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.START_AS_RUN_SUCCESSFUL));
+                } else {
+                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.START_SUCCESSFUL));
                 }
-                postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.START_SUCCESSFUL));
             } catch (ComponentExecutionException e) {
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.START_FAILED, e));
             } catch (ComponentException e) {
@@ -595,14 +656,6 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                     synchronized (executionCountOnResets) {
                         executionCountOnResets.add(compExeRelatedInstances.compExeRelatedStates.executionCount.get());
                     }
-                    if (compExeRelatedInstances.compExeStorageBridge.hasUnfinishedComponentExecution()) {
-                        try {
-                            compExeRelatedInstances.compExeStorageBridge.setComponentExecutionFinished();
-                        } catch (ComponentExecutionException e) {
-                            postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESET_FAILED, e));
-                            return;
-                        }
-                    }
                 }
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESET_SUCCESSFUL));
             } catch (ComponentExecutionException e) {
@@ -632,6 +685,59 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PROCESSING_INPUTS_FAILED, e));
             } catch (ComponentException e) {
                 postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.PROCESSING_INPUTS_FAILED,
+                    e.getMessage()));
+            }
+        }
+    }
+
+    /**
+     * Let the component handle the verification token.
+     * 
+     * @author Doreen Seider
+     */
+    private final class AsyncHandleVerificationTokenTask implements Runnable {
+
+        @Override
+        @TaskDescription("Let component handle the verification token")
+        public void run() {
+            try {
+                compExecutorRef.get().executeByConsideringLimitations();
+            } catch (ComponentExecutionException e) {
+                postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.HANDLE_VERIFICATION_TOKEN_FAILED, e));
+            } catch (ComponentException e) {
+                postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.HANDLE_VERIFICATION_TOKEN_FAILED,
+                    e.getMessage()));
+            }
+        }
+    }
+
+    /**
+     * Let the component complete the verification.
+     * 
+     * @author Doreen Seider
+     */
+    private final class AsyncCompleteVerificationTask implements Runnable {
+
+        private final boolean outputsApprove;
+
+        protected AsyncCompleteVerificationTask(boolean outputsApprove) {
+            this.outputsApprove = outputsApprove;
+        }
+
+        @Override
+        @TaskDescription("Let component complete verification")
+        public void run() {
+            try {
+                compExecutorRef.get().executeByConsideringLimitations();
+                if (outputsApprove) {
+                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESULTS_APPROVED_COMPLETED));
+                } else {
+                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESULTS_REJECTED_COMPLETED));
+                }
+            } catch (ComponentExecutionException e) {
+                postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.VERIFICATION_COMPLETION_FAILED, e));
+            } catch (ComponentException e) {
+                postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.VERIFICATION_COMPLETION_FAILED,
                     e.getMessage()));
             }
         }
@@ -813,8 +919,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         @Override
         public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
             ComponentState state = currentState;
-            if (checkStateChange(currentState, ComponentState.WAITING, event)) {
-                state = ComponentState.WAITING;
+            if (checkStateChange(currentState, ComponentState.WAITING_FOR_RESOURCES, event)) {
+                state = ComponentState.WAITING_FOR_RESOURCES;
                 synchronized (compExeRelatedInstances.component) {
                     if (compExeRelatedInstances.component.get().treatStartAsComponentRun()) {
                         compExeRelatedInstances.compExeRelatedStates.executionCount.incrementAndGet();
@@ -836,8 +942,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         @Override
         public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
             ComponentState state = currentState;
-            if (checkStateChange(currentState, ComponentState.WAITING, event)) {
-                state = ComponentState.WAITING;
+            if (checkStateChange(currentState, ComponentState.WAITING_FOR_RESOURCES, event)) {
+                state = ComponentState.WAITING_FOR_RESOURCES;
                 processInputsAsync();
             }
             return state;
@@ -871,8 +977,8 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
         @Override
         public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
             ComponentState state = currentState;
-            if (checkStateChange(currentState, ComponentState.RESETTING, event)) {
-                state = ComponentState.RESETTING;
+            if (checkStateChange(currentState, ComponentState.WAITING_FOR_RESOURCES, event)) {
+                state = ComponentState.WAITING_FOR_RESOURCES;
                 resetAsync();
             }
             return state;
@@ -1173,14 +1279,36 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
      * 
      * @author Doreen Seider
      */
-    private class StartOrProcessingInputsSuccessfulEventProcessor implements EventProcessor {
+    private class StartSuccessfulEventProcessor implements EventProcessor {
 
         @Override
         public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
-            if (currentState != ComponentState.CANCELLING) {
+            if (!isCanceling(currentState)) {
                 return new IdleRequestedEventProcessor().processEvent(currentState, event);
             }
             return currentState;
+        }
+    }
+
+    /**
+     * Specific implementation of {@link EventProcessor}.
+     * 
+     * @author Doreen Seider
+     */
+    private class StartAsRunOrProcessingInputsSuccessfulEventProcessor implements EventProcessor {
+
+        @Override
+        public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
+            ComponentState newState = currentState;
+            if (!isCanceling(currentState)) {
+                if (ComponentExecutionUtils.isVerificationRequired(compExeRelatedInstances.compExeCtx.getComponentDescription()
+                    .getConfigurationDescription().getComponentConfigurationDefinition())) {
+                    postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESULT_APPROVAL_REQUESTED));
+                } else {
+                    newState = new IdleRequestedEventProcessor().processEvent(currentState, event);
+                }
+            }
+            return newState;
         }
     }
 
@@ -1217,6 +1345,96 @@ public class ComponentStateMachine extends AbstractFixedTransitionsStateMachine<
             }
             return state;
         }
+    }
+
+    /**
+     * Specific implementation of {@link EventProcessor}.
+     * 
+     * @author Doreen Seider
+     */
+    private class ResultsApprovalRequestedEventProcessor implements EventProcessor {
+
+        private static final int VERIFICATION_TOKEN_LENGTH = 32;
+
+        @Override
+        public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
+            String verificationToken = IdGenerator.secureRandomHexString(VERIFICATION_TOKEN_LENGTH);
+            handleVerificationTokenAsync(verificationToken);
+            return ComponentState.WAITING_FOR_APPROVAL;
+        }
+    }
+
+    /**
+     * Specific implementation of {@link EventProcessor}.
+     * 
+     * @author Doreen Seider
+     */
+    private class ResultsApprovedEventProcessor implements EventProcessor {
+
+        @Override
+        public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
+            latestVerificationToken = null;
+            compExeRelatedInstances.compCtxBridge.flushOutputs();
+            componentContext.getLog()
+                .componentInfo("Result approved (was done by person responsible for the component) -> outputs sent");
+            completeVerificationAsync(true);
+            return currentState;
+        }
+    }
+
+    /**
+     * Specific implementation of {@link EventProcessor}.
+     * 
+     * @author Doreen Seider
+     */
+    private class ResultsRejectedEventProcessor implements EventProcessor {
+
+        @Override
+        public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
+            componentContext.getLog()
+                .componentWarn("Results rejected (was done by person responsible for the component) -> cancel");
+            completeVerificationAsync(false);
+            return currentState;
+        }
+    }
+
+    /**
+     * Specific implementation of {@link EventProcessor}.
+     * 
+     * @author Doreen Seider
+     */
+    private class ResultsApprovedCompletedSuccessfulEventProcessor implements EventProcessor {
+
+        @Override
+        public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
+            ComponentState newState = currentState;
+            if (!isCanceling(currentState)) {
+                newState = new IdleRequestedEventProcessor().processEvent(currentState, event);
+            }
+            return newState;
+        }
+    }
+
+    /**
+     * Specific implementation of {@link EventProcessor}.
+     * 
+     * @author Doreen Seider
+     */
+    private class ResultsRejectedCompletedSuccessfulEventProcessor implements EventProcessor {
+
+        @Override
+        public ComponentState processEvent(ComponentState currentState, ComponentStateMachineEvent event) {
+            ComponentState state = currentState;
+            if (checkStateChange(currentState, ComponentState.TEARING_DOWN, event)) {
+                state = ComponentState.TEARING_DOWN;
+                tearDownAsync(ComponentState.RESULTS_REJECTED);
+            }
+            return state;
+        }
+    }
+
+    private boolean isCanceling(ComponentState state) {
+        return state == ComponentState.CANCELLING || state == ComponentState.CANCELLING_AFTER_FAILURE;
     }
 
     protected void bindComponentExecutionService(ComponentExecutionService newService) {

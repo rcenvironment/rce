@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.workflow.execution.internal;
 
 import java.io.IOException;
@@ -28,19 +28,21 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.ComponentUtils;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants.LoopBehaviorInCaseOfFailure;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContextBuilder;
+import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionService;
 import de.rcenvironment.core.component.execution.api.ComponentState;
 import de.rcenvironment.core.component.execution.api.ConsoleRow;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.Type;
 import de.rcenvironment.core.component.execution.api.ConsoleRow.WorkflowLifecyleEventType;
 import de.rcenvironment.core.component.execution.api.ConsoleRowBuilder;
+import de.rcenvironment.core.component.execution.api.ConsoleRowUtils;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.execution.api.WorkflowGraphEdge;
@@ -53,37 +55,39 @@ import de.rcenvironment.core.component.workflow.api.WorkflowConstants;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionException;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowExecutionUtils;
 import de.rcenvironment.core.component.workflow.execution.api.WorkflowState;
+import de.rcenvironment.core.component.workflow.execution.internal.WorkflowExecutionStorageBridge.DataManagementIdsHolder;
 import de.rcenvironment.core.component.workflow.model.api.Connection;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
 import de.rcenvironment.core.datamodel.api.FinalWorkflowState;
 import de.rcenvironment.core.notification.DistributedNotificationService;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.AsyncExceptionListener;
-import de.rcenvironment.core.utils.common.concurrent.CallablesGroup;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.incubator.AbstractFixedTransitionsStateMachine;
 import de.rcenvironment.core.utils.incubator.AbstractStateMachine;
 import de.rcenvironment.core.utils.incubator.StateChangeException;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncExceptionListener;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.CallablesGroup;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Workflow-specific implementation of {@link AbstractStateMachine}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (tweaked notification setup)
  */
 public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<WorkflowState, WorkflowStateMachineEvent>
     implements ComponentStatesChangedEntirelyListener {
 
     private static final long WAIT_INTERVAL_TERMINATED_SEC = 60;
-    
+
     private static final String CAUSE_WAITING_TIME_ELAPSED_SEC = "; cause: waiting time (%d seconds) elapsed";
-    
+
     private static final String CAUSE_WAITING_TIME_ELAPSED_HRS = "; cause: waiting time (%d hours) elapsed";
-    
+
     private static final Log LOG = LogFactory.getLog(WorkflowStateMachine.class);
 
     private static final WorkflowState[][] VALID_WORKFLOW_STATE_TRANSITIONS = new WorkflowState[][] {
@@ -103,55 +107,54 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         { WorkflowState.PAUSED, WorkflowState.RESUMING },
         { WorkflowState.RESUMING, WorkflowState.RUNNING },
         // cancel
-        { WorkflowState.INIT, WorkflowState.CANCELING },
-        { WorkflowState.PREPARING, WorkflowState.CANCELING },
-        { WorkflowState.PREPARED, WorkflowState.CANCELING },
         { WorkflowState.RUNNING, WorkflowState.CANCELING },
-        { WorkflowState.PAUSING, WorkflowState.CANCELING },
         { WorkflowState.PAUSED, WorkflowState.CANCELING },
-        { WorkflowState.RESUMING, WorkflowState.CANCELING },
         { WorkflowState.CANCELING, WorkflowState.CANCELLED },
         { WorkflowState.CANCELLED, WorkflowState.DISPOSING },
         // failure
         { WorkflowState.PREPARING, WorkflowState.CANCELING_AFTER_FAILED },
+        { WorkflowState.STARTING, WorkflowState.CANCELING_AFTER_FAILED },
         { WorkflowState.RUNNING, WorkflowState.CANCELING_AFTER_FAILED },
         { WorkflowState.PAUSING, WorkflowState.CANCELING_AFTER_FAILED },
         { WorkflowState.RESUMING, WorkflowState.CANCELING_AFTER_FAILED },
         { WorkflowState.CANCELING, WorkflowState.CANCELING_AFTER_FAILED },
         { WorkflowState.CANCELING, WorkflowState.FAILED },
         { WorkflowState.CANCELING_AFTER_FAILED, WorkflowState.FAILED },
+        { WorkflowState.RUNNING, WorkflowState.CANCELING_AFTER_RESULTS_REJECTED },        
+        { WorkflowState.CANCELING_AFTER_RESULTS_REJECTED, WorkflowState.RESULTS_REJECTED },
+        { WorkflowState.RESULTS_REJECTED, WorkflowState.DISPOSING },
         { WorkflowState.FAILED, WorkflowState.DISPOSING }
     };
-    
+
     private static CommunicationService communicationService;
-    
+
     private static DistributedNotificationService notificationService;
-    
+
     private static ComponentExecutionService componentExecutionService;
-    
+
     private static WorkflowExecutionStatsService wfExeStatsService;
-    
+
     // set visibility to protected for test purposes
     protected final Map<WorkflowStateMachineEventType, EventProcessor> eventProcessors = new HashMap<>();
 
     private String wfNameAndIdMessagePart;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private WorkflowStateMachineContext wfStateMachineCtx;
-    
+
     private WorkflowDescription fullWorkflowDescription;
 
     private Map<String, String> executionAuthTokens;
-    
+
     private ScheduledFuture<?> heartbeatFuture;
-    
-    private final Map<String, NodeIdentifier> componentNodeIds = Collections
-        .synchronizedMap(new HashMap<String, NodeIdentifier>());
-    
+
+    private final Map<String, LogicalNodeId> componentNodeIds = Collections
+        .synchronizedMap(new HashMap<String, LogicalNodeId>());
+
     private final Map<String, String> componentInstanceNames = Collections
         .synchronizedMap(new HashMap<String, String>());
-    
+
     private final CountDownLatch workflowTerminatedLatch = new CountDownLatch(2);
 
     private CountDownLatch pausedComonentStateLatch = new CountDownLatch(1);
@@ -159,26 +162,26 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     private CountDownLatch resumedComonentStateLatch = new CountDownLatch(1);
 
     private final CountDownLatch disposedComponentStateLatch = new CountDownLatch(1);
-    
+
     private Future<?> currentTask = null;
 
     @Deprecated
     public WorkflowStateMachine() {
         super(WorkflowState.INIT, VALID_WORKFLOW_STATE_TRANSITIONS);
     }
-    
+
     public WorkflowStateMachine(WorkflowStateMachineContext wfStateMachineCtx) {
         super(WorkflowState.INIT, VALID_WORKFLOW_STATE_TRANSITIONS);
         this.wfStateMachineCtx = wfStateMachineCtx;
         this.fullWorkflowDescription = wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription().clone();
         WorkflowExecutionUtils
             .removeDisabledWorkflowNodesWithoutNotify(wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription());
-        this.wfNameAndIdMessagePart = String.format("'%s' (%s)", wfStateMachineCtx.getWorkflowExecutionContext().getInstanceName(),
+        this.wfNameAndIdMessagePart = StringUtils.format("'%s' (%s)", wfStateMachineCtx.getWorkflowExecutionContext().getInstanceName(),
             wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier());
-        
+
         initializeEventProcessors();
     }
-    
+
     // set visibility to protected for test purposes
     protected void initializeEventProcessors() {
         eventProcessors.put(WorkflowStateMachineEventType.START_REQUESTED, new StartRequestedEventProcessor());
@@ -188,10 +191,13 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         eventProcessors.put(WorkflowStateMachineEventType.PAUSE_ATTEMPT_SUCCESSFUL, new PauseAttemptSuccessfulEventProcessor());
         eventProcessors.put(WorkflowStateMachineEventType.RESUME_REQUESTED, new ResumeRequestedEventProcessor());
         eventProcessors.put(WorkflowStateMachineEventType.RESUME_ATTEMPT_SUCCESSFUL, new ResumeAttemptSuccessfulEventProcessor());
-        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_REQUESTED, new CancelRequestedEventProcessor());
-        CancelAfterFailedRequestedEventProcessor cancelAfterFailedRequestedEventProcessor = new CancelAfterFailedRequestedEventProcessor();
-        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_AFTER_COMPONENT_LOST_REQUESTED, cancelAfterFailedRequestedEventProcessor);
-        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED, cancelAfterFailedRequestedEventProcessor);
+        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_REQUESTED, new CancelRequestedEventProcessor(WorkflowState.CANCELING));
+        CancelRequestedEventProcessor cancelRequestedEventProcessor =
+            new CancelRequestedEventProcessor(WorkflowState.CANCELING_AFTER_FAILED);
+        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_AFTER_COMPONENT_LOST_REQUESTED, cancelRequestedEventProcessor);
+        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_AFTER_FAILED_REQUESTED, cancelRequestedEventProcessor);
+        eventProcessors.put(WorkflowStateMachineEventType.CANCEL_AFTER_RESULTS_REJECTED_REQUESTED,
+            new CancelRequestedEventProcessor(WorkflowState.CANCELING_AFTER_RESULTS_REJECTED));
         eventProcessors.put(WorkflowStateMachineEventType.CANCEL_ATTEMPT_SUCCESSFUL, new CancelAttemptSuccessufulEventProcessor());
         eventProcessors.put(WorkflowStateMachineEventType.DISPOSE_REQUESTED, new DisposeRequestedEventProcessor());
         DisposeAttemptSuccessfulOrFailedEventProcessor disposeAttemptSuccessfulOrFailedEventProcessor =
@@ -206,6 +212,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         eventProcessors.put(WorkflowStateMachineEventType.START_ATTEMPT_FAILED, variousAttemptsFailedEventProcessor);
         eventProcessors.put(WorkflowStateMachineEventType.PAUSE_ATTEMPT_FAILED, variousAttemptsFailedEventProcessor);
         eventProcessors.put(WorkflowStateMachineEventType.RESUME_ATTEMPT_FAILED, variousAttemptsFailedEventProcessor);
+        eventProcessors.put(WorkflowStateMachineEventType.VERIFICATION_ATTEMPT_FAILED, variousAttemptsFailedEventProcessor);
         eventProcessors.put(WorkflowStateMachineEventType.FINISH_ATTEMPT_FAILED, variousAttemptsFailedEventProcessor);
         eventProcessors.put(WorkflowStateMachineEventType.PROCESS_COMPONENT_TIMELINE_EVENTS_FAILED, variousAttemptsFailedEventProcessor);
         eventProcessors.put(WorkflowStateMachineEventType.COMPONENT_HEARTBEAT_LOST, new ComponentHeartbeatLostEventProcessor());
@@ -216,11 +223,11 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     protected WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) throws StateChangeException {
         return eventProcessors.get(event.getType()).processEvent(currentState, event);
     }
-    
+
     public void setComponentExecutionAuthTokens(Map<String, String> exeAuthTokens) {
         this.executionAuthTokens = exeAuthTokens;
     }
-    
+
     private boolean checkStateChange(WorkflowState currentState, WorkflowState newState) {
         if (isStateChangeValid(currentState, newState)) {
             return true;
@@ -237,7 +244,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             String errorMessage = ComponentUtils.createErrorLogMessage(event.getThrowable(), errorId);
             storeAndSendErrorLogMessage(ConsoleRow.Type.WORKFLOW_ERROR, errorMessage, "", "");
         } else {
-            final NodeIdentifier componentNode = componentNodeIds.get(event.getComponentExecutionId());
+            final LogicalNodeId componentNode = componentNodeIds.get(event.getComponentExecutionId());
             final String componentName = componentInstanceNames.get(event.getComponentExecutionId());
             String errorMessagePrefix = StringUtils.format(
                 "Workflow %s will be cancelled because component '%s' on %s failed",
@@ -267,8 +274,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         if (newState == WorkflowState.DISPOSED) {
             disposeNotificationBuffers();
         }
-        if (newState.equals(WorkflowState.FINISHED) || newState.equals(WorkflowState.CANCELLED)
-            || newState.equals(WorkflowState.FAILED)) {
+        if (WorkflowConstants.FINAL_WORKFLOW_STATES.contains(newState)) {
             wfExeStatsService.addStatsAtWorkflowTermination(wfStateMachineCtx.getWorkflowExecutionContext(), newState);
             synchronized (wfStateMachineCtx.getComponentStatesChangedEntirelyVerifier()) {
                 if (heartbeatFuture != null && !heartbeatFuture.isCancelled()) {
@@ -332,8 +338,9 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
             initializeConsoleLogWriting();
 
+            DataManagementIdsHolder dmIds;
             try {
-                wfStateMachineCtx.getWorkflowExecutionStorageBridge().addWorkflowExecution(
+                dmIds = wfStateMachineCtx.getWorkflowExecutionStorageBridge().addWorkflowExecution(
                     wfStateMachineCtx.getWorkflowExecutionContext(), fullWorkflowDescription);
             } catch (WorkflowExecutionException e) {
                 postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED, e));
@@ -346,16 +353,16 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                 onComponentStatesChangedCompletelyToPrepared();
             }
 
-            final Map<String, ComponentExecutionContext> compExeCtxts = createComponentExecutionContexts();
-
+            final Map<String, ComponentExecutionContext> compExeCtxts;
             try {
+                compExeCtxts = createComponentExecutionContexts(dmIds);
                 checkForUnreachableComponentNodes(compExeCtxts);
             } catch (WorkflowExecutionException e) {
                 postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_FAILED, e));
                 return;
             }
 
-            CallablesGroup<Throwable> callablesGroup = SharedThreadPool.getInstance().createCallablesGroup(Throwable.class);
+            CallablesGroup<Throwable> callablesGroup = ConcurrencyUtils.getFactory().createCallablesGroup(Throwable.class);
 
             final Long referenceTimestamp = System.currentTimeMillis();
 
@@ -415,12 +422,13 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
         Map<String, ComponentExecutionContext> notReachableCompExeIds = new HashMap<>();
 
-        Set<NodeIdentifier> reachableNodes = communicationService.getReachableNodes();
+        Set<LogicalNodeId> reachableNodes = communicationService.getReachableLogicalNodes();
         for (ComponentExecutionContext compExeCtx : compExeCtxts.values()) {
             // stored for logging purposes, see createMessageListingComponents; should be improved
             componentInstanceNames.put(compExeCtx.getExecutionIdentifier(), compExeCtx.getInstanceName());
             componentNodeIds.put(compExeCtx.getExecutionIdentifier(), compExeCtx.getNodeId());
-            if (!reachableNodes.contains(compExeCtx.getNodeId())) {
+            // TODO (p2) simply checking the reachability of the equivalent default logical node id for now; improve when needed
+            if (!reachableNodes.contains(compExeCtx.getNodeId().convertToDefaultLogicalNodeId())) {
                 notReachableCompExeIds.put(compExeCtx.getExecutionIdentifier(), compExeCtx);
             }
         }
@@ -464,13 +472,13 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
     private void initializeNotificationBuffers() {
         final int bufferSize = 500;
-        notificationService.setBufferSize(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()
-            + wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getIdString() + ConsoleRow.NOTIFICATION_SUFFIX, bufferSize);
+        notificationService.setBufferSize(ConsoleRowUtils.composeConsoleNotificationId(wfStateMachineCtx.getWorkflowExecutionContext()
+            .getNodeId(), wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()), bufferSize);
         notificationService.setBufferSize(WorkflowConstants.STATE_NOTIFICATION_ID
             + wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier(), 1);
-        notificationService.setBufferSize(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()
-            + wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getIdString()
-            + ComponentConstants.PORCESSED_INPUT_NOTIFICATION_ID_SUFFIX, bufferSize);
+        notificationService.setBufferSize(StringUtils.format(ComponentConstants.NOTIFICATION_ID_PREFIX_PROCESSED_INPUT + "%s:%s",
+            wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getLogicalNodeIdString(),
+            wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()), bufferSize);
         for (WorkflowNode wfNode : wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription().getWorkflowNodes()) {
             String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier());
             // set to 3 as the state before the component is disposing->disposed must be
@@ -480,17 +488,18 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
     }
 
-    private Map<String, ComponentExecutionContext> createComponentExecutionContexts() {
+    private Map<String, ComponentExecutionContext> createComponentExecutionContexts(DataManagementIdsHolder dmIds)
+        throws WorkflowExecutionException {
         WorkflowDescription workflowDescription = wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription();
         WorkflowGraph workflowGraph = createWorkflowGraph(workflowDescription);
         Map<String, ComponentExecutionContext> compExeCtxs = new HashMap<>();
         for (WorkflowNode wfNode : workflowDescription.getWorkflowNodes()) {
-            compExeCtxs.put(wfNode.getIdentifier(), createComponentExecutionContext(wfNode, workflowGraph));
+            compExeCtxs.put(wfNode.getIdentifier(), createComponentExecutionContext(wfNode, workflowGraph, dmIds));
         }
         return compExeCtxs;
     }
 
-    private WorkflowGraph createWorkflowGraph(WorkflowDescription workflowDescription) {
+    private WorkflowGraph createWorkflowGraph(WorkflowDescription workflowDescription) throws WorkflowExecutionException {
         Map<String, WorkflowGraphNode> workflowGraphNodes = new HashMap<>();
         Map<String, Set<WorkflowGraphEdge>> workflowGraphEdges = new HashMap<>();
         for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
@@ -509,21 +518,52 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             workflowGraphNodes.put(compExeId, new WorkflowGraphNode(compExeId, inputIds, outputIds, endpointNames,
                 wn.getComponentDescription().getComponentInstallation().getComponentRevision()
                     .getComponentInterface().getIsLoopDriver(),
-                isDrivingFaultTolerantNode(wn)));
+                isDrivingFaultTolerantNode(wn), wn.getName()));
         }
         for (Connection cn : workflowDescription.getConnections()) {
             WorkflowGraphEdge edge = new WorkflowGraphEdge(
                 wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(cn.getSourceNode().getIdentifier()),
-                cn.getOutput().getIdentifier(), cn.getOutput().getMetaDataValue(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE),
+                cn.getOutput().getIdentifier(), cn.getOutput().getEndpointDefinition().getEndpointCharacter(),
                 wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(cn.getTargetNode().getIdentifier()),
-                cn.getInput().getIdentifier(), cn.getInput().getMetaDataValue(LoopComponentConstants.META_KEY_LOOP_ENDPOINT_TYPE));
+                cn.getInput().getIdentifier(), cn.getInput().getEndpointDefinition().getEndpointCharacter());
             String edgeKey = WorkflowGraph.createEdgeKey(edge);
             if (!workflowGraphEdges.containsKey(edgeKey)) {
                 workflowGraphEdges.put(edgeKey, new HashSet<WorkflowGraphEdge>());
             }
             workflowGraphEdges.get(edgeKey).add(edge);
         }
-        return new WorkflowGraph(workflowGraphNodes, workflowGraphEdges);
+        WorkflowGraph workflowGraph = new WorkflowGraph(workflowGraphNodes, workflowGraphEdges);
+        validatedNestedLoopDriverConfiguration(workflowDescription, workflowGraph);
+        return workflowGraph;
+    }
+    
+    private void validatedNestedLoopDriverConfiguration(WorkflowDescription workflowDescription, WorkflowGraph workflowGraph)
+        throws WorkflowExecutionException {
+        for (WorkflowNode wn : workflowDescription.getWorkflowNodes()) {
+            boolean isDriverComp = wn.getComponentDescription().getComponentInstallation().getComponentRevision()
+                .getComponentInterface().getIsLoopDriver();
+            if (isDriverComp) {
+                String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wn.getIdentifier());
+                Boolean nestedLoop = Boolean.valueOf(wn.getConfigurationDescription()
+                    .getConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP));
+                try {
+                    if (nestedLoop && workflowGraph.getLoopDriver(compExeId) == null) {
+                        storeAndSendErrorLogMessage(ConsoleRow.Type.WORKFLOW_ERROR,
+                            StringUtils.format(
+                                "Potential configuration error: '%s' is configured as a nested loop driver component but doesn't seem "
+                                + "to be part of a loop driven by an outer loop driver component", 
+                                wn.getComponentDescription().getName()), "", "");
+                    } else if (!nestedLoop && workflowGraph.getLoopDriver(compExeId) != null) {
+                        storeAndSendErrorLogMessage(ConsoleRow.Type.WORKFLOW_ERROR,
+                            StringUtils.format("Potential configuration error: '%s' is part of a loop driven by an outer loop driver "
+                                + "component but is not configured as a nested loop driver component", 
+                                wn.getComponentDescription().getName()), "", "");
+                    }
+                } catch (ComponentExecutionException e) {
+                    throw new WorkflowExecutionException("Wokflow logic invalid", e);
+                }
+            }
+        }
     }
 
     private boolean isDrivingFaultTolerantNode(WorkflowNode wn) {
@@ -533,7 +573,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         return behavior.equals(LoopBehaviorInCaseOfFailure.Discard);
     }
 
-    private ComponentExecutionContext createComponentExecutionContext(WorkflowNode wfNode, WorkflowGraph workflowGraph) {
+    private ComponentExecutionContext createComponentExecutionContext(WorkflowNode wfNode, WorkflowGraph workflowGraph,
+        DataManagementIdsHolder dmIds) {
         String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier());
         WorkflowDescription workflowDescription = wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription();
         ComponentExecutionContextBuilder builder = new ComponentExecutionContextBuilder();
@@ -564,14 +605,12 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
         builder.setPredecessorAndSuccessorInformation(isConnectedToEndpointDatumSenders, endpointDatumRecipients);
         builder.setWorkflowGraph(workflowGraph);
-        Long compInstanceDmId = wfStateMachineCtx.getWorkflowExecutionStorageBridge().getComponentInstanceDataManamagementId(
-            wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier()));
-        Map<String, Long> inputDataManagementIds = wfStateMachineCtx.getWorkflowExecutionStorageBridge()
-            .getInputInstanceDataManamagementIds(wfStateMachineCtx.getWorkflowExecutionContext()
-                .getCompExeIdByWfNodeId(wfNode.getIdentifier()));
-        Map<String, Long> outputDataManagementIds = wfStateMachineCtx.getWorkflowExecutionStorageBridge()
-            .getOutputInstanceDataManamagementIds(wfStateMachineCtx.getWorkflowExecutionContext()
-                .getCompExeIdByWfNodeId(wfNode.getIdentifier()));
+        Long compInstanceDmId =
+            dmIds.compInstDmIds.get(wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier()));
+        Map<String, Long> inputDataManagementIds = dmIds.inputDmIds.get(wfStateMachineCtx.getWorkflowExecutionContext()
+            .getCompExeIdByWfNodeId(wfNode.getIdentifier()));
+        Map<String, Long> outputDataManagementIds = dmIds.outputDmIds.get(wfStateMachineCtx.getWorkflowExecutionContext()
+            .getCompExeIdByWfNodeId(wfNode.getIdentifier()));
         builder.setDataManagementIds(wfStateMachineCtx.getWorkflowExecutionStorageBridge().getWorkflowInstanceDataManamagementId(),
             compInstanceDmId, inputDataManagementIds, outputDataManagementIds);
         return builder.build();
@@ -685,7 +724,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                 postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PAUSE_ATTEMPT_FAILED, throwable));
             }
         }
-        
+
     }
 
     /**
@@ -752,7 +791,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     private final class AsyncCancelTask implements Runnable {
 
         private static final int WAIT_INTERVAL_CANCEL_SEC = 90;
-        
+
         private final Future<?> future;
 
         protected AsyncCancelTask(Future<?> future) {
@@ -781,7 +820,12 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
                     @Override
                     public void callSingleComponent(String compExeId) throws ExecutionControllerException, RemoteOperationException {
-                        componentExecutionService.cancel(compExeId, componentNodeIds.get(compExeId));
+                        try {
+                            componentExecutionService.cancel(compExeId, componentNodeIds.get(compExeId));
+                        } catch (ExecutionControllerException e) {
+                            LOG.debug(StringUtils.format("Failed to cancel component(s) of %s; cause: %s", 
+                                getMethodToCallAsString(), e.toString()));
+                        }
                     }
 
                     @Override
@@ -824,6 +868,9 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
                 flushAndDisposeComponentLogFiles();
                 if (getState() == WorkflowState.CANCELING_AFTER_FAILED || throwable != null) {
                     wfStateMachineCtx.getWorkflowExecutionStorageBridge().setWorkflowExecutionFinished(FinalWorkflowState.FAILED);
+                } else if (getState() == WorkflowState.CANCELING_AFTER_RESULTS_REJECTED) {
+                    wfStateMachineCtx.getWorkflowExecutionStorageBridge()
+                        .setWorkflowExecutionFinished(FinalWorkflowState.RESULTS_REJECTED);
                 } else if (getState() == WorkflowState.CANCELING) {
                     wfStateMachineCtx.getWorkflowExecutionStorageBridge().setWorkflowExecutionFinished(FinalWorkflowState.CANCELLED);
                 }
@@ -898,7 +945,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         public void run() {
             notificationService.send(WorkflowConstants.STATE_DISPOSED_NOTIFICATION_ID, wfStateMachineCtx.getWorkflowExecutionContext()
                 .getExecutionIdentifier());
-            ParallelComponentCaller ppc = new ParallelComponentCaller(getComponentsToConsider(false, true), 
+            ParallelComponentCaller ppc = new ParallelComponentCaller(getComponentsToConsider(false, true),
                 wfStateMachineCtx.getWorkflowExecutionContext()) {
 
                 @Override
@@ -944,21 +991,19 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     private void disposeNotificationBuffers() {
         notificationService.removePublisher(WorkflowConstants.STATE_NOTIFICATION_ID
             + wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier());
-        notificationService.removePublisher(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()
-            + wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getIdString()
-            + ConsoleRow.NOTIFICATION_SUFFIX);
-        notificationService.removePublisher(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()
-            + wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getIdString()
-            + ComponentConstants.PORCESSED_INPUT_NOTIFICATION_ID_SUFFIX);
+        notificationService.removePublisher(ConsoleRowUtils.composeConsoleNotificationId(wfStateMachineCtx.getWorkflowExecutionContext()
+            .getNodeId(), wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()));
+        notificationService.removePublisher(ConsoleRowUtils.composeConsoleNotificationId(wfStateMachineCtx.getWorkflowExecutionContext()
+            .getNodeId(), wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()));
         for (WorkflowNode wfNode : wfStateMachineCtx.getWorkflowExecutionContext().getWorkflowDescription().getWorkflowNodes()) {
             String compExeId = wfStateMachineCtx.getWorkflowExecutionContext().getCompExeIdByWfNodeId(wfNode.getIdentifier());
             notificationService.removePublisher(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId);
             notificationService.removePublisher(ComponentConstants.ITERATION_COUNT_NOTIFICATION_ID_PREFIX + compExeId);
         }
     }
-    
+
     private Set<String> getComponentsToConsider(boolean ignoreCompsInFinalState, boolean ignoreDisposedComps) {
-        
+
         Set<String> compsToConsider = new HashSet<>(componentNodeIds.keySet());
         if (ignoreCompsInFinalState) {
             compsToConsider.removeAll(wfStateMachineCtx.getComponentStatesChangedEntirelyVerifier().getComponentsInFinalState());
@@ -967,7 +1012,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
         return compsToConsider;
     }
-    
+
     private String createMessageListingComponents(Set<String> compExeIds) {
         String message = "";
         for (String compExeId : compExeIds) {
@@ -979,7 +1024,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
         }
         return message;
     }
-    
+
     private void sendLifeCycleEventAsConsoleRow(ConsoleRow.WorkflowLifecyleEventType type) {
         ConsoleRow consoleRow = createConsoleRowForWorkflowLifeCycleEvent(type.name());
         sendConsoleRowAsNotification(consoleRow);
@@ -992,15 +1037,14 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     }
 
     private void sendConsoleRowAsNotification(ConsoleRow consoleRow) {
-        notificationService.send(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()
-            + wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getIdString()
-            + ConsoleRow.NOTIFICATION_SUFFIX, consoleRow);
+        notificationService.send(ConsoleRowUtils.composeConsoleNotificationId(wfStateMachineCtx.getWorkflowExecutionContext().getNodeId(),
+            wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()), consoleRow);
     }
-    
+
     private ConsoleRow createConsoleRowForWorkflowLifeCycleEvent(String payload) {
         return createConsoleRow(ConsoleRow.Type.LIFE_CYCLE_EVENT, payload, "", "");
     }
-    
+
     private ConsoleRow createConsoleRow(Type type, String payload, String compExeId, String compInstanceName) {
         ConsoleRowBuilder consoleRowBuilder = new ConsoleRowBuilder();
         consoleRowBuilder.setExecutionIdentifiers(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier(), compExeId)
@@ -1013,10 +1057,10 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
     private void storeAndSendErrorLogMessage(Type type, String message, String compExeId, String compInstanceName) {
         ConsoleRow consoleRow = createConsoleRow(type, message, compExeId, compInstanceName);
         wfStateMachineCtx.getComponentsConsoleLogFileWriter().addWorkflowConsoleRow(consoleRow);
-        notificationService.send(wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()
-            + wfStateMachineCtx.getWorkflowExecutionContext().getNodeId().getIdString() + ConsoleRow.NOTIFICATION_SUFFIX, consoleRow);
+        notificationService.send(ConsoleRowUtils.composeConsoleNotificationId(wfStateMachineCtx.getWorkflowExecutionContext().getNodeId(),
+            wfStateMachineCtx.getWorkflowExecutionContext().getExecutionIdentifier()), consoleRow);
     }
-    
+
     @Override
     public void onComponentStatesChangedCompletelyToPrepared() {
         postEvent(new WorkflowStateMachineEvent(WorkflowStateMachineEventType.PREPARE_ATTEMPT_SUCCESSFUL));
@@ -1054,26 +1098,25 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
 
     @Override
     public void onLastConsoleRowsReceived() {
-        sendLifeCycleEventAsConsoleRow(ConsoleRow.WorkflowLifecyleEventType.WORKFLOW_FINISHED);
         workflowTerminatedLatch.countDown();
     }
-    
+
     private Set<String> getComponentsToConsider(boolean ignoreCompsInFinalState) {
         return getComponentsToConsider(ignoreCompsInFinalState, true);
     }
-    
+
     private void sendComponentStateCanceled(String compExeId) {
         notificationService.send(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, ComponentState.CANCELED.name());
     }
-    
+
     private void sendComponentStateFailed(String compExeId) {
         notificationService.send(ComponentConstants.STATE_NOTIFICATION_ID_PREFIX + compExeId, ComponentState.FAILED.name());
     }
-    
+
     protected void bindCommunicationService(CommunicationService newService) {
         communicationService = newService;
     }
-    
+
     protected void bindComponentExecutionService(ComponentExecutionService newService) {
         componentExecutionService = newService;
     }
@@ -1095,13 +1138,14 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             new WorkflowExecutionException(StringUtils.format("Component(s) not reachable (anymore): "
                 + createMessageListingComponents(compExeIdsLost)))));
     }
-    
+
     /**
      * Processes {@link WorkflowStateMachineEventType}s.
      * 
      * @author Doreen Seider
      */
     private interface EventProcessor {
+
         WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event);
     }
 
@@ -1111,6 +1155,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class StartRequestedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1128,6 +1173,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class PrepareAttemptSuccessfulEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1146,6 +1192,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class StartAttemptSuccessfulEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1163,6 +1210,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class PauseRequestedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1182,6 +1230,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class PauseAttemptSuccessfulEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1198,6 +1247,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class ResumeRequestedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1217,6 +1267,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class ResumeAttemptSuccessfulEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1233,11 +1284,21 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class CancelRequestedEventProcessor implements EventProcessor {
+
+        private final WorkflowState cancelingWfState;
+
+        CancelRequestedEventProcessor(WorkflowState cancelingWfState) {
+            this.cancelingWfState = cancelingWfState;
+        }
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
-            if (checkStateChange(currentState, WorkflowState.CANCELING)) {
-                state = WorkflowState.CANCELING;
+            if (checkStateChange(currentState, cancelingWfState)) {
+                state = cancelingWfState;
+                if (cancelingWfState.equals(WorkflowState.CANCELING_AFTER_FAILED)) {
+                    handleFailure(event);
+                }
                 cancelAsync();
             }
             return state;
@@ -1249,23 +1310,8 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * 
      * @author Doreen Seider
      */
-    private class CancelAfterFailedRequestedEventProcessor implements EventProcessor {
-        @Override
-        public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
-            handleFailure(event);
-            if (currentState != WorkflowState.CANCELING && currentState != WorkflowState.CANCELING_AFTER_FAILED) {
-                cancelAsync();
-            }
-            return WorkflowState.CANCELING_AFTER_FAILED;
-        }
-    }
-
-    /**
-     * Specific implementation of {@link EventProcessor}.
-     * 
-     * @author Doreen Seider
-     */
     private class CancelAttemptSuccessufulEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1276,6 +1322,10 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             } else if (currentState == WorkflowState.CANCELING_AFTER_FAILED) {
                 if (checkStateChange(currentState, WorkflowState.FAILED)) {
                     state = WorkflowState.FAILED;
+                }
+            } else if (currentState == WorkflowState.CANCELING_AFTER_RESULTS_REJECTED) {
+                if (checkStateChange(currentState, WorkflowState.RESULTS_REJECTED)) {
+                    state = WorkflowState.RESULTS_REJECTED;
                 }
             }
             return state;
@@ -1288,6 +1338,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class DisposeRequestedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1305,6 +1356,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class DisposeAttemptSuccessfulOrFailedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1322,6 +1374,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class OnComponentsFinishedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             if (checkStateChange(currentState, WorkflowState.FINISHED)) {
@@ -1337,6 +1390,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class FinishedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1353,6 +1407,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class PrepareStartPauseResumeFinishTimelineAttemptFailedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             currentTask = null;
@@ -1366,13 +1421,14 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             return currentState;
         }
     }
-    
+
     /**
      * Specific implementation of {@link EventProcessor}.
      * 
      * @author Doreen Seider
      */
     private class ComponentHeartbeatLostEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             currentTask = null;
@@ -1389,6 +1445,7 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
      * @author Doreen Seider
      */
     private class CancelAttemptFailedEventProcessor implements EventProcessor {
+
         @Override
         public WorkflowState processEvent(WorkflowState currentState, WorkflowStateMachineEvent event) {
             WorkflowState state = currentState;
@@ -1409,7 +1466,5 @@ public class WorkflowStateMachine extends AbstractFixedTransitionsStateMachine<W
             return state;
         }
     }
-    
+
 }
-
-

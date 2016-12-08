@@ -13,8 +13,8 @@ import java.io.Serializable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.IdentifierException;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.communication.common.SerializationException;
 import de.rcenvironment.core.communication.model.NetworkResponse;
 import de.rcenvironment.core.communication.model.internal.PayloadTestFuzzer;
@@ -88,19 +88,24 @@ public final class ServiceCallResultFactory {
         }
         String errorId = parts[0];
         String nodeIdString = parts[1];
-        final NodeIdentifier nodeId;
+        String reportingNodeRepresentation;
         if (!StringUtils.isNullorEmpty(nodeIdString)) {
-            nodeId = NodeIdentifierFactory.fromNodeId(nodeIdString);
+            try {
+                reportingNodeRepresentation = NodeIdentifierUtils.parseInstanceNodeSessionIdString(nodeIdString).toString();
+            } catch (IdentifierException e) {
+                // emergency fallback - should not happen
+                reportingNodeRepresentation = StringUtils.format("[Failed to parse received node id '%s': %s]", nodeIdString, e.toString());
+            }
         } else {
-            nodeId = null;
+            reportingNodeRepresentation = null;
         }
-        if (nodeId != null) {
+        if (reportingNodeRepresentation != null) {
             if (StringUtils.isNullorEmpty(errorId)) {
-                return StringUtils.format("The error was reported by %s", nodeId.toString());
+                return StringUtils.format("The error was reported by %s", reportingNodeRepresentation);
             } else {
                 return StringUtils.format(
                     "The error was reported by %s; technical details were logged there as error '%s'",
-                    nodeId.toString(), errorId);
+                    reportingNodeRepresentation, errorId);
             }
         } else {
             // note: both cases are unusual
@@ -148,14 +153,14 @@ public final class ServiceCallResultFactory {
         final String errorId;
         if (suppressStacktrace) {
             errorId = LogUtils.logErrorAndAssignUniqueMarker(sharedLog,
-                StringUtils.format("Local error while handling service request for '%s#%s' on '%s': %s: %s",
-                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getDestination(),
+                StringUtils.format("Local error at sender while performing service request to '%s#%s' on target node '%s': %s: %s",
+                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(),
                     errorMessage, throwable.toString()));
 
         } else {
             errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(sharedLog,
-                StringUtils.format("Local error while handling service request for '%s#%s' on '%s': %s: ",
-                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getDestination(),
+                StringUtils.format("Local error at sender while performing service request to '%s#%s' on target node '%s': %s",
+                    serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getTargetNodeId(),
                     errorMessage), throwable);
         }
 
@@ -201,8 +206,8 @@ public final class ServiceCallResultFactory {
      */
     public static ServiceCallResult representInvalidRequestAtHandler(ServiceCallRequest serviceCallRequest, String internalInfo) {
         final String errorId = LogUtils.logErrorAndAssignUniqueMarker(sharedLog,
-            StringUtils.format("Refused request for invalid method '%s#%s()' sent by '%s': %s",
-                serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getSender(), internalInfo));
+            StringUtils.format("Refused request for invalid method '%s#%s()' sent by '%s': %s", serviceCallRequest.getServiceName(),
+                serviceCallRequest.getMethodName(), serviceCallRequest.getCallerNodeId(), internalInfo));
 
         final String userMessage = StringUtils.format("Request refused by destination instance (remote error id: %s)", errorId);
         return new ServiceCallResult(null, null, null, userMessage);
@@ -242,13 +247,14 @@ public final class ServiceCallResultFactory {
 
         final String errorId = LogUtils.logExceptionWithStacktraceAndAssignUniqueMarker(sharedLog,
             StringUtils.format("Error while handling service request to '%s#%s' from '%s': %s",
-                serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getSender(), errorMessage),
+                serviceCallRequest.getServiceName(), serviceCallRequest.getMethodName(), serviceCallRequest.getCallerNodeId(),
+                errorMessage),
             throwable);
 
         final String userMessage = StringUtils.format(
             "There was an error performing this remote operation; if you have access to the log files of %s, "
                 + "you can find more information by looking for the marker '%s' in its log files",
-            serviceCallRequest.getDestination(), errorId);
+            serviceCallRequest.getTargetNodeId(), errorId);
         return new ServiceCallResult(null, null, null, userMessage);
     }
 }

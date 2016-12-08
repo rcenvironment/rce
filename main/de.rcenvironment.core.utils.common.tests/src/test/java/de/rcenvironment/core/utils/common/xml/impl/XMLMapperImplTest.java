@@ -8,21 +8,25 @@
 
 package de.rcenvironment.core.utils.common.xml.impl;
 
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import javax.xml.xpath.XPathExpressionException;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 import org.w3c.dom.Document;
 
+import de.rcenvironment.core.utils.common.FileUtils;
 import de.rcenvironment.core.utils.common.TempFileService;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
 import de.rcenvironment.core.utils.common.xml.EMappingMode;
@@ -50,13 +54,13 @@ public class XMLMapperImplTest {
     private static final String WRONG_SOURCE_XPATH = "Wrong source xpath.";
 
     private static final String WRONG_MAPPING_MODE = "Content should be 'MappingMode Delete'.";
-    
+
     /**
      * JUnit Rule for expected exceptions.
      */
     @Rule
     public ExpectedException thrown = ExpectedException.none();
-    
+
     private final Log log = LogFactory.getLog(getClass());
 
     private XMLSupportService support;
@@ -68,7 +72,7 @@ public class XMLMapperImplTest {
     private File compareCPACS1;
 
     private File compareCPACS2;
-    
+
     private File compareCPACSXSL;
 
     private File toolOutput;
@@ -78,15 +82,14 @@ public class XMLMapperImplTest {
     private File mappingInputComplex;
 
     private File mappingOutput;
-    
+
     private File xsltFile;
-    
+
     private File resultFile;
-    
+
     private TempFileService tempFileService;
-    
+
     private File testRootDir;
-    
 
     /**
      * Setup for the XML Mapper tests.
@@ -94,19 +97,18 @@ public class XMLMapperImplTest {
      * @throws Exception on error.
      */
     @Before
-    public void setup() throws Exception{
-        
+    public void setup() throws Exception {
+
         // Setup temp file service for testing
         TempFileServiceAccess.setupUnitTestEnvironment();
         tempFileService = TempFileServiceAccess.getInstance();
         testRootDir = tempFileService.createManagedTempDir();
         log.debug("Testing in temporary directory " + testRootDir.getAbsolutePath());
 
-        
         xmlMapper = new XMLMapperServiceImpl();
         support = new XMLSupportServiceImpl();
         xmlMapper.bindXMLSupportService(support);
-        
+
         originCPACS = new File("src/test/resources/CPACS.xml");
         compareCPACS1 = new File("src/test/resources/compareCPACS_1.xml");
         compareCPACS2 = new File("src/test/resources/compareCPACS_2.xml");
@@ -118,6 +120,17 @@ public class XMLMapperImplTest {
         mappingInputSimple = new File("src/test/resources/mappingInput_newNamespace.xml");
         resultFile = tempFileService.createTempFileFromPattern("output*.xml");
     }
+    
+    /**
+     * Clean up temp files.
+     * 
+     * @throws IOException on Error.
+     */
+    @After
+    public void cleanup() throws IOException {
+        tempFileService.disposeManagedTempDirOrFile(testRootDir);
+        tempFileService.disposeManagedTempDirOrFile(resultFile);
+    }
 
     /**
      * Test transforming a file with XSLT.
@@ -126,7 +139,15 @@ public class XMLMapperImplTest {
      */
     @Test
     public void testTransformXMLFileWithXSLT() throws XMLException {
-        xmlMapper.transformXMLFileWithXSLT(originCPACS, resultFile, xsltFile);
+        assertFalse(FileUtils.isLocked(originCPACS));
+        assertFalse(FileUtils.isLocked(resultFile));
+        assertFalse(FileUtils.isLocked(xsltFile));
+        
+        xmlMapper.transformXMLFileWithXSLT(originCPACS, resultFile, xsltFile, null);
+
+        assertFalse(FileUtils.isLocked(originCPACS));
+        assertFalse(FileUtils.isLocked(resultFile));
+        assertFalse(FileUtils.isLocked(xsltFile));
 
         Document compareDoc = support.readXMLFromFile(compareCPACSXSL);
         Document target = support.readXMLFromFile(resultFile);
@@ -171,6 +192,24 @@ public class XMLMapperImplTest {
         assertTrue(CONTENT_OF_MAPPING_IS_NOT_AS_EXPECTED,
             support.writeXMLToString(target).equals(support.writeXMLToString(compareDoc)));
     }
+    
+    /**
+     * Tests if the all involved files are not locked after calling transformXMLFileWithXMLMappingInformation.
+     * 
+     * @throws XPathExpressionException Thrown if mapping fails.
+     * @throws XMLException Error in XML handling
+     * 
+     * @author Tobias Rodehutskors
+     */
+    @Test
+    public void testTransformXMLFileWithXMLMappingInformationForNotLocked() throws XPathExpressionException, XMLException {
+        File target = new File(testRootDir, "target.xml");
+        xmlMapper.transformXMLFileWithXMLMappingInformation(toolOutput, target, mappingOutput);
+        assertFalse(FileUtils.isLocked(toolOutput));
+        assertFalse(FileUtils.isLocked(target));
+        assertFalse(FileUtils.isLocked(mappingOutput));
+
+    }
 
     /**
      * Check handling of null values. They shouldn't cause uncatched NullPointerExceptions. XMLExceptions are expected.
@@ -188,7 +227,7 @@ public class XMLMapperImplTest {
         xmlMapper.transformXMLFileWithXMLMappingInformation(nullFile, resultFile, nullFile);
         xmlMapper.transformXMLFileWithXMLMappingInformation(nullFile, nullFile, mappingInputSimple);
         xmlMapper.transformXMLFileWithXMLMappingInformation(nullFile, nullFile, nullDoc);
-        xmlMapper.transformXMLFileWithXSLT(null, null, null);
+        xmlMapper.transformXMLFileWithXSLT(null, null, null, null);
     }
 
     /**

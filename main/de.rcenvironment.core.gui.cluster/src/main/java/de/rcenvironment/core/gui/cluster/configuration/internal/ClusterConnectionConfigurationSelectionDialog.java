@@ -94,6 +94,7 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
                 close();
             }
         });
+        connectButton.setEnabled(hasInitialElements);
         
         Button cancelButton = createButton(parent, CANCEL, Messages.cancelButtonTitle, false);
         cancelButton.addSelectionListener(new SelectionAdapter() {
@@ -117,6 +118,13 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
         close();
     }
     
+    @Override
+    protected void handleSelectionChanged() {
+        super.handleSelectionChanged();
+        setSelectedConfiguration();
+        updateButtons();
+    }
+    
     protected ClusterConnectionConfiguration getSelectedElement() {
         return selectedConfiguration;
     }
@@ -124,15 +132,22 @@ public class ClusterConnectionConfigurationSelectionDialog extends ElementListSe
     private void setSelectedConfiguration() {
         if (getSelectedElements().length > 0) {
             selectedConfiguration = (ClusterConnectionConfiguration) getSelectedElements()[0];                    
-        }        
+        } else {
+            selectedConfiguration = null;
+        }
     }
     
     private void updateDialog() {
-        ClusterConnectionConfiguration[] configurations = controller.getStoredClusterConnectionConfigurations();
         setListElements(controller.getStoredClusterConnectionConfigurations());
-        boolean enabled = configurations.length > 0;
-        editButton.setEnabled(enabled);
-        deleteButton.setEnabled(enabled);
+        updateButtons();
     }
 
+    private void updateButtons() {
+        ClusterConnectionConfiguration[] configurations = controller.getStoredClusterConnectionConfigurations();
+        setListElements(controller.getStoredClusterConnectionConfigurations());
+        boolean enabled = configurations.length > 0 && getSelectedElements().length > 0;
+        editButton.setEnabled(enabled);
+        deleteButton.setEnabled(enabled);
+        connectButton.setEnabled(enabled);
+    }
 }

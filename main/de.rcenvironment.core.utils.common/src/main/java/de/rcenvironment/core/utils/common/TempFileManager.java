@@ -25,6 +25,8 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
+
 /**
  * Utilities for creating automatically cleaned-up temporary directories and files. <br/>
  * The major design goals were:
@@ -42,6 +44,8 @@ import org.apache.commons.logging.LogFactory;
  * <ul>
  * <li>TODO</li>
  * </ul>
+ * 
+ * TODO (p2) add/fix missing authors
  * 
  * @author Robert Mischke
  */
@@ -85,6 +89,25 @@ public class TempFileManager {
     private final TempFileServiceImpl serviceImplementation;
 
     private final String instanceDirPrefix;
+
+    /**
+     * A shutdown hook to delete the temp directory; mostly relevant for cleaning up after unit tests. Extracted as a nested class to mark
+     * it as a shutdown hook for code quality checks.
+     *
+     * @author Robert Mischke (extracted)
+     */
+    private final class CleanUpShutdownHook extends Thread {
+
+        @Override
+        @TaskDescription("Shutdown hook to delete a root temp directory used by unit tests")
+        public void run() {
+            try {
+                deleteInstanceDirectoryForUnitTest();
+            } catch (IOException e) {
+                log.info("Failed to delete Instance Directory", e);
+            }
+        }
+    }
 
     /**
      * Default {@link TempFileService} implementation.
@@ -147,6 +170,10 @@ public class TempFileManager {
             if (filename.contains("\\") || filename.contains("/")) {
                 throw new IOException("Relative filenames are not allowed in this call");
             }
+            // TODO Not all filenames are valid on all platforms, but we cannot simply enforce the check here before we have not checked
+            // each call of createTempFileWithFixedFilename, to ensure that our code does not create invalid filenames.
+            // CrossPlatformFilenameUtils.throwIOExceptionIfFilenameNotValid(filename);
+
             // create a managed directory if not done yet or deleted meanwhile
             if (currentDirectoryForTempFiles == null || !currentDirectoryForTempFiles.exists()) {
                 currentDirectoryForTempFiles = createManagedTempDir();
@@ -246,6 +273,15 @@ public class TempFileManager {
         setGlobalRootDir(globalRootDir);
         this.instanceDirPrefix = instanceDirPrefix;
         serviceImplementation = new TempFileServiceImpl();
+    }
+
+    protected TempFileManager(File globalRootDir, String instanceDirPrefix, boolean unitTest) throws IOException {
+        setGlobalRootDir(globalRootDir);
+        this.instanceDirPrefix = instanceDirPrefix;
+        serviceImplementation = new TempFileServiceImpl();
+        if (unitTest) {
+            Runtime.getRuntime().addShutdownHook(new CleanUpShutdownHook());
+        }
     }
 
     /**
@@ -428,6 +464,29 @@ public class TempFileManager {
         String canonicalExpectedInner = expectedInner.getCanonicalPath();
         return ((canonicalExpectedInner.length() < canonicalExpectedOuter.length()) && canonicalExpectedOuter
             .startsWith(canonicalExpectedInner));
+    }
+
+    /**
+     * 
+     * Convenient method to delete temp directory created by a unit test. There should only be the lock file left in the folder
+     * 
+     * @throws IOException on error
+     */
+    private void deleteInstanceDirectoryForUnitTest() throws IOException {
+        if (instanceRootDirLock != null) {
+            instanceRootDirLock.release();
+            instanceRootDirLock.channel().close();
+        }
+        if (instanceRootDir != null) {
+            List<File> files = (List<File>) FileUtils.listFiles(instanceRootDir, null, true);
+            if (files.size() == 1 && files.get(0).getName().equals(LOCK_FILE_NAME)) {
+                FileUtils.deleteDirectory(instanceRootDir);
+                log.info("Deleted instance directory: " + instanceRootDir.getAbsolutePath());
+            } else {
+                log.warn("Did not delete temp directory: " + instanceRootDir.getAbsolutePath() + " since it is not empty.");
+            }
+        }
+
     }
 
 }

@@ -175,6 +175,12 @@ public class Messages extends NLS {
 
     /** NLS Constant. */
     public static String rceTempUsed;
+    
+    /** NLS Constant. */
+    public static String addDiaglogTitle;
+    
+    /** NLS Constant. */
+    public static String editDiaglogTitle;
 
     /** NLS Constant. */
     public static String inputs;

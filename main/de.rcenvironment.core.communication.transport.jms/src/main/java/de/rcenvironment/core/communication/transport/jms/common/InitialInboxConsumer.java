@@ -17,10 +17,10 @@ import javax.jms.Session;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * A single-threaded consumer that listens for initial protocol handshake requests. These requests are the first messages that should be
@@ -36,7 +36,7 @@ public final class InitialInboxConsumer extends AbstractJmsQueueConsumer impleme
 
     private RemoteInitiatedMessageChannelFactory passiveConnectionFactory;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private final String expectedProtocolVersion;
 

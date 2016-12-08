@@ -59,9 +59,6 @@ public class Messages extends NLS {
     public static String inputTitle;
 
     /** Constant. */
-    public static String noInput;
-
-    /** Constant. */
     public static String propertyIncorrectFloat;
 
     /** Constant. */
@@ -81,7 +78,7 @@ public class Messages extends NLS {
 
     /** Constant. */
     public static String maxConvChecks;
-    
+
     /** Constant. */
     public static String iterationsToConsider;
 

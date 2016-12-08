@@ -131,6 +131,16 @@ public class ComponentsConsoleLogFileWriterTest {
         assertFalse(fileCapture1.getValue().exists());
         assertFalse(fileCapture2.getValue().exists());
         assertFalse(fileCapture3.getValue().exists());
+        
+        deleteFile(fileCapture1.copiedLogFile);
+        deleteFile(fileCapture2.copiedLogFile);
+        deleteFile(fileCapture3.copiedLogFile);
+    }
+    
+    private void deleteFile(File file) {
+        if (!file.delete()) {
+            LogFactory.getLog(getClass()).error("Failed to delete test file: " + file);
+        }
     }
     
     private ConsoleRow createConsoleRow(Type type, String compExeId, String compName, String wfName, String payload) {

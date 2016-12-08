@@ -14,24 +14,28 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 
 /**
  * Test constants for this bundle tests.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public final class NotificationTestConstants {
 
+    /** Local Host. */
+    public static final InstanceNodeSessionId LOCAL_INSTANCE_SESSION = NodeIdentifierTestUtils
+        .createTestInstanceNodeSessionIdWithDisplayName("local");
+
     /** Remote Host. */
-    public static final NodeIdentifier LOCALHOST = NodeIdentifierFactory.fromHostAndNumber("localhost", 1);
+    public static final InstanceNodeSessionId REMOTE_INSTANCE_SESSION = NodeIdentifierTestUtils
+        .createTestInstanceNodeSessionIdWithDisplayName("remote");
 
     /** Local Host. */
-    public static final NodeIdentifier REMOTEHOST = NodeIdentifierFactory.fromHostAndNumber("remote", 1);
-
-    /** Local Host. */
-    public static final NodeIdentifier UNREACHABLE_HOST = NodeIdentifierFactory.fromHostAndNumber("unreachable", 1);
+    public static final InstanceNodeSessionId UNREACHABLE_INSTANCE = NodeIdentifierTestUtils
+        .createTestInstanceNodeSessionIdWithDisplayName("unreachable");
 
     /** Notification identifier. */
     public static final String PERSISTENT_NOTIFICATION_ID = "de.rcenvironment.rce.notification.persistent";
@@ -41,7 +45,7 @@ public final class NotificationTestConstants {
 
     /** Notification identifier. */
     public static final String PERSISTENT_NOTIFICATION_REGEX = "de.rcenvironment.rce.notification.pers.*";
-    
+
     /** Notification identifier of a persistent notification. */
     public static final String NOTIFICATION_ID = "de.rcenvironment.rce.notification";
 
@@ -53,25 +57,24 @@ public final class NotificationTestConstants {
 
     /** Publisher name. */
     public static final long NOTIFICATION_EDITION = 0;
-    
+
     /** Notification header. */
     public static final NotificationHeader NOTIFICATION_HEADER = new NotificationHeader(NOTIFICATION_ID,
-        NOTIFICATION_EDITION, LOCALHOST);
+        NOTIFICATION_EDITION, LOCAL_INSTANCE_SESSION);
 
     /** Notification headers. */
     public static final SortedSet<NotificationHeader> NOTIFICATION_HEADERS = new TreeSet<NotificationHeader>();
 
     /** Notifications. */
     public static final List<Notification> NOTIFICATIONS = new ArrayList<Notification>();
-    
+
     /** Notification subscriber. */
     public static final NotificationSubscriber NOTIFICATION_SUBSCRIBER = new DefaultNotificationSubscriber() {
-        
+
         private static final long serialVersionUID = 1L;
 
         @Override
-        public void processNotification(Notification notification) {
-        }
+        public void processNotification(Notification notification) {}
 
         @Override
         public Class<? extends Serializable> getInterface() {
@@ -81,7 +84,7 @@ public final class NotificationTestConstants {
 
     /** Notification. */
     public static final Notification NOTIFICATION = new Notification(NOTIFICATION_ID,
-        NOTIFICATION_EDITION, LOCALHOST, new String());
+        NOTIFICATION_EDITION, LOCAL_INSTANCE_SESSION, new String());
 
     /**
      * Private constructor of this utility class.

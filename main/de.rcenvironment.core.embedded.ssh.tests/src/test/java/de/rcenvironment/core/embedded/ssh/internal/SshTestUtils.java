@@ -27,9 +27,9 @@ public final class SshTestUtils {
 
     private static final int DEFAULT_TEST_PORT = 31005;
 
-    private static final String NOT_RESTRICTED_ROLE = "no_restrictions";
+    private static final String NOT_RESTRICTED_ROLE = SshConstants.ROLE_NAME_DEVELOPER;
 
-    private static final String RESTRICTED_ROLE = "restricted!";
+    private static final String RESTRICTED_ROLE = SshConstants.ROLE_NAME_LOCAL_ADMIN;
 
     private static final String PUBLIC_KEY =
         "ssh-rsa AAAAB3NzaC1yc2EAAAABJQAAAQEAty3XzVa62Gj6qDpXRiBq+EH72YItRfagVcFedx3+FR7VUzMytZ3BQ/egFu7i"
@@ -53,43 +53,7 @@ public final class SshTestUtils {
         // add user
         configuration.setAccounts(getValidUsers());
 
-        // add roles
-        configuration.setRoles(getValidRoles());
-
         return configuration;
-    }
-
-    /**
-     * 
-     * Get a list of valid roles...
-     * 
-     * @return a list of valid roles
-     */
-    public static List<SshAccountRole> getValidRoles() {
-        List<SshAccountRole> roles = new ArrayList<SshAccountRole>();
-        List<String> allowedCommandPatterns = new ArrayList<String>();
-        List<String> allowedScpPath = new ArrayList<String>();
-
-        // add not restricted role
-        allowedCommandPatterns.add(".*");
-        allowedScpPath.add("/tmp/");
-        allowedScpPath.add("/etc/");
-        roles.add(new SshAccountRole(NOT_RESTRICTED_ROLE, allowedCommandPatterns, allowedScpPath));
-
-        // add restricted role
-        allowedCommandPatterns = new ArrayList<String>();
-        allowedScpPath = new ArrayList<String>();
-
-        allowedCommandPatterns.add("stats");
-        allowedCommandPatterns.add("tasks");
-        allowedCommandPatterns.add("net( .+)?");
-        allowedScpPath.add("/tmp/rce/");
-        roles.add(new SshAccountRole(RESTRICTED_ROLE, allowedCommandPatterns, allowedScpPath));
-        return roles;
-    }
-
-    public static SshAccountRole getValidRole() {
-        return getValidRoles().get(0);
     }
 
     /**
@@ -164,4 +128,9 @@ public final class SshTestUtils {
         }
         return key;
     }
+
+    public static List<SshAccountRole> getValidRoles() {
+        return getValidConfig().getRoles();
+    }
+
 }

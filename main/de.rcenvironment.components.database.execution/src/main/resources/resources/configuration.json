@@ -25,7 +25,8 @@
             "defaultValue": "MySQL"
         },
         {
-            "key": "databaseStatements"
+            "key": "databaseStatements",
+            "defaultValue": "[{\"index\":0,\"name\":\"Statement\",\"statement\":\"\",\"willWriteToOutput\":false,\"outputToWriteTo\":\"\"}]"
         },
         {
             "key": "databaseExecutionType",

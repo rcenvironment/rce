@@ -8,7 +8,8 @@
  
 package de.rcenvironment.core.component.model.endpoint.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 
 /**
  * Describes the recipient for an {@link EndpointDatum}.
@@ -33,8 +34,8 @@ public interface EndpointDatumRecipient {
     String getInputsComponentInstanceName();
     
     /**
-     * @return {@link NodeIdentifier} of the target node
+     * @return {@link InstanceNodeSessionId} of the target node
      */
-    NodeIdentifier getInputsNodeId();
+    LogicalNodeId getInputsNodeId();
     
 }

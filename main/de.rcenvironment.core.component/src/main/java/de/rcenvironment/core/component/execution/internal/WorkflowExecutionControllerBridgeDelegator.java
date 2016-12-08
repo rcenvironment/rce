@@ -179,4 +179,5 @@ public class WorkflowExecutionControllerBridgeDelegator implements WorkflowExecu
 
         protected abstract void call() throws ExecutionControllerException, RemoteOperationException;
     }
+    
 }

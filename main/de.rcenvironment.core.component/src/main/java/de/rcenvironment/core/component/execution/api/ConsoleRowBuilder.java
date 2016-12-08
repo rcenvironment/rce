@@ -72,11 +72,20 @@ public class ConsoleRowBuilder {
     }
     
     /**
-     * @param sequenceNumber sequenceNumber of the {@link ConsoleRow}
+     * @param sequenceNumber sequence number of the {@link ConsoleRow}
      * @return {@link ConsoleRowBuilder} instance for method chaining
      */
     public ConsoleRowBuilder setSequenceNumber(long sequenceNumber) {
         consoleRow.setSequenceNumber(sequenceNumber);
+        return this;
+    }
+    
+    /**
+     * @param compRun component run the the {@link ConsoleRow} was generated
+     * @return {@link ConsoleRowBuilder} instance for method chaining
+     */
+    public ConsoleRowBuilder setComponentRun(int compRun) {
+        consoleRow.setComponentRun(compRun);
         return this;
     }
     

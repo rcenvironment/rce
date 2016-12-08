@@ -8,5 +8,9 @@
      },
 	 "de.rcenvironment.outputwriter/1.1": {
           "targetRootFolder": "path to any directory"
+     },
+	 "de.rcenvironment.database/1.0": {
+          "authUser": "user name for the database",
+          "authPhrase": "user password for the database"
      }
 }

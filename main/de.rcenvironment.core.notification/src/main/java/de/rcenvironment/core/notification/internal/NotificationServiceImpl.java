@@ -31,11 +31,12 @@ import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationHeader;
 import de.rcenvironment.core.notification.NotificationService;
 import de.rcenvironment.core.notification.NotificationSubscriber;
-import de.rcenvironment.core.utils.common.StatsCounter;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator;
-import de.rcenvironment.core.utils.common.concurrent.BatchAggregator.BatchProcessor;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchAggregator;
+import de.rcenvironment.toolkit.modules.concurrency.api.BatchProcessor;
 
 /**
  * Implementation of the {@link NotificationService}.
@@ -109,7 +110,7 @@ public class NotificationServiceImpl implements NotificationService {
      * 
      * @author Robert Mischke
      */
-    private final class NotificationBatchSender implements BatchAggregator.BatchProcessor<Notification> {
+    private final class NotificationBatchSender implements BatchProcessor<Notification> {
 
         private NotificationSubscriber subscriber;
 
@@ -190,8 +191,8 @@ public class NotificationServiceImpl implements NotificationService {
 
         if (TOPIC_STATISTICS_ENABLED) {
             if (StatsCounter.isEnabled()) {
-                StatsCounter.count("Notification Ids", notificationId);
-                StatsCounter.countClass("Notification Body Types", notificationBody);
+                StatsCounter.count("Notifications sent by id", notificationId);
+                StatsCounter.countClass("Notifications sent by body type", notificationBody);
             }
         }
 
@@ -201,7 +202,7 @@ public class NotificationServiceImpl implements NotificationService {
 
         Long currentEdition = currentNumbers.get(notificationId);
         Notification notification = new Notification(notificationId, currentEdition.longValue() + 1,
-            platformService.getLocalNodeId(), notificationBody);
+            platformService.getLocalInstanceNodeSessionId(), notificationBody);
 
         SortedMap<NotificationHeader, Notification> notifications = allNotifications.get(notificationId);
         if (notifications != null) {
@@ -344,7 +345,7 @@ public class NotificationServiceImpl implements NotificationService {
             try {
                 subscriber.receiveBatchedNotifications(notifications);
             } catch (RuntimeException e) {
-                // TODO 8.0.0: safeguard code added in 7.0.0 transition; remove if never observed in 7.x cycle
+                // TODO >=8.0.0: safeguard code added in 7.0.0 transition; remove if never observed in 7.x cycle
                 LOGGER.error("Unexpected RTE thrown from receiveBatchedNotifications()", e);
                 throw new RemoteOperationException(e.toString());
             }
@@ -376,28 +377,18 @@ public class NotificationServiceImpl implements NotificationService {
     }
 
     private NotificationTopic getNotificationTopic(String notificationId) {
-
-        NotificationTopic topic = null;
         synchronized (topics) {
-            for (String topicName : topics.keySet()) {
-                if (topicName.equals(notificationId)) {
-                    topic = topics.get(topicName);
-                    break;
-                }
-            }
+            return topics.get(notificationId);
         }
-
-        return topic;
-
     }
 
     private LocalSubscriberMetaData getLocalSubscriberMetaData(NotificationSubscriber subscriber) {
         synchronized (subscriberMap) {
             LocalSubscriberMetaData metaData = subscriberMap.get(subscriber);
             if (metaData == null) {
-                final BatchAggregator.BatchProcessor<Notification> batchProcessor = new NotificationBatchSender(subscriber);
+                final BatchProcessor<Notification> batchProcessor = new NotificationBatchSender(subscriber);
                 final BatchAggregator<Notification> batchAggregator =
-                    new BatchAggregator<Notification>(MAX_NOTIFICATION_BATCH_SIZE, MAX_NOTIFICATION_LATENCY,
+                    ConcurrencyUtils.getFactory().createBatchAggregator(MAX_NOTIFICATION_BATCH_SIZE, MAX_NOTIFICATION_LATENCY,
                         batchProcessor);
                 metaData = new LocalSubscriberMetaData(batchAggregator);
                 subscriberMap.put(subscriber, metaData);
@@ -408,6 +399,7 @@ public class NotificationServiceImpl implements NotificationService {
 
     private Set<NotificationTopic> getMatchingNotificationTopics(String currentNotificationId) {
 
+        // TODO (p2) >8.0.0: this is performed on every send() call, and is quite CPU and GC intensive; rework approach
         Set<NotificationTopic> matchingTopics = new HashSet<NotificationTopic>();
         synchronized (topics) {
             for (NotificationTopic topic : topics.values()) {

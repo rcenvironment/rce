@@ -29,8 +29,7 @@ import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
  */
 public class PersistentComponentDescriptionUpdateServiceImpl implements RemotablePersistentComponentDescriptionUpdateService {
 
-    private Map<String, PersistentComponentDescriptionUpdater> updaters = Collections
-        .synchronizedMap(new HashMap<String, PersistentComponentDescriptionUpdater>());
+    private Map<String, PersistentComponentDescriptionUpdater> updaters = new HashMap<String, PersistentComponentDescriptionUpdater>();
     
     private Map<Boolean, Map<String, Integer>> versionsToUpdate = new HashMap<Boolean, Map<String, Integer>>();
     
@@ -76,9 +75,11 @@ public class PersistentComponentDescriptionUpdateServiceImpl implements Remotabl
     
     private PersistentComponentDescriptionUpdater findFirstMatchingUpdater(String compIdentifier) {
         // iterate over all entries should be fine, because the amount of updaters shouldn't be more than 10 (07/2013)
-        for (String key : updaters.keySet()) {
-            if (compIdentifier.matches(key)) {
-                return updaters.get(key);
+        synchronized (updaters) {
+            for (String key : updaters.keySet()) {
+                if (compIdentifier.matches(key)) { // TODO review if 'key' can be still a regular expression here
+                    return updaters.get(key);
+                }
             }
         }
         
@@ -106,11 +107,15 @@ public class PersistentComponentDescriptionUpdateServiceImpl implements Remotabl
 
     protected void addPersistentComponentDescriptionUpdater(PersistentComponentDescriptionUpdater updater) {
         for (String identifier : updater.getComponentIdentifiersAffectedByUpdate()) {
-            updaters.put(identifier, updater);
+            synchronized (updaters) {
+                updaters.put(identifier, updater);
+            }
         }
     }
 
     protected void removePersistentComponentDescriptionUpdater(PersistentComponentDescriptionUpdater updater) {
-        updaters.remove(updater.getComponentIdentifiersAffectedByUpdate());
+        synchronized (updaters) {
+            updaters.remove(updater.getComponentIdentifiersAffectedByUpdate());
+        }
     }
 }

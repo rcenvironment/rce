@@ -8,7 +8,7 @@
       <propertySections
             contributorId="de.rcenvironment.rce.gui.workflow.editor.WorkflowEditor">
          <propertySection
-               class="de.rcenvironment.core.gui.workflow.editor.properties.DefaultEndpointPropertySection"
+               class="de.rcenvironment.core.gui.remoteaccess.SshRemoteAccessEndpointPropertySection"
                enablesFor="1"
                filter="de.rcenvironment.core.gui.remoteaccess.SshRemoteAccessClientComponentFilter"
                id="workflow.editor.tab.Properties.Section.InputsOutputs"
@@ -36,5 +36,9 @@
       		class="de.rcenvironment.core.gui.workflow.editor.validator.DefaultWorkflowNodeValidator"
             filter="de.rcenvironment.core.gui.remoteaccess.SshRemoteAccessClientComponentFilter">
       </validator>
+   </extension>
+    <!-- Dynamic Help -->
+   <extension point="org.eclipse.help.contexts">
+      <contexts file="help/contexts.xml" plugin="de.rcenvironment.remoteaccess" />
    </extension>
 </plugin>

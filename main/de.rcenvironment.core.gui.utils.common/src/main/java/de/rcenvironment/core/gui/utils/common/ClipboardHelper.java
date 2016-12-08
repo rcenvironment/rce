@@ -48,7 +48,7 @@ public final class ClipboardHelper {
         try {
             cb.setContents(new Object[] { content }, new Transfer[] { textTransfer });
         } catch (IllegalArgumentException e) { // content is null
-            LOG.info("Empty content cannot be copied onto the Clipboard.", e);
+            // Empty content cannot be copied onto the clipboard
         } // TODO there are more possible exceptions
         cb.dispose();
     }

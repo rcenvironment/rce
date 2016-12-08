@@ -15,6 +15,7 @@ import junit.framework.TestCase;
  * 
  * @author Andre Nurzenski
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class NotificationTest extends TestCase {
 
@@ -39,7 +40,7 @@ public class NotificationTest extends TestCase {
         myThrowable = new NullPointerException(THROWABLE_TEXT);
         myNotification = new Notification(NotificationTestConstants.NOTIFICATION_ID,
             NotificationTestConstants.NOTIFICATION_EDITION,
-            NotificationTestConstants.LOCALHOST,
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION,
             myThrowable);
     }
 
@@ -79,7 +80,7 @@ public class NotificationTest extends TestCase {
         try {
             new Notification(null,
                 NotificationTestConstants.NOTIFICATION_EDITION,
-                NotificationTestConstants.LOCALHOST,
+                NotificationTestConstants.LOCAL_INSTANCE_SESSION,
                 myThrowable);
             fail();
         } catch (IllegalArgumentException e) {
@@ -89,7 +90,7 @@ public class NotificationTest extends TestCase {
         try {
             new Notification(NotificationTestConstants.NOTIFICATION_ID,
                 illegalEdition,
-                NotificationTestConstants.LOCALHOST,
+                NotificationTestConstants.LOCAL_INSTANCE_SESSION,
                 myThrowable);
             fail();
         } catch (IllegalArgumentException e) {
@@ -106,7 +107,7 @@ public class NotificationTest extends TestCase {
         }
         new Notification(NotificationTestConstants.NOTIFICATION_ID,
             NotificationTestConstants.NOTIFICATION_EDITION,
-            NotificationTestConstants.LOCALHOST,
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION,
             null);
     }
 
@@ -145,19 +146,19 @@ public class NotificationTest extends TestCase {
     public final void testEqualsForSanity() throws Exception {
         Notification notification = new Notification(NotificationTestConstants.OTHER_NOTIFICATION_IDENTIFIER,
             NotificationTestConstants.NOTIFICATION_EDITION,
-            NotificationTestConstants.LOCALHOST,
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION,
             myThrowable);
         assertFalse(myNotification.equals(notification));
         notification = new Notification(NotificationTestConstants.NOTIFICATION_ID,
             NotificationTestConstants.NOTIFICATION_EDITION,
-            NotificationTestConstants.LOCALHOST,
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION,
             new String());
         assertFalse(myNotification.equals(notification));
         final int sleep = 1000;
         Thread.sleep(sleep);
         notification = new Notification(NotificationTestConstants.NOTIFICATION_ID,
             NotificationTestConstants.NOTIFICATION_EDITION,
-            NotificationTestConstants.LOCALHOST,
+            NotificationTestConstants.LOCAL_INSTANCE_SESSION,
             myThrowable);
         assertFalse(myNotification.equals(notification));
 

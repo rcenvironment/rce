@@ -8,13 +8,15 @@
 
 package de.rcenvironment.core.communication.model.internal;
 
-import java.util.HashMap;
+import java.io.PrintStream;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
-import de.rcenvironment.core.communication.model.InitialNodeInformation;
-import de.rcenvironment.core.communication.model.NodeIdentityInformation;
-import de.rcenvironment.core.communication.model.NodeInformation;
 import de.rcenvironment.core.communication.model.NodeInformationRegistry;
+import de.rcenvironment.core.communication.model.SharedNodeInformationHolder;
+import de.rcenvironment.core.utils.common.StringUtils;
+import de.rcenvironment.toolkit.modules.concurrency.utils.ThreadsafeAutoCreationMap;
 
 /**
  * Central registry for information gathered about nodes.
@@ -23,63 +25,46 @@ import de.rcenvironment.core.communication.model.NodeInformationRegistry;
  */
 public class NodeInformationRegistryImpl implements NodeInformationRegistry {
 
-    private static final NodeInformationRegistryImpl sharedInstance = new NodeInformationRegistryImpl();
+    private final ThreadsafeAutoCreationMap<String, SharedNodeInformationHolderImpl> threadSafeIdToHolderAutoMap =
+        new ThreadsafeAutoCreationMap<String, SharedNodeInformationHolderImpl>() {
 
-    private Map<String, NodeInformationHolder> idToHolderMap = new HashMap<String, NodeInformationHolder>();
-
-    // TODO this shared map does not properly reflect multi-instance tests; changes required?
-    public static NodeInformationRegistryImpl getInstance() {
-        return sharedInstance;
-    }
-
-    /**
-     * {@inheritDoc}
-     * 
-     * @see de.rcenvironment.core.communication.model.NodeInformationRegistry#getNodeInformation(java.lang.String)
-     */
-    @Override
-    public NodeInformation getNodeInformation(String id) {
-        return getWritableNodeInformation(id);
-    }
-
-    /**
-     * Provides direct, write-enabled access to {@link NodeInformationHolder}s. Not part of the {@link NodeInformationRegistry} interface as
-     * it is intended for bundle-internal use only.
-     * 
-     * @param id the id of the relevant node
-     * @return the writable {@link NodeInformationHolder}
-     */
-    public NodeInformationHolder getWritableNodeInformation(String id) {
-        synchronized (idToHolderMap) {
-            NodeInformationHolder holder = idToHolderMap.get(id);
-            if (holder == null) {
-                holder = new NodeInformationHolder();
-                idToHolderMap.put(id, holder);
+            @Override
+            protected SharedNodeInformationHolderImpl createNewEntry(String key) {
+                return new SharedNodeInformationHolderImpl();
             }
-            return holder;
+
+        };
+
+    @Override
+    public SharedNodeInformationHolder getNodeInformationHolder(String id) {
+        return getMutableNodeInformationHolder(id);
+    }
+
+    @Override
+    public void printAllNameAssociations(PrintStream output, String introText) {
+        if (introText != null) {
+            output.println(introText);
+        }
+        final Map<String, SharedNodeInformationHolderImpl> snapshot = new TreeMap<>(threadSafeIdToHolderAutoMap.getShallowCopy()); // sorted
+        for (Entry<String, SharedNodeInformationHolderImpl> entry : snapshot.entrySet()) {
+            final String stringValue = entry.getValue().getDisplayName();
+            if (stringValue != null) {
+                output.println(StringUtils.format("  %s -> \"%s\"", entry.getKey(), stringValue));
+            } else {
+                output.println(StringUtils.format("  %s -> <null>", entry.getKey()));
+            }
         }
     }
 
     /**
-     * Updates the associated information for a node from a received or locally-generated {@link InitialNodeInformation} object.
+     * Provides direct, write-enabled access to {@link SharedNodeInformationHolderImpl}s. Not part of the {@link NodeInformationRegistry}
+     * interface as it is intended for bundle-internal use only.
      * 
-     * @param remoteNodeInformation the object to update from
+     * @param id the id of the relevant node
+     * @return the writable {@link SharedNodeInformationHolderImpl}
      */
-    public void updateFrom(InitialNodeInformation remoteNodeInformation) {
-        String nodeId = remoteNodeInformation.getNodeId().getIdString();
-        NodeInformationHolder writableNodeInformation = getWritableNodeInformation(nodeId);
-        writableNodeInformation.setDisplayName(remoteNodeInformation.getDisplayName());
-    }
-
-    /**
-     * Updates the associated information for a node from a received or locally-generated {@link NodeIdentityInformation} object.
-     * 
-     * @param identityInformation the object to update from
-     */
-    public void updateFrom(NodeIdentityInformation identityInformation) {
-        String nodeId = identityInformation.getPersistentNodeId();
-        NodeInformationHolder writableNodeInformation = getWritableNodeInformation(nodeId);
-        writableNodeInformation.setDisplayName(identityInformation.getDisplayName());
+    public SharedNodeInformationHolderImpl getMutableNodeInformationHolder(String id) {
+        return threadSafeIdToHolderAutoMap.get(id);
     }
 
 }

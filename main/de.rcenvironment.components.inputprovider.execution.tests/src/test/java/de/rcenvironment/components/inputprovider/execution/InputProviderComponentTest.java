@@ -15,7 +15,6 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.commons.io.FileUtils;
 import org.easymock.EasyMock;
 import org.junit.After;
 import org.junit.Before;
@@ -242,7 +241,7 @@ public class InputProviderComponentTest {
         context.addSimulatedOutput(FILE_VARIABLE, "", DataType.FileReference, false, metaData);
         component.start();
         assertEquals(dummyFileReference, context.getCapturedOutput(FILE_VARIABLE).get(0));
-        removeTempDir(createTempDir);
+        removeTempDirOrFile(createTempDir);
     }
 
     /**
@@ -256,8 +255,7 @@ public class InputProviderComponentTest {
         Map<String, String> metaData = generateInputProviderMetadata(value);
         context.addSimulatedOutput(FILE_VARIABLE, "", DataType.FileReference, false, metaData);
         dataException.expect(ComponentException.class);
-        dataException.expectMessage(StringUtils.format("%s: No file name given for output '%s'",
-            context.getInstanceName(), FILE_VARIABLE));
+        dataException.expectMessage(StringUtils.format("Internal error: No file given for output '%s'", FILE_VARIABLE));
         component.start();
     }
 
@@ -265,14 +263,22 @@ public class InputProviderComponentTest {
      * Test with one output with an not existing file value.
      *
      * @throws ComponentException ce
+     * @throws IOException on unexpected error
      */
     @Test
-    public void testFileNotExist() throws ComponentException {
-        String value = "C:\\lorem\\ipsum\\rce.xml";
-        Map<String, String> metaData = generateInputProviderMetadata(value);
+    public void testFileNotExist() throws ComponentException, IOException {
+        File emptyTempDir = tempFileService.createManagedTempDir();
+        Map<String, String> metaData = generatedMetaDataForNonExistentFileOrDir(emptyTempDir);
         context.addSimulatedOutput(FILE_VARIABLE, "", DataType.FileReference, false, metaData);
         dataException.expect(ComponentException.class);
         component.start();
+        removeTempDirOrFile(emptyTempDir);
+    }
+
+    private Map<String, String> generatedMetaDataForNonExistentFileOrDir(File emptyTempDir) {
+        String value = new File(emptyTempDir, "not_existent").getAbsolutePath();
+        Map<String, String> metaData = generateInputProviderMetadata(value);
+        return metaData;
     }
 
     /**
@@ -296,7 +302,7 @@ public class InputProviderComponentTest {
         context.addSimulatedOutput(DIR_VARIABLE, "", DataType.DirectoryReference, false, metaData);
         component.start();
         assertEquals(createDirectoryReference, context.getCapturedOutput(DIR_VARIABLE).get(0));
-        removeTempDir(createTempDir);
+        removeTempDirOrFile(createTempDir);
     }
 
     /**
@@ -309,7 +315,7 @@ public class InputProviderComponentTest {
         String value = "";
         Map<String, String> metaData = generateInputProviderMetadata(value);
         context.addSimulatedOutput(DIR_VARIABLE, "", DataType.DirectoryReference, false, metaData);
-        dataException.expect(NullPointerException.class);
+        dataException.expect(ComponentException.class);
         component.start();
     }
 
@@ -317,14 +323,17 @@ public class InputProviderComponentTest {
      * Test with one output with an not existing file value.
      *
      * @throws ComponentException ce
+     * @throws IOException on unexpected error
      */
     @Test
-    public void testDirNotExist() throws ComponentException {
-        String value = "C:\\lorem\\ipsum\\";
-        Map<String, String> metaData = generateInputProviderMetadata(value);
+    public void testDirNotExist() throws ComponentException, IOException {
+        File emptyTempDir = tempFileService.createManagedTempDir();
+        Map<String, String> metaData = generatedMetaDataForNonExistentFileOrDir(emptyTempDir);
         context.addSimulatedOutput(DIR_VARIABLE, "", DataType.DirectoryReference, false, metaData);
         dataException.expect(ComponentException.class);
         component.start();
+        
+        removeTempDirOrFile(emptyTempDir);
     }
 
     /**
@@ -347,8 +356,11 @@ public class InputProviderComponentTest {
         Map<String, String> metaData = generateInputProviderMetadata(testFile.getAbsolutePath());
         context.addSimulatedOutput(DIR_VARIABLE, "", DataType.DirectoryReference, false, metaData);
         dataException.expect(ComponentException.class);
-        component.start();
-        removeTempDir(createTempDir);
+        try {
+            component.start();
+        } finally {
+            removeTempDirOrFile(createTempDir);
+        }
     }
 
     private Map<String, String> generateInputProviderMetadata(String value) {
@@ -388,9 +400,9 @@ public class InputProviderComponentTest {
      * 
      * @param file The File object of the directory.
      */
-    private void removeTempDir(File file) {
+    private void removeTempDirOrFile(File file) {
         try {
-            FileUtils.deleteDirectory(file);
+            tempFileService.disposeManagedTempDirOrFile(file);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

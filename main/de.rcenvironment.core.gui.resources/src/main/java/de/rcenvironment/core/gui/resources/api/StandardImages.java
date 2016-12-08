@@ -293,6 +293,11 @@ public enum StandardImages implements ImageSource {
      * Workflow state: failed.
      */
     FAILED(fromLocalBundle("failed.gif")),
+    
+    /**
+     * Workflow state: verification failed.
+     */
+    RESULTS_REJECTED(fromLocalBundle("results_rejected.png")),
 
     /**
      * Workflow state: corrupted.
@@ -360,6 +365,11 @@ public enum StandardImages implements ImageSource {
     LOCAL(fromLocalBundle("local.gif")),
 
     /**
+     * Local component icon.
+     */
+    IMITATION_MODE(fromLocalBundle("imitation_mode.gif")),
+    
+    /**
      * Deprecated component icon.
      */
     DEPRECATED(fromLocalBundle("deprecated.png")),
@@ -403,6 +413,11 @@ public enum StandardImages implements ImageSource {
      * Remove icon (red cross).
      */
     REMOVE_16(fromLocalBundle("remove.gif")),
+    
+    /**
+     * Restore default icon (arrow and baseline).
+     */
+    RESTORE_DEFAULT(fromLocalBundle("restore_default.gif")),
     
     /**
      * Icon for SQL statements (e.g. in a folder).

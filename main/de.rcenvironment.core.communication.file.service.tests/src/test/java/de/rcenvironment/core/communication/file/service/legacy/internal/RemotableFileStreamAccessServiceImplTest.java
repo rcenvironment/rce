@@ -25,8 +25,8 @@ import org.junit.Test;
 
 import de.rcenvironment.core.authorization.AuthorizationException;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.communication.fileaccess.api.RemoteFileConnection.FileType;
 import de.rcenvironment.core.datamanagement.FileDataService;
 import de.rcenvironment.core.datamanagement.backend.MetaDataBackendService;
@@ -41,12 +41,12 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link RemotableFileStreamAccessServiceImpl}.
  * 
  * @author Doreen Seider
- * @author Robert Mischke (changed to classpath resource loading)
+ * @author Robert Mischke (changed to classpath resource loading; id adaptations)
  */
 @Deprecated
 public class RemotableFileStreamAccessServiceImplTest {
 
-    private static final String INVALID_UUID = "uuid";
+    private final String invalidUUID = "uuid";
 
     private final UUID dmUuid = UUID.fromString("e293a96a-ddf2-41c5-b94e-c95a3a5cecc2");
 
@@ -76,7 +76,7 @@ public class RemotableFileStreamAccessServiceImplTest {
         Set<BinaryReference> birefs = new HashSet<BinaryReference>();
         birefs.add(new BinaryReference(UUID.randomUUID().toString(), CompressionFormat.GZIP, "1"));
 
-        dataRef = new DataReference(dmUuid.toString(), NodeIdentifierFactory.fromNodeId("lump:6"), birefs);
+        dataRef = new DataReference(dmUuid.toString(), NodeIdentifierTestUtils.createTestInstanceNodeIdWithDisplayName("dummy"), birefs);
         inputStream = EasyMock.createNiceMock(InputStream.class);
         EasyMock.expect(inputStream.read()).andReturn(noOfBytes).anyTimes();
         EasyMock.expect(inputStream.read(EasyMock.aryEq(new byte[noOfBytes]),
@@ -139,7 +139,7 @@ public class RemotableFileStreamAccessServiceImplTest {
     @Test
     public void testReadForFailure() throws Exception {
         try {
-            fileService.read(INVALID_UUID);
+            fileService.read(invalidUUID);
             fail();
         } catch (IOException e) {
             assertTrue(true);
@@ -182,7 +182,7 @@ public class RemotableFileStreamAccessServiceImplTest {
     @Test
     public void testRead2ForFailure() throws Exception {
         try {
-            fileService.read(INVALID_UUID, new Integer(4));
+            fileService.read(invalidUUID, new Integer(4));
             fail();
         } catch (IOException e) {
             assertTrue(true);
@@ -222,7 +222,7 @@ public class RemotableFileStreamAccessServiceImplTest {
             assertTrue(true);
         }
 
-        fileService.close(INVALID_UUID);
+        fileService.close(invalidUUID);
     }
 
     /**
@@ -248,7 +248,7 @@ public class RemotableFileStreamAccessServiceImplTest {
     @Test
     public void testSkipForFailure() throws Exception {
         try {
-            fileService.skip(INVALID_UUID, new Long(2));
+            fileService.skip(invalidUUID, new Long(2));
             fail();
         } catch (IOException e) {
             assertTrue(true);
@@ -280,7 +280,7 @@ public class RemotableFileStreamAccessServiceImplTest {
         }
 
         @Override
-        public DataReference newReferenceFromStream(InputStream inStream, MetaDataSet metaDataSet, NodeIdentifier platform)
+        public DataReference newReferenceFromStream(InputStream inStream, MetaDataSet metaDataSet, ResolvableNodeId platform)
             throws AuthorizationException, IOException, InterruptedException, CommunicationException {
             return dataRef;
         }

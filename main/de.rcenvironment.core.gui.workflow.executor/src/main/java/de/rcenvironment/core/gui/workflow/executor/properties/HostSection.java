@@ -29,7 +29,7 @@ import org.eclipse.ui.views.properties.tabbed.TabbedPropertySheetWidgetFactory;
 import de.rcenvironment.core.component.executor.SshExecutorConstants;
 import de.rcenvironment.core.gui.utils.incubator.WidgetGroupFactory;
 import de.rcenvironment.core.gui.workflow.editor.properties.ValidatingWorkflowNodePropertySection;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 
 /**
  * "Properties" view tab for configuring cluster configuration.
@@ -92,7 +92,7 @@ public class HostSection extends ValidatingWorkflowNodePropertySection {
                         pingLabel.setText("Pinging host " + host + " ...");
                     }
                     hostSection.layout();
-                    SharedThreadPool.getInstance().execute(new Runnable() {
+                    ConcurrencyUtils.getAsyncTaskService().execute(new Runnable() {
 
                         @Override
                         public void run() {

@@ -78,7 +78,7 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         workingPath = scripts.getParentFile().getAbsolutePath().toString();
         workingPath = workingPath.replaceAll(ESCAPESLASH, SLASH);
         tempFiles.add(file);
-        stateMap = new HashMap<String, Object>();
+        stateMap = new HashMap<>();
         scriptingService = componentContext.getService(ScriptingService.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
         return successful;
@@ -95,7 +95,6 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
         loadScript(userScript);
         foot =
             "\nRCE_Dict_OutputChannels = RCE.get_output_internal()\nRCE_CloseOutputChannelsList = RCE.get_closed_outputs_internal()\n"
-                + "RCE_NotAValueOutputList = RCE.get_indefinite_outputs_internal()\n"
                 + StringUtils.format("sys.stdout.write('%s')\nsys.stderr.write('%s')\nsys.stdout.flush()\nsys.stderr.flush()",
                     WorkflowConsoleForwardingWriter.CONSOLE_END, WorkflowConsoleForwardingWriter.CONSOLE_END);
     }
@@ -126,10 +125,10 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
                 // imports, variables and
                 // its changig the working directory.
                 scriptEngine.eval(header);
-                
+
             } catch (IOError | ScriptException e) {
                 throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
-            } 
+            }
             try {
                 // execute the script, written by the user.
                 scriptEngine.eval(body);
@@ -145,8 +144,8 @@ public class JythonScriptExecutor extends DefaultScriptExecutor {
             } catch (IOError | ScriptException e) {
                 throw new ComponentException("Failed to execute script that is wrapped around the actual script", e);
             } catch (InterruptedException e) {
-                componentContext.getLog().componentError("Failed to wait for console output. Some output might be missing");
-                LOGGER.error("Failed to wait for stdout or stderr writer", e);
+                componentContext.getLog().componentError("Waiting for script output was interrupted. Some output might be missing");
+                LOGGER.error("Waiting for stdout or stderr of Jython script execution was interrupted");
             }
         }
     }

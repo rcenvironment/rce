@@ -25,7 +25,10 @@ public enum FinalComponentState {
     FAILED("Failed"),
     
     /** Canceled. */
-    CANCELLED("Cancelled");
+    CANCELLED("Canceled"),
+    
+    /** Verification failed. */
+    RESULTS_REJECTED("Verification failed");
     
     private String displayName;
     

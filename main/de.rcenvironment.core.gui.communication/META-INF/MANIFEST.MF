@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Communication GUI
 Bundle-SymbolicName: de.rcenvironment.core.gui.communication; singleton:=true
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Require-Bundle: org.eclipse.core.runtime,
  org.eclipse.ui,
  org.eclipse.equinox.security;bundle-version="1.1.1",
@@ -31,10 +31,12 @@ Import-Package: com.jcraft.jsch;version="0.1.45",
  de.rcenvironment.core.gui.utils.common,
  de.rcenvironment.core.gui.utils.incubator,
  de.rcenvironment.core.monitoring.system.api,
+ de.rcenvironment.core.monitoring.system.api.model,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.incubator,
  de.rcenvironment.core.utils.ssh.jsch,
+ de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.io;version="2.0.1",
  org.apache.commons.logging;version="1.1.1",

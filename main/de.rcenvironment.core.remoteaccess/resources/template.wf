@@ -1,6 +1,6 @@
 {
   "identifier" : "81725a69-d069-4f8d-bdcf-a4bf31ac55d8",
-  "workflowVersion" : "4",
+  "workflowVersion" : "5",
   "name" : "Remote_Tool_Access-##TIMESTAMP##-##TOOL_ID##",
   "nodes" : [ {
     "identifier" : "fb3e2b68-74e6-414b-87c7-6f8ab6b53b83",

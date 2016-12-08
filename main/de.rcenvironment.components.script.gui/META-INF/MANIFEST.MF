@@ -3,14 +3,13 @@ Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Script Component GUI
 Bundle-SymbolicName: de.rcenvironment.components.script.gui;singleton:=true
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-Vendor: DLR
 Bundle-ClassPath: .
 Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.components.script.common.registry,
  de.rcenvironment.core.component.api,
  de.rcenvironment.core.component.datamanagement.api,
- de.rcenvironment.core.component.datamanagement.history,
  de.rcenvironment.core.component.executor,
  de.rcenvironment.core.component.model.configuration.api,
  de.rcenvironment.core.component.model.endpoint.api,
@@ -20,9 +19,7 @@ Import-Package: de.rcenvironment.components.script.common,
  de.rcenvironment.core.gui.datamanagement.browser.spi,
  de.rcenvironment.core.gui.utils.common,
  de.rcenvironment.core.gui.workflow.editor,
- de.rcenvironment.core.gui.workflow.editor.commands.endpoint,
  de.rcenvironment.core.gui.workflow.editor.properties,
- de.rcenvironment.core.gui.workflow.editor.validator,
  de.rcenvironment.core.gui.workflow.executor.properties,
  de.rcenvironment.core.utils.common,
  de.rcenvironment.core.utils.common.legacy,
@@ -34,7 +31,6 @@ Import-Package: de.rcenvironment.components.script.common,
  org.eclipse.core.runtime,
  org.eclipse.gef.commands,
  org.eclipse.jface.resource,
- org.eclipse.jface.viewers,
  org.eclipse.osgi.util,
  org.eclipse.swt,
  org.eclipse.swt.custom,

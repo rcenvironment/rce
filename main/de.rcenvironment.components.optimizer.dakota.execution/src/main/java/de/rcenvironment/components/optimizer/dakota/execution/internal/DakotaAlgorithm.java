@@ -112,7 +112,7 @@ import de.rcenvironment.core.datamodel.types.api.FileReferenceTD;
 import de.rcenvironment.core.datamodel.types.api.VectorTD;
 import de.rcenvironment.core.utils.common.LogUtils;
 import de.rcenvironment.core.utils.common.TempFileServiceAccess;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * This class provides everything for running the dakota optimizer blackbox.
@@ -256,7 +256,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
         File fo = new File(messageFromClient.getCurrentWorkingDir() + File.separatorChar + outputFileName);
         fo.createNewFile();
         FileWriter fw2 = new FileWriter(fo);
-        Queue<String> keyQueue = new LinkedList<String>();
+        Queue<String> keyQueue = new LinkedList<>();
         for (String key : functionVariables.keySet()) {
             if ((currentActiveSetVectorNumber & 1) != 0) { // if ASV == 2, no function evaluation is
                 // needed
@@ -365,7 +365,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                             throw new IOException("Failed to parse parameters file", e);
                         }
                     }
-                    Map<String, Double> newOutput = new HashMap<String, Double>();
+                    Map<String, Double> newOutput = new HashMap<>();
                     for (int i = 0; i < varCount; i++) {
                         String x = fr.readLine();
                         if (x != null) {
@@ -442,7 +442,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
     @Override
     public int getOptimalRunNumber() {
         File output = new File(workingDir.getAbsolutePath(), "consoleStdOutput.txt");
-        Map<String, Double> results = new HashMap<String, Double>();
+        Map<String, Double> results = new HashMap<>();
         try {
             List<String> outputLines = FileUtils.readLines(output);
             boolean readParameters = false;
@@ -521,7 +521,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                 algorithm.split(COMMA).length > 1
                     && algorithm.split(COMMA)[0].equalsIgnoreCase(DakotaConstants.DAKOTA_SURROGATE_BASED_LOCAL_STRING);
 
-            Map<String, String> valuesForSampleFile = new HashMap<String, String>();
+            Map<String, String> valuesForSampleFile = new HashMap<>();
             MethodDescription description = methodConfigurations.get(algorithm.split(COMMA)[0]);
             valuesForSampleFile.put(PLACEHOLDER_METHOD_CODE, description.getMethodCode());
             valuesForSampleFile.put(PLACEHOLDER_METHOD_PROPERTIES, createMethodsProperties(description.getCommonSettings())
@@ -696,14 +696,14 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
     private void createValueAndConstraintOrders() {
         int position = 0;
         variableOrderForWholeExecution = new String[outputValues.size()];
-        List<String> ordered = new LinkedList<String>(outputValues.keySet());
+        List<String> ordered = new LinkedList<>(outputValues.keySet());
         Collections.sort(ordered);
         for (String key : ordered) {
             variableOrderForWholeExecution[position++] = key;
         }
         constraintOrder = new String[countConstraint(input)];
         int nextFreePosition = 0;
-        List<String> orderedInput = new LinkedList<String>(input);
+        List<String> orderedInput = new LinkedList<>(input);
         Collections.sort(orderedInput);
         for (String e : orderedInput) {
             if (!e.contains(OptimizerComponentConstants.GRADIENT_DELTA)
@@ -803,7 +803,7 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
     }
 
     private String getGradientString(MethodDescription description) throws IOException {
-        Map<String, String> gradientStrings = new HashMap<String, String>();
+        Map<String, String> gradientStrings = new HashMap<>();
         String gradients = "";
         if (description.getResponsesSettings() != null
             && description.getResponsesSettings().get(GRADIENTS_KEY) != null) {
@@ -829,20 +829,22 @@ public class DakotaAlgorithm extends OptimizerAlgorithmExecutor {
                     hessiansValue = respSettings.get(HESSIANS_KEY).get(DEFAULT_VALUE_KEY);
                 }
                 gradientStrings.put(HESSIANS_VALUE, hessiansValue);
-                String hessianIntervalValue = respSettings.get(INTERVAL_TYPE_HESSIAN_KEY)
-                    .get(VALUE_KEY);
-                if (hessianIntervalValue == null || hessianIntervalValue.equals("")) {
-                    hessianIntervalValue = respSettings.get(INTERVAL_TYPE_HESSIAN_KEY)
-                        .get(DEFAULT_VALUE_KEY);
+                if (!hessiansValue.equals(NO_HESSIANS)) {
+                    String hessianIntervalValue = respSettings.get(INTERVAL_TYPE_HESSIAN_KEY)
+                        .get(VALUE_KEY);
+                    if (hessianIntervalValue == null || hessianIntervalValue.equals("")) {
+                        hessianIntervalValue = respSettings.get(INTERVAL_TYPE_HESSIAN_KEY)
+                            .get(DEFAULT_VALUE_KEY);
+                    }
+                    gradientStrings.put(HESSIAN_INTERVALL, hessianIntervalValue);
+                    String hessianStepValue = respSettings.get(FD_HESSIAN_STEP_SIZE_KEY)
+                        .get(VALUE_KEY);
+                    if (hessianStepValue == null || hessianStepValue.equals("")) {
+                        hessianStepValue = respSettings.get(FD_HESSIAN_STEP_SIZE_KEY)
+                            .get(DEFAULT_VALUE_KEY);
+                    }
+                    gradientStrings.put(HESSIAN_STEP_SIZE, hessianStepValue);
                 }
-                gradientStrings.put(HESSIAN_INTERVALL, hessianIntervalValue);
-                String hessianStepValue = respSettings.get(FD_HESSIAN_STEP_SIZE_KEY)
-                    .get(VALUE_KEY);
-                if (hessianStepValue == null || hessianStepValue.equals("")) {
-                    hessianStepValue = respSettings.get(FD_HESSIAN_STEP_SIZE_KEY)
-                        .get(DEFAULT_VALUE_KEY);
-                }
-                gradientStrings.put(HESSIAN_STEP_SIZE, hessianStepValue);
                 gradientStrings.put(PARAMETER_GRADIENTS, replacePlaceholderInSamplefile(
                     RESOURCES_DAKOTA_GRADIENTS_SAMPLE, gradientStrings));
                 if (!gradientStrings.get(HESSIANS_VALUE).equals(NO_HESSIANS)) {

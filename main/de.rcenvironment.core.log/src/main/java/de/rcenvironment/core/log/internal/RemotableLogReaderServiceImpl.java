@@ -24,13 +24,13 @@ import org.osgi.service.log.LogService;
 import de.rcenvironment.core.log.RemotableLogReaderService;
 import de.rcenvironment.core.log.SerializableLogEntry;
 import de.rcenvironment.core.log.SerializableLogListener;
-import de.rcenvironment.core.utils.common.StatsCounter;
-import de.rcenvironment.core.utils.common.concurrent.AsyncCallbackExceptionPolicy;
-import de.rcenvironment.core.utils.common.concurrent.AsyncOrderedExecutionQueue;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncCallbackExceptionPolicy;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncOrderedExecutionQueue;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link RemotableLogReaderService}.
@@ -53,9 +53,10 @@ public class RemotableLogReaderServiceImpl implements RemotableLogReaderService 
 
         private final SerializableLogListener externalListener;
 
+        // For each event that should be forwarded to the listener, a runnable is enqueued in this queue.
         // TODO review exception policy; which is better?
-        private final AsyncOrderedExecutionQueue orderedExecutionQueue = new AsyncOrderedExecutionQueue(
-            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER, SharedThreadPool.getInstance());
+        private final AsyncOrderedExecutionQueue orderedExecutionQueue = ConcurrencyUtils.getFactory().createAsyncOrderedExecutionQueue(
+            AsyncCallbackExceptionPolicy.LOG_AND_CANCEL_LISTENER);
 
         private SingleReceiverOsgiLogForwarder(SerializableLogListener externalListener) {
             this.externalListener = externalListener;
@@ -85,11 +86,9 @@ public class RemotableLogReaderServiceImpl implements RemotableLogReaderService 
                             exceptionString));
                     } catch (RemoteOperationException e) {
                         final Log localLog = LogFactory.getLog(getClass());
-                        localLog.error("Error while forwarding log event to listener "
+                        localLog.debug("Error while forwarding log event to listener "
                             + "(delivery of log events to this receiver will be cancelled): " + e.toString());
-                        // TODO >7.0.0: these lines should be equivalent, but aren't; investigate why - misc_ro, Nov 2015
-                        // orderedExecutionQueue.cancelAsync();
-                        throw new RuntimeException("Error while forwarding log event to listener"); // workaround to restore behavior
+                        orderedExecutionQueue.cancelAsync();
                     }
                     // the @TaskDescription is not forwarded by AsyncOrderedExecutionQueue, so count a stats event for monitoring - misc_ro
                     StatsCounter.count(AsyncOrderedExecutionQueue.STATS_COUNTER_SHARED_CATEGORY_NAME, ASYNC_TASK_DESCRIPTION);

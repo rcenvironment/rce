@@ -22,11 +22,11 @@ import org.junit.Test;
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentException;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.component.execution.api.Component;
 import de.rcenvironment.core.component.testutils.ComponentContextMock;
 import de.rcenvironment.core.component.testutils.ComponentTestWrapper;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.TypedDatum;
 import de.rcenvironment.core.datamodel.api.TypedDatumFactory;
 import de.rcenvironment.core.datamodel.api.TypedDatumService;
@@ -83,25 +83,20 @@ public class ConvergerComponentTest {
             context.setConfigurationValue(ConvergerComponentConstants.KEY_MAX_CONV_CHECKS, maxChecks);
 
             addSimulatedOutput(ConvergerComponentConstants.CONVERGED, null, DataType.Boolean, false,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-            addSimulatedOutput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, dynamicEndpointType, true,
-                LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+                null, EndpointCharacter.OUTER_LOOP);
+            addSimulatedOutput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, dynamicEndpointType, true, null);
             addSimulatedOutput(X + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
-                ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, DataType.Boolean, true,
-                LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+                ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, DataType.Boolean, true, null);
             addSimulatedOutput(X + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE,
-                dynamicEndpointType, true,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-            context.addSimulatedOutput(ConvergerComponentConstants.CONVERGED, "", DataType.Boolean, true,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-            context.addSimulatedOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, "", DataType.Float, true,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-            context.addSimulatedOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, "", DataType.Float, true,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-            addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, null, DataType.Boolean, false,
-                LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
-            addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, null, DataType.Boolean, false,
-                LoopComponentConstants.createMetaData(LoopEndpointType.InnerLoopEndpoint));
+                dynamicEndpointType, true, null, EndpointCharacter.OUTER_LOOP);
+            context.addSimulatedOutput(ConvergerComponentConstants.CONVERGED, "", DataType.Boolean, true, null,
+                EndpointCharacter.OUTER_LOOP);
+            context.addSimulatedOutput(ConvergerComponentConstants.CONVERGED_ABSOLUTE, "", DataType.Float, true, null,
+                EndpointCharacter.OUTER_LOOP);
+            context.addSimulatedOutput(ConvergerComponentConstants.CONVERGED_RELATIVE, "", DataType.Float, true, null,
+                EndpointCharacter.OUTER_LOOP);
+            addSimulatedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, null, DataType.Boolean, false, null,
+                EndpointCharacter.OUTER_LOOP);
         }
 
         public void configure(ComponentContextMock ctx, String epsA, String epsR, String itsToConsider) {
@@ -119,10 +114,6 @@ public class ConvergerComponentTest {
             context.setConfigurationValue(LoopComponentConstants.CONFIG_KEY_IS_NESTED_LOOP, String.valueOf(isNestedLoop));
         }
 
-        public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic, LoopEndpointType endpointType) {
-            super.addSimulatedInput(name, endpointId, dataType, isDynamic, LoopComponentConstants.createMetaData(endpointType));
-        }
-
         public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic, double startValue) {
             Map<String, String> metaData = new HashMap<>();
             metaData.put(ConvergerComponentConstants.META_HAS_STARTVALUE, String.valueOf(true));
@@ -131,8 +122,7 @@ public class ConvergerComponentTest {
         }
 
         public void addSimulatedInput(String name, String endpointId, DataType dataType, boolean isDynamic) {
-            super.addSimulatedInput(name, endpointId, dataType, isDynamic,
-                LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+            super.addSimulatedInput(name, endpointId, dataType, isDynamic, null);
         }
 
         // TODO without the "assert" method (which cannot be in non-test bundles), this could be
@@ -203,6 +193,24 @@ public class ConvergerComponentTest {
     public void testNoInputs() throws ComponentException {
         context.configure(context, STRING_0, STRING_0, STRING_1);
         component.start();
+    }
+    
+    /**
+     * Tests that a forwarded value can not trigger convergence.
+     * 
+     * @throws ComponentException on unexpected error
+     */
+    @Test
+    public void testForwardedInputNotTriggerConvergence() throws ComponentException {
+        context.addSimulatedInput(X, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, DataType.Float, true);
+        context.configure(context, STRING_0, STRING_0, STRING_1);
+        component.start();
+        context.setInputValue(X, typedDatumFactory.createFloat(5.0));
+        component.processInputs();
+        context.testForSingleValueOutput(X, 5.0);
+        context.testForNoOutputValueSent(X + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX);
+        context.testForNoOutputValueSent(ConvergerComponentConstants.CONVERGED);
+        context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
     }
 
     /**
@@ -409,7 +417,7 @@ public class ConvergerComponentTest {
     public void testResetOnConverged() throws ComponentException {
         context.addSimulatedInput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true);
         context.addSimulatedInput(X + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
-            "startValues", DataType.Float, true, LoopEndpointType.OuterLoopEndpoint);
+            "startValues", DataType.Float, true, null, EndpointCharacter.OUTER_LOOP);
 
         context.configure(context, STRING_0, STRING_0, STRING_1, true);
         component.start();
@@ -435,8 +443,8 @@ public class ConvergerComponentTest {
     @Test
     public void testResetOnMaxConvChecksReached() throws ComponentException {
         context.addSimulatedInput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true);
-        context.addSimulatedInput(X + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, "startValues", DataType.Float, true,
-            LoopEndpointType.OuterLoopEndpoint);
+        context.addSimulatedInput(X + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, "startValues", DataType.Float, true, null,
+            EndpointCharacter.OUTER_LOOP);
 
         context.configure(context, STRING_0, STRING_0, STRING_1, STRING_1, true);
         component.start();
@@ -532,14 +540,11 @@ public class ConvergerComponentTest {
     public void testWithStartValueInputsAndAsMetaData() throws ComponentException {
 
         context.addSimulatedInput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true, 5.0);
-        context.addSimulatedOutput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedOutput(X, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true, null);
         context.addSimulatedOutput(X + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
-            ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, DataType.Boolean, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+            ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, DataType.Boolean, true, null);
         context.addSimulatedOutput(X + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true, null, EndpointCharacter.OUTER_LOOP);
 
         addSimulatedEndpointsToForward(N, DataType.Integer);
         context.addSimulatedInput(N + LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX,
@@ -584,7 +589,6 @@ public class ConvergerComponentTest {
         context.testForNoOutputValueSent(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX);
         context.testForNoOutputValueSent(ConvergerComponentConstants.CONVERGED);
         context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
-        context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
     }
 
     private void expectProcessInputsWithConverging(String valueInput, String valueOutput, double value) throws ComponentException {
@@ -595,7 +599,6 @@ public class ConvergerComponentTest {
         context.testForSingleValueOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, value);
         context.testForSingleBooleanOutput(ConvergerComponentConstants.CONVERGED, true);
         context.testForSingleBooleanOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, true);
-        context.testForSingleBooleanOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, true);
     }
 
     private void expectProcessInputsWithConvergingOrDoneOnReset(String valueInput, String valueOutput, double value)
@@ -607,7 +610,6 @@ public class ConvergerComponentTest {
         context.testForNoOutputValueSent(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX);
         context.testForNoOutputValueSent(ConvergerComponentConstants.CONVERGED);
         context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
-        context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
     }
 
     private void expectFinalValuesSentAfterResetIfConverged(String valueInput, String valueOutput, double value) throws ComponentException {
@@ -616,7 +618,6 @@ public class ConvergerComponentTest {
         context.testForSingleValueOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, value);
         context.testForSingleBooleanOutput(ConvergerComponentConstants.CONVERGED, true);
         context.testForSingleBooleanOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, true);
-        context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
     }
 
     private void expectFinalValuesSentAfterResetIfMaxConvChecksReached(String valueInput, String valueOutput, double value)
@@ -626,7 +627,6 @@ public class ConvergerComponentTest {
         context.testForSingleValueOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, value);
         context.testForSingleBooleanOutput(ConvergerComponentConstants.CONVERGED, false);
         context.testForSingleBooleanOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, true);
-        context.testForNoOutputValueSent(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
     }
 
     private void expectProcessInputsWithoutConvergingButWithDone(String valueInput, String valueOutput, double value)
@@ -638,7 +638,6 @@ public class ConvergerComponentTest {
         context.testForSingleValueOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX, value);
         context.testForSingleBooleanOutput(ConvergerComponentConstants.CONVERGED, false);
         context.testForSingleBooleanOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE, true);
-        context.testForSingleBooleanOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE, true);
     }
 
     private void expectNoneOutputIsClosed() {
@@ -651,28 +650,22 @@ public class ConvergerComponentTest {
         context.testForClosedOutput(valueOutput + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX);
         context.testForClosedOutput(ConvergerComponentConstants.CONVERGED);
         context.testForClosedOutput(LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE);
-        context.testForClosedOutput(LoopComponentConstants.ENDPOINT_NAME_OUTERLOOP_DONE);
     }
 
     private void addSimulatedEndpointsToConverge(String name, DataType dataType) {
         context.addSimulatedInput(name, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, dataType, true);
-        context.addSimulatedOutput(name, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, dataType, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedOutput(name, ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, dataType, true, null);
         context.addSimulatedOutput(name + ConvergerComponentConstants.IS_CONVERGED_OUTPUT_SUFFIX,
-            ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, DataType.Boolean, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+            ConvergerComponentConstants.ENDPOINT_ID_AUXILIARY, DataType.Boolean, true, null);
         context.addSimulatedOutput(name + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+            ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE, DataType.Float, true, null, EndpointCharacter.OUTER_LOOP);
     }
 
     private void addSimulatedEndpointsToForward(String name, DataType dataType) {
         context.addSimulatedInput(name, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, dataType, true);
-        context.addSimulatedOutput(name, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, dataType, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
+        context.addSimulatedOutput(name, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, dataType, true, null);
         context.addSimulatedOutput(name + ConvergerComponentConstants.CONVERGED_OUTPUT_SUFFIX,
-            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, dataType, true,
-            LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, dataType, true, null, EndpointCharacter.OUTER_LOOP);
     }
 
 }

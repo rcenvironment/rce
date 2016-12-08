@@ -16,10 +16,11 @@ import java.util.List;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackObject;
+import de.rcenvironment.core.toolkitbridge.transitional.StatsCounter;
 
 /**
  * Utility class for service call handlings.
@@ -48,6 +49,7 @@ public final class CallbackUtils {
         if (o instanceof CallbackProxy) {
             String objectIdentifier = ((CallbackProxy) o).getObjectIdentifier();
             Object object = cs.getCallbackObject(objectIdentifier);
+            StatsCounter.countClass("Callback proxy parameter", object); // not expected in live operation
             if (object != null) {
                 newObject = object;
             } else {
@@ -80,12 +82,12 @@ public final class CallbackUtils {
      * Handles an object that could be a proxy and which needs to be replaced by an exiting one.
      * 
      * @param o The object to check and to replace.
-     * @param pi The {@link NodeIdentifier} of the remote platform.
+     * @param pi The {@link InstanceNodeSessionId} of the remote platform.
      * @param cs The {@link CallbackService} to use.
      * @return the proxied object or <code>o</code> if there is no need for proxying.
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
-    public static Object handleCallbackObject(Object o, NodeIdentifier pi, CallbackService cs) {
+    public static Object handleCallbackObject(Object o, InstanceNodeSessionId pi, CallbackService cs) {
 
         Object newObject = o;
         if (o instanceof CallbackObject) {

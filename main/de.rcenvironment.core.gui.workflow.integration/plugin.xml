@@ -250,6 +250,7 @@
    </extension>
       <extension
          point="de.rcenvironment.core.gui.workflow.editorActions">
+         
       <action
             class="de.rcenvironment.core.gui.workflow.integration.GetDocumentationWorkflowEditorAction"
             component="de.rcenvironment.integration.*"
@@ -257,6 +258,19 @@
             id="de.rcenvironment.integration.getDocumentation"
             label="Open Documentation">
       </action>
+      
+   </extension>
+    <extension
+         point="de.rcenvironment.core.gui.workflow.editorActions">
+         
+      <action
+            class="de.rcenvironment.core.gui.workflow.integration.SetImitationModeWorkflowEditorAction"
+            component="de.rcenvironment.integration.*"
+            default="true"
+            id="de.rcenvironment.integration.getDocumentation2"
+            label="Enable/Disable tool run imitation mode">
+      </action>
+      
    </extension>
    <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
       <validator 

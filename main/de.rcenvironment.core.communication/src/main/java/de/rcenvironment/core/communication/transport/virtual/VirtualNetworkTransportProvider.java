@@ -14,7 +14,7 @@ import java.util.Map;
 import de.rcenvironment.core.communication.channel.MessageChannelIdFactory;
 import de.rcenvironment.core.communication.channel.ServerContactPoint;
 import de.rcenvironment.core.communication.common.CommunicationException;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.model.InitialNodeInformation;
 import de.rcenvironment.core.communication.model.NetworkContactPoint;
 import de.rcenvironment.core.communication.transport.spi.BrokenMessageChannelListener;
@@ -37,8 +37,8 @@ public class VirtualNetworkTransportProvider implements NetworkTransportProvider
     private Map<NetworkContactPoint, ServerContactPoint> virtualServices =
         new HashMap<NetworkContactPoint, ServerContactPoint>();
 
-    private Map<NodeIdentifier, MessageChannelEndpointHandler> remoteInitiatedConnectionEndpointHandlerMap =
-        new HashMap<NodeIdentifier, MessageChannelEndpointHandler>();
+    private Map<InstanceNodeSessionId, MessageChannelEndpointHandler> remoteInitiatedConnectionEndpointHandlerMap =
+        new HashMap<InstanceNodeSessionId, MessageChannelEndpointHandler>();
 
     private boolean supportRemoteInitiatedConnections;
 

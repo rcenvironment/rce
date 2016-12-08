@@ -83,13 +83,7 @@
    <extension point="org.eclipse.help.toc">
    		<toc file="help/toc.xml"/>
  	</extension>
-   
-   <extension point="de.rcenvironment.core.gui.workflow.nodeValidators">
-      <validator 
-      		class="de.rcenvironment.components.switchcmp.gui.SwitchComponentWorkflowNodeValidator"
-            filter="de.rcenvironment.components.switchcmp.gui.SwitchComponentFilter">
-      </validator>
-   </extension>
+
     <extension point="de.rcenvironment.core.gui.datamanagement.browser.historysubtreebuilder">
       <builder class="de.rcenvironment.components.switchcmp.gui.SwitchHistoryDataItemSubtreeBuilder"/>
    </extension> 

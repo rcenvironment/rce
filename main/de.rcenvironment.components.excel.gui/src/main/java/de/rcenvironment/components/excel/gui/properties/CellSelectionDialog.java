@@ -27,11 +27,11 @@ import com.jacob.com.Dispatch;
 import com.jacob.com.DispatchProxy;
 import com.jacob.com.Variant;
 
+import de.rcenvironment.components.excel.common.ExcelAddress;
 import de.rcenvironment.components.excel.common.ExcelComponentConstants;
 import de.rcenvironment.components.excel.common.ExcelServiceGUIEvents;
 import de.rcenvironment.core.utils.incubator.ServiceRegistry;
 import de.rcenvironment.core.utils.incubator.ServiceRegistryAccess;
-import de.rcenvironment.rce.components.excel.commons.ExcelAddress;
 
 
 /**

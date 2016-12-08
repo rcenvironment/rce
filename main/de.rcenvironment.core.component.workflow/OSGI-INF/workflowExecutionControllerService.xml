@@ -18,10 +18,10 @@
 		policy="dynamic"
 	/>
 	
-	<reference name="Distributed Notification Service"
-		interface="de.rcenvironment.core.notification.DistributedNotificationService"
+	<reference name="Notification Service"
+		interface="de.rcenvironment.core.notification.NotificationService"
 		cardinality="1..1"
-		bind="bindDistributedNotificationService"
+		bind="bindNotificationService"
 		policy="dynamic"
 	/>
 	

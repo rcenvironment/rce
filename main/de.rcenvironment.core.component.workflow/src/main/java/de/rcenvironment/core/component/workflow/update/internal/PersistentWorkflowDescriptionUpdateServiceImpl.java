@@ -12,10 +12,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.apache.commons.logging.Log;
@@ -35,8 +37,8 @@ import org.codehaus.jackson.node.ObjectNode;
 import org.codehaus.jackson.node.TextNode;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.ComponentConstants;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledge;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
@@ -56,6 +58,7 @@ import de.rcenvironment.core.utils.common.StringUtils;
  * 
  * @author Doreen Seider
  * @author Sascha Zur
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class PersistentWorkflowDescriptionUpdateServiceImpl implements PersistentWorkflowDescriptionUpdateService {
 
@@ -118,7 +121,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
     private DistributedComponentKnowledgeService componentKnowledgeService;
 
-    private NodeIdentifier localNodeId;
+    private LogicalNodeId localLogicalNodeId;
 
     @Override
     public boolean isUpdateForWorkflowDescriptionAvailable(PersistentWorkflowDescription description, boolean silent) {
@@ -144,6 +147,8 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
         PersistentWorkflowDescription description = persistentDescription;
 
+        Set<String> endpoints = getEndpoints(description);
+
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE, description, true);
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.BEFORE_VERSON_THREE, description, false);
 
@@ -158,9 +163,59 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.AFTER_VERSION_THREE, description, true);
         description = performComponentDescriptionUpdates(PersistentDescriptionFormatVersion.AFTER_VERSION_THREE, description, false);
 
+        endpoints.removeAll(getEndpoints(description));
+        description = removeConnectionsRelatedToRemovedEndpoints(description, endpoints);
+
         description = updateWorkflowToCurrentVersion(description);
 
         return description;
+    }
+
+    private Set<String> getEndpoints(PersistentWorkflowDescription persWfDescription) throws JsonProcessingException, IOException {
+        Set<String> endpoints = new HashSet<>();
+        for (PersistentComponentDescription persCompDesc : persWfDescription.getComponentDescriptions()) {
+            ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+            JsonNode node = mapper.readTree(persCompDesc.getComponentDescriptionAsString());
+            endpoints.addAll(getEndpointsOfGroup(node, STATIC_INPUTS));
+            endpoints.addAll(getEndpointsOfGroup(node, STATIC_OUTPUTS));
+            endpoints.addAll(getEndpointsOfGroup(node, DYNAMIC_INPUTS));
+            endpoints.addAll(getEndpointsOfGroup(node, DYNAMIC_OUTPUTS));
+        }
+        return endpoints;
+    }
+
+    private Set<String> getEndpointsOfGroup(JsonNode node, String endpointGroup) throws JsonProcessingException, IOException {
+        Set<String> endpoints = new HashSet<>();
+        if (node.has(endpointGroup)) {
+            Iterator<JsonNode> outputJsonNodes = node.get(endpointGroup).getElements();
+            while (outputJsonNodes.hasNext()) {
+                endpoints.add(outputJsonNodes.next().get(IDENTIFIER).getTextValue());
+            }
+        }
+        return endpoints;
+    }
+
+    private PersistentWorkflowDescription removeConnectionsRelatedToRemovedEndpoints(PersistentWorkflowDescription persWfDescription,
+        Set<String> endpointsRemoved) throws JsonProcessingException, IOException {
+        ObjectMapper mapper = JsonUtils.getDefaultObjectMapper();
+        JsonNode workflowDescriptionAsTree = mapper.readTree(persWfDescription.getWorkflowDescriptionAsString());
+        for (String endpointRemoved : endpointsRemoved) {
+            if (workflowDescriptionAsTree.has(CONNECTIONS)) {
+                ArrayNode connectionsJsonNode = (ArrayNode) workflowDescriptionAsTree.get(CONNECTIONS);
+
+                Iterator<JsonNode> connectionJsonNodes = connectionsJsonNode.getElements();
+                while (connectionJsonNodes.hasNext()) {
+                    JsonNode connectionJsonNode = connectionJsonNodes.next();
+                    if (connectionJsonNode.get("input").getTextValue().equals(endpointRemoved)
+                        || connectionJsonNode.get("output").getTextValue().equals(endpointRemoved)) {
+                        connectionJsonNodes.remove();
+                    }
+                }
+            }
+        }
+        ObjectWriter writer = mapper.writerWithDefaultPrettyPrinter();
+        return new PersistentWorkflowDescription(persWfDescription.getComponentDescriptions(),
+            writer.writeValueAsString(workflowDescriptionAsTree));
     }
 
     private PersistentWorkflowDescription updateWorkflowToCurrentVersion(PersistentWorkflowDescription description) {
@@ -496,7 +551,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
         Collection<ComponentInstallation> collection) {
 
         ComponentInstallation exactlyMatchingComponent = null;
-        
+
         List<ComponentInstallation> matchingComponents = new ArrayList<ComponentInstallation>();
 
         // for all registered components which match the persistent one (identifiers are equal and version of persistent one is greater or
@@ -513,11 +568,11 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
             if (compId.equals(compDesc.getComponentIdentifier())
                 && (compDesc.getComponentVersion().equals("")
                 || compInterface.getVersion().compareTo(compDesc.getComponentVersion()) >= 0)) {
-                if (compInst.getNodeId() == null || compInst.getNodeId().equals(localNodeId.getIdString())) {
-                    compDesc.setNodeIdentifier(null);
+                if (compInst.getNodeId() == null || compInst.getNodeId().equals(localLogicalNodeId.getLogicalNodeIdString())) {
+                    compDesc.setNodeIdentifier(localLogicalNodeId);
                     return compDesc;
                 } else if (compInst.getNodeId() != null && compDesc.getComponentNodeIdentifier() != null
-                    && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getIdString())) {
+                    && compInst.getNodeId().equals(compDesc.getComponentNodeIdentifier().getLogicalNodeIdString())) {
                     exactlyMatchingComponent = compInst;
                 } else {
                     matchingComponents.add(compInst);
@@ -527,20 +582,23 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
 
         // if there is not local component, take the exactly matching remote component if there is one
         if (exactlyMatchingComponent != null) {
-            compDesc.setNodeIdentifier(NodeIdentifierFactory.fromNodeId(exactlyMatchingComponent.getNodeId()));
+            compDesc
+                .setNodeIdentifier(NodeIdentifierUtils
+                    .parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(exactlyMatchingComponent.getNodeId()));
             return compDesc;
         }
         // a matching component on the originally registered node was not found. thus set the node
         // identifier of any matching component if there is at least one found
         if (matchingComponents.size() > 0) {
-            compDesc.setNodeIdentifier(NodeIdentifierFactory.fromNodeId(matchingComponents.get(0).getNodeId()));
+            compDesc.setNodeIdentifier(NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(matchingComponents
+                .get(0).getNodeId()));
             return compDesc;
         }
 
         // if there is no matching component found in the RCE network set the node identifier to
         // local, thus the local update service will be requested and will return that it has no
         // updater registered for the component as it is not registered at all
-        compDesc.setNodeIdentifier(null);
+        compDesc.setNodeIdentifier(localLogicalNodeId);
         return compDesc;
 
     }
@@ -559,7 +617,7 @@ public class PersistentWorkflowDescriptionUpdateServiceImpl implements Persisten
     }
 
     protected void bindPlatformService(PlatformService platformService) {
-        localNodeId = platformService.getLocalNodeId();
+        localLogicalNodeId = platformService.getLocalDefaultLogicalNodeId();
     }
 
 }

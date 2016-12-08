@@ -59,11 +59,16 @@ public final class ConsoleRowFormatter {
      */
     public String toWorkflowErrorLogFileFormat(ConsoleRow row) {
         if (row.getType().equals(ConsoleRow.Type.WORKFLOW_ERROR)) {
-            return StringUtils.format("%s %s - %s", timeFormat.format(row.getTimestamp()), 
+            return StringUtils.format("%s %s: %s", timeFormat.format(row.getTimestamp()), 
                 row.getType().getDisplayName(), row.getPayload());            
         } else {
-            return StringUtils.format("%s %s (%s) - %s", timeFormat.format(row.getTimestamp()), 
-                row.getType().getDisplayName(), row.getComponentName(), row.getPayload());
+            if (row.getComponentRun() > 0) {
+                return StringUtils.format("%s %s - %s [run %d]: %s", timeFormat.format(row.getTimestamp()), 
+                    row.getType().getDisplayName(), row.getComponentName(), row.getComponentRun(), row.getPayload());
+            } else {
+                return StringUtils.format("%s %s - %s: %s", timeFormat.format(row.getTimestamp()), 
+                    row.getType().getDisplayName(), row.getComponentName(), row.getPayload());                
+            }
         }
     }
     

@@ -15,6 +15,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ScheduledFuture;
 
@@ -33,6 +34,7 @@ import de.rcenvironment.core.component.execution.api.ComponentExecutionControlle
 import de.rcenvironment.core.component.execution.api.ComponentExecutionException;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 import de.rcenvironment.core.component.execution.api.ComponentState;
+import de.rcenvironment.core.component.execution.api.EndpointDatumSerializer;
 import de.rcenvironment.core.component.execution.api.ExecutionConstants;
 import de.rcenvironment.core.component.execution.api.ExecutionContext;
 import de.rcenvironment.core.component.execution.api.ExecutionControllerException;
@@ -40,13 +42,12 @@ import de.rcenvironment.core.component.execution.api.LocalExecutionControllerUti
 import de.rcenvironment.core.component.execution.api.WorkflowExecutionControllerCallbackService;
 import de.rcenvironment.core.component.execution.impl.ComponentExecutionInformationImpl;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
-import de.rcenvironment.core.component.model.endpoint.api.EndpointDatum;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.TaskDescription;
 import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
 import de.rcenvironment.core.utils.common.security.AllowRemoteAccess;
 import de.rcenvironment.core.utils.incubator.DebugSettings;
+import de.rcenvironment.toolkit.modules.concurrency.api.TaskDescription;
 
 /**
  * Implementation of {@link ComponentExecutionControllerService}.
@@ -74,6 +75,8 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
     private LocalExecutionControllerUtilsService exeCtrlUtilsService;
 
     private DistributedComponentKnowledgeService compKnowledgeService;
+    
+    private EndpointDatumSerializer endpointDatumSerializer;
 
     // FIXME Currently, tokens, which were not used, are not removed over time-> memory leak, but
     // only minor because of small amount of
@@ -93,7 +96,7 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
     protected void activate(BundleContext context) {
         bundleContext = context;
 
-        componentControllerGarbargeCollectionFuture = SharedThreadPool.getInstance().scheduleAtFixedRate(new Runnable() {
+        componentControllerGarbargeCollectionFuture = ConcurrencyUtils.getAsyncTaskService().scheduleAtFixedRate(new Runnable() {
 
             @Override
             @TaskDescription("Garbage collection: Component controllers")
@@ -229,6 +232,26 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
 
     @Override
     @AllowRemoteAccess
+    public ComponentExecutionInformation getComponentExecutionInformation(String verificationToken) throws RemoteOperationException {
+        for (Entry<String, ComponentExecutionController> entry : exeCtrlUtilsService
+            .getExecutionControllers(ComponentExecutionController.class, bundleContext).entrySet()) {
+            if (entry.getValue().getVerificationToken() != null && entry.getValue().getVerificationToken().equals(verificationToken)) {
+                return componentExecutionInformations.get(entry.getKey());
+            }
+        }
+        return null;
+    }
+
+    @Override
+    @AllowRemoteAccess
+    public Boolean performVerifyResults(String executionId, String verificationToken, Boolean verified)
+        throws ExecutionControllerException, RemoteOperationException {
+        return exeCtrlUtilsService.getExecutionController(ComponentExecutionController.class, executionId, bundleContext)
+            .verifyResults(verificationToken, verified);
+    }
+
+    @Override
+    @AllowRemoteAccess
     public void performDispose(String executionId) throws ExecutionControllerException, RemoteOperationException {
         try {
             exeCtrlUtilsService.getExecutionController(ComponentExecutionController.class, executionId, bundleContext).dispose();
@@ -258,12 +281,12 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
             return new HashSet<ComponentExecutionInformation>(componentExecutionInformations.values());
         }
     }
-    
+
     @Override
-    public void onSendingEndointDatumFailed(String executionId, EndpointDatum endpointDatum, RemoteOperationException e)
+    public void onSendingEndointDatumFailed(String executionId, String serializedEndpointDatum, RemoteOperationException e)
         throws ExecutionControllerException {
         exeCtrlUtilsService.getExecutionController(ComponentExecutionController.class, executionId, bundleContext)
-            .onSendingEndointDatumFailed(endpointDatum, e);
+            .onSendingEndointDatumFailed(endpointDatumSerializer.deserializeEndpointDatum(serializedEndpointDatum), e);
     }
 
     protected void bindCommunicationService(CommunicationService newService) {
@@ -276,6 +299,10 @@ public class ComponentExecutionControllerServiceImpl implements ComponentExecuti
 
     protected void bindDistributedComponentKnowledgeService(DistributedComponentKnowledgeService componentKnowledgeService) {
         this.compKnowledgeService = componentKnowledgeService;
+    }
+
+    protected void bindEndpointDatumSerializer(EndpointDatumSerializer newService) {
+        this.endpointDatumSerializer = newService;
     }
 
 }

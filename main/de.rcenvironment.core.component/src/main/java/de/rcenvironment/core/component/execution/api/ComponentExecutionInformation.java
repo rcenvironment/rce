@@ -5,11 +5,11 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.api;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 
 /**
  * Component specific extension of {@link ExecutionInformation}.
@@ -22,19 +22,19 @@ public interface ComponentExecutionInformation extends ExecutionInformation {
      * @return identifier of the component
      */
     String getComponentIdentifier();
-    
+
     /**
      * @return name of workflow instance
      */
     String getWorkflowInstanceName();
-    
+
     /**
      * @return execution identifier of workflow instance
      */
     String getWorkflowExecutionIdentifier();
-    
+
     /**
-     * @return get {@link NodeIdentifier} of workflow instance
+     * @return get {@link InstanceNodeSessionId} of workflow instance
      */
-    NodeIdentifier getWorkflowNodeId();
+    LogicalNodeId getWorkflowNodeId();
 }

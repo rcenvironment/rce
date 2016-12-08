@@ -24,7 +24,7 @@ import de.rcenvironment.core.datamodel.types.api.FloatTD;
 import de.rcenvironment.core.datamodel.types.api.IntegerTD;
 import de.rcenvironment.core.datamodel.types.api.ShortTextTD;
 import de.rcenvironment.core.datamodel.types.api.SmallTableTD;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 
 
 /**
@@ -162,6 +162,6 @@ public final class ExcelUtils {
      * Destroys garbage.
      */
     public static void destroyGarbage() {
-        SharedThreadPool.getInstance().execute(new GarbageDestroyer());
+        ConcurrencyUtils.getAsyncTaskService().execute(new GarbageDestroyer());
     }
 }

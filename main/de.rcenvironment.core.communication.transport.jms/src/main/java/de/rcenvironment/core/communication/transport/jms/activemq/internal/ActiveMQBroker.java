@@ -32,9 +32,9 @@ import de.rcenvironment.core.communication.transport.jms.common.JmsProtocolUtils
 import de.rcenvironment.core.communication.transport.jms.common.RemoteInitiatedMessageChannelFactory;
 import de.rcenvironment.core.communication.transport.jms.common.RequestInboxConsumer;
 import de.rcenvironment.core.communication.transport.spi.MessageChannelEndpointHandler;
+import de.rcenvironment.core.toolkitbridge.transitional.ConcurrencyUtils;
 import de.rcenvironment.core.utils.common.StringUtils;
-import de.rcenvironment.core.utils.common.concurrent.SharedThreadPool;
-import de.rcenvironment.core.utils.common.concurrent.ThreadPool;
+import de.rcenvironment.toolkit.modules.concurrency.api.AsyncTaskService;
 
 /**
  * ActiveMQ implementation of the common {@link JmsBroker} interface. It provides an embedded JMS broker for a given
@@ -70,7 +70,7 @@ public class ActiveMQBroker implements JmsBroker {
 
     private ActiveMQConnectionFilterPlugin connectionFilterPlugin;
 
-    private final ThreadPool threadPool = SharedThreadPool.getInstance();
+    private final AsyncTaskService threadPool = ConcurrencyUtils.getAsyncTaskService();
 
     private final Log log = LogFactory.getLog(getClass());
 

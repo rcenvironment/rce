@@ -14,6 +14,7 @@ import de.rcenvironment.core.component.model.endpoint.api.EndpointDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointMetaDataDefinition;
 import de.rcenvironment.core.component.model.endpoint.api.InitialDynamicEndpointDefinition;
 import de.rcenvironment.core.datamodel.api.DataType;
+import de.rcenvironment.core.datamodel.api.EndpointCharacter;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 
 /**
@@ -103,5 +104,9 @@ public class EndpointDefinitionDefaultStub implements EndpointDefinition {
         return null;
     }
 
+    @Override
+    public EndpointCharacter getEndpointCharacter() {
+        return EndpointCharacter.SAME_LOOP;
+    }
 
 }

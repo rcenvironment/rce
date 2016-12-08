@@ -11,8 +11,10 @@ package de.rcenvironment.components.outputwriter.execution;
 import java.io.File;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.io.FileUtils;
@@ -157,7 +159,7 @@ public class OutputWriterComponent extends DefaultComponent {
         } else if (input.getDataType().equals(DataType.FileReference)) {
             origFilename = ((FileReferenceTD) input).getFileName();
         }
-        
+
         path = replacePlaceholder(path, inputName, origFilename);
         File fileToWrite = new File(root + File.separator + path);
         if (!fileToWrite.exists()) {
@@ -221,7 +223,7 @@ public class OutputWriterComponent extends DefaultComponent {
         output =
             output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_EXECUTION_COUNT),
                 Integer.toString(componentContext.getExecutionCount()));
-        //In the case of simple data inputs, there is no initial filename, so this placeholder is only replaced for files/directories.
+        // In the case of simple data inputs, there is no initial filename, so this placeholder is only replaced for files/directories.
         if (filename != null) {
             output =
                 output.replaceAll(escapePlaceholder(OutputWriterComponentConstants.PH_FILE_NAME), filename);
@@ -248,6 +250,12 @@ public class OutputWriterComponent extends DefaultComponent {
         final File incFileOrDir;
         switch (input.getDataType()) {
         case FileReference:
+            // Check for invalid filename
+            List<String> forbiddenFilenames = Arrays.asList(OutputWriterComponentConstants.PROBLEMATICFILENAMES_WIN);
+            if (forbiddenFilenames.contains(filename) || filename.contains("/") || filename.contains("\\")) {
+                throw new ComponentException(StringUtils.format("Failed to write file of input '%s' beacuse '%s' "
+                    + "is a forbidden filename", inputName, filename));
+            }
             incFileOrDir = new File(path);
             try {
                 dataManagementService.copyReferenceToLocalFile(((FileReferenceTD) input).getFileReference(),

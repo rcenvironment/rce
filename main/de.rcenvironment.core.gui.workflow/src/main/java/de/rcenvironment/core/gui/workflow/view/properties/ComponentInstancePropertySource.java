@@ -58,7 +58,7 @@ public class ComponentInstancePropertySource extends WorkflowInstancePropertySou
         }
         Object value = null;
         if (key.equals(PROP_KEY_PLATFORM)) {
-            if (compInstDescr.getNodeId() == null || platformService.isLocalNode(compInstDescr.getNodeId())) {
+            if (compInstDescr.getNodeId() == null || platformService.matchesLocalInstance(compInstDescr.getNodeId())) {
                 value = Messages.local;
             } else {
                 value = compInstDescr.getNodeId().getAssociatedDisplayName();

@@ -90,24 +90,24 @@ public class SshAccountImpl implements SshAccount {
         if ((password == null || password.isEmpty())
             && (passwordHash == null || passwordHash.isEmpty())
             && (publicKey == null || publicKey.isEmpty())) {
-            log.warn("User " + loginName + " does not have a password, password hash, or public key");
+            log.warn("User \"" + loginName + "\" does not have a password, password hash, or public key");
             isValid = false;
         }
 
         if (password != null && passwordHash != null) {
-            log.warn("User " + loginName + " has both a clear-text and a hashed password at the same time");
+            log.warn("User \"" + loginName + "\" has both a clear-text and a hashed password at the same time");
             isValid = false;
         }
 
         // ensure public key is valid (can be parsed to public key object)
         if (publicKey != null && !publicKey.isEmpty() && publicKeyObj == null) {
-            log.warn("SSH User " + loginName + " has an invalid public key (only RSA keys are valid)");
+            log.warn("SSH User \"" + loginName + "\" has an invalid public key (only RSA keys are valid)");
             isValid = false;
         }
 
         // ensure role is not null
         if (role == null) {
-            log.warn("Changed role for user " + loginName + " from null to empty string");
+            log.warn("Changed role for user \"" + loginName + "\" from null to empty string");
             role = "";
         }
 
@@ -119,8 +119,8 @@ public class SshAccountImpl implements SshAccount {
             }
         }
         if (noMatchingRole) {
-            log.warn("Could not find role description for role " + role + " configured for user " + loginName);
-            isValid = false;
+            log.warn("Non-existing role \"" + role + "\" configured for user \"" + loginName
+                + "\". Default permissions (\"help\", \"exit\", \"version\") will be used.");
         }
         return isValid;
     }
@@ -162,7 +162,7 @@ public class SshAccountImpl implements SshAccount {
         this.publicKey = publicKey;
         parsePublicKey();
     }
-    
+
     @JsonIgnore
     @Override
     public PublicKey getPublicKeyObj() {

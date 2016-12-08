@@ -38,6 +38,8 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     private ComponentExecutionRelatedInstances compExeRelatedInstances;
 
     private String compInstanceName;
+    
+    private Object verifyLock = new Object();
 
     @Deprecated
     public ComponentExecutionControllerImpl() {}
@@ -45,10 +47,7 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     public ComponentExecutionControllerImpl(ComponentExecutionContext compExeCtx,
         WorkflowExecutionControllerCallbackService wfExeCtrlBridge, long currentTimestampOffWorkflowNode) {
         this.compInstanceName = compExeCtx.getInstanceName();
-        int timestampOffsetToWorkfowNode = 0;
-        if (!compExeCtx.getWorkflowNodeId().equals(compExeCtx.getComponentDescription().getNode())) {
-            timestampOffsetToWorkfowNode = (int) (currentTimestampOffWorkflowNode - System.currentTimeMillis());
-        }
+        int timestampOffsetToWorkfowNode = (int) (currentTimestampOffWorkflowNode - System.currentTimeMillis());
 
         compExeRelatedInstances = new ComponentExecutionRelatedInstances();
         compExeRelatedInstances.compExeCtx = compExeCtx;
@@ -137,12 +136,40 @@ public class ComponentExecutionControllerImpl implements ComponentExecutionContr
     }
 
     @Override
+    public String getVerificationToken() {
+        return compExeRelatedInstances.compStateMachine.getVerificationToken();
+    }
+
+    @Override
     public boolean isWorkflowControllerReachable() {
         return compExeRelatedInstances.compStateMachine.isWorkflowControllerReachable();
     }
 
+    @Override
+    public boolean verifyResults(String verificationToken, boolean verified) {
+
+        synchronized (verifyLock) {
+            if (compExeRelatedInstances.compStateMachine.getVerificationToken() == null
+                || !compExeRelatedInstances.compStateMachine.getVerificationToken().equals(verificationToken)) {
+                return false;
+            }
+            if (verified) {
+                compExeRelatedInstances.compStateMachine
+                    .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESULTS_APPROVED));
+            } else {
+                compExeRelatedInstances.compStateMachine
+                    .postEvent(new ComponentStateMachineEvent(ComponentStateMachineEventType.RESULTS_REJECTED));
+            }
+            return true;
+        }
+    }
+
     protected void bindComponentExecutionRelatedInstancesFactory(ComponentExecutionRelatedInstancesFactory newService) {
         ComponentExecutionControllerImpl.compExeInstancesFactory = newService;
+    }
+    
+    protected ComponentExecutionRelatedInstances geComponentExecutionRelatedInstances() {
+        return compExeRelatedInstances;
     }
 
 }

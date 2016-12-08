@@ -72,9 +72,6 @@ public class Messages extends NLS {
     public static String excelExport;
 
     /** Message. */
-    public static String noAlgorithmSelected;
-
-    /** Message. */
     public static String newGradientText;
 
     /** Message. */
@@ -94,6 +91,9 @@ public class Messages extends NLS {
 
     /** Message. */
     public static String dakotaOSHint;
+
+    /** Message. */
+    public static String restoreDefaultAlgorithmProperties;
 
     private static final String BUNDLE_NAME = Messages.class.getPackage().getName() + ".messages";
 

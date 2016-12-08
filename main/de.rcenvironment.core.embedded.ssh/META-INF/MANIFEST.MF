@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Embedded SSH Server
 Bundle-SymbolicName: de.rcenvironment.core.embedded.ssh
-Bundle-Version: 7.1.5.qualifier
+Bundle-Version: 8.0.0.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Vendor: DLR
 Export-Package: de.rcenvironment.core.embedded.ssh.api
@@ -11,22 +11,28 @@ Import-Package: de.rcenvironment.core.authentication,
  de.rcenvironment.core.command.common,
  de.rcenvironment.core.command.spi,
  de.rcenvironment.core.configuration,
+ de.rcenvironment.core.toolkitbridge.transitional,
  de.rcenvironment.core.utils.common,
- de.rcenvironment.core.utils.common.concurrent,
  de.rcenvironment.core.utils.common.textstream,
+ de.rcenvironment.toolkit.modules.concurrency.api,
  org.apache.commons.codec;version="1.4.0",
  org.apache.commons.codec.binary;version="1.4.0",
  org.apache.commons.lang3;version="3.1.0",
  org.apache.commons.logging;version="1.1.1",
- org.apache.sshd;version="0.14.0",
- org.apache.sshd.common;version="0.14.0",
- org.apache.sshd.common.file;version="0.14.0",
- org.apache.sshd.common.util;version="0.14.0",
- org.apache.sshd.server;version="0.14.0",
- org.apache.sshd.server.auth;version="0.14.0",
- org.apache.sshd.server.command;version="0.14.0",
- org.apache.sshd.server.keyprovider;version="0.14.0",
- org.apache.sshd.server.session;version="0.14.0",
+ org.apache.sshd;version="1.2.0",
+ org.apache.sshd.common;version="1.2.0",
+ org.apache.sshd.common.file;version="1.2.0",
+ org.apache.sshd.common.helpers,
+ org.apache.sshd.common.kex;version="1.2.0",
+ org.apache.sshd.common.keyprovider;version="1.2.0",
+ org.apache.sshd.common.util;version="1.2.0",
+ org.apache.sshd.server;version="1.2.0",
+ org.apache.sshd.server.auth;version="1.2.0",
+ org.apache.sshd.server.auth.password;version="1.2.0",
+ org.apache.sshd.server.auth.pubkey,
+ org.apache.sshd.server.keyprovider;version="1.2.0",
+ org.apache.sshd.server.scp;version="1.2.0",
+ org.apache.sshd.server.session;version="1.2.0",
  org.codehaus.jackson.annotate;version="1.9.13",
  org.mindrot.jbcrypt;version="0.4.0"
 Service-Component: OSGI-INF/*.xml

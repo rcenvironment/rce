@@ -9,6 +9,7 @@
 package de.rcenvironment.core.component.workflow.execution.headless.internal;
 
 import java.io.File;
+import java.io.FilenameFilter;
 
 import de.rcenvironment.core.component.execution.api.SingleConsoleRowsProcessor;
 import de.rcenvironment.core.component.workflow.execution.headless.api.HeadlessWorkflowExecutionContext;
@@ -34,9 +35,9 @@ public class HeadlessWorkflowExecutionContextImpl implements HeadlessWorkflowExe
 
     private SingleConsoleRowsProcessor singleConsoleRowsProcessor;
 
-    private DisposalBehavior disposeBehavior = DisposalBehavior.OnFinished;
+    private DisposalBehavior disposeBehavior = DisposalBehavior.OnExpected;
 
-    private DeletionBehavior deletionBehavior = DeletionBehavior.OnFinished;
+    private DeletionBehavior deletionBehavior = DeletionBehavior.OnExpected;
 
     private boolean abortIfWorkflowUpdateRequired = false;
 
@@ -55,6 +56,18 @@ public class HeadlessWorkflowExecutionContextImpl implements HeadlessWorkflowExe
     @Override
     public File getLogDirectory() {
         return logDirectory;
+    }
+    
+    @Override
+    public File[] getLogFiles() {
+        return getLogDirectory().listFiles(new FilenameFilter() {
+            
+            
+            @Override
+            public boolean accept(File dir, String name) {
+                return name.startsWith("workflow.log");
+            }
+        });
     }
 
     @Override

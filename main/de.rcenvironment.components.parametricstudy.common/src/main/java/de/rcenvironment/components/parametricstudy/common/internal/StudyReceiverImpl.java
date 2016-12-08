@@ -15,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
 import de.rcenvironment.components.parametricstudy.common.Study;
 import de.rcenvironment.components.parametricstudy.common.StudyPublisher;
 import de.rcenvironment.components.parametricstudy.common.StudyReceiver;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.ResolvableNodeId;
 import de.rcenvironment.core.notification.DistributedNotificationService;
 import de.rcenvironment.core.notification.Notification;
 import de.rcenvironment.core.notification.NotificationSubscriber;
@@ -34,13 +34,13 @@ public final class StudyReceiverImpl implements StudyReceiver {
 
     private final Study study;
 
-    private final NodeIdentifier platform;
+    private final ResolvableNodeId platform;
 
     private NotificationSubscriber notificationSubscriber;
 
     private DistributedNotificationService notificationService;
 
-    public StudyReceiverImpl(final Study study, final NodeIdentifier platform,
+    public StudyReceiverImpl(final Study study, final ResolvableNodeId platform,
         DistributedNotificationService notificationService) {
         this.study = study;
         this.platform = platform;

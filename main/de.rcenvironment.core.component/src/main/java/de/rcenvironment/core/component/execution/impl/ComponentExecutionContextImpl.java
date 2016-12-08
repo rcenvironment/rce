@@ -5,7 +5,7 @@
  * 
  * http://www.rcenvironment.de/
  */
- 
+
 package de.rcenvironment.core.component.execution.impl;
 
 import java.io.File;
@@ -14,8 +14,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.api.ServiceCallContext;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.WorkflowGraph;
 import de.rcenvironment.core.component.model.api.ComponentDescription;
@@ -35,34 +36,34 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     private String executionIdentifier;
 
     private String instanceName;
-    
-    private NodeIdentifier controllerNode;
+
+    private LogicalNodeId controllerNode;
 
     private String workflowExecutionIdentifier;
-    
+
     private String workflowInstanceName;
 
-    private NodeIdentifier defaultStorageNodeId;
-    
+    private LogicalNodeId defaultStorageNodeId;
+
     private ComponentDescription componentDescription;
-    
+
     private boolean isConnectedToEndpointDatumSenders;
-    
+
     // EndpointDatumRecipient stored as String for serialization purposes
     private Map<String, List<String>> serializedEndpointDatumRecipients = new HashMap<String, List<String>>();
 
     private File workingDirectory;
-    
+
     private WorkflowGraph workflowGraph;
-    
+
     private Long workflowInstanceDataManagementId;
-    
+
     private Long instanceDataManagementId;
-    
+
     private Map<String, Long> inputDataManagementIds;
 
     private Map<String, Long> outputDataManagementIds;
-    
+
     private Map<String, List<EndpointDatumRecipient>> cachedEndpointDatumRecipients;
 
     @Override
@@ -76,7 +77,7 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     }
 
     @Override
-    public NodeIdentifier getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowNodeId() {
         return controllerNode;
     }
 
@@ -89,9 +90,9 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public String getWorkflowInstanceName() {
         return workflowInstanceName;
     }
-    
+
     @Override
-    public NodeIdentifier getDefaultStorageNodeId() {
+    public LogicalNodeId getDefaultStorageNodeId() {
         return defaultStorageNodeId;
     }
 
@@ -104,10 +105,11 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public boolean isConnectedToEndpointDatumSenders() {
         return isConnectedToEndpointDatumSenders;
     }
-    
+
     @Override
-    public NodeIdentifier getNodeId() {
-        return NodeIdentifierFactory.fromNodeId(componentDescription.getComponentInstallation().getNodeId());
+    public LogicalNodeId getNodeId() {
+        return NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(componentDescription
+            .getComponentInstallation().getNodeId());
     }
 
     @Override
@@ -118,8 +120,9 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
                 edrs.put(output, new ArrayList<EndpointDatumRecipient>());
                 for (String sedr : serializedEndpointDatumRecipients.get(output)) {
                     String[] parts = StringUtils.splitAndUnescape(sedr);
-                    edrs.get(output).add(EndpointDatumRecipientFactory.createEndpointDatumRecipient(
-                        parts[0], parts[1], parts[2], NodeIdentifierFactory.fromNodeId(parts[3])));
+                    edrs.get(output).add(
+                        EndpointDatumRecipientFactory.createEndpointDatumRecipient(parts[0], parts[1], parts[2],
+                            NodeIdentifierUtils.parseArbitraryIdStringToLogicalNodeIdWithExceptionWrapping(parts[3])));
                 }
             }
             cachedEndpointDatumRecipients = edrs;
@@ -131,22 +134,22 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public File getWorkingDirectory() {
         return workingDirectory;
     }
-    
+
     @Override
     public WorkflowGraph getWorkflowGraph() {
         return workflowGraph;
     }
-    
+
     @Override
     public Long getWorkflowInstanceDataManagementId() {
         return workflowInstanceDataManagementId;
     }
-    
+
     @Override
     public Long getInstanceDataManagementId() {
         return instanceDataManagementId;
     }
-    
+
     @Override
     public Map<String, Long> getInputDataManagementIds() {
         return inputDataManagementIds;
@@ -156,7 +159,7 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public Map<String, Long> getOutputDataManagementIds() {
         return outputDataManagementIds;
     }
-    
+
     public void setExecutionIdentifier(String executionIdentifier) {
         this.executionIdentifier = executionIdentifier;
     }
@@ -168,27 +171,27 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public void setIsConnectedToEndpointDatumSenders(boolean isConnectedToEndpointDatumSenders) {
         this.isConnectedToEndpointDatumSenders = isConnectedToEndpointDatumSenders;
     }
-    
+
     public void setWorkflowExecutionIdentifier(String wfExeId) {
         this.workflowExecutionIdentifier = wfExeId;
     }
-    
+
     public void setWorkflowInstanceName(String wfInstanceName) {
         this.workflowInstanceName = wfInstanceName;
     }
-    
-    public void setWorkflowNodeId(NodeIdentifier wfNodeId) {
+
+    public void setWorkflowNodeId(LogicalNodeId wfNodeId) {
         this.controllerNode = wfNodeId;
     }
-    
-    public void setDefaultStorageNode(NodeIdentifier defaultStorageNode) {
+
+    public void setDefaultStorageNode(LogicalNodeId defaultStorageNode) {
         this.defaultStorageNodeId = defaultStorageNode;
     }
-    
+
     public void setComponentDescription(ComponentDescription componentDescription) {
         this.componentDescription = componentDescription;
     }
-    
+
     /**
      * Sets {@link EndpointDatumRecipient}s per output and serializes {@link EndpointDatumRecipient} instances.
      * 
@@ -200,7 +203,7 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
             for (EndpointDatumRecipient edr : endpointDatumRecipients.get(output)) {
                 serializedEndpointDatumRecipients.get(output).add(StringUtils.escapeAndConcat(
                     new String[] { edr.getInputName(), edr.getInputsComponentExecutionIdentifier(),
-                        edr.getInputsComponentInstanceName(), edr.getInputsNodeId().getIdString() }));
+                        edr.getInputsComponentInstanceName(), edr.getInputsNodeId().getLogicalNodeIdString() }));
             }
         }
     }
@@ -212,21 +215,25 @@ public class ComponentExecutionContextImpl implements ComponentExecutionContext 
     public void setWorkflowGraph(WorkflowGraph workflowGraph) {
         this.workflowGraph = workflowGraph;
     }
-    
+
     public void setWorkflowInstanceDataManagementId(Long workflowInstanceDataManagementId) {
         this.workflowInstanceDataManagementId = workflowInstanceDataManagementId;
     }
-    
+
     public void setInstanceDataManagementId(Long instanceDataManagementId) {
         this.instanceDataManagementId = instanceDataManagementId;
     }
-    
+
     public void setInputDataManagementIds(Map<String, Long> inputDataManagementIds) {
         this.inputDataManagementIds = inputDataManagementIds;
     }
-    
+
     public void setOutputDataManagementIds(Map<String, Long> outputDataManagementIds) {
         this.outputDataManagementIds = outputDataManagementIds;
     }
 
+    @Override
+    public ServiceCallContext getServiceCallContext() {
+        return null;
+    }
 }

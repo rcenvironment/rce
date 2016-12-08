@@ -20,13 +20,12 @@
                id="workflow.editor.tab.Properties.Section.tooltempdir"
                tab="workflow.editor.tab.integrated.tempdir">
          </propertySection>
-         <!-- XPathChooserView -->
          <propertySection
-               tab="workflow.editor.tab.loader.XPathChooser"
+               class="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsIntegrationEndpointPropertySection"
                enablesFor="1"
-               class="de.rcenvironment.core.gui.xpathchooser.XPathChooserPropertyView"
-               id="workflow.editor.tab.loader.XPathChooser.Section"
-               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter">
+               id="workflow.editor.tab.Properties.Section.CPACSInputsOutputs"
+               filter="de.rcenvironment.core.gui.workflow.integration.cpacs.CpacsToolIntegratorComponentFilter"
+               tab="workflow.editor.tab.integrated.InputsOutputs">
          </propertySection>
          <propertySection
                class="de.rcenvironment.core.gui.workflow.integration.ToolInformationSection"
@@ -92,8 +91,8 @@
          <propertyTab
                category="default"
                id="workflow.editor.tab.integrated.InputsOutputs"
-               label="%InputOutput"
-               afterTab="workflow.editor.tab.integrated.tempdir">
+               afterTab="workflow.editor.tab.integrated.tempdir"
+               label="%InputOutput">
          </propertyTab>
          <propertyTab
                category="default"

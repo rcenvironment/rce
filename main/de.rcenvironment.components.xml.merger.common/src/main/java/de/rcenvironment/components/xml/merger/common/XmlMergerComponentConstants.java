@@ -58,7 +58,7 @@ public final class XmlMergerComponentConstants {
     public static final String XMLFILEEND = "xml";
     
     /** Constant. */
-    public static final String INPUT_NAME_XML = "XML";
+    public static final String ENDPOINT_NAME_XML = "XML";
     
     /** Constant. */
     public static final String INPUT_ID_MAPPING_FILE = "mappingFile";

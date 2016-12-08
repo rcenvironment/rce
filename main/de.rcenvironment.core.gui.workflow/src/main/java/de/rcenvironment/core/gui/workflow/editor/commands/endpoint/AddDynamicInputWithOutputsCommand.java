@@ -20,19 +20,22 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Refreshable;
  */
 public class AddDynamicInputWithOutputsCommand extends AddDynamicInputWithOutputCommand {
 
+    private final String addDynOutputId;
+    
     private final String nameSuffix;
     
     private Map<String, String> metaDataOutputWithSuffix;
 
-    public AddDynamicInputWithOutputsCommand(String dynamicEndpointId, String name, DataType type, 
-        Map<String, String> metaData, String nameSuffix, Refreshable... panes) {
+    public AddDynamicInputWithOutputsCommand(String dynamicEndpointId, String addDynOutputId, String outputNameSuffix, String name,
+        DataType type, Map<String, String> metaData, Refreshable... panes) {
         super(dynamicEndpointId, name, type, metaData, panes);
-        this.nameSuffix = nameSuffix;
+        this.addDynOutputId = addDynOutputId;
+        this.nameSuffix = outputNameSuffix;
     }
 
     @Override
     public void execute() {
-        InputWithOutputsCommandUtils.addOutputWithSuffix(getProperties(), dynEndpointId, name, type, nameSuffix, metaDataOutputWithSuffix);
+        InputWithOutputsCommandUtils.addOutputWithSuffix(getProperties(), addDynOutputId, name, type, nameSuffix, metaDataOutputWithSuffix);
         super.execute();
     }
 

@@ -25,9 +25,9 @@ public class ComponentStateChangeListener extends DefaultNotificationSubscriber 
 
     private static final long serialVersionUID = -5025502558454267143L;
 
-    private transient ReadOnlyWorkflowNodePart part;
+    private transient WorkflowRunNodePart part;
     
-    public ComponentStateChangeListener(ReadOnlyWorkflowNodePart newPart) {
+    public ComponentStateChangeListener(WorkflowRunNodePart newPart) {
         part = newPart;
     }
     

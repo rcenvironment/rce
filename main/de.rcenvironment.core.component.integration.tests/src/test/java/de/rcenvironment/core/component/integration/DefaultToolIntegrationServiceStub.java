@@ -70,7 +70,7 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
     }
 
     @Override
-    public String getPathOfComponentID(String id) {
+    public String getPathOfComponentID(String id, ToolIntegrationContext context) {
         return null;
     }
 
@@ -136,6 +136,12 @@ public class DefaultToolIntegrationServiceStub implements ToolIntegrationService
 
     @Override
     public void registerRecursive(String toolName, ToolIntegrationContext integrationContext) {
+
+    }
+
+    @Override
+    public void deactivateIntegrationService() {
+        // TODO Auto-generated method stub
 
     }
 

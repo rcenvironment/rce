@@ -10,14 +10,12 @@ package de.rcenvironment.components.parametricstudy.gui.properties;
 
 import de.rcenvironment.components.parametricstudy.common.ParametricStudyComponentConstants;
 import de.rcenvironment.core.component.api.LoopComponentConstants;
-import de.rcenvironment.core.component.api.LoopComponentConstants.LoopEndpointType;
 import de.rcenvironment.core.datamodel.api.EndpointType;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointPropertySection;
 import de.rcenvironment.core.gui.workflow.editor.properties.EndpointSelectionPane;
 import de.rcenvironment.core.gui.workflow.editor.properties.InputCoupledWithAnotherInputAndOutputSelectionPane;
 
 /**
- * 
  * Creates a "Properties" view tab for configuring endpoints (inputs and outputs).
  * 
  * @author Marc Stammerjohann
@@ -28,24 +26,29 @@ public class ParametricStudyPropertiesSection extends EndpointPropertySection {
 
     public ParametricStudyPropertiesSection() {
 
-        EndpointSelectionPane inputPane = new EndpointSelectionPane("Inputs (evaluation results received from loop)",
-            EndpointType.INPUT, this, false, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, true);
+        EndpointSelectionPane designValuesPane = new EndpointSelectionPane("Inputs (configuration)",
+            EndpointType.INPUT, ParametricStudyComponentConstants.DYNAMIC_INPUT_STUDY_PARAMETERS, new String[] {}, new String[] {}, this,
+            true, true);
 
-        EndpointSelectionPane outputPane = new EndpointSelectionPane("Output (values to evaluate)",
-            EndpointType.OUTPUT, this, false, null, true);
+        EndpointSelectionPane inputPane = new EndpointSelectionPane("Inputs (evaluation results received from loop)",
+            EndpointType.INPUT, ParametricStudyComponentConstants.DYNAMIC_INPUT_IDENTIFIER, new String[] {}, new String[] {}, this, false,
+            true);
+
+        EndpointSelectionPane outputPane = new ParametricStudyEndpointSelectionPane("Outputs (values to evaluate)",
+            EndpointType.OUTPUT, this, designValuesPane);
 
         EndpointSelectionPane outputForwardedPane = new EndpointSelectionPane("Outputs (forwarded)", EndpointType.OUTPUT,
-            this, true, LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, true, true);
+            LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, new String[] {}, new String[] {}, this, true, true);
 
         InputCoupledWithAnotherInputAndOutputSelectionPane inputToForwardPane =
-            new InputCoupledWithAnotherInputAndOutputSelectionPane("Inputs (to forward)",
-                LoopComponentConstants.ENDPOINT_ID_TO_FORWARD, LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, this,
+            new InputCoupledWithAnotherInputAndOutputSelectionPane("Inputs (to forward)", LoopComponentConstants.ENDPOINT_ID_TO_FORWARD,
+                LoopComponentConstants.ENDPOINT_ID_START_TO_FORWARD, LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX, this,
                 outputForwardedPane);
-        inputToForwardPane.setMetaDataInput(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        inputToForwardPane.setMetaDataOutput(LoopComponentConstants.createMetaData(LoopEndpointType.SelfLoopEndpoint));
-        inputToForwardPane.setMetaDataInputWithSuffix(LoopComponentConstants.createMetaData(LoopEndpointType.OuterLoopEndpoint));
+
+        EndpointSelectionPane outputPaneOthers = new EndpointSelectionPane("Outputs (other)", EndpointType.OUTPUT, null,
+            new String[] {}, new String[] { LoopComponentConstants.ENDPOINT_NAME_LOOP_DONE }, this, true, true);
 
         setColumns(2);
-        setPanes(inputPane, outputPane, inputToForwardPane, outputForwardedPane);
+        setPanes(inputPane, outputPane, inputToForwardPane, outputForwardedPane, designValuesPane, outputPaneOthers);
     }
 }

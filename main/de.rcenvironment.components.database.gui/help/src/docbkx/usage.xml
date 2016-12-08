@@ -5,8 +5,8 @@
     <title>Database Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-    <para> With the database component databases can be accessed. Database management is not the
-            focus of this component.</para>
+    <para> With the database component, databases can be accessed. Database management however is
+            not the focus of this component.</para>
     </sect1>
     <sect1>
         <title>Rationale</title>
@@ -59,9 +59,9 @@
         <sect2>
             <title>Writing multiple times to the same output</title>
             <para>It is possible to configure multiple statements to write their result sets to the
-                same output. The results are queued. Note that this can cause subsequent components
-                to run multiple times to consume the queued values. Moreover subsequent must allow
-                queuing of input values.</para>
+                same output. These results are queued, which can cause subsequent components to run
+                multiple times to consume the queued values. Note that these components must allow
+                queuing of input values for this to work.</para>
         </sect2>
         <sect2>
             <title>Output "success"</title>
@@ -76,10 +76,10 @@
         <sect2>
             <title>Valid statement types</title>
             <para>The database component is designed to query and update databases on a lightweight
-                basis. As already mentioned above typical database management statements like
-                creating, altering and dropping tables or working on views and user account is not
-                the aim of this component. Thus, the following four database statement types are
-                supported. That means, each statement must begin with one of the following
+                basis. As already mentioned above, typical database management statements like
+                creating, altering and dropping tables or working on views and user accounts is not
+                the aim of this component. Therefore, only a set of four database statement types is
+                supported. Meaning that each statement must begin with one of the following
                 phrases:</para>
             <para>
                 <itemizedlist>
@@ -126,8 +126,8 @@
                 processed as there is currently no data type of RCE that can represent it. As a
                 workaround you can cast or transfer the timestamp to some textual representation
                 with SQL functionalities and work on with this.</para>
-            <para>If values in the result set are null it is mapped to RCE's data type "Empty" has
-                the textual representation <emphasis role="italic">"nil"</emphasis>.</para>
+            <para>If values in the result set are null, it is mapped to RCE's data type "Empty" and
+                has the textual representation <emphasis role="italic">"nil"</emphasis>.</para>
         </sect2>
         <sect2>
             <title>Local Execution Only</title>

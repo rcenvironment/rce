@@ -8,7 +8,7 @@
  
 package de.rcenvironment.core.component.execution.impl;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionContext;
 import de.rcenvironment.core.component.execution.api.ComponentExecutionInformation;
 
@@ -25,17 +25,17 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     
     private String instanceName;
     
-    private NodeIdentifier nodeId;
+    private LogicalNodeId nodeId;
     
     private String componentIdentifier;
     
-    private NodeIdentifier defaultStorageNodeId;
+    private LogicalNodeId defaultStorageNodeId;
     
     private String workflowInstanceName;
     
     private String workflowExecutionIdentifier;
     
-    private NodeIdentifier workflowNodeId;
+    private LogicalNodeId workflowNodeId;
     
     public ComponentExecutionInformationImpl() {}
     
@@ -61,7 +61,7 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     }
 
     @Override
-    public NodeIdentifier getNodeId() {
+    public LogicalNodeId getNodeId() {
         return nodeId;
     }
     
@@ -70,7 +70,7 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
         return componentIdentifier;
     }
     
-    public void setNodeId(NodeIdentifier nodeId) {
+    public void setNodeId(LogicalNodeId nodeId) {
         this.nodeId = nodeId;
     }
     
@@ -87,11 +87,11 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     }
 
     @Override
-    public NodeIdentifier getDefaultStorageNodeId() {
+    public LogicalNodeId getDefaultStorageNodeId() {
         return defaultStorageNodeId;
     }
     
-    public void setDefaultStorageNodeId(NodeIdentifier defaultStorageNodeId) {
+    public void setDefaultStorageNodeId(LogicalNodeId defaultStorageNodeId) {
         this.defaultStorageNodeId = defaultStorageNodeId;
     }
 
@@ -114,11 +114,11 @@ public class ComponentExecutionInformationImpl implements ComponentExecutionInfo
     }
 
     @Override
-    public NodeIdentifier getWorkflowNodeId() {
+    public LogicalNodeId getWorkflowNodeId() {
         return workflowNodeId;
     }
 
-    public void setWorkflowNodeId(NodeIdentifier workflowNodeId) {
+    public void setWorkflowNodeId(LogicalNodeId workflowNodeId) {
         this.workflowNodeId = workflowNodeId;
     }
     

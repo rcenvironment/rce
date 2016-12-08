@@ -73,10 +73,12 @@ public class ConsoleRowsSenderTest {
         ConsoleRowsSender consoleRowsSender = new ConsoleRowsSender(compExeRelatedInstances);
         
         String payload = "some message";
-        consoleRowsSender.sendLogMessageAsConsoleRow(ConsoleRow.Type.TOOL_ERROR, payload);
+        int compRun = 5;
+        consoleRowsSender.sendLogMessageAsConsoleRow(ConsoleRow.Type.TOOL_ERROR, payload, compRun);
         
         ConsoleRow capturedConsoleRow = verifyAfterConsoleRowSent(consoleRowCapture, ConsoleRow.Type.TOOL_ERROR);
         assertEquals(payload, capturedConsoleRow.getPayload());
+        assertEquals(compRun, capturedConsoleRow.getComponentRun());
     }
     
     /**

@@ -9,7 +9,6 @@
 package de.rcenvironment.components.script.gui;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
@@ -35,21 +34,22 @@ import de.rcenvironment.core.gui.workflow.editor.properties.Messages;
  * @author Doreen Seider
  */
 public class ScriptEndpointSection extends DefaultEndpointPropertySection {
-    
+
     private EndpointSelectionPane inputPane;
-    
+
     private Button orGroupCheckbox;
 
     public ScriptEndpointSection() {
         inputPane = new EndpointSelectionPane(Messages.inputs,
-            EndpointType.INPUT, this, false, ScriptComponentConstants.GROUP_NAME_AND, false);
+            EndpointType.INPUT, ScriptComponentConstants.GROUP_NAME_AND, new String[] { ScriptComponentConstants.GROUP_NAME_OR },
+            new String[] {}, this);
 
         EndpointSelectionPane outputPane = new EndpointSelectionPane(Messages.outputs,
-            EndpointType.OUTPUT, this, false, "default", false);
+            EndpointType.OUTPUT, "default", new String[] {}, new String[] {}, this);
         setColumns(2);
         setPanes(inputPane, outputPane);
     }
-    
+
     @Override
     public void createCompositeContent(Composite parent, TabbedPropertySheetPage aTabbedPropertySheetPage) {
         super.createCompositeContent(parent, aTabbedPropertySheetPage);
@@ -66,46 +66,30 @@ public class ScriptEndpointSection extends DefaultEndpointPropertySection {
         Label noteLabel = new Label(noteComposite, SWT.READ_ONLY);
         noteLabel.setText("(ie inputs have an 'xor' relation instead of an 'and' relation)");
     }
-    
+
     @Override
     public void aboutToBeShown() {
         super.aboutToBeShown();
         inputPane.refresh();
     }
-    
+
     @Override
     protected Synchronizer createSynchronizer() {
         return new ScriptWidgetsSynchronizer();
     }
-    
+
     @Override
-    protected Controller createController() {
-        return new ScriptWidgetsController();
+    protected Updater createUpdater() {
+        return new ScriptWidgetsUpdater();
     }
-    
-    /**
-     * Script-specific implementation of {@link Controller}.
-     * 
-     * @author Doreen Seider
-     */
-    private class ScriptWidgetsController extends DefaultController {
-        
-        @Override
-        protected void widgetSelected(SelectionEvent event, Control source, String property) {
-            if (property.equals(ScriptComponentConstants.PROP_KEY_XOR)) {
-                switchDynamicInputIds(((Button) source).getSelection());
-            }
-            super.widgetSelected(event, source, property);
-        }
-    }
-    
+
     /**
      * Script-specific implementation of {@link Synchronizer}.
      * 
      * @author Doreen Seider
      */
     private class ScriptWidgetsSynchronizer extends DefaultSynchronizer {
-        
+
         @Override
         protected void handlePropertyChange(Control control, String key, String newValue, String oldValue) {
             if (key.equals(ScriptComponentConstants.PROP_KEY_XOR)) {
@@ -115,17 +99,34 @@ public class ScriptEndpointSection extends DefaultEndpointPropertySection {
         }
 
     }
-    
+
+    /**
+     * Script-specific implementation of {@link Updater}.
+     * 
+     * @author Doreen Seider
+     */
+    private class ScriptWidgetsUpdater extends DefaultUpdater {
+
+        @Override
+        public void updateControl(Control control, String propertyName, String newValue, String oldValue) {
+            if (propertyName.equals(ScriptComponentConstants.PROP_KEY_XOR) && Boolean.parseBoolean(newValue)) {
+                inputPane.updateDynamicEndpointIdToManage(ScriptComponentConstants.GROUP_NAME_OR);
+            }
+            super.updateControl(control, propertyName, newValue, oldValue);
+        }
+
+    }
+
     private void switchDynamicInputIds(boolean xor) {
         if (xor) {
             switchDynamicInputsId(ScriptComponentConstants.GROUP_NAME_OR);
         } else {
             switchDynamicInputsId(ScriptComponentConstants.GROUP_NAME_AND);
         }
-        inputPane.refresh();
     }
-    
+
     private void switchDynamicInputsId(String toDynamicInputId) {
+        inputPane.updateDynamicEndpointIdToManage(toDynamicInputId);
         EndpointDescriptionsManager inputDescriptionsManager = getConfiguration().getInputDescriptionsManager();
         for (EndpointDescription ep : inputDescriptionsManager.getEndpointDescriptions()) {
             inputDescriptionsManager.removeDynamicEndpointDescriptionQuietely(ep.getName());
@@ -138,5 +139,5 @@ public class ScriptEndpointSection extends DefaultEndpointPropertySection {
             }
         }
     }
-    
+
 }

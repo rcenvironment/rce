@@ -13,7 +13,7 @@
 	<property name="rce.component.name" type="String" value="Converger"/>
 	
 	<property name="rce.component.group" type="String" value="Evaluation"/>
-	<property name="rce.component.version" type="String" value="5.1.1"/>
+	<property name="rce.component.version" type="String" value="6"/>
 	
 	<property name="rce.component.class" type="String" value="de.rcenvironment.components.converger.execution.ConvergerComponent"/>
 	

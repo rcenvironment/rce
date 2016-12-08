@@ -69,7 +69,7 @@ public class TypedDatumToOutputWriter {
                     endpointDatum.setOutputsNodeId(compExeCtx.getNodeId());
                     endpointDatum.setWorkflowExecutionIdentifier(
                         compExeCtx.getWorkflowExecutionIdentifier());
-                    endpointDatum.setWorkfowNodeId(compExeCtx.getWorkflowNodeId());
+                    endpointDatum.setWorkflowNodeId(compExeCtx.getWorkflowNodeId());
                     endpointDatum.setDataManagementId(outputDmId);
                     endpointDatum.setValue(datumToSend);
                     endpointDatumDispatcher.dispatchEndpointDatum(endpointDatum);

@@ -25,7 +25,7 @@ import org.codehaus.jackson.map.JsonMappingException;
 import org.codehaus.jackson.map.ObjectMapper;
 
 import de.rcenvironment.core.communication.api.CommunicationService;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.NodeIdentifierUtils;
 import de.rcenvironment.core.component.api.DistributedComponentKnowledgeService;
 import de.rcenvironment.core.component.integration.RemoteToolIntegrationService;
 import de.rcenvironment.core.component.integration.ToolIntegrationConstants;
@@ -112,7 +112,6 @@ public class ToolIntegrationDocumentationServiceImpl implements ToolIntegrationD
     public File getToolDocumentation(String identifier, String nodeId, String hashValue)
         throws RemoteOperationException, FileNotFoundException, IOException {
         byte[] documentation = null;
-
         File cacheDir = loadDocumentationCache();
 
         if (nodeId.endsWith(ToolIntegrationConstants.DOCUMENTATION_CACHED_SUFFIX)) {
@@ -129,8 +128,10 @@ public class ToolIntegrationDocumentationServiceImpl implements ToolIntegrationD
             return docuDir;
         } else {
             // documentation not in cache, retrieve
+            // TODO improve method by passing the id object into it (instead of a node id string)
             RemoteToolIntegrationService rtis =
-                communicationService.getRemotableService(RemoteToolIntegrationService.class, NodeIdentifierFactory.fromNodeId(nodeId));
+                communicationService.getRemotableService(RemoteToolIntegrationService.class,
+                    NodeIdentifierUtils.parseLogicalNodeIdStringWithExceptionWrapping(nodeId));
             documentation = rtis.getToolDocumentation(identifier);
             if (documentation != null) {
                 File tempDir = null;

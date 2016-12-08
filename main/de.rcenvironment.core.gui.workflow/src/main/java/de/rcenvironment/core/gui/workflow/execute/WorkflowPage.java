@@ -33,8 +33,8 @@ import org.eclipse.swt.custom.CCombo;
 import org.eclipse.swt.custom.ScrolledComposite;
 import org.eclipse.swt.events.ControlAdapter;
 import org.eclipse.swt.events.ControlEvent;
-import org.eclipse.swt.events.KeyAdapter;
-import org.eclipse.swt.events.KeyEvent;
+import org.eclipse.swt.events.ModifyEvent;
+import org.eclipse.swt.events.ModifyListener;
 import org.eclipse.swt.events.SelectionAdapter;
 import org.eclipse.swt.events.SelectionEvent;
 import org.eclipse.swt.graphics.Font;
@@ -56,7 +56,8 @@ import org.eclipse.swt.widgets.Text;
 import org.eclipse.swt.widgets.TreeItem;
 
 import de.rcenvironment.core.communication.api.PlatformService;
-import de.rcenvironment.core.communication.common.NodeIdentifier;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.LogicalNodeId;
 import de.rcenvironment.core.component.model.api.ComponentInstallation;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowDescription;
 import de.rcenvironment.core.component.workflow.model.api.WorkflowNode;
@@ -108,11 +109,11 @@ final class WorkflowPage extends WizardPage {
 
     private CheckboxLabelProvider checkboxProviderTable;
 
-    private List<NodeIdentifier> missingInstances;
+    private List<InstanceNodeSessionId> missingInstances;
 
     private TreeContentProvider treeContenProvider;
 
-    private final NodeIdentifier localNodeId;
+    private final LogicalNodeId localNodeId;
 
     private boolean tableViewActive = true;
 
@@ -131,7 +132,7 @@ final class WorkflowPage extends WizardPage {
 
         ServiceRegistryAccess serviceRegistryAccess = ServiceRegistry.createAccessFor(this);
         PlatformService platformService = serviceRegistryAccess.getService(PlatformService.class);
-        localNodeId = platformService.getLocalNodeId();
+        localNodeId = platformService.getLocalDefaultLogicalNodeId();
     }
 
     @Override
@@ -158,14 +159,14 @@ final class WorkflowPage extends WizardPage {
         }
         workflowComposite.workflowNameText.setFocus();
         workflowComposite.workflowNameText.selectAll();
-        workflowComposite.workflowNameText.addKeyListener(new KeyAdapter() {
+
+        workflowComposite.workflowNameText.addModifyListener(new ModifyListener() {
 
             @Override
-            public void keyReleased(KeyEvent event) {
+            public void modifyText(ModifyEvent e) {
                 String name = WorkflowPage.this.workflowComposite.workflowNameText.getText();
                 WorkflowPage.this.workflowDescription.setName(name);
             }
-
         });
 
         setListenersForControllerInstanceCombo();
@@ -177,15 +178,14 @@ final class WorkflowPage extends WizardPage {
             .setContentProvider(new WorkflowDescriptionContentProvider(SWT.UP, TableSortSelectionListener.COLUMN_NAME));
         workflowComposite.componentsTableViewer.setInput(workflowDescription);
 
-        workflowComposite.additionalInformationText
-            .addKeyListener(new KeyAdapter() {
+        workflowComposite.additionalInformationText.addModifyListener(new ModifyListener() {
 
-                @Override
-                public void keyReleased(KeyEvent event) {
-                    workflowDescription.setAdditionalInformation(
-                        WorkflowPage.this.workflowComposite.additionalInformationText.getText());
-                }
-            });
+            @Override
+            public void modifyText(ModifyEvent e) {
+                workflowDescription.setAdditionalInformation(
+                    WorkflowPage.this.workflowComposite.additionalInformationText.getText());
+            }
+        });
 
         treeContenProvider = new TreeContentProvider();
         TableBehaviour.allCheckboxesClicked = false;
@@ -213,7 +213,7 @@ final class WorkflowPage extends WizardPage {
                 public void widgetSelected(SelectionEvent event) {
                     int index = workflowComposite.controllerTargetNodeCombo
                         .getSelectionIndex();
-                    NodeIdentifier platform = (NodeIdentifier) workflowComposite.controllerTargetNodeCombo
+                    LogicalNodeId platform = (LogicalNodeId) workflowComposite.controllerTargetNodeCombo
                         .getData(PLATFORM_DATA_PREFIX + index);
                     workflowDescription.setControllerNode(platform);
                     refreshControllersTargetInstance();
@@ -238,12 +238,12 @@ final class WorkflowPage extends WizardPage {
             comboControllerTarget.add(localNodeId.getAssociatedDisplayName()
                 + " " + Messages.localPlatformSelectionTitle);
             comboControllerTarget.setData(PLATFORM_DATA_PREFIX + 0, null);
-            final List<NodeIdentifier> nodes = nodeIdConfigHelper
+            final List<LogicalNodeId> nodes = nodeIdConfigHelper
                 .getWorkflowControllerNodesSortedByName();
             nodes.remove(localNodeId);
             int index = 0;
 
-            for (NodeIdentifier node : nodes) {
+            for (LogicalNodeId node : nodes) {
                 index++;
                 comboControllerTarget.add(node
                     .getAssociatedDisplayName());
@@ -252,7 +252,7 @@ final class WorkflowPage extends WizardPage {
 
             }
             // select the configured platform or default to the local platform
-            NodeIdentifier selectedNode = workflowDescription.getControllerNode();
+            LogicalNodeId selectedNode = workflowDescription.getControllerNode();
             if (selectedNode == null || selectedNode.equals(localNodeId)
                 || !nodes.contains(selectedNode)) {
                 comboControllerTarget.select(0);
@@ -265,7 +265,7 @@ final class WorkflowPage extends WizardPage {
             }
             index = comboControllerTarget.getSelectionIndex();
 
-            NodeIdentifier platform = (NodeIdentifier) comboControllerTarget
+            LogicalNodeId platform = (LogicalNodeId) comboControllerTarget
                 .getData(PLATFORM_DATA_PREFIX + index);
             workflowDescription.setControllerNode(platform);
         }
@@ -292,7 +292,7 @@ final class WorkflowPage extends WizardPage {
 
     private boolean hasInstanceError() {
         if (missingInstances != null) {
-            for (NodeIdentifier id : missingInstances) {
+            for (InstanceNodeSessionId id : missingInstances) {
 
                 for (WorkflowNode node : workflowDescription.getWorkflowNodes()) {
 
@@ -353,7 +353,7 @@ final class WorkflowPage extends WizardPage {
         return workflowDescription.getName();
     }
 
-    protected NodeIdentifier getControllerNodeId() {
+    protected LogicalNodeId getControllerNodeId() {
         return workflowDescription.getControllerNode();
     }
 
@@ -600,30 +600,20 @@ final class WorkflowPage extends WizardPage {
             search.setLayoutData(searchData);
             search.setMessage(FILTER);
 
-            search.addKeyListener(new KeyAdapter() {
+            search.addModifyListener(new ModifyListener() {
 
                 @Override
-                public void keyReleased(KeyEvent e) {
-
+                public void modifyText(ModifyEvent e) {
                     Text text = (Text) e.getSource();
                     if (componentsTableViewer.getTable().isVisible()) {
-
                         filterTable.setSearchText(text.getText());
-
                         refreshTable();
-
                     } else {
-
                         filterTree.setSearchText(text.getText());
-
                         refreshTree();
-
                         // repackTree();
-
                     }
-
                 }
-
             });
 
             groupbyComponentCheck = new Button(grpComponentsTp, SWT.CHECK);
@@ -788,6 +778,7 @@ final class WorkflowPage extends WizardPage {
                     if (n.getWorkflowNode() != null) {
 
                         setRandomlyRemote(n.getWorkflowNode(), combo);
+                        targetNodeLabelProviderTable.handleSelection(combo, n.getWorkflowNode());
                     }
                 }
 
@@ -798,6 +789,7 @@ final class WorkflowPage extends WizardPage {
 
                         WorkflowNode node = (WorkflowNode) combo.getData();
                         setRandomlyRemote(node, combo);
+                        targetNodeLabelProviderTable.handleSelection(combo, node);
                     }
                 }
             }
@@ -859,12 +851,14 @@ final class WorkflowPage extends WizardPage {
             checkboxProviderTree = new CheckboxLabelProvider();
             targetNodeLabelProviderTree.setPage(WorkflowPage.this);
             componentsTreeViewer.getTree().addListener(SWT.Expand, new Listener() {
+
                 @Override
                 public void handleEvent(Event e) {
                     componentsTreeViewer.getTree().redraw();
                 }
             });
             componentsTreeViewer.getTree().addListener(SWT.Collapse, new Listener() {
+
                 @Override
                 public void handleEvent(Event e) {
                     componentsTreeViewer.getTree().redraw();
@@ -891,6 +885,7 @@ final class WorkflowPage extends WizardPage {
             columnViewerBox.getColumn().setImage(uncheckedImg);
             columnViewerBox.getColumn().setText(ALL);
             columnViewerBox.getColumn().addSelectionListener(new SelectionAdapter() {
+
                 @Override
                 public void widgetSelected(SelectionEvent e) {
                     treeUpdater.saveIndexOfComboBeforeRefresh();
@@ -935,6 +930,7 @@ final class WorkflowPage extends WizardPage {
             componentsTreeViewer.getTree().setSortColumn(columnViewer.getColumn());
             componentsTreeViewer.getTree().setSortDirection(SWT.UP);
             columnViewer.getColumn().addSelectionListener(new SelectionAdapter() {
+
                 @Override
                 public void widgetSelected(SelectionEvent e) {
                     treeUpdater.saveIndexOfComboBeforeRefresh();
@@ -951,6 +947,7 @@ final class WorkflowPage extends WizardPage {
             });
 
             componentsTreeViewer.setSorter(new ViewerSorter() {
+
                 @Override
                 public int compare(Viewer viewer, Object node, Object otherNode) {
 

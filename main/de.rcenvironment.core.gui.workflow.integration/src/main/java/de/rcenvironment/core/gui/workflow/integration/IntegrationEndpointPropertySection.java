@@ -23,9 +23,9 @@ public class IntegrationEndpointPropertySection extends EndpointPropertySection 
     public IntegrationEndpointPropertySection() {
         super();
         EndpointSelectionPane inputPane = new EndpointSelectionPane(Messages.inputs,
-            EndpointType.INPUT, this, false, "default", false);
+            EndpointType.INPUT, null, new String[] {}, null, this, false);
         EndpointSelectionPane outputPane = new EndpointSelectionPane(Messages.outputs,
-            EndpointType.OUTPUT, this, true, "default", false);
+            EndpointType.OUTPUT, null, new String[] {}, null, this, false);
         setColumns(2);
         setPanes(inputPane, outputPane);
     }

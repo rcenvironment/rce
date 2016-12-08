@@ -17,8 +17,8 @@ import java.util.List;
 
 import org.junit.Test;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
+import de.rcenvironment.core.communication.common.NodeIdentifierTestUtils;
 import de.rcenvironment.core.communication.rpc.api.CallbackProxyService;
 import de.rcenvironment.core.communication.rpc.api.CallbackService;
 import de.rcenvironment.core.communication.spi.CallbackMethod;
@@ -29,12 +29,13 @@ import de.rcenvironment.core.utils.common.rpc.RemoteOperationException;
  * Test cases for {@link CallbackUtils}.
  * 
  * @author Doreen Seider
+ * @author Robert Mischke (8.0.0 id adaptations)
  */
 public class CallbackUtilsTest {
 
-    private final NodeIdentifier piLocal = NodeIdentifierFactory.fromHostAndNumberString("localhost:1");
+    private final InstanceNodeSessionId instanceIdLocal = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("local");
 
-    private final NodeIdentifier piRemote = NodeIdentifierFactory.fromHostAndNumberString("remotehost:1");
+    private final InstanceNodeSessionId instanceIdRemote = NodeIdentifierTestUtils.createTestInstanceNodeSessionIdWithDisplayName("remote");
 
     private final DummyCallbackService callbackService = new DummyCallbackService();
 
@@ -63,10 +64,10 @@ public class CallbackUtilsTest {
     @Test
     public void testHandlingCallbackObjects() {
         Object o = new Object();
-        assertEquals(o, CallbackUtils.handleCallbackObject(o, piRemote, callbackService));
+        assertEquals(o, CallbackUtils.handleCallbackObject(o, instanceIdRemote, callbackService));
 
-        assertEquals(proxy11, CallbackUtils.handleCallbackObject(object1, piRemote, callbackService));
-        assertEquals(proxy2, CallbackUtils.handleCallbackObject(object2, piRemote, callbackService));
+        assertEquals(proxy11, CallbackUtils.handleCallbackObject(object1, instanceIdRemote, callbackService));
+        assertEquals(proxy2, CallbackUtils.handleCallbackObject(object2, instanceIdRemote, callbackService));
 
         List objects = new ArrayList<Serializable>();
         List object = new ArrayList<Serializable>();
@@ -75,7 +76,7 @@ public class CallbackUtilsTest {
         object.add(object2);
         objects.add(object);
 
-        List newObjects = (List) CallbackUtils.handleCallbackObject(objects, piRemote, callbackService);
+        List newObjects = (List) CallbackUtils.handleCallbackObject(objects, instanceIdRemote, callbackService);
 
         assertEquals(1, newObjects.size());
         List newObject = (List) newObjects.get(0);
@@ -123,8 +124,8 @@ public class CallbackUtilsTest {
     private class DummyCallbackService implements CallbackService {
 
         @Override
-        public String addCallbackObject(Object callBackObject, NodeIdentifier nodeId) {
-            if (callBackObject == object1 && nodeId.equals(piRemote)) {
+        public String addCallbackObject(Object callBackObject, InstanceNodeSessionId nodeId) {
+            if (callBackObject == object1 && nodeId.equals(instanceIdRemote)) {
                 return id1;
             }
             return null;
@@ -137,10 +138,10 @@ public class CallbackUtilsTest {
         }
 
         @Override
-        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, NodeIdentifier proxyHome) {
-            if (callbackObject == object1 && objectIdentifier == id1 && proxyHome.equals(piRemote)) {
+        public Object createCallbackProxy(CallbackObject callbackObject, String objectIdentifier, InstanceNodeSessionId proxyHome) {
+            if (callbackObject == object1 && objectIdentifier == id1 && proxyHome.equals(instanceIdRemote)) {
                 return proxy11;
-            } else if (callbackObject == object2 && objectIdentifier == id2 && proxyHome.equals(piRemote)) {
+            } else if (callbackObject == object2 && objectIdentifier == id2 && proxyHome.equals(instanceIdRemote)) {
                 return proxy2;
             }
             return null;
@@ -250,8 +251,8 @@ public class CallbackUtilsTest {
         }
 
         @Override
-        public NodeIdentifier getHomePlatform() {
-            return piLocal;
+        public InstanceNodeSessionId getHomePlatform() {
+            return instanceIdLocal;
         }
 
         @Override

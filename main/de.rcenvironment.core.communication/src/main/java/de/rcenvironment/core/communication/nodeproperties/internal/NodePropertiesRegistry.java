@@ -18,8 +18,7 @@ import java.util.Map;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import de.rcenvironment.core.communication.common.NodeIdentifier;
-import de.rcenvironment.core.communication.common.NodeIdentifierFactory;
+import de.rcenvironment.core.communication.common.InstanceNodeSessionId;
 import de.rcenvironment.core.communication.nodeproperties.NodeProperty;
 
 /**
@@ -45,12 +44,12 @@ public class NodePropertiesRegistry {
      * @param nodeId the id of the target node
      * @return the property map
      */
-    public Map<String, String> getNodeProperties(NodeIdentifier nodeId) {
-        String nodeIdString = nodeId.getIdString();
+    public Map<String, String> getNodeProperties(InstanceNodeSessionId nodeId) {
+        String nodeIdString = nodeId.getInstanceNodeSessionIdString();
         Map<String, String> result = new HashMap<String, String>();
         for (NodePropertyImpl entry : knowledgeMap.values()) {
             CompositeNodePropertyKey key = entry.getCompositeKey();
-            if (key.getNodeIdString().equals(nodeIdString)) {
+            if (key.getInstanceNodeSessionIdString().equals(nodeIdString)) {
                 result.put(key.getDataKey(), entry.getValue());
             }
         }
@@ -64,8 +63,8 @@ public class NodePropertiesRegistry {
      * @param dataKey the property key to look up
      * @return the value for the given key, or null if it does not exist
      */
-    public NodeProperty getNodeProperty(NodeIdentifier nodeId, String dataKey) {
-        CompositeNodePropertyKey ckey = new CompositeNodePropertyKey(nodeId.getIdString(), dataKey);
+    public NodeProperty getNodeProperty(InstanceNodeSessionId nodeId, String dataKey) {
+        CompositeNodePropertyKey ckey = new CompositeNodePropertyKey(nodeId.getInstanceNodeSessionIdString(), dataKey);
         return knowledgeMap.get(ckey);
     }
 
@@ -76,7 +75,7 @@ public class NodePropertiesRegistry {
      * @param dataKey the property key to look up
      * @return the value for the given key, or null if it does not exist
      */
-    public String getNodePropertyValue(NodeIdentifier nodeId, String dataKey) {
+    public String getNodePropertyValue(InstanceNodeSessionId nodeId, String dataKey) {
         NodeProperty property = getNodeProperty(nodeId, dataKey);
         if (property != null) {
             return property.getValue();
@@ -88,13 +87,13 @@ public class NodePropertiesRegistry {
     /**
      * Returns the full property map for all known nodes.
      * 
-     * @return the map of property maps as returned by {@link #getNodeProperties(NodeIdentifier)}
+     * @return the map of property maps as returned by {@link #getNodeProperties(InstanceNodeSessionId)}
      */
-    public Map<NodeIdentifier, Map<String, String>> getAllNodeProperties() {
-        Map<NodeIdentifier, Map<String, String>> result = new HashMap<NodeIdentifier, Map<String, String>>();
+    public Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties() {
+        Map<InstanceNodeSessionId, Map<String, String>> result = new HashMap<InstanceNodeSessionId, Map<String, String>>();
         for (NodePropertyImpl entry : knowledgeMap.values()) {
             CompositeNodePropertyKey key = entry.getCompositeKey();
-            NodeIdentifier nodeId = NodeIdentifierFactory.fromNodeId(key.getNodeIdString());
+            InstanceNodeSessionId nodeId = entry.getInstanceNodeSessionId();
             Map<String, String> nodeMap = result.get(nodeId);
             if (!result.containsKey(nodeId)) {
                 nodeMap = new HashMap<String, String>();
@@ -109,11 +108,11 @@ public class NodePropertiesRegistry {
      * Returns the full property map for all given nodes.
      * 
      * @param nodeIds the ids of the relevant nodes
-     * @return the map of property maps as returned by {@link #getNodeProperties(NodeIdentifier)}
+     * @return the map of property maps as returned by {@link #getNodeProperties(InstanceNodeSessionId)}
      */
-    public Map<NodeIdentifier, Map<String, String>> getAllNodeProperties(Collection<NodeIdentifier> nodeIds) {
-        Map<NodeIdentifier, Map<String, String>> result = new HashMap<NodeIdentifier, Map<String, String>>();
-        for (NodeIdentifier nodeId : nodeIds) {
+    public Map<InstanceNodeSessionId, Map<String, String>> getAllNodeProperties(Collection<InstanceNodeSessionId> nodeIds) {
+        Map<InstanceNodeSessionId, Map<String, String>> result = new HashMap<InstanceNodeSessionId, Map<String, String>>();
+        for (InstanceNodeSessionId nodeId : nodeIds) {
             result.put(nodeId, getNodeProperties(nodeId));
         }
         return result;

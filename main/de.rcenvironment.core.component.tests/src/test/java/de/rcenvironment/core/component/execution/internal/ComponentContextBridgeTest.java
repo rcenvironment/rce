@@ -77,9 +77,11 @@ public class ComponentContextBridgeTest {
     private static final String TARGET_INPUT_1 = "input_1-target";
 
     private static final String TARGET_INPUT_2 = "input_2-target";
-    
+
     private static final String SER_OUTPUT_TYPED_DATUM = "ser-output-datum";
-    
+
+    private static final Long DM_ID = Long.valueOf(5);
+
     private TypedDatum outputTypedDatum;
 
     static {
@@ -94,6 +96,7 @@ public class ComponentContextBridgeTest {
     public void bindServices() {
         @SuppressWarnings("deprecation") ComponentContextBridge componentContextBridge = new ComponentContextBridge();
         componentContextBridge.bindTypedDatumService(new TypedDatumServiceDefaultStub() {
+
             @Override
             public TypedDatumConverter getConverter() {
                 return new TypedDatumConverterDefaultStub() {
@@ -108,21 +111,23 @@ public class ComponentContextBridgeTest {
                     }
                 };
             }
+
             @Override
             public TypedDatumSerializer getSerializer() {
                 return new TypedDatumSerializerDefaultStub() {
+
                     @Override
                     public String serialize(TypedDatum input) {
                         if (input == outputTypedDatum) {
                             return SER_OUTPUT_TYPED_DATUM;
                         } else {
-                            throw new RuntimeException("Unexpected parameters passed");            
+                            throw new RuntimeException("Unexpected parameters passed");
                         }
                     }
                 };
             }
         });
-        
+
         outputTypedDatum = createTypedDatumMock(DataType.Integer);
     }
 
@@ -241,28 +246,12 @@ public class ComponentContextBridgeTest {
 
     /**
      * Tests writing a value to an output.
+     * 
      * @throws ComponentExecutionException on unexpected error
      */
     @Test
-    public void testWriteOutput() throws ComponentExecutionException {
-        ComponentExecutionRelatedInstances compExeRelatedInstances = createComponentExecutionRelatedInstances();
-        ComponentContextBridge compCtxBridge = new ComponentContextBridge(compExeRelatedInstances);
-        
-        ComponentExecutionStorageBridge compExeStorageBridgeMock = EasyMock.createStrictMock(ComponentExecutionStorageBridge.class);
-        Capture<String> outputNameCapture = new Capture<>();
-        Capture<String> serDatumCapture = new Capture<>();
-        EasyMock.expect(compExeStorageBridgeMock.addOutput(EasyMock.capture(outputNameCapture), EasyMock.capture(serDatumCapture)))
-            .andReturn(Long.valueOf(8));
-        Long dmId = Long.valueOf(5);
-        EasyMock.expect(compExeStorageBridgeMock.addOutput(EasyMock.capture(outputNameCapture), EasyMock.capture(serDatumCapture)))
-            .andReturn(dmId);
-        EasyMock.replay(compExeStorageBridgeMock);
-        compExeRelatedInstances.compExeStorageBridge = compExeStorageBridgeMock;
-        
-        compCtxBridge.writeOutput(OUTPUT_1, outputTypedDatum);
-        assertEquals(OUTPUT_1, outputNameCapture.getValue());
-        assertEquals(SER_OUTPUT_TYPED_DATUM, serDatumCapture.getValue());
-        
+    public void testWriteOutputNoVerificationRequired() throws ComponentExecutionException {
+
         TypedDatumToOutputWriter typedDatumToOutputWriterMock = EasyMock.createStrictMock(TypedDatumToOutputWriter.class);
         Capture<String> nameCapture = new Capture<>();
         Capture<TypedDatum> datumToSendCapture = new Capture<>();
@@ -270,16 +259,55 @@ public class ComponentContextBridgeTest {
         typedDatumToOutputWriterMock.writeTypedDatumToOutput(EasyMock.capture(nameCapture),
             EasyMock.capture(datumToSendCapture), EasyMock.captureLong(dmIdCapture));
         EasyMock.replay(typedDatumToOutputWriterMock);
-        compExeRelatedInstances.typedDatumToOutputWriter = typedDatumToOutputWriterMock;
-        
-        compCtxBridge.writeOutput(OUTPUT_2, outputTypedDatum);
+
+        testWriteOutput(typedDatumToOutputWriterMock, false);
+
         assertEquals(OUTPUT_2, nameCapture.getValue());
         assertEquals(outputTypedDatum, datumToSendCapture.getValue());
-        assertEquals(dmId, dmIdCapture.getValue());
-        
-        EasyMock.verify(compExeStorageBridgeMock);
-        
+        assertEquals(DM_ID, dmIdCapture.getValue());
+
         // TODO test close is reset to false and not-a-value is handled properly
+    }
+
+    /**
+     * Tests if values sent to an output are not sent to another component in case verification is required.
+     * 
+     * @throws ComponentExecutionException on unexpected error
+     */
+    @Test
+    public void testWriteOutputIfVerificationRequired() throws ComponentExecutionException {
+
+        TypedDatumToOutputWriter typedDatumToOutputWriterMock = EasyMock.createStrictMock(TypedDatumToOutputWriter.class);
+        EasyMock.replay(typedDatumToOutputWriterMock);
+
+        testWriteOutput(typedDatumToOutputWriterMock, true);
+    }
+
+    private void testWriteOutput(TypedDatumToOutputWriter typedDatumToOutputWriterMock, boolean verificationRequired)
+        throws ComponentExecutionException {
+        ComponentExecutionRelatedInstances compExeRelatedInstances = createComponentExecutionRelatedInstances(verificationRequired);
+        ComponentContextBridge compCtxBridge = new ComponentContextBridge(compExeRelatedInstances);
+
+        ComponentExecutionStorageBridge compExeStorageBridgeMock = EasyMock.createStrictMock(ComponentExecutionStorageBridge.class);
+        Capture<String> outputNameCapture = new Capture<>();
+        Capture<String> serDatumCapture = new Capture<>();
+        EasyMock.expect(compExeStorageBridgeMock.addOutput(EasyMock.capture(outputNameCapture), EasyMock.capture(serDatumCapture)))
+            .andReturn(Long.valueOf(8));
+        EasyMock.expect(compExeStorageBridgeMock.addOutput(EasyMock.capture(outputNameCapture), EasyMock.capture(serDatumCapture)))
+            .andReturn(DM_ID);
+        EasyMock.replay(compExeStorageBridgeMock);
+        compExeRelatedInstances.compExeStorageBridge = compExeStorageBridgeMock;
+
+        compCtxBridge.writeOutput(OUTPUT_1, outputTypedDatum);
+        assertEquals(OUTPUT_1, outputNameCapture.getValue());
+        assertEquals(SER_OUTPUT_TYPED_DATUM, serDatumCapture.getValue());
+
+        compExeRelatedInstances.typedDatumToOutputWriter = typedDatumToOutputWriterMock;
+
+        compCtxBridge.writeOutput(OUTPUT_2, outputTypedDatum);
+
+        EasyMock.verify(typedDatumToOutputWriterMock);
+        EasyMock.verify(compExeStorageBridgeMock);
     }
 
     /**
@@ -420,14 +448,14 @@ public class ComponentContextBridgeTest {
 
         compCtxBridge.writeFinalHistoryDataItem(compHistoryDataItemMock);
         assertTrue(compExeRelatedInstances.compExeRelatedStates.finalHistoryDataItemWritten.get());
-        
+
         assertEquals(serCompHistoryDataItem, serCompHistoryDataItemCapture.getValues().get(0));
-        
+
         compCtxBridge.writeIntermediateHistoryData(compHistoryDataItemMock);
         assertTrue(compExeRelatedInstances.compExeRelatedStates.intermediateHistoryDataWritten.get());
-        
+
         assertEquals(serCompHistoryDataItem, serCompHistoryDataItemCapture.getValues().get(1));
-        
+
         EasyMock.verify(consoleRowsSenderMock);
         EasyMock.verify(compExeStorageBridgeMock);
     }
@@ -435,7 +463,8 @@ public class ComponentContextBridgeTest {
     private ConsoleRowsSender createConsoleRowsSenderMock(Capture<String> logMessageCapture,
         Capture<ConsoleRow.Type> consoleRowTypeCatpure) {
         ConsoleRowsSender consoleRowsSenderMock = EasyMock.createStrictMock(ConsoleRowsSender.class);
-        consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCatpure), EasyMock.capture(logMessageCapture));
+        consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCatpure), EasyMock.capture(logMessageCapture),
+            EasyMock.anyInt());
         EasyMock.replay(consoleRowsSenderMock);
         return consoleRowsSenderMock;
     }
@@ -471,7 +500,8 @@ public class ComponentContextBridgeTest {
         Capture<String> logMessageCapture = new Capture<>();
         Capture<ConsoleRow.Type> consoleRowTypeCatpure = new Capture<>();
         ConsoleRowsSender consoleRowsSenderMock = EasyMock.createStrictMock(ConsoleRowsSender.class);
-        consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCatpure), EasyMock.capture(logMessageCapture));
+        consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCatpure), EasyMock.capture(logMessageCapture),
+            EasyMock.anyInt());
         EasyMock.replay(consoleRowsSenderMock);
         compExeRelatedInstances.consoleRowsSender = consoleRowsSenderMock;
 
@@ -541,13 +571,17 @@ public class ComponentContextBridgeTest {
      */
     @Test
     public void testPrintConsoleRow() {
-        Capture<String> logMessageCapture = new Capture<>();
-        Capture<ConsoleRow.Type> consoleRowTypeCatpure = new Capture<>();
+        Capture<String> logMessageCapture = new Capture<>(CaptureType.ALL);
+        Capture<ConsoleRow.Type> consoleRowTypeCatpure = new Capture<>(CaptureType.ALL);
+        Capture<Integer> compRunCapture = new Capture<>(CaptureType.ALL);
         ConsoleRowsSender consoleRowsSenderMock = EasyMock.createStrictMock(ConsoleRowsSender.class);
-        consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCatpure), EasyMock.capture(logMessageCapture));
+        consoleRowsSenderMock.sendLogMessageAsConsoleRow(EasyMock.capture(consoleRowTypeCatpure), EasyMock.capture(logMessageCapture),
+            EasyMock.captureInt(compRunCapture));
         EasyMock.replay(consoleRowsSenderMock);
 
         ComponentExecutionRelatedInstances compExeRelatedInstances = createComponentExecutionRelatedInstances();
+        final int compRun = 8;
+        compExeRelatedInstances.compExeRelatedStates.executionCount.set(compRun);
         compExeRelatedInstances.consoleRowsSender = consoleRowsSenderMock;
         ComponentContextBridge compCtxBridge = new ComponentContextBridge(compExeRelatedInstances);
 
@@ -560,6 +594,8 @@ public class ComponentContextBridgeTest {
         assertEquals(ConsoleRow.Type.COMPONENT_WARN, consoleRowTypeCatpure.getValue());
         assertEquals(1, logMessageCapture.getValues().size());
         assertEquals(message, logMessageCapture.getValue());
+        assertEquals(1, compRunCapture.getValues().size());
+        assertTrue(compRunCapture.getValue().equals(compRun));
 
         EasyMock.reset(consoleRowsSenderMock);
 
@@ -580,6 +616,10 @@ public class ComponentContextBridgeTest {
     }
 
     private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstances() {
+        return createComponentExecutionRelatedInstances(false);
+    }
+
+    private ComponentExecutionRelatedInstances createComponentExecutionRelatedInstances(boolean verificationRequired) {
 
         Map<String, EndpointDescription> inputDescriptions = new HashMap<>();
         inputDescriptions.put(INPUT_1, createEndpointDescriptionMock(INPUT_1, DATA_TYPE_1));
@@ -594,6 +634,8 @@ public class ComponentContextBridgeTest {
         final ComponentDescription compDescMock = EasyMock.createStrictMock(ComponentDescription.class);
         EasyMock.expect(compDescMock.getInputDescriptionsManager()).andStubReturn(inputDescManagerMock);
         EasyMock.expect(compDescMock.getOutputDescriptionsManager()).andStubReturn(outputDescManagerMock);
+        EasyMock.expect(compDescMock.getConfigurationDescription())
+            .andStubReturn(ConfigurationDescriptionMockFactory.createConfigurationDescriptionMock(verificationRequired));
         EasyMock.replay(compDescMock);
 
         ComponentExecutionRelatedInstances compExeRelatedInstances = new ComponentExecutionRelatedInstances();
@@ -605,6 +647,8 @@ public class ComponentContextBridgeTest {
                 return compDescMock;
             }
         };
+
+        compExeRelatedInstances.compExeRelatedStates = new ComponentExecutionRelatedStates();
 
         return compExeRelatedInstances;
     }
@@ -630,6 +674,7 @@ public class ComponentContextBridgeTest {
     private EndpointDescription createEndpointDescriptionMock(String name, DataType dataType) {
         return createEndpointDescriptionMock(name, dataType, false);
     }
+
     private EndpointDescription createEndpointDescriptionMock(String name, DataType dataType, boolean connected) {
         EndpointDescription epDescMock = EasyMock.createStrictMock(EndpointDescription.class);
         EasyMock.expect(epDescMock.getName()).andStubReturn(name);
