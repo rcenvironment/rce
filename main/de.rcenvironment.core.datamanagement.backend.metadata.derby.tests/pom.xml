@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.datamanagement.backend.metadata.derby.tests</artifactId>
 	<name>RCE Core Datamanagement Backend Catalog Derby Bundle Tests</name>
-	<version>8.0.0.qualifier</version>
+	<version>8.0.1.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

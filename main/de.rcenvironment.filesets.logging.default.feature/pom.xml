@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.filesets.logging.default.feature</artifactId>
 	<name>RCE File Sets - Default Logging Configuration</name>
-	<version>8.0.0.qualifier</version>
+	<version>8.0.1.qualifier</version>
 	<packaging>eclipse-feature</packaging>
 
 	<parent>

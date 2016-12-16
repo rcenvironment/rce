@@ -38,7 +38,7 @@ public class RemoveDynamicInputWithAnotherPossibleInputAndOutputCommand extends 
             oldDescriptions.put(name, getProperties().getInputDescriptionsManager().getEndpointDescription(name));
             EndpointDescription endpointDescription = getProperties().getInputDescriptionsManager()
                 .getEndpointDescription(name + inputNameSuffix);
-            if (!name.endsWith(inputNameSuffix) && endpointDescription != null) {
+            if (endpointDescription != null) {
                 inputsWithSuffixInput.add(name);
             }
         }
@@ -49,8 +49,7 @@ public class RemoveDynamicInputWithAnotherPossibleInputAndOutputCommand extends 
         for (String name : names) {
             EndpointDescription endpointDescription = getProperties().getInputDescriptionsManager()
                 .getEndpointDescription(name + inputNameSuffix);
-            if (!name.endsWith(inputNameSuffix)
-                && endpointDescription != null) {
+            if (endpointDescription != null) {
                 InputWithOutputsCommandUtils.removeInputWithSuffix(getProperties(), name, inputNameSuffix);
             }
         }

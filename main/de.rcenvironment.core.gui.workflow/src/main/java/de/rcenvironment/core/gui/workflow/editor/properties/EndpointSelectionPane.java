@@ -552,47 +552,47 @@ public class EndpointSelectionPane implements Refreshable {
     protected void updateButtonActivation() {
         TableItem[] selection = table.getSelection();
         boolean hasSelection = selection.length != 0;
-        boolean isDynamic = false;
-        boolean dynamicReadOnly = false;
+        boolean addible = endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage) != null;
+        boolean editable = false;
+        boolean removable = false;
         if (hasSelection) {
-            isDynamic = !endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition().isStatic();
-            if (isDynamic) {
-                dynamicReadOnly = endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition().isReadOnly();
-            }
-        }
-        buttonRemove.setEnabled(hasSelection && (isDynamic && !dynamicReadOnly));
+            boolean containsStaticOrReadOnly = selectionContainsStaticOrReadOnly(Arrays.asList(selection));
+            editable = selection.length == 1 && !containsStaticOrReadOnly;
+            removable = !containsStaticOrReadOnly;
+            if (selection.length == 1) {
+                EndpointDefinition definition = endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition();
+                if (definition.isStatic()) {
+                    editable = definition.getPossibleDataTypes().size() > 1
+                        || definition.getInputDatumOptions().size() > 1
+                        || definition.getInputExecutionConstraintOptions().size() > 1;
+                    EndpointMetaDataDefinition metaDescription = definition.getMetaDataDefinition();
+                    if (metaDescription != null && metaDescription.getMetaDataKeys().size() > 0) {
+                        for (String key : metaDescription.getMetaDataKeys()) {
+                            editable |= isValueEditable(selection[0].getText(), key);
 
-        boolean editAble = false;
-        if (hasSelection && !isDynamic) {
-            editAble =
-                endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition().getPossibleDataTypes()
-                    .size() > 1
-                    || endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition().getInputDatumOptions()
-                        .size() > 1
-                    || endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition()
-                        .getInputExecutionConstraintOptions()
-                        .size() > 1;
-            EndpointMetaDataDefinition metaDescription =
-                endpointManager.getEndpointDescription(selection[0].getText()).getEndpointDefinition()
-                    .getMetaDataDefinition();
-            if (metaDescription != null && metaDescription.getMetaDataKeys().size() > 0) {
-                for (String key : metaDescription.getMetaDataKeys()) {
-                    editAble |= isValueEditable(selection[0].getText(), key);
-
+                        }
+                    }
                 }
             }
         }
-        if (selection.length == 1) {
-            buttonEdit.setEnabled(editAble || (isDynamic && !dynamicReadOnly));
-        } else {
-            buttonEdit.setEnabled(false);
+
+        buttonAdd.setEnabled(addible);
+        buttonEdit.setEnabled(editable);
+        buttonRemove.setEnabled(removable);
+
+        itemAdd.setEnabled(addible);
+        itemEdit.setEnabled(editable);
+        itemRemove.setEnabled(removable);
+    }
+
+    private boolean selectionContainsStaticOrReadOnly(List<TableItem> tableItems) {
+        for (TableItem item : tableItems) {
+            if (endpointManager.getEndpointDescription(item.getText()).getEndpointDefinition().isReadOnly()
+                || endpointManager.getEndpointDescription(item.getText()).getEndpointDefinition().isStatic()) {
+                return true;
+            }
         }
-
-        buttonAdd.setEnabled(endpointManager.getDynamicEndpointDefinition(dynEndpointIdToManage) != null);
-
-        itemEdit.setEnabled(buttonEdit.isEnabled());
-        itemRemove.setEnabled(buttonRemove.isEnabled());
-        itemAdd.setEnabled(buttonAdd.isEnabled());
+        return false;
     }
 
     /**

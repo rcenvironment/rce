@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-Name: RCE Core Communication
 Bundle-SymbolicName: de.rcenvironment.core.communication;singleton:=true
 Bundle-Vendor: DLR
-Bundle-Version: 8.0.0.qualifier
+Bundle-Version: 8.0.1.qualifier
 Export-Package: de.rcenvironment.core.communication.api,
  de.rcenvironment.core.communication.channel,
  de.rcenvironment.core.communication.common,

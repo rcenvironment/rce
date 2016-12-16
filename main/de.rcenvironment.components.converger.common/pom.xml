@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.components.converger.common</artifactId>
 	<name>RCE Converger Component Common Bundle</name>
-	<version>8.0.0.qualifier</version>
+	<version>8.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

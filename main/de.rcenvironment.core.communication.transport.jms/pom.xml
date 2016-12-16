@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.communication.transport.jms</artifactId>
 	<name>RCE Core Communication - JMS/ActiveMQ Transport</name>
-	<version>8.0.0.qualifier</version>
+	<version>8.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

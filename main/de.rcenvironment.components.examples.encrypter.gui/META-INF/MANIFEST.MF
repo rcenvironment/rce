@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Encrypter Component GUI (Example Component)
 Bundle-SymbolicName: de.rcenvironment.components.examples.encrypter.gui;singleton:=true
-Bundle-Version: 8.0.0.qualifier
+Bundle-Version: 8.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-Localization: plugin
 Import-Package: de.rcenvironment.components.examples.encrypter.common,

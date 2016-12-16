@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_8.0.0.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="8.0.0.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.special.feature_8.0.0.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="8.0.0.qualifier"/>
-   <feature url="features/de.rcenvironment.componentgroups.standard.feature_8.0.0.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="8.0.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.combined.feature_8.0.0.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="8.0.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_8.0.0.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="8.0.0.qualifier"/>
-   <feature url="features/de.rcenvironment.documentation.core.feature_8.0.0.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="8.0.0.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.cpacs.feature_8.0.1.qualifier.jar" id="de.rcenvironment.componentgroups.cpacs.feature" version="8.0.1.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.special.feature_8.0.1.qualifier.jar" id="de.rcenvironment.componentgroups.special.feature" version="8.0.1.qualifier"/>
+   <feature url="features/de.rcenvironment.componentgroups.standard.feature_8.0.1.qualifier.jar" id="de.rcenvironment.componentgroups.standard.feature" version="8.0.1.qualifier"/>
+   <feature url="features/de.rcenvironment.core.combined.feature_8.0.1.qualifier.jar" id="de.rcenvironment.core.combined.feature" version="8.0.1.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.branding.default.feature_8.0.1.qualifier.jar" id="de.rcenvironment.core.gui.branding.default.feature" version="8.0.1.qualifier"/>
+   <feature url="features/de.rcenvironment.documentation.core.feature_8.0.1.qualifier.jar" id="de.rcenvironment.documentation.core.feature" version="8.0.1.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.configuration.samples.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.configuration.samples.feature" version="7.1.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.extras.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.extras.feature" version="7.1.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.integration.tools.templates.common.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.integration.tools.templates.common.feature" version="7.1.0.qualifier"/>
@@ -14,5 +14,5 @@
    <feature url="features/de.rcenvironment.filesets.licensing.thirdparty.default.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.licensing.thirdparty.default.feature" version="7.1.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.logging.default.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.logging.default.feature" version="7.1.0.qualifier"/>
    <feature url="features/de.rcenvironment.filesets.sql.connectors.mysql.feature_7.1.0.qualifier.jar" id="de.rcenvironment.filesets.sql.connectors.mysql.feature" version="7.1.0.qualifier"/>
-   <feature url="features/de.rcenvironment.core.gui.help.feature_8.0.0.qualifier.jar" id="de.rcenvironment.core.gui.help.feature" version="8.0.0.qualifier"/>
+   <feature url="features/de.rcenvironment.core.gui.help.feature_8.0.1.qualifier.jar" id="de.rcenvironment.core.gui.help.feature" version="8.0.1.qualifier"/>
 </site>

@@ -48,6 +48,8 @@ import de.rcenvironment.core.utils.common.TempFileServiceAccess;
  */
 public class DOEComponent extends AbstractNestedLoopComponent {
 
+    private static final int MINUS_ONE = -1;
+
     private static final String PLACEHOLDER_STRING = "%s: %s";
 
     private static final String WROTE_VALUE_TO_OUTPUT_TEXT = "Wrote to output '%s': %s";
@@ -60,7 +62,7 @@ public class DOEComponent extends AbstractNestedLoopComponent {
 
     private int runNumber = 0;
 
-    private int endSample = 0;
+    private int endSample = MINUS_ONE;
 
     private DOEComponentHistoryDataItem historyDataItem;
 
@@ -163,7 +165,9 @@ public class DOEComponent extends AbstractNestedLoopComponent {
         default:
             break;
         }
-
+        if (this.endSample < 0) {
+            this.endSample = valuesTable.length;
+        }
         try {
             int i = 0;
             codedValues = new Double[valuesTable.length][valuesTable[0].length];
@@ -179,7 +183,11 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             }
             if (outputs.size() > 0) {
                 tableFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOETable*.csv");
-                DOEUtils.writeTableToCSVFile(codedValues, tableFile.getAbsolutePath(), outputs);
+                if (!(componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE))) {
+                    DOEUtils.writeTableToCSVFile(codedValues, tableFile.getAbsolutePath(), outputs);
+                } else {
+                    DOEUtils.writeTableToCSVFile(valuesTable, tableFile.getAbsolutePath(), outputs);
+                }
             }
         } catch (IOException e) {
             String errorMessage = "Failed to write DOE table file";
@@ -280,7 +288,11 @@ public class DOEComponent extends AbstractNestedLoopComponent {
             File resultFile = null;
             try {
                 resultFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("DOEResult*.csv");
-                DOEUtils.writeResultToCSVFile(codedValues, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
+                if (componentContext.getConfigurationValue(DOEConstants.KEY_METHOD).equals(DOEConstants.DOE_ALGORITHM_CUSTOM_TABLE)) {
+                    DOEUtils.writeResultToCSVFile(valuesTable, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
+                } else {
+                    DOEUtils.writeResultToCSVFile(codedValues, resultData, resultFile.getAbsolutePath(), runNumber, outputs);
+                }
                 FileReferenceTD resultFileReference =
                     componentContext.getService(ComponentDataManagementService.class).createFileReferenceTDFromLocalFile(componentContext,
                         resultFile, "Result.csv");

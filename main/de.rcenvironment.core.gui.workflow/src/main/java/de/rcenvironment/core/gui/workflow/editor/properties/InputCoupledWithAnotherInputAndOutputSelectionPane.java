@@ -12,8 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.eclipse.swt.widgets.TableItem;
-
 import de.rcenvironment.core.component.api.LoopComponentConstants;
 import de.rcenvironment.core.component.model.endpoint.api.EndpointDescription;
 import de.rcenvironment.core.datamodel.api.DataType;
@@ -81,16 +79,6 @@ public class InputCoupledWithAnotherInputAndOutputSelectionPane extends Forwardi
             new RemoveDynamicInputWithAnotherPossibleInputAndOutputCommand(dynEndpointId, names, inputNameSuffix, this,
                 outputPane);
         execute(command);
-    }
-
-    @Override
-    protected void updateButtonActivation() {
-        super.updateButtonActivation();
-        TableItem[] selection = table.getSelection();
-        if (selection.length == 1 && selection[0].getText().endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
-            buttonEdit.setEnabled(false);
-            buttonRemove.setEnabled(false);
-        }
     }
 
     @Override

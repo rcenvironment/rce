@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.gui.wizards.toolintegration</artifactId>
 	<name>RCE Core GUI Wizards Toolintegration Bundle</name>
-	<version>8.0.0.qualifier</version>
+	<version>8.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

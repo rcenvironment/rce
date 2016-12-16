@@ -5,7 +5,7 @@
     <title>Design of Experiments Component Usage</title>
     <sect1>
         <title>Synopsis</title>
-    <para>The Design of Experiments component sends values (floating-point numbers) to other components. The values
+    <para>The Design of Experiment component sends values (floating-point numbers) to other components. The values
             are either generated on the base of a design method or are provided by a custom design
             table. The values can be used to sample a solution within a bounded space. They are
             independent to each other.</para>

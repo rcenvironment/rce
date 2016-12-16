@@ -4,7 +4,7 @@
 
 	<artifactId>de.rcenvironment.core.component.scripting</artifactId>
 	<name>RCE Core Scripting Component Bundle</name>
-	<version>8.0.0.qualifier</version>
+	<version>8.0.1.qualifier</version>
 	<packaging>eclipse-plugin</packaging>
 
 	<parent>

@@ -10,11 +10,8 @@ package de.rcenvironment.components.converger.gui;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
-import org.eclipse.swt.widgets.TableItem;
 
 import de.rcenvironment.components.converger.common.ConvergerComponentConstants;
 import de.rcenvironment.core.component.api.ComponentConstants;
@@ -128,15 +125,6 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
 
     @Override
     protected void executeRemoveCommand(List<String> names) {
-        List<String> removeNames = new LinkedList<>();
-        for (String name : names) {
-            if (name.endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
-                removeNames.add(name);
-            }
-        }
-        for (String remove : removeNames) {
-            names.remove(remove);
-        }
         ProcessEndpointsGroupCommand groupCommand = new ProcessEndpointsGroupCommand(executor, this, outputPane);
         for (String name : names) {
             groupCommand.add(new RemoveDynamicInputCommand(ConvergerComponentConstants.ENDPOINT_ID_TO_CONVERGE,
@@ -153,13 +141,4 @@ public class ConvergerEndpointSelectionPane extends EndpointSelectionPane {
         execute(groupCommand);
     }
 
-    @Override
-    protected void updateButtonActivation() {
-        super.updateButtonActivation();
-        TableItem[] selection = table.getSelection();
-        if (selection.length == 1 && selection[0].getText().endsWith(LoopComponentConstants.ENDPOINT_STARTVALUE_SUFFIX)) {
-            buttonEdit.setEnabled(false);
-            buttonRemove.setEnabled(false);
-        }
-    }
 }

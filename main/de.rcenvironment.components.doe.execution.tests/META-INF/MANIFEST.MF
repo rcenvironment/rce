@@ -3,7 +3,7 @@ Bundle-ManifestVersion: 2
 Bundle-Name: RCE Components DOE Execution Tests Bundle
 Bundle-Vendor: DLR
 Bundle-SymbolicName: de.rcenvironment.components.doe.execution.tests
-Bundle-Version: 8.0.0.qualifier
+Bundle-Version: 8.0.1.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Fragment-Host: de.rcenvironment.components.doe.execution
 Require-Bundle: de.rcenvironment.core.utils.testing
