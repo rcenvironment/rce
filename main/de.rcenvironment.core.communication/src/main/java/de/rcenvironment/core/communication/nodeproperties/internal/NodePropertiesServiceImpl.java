@@ -417,7 +417,7 @@ public class NodePropertiesServiceImpl implements NodePropertiesService {
                     // in this unlikely case, proceed; log messages will contain 'null', but all other behavior is valid - misc_ro
                 }
                 if (!response.isSuccess()) {
-                    log.warn(StringUtils.format("Initial node property exchange with %s via channel %s failed: ",
+                    log.warn(StringUtils.format("Initial node property exchange with %s via channel %s failed: %s",
                         sender, channel.getChannelId(), response.getResultCode()));
                     return;
                 }

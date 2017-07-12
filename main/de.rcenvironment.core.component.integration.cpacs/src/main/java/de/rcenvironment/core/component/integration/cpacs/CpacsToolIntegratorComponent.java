@@ -68,8 +68,6 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
 
     private static final String STRING_CPACS_RESULT_FILE_CREATED = "CPACS result file created (%s)): %s";
 
-    private static final String STRING_TOOL_OUTPUT_FILE_EXISTS = "Tool output file '%s' exists: %s";
-
     private static final String SUFFIX_MAPPED = "-mapped";
 
     private static final String STRING_NOT_AVAILABLE_IN_WDB = "; it is not available in the workflow data browser";
@@ -487,11 +485,7 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
         }
 
         try {
-            Boolean outputFileExists = new File(getToolOutput()).exists();
-            componentLog.componentInfo(StringUtils.format(STRING_TOOL_OUTPUT_FILE_EXISTS, getToolOutput(),
-                outputFileExists));
-
-            if (!outputFileExists) {
+            if (needsToRun && !new File(getToolOutput()).exists()) {
                 throw new ComponentException(
                     StringUtils.format(
                         "Failed to perform output mapping. Tool output file is missing after post script execution: %s",
@@ -506,6 +500,11 @@ public class CpacsToolIntegratorComponent extends CommonToolIntegratorComponent 
                     tmpOutputFile = TempFileServiceAccess.getInstance().createTempFileFromPattern("cpacsToolOutput-*.xml");
                     FileUtils.copyFile(new File(getToolOutput()), tmpOutputFile);
                 } else {
+                    if (!tmpOutputFile.exists()) {
+                        throw new ComponentException(
+                            "Failed to perform output mapping after skipped tool execution. "
+                                + "The temporary tool output file of last execution is missing.");
+                    }
                     FileUtils.copyFile(tmpOutputFile, new File(getToolOutput()));
                 }
             }

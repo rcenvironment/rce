@@ -174,7 +174,7 @@ public class ToolIntegrationFileWatcher implements Runnable {
                     running = false;
                 }
             } catch (InterruptedException e) {
-                LOGGER.error("Got interrupted waiting for watch keys.", e);
+                LOGGER.debug("Got interrupted waiting for watch keys. " + e.getMessage());
                 return;
             } catch (ClosedWatchServiceException e) {
                 running = false;

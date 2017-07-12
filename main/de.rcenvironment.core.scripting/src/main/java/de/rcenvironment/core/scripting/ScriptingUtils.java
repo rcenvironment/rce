@@ -127,13 +127,13 @@ public final class ScriptingUtils {
         jythonPath = path;
     }
 
-//    /**
-//     * Set JVM properties required for proper Jython 2.7.0 support.
-//     */
-//    public static void setJVMPropertiesForJython270Support() {
-//        System.setProperty("python.import.site", "false");
-//        System.setProperty("python.console.encoding", "UTF-8");
-//    }
+    // /**
+    // * Set JVM properties required for proper Jython 2.7.0 support.
+    // */
+    // public static void setJVMPropertiesForJython270Support() {
+    // System.setProperty("python.import.site", "false");
+    // System.setProperty("python.console.encoding", "UTF-8");
+    // }
 
     /**
      * Determines the location of the jython.jar.
@@ -468,11 +468,30 @@ public final class ScriptingUtils {
      * @param engine script engine
      * @param workingPath for files
      * @param historyDataItem of component instance
-     * @throws ComponentException e
+     * @throws ComponentException e if there is an error
+     */
+    public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext, ScriptEngine engine,
+        String workingPath, ComponentHistoryDataItem historyDataItem)
+        throws ComponentException {
+        writeAPIOutput(stateMap, componentContext, engine, workingPath, historyDataItem, null);
+
+    }
+
+    /**
+     * Write all output written with the RCE Script API.
+     * 
+     * @param stateMap current state map of script
+     * @param componentContext from component
+     * @param engine script engine
+     * @param workingPath for files
+     * @param historyDataItem of component instance
+     * @param lastRunStaticOutputValues map if the outputs should be saved
+     * @throws ComponentException e if there is an error
      */
     @SuppressWarnings("unchecked")
     public static void writeAPIOutput(Map<String, Object> stateMap, ComponentContext componentContext, ScriptEngine engine,
-        String workingPath, ComponentHistoryDataItem historyDataItem) throws ComponentException {
+        String workingPath, ComponentHistoryDataItem historyDataItem, Map<String, TypedDatum> lastRunStaticOutputValues)
+        throws ComponentException {
         Map<String, ArrayList<Object>> map = (Map<String, ArrayList<Object>>) engine.get("RCE_Dict_OutputChannels");
         // send values to outputs, using the Map
         // this block sends the values when the user calls the method RCE.write_output()
@@ -483,9 +502,11 @@ public final class ScriptingUtils {
             if (datas != null) {
                 for (Object value : datas) {
                     if (value != null && !String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
-                        writeOutputByType(value, type, outputName, workingPath, engine, historyDataItem, componentContext);
+                        TypedDatum outputValue = getOutputByType(value, type, outputName, workingPath, engine, componentContext);
+                        writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName, outputValue);
                     } else if (String.valueOf(value).equals(NOT_A_VALUE_UUID)) {
-                        componentContext.writeOutput(outputName, typedDatumFactory.createNotAValue());
+                        writeOutput(componentContext, historyDataItem, lastRunStaticOutputValues, outputName,
+                            typedDatumFactory.createNotAValue());
                     }
                 }
             }
@@ -498,6 +519,15 @@ public final class ScriptingUtils {
         for (String endpointName : (List<String>) engine.get("RCE_CloseOutputChannelsList")) {
             componentContext.closeOutput(endpointName);
         }
+    }
+
+    private static void writeOutput(ComponentContext componentContext, ComponentHistoryDataItem historyDataItem,
+        Map<String, TypedDatum> lastRunStaticOutputValues, String outputName, TypedDatum outputValue) {
+        componentContext.writeOutput(outputName, outputValue);
+        if (lastRunStaticOutputValues != null) {
+            lastRunStaticOutputValues.put(outputName, outputValue);
+        }
+        addOutputToHistoryDataItem(outputName, outputValue, historyDataItem);
     }
 
     /**
@@ -526,8 +556,9 @@ public final class ScriptingUtils {
     }
 
     @SuppressWarnings("unchecked")
-    protected static void writeOutputByType(Object value, DataType type, String name, String workingPath, ScriptEngine engine,
-        ComponentHistoryDataItem historyDataItem, ComponentContext componentContext) throws ComponentException {
+    protected static TypedDatum getOutputByType(Object value, DataType type, String name, String workingPath, ScriptEngine engine,
+        ComponentContext componentContext)
+        throws ComponentException {
         TypedDatum outputValue = null;
         switch (type) {
         case ShortText:
@@ -623,9 +654,7 @@ public final class ScriptingUtils {
             outputValue = typedDatumFactory.createShortText(engine.get(name).toString());
             break;
         }
-
-        componentContext.writeOutput(name, outputValue);
-        addOutputToHistoryDataItem(name, outputValue, historyDataItem);
+        return outputValue;
     }
 
     /**

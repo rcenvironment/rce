@@ -229,7 +229,7 @@ public final class BootstrapConfiguration {
         String profileOptionHintToPrint = PROFILE_OPTION_HINT;
         // if the user specified profile directory is used, print a modified profile option hint
         if (profileOptionUsed && finalProfileDirectory.getCanonicalPath().equals(originalProfileDirectory.getCanonicalPath())) {
-            profileOptionHintToPrint = "(as specified by the -p/--profile option)";
+            profileOptionHintToPrint = " (as specified by the -p/--profile option)";
         }
 
         // circumvent CheckStyle rule to generate basic output before the log system is initialized

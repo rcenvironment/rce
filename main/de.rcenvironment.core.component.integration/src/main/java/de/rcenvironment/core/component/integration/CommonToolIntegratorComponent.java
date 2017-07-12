@@ -217,7 +217,8 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         datamanagementService = componentContext.getService(ComponentDataManagementService.class);
         scriptingService = componentContext.getService(ScriptingService.class);
         typedDatumFactory = componentContext.getService(TypedDatumService.class).getFactory();
-
+        lastRunStaticInputValues = new HashMap<>();
+        lastRunStaticOutputValues = new HashMap<>();
         // Create basic folder structure and prepare sandbox
 
         String toolName = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_TOOL_NAME);
@@ -444,8 +445,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
         String preScript = componentContext.getConfigurationValue(ToolIntegrationConstants.KEY_PRE_SCRIPT);
         beforePreScriptExecution(inputValues, inputNamesToLocalFile);
         needsToRun = needToRun(inputValues, inputNamesToLocalFile);
-        lastRunStaticInputValues = new HashMap<>();
-        lastRunStaticOutputValues = new HashMap<>();
+
         if (needsToRun) {
 
             for (String inputName : inputValues.keySet()) {
@@ -816,7 +816,7 @@ public class CommonToolIntegratorComponent extends DefaultComponent {
                 }
             }
         }
-        ScriptingUtils.writeAPIOutput(stateMap, componentContext, engine, workingPath, historyDataItem);
+        ScriptingUtils.writeAPIOutput(stateMap, componentContext, engine, workingPath, historyDataItem, lastRunStaticOutputValues);
         outputsWithNotAValueWritten.addAll(ScriptingUtils.getOutputsSendingNotAValue(engine, componentContext));
 
         for (String outputName : (List<String>) engine.get("RCE_CloseOutputChannelsList")) {

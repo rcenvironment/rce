@@ -10,12 +10,16 @@ package de.rcenvironment.core.scripting;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.script.ScriptEngine;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import de.rcenvironment.core.component.api.ComponentException;
+import de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem;
+import de.rcenvironment.core.component.execution.api.ComponentContext;
 import de.rcenvironment.core.datamodel.api.DataType;
 import de.rcenvironment.core.datamodel.testutils.TypedDatumServiceDefaultStub;
 
@@ -49,10 +53,8 @@ public final class ScriptingUtilsTest {
 
     /**
      * Tests behavior of
-     * {@link ScriptingUtils#writeOutputByType(Object, de.rcenvironment.core.datamodel.api.DataType, String, 
-     * String, javax.script.ScriptEngine, de.rcenvironment.core.component.datamanagement.api.ComponentHistoryDataItem, 
-     * de.rcenvironment.core.component.execution.api.ComponentContext)}
-     * for writing small tables with different row element count.
+     * {@link ScriptingUtils#getOutputByType(Object, DataType, String, ScriptEngine,ComponentHistoryDataItem, ComponentContext)} for
+     * writing small tables with different row element count.
      * 
      * @throws ComponentException on failure.
      */
@@ -74,7 +76,8 @@ public final class ScriptingUtilsTest {
         smallTableList.add(firstRow);
         smallTableList.add(secRow);
 
-        ScriptingUtils.writeOutputByType(smallTableList, DataType.SmallTable, "hellö", null, null, null, null);
+        ScriptingUtils.getOutputByType(smallTableList, DataType.SmallTable, "hellö", null, null, null);
+
     }
 
 }

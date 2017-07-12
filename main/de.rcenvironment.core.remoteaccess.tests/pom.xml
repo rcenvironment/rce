@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<artifactId>de.rcenvironment.core.remoteaccess.tests</artifactId>
-	<version>8.0.1.qualifier</version>
+	<version>8.0.2.qualifier</version>
 	<packaging>eclipse-test-plugin</packaging>
 
 	<parent>

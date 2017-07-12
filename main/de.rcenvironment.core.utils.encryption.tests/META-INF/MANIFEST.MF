@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: RCE Core Utils Encryption Tests
 Bundle-SymbolicName: de.rcenvironment.core.utils.encryption.tests
-Bundle-Version: 8.0.1.qualifier
+Bundle-Version: 8.0.2.qualifier
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Fragment-Host: de.rcenvironment.core.utils.encryption
 Import-Package: junit.framework,

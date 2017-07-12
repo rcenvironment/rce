@@ -2,7 +2,7 @@
 <feature
       id="de.rcenvironment.core.gui.feature"
       label="RCE Core GUI Feature"
-      version="8.0.1.qualifier"
+      version="8.0.2.qualifier"
       provider-name="DLR">
 
    <description url="http://www.rcenvironment.de">
